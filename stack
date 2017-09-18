@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export PYDEVD_HOST=`ifconfig en0 inet | grep inet | awk '{ print($2); }'`
+docker-compose $*
+

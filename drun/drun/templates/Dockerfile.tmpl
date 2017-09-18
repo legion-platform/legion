@@ -1,0 +1,6 @@
+FROM drun/python-base-image:latest
+
+ADD "./config.py" "/app/instance/config.py"
+ADD "./{{MODEL_FILE}}" "/app/instance/{{MODEL_FILE}}"
+
+RUN pip install drun legion

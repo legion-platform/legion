@@ -1,0 +1,87 @@
+version: "3"
+
+volumes:
+# Temporary data exchange between notebook-server and legion
+  drun_interchange: {}
+  drun_grafana_storage: {}
+
+services:
+  base-python-image:
+    build:
+      context: base-python-image
+    image: drun/base-python-image:latest
+    restart: "no"
+
+  jupyter:
+    image: drun/base-python-image
+    environment:
+      - PYTHONPATH=/opt/project
+      - PYDEVD_HOST
+      - PYDEVD_PORT=5501
+    entrypoint:
+      - python
+      - -u
+      - /opt/project/jupyter/jupyter.py
+    ports:
+      - 8888:8888
+    working_dir: /opt/project/jupyter
+    volumes:
+      - drun_interchange:/drun
+      - ./examples:/notebooks
+      - ./:/opt/project
+
+  legion:
+    depends_on:
+      - consul
+    image: drun/base-python-image
+    environment:
+      - PYTHONPATH=/opt/project
+      - PYDEVD_HOST
+      - PYDEVD_PORT=5502
+    entrypoint:
+      - python
+      - -u
+      - /opt/project/legion/bin/legion
+      - pyserve
+    ports:
+      - 5000:5000
+    volumes:
+      - drun_interchange:/drun
+      - .:/opt/project
+
+  grafana:
+    image: grafana/grafana
+    environment:
+      - PYTHONPATH=/opt/project
+      - GF_SERVER_ROOT_URL=http://parallels/grafana
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+    ports:
+      - 3000:3000
+    volumes:
+      - drun_interchange:/drun
+      - drun_grafana_storage:/var/lib/grafana
+      - .:/opt/project
+
+  graphite:
+    image: hopsoft/graphite-statsd
+    ports:
+      - 81:80
+      - 8126:8126
+
+  drun-edge:
+    depends_on:
+      - consul
+    image: steadyserv/nginx-consul:latest
+    environment:
+      - CONSUL_HTTP_ADDR=http://consul:8500
+    ports:
+      - 80:80
+    volumes:
+      - ./drun-edge/nginx.conf.ctmpl:/etc/nginx/nginx.conf.ctmpl
+
+  consul:
+    image: library/consul:latest
+    ports:
+      - 8500:8500
+

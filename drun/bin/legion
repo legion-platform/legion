@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+try:
+    import docker_bootup
+except ImportError:
+    pass
+
+import sys
+import argparse
+import logging
+
+from drun.pyserve import serve_model
+from drun.deploy import deploy_model, undeploy_model
+
+logger = logging.getLogger("legion")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
+    subparsers = parser.add_subparsers()
+
+    deploy_parser = subparsers.add_parser('deploy', description='deploys a model into a new container')
+    deploy_parser.add_argument('--model-file', type=str, help='serialized model file name')
+    deploy_parser.add_argument('--model-id', type=str, help='alpha-numeric identifier of the model to publish')
+    deploy_parser.add_argument('--model-type', type=str, help='drun-python, tensorflow, mleap', default='drun-python')
+    deploy_parser.set_defaults(func=deploy_model)
+
+    undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
+    undeploy_parser.add_argument('--model-id', type=str, help='identifier of the model')
+    undeploy_parser.set_defaults(func=undeploy_model)
+
+    pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
+    pyserve_parser.add_argument('--model-id', type=str)
+    pyserve_parser.set_defaults(func=serve_model)
+
+    args = parser.parse_args(sys.argv[1:])
+    args.func(args)
