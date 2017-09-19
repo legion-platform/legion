@@ -1,6 +1,9 @@
-FROM drun/python-base-image:latest
+FROM {{DOCKER_BASE_IMAGE}}
 
-ADD "./config.py" "/app/instance/config.py"
-ADD "./{{MODEL_FILE}}" "/app/instance/{{MODEL_FILE}}"
+ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
 
-RUN pip install drun legion
+RUN pip3 install drun
+
+CMD /usr/local/bin/legion pyserve --model-id {{MODEL_ID}} --model-file /legion/{{MODEL_FILE}}
+
+

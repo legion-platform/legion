@@ -4,15 +4,16 @@ import unittest2
 import logging
 import sys
 import json
+import argparse
 
 import drun.pyserve as pyserve
 
 
-class TestSimpleModelEnd2End(unittest2.TestCase):
+class TestPyserveEndpoints(unittest2.TestCase):
 
     def setUp(self):
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-        self.app = pyserve.init_application()
+        self.app = pyserve.init_application(argparse.Namespace())
         self.app.testing = True
         self.client = self.app.test_client()
 

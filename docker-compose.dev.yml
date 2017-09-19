@@ -1,10 +1,5 @@
 version: "3"
 
-volumes:
-# Temporary data exchange between notebook-server and legion
-  drun_interchange: {}
-  drun_grafana_storage: {}
-
 services:
   base-python-image:
     build:
@@ -19,14 +14,14 @@ services:
       - PYDEVD_HOST
       - PYDEVD_PORT=5501
     entrypoint:
-      - python
+      - python3
       - -u
       - /opt/project/jupyter/jupyter.py
     ports:
       - 8888:8888
     working_dir: /opt/project/jupyter
     volumes:
-      - drun_interchange:/drun
+      - ./workspace/drun:/drun
       - ./examples:/notebooks
       - ./:/opt/project
 
@@ -39,14 +34,14 @@ services:
       - PYDEVD_HOST
       - PYDEVD_PORT=5502
     entrypoint:
-      - python
+      - python3
       - -u
-      - /opt/project/legion/bin/legion
+      - /opt/project/drun/bin/legion
       - pyserve
     ports:
       - 5000:5000
     volumes:
-      - drun_interchange:/drun
+      - ./workspace/drun:/drun
       - .:/opt/project
 
   grafana:
@@ -59,15 +54,19 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - drun_interchange:/drun
-      - drun_grafana_storage:/var/lib/grafana
+      - ./workspace/drun:/drun
+      - ./workspace/grafana:/var/lib/grafana
       - .:/opt/project
+    logging:
+      driver: none
 
   graphite:
     image: hopsoft/graphite-statsd
     ports:
       - 81:80
       - 8126:8126
+    logging:
+      driver: none
 
   drun-edge:
     depends_on:
@@ -79,9 +78,13 @@ services:
       - 80:80
     volumes:
       - ./drun-edge/nginx.conf.ctmpl:/etc/nginx/nginx.conf.ctmpl
+    logging:
+      driver: none
 
   consul:
     image: library/consul:latest
     ports:
       - 8500:8500
+    logging:
+      driver: none
 

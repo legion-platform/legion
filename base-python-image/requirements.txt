@@ -4,10 +4,6 @@ cython
 requests
 elasticsearch
 h5py
-keras
-Lasagne
-lasagne_visualizer
-keras-vis
 dill
 python-interface
 pandas
@@ -21,4 +17,6 @@ urllib3
 sklearn
 pydevd
 python-consul
+matplotlib
+scipy
 

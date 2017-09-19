@@ -1,13 +1,17 @@
 import os
 import logging
 import consul
+import json
 from flask import Flask, Blueprint, request, jsonify, redirect
 from flask import current_app as app
 
+import drun.io
 import drun.model as mlmodel
 import drun.utils as utils
 
-log = logging.getLogger('pyserve')
+
+logger = logging.getLogger('pyserve')
+
 
 class HttpProtocolHandler:
 
@@ -44,9 +48,13 @@ protocol_handler = HttpProtocolHandler()
 blueprint = Blueprint('pyserve', __name__)
 
 
+@blueprint.route('/')
+def root():
+    return redirect('index.html')
+
 @blueprint.route('/api/model/<model_id>/info')
 def model_info(model_id):
-    assert model_id == app.config['MODEL_ID']
+#    assert model_id == app.config['MODEL_ID']
 
     model = app.config['model']
 
@@ -55,15 +63,14 @@ def model_info(model_id):
 
 @blueprint.route('/api/model/<model_id>/invoke', methods=['POST', 'GET'])
 def model_invoke(model_id):
-    assert model_id == app.config['MODEL_ID']
+    # TODO single configuration for Flask/CLI
+#    assert model_id == app.config['MODEL_ID']
 
     input_dict = protocol_handler.parse_request(request)
 
     model = app.config['model']
 
-    vector = model.transform(input_dict)
-
-    output = model.apply(vector)
+    output = model.apply(input_dict)
 
     return protocol_handler.prepare_response(output)
 
@@ -74,15 +81,18 @@ def healthcheck():
 
 
 def init_model(app):
-    if 'model_bundle_file' in app.config:
-        model = mlmodel.load_model(app.config['model_bundle_file'])
+    if 'MODEL_FILE' in app.config:
+        file = app.config['MODEL_FILE']
+        logger.info("Loading model from %s", file)
+        model = drun.io.load_model(file)
     else:
+        logger.info("Instantiated dummy model")
         model = mlmodel.DummyModel()
     return model
 
 
-def init_application():
-    app = Flask(__name__, static_url_path='/')
+def create_application():
+    app = Flask(__name__, static_url_path='')
     app.config.from_pyfile('config_default.py')
 #   Instance relative configuration
     instance_config = os.path.join(app.instance_path, 'config.py')
@@ -94,9 +104,6 @@ def init_application():
     cfg_addr = app.config['LEGION_ADDR']
     if cfg_addr == "" or cfg_addr == "0.0.0.0":
         app.config['LEGION_ADDR'] = utils.detect_ip()
-
-    # Put a model object into application configuration
-    app.config['model'] = init_model(app)
 
     app.register_blueprint(blueprint)
 
@@ -114,6 +121,7 @@ def register_service(app):
     addr = app.config['LEGION_ADDR']
     port = app.config['LEGION_PORT']
 
+    logger.info("Registering model service %s @ http://%s:%s", service, addr, port)
     client.agent.service.register(
         service,
         address=addr,
@@ -122,13 +130,28 @@ def register_service(app):
     )
 
 
+def apply_cli_args(flask_app, args):
+    v = vars(args)
+    for k in v:
+        if v[k] is not None:
+            flask_app.config[k.upper()] = v[k]
+
+
+def init_application(args):
+    app = create_application()
+    apply_cli_args(app, args)
+    # Put a model object into application configuration
+    app.config['model'] = init_model(app)
+    return app
+
+
 def serve_model(args):
-    logging.basicConfig(level=logging.DEBUG)
+    # Overall configuration priority: config_default.py, instance/config.py, CLI parameters
     logging.info("legion pyserve initializing")
-    app = init_application()
-    logging.info("legion ready")
+    app = init_application(args)
 
     register_service(app)
+    logging.info("consensus achieved")
 
     app.run(host=app.config['LEGION_ADDR'],
             port=app.config['LEGION_PORT'],

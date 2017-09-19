@@ -9,7 +9,7 @@ def extract_requirements(filename):
         return requirements_file.read().splitlines()
 
 setup(name='drun',
-      version='0.1',
+      version='0.5',
       description='Legion server',
       url='http://github.com/akharlamov/drun-root',
       author='Alexey Kharlamov',
@@ -27,7 +27,8 @@ setup(name='drun',
           'docker',
           'python-consul',
           'flask',
-          'docker'
+          'docker',
+          'numpy'
       ],
       test_suite='nose.collector',
       tests_require=[

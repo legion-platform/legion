@@ -12,6 +12,7 @@ import logging
 from drun.pyserve import serve_model
 from drun.deploy import deploy_model, undeploy_model
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("legion")
 
 
@@ -23,6 +24,7 @@ if __name__ == '__main__':
     deploy_parser.add_argument('--model-file', type=str, help='serialized model file name')
     deploy_parser.add_argument('--model-id', type=str, help='alpha-numeric identifier of the model to publish')
     deploy_parser.add_argument('--model-type', type=str, help='drun-python, tensorflow, mleap', default='drun-python')
+    deploy_parser.add_argument('--docker-network', type=str)
     deploy_parser.set_defaults(func=deploy_model)
 
     undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
@@ -31,7 +33,20 @@ if __name__ == '__main__':
 
     pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
     pyserve_parser.add_argument('--model-id', type=str)
+    pyserve_parser.add_argument('--model-file', type=str)
+    pyserve_parser.add_argument('--consul-addr', type=str, help='Consul Agent IP address')
+    pyserve_parser.add_argument('--consul-port', type=int, help='Consul Agent port')
+    pyserve_parser.add_argument('--legion-addr', type=str)
+    pyserve_parser.add_argument('--legion-port', type=int)
     pyserve_parser.set_defaults(func=serve_model)
 
     args = parser.parse_args(sys.argv[1:])
-    args.func(args)
+
+    v = vars(args)
+
+    if 'func' in v:
+        args.func(args)
+    else:
+        parser.print_help()
+        sys.exit(1)
+

@@ -1,8 +1,0 @@
-FROM drun/base-python-image:latest
-
-# In DEV envirionment the project root is exposed as /opt/project
-VOLUME /opt/project
-
-ENV PYTHONPATH='/opt/project:/opt/project/drun:/opt/project/legion'
-
-ENTRYPOINT ['python', '-u', '/opt/project/legion/legion.py']

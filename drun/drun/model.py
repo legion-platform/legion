@@ -13,15 +13,6 @@ class IMLModel(Interface):
         """
         pass
 
-    def transform(self, input_dict):
-        """
-        Transforms a dictionary of input parameters into a format comprehensible by the model.apply().
-        This may include type transformation, enrichment, and access to external sources.
-        :param input_dict: the dictionary
-        :return: an arbitrary object representing model's input vector.
-        """
-        pass
-
     def apply(self, input_vector):
         """
         applies the model to the provided input_vector
@@ -36,51 +27,40 @@ class ScipyModel(implements(IMLModel)):
     A simple model using Pandas DF for internal representation.
     Useful for Sklearn/Scipy based model export
     """
+    def __init__(self, apply_func, prepare_func, column_types, version='Unknown'):
+        assert apply_func is not None
+        assert prepare_func is not None
+        assert column_types is not None
 
-    def __init__(self, apply, types, prepare, version):
-        self.column_types = types
-        self.prepare_func = prepare
-        self.apply_func = apply
+        self.apply_func = apply_func
+        self.column_types = column_types
+        self.prepare_func = prepare_func
         self.version = version
 
-    def transform(self, input_dict):
-        df = self.to_df(input_dict)
-
-        if self.prepare_func is not None:
-            df = self.prepare_func(input_dict)
-
-        return df
-
     def apply(self, input_vector):
-        return self.apply_func(input_vector)
+        df = self.to_df(input_vector)
+
+        df = self.prepare_func(df)
+
+        return self.apply_func(df)
 
     def description(self):
-        return {'version': self.version}
+        return {'version': self.version,
+                'input_params': dict(map(lambda t: (t[0], str(t[1])), self.column_types.items()))}
 
     def to_df(self, input_dict):
-        col_names = input_dict.keys()
+        vectorized = {k: [v] for k, v in input_dict.items()}
 
-        if self.column_types is None:
-            dtypes = self.deduce_dtypes()
-        else:
-            dtypes = self.column_types
+        df = pandas.DataFrame(vectorized, columns=input_dict.keys())
 
-        df = pandas.DataFrame(
-            data=input_dict,
-            columns=col_names,
-            dtypes=dtypes
-        )
+        # TODO Proper error reporting in response
+        assert df.shape[0] == 1
 
-        assert df.count() == 1
+        df_cols = df.columns.values.tolist()
 
-        return df
+        types = {k: v for k, v in self.column_types.items() if k in df_cols}
 
-    def deduce_dtypes(self, names, dict):
-        # TODO Implement type deduction
-        raise NotImplementedError
-        dtypes = []
-
-        return dtypes
+        return df.astype(types)
 
 
 class DummyModel(implements(IMLModel)):
