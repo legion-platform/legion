@@ -10,7 +10,7 @@
 ## Installation
 * Clone repo ( `git clone https://github.com/akharlamov/drun-root` )
 * Build docker image in directory base-python-image ( `cd base-python-image && docker build . && cd -` )
-* Get latest installed image tag ( `docker images -q | head -n 1` )
+* Get latest installed image ID ( `docker images -q | head -n 1` )
 * Add tag drun/base-python-image to image ( `docker tag <image id> drun/base-python-image` )
 * For local installation add to hosts file
 ```
