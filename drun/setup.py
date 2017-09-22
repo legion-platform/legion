@@ -28,7 +28,8 @@ setup(name='drun',
           'python-consul',
           'flask',
           'docker',
-          'numpy'
+          'numpy',
+          'Jinja2>=2.9'
       ],
       test_suite='nose.collector',
       tests_require=[
