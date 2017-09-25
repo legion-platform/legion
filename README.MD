@@ -63,6 +63,9 @@ Content-Disposition: form-data; name="age"
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 ```
 
+## Code analysis tools
+For run code analysis tools, install **tox** package (`pip3 install tox`) and run `tox testenv:quality` from *drun* folder
+
 ## Additional
 * For external docker installation set: `DOCKER_HOST="tcp://host:ip"` (for example `DOCKER_HOST="tcp://127.0.0.1:2375"`) enviroment variable.
 
