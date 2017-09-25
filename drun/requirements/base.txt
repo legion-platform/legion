@@ -1,0 +1,10 @@
+dill
+python-interface
+pandas
+traitlets
+docker
+python-consul
+flask
+docker
+numpy
+Jinja2>=2.9

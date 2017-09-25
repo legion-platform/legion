@@ -1,4 +1,7 @@
 from setuptools import setup
+import os
+
+PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def extract_requirements(filename):
@@ -7,6 +10,7 @@ def extract_requirements(filename):
     """
     with open(filename, 'r') as requirements_file:
         return requirements_file.read().splitlines()
+
 
 setup(name='drun',
       version='0.5',
@@ -18,22 +22,7 @@ setup(name='drun',
       packages=['drun'],
       include_package_data=True,
       scripts=['bin/legion'],
-
-      install_requires=[
-          'dill',
-          'python-interface',
-          'pandas',
-          'traitlets',
-          'docker',
-          'python-consul',
-          'flask',
-          'docker',
-          'numpy',
-          'Jinja2>=2.9'
-      ],
+      install_requires=extract_requirements(os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'base.txt')),
       test_suite='nose.collector',
-      tests_require=[
-          'unittest2',
-          'nose'
-      ],
+      tests_require=extract_requirements(os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'test.txt')),
       zip_safe=False)
