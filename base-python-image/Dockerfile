@@ -4,7 +4,7 @@ ADD requirements.txt /root/requirements.txt
 
 # Theano requires C++ compiler to produce effective code
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
-    g++ apt-utils python3-dev python3-pip python3-setuptools file wget
+    g++ apt-utils python3-dev python3-pip python3-setuptools file wget git
 
 
 
