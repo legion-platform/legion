@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 \
 
 
 RUN pip3 install --upgrade pip \
-    && pip3 install -r /root/requirements.txt \
-    && "/usr/bin/python3" "/usr/local/lib/python3.5/dist-packages/setup_cython.py" build_ext --inplace
+    && pip3 install -r /root/requirements.txt
 
 WORKDIR /app

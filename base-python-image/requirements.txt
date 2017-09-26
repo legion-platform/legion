@@ -19,4 +19,6 @@ pydevd
 python-consul
 matplotlib
 scipy
+tensorflow
+keras
 

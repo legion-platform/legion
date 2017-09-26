@@ -2,6 +2,8 @@
 ** TODO Request type conversion system
    + Image (PIL)
    + String (instead of general object)
+
+** TODO Keras model support
    
 ** TODO Tensorflow support
 *** TODO Review tensorflow serving @AlexeyKharlamov
@@ -27,3 +29,7 @@
 **** TODO Docker registry
 **** TODO Production docker compose
 **** TODO PIP registry
+
+** TODO Application of a model in batch mode
+*** TODO PySpark
+*** TODO Spark
