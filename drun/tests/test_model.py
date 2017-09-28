@@ -38,5 +38,6 @@ class TestScipyModel(unittest2.TestCase):
 
         print(s.description())
 
+
 if __name__ == '__main__':
     unittest2.main()

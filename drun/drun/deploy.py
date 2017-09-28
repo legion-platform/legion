@@ -1,15 +1,28 @@
+"""
+Deploy logic for DRun
+"""
+
 import os
 import tempfile
-import docker
 import shutil
 import logging
+
+import docker
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-logger = logging.getLogger('deploy')
+LOGGER = logging.getLogger('deploy')
 
 
 # TODO Model version info must be embedded to image
 def build_docker_image(baseimage, model_id, model_file, labels):
+    """
+    Build docker image from base image and model file
+    :param baseimage: name of base image
+    :param model_id: model id
+    :param model_file: path to model file
+    :param labels: dict of image labels
+    :return: docker.models.Image
+    """
     tmpdir = tempfile.mkdtemp('legion-docker-build')
 
     (folder, model_filename) = os.path.split(model_file)
@@ -23,8 +36,8 @@ def build_docker_image(baseimage, model_id, model_file, labels):
 
     template = env.get_template('Dockerfile.tmpl')
 
-    with open(os.path.join(tmpdir, 'Dockerfile'), 'w') as f:
-        f.write(template.render({
+    with open(os.path.join(tmpdir, 'Dockerfile'), 'w') as file:
+        file.write(template.render({
             'DOCKER_BASE_IMAGE': baseimage,
             'MODEL_ID': model_id,
             'MODEL_FILE': model_filename
@@ -42,22 +55,33 @@ def build_docker_image(baseimage, model_id, model_file, labels):
 
 
 def find_network(client, args):
+    """
+    Find DRun network on docker host
+    :param client: docker.client
+    :param args: args with .docker_network item
+    :return: str id of network
+    """
     network_id = args.docker_network
 
     if network_id is None:
-        logger.debug('No network provided, trying to detect an active DRun network')
+        LOGGER.debug('No network provided, trying to detect an active DRun network')
         nets = client.networks.list()
-        for n in nets:
-            name = n.name
+        for network in nets:
+            name = network.name
             if name.startswith('drun'):
-                logger.info('Detected network %s', name)
-                network_id = n.id
+                LOGGER.info('Detected network %s', name)
+                network_id = network.id
                 break
 
     return network_id
 
 
 def deploy_model(args):
+    """
+    Deploy model to docker host
+    :param args: args with .model_id, .model_file, .docker_network
+    :return: docker.model.Container new instance
+    """
     client = docker.from_env()
 
     labels = {
@@ -72,20 +96,26 @@ def deploy_model(args):
         args.model_file,
         labels
     )
-    logger.info('Built image: %s', image)
+    LOGGER.info('Built image: %s', image)
 
     network_id = find_network(client, args)
 
-    logger.info('Starting container')
+    LOGGER.info('Starting container')
     container = client.containers.run(image,
-                          network=network_id,
-                          stdout=True,
-                          stderr=True,
-                          detach=True,
-                          labels=labels)
+                                      network=network_id,
+                                      stdout=True,
+                                      stderr=True,
+                                      detach=True,
+                                      labels=labels)
     print(container)
     return container
 
 
+# TODO Model undeploy
 def undeploy_model(args):
+    """
+    Undeploy model from Docker Host
+    :param args: arguments
+    :return: None
+    """
     return

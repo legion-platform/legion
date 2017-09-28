@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-
+"""
+Default config for DRun
+"""
 
 DOCKER_PYSERVER_BASE = "drun/base-python-image:latest"
 
@@ -10,4 +12,3 @@ LEGION_PORT = 5000
 
 CONSUL_ADDR = "consul"
 CONSUL_PORT = 8500
-

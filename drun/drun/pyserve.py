@@ -1,7 +1,10 @@
+"""
+Flask app
+"""
+
 import os
 import logging
 import consul
-import json
 from flask import Flask, Blueprint, request, jsonify, redirect
 from flask import current_app as app
 
@@ -10,16 +13,16 @@ import drun.model as mlmodel
 import drun.utils as utils
 
 
-logger = logging.getLogger('pyserve')
+LOGGER = logging.getLogger('pyserve')
 
 
 class HttpProtocolHandler:
 
     def parse_request(self, input_request):
         """
-        Produces a model input dictionary from HTTP request
-        :param input_request: flash.request object
-        :return: a dictionary
+        Produce a model input dictionary from HTTP request
+        :param input_request: Flask.request object
+        :return: dict with requested fields
         """
         # TODO Handle JSON and image upload over MIME multipart
         result = {}
@@ -36,7 +39,7 @@ class HttpProtocolHandler:
 
     def prepare_response(self, response):
         """
-        Produces an HTTP response from a model output
+        Produce an HTTP response from a model output
         :param response: a model output
         :return: bytes
         """
@@ -50,21 +53,38 @@ blueprint = Blueprint('pyserve', __name__)
 
 @blueprint.route('/')
 def root():
+    """
+    Return static file for root query
+    :return: Flask.Response with index file
+    """
     return redirect('index.html')
 
+
+# TODO: Add model check
 @blueprint.route('/api/model/<model_id>/info')
 def model_info(model_id):
-#    assert model_id == app.config['MODEL_ID']
+    """
+    Get model description
+    :param model_id: str of model id
+    :return: Flask.Response of model description
+    """
+    # assert model_id == app.config['MODEL_ID']
 
     model = app.config['model']
 
     return jsonify(model.description())
 
 
+# TODO: Add model check
 @blueprint.route('/api/model/<model_id>/invoke', methods=['POST', 'GET'])
 def model_invoke(model_id):
+    """
+    Call model for calculation
+    :param model_id: str model name
+    :return:Flask.Response with result of calculation
+    """
     # TODO single configuration for Flask/CLI
-#    assert model_id == app.config['MODEL_ID']
+    # assert model_id == app.config['MODEL_ID']
 
     input_dict = protocol_handler.parse_request(request)
 
@@ -77,21 +97,34 @@ def model_invoke(model_id):
 
 @blueprint.route('/healthcheck')
 def healthcheck():
+    """
+    Check that model is OK
+    :return: str status string
+    """
     return 'OK'
 
 
 def init_model(app):
+    """
+    Load model from app configuration
+    :param app: Flask app
+    :return: model instance
+    """
     if 'MODEL_FILE' in app.config:
         file = app.config['MODEL_FILE']
-        logger.info("Loading model from %s", file)
+        LOGGER.info("Loading model from %s", file)
         model = drun.io.load_model(file)
     else:
-        logger.info("Instantiated dummy model")
+        LOGGER.info("Instantiated dummy model")
         model = mlmodel.DummyModel()
     return model
 
 
 def create_application():
+    """
+    Create Flask application
+    :return: Flask application instance
+    """
     app = Flask(__name__, static_url_path='')
     app.config.from_pyfile('config_default.py')
 #   Instance relative configuration
@@ -111,7 +144,11 @@ def create_application():
 
 
 def register_service(app):
-
+    """
+    Register application in Consul
+    :param app: Flask application instance
+    :return: None
+    """
     client = consul.Consul(
         host=app.config['CONSUL_ADDR'],
         port=app.config['CONSUL_PORT'])
@@ -121,7 +158,7 @@ def register_service(app):
     addr = app.config['LEGION_ADDR']
     port = app.config['LEGION_PORT']
 
-    logger.info("Registering model service %s @ http://%s:%s", service, addr, port)
+    LOGGER.info("Registering model service %s @ http://%s:%s", service, addr, port)
     client.agent.service.register(
         service,
         address=addr,
@@ -131,13 +168,23 @@ def register_service(app):
 
 
 def apply_cli_args(flask_app, args):
-    v = vars(args)
-    for k in v:
-        if v[k] is not None:
-            flask_app.config[k.upper()] = v[k]
+    """
+    Set Flask app instance configuration from arguments
+    :param flask_app: Flask app instance
+    :param args: dict arguments
+    :return: None
+    """
+    for k in args:
+        if args[k] is not None:
+            flask_app.config[k.upper()] = args[k]
 
 
 def init_application(args):
+    """
+    Initialize configured Flask application instance
+    :param args: dict configuration arguments
+    :return: Flask application instance
+    """
     app = create_application()
     apply_cli_args(app, args)
     # Put a model object into application configuration
@@ -146,7 +193,12 @@ def init_application(args):
 
 
 def serve_model(args):
-    # Overall configuration priority: config_default.py, instance/config.py, CLI parameters
+    """
+    Serve models
+    Overall configuration priority: config_default.py, instance/config.py, CLI parameters
+    :param args: dict configuration arguments
+    :return: None
+    """
     logging.info("legion pyserve initializing")
     app = init_application(args)
 
@@ -155,5 +207,4 @@ def serve_model(args):
 
     app.run(host=app.config['LEGION_ADDR'],
             port=app.config['LEGION_PORT'],
-            use_reloader=False
-            )
+            use_reloader=False)
