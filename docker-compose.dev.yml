@@ -71,20 +71,19 @@ services:
   drun-edge:
     depends_on:
       - consul
-    image: steadyserv/nginx-consul:latest
+    image: drun/edge
+    build:
+      context: drun-edge
     environment:
       - CONSUL_HTTP_ADDR=http://consul:8500
     ports:
       - 80:80
     volumes:
-      - ./drun-edge/nginx.conf.ctmpl:/etc/nginx/nginx.conf.ctmpl
-    logging:
-      driver: none
+      - ./drun-edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
+#    logging:
+#      driver: none
 
   consul:
     image: library/consul:latest
     ports:
       - 8500:8500
-    logging:
-      driver: none
-
