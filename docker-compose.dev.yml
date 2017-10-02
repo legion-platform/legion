@@ -57,6 +57,11 @@ services:
       - ./workspace/drun:/drun
       - ./workspace/grafana:/var/lib/grafana
       - .:/opt/project
+
+  jenkins:
+    image: drun/jenkins-server
+    ports:
+      - 8081:8080
     logging:
       driver: none
 
