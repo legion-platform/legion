@@ -62,6 +62,8 @@ services:
     image: drun/jenkins-server
     ports:
       - 8081:8080
+    volumes:
+      - ./keys/git-deploy.key:/var/jenkins_home/.ssh/id_rsa
     logging:
       driver: none
 

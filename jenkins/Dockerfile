@@ -8,6 +8,3 @@ COPY create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
 
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
-
-
-COPY git-deploy.key /var/jenkins_home/.ssh/id_rsa
