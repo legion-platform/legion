@@ -174,9 +174,10 @@ def apply_cli_args(flask_app, args):
     :param args: dict arguments
     :return: None
     """
-    for k in args:
-        if args[k] is not None:
-            flask_app.config[k.upper()] = args[k]
+    args_dict = vars(args)
+    for k, v in args_dict.items():
+        if v is not None:
+            flask_app.config[k.upper()] = v
 
 
 def init_application(args):
