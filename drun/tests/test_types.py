@@ -51,6 +51,12 @@ class TestTypes(unittest2.TestCase):
             types.Float.parse('25,2')
 
     def test_image_with_network_loading(self):
+        self.assertValidImage(types.Image.parse('data:image/gif;base64,R0lGODlhEAAOALMAAOazToeHh0tLS/7LZ'
+                                                'v/0jvb29t/f3//Ub//ge8WSLf/rhf/3kdbW1mxsbP//mf///yH5BAAAA'
+                                                'AAALAAAAAAQAA4AAARe8L1Ekyky67QZ1hLnjM5UUde0ECwLJoExKcppV'
+                                                '0aCcGCmTIHEIUEqjgaORCMxIC6e0CcguWw6aFjsVMkkIr7g77ZKPJjPZq'
+                                                'Iyd7sJAgVGoEGv2xsBxqNgYPj/gAwXEQA7'), 16, 14)
+
         self.assertValidImage(types.Image.parse('http://placehold.it/120x130&text=image1'), 120, 130)
 
 

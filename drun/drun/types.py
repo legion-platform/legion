@@ -71,6 +71,11 @@ class _Image(BaseType):
         if len(value) > 10 and value[:4] == 'http':
             return self._load_from_network(value)
 
+        if re.match(self.BASE64_REGEX, value):
+            return self._load_from_base64(value)
+
+        raise Exception('Invalid data')
+
     def _load_from_network(self, url):
         data = urlopen(url).read()
         if isinstance(data, str):
@@ -80,7 +85,14 @@ class _Image(BaseType):
         return img
 
     def _load_from_base64(self, value):
-        pass
+        search_results = re.search(self.BASE64_REGEX, value)
+        data = search_results.group(2)
+        if len(data) % 4:
+            data += '=' * (4 - len(data) % 4)
+        data = base64.decodebytes(data.encode('ascii'))
+        file = BytesIO(data)
+        img = PYTHON_Image.open(file)
+        return img
 
 
 Integer = BaseType(int)
