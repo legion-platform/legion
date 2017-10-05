@@ -62,6 +62,7 @@ class ScipyModel(implements(IMLModel)):
         :param input_vector: dict of input data
         :return: dict of output data
         """
+        LOGGER.info('Input vector: %r' % input_vector)
         data_frame = build_df(self.column_types, input_vector)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)

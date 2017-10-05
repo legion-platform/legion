@@ -157,14 +157,15 @@ class _Image(BaseType):
         if isinstance(value, str):
             if len(value) > 10 and value[:4] == 'http':
                 return self._load_from_network(value)
-
-            if re.match(self.BASE64_REGEX, value):
+            elif re.match(self.BASE64_REGEX, value):
                 return self._load_from_base64(value)
+            else:
+                raise Exception('Invalid string: %s' % value)
         elif isinstance(value, bytes):
             file = BytesIO(value)
             return PYTHON_Image.open(file)
         else:
-            raise Exception('Invalid data type')
+            raise Exception('Invalid data type: %s' % (value.__class__))
 
     def _load_from_network(self, url):
         data = urlopen(url).read()
