@@ -20,10 +20,10 @@ try:
     if host != "" and port != "":
         import pydevd
 
-        pydevd.settrace(
-            host=host,
-            port=int(port),
-            suspend=False,
-            patch_multiprocessing=True)
+#        pydevd.settrace(
+#            host=host,
+#            port=int(port),
+#            suspend=False,
+#            patch_multiprocessing=True)
 except Exception as e:
     print('Unable to connect to pydevd. Ignoring...', e)
