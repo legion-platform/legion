@@ -2,8 +2,11 @@
 Models (base, interfaces and proxies)
 """
 
+from drun.types import build_df
 from interface import Interface, implements
-import pandas
+import logging
+
+LOGGER = logging.getLogger('deploy')
 
 
 class IMLModel(Interface):
@@ -11,12 +14,13 @@ class IMLModel(Interface):
     Definition of an interface for ML model usable for the engine
     """
 
+    @property
     def description(self):
         """
         Get model description
         :return: dictionary with model description
         """
-        pass
+        return None
 
     def apply(self, input_vector):
         """
@@ -58,38 +62,24 @@ class ScipyModel(implements(IMLModel)):
         :param input_vector: dict of input data
         :return: dict of output data
         """
-        data_frame = self.to_df(input_vector)
+        data_frame = build_df(self.column_types, input_vector)
 
+        LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
         data_frame = self.prepare_func(data_frame)
 
+        LOGGER.info('Applying function with DataFrame: %r' % data_frame)
         return self.apply_func(data_frame)
 
+    @property
     def description(self):
         """
         Get model description
         :return: dictionary with model description
         """
-        return {'version': self.version,
-                'input_params': dict(map(lambda t: (t[0], str(t[1])), self.column_types.items()))}
-
-    def to_df(self, input_dict):
-        """
-        Convert dict to pandas DataFrame
-        :param input_dict: dict of input data
-        :return: pandas.DataFrame with input data
-        """
-        vectorized = {k: [v] for k, v in input_dict.items()}
-
-        data_frame = pandas.DataFrame(vectorized, columns=input_dict.keys())
-
-        # TODO Proper error reporting in response
-        assert data_frame.shape[0] == 1
-
-        df_cols = data_frame.columns.values.tolist()
-
-        types = {k: v for k, v in self.column_types.items() if k in df_cols}
-
-        return data_frame.astype(types)
+        return {
+            'version': self.version,
+            'input_params': {k: v.description_for_api for (k, v) in self.column_types.items()}
+        }
 
 
 class DummyModel(implements(IMLModel)):
@@ -105,6 +95,7 @@ class DummyModel(implements(IMLModel)):
         """
         return input_dict
 
+    @property
     def description(self):
         """
         Get model description
