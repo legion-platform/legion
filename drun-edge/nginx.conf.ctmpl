@@ -7,11 +7,15 @@ events {
 }
 
 http{
+
   include       mime.types;
   default_type  application/octet-stream;
   sendfile        on;
   keepalive_timeout  65;
 
+  resolver {{env "DOCKER_RESOLVER"}};
+
+  lua_package_path "/usr/local/share/lua/5.3/?.lua";
 
   {{range services}} {{$name := .Name}} {{$service := service .Name}}
   {{if (.Tags | contains "model") }}
@@ -23,11 +27,9 @@ http{
   {{end}}
   {{end}}
 
-
-
   server {
     listen 80;
-    server_name drun-edge;
+    server_name edge;
     client_max_body_size 0; # disable any limits to avoid HTTP 413 for large image uploads
 
     chunked_transfer_encoding on;
@@ -68,12 +70,15 @@ http{
     # Models API
     {{range services}} {{$name := .Name}}
     {{if (.Tags | contains "model")}}
-    location /api/model/{{$name}} {
+    location /model/{{$name}} {
         proxy_pass http://{{$name}};
 
         expires -1;
         add_header Cache-Control no-cache;
+
+        log_by_lua 'ngx.log(ngx.ERR, "Test!")';
     }
+
     {{end}}
     {{end}}
   }

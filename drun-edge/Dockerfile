@@ -13,17 +13,20 @@ RUN set -ex \
 
 ENV CTMPL_VERSION 0.19.3
 RUN set -x \
-  && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl
-
-RUN gpg --keyserver keys.gnupg.net --recv-keys 91A6E7F85D05C65630BEF18951852D87348FFC4C
-
-RUN wget https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_linux_amd64.zip \
+  && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl \
+  && gpg --keyserver keys.gnupg.net --recv-keys 91A6E7F85D05C65630BEF18951852D87348FFC4C \
+  && wget https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_linux_amd64.zip \
   && wget https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_SHA256SUMS \
   && wget https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_SHA256SUMS.sig \
   && gpg --batch --verify consul-template_${CTMPL_VERSION}_SHA256SUMS.sig consul-template_${CTMPL_VERSION}_SHA256SUMS \
   && grep consul-template_${CTMPL_VERSION}_linux_amd64.zip consul-template_${CTMPL_VERSION}_SHA256SUMS | sha256sum -c \
   && unzip -d /bin consul-template_${CTMPL_VERSION}_linux_amd64.zip \
   && rm -rf consul-template_* /root/.gnupg \
+  && apk del .install-deps
+
+RUN set -x \
+  && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl git curl luarocks5.3 \
+  && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
   && apk del .install-deps
 
 
