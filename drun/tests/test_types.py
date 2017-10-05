@@ -4,12 +4,14 @@ import unittest2
 
 import drun.types as types
 from PIL import Image as PYTHON_Image
+import base64
+import pandas as pd
 
 
 class TestTypes(unittest2.TestCase):
     def assertValidImage(self, object, width, height):
         if not isinstance(object, PYTHON_Image.Image):
-            raise AssertionError('Object is not an image')
+            raise AssertionError('Object of type %s is not an image' % (type(object), ))
 
         if width and height and (object.width != width or object.height != height):
             raise AssertionError('Image size (%d, %d) not equals to (%d, %d)' %
@@ -50,14 +52,56 @@ class TestTypes(unittest2.TestCase):
         with self.assertRaises(ValueError):
             types.Float.parse('25,2')
 
-    def test_image_with_network_loading(self):
+    def test_image_conversions(self):
         self.assertValidImage(types.Image.parse('data:image/gif;base64,R0lGODlhEAAOALMAAOazToeHh0tLS/7LZ'
                                                 'v/0jvb29t/f3//Ub//ge8WSLf/rhf/3kdbW1mxsbP//mf///yH5BAAAA'
                                                 'AAALAAAAAAQAA4AAARe8L1Ekyky67QZ1hLnjM5UUde0ECwLJoExKcppV'
                                                 '0aCcGCmTIHEIUEqjgaORCMxIC6e0CcguWw6aFjsVMkkIr7g77ZKPJjPZq'
                                                 'Iyd7sJAgVGoEGv2xsBxqNgYPj/gAwXEQA7'), 16, 14)
 
+        image_source_in_base64 = 'R0lGODlhEAAOALMAAOazToeHh0tLS/7LZ' \
+                                 'v/0jvb29t/f3//Ub//ge8WSLf/rhf/3kdbW1mxsbP//mf///yH5BAAAA' \
+                                 'AAALAAAAAAQAA4AAARe8L1Ekyky67QZ1hLnjM5UUde0ECwLJoExKcppV' \
+                                 '0aCcGCmTIHEIUEqjgaORCMxIC6e0CcguWw6aFjsVMkkIr7g77ZKPJjPZq' \
+                                 'Iyd7sJAgVGoEGv2xsBxqNgYPj/gAwXEQA7'
+
+        if len(image_source_in_base64) % 4:
+            image_source_in_base64 += '=' * (4 - len(image_source_in_base64) % 4)
+        image_source_in_bytes = base64.decodebytes(image_source_in_base64.encode('ascii'))
+
+        self.assertValidImage(types.Image.parse(image_source_in_bytes), 16, 14)
+
         self.assertValidImage(types.Image.parse('http://placehold.it/120x130&text=image1'), 120, 130)
+
+    def test_type_deduction_base(self):
+        df = pd.DataFrame([{'a': 1, 'b': 2.0, 'c': False, 'd': 'Hello'}, {'a': -20, 'b': 3.0, 'c': True, 'd': '!'}])
+
+        deducted_types = types.deduct_types_on_pandas_df(df)
+
+        self.assertSetEqual(set(deducted_types.keys()), {'a', 'b', 'c', 'd'})
+        self.assertEqual(deducted_types['a'].representation_type, types.Integer)
+        self.assertEqual(deducted_types['b'].representation_type, types.Float)
+        self.assertEqual(deducted_types['c'].representation_type, types.Bool)
+        self.assertEqual(deducted_types['d'].representation_type, types.String)
+
+    def test_type_deduction_with_image(self):
+        img = PYTHON_Image.new('RGB', (128, 20), 'black')
+        df = pd.DataFrame([{'a': 1, 'i': img}, {'a': 2, 'i': img}])
+
+        deducted_types = types.deduct_types_on_pandas_df(df)
+
+        self.assertSetEqual(set(deducted_types.keys()), {'a', 'i'})
+        self.assertEqual(deducted_types['a'].representation_type, types.Integer)
+        self.assertEqual(deducted_types['i'].representation_type, types.Image)
+
+    def test_type_deduction_with_custom(self):
+        df = pd.DataFrame([{'a': 1, 's': 'Hello'.encode('ascii')}])
+
+        deducted_types = types.deduct_types_on_pandas_df(df, {'s': types.String})
+
+        self.assertSetEqual(set(deducted_types.keys()), {'a', 's'})
+        self.assertEqual(deducted_types['a'].representation_type, types.Integer)
+        self.assertEqual(deducted_types['s'].representation_type, types.String)
 
 
 if __name__ == '__main__':
