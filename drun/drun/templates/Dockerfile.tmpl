@@ -2,8 +2,12 @@ FROM {{DOCKER_BASE_IMAGE}}
 
 ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
 
-RUN pip3 install drun
+{% if PIP_CUSTOM_TARGET %}
+ADD {{PIP_INSTALL_TARGET}} "/legion/{{PIP_INSTALL_TARGET}}"
+RUN pip3 install /legion/{{PIP_INSTALL_TARGET}}
+{% else %}
+RUN pip3 install {{PIP_INSTALL_TARGET}}
+{% endif %}
+
 
 CMD /usr/local/bin/legion pyserve --model-id {{MODEL_ID}} --model-file /legion/{{MODEL_FILE}}
-
-

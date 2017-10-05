@@ -24,6 +24,7 @@ if __name__ == '__main__':
     deploy_parser.add_argument('--model-file', type=str, help='serialized model file name')
     deploy_parser.add_argument('--model-id', type=str, help='alpha-numeric identifier of the model to publish')
     deploy_parser.add_argument('--model-type', type=str, help='drun-python, tensorflow, mleap', default='drun-python')
+    deploy_parser.add_argument('--python-package', type=str, help='drun-python package', default=None)
     deploy_parser.add_argument('--docker-network', type=str)
     deploy_parser.set_defaults(func=deploy_model)
 

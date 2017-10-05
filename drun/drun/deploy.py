@@ -14,13 +14,14 @@ LOGGER = logging.getLogger('deploy')
 
 
 # TODO Model version info must be embedded to image
-def build_docker_image(baseimage, model_id, model_file, labels):
+def build_docker_image(baseimage, model_id, model_file, labels, python_package=None):
     """
     Build docker image from base image and model file
     :param baseimage: name of base image
     :param model_id: model id
     :param model_file: path to model file
     :param labels: dict of image labels
+    :param python_package: str path to wheel or None for install from PIP
     :return: docker.models.Image
     """
     tmpdir = tempfile.mkdtemp('legion-docker-build')
@@ -28,6 +29,18 @@ def build_docker_image(baseimage, model_id, model_file, labels):
     (folder, model_filename) = os.path.split(model_file)
 
     shutil.copy2(model_file, os.path.join(tmpdir, model_filename))
+
+    install_target = 'drun'
+    custom_target = False
+
+    if python_package:
+        if not os.path.exists(python_package):
+            raise Exception('Python package file not found: %s' % python_package)
+
+        install_target = os.path.basename(python_package)
+        custom_target = True
+
+        shutil.copy2(python_package, os.path.join(tmpdir, install_target))
 
     env = Environment(
         loader=PackageLoader(__name__, 'templates'),
@@ -40,11 +53,16 @@ def build_docker_image(baseimage, model_id, model_file, labels):
         file.write(template.render({
             'DOCKER_BASE_IMAGE': baseimage,
             'MODEL_ID': model_id,
-            'MODEL_FILE': model_filename
+            'MODEL_FILE': model_filename,
+            'PIP_INSTALL_TARGET': install_target,
+            'PIP_CUSTOM_TARGET': custom_target
         }))
 
     client = docker.from_env()
+
+    LOGGER.info('Building docker image in folder %s' % (tmpdir))
     image = client.images.build(
+        tag='model-%s' % model_id,
         nocache=True,
         path=tmpdir,
         rm=True,
@@ -94,7 +112,8 @@ def deploy_model(args):
         'drun/base-python-image:latest',
         args.model_id,
         args.model_file,
-        labels
+        labels,
+        args.python_package
     )
     LOGGER.info('Built image: %s', image)
 
