@@ -2,6 +2,10 @@
 DRun model export / load
 """
 
+from drun.model import ScipyModel
+import drun.types
+from drun.types import deduct_types_on_pandas_df
+
 import dill
 import os
 import zipfile
@@ -9,6 +13,31 @@ import tempfile
 
 import drun
 from drun.model import ScipyModel, IMLModel
+from pandas import DataFrame
+
+
+def _get_column_types(param_types):
+    """
+    Build dict with ColumnInformation from param_types argument for export function
+    :param param_types: tuple of pandas DF with custom dict or pandas DF.
+    Custom dict contains of column_name => drun.BaseType
+    :return: dict of column_name => drun.types.ColumnInformation
+    """
+    pandas_df_sample = None
+    custom_props = None
+
+    if isinstance(param_types, tuple) and len(param_types) == 2 \
+            and isinstance(param_types[0], DataFrame) \
+            and isinstance(param_types[1], dict):
+
+        pandas_df_sample = param_types[0]
+        custom_props = param_types[1]
+    elif isinstance(param_types, DataFrame):
+        pandas_df_sample = param_types
+    else:
+        raise Exception('Provided invalid param types: not tuple[DataFrame, dict] or DataFrame')
+
+    return deduct_types_on_pandas_df(data_frame=pandas_df_sample, extra_columns=custom_props)
 
 
 class ModelContainer:
@@ -116,9 +145,10 @@ def export(filename, apply_func, prepare_func=None, param_types=None, version=No
     :param filename: the location to write down the model
     :param apply_func: an apply function DF->DF
     :param prepare_func: a function to prepare input DF->DF
-    :param param_types:
-    :param version: str version of model
-    :return: instance of model
+    :param param_types: tuple of pandas DF with custom dict or pandas DF.
+    Custom dict contains of column_name => drun.BaseType
+    :param version: str of version
+    :return: ScipyModel model instance
     """
     if prepare_func is None:
         def prepare_func(input_dict):
@@ -130,7 +160,7 @@ def export(filename, apply_func, prepare_func=None, param_types=None, version=No
             return input_dict
 
     model = ScipyModel(apply_func=apply_func,
-                       column_types=param_types,
+                       column_types=_get_column_types(param_types),
                        prepare_func=prepare_func,
                        version=version)
 
@@ -138,3 +168,4 @@ def export(filename, apply_func, prepare_func=None, param_types=None, version=No
         container.save(model)
 
     return model
+
