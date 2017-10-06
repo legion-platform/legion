@@ -5,11 +5,11 @@ DRun model export / load
 from drun.model import ScipyModel
 import drun.types
 from drun.types import deduct_types_on_pandas_df
+from drun.utils import TemporaryFolder
 
 import dill
 import os
 import zipfile
-import tempfile
 
 import drun
 from drun.model import ScipyModel, IMLModel
@@ -54,21 +54,19 @@ class ModelContainer:
         if self._is_saved:
             self._load()
 
-    # TODO: Add temp directory remove
     def _load(self):
         if not os.path.exists(self._file):
             raise Exception('File not existed: %s' % (self._file, ))
 
-        temp_directory = tempfile.mkdtemp('drun-model-save')
+        with TemporaryFolder('drun-model-save') as temp_directory:
+            with zipfile.ZipFile(self._file, 'r') as zip:
+                model_path = zip.extract(self.ZIP_FILE_MODEL, os.path.join(temp_directory.path, self.ZIP_FILE_MODEL))
+                info_path = zip.extract(self.ZIP_FILE_INFO, os.path.join(temp_directory.path, self.ZIP_FILE_INFO))
 
-        with zipfile.ZipFile(self._file, 'r') as zip:
-            model_path = zip.extract(self.ZIP_FILE_MODEL, os.path.join(temp_directory, self.ZIP_FILE_MODEL))
-            info_path = zip.extract(self.ZIP_FILE_INFO, os.path.join(temp_directory, self.ZIP_FILE_INFO))
-
-        with open(model_path, 'rb') as file:
-            self._model = dill.load(file)
-        with open(info_path, 'r') as file:
-            self._load_info(file)
+            with open(model_path, 'rb') as file:
+                self._model = dill.load(file)
+            with open(info_path, 'r') as file:
+                self._load_info(file)
 
     def _load_info(self, file):
         lines = file.read().splitlines()
@@ -90,20 +88,18 @@ class ModelContainer:
 
         return self._model
 
-    # TODO: Add temp directory remove
     def save(self, model_instance):
         self._add_default_properties(model_instance)
 
-        temp_directory = tempfile.mkdtemp('drun-model-save')
+        with TemporaryFolder('drun-model-save') as temp_directory:
+            with open(os.path.join(temp_directory.path, self.ZIP_FILE_MODEL), 'wb') as file:
+                dill.dump(model_instance, file, recurse=True)
+            with open(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), 'wt') as file:
+                self._write_info(file)
 
-        with open(os.path.join(temp_directory, self.ZIP_FILE_MODEL), 'wb') as file:
-            dill.dump(model_instance, file, recurse=True)
-        with open(os.path.join(temp_directory, self.ZIP_FILE_INFO), 'wt') as file:
-            self._write_info(file)
-
-        with zipfile.ZipFile(self._file, 'w', self.ZIP_COMPRESSION) as zip:
-            zip.write(os.path.join(temp_directory, self.ZIP_FILE_MODEL), self.ZIP_FILE_MODEL)
-            zip.write(os.path.join(temp_directory, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
+            with zipfile.ZipFile(self._file, 'w', self.ZIP_COMPRESSION) as zip:
+                zip.write(os.path.join(temp_directory.path, self.ZIP_FILE_MODEL), self.ZIP_FILE_MODEL)
+                zip.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
 
     def __enter__(self):
         return self
