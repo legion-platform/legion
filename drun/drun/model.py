@@ -34,6 +34,10 @@ class IMLModel(Interface):
 
     @property
     def version_string(self):
+        """
+        Get model version
+        :return: str version
+        """
         return None
 
 
@@ -79,6 +83,10 @@ class ScipyModel(implements(IMLModel)):
 
     @property
     def version_string(self):
+        """
+        Get model version
+        :return: str version
+        """
         return self.version
 
     @property
@@ -108,6 +116,10 @@ class DummyModel(implements(IMLModel)):
 
     @property
     def version_string(self):
+        """
+        Get model version
+        :return: str version
+        """
         return 'dummy'
 
     @property

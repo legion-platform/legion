@@ -2,17 +2,16 @@
 DRun model export / load
 """
 
-from drun.model import ScipyModel
-import drun.types
-from drun.types import deduct_types_on_pandas_df
-from drun.utils import TemporaryFolder
-
-import dill
 import os
 import zipfile
 
 import drun
 from drun.model import ScipyModel, IMLModel
+import drun.types
+from drun.types import deduct_types_on_pandas_df
+from drun.utils import TemporaryFolder
+
+import dill
 from pandas import DataFrame
 
 
@@ -41,11 +40,20 @@ def _get_column_types(param_types):
 
 
 class ModelContainer:
+    """
+    Archive representation of model with meta information (properties, str => str)
+    """
+
     ZIP_COMPRESSION = zipfile.ZIP_STORED
     ZIP_FILE_MODEL = 'model'
     ZIP_FILE_INFO = 'info.ini'
 
-    def __init__(self, file=None, is_write=False):
+    def __init__(self, file, is_write=False):
+        """
+        Create model container (archive) from existing (when is_write=False) or from empty (when is_write=True)
+        :param file: str path to file for load or save in future
+        :param is_write: bool flag for create empty container (not read)
+        """
         self._file = file
         self._is_saved = not is_write
         self._model = None
@@ -55,6 +63,10 @@ class ModelContainer:
             self._load()
 
     def _load(self):
+        """
+        Load from file
+        :return: None
+        """
         if not os.path.exists(self._file):
             raise Exception('File not existed: %s' % (self._file, ))
 
@@ -69,27 +81,51 @@ class ModelContainer:
                 self._load_info(file)
 
     def _load_info(self, file):
+        """
+        Read properties from file-like object (using .read)
+        :param file: file-like object
+        :return: None
+        """
         lines = file.read().splitlines()
         lines = [line.split('=', 1) for line in lines if len(line) > 0 and line[0] != '#' and '=' in line]
         self._properties = {k.strip(): v.strip() for (k, v) in lines}
 
     def _write_info(self, file):
+        """
+        Write properties to file-like object (using .write)
+        :param file: file-like object
+        :return: None
+        """
         for key, value in self._properties.items():
             file.write('%s = %s\n' % (key, value))
 
-    def _add_default_properties(self, model_instance):
-        self['model.version'] = model_instance.version
+    def _add_default_properties(self):
+        """
+        Add default properties during saving of model
+        :return: None
+        """
+        self['model.version'] = self._model.version
         self['drun.version'] = drun.__version__
 
     @property
     def model(self):
+        """
+        Get instance of model if it has been loaded or saved
+        :return: IMLModel
+        """
         if not self._is_saved:
             raise Exception('Cannot get model on non-saved container')
 
         return self._model
 
     def save(self, model_instance):
-        self._add_default_properties(model_instance)
+        """
+        Save to file
+        :param model_instance: IMLModel model
+        :return: None
+        """
+        self._model = model_instance
+        self._add_default_properties()
 
         with TemporaryFolder('drun-model-save') as temp_directory:
             with open(os.path.join(temp_directory.path, self.ZIP_FILE_MODEL), 'wb') as file:
@@ -102,47 +138,116 @@ class ModelContainer:
                 zip.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
 
     def __enter__(self):
+        """
+        Return self on context enter
+        :return: ModelContainer
+        """
         return self
 
     def __exit__(self, type, value, traceback):
+        """
+        Call remove on context exit
+        :param type: -
+        :param value: -
+        :param traceback: -
+        :return: None
+        """
         pass
 
     def __setitem__(self, key, item):
+        """
+        Set property value (without save)
+        :param key: str key
+        :param item: str value
+        :return: None
+        """
         self._properties[key] = item
 
     def __getitem__(self, key):
+        """
+        Get property value
+        :param key: str key
+        :return: str value
+        """
         return self._properties[key]
 
     def __len__(self):
+        """
+        Get count of properties
+        :return: int count of properties
+        """
         return len(self._properties)
 
     def __delitem__(self, key):
+        """
+        Remove property by key
+        :param key: str key
+        :return: None
+        """
         del self._properties[key]
 
     def has_key(self, k):
+        """
+        Check that property with specific key exists
+        :param k: str key
+        :return: bool check result
+        """
         return k in self._properties
 
     def update(self, *args, **kwargs):
+        """
+        Update property dict with another values
+        :param args: tuple args
+        :param kwargs: dict kwargs
+        :return: any result of update
+        """
         return self._properties.update(*args, **kwargs)
 
     def keys(self):
-        return self._properties.keys()
+        """
+        Get tuple of properties keys
+        :return: tuple of properties keys
+        """
+        return tuple(self._properties.keys())
 
     def values(self):
-        return self._properties.values()
+        """
+        Get tuple of properties values
+        :return: tuple of properties values
+        """
+        return tuple(self._properties.values())
 
     def items(self):
+        """
+        Get tuple of properties (key, value)
+        :return: tuple of (key, value)
+        """
         return self._properties.items()
 
     def get(self, key, default=None):
-        if self.has_key(key):
+        """
+        Get property value or default value
+        :param key: str key
+        :param default: any default value
+        :return: str or value of default
+        """
+        if key in self._properties:
             return self[key]
         return default
 
-    def __contains__(self, item):
-        return item in self._properties
+    def __contains__(self, k):
+        """
+        Check that property with specific key exists
+        :param k: str key
+        :return: bool check result
+        """
+        return k in self._properties
 
     def __iter__(self):
+        """
+        Iterate over properties
+        :return: iterator
+        """
         return iter(self._properties)
 
 
@@ -175,4 +280,3 @@ def export(filename, apply_func, prepare_func=None, param_types=None, version=No
         container.save(model)
 
     return model
-
