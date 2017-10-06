@@ -54,20 +54,26 @@ class ModelContainer:
         if self._is_saved:
             self._load()
 
+    # TODO: Add temp directory remove
     def _load(self):
         if not os.path.exists(self._file):
             raise Exception('File not existed: %s' % (self._file, ))
 
+        temp_directory = tempfile.mkdtemp('drun-model-save')
+
         with zipfile.ZipFile(self._file, 'r') as zip:
-            with zip.open(self.ZIP_FILE_MODEL, 'rb') as file:
-                self._model = dill.load(file)
-            with zip.open(self.ZIP_FILE_INFO, 'r') as file:
-                self._load_info(file)
+            model_path = zip.extract(self.ZIP_FILE_MODEL, os.path.join(temp_directory, self.ZIP_FILE_MODEL))
+            info_path = zip.extract(self.ZIP_FILE_INFO, os.path.join(temp_directory, self.ZIP_FILE_INFO))
+
+        with open(model_path, 'rb') as file:
+            self._model = dill.load(file)
+        with open(info_path, 'r') as file:
+            self._load_info(file)
 
     def _load_info(self, file):
         lines = file.read().splitlines()
         lines = [line.split('=', 1) for line in lines if len(line) > 0 and line[0] != '#' and '=' in line]
-        self._properties = {k: v for (k, v) in lines}
+        self._properties = {k.strip(): v.strip() for (k, v) in lines}
 
     def _write_info(self, file):
         for key, value in self._properties.items():
@@ -131,6 +137,11 @@ class ModelContainer:
 
     def items(self):
         return self._properties.items()
+
+    def get(self, key, default=None):
+        if self.has_key(key):
+            return self[key]
+        return default
 
     def __contains__(self, item):
         return item in self._properties
