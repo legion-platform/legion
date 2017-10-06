@@ -113,7 +113,8 @@ def init_model(app):
     if 'MODEL_FILE' in app.config:
         file = app.config['MODEL_FILE']
         LOGGER.info("Loading model from %s", file)
-        model = drun.io.load_model(file)
+        with drun.io.ModelContainer(file) as container:
+            model = container.model
     else:
         LOGGER.info("Instantiated dummy model")
         model = mlmodel.DummyModel()

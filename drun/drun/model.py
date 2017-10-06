@@ -26,6 +26,10 @@ class IMLModel(Interface):
         """
         pass
 
+    @property
+    def version_string(self):
+        return None
+
 
 class ScipyModel(implements(IMLModel)):
     """
@@ -63,6 +67,10 @@ class ScipyModel(implements(IMLModel)):
         data_frame = self.prepare_func(data_frame)
 
         return self.apply_func(data_frame)
+
+    @property
+    def version_string(self):
+        return self.version
 
     def description(self):
         """
@@ -104,6 +112,10 @@ class DummyModel(implements(IMLModel)):
         :return: processed dict with data
         """
         return input_dict
+
+    @property
+    def version_string(self):
+        return 'dummy'
 
     def description(self):
         """
