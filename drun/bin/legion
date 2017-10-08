@@ -30,8 +30,7 @@ if __name__ == '__main__':
     build_parser.add_argument('--python-package',
                               type=str, help='path to drun-python package wheel')
     build_parser.add_argument('--base-docker-image',
-                              type=str, help='base docker image for new image',
-                              default='drun/base-python-image:latest')
+                              type=str, help='base docker image for new image')
     build_parser.add_argument('--docker-image-tag',
                               type=str, help='docker image tag')
     build_parser.set_defaults(func=build_model)

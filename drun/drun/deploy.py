@@ -17,6 +17,12 @@ LOGGER = logging.getLogger('deploy')
 
 
 def generate_docker_labels_for_image(model_file, args):
+    """
+    Generate docker image labels from model file
+    :param model_file: str path to model file
+    :param args: command arguments
+    :return: dict of labels str => str
+    """
     with drun.io.ModelContainer(model_file, do_not_load_model=True) as container:
         base = {
             'com.epam.drun.model.id': args.model_id,
@@ -31,6 +37,11 @@ def generate_docker_labels_for_image(model_file, args):
 
 
 def generate_docker_labels_for_container(image):
+    """
+    Build container labels from image labels (copy)
+    :param image: docker.models.image.Image
+    :return: dict of labels str => str
+    """
     return image.labels
 
 
@@ -119,7 +130,7 @@ def find_network(client, args):
 def build_docker_client(args):
     """
     Create docker client
-    :param args: args with .docker_network item
+    :param args: args
     :return: docker.Client
     """
     client = docker.from_env()
@@ -139,9 +150,13 @@ def build_model(args):
 
     image_labels = generate_docker_labels_for_image(args.model_file, args)
 
+    base_docker_image = args.base_docker_image
+    if not base_docker_image:
+        base_docker_image = 'drun/base-python-image:latest'
+
     image = build_docker_image(
         client,
-        args.base_docker_image,
+        base_docker_image,
         args.model_id,
         args.model_file,
         image_labels,
@@ -233,6 +248,12 @@ def undeploy_model(args):
 
 
 def get_stack_containers_and_images(client, network_id):
+    """
+    Get information about DRun containers and images
+    :param client: docker.Client client
+    :param network_id: docker network
+    :return: dict with lists 'services', 'models' and 'model_images'
+    """
     containers = client.containers.list(True)
     containers = [c
                   for c in containers
@@ -250,6 +271,11 @@ def get_stack_containers_and_images(client, network_id):
 
 
 def inspect(args):
+    """
+    Print information about current containers / images state
+    :param args: arguments
+    :return: None
+    """
     client = build_docker_client(args)
     network_id = find_network(client, args)
     containers = get_stack_containers_and_images(client, network_id)
@@ -260,8 +286,8 @@ def inspect(args):
     for container in containers['services']:
         is_running = container.status == 'running'
         container_name = container.labels.get('com.epam.drun.container_description', container.image.tags[0])
-        container_required = container.labels.get('com.epam.drun.container_required', 'true').lower() \
-                             in ('1', 'yes', 'true')
+        container_required = container.labels.get('com.epam.drun.container_required', 'true').lower()
+        container_required = container_required in ('1', 'yes', 'true')
         container_status = container.status
 
         if is_running:
@@ -279,13 +305,13 @@ def inspect(args):
             ports = list(container.attrs['NetworkSettings']['Ports'].values())
             ports = [item['HostPort'] for sublist in ports if sublist for item in sublist if item]
 
-            if len(ports) > 0:
+            if ports:
                 container_status = 'running on ports: %s' % (', '.join(ports),)
         print('%s*%s %s #%s - %s%s%s' % (line_color, Colors.ENDC,
                                          container_name, container.short_id,
                                          line_color, container_status, Colors.ENDC))
 
-    if len(containers['services']) == 0:
+    if not containers['services']:
         all_required_containers_is_ok = False
         print('%s-- looks like DRun stack hasn\'t been deployed --%s' % (Colors.FAIL, Colors.ENDC))
 
@@ -304,7 +330,7 @@ def inspect(args):
                                                            model_image_id, model_version,
                                                            line_color, container_status, Colors.ENDC))
 
-    if len(containers['models']) == 0:
+    if not containers['models']:
         print('%s-- cannot find any model instances --%s' % (Colors.WARNING, Colors.ENDC))
 
     print('%sModel images:%s' % (Colors.BOLD, Colors.ENDC))
@@ -314,7 +340,7 @@ def inspect(args):
         model_version = image.labels.get('com.epam.drun.model.version', '?')
         print('* %s%s%s #%s (version: %s)' % (Colors.UNDERLINE, model_name, Colors.ENDC, model_image_id, model_version))
 
-    if len(containers['model_images']) == 0:
+    if not containers['model_images']:
         print('%s-- cannot find any model images --%s' % (Colors.WARNING, Colors.ENDC))
 
     if not all_required_containers_is_ok:
