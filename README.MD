@@ -27,8 +27,10 @@
 * Open http://parallels/jupyter
 * Open DRun experimental notebook. Show how we export the model
 * Run the notebook and export a model
-* Deploy a container with model using
-`legion deploy --model-id <id, for example: income> --model-file <file>`
+* Build a docker image `legion build workspace/drun/income.model income`
+* Deploy a container with model 
+`legion deploy --model-id income`
+* Inspect current state `legion inspect`
 * Go to consul http://consul:8500/ui/# and show model is registered
 * Use Postman to show invocations through Restful API
 * (optional) Go to grafana and show stats
