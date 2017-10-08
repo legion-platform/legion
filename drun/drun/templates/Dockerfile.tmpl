@@ -10,4 +10,4 @@ RUN pip3 install {{PIP_INSTALL_TARGET}}
 {% endif %}
 
 
-CMD /usr/local/bin/legion pyserve --model-id {{MODEL_ID}} --model-file /legion/{{MODEL_FILE}}
+CMD /usr/local/bin/legion pyserve /legion/{{MODEL_FILE}} {{MODEL_ID}}
