@@ -48,14 +48,16 @@ class ModelContainer:
     ZIP_FILE_MODEL = 'model'
     ZIP_FILE_INFO = 'info.ini'
 
-    def __init__(self, file, is_write=False):
+    def __init__(self, file, is_write=False, do_not_load_model=False):
         """
         Create model container (archive) from existing (when is_write=False) or from empty (when is_write=True)
         :param file: str path to file for load or save in future
         :param is_write: bool flag for create empty container (not read)
+        :param do_not_load_model: bool load only meta information
         """
         self._file = file
         self._is_saved = not is_write
+        self._do_not_load_model = do_not_load_model
         self._model = None
         self._properties = {}
 
@@ -75,8 +77,10 @@ class ModelContainer:
                 model_path = zip.extract(self.ZIP_FILE_MODEL, os.path.join(temp_directory.path, self.ZIP_FILE_MODEL))
                 info_path = zip.extract(self.ZIP_FILE_INFO, os.path.join(temp_directory.path, self.ZIP_FILE_INFO))
 
-            with open(model_path, 'rb') as file:
-                self._model = dill.load(file)
+            if not self._do_not_load_model:
+                with open(model_path, 'rb') as file:
+                    self._model = dill.load(file)
+
             with open(info_path, 'r') as file:
                 self._load_info(file)
 
