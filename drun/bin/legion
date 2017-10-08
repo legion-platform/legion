@@ -72,6 +72,17 @@ if __name__ == '__main__':
                                 type=int)
     pyserve_parser.set_defaults(func=serve_model)
 
+    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model')
+    pyserve_parser.add_argument('--consul-addr',
+                                type=str, help='Consul Agent IP address')
+    pyserve_parser.add_argument('--consul-port',
+                                type=int, help='Consul Agent port')
+    pyserve_parser.add_argument('--legion-addr',
+                                type=str)
+    pyserve_parser.add_argument('--legion-port',
+                                type=int)
+    pyserve_parser.set_defaults(func=serve_model)
+
     args = parser.parse_args(sys.argv[1:])
 
     v = vars(args)

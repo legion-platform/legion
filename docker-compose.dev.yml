@@ -44,7 +44,7 @@ services:
       - python3
       - -u
       - /opt/project/drun/bin/legion
-      - pyserve
+      - pyserve-dummy
     ports:
       - 5000:5000
     volumes:
