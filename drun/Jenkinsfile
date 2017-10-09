@@ -13,6 +13,7 @@ node {
 		sh '''
 		cd drun
 		python3 setup.py sdist
+		python3 setup.py bdist_wheel
 		cp dist/* /var/pypi/drun/
 		cd -
 		'''
