@@ -42,7 +42,19 @@ def createNewJob(name, path){
 
 def names = []
 
-node {    
+node { 
+    stage('Clone repos') {
+        sh '''
+        rm -rf ROOT
+        rm -rf Examples
+        '''
+        dir('ROOT') {
+            git credentialsId: 'drun-root-key', url: 'git@github.com:akharlamov/drun-root.git'
+        }
+        dir('Examples') {
+            git url: 'https://github.com/akharlamov/drun-examples.git'
+        }
+    }
     /*
     stage('Remove old dynamic jobs'){
         removeOld()
