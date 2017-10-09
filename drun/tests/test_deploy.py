@@ -65,7 +65,7 @@ class TestDeploy(unittest2.TestCase):
         return drun.io.export(path,
                               apply,
                               prepare,
-                              df,
+                              input_data_frame=df,
                               version=version)
 
     def test_model_image_build(self, remove_image=True):

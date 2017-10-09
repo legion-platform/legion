@@ -35,7 +35,7 @@ class TestModelContainer(unittest2.TestCase):
             drun.io.export(path,
                            apply,
                            prepare,
-                           df,
+                           input_data_frame=df,
                            version=version)
 
             self.assertTrue(os.path.exists(path), 'File not exists')
