@@ -4,6 +4,7 @@ DRun model export / load
 
 import os
 import zipfile
+import json
 
 import drun
 from drun.model import ScipyModel, IMLModel
@@ -90,9 +91,7 @@ class ModelContainer:
         :param file: file-like object
         :return: None
         """
-        lines = file.read().splitlines()
-        lines = [line.split('=', 1) for line in lines if len(line) > 0 and line[0] != '#' and '=' in line]
-        self._properties = {k.strip(): v.strip() for (k, v) in lines}
+        self._properties = json.load(file)
 
     def _write_info(self, file):
         """
@@ -100,8 +99,7 @@ class ModelContainer:
         :param file: file-like object
         :return: None
         """
-        for key, value in self._properties.items():
-            file.write('%s = %s\n' % (key, value))
+        json.dump(self._properties, file)
 
     def _add_default_properties(self):
         """
