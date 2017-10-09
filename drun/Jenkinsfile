@@ -1,4 +1,7 @@
 node {
+    stage('Preparation') {
+		git credentialsId: 'jenkins@drun GIT', branch: "${BRANCH_NAME}", url: 'git@github.com:akharlamov/drun-root.git'
+	}
 	stage('Install PIP packages'){
 	    sh '''
 	    cd drun
