@@ -108,6 +108,9 @@ class ModelContainer:
         """
         self['model.version'] = self._model.version
         self['drun.version'] = drun.__version__
+        self['jenkins.build_number'] = os.environ.get('BUILD_NUMBER')
+        self['jenkins.commit'] = os.environ.get('BUILD_COMMIT')
+        self['jenkins.node_name'] = os.environ.get('NODE_NAME')
 
     @property
     def model(self):
