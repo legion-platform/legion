@@ -1,0 +1,45 @@
+node {
+    stage('Preparation') {
+		git credentialsId: 'jenkins@drun GIT', branch: "${BRANCH_NAME}", url: 'git@github.com:akharlamov/drun-root.git'
+	}
+	stage('Install PIP packages'){
+	    sh '''
+	    cd drun
+	    sudo pip3 install -r requirements/base.txt
+	    sudo pip3 install -r requirements/test.txt
+	    '''
+	}
+	stage('Build Python SDIST') {
+		sh '''
+		cd drun
+		python3 setup.py sdist
+		cp dist/* /var/pypi/drun/
+		cd -
+		'''
+	}
+	stage('Run TOX'){
+		sh '''
+		cd drun
+		tox testenv:quality
+		cd ..
+		'''
+	}
+	stage('Run PyLint'){
+		sh '''
+		cd drun
+		export TERM="linux"
+		rm -f pylint.log
+		pylint drun >> pylint.log || exit 0
+		pylint tests >> pylint.log || exit 0
+		cd -
+		'''
+		archiveArtifacts 'drun/pylint.log'
+		warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'drun/pylint.log']], unHealthy: ''
+	}
+	stage('Run tests'){
+		sh '''
+		cd drun
+		nosetests --with-coverage --cover-package drun
+		'''
+	}		
+}
