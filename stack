@@ -1,5 +1,24 @@
 #!/bin/bash
 
 export PYDEVD_HOST=`ifconfig en0 inet | grep inet | awk '{ print($2); }'`
+
+docker-machine ip> /dev/null || exit 1
+
+export JENKINS_DOCKER_HOST_IP=`docker-machine ip`
+if [ $? -ne 0 ]; then
+    echo "Cannot get ip using docker-machine. Is docker-machine installed and activated?"
+    return 1
+fi
+
+eval "$(docker-machine env)"
+
+mkdir -p keys/docker/
+cp -f ${DOCKER_CERT_PATH}/* keys/docker/
+chmod uga+r keys/docker/*
+
+export JENKINS_DOCKER_HOST=${DOCKER_HOST}
+export JENKINS_DOCKER_KEYS="./keys/docker"
+
+
 docker-compose $*
 
