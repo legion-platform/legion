@@ -17,10 +17,12 @@ node {
 		cd -
 		'''
 	}
-	stage('Run TOX'){
+	stage('Run static code analyzers'){
 		sh '''
 		cd drun
-		tox testenv:quality
+		pycodestyle drun
+		pycodestyle tests
+		pydocstyle drun
 		cd ..
 		'''
 	}
