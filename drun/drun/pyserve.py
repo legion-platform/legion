@@ -20,11 +20,10 @@ class HttpProtocolHandler:
 
     def parse_request(self, input_request):
         """
-        Produce a model input dictionary from HTTP request
+        Produce a model input dictionary from HTTP request (GET/POST fields, and Files)
         :param input_request: Flask.request object
         :return: dict with requested fields
         """
-        # TODO Handle JSON and image upload over MIME multipart
         result = {}
 
         # Fill in URL parameters
@@ -34,6 +33,10 @@ class HttpProtocolHandler:
         # Fill in POST parameters
         for k in input_request.form:
             result[k] = input_request.form[k]
+
+        # Fill in Files:
+        for k in input_request.files:
+            result[k] = input_request.files[k].read()
 
         return result
 
@@ -72,7 +75,7 @@ def model_info(model_id):
 
     model = app.config['model']
 
-    return jsonify(model.description())
+    return jsonify(model.description)
 
 
 # TODO: Add model check

@@ -63,6 +63,9 @@ Content-Disposition: form-data; name="age"
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 ```
 
+## Sending files
+For sending files from command line you may use ```curl -F "image=@examples/sklearn_demos/nine.png;filename=image"  http://parallels/api/model/image_recognize/invoke```
+
 ## Code analysis tools
 For run code analysis tools, install **tox** package (`pip3 install tox`) and run `tox testenv:quality` from *drun* folder
 

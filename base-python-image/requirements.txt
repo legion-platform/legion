@@ -21,4 +21,4 @@ matplotlib
 scipy
 tensorflow
 keras
-
+Pillow

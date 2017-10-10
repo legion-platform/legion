@@ -5,6 +5,6 @@ traitlets
 docker
 python-consul
 flask
-docker
 numpy
+Pillow
 Jinja2>=2.9
