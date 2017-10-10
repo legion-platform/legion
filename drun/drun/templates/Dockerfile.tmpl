@@ -6,7 +6,7 @@ ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
 ADD {{PIP_INSTALL_TARGET}} "/legion/{{PIP_INSTALL_TARGET}}"
 RUN pip3 install /legion/{{PIP_INSTALL_TARGET}}
 {% else %}
-RUN pip3 install {{PIP_INSTALL_TARGET}}
+RUN pip3 install -i https://drun.kharlamov.biz/pypi/ {{PIP_INSTALL_TARGET}}
 {% endif %}
 
 
