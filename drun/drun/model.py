@@ -3,7 +3,9 @@ Models (base, interfaces and proxies)
 """
 
 from drun.types import build_df
+
 from interface import Interface, implements
+import pandas
 import logging
 
 LOGGER = logging.getLogger('deploy')
@@ -29,6 +31,14 @@ class IMLModel(Interface):
         :return: an arbitrary JSON serializable object
         """
         pass
+
+    @property
+    def version_string(self):
+        """
+        Get model version
+        :return: str version
+        """
+        return None
 
 
 class ScipyModel(implements(IMLModel)):
@@ -72,6 +82,14 @@ class ScipyModel(implements(IMLModel)):
         return self.apply_func(data_frame)
 
     @property
+    def version_string(self):
+        """
+        Get model version
+        :return: str version
+        """
+        return self.version
+
+    @property
     def description(self):
         """
         Get model description
@@ -95,6 +113,14 @@ class DummyModel(implements(IMLModel)):
         :return: processed dict with data
         """
         return input_dict
+
+    @property
+    def version_string(self):
+        """
+        Get model version
+        :return: str version
+        """
+        return 'dummy'
 
     @property
     def description(self):

@@ -9,6 +9,9 @@ services:
 
   jupyter:
     image: drun/base-python-image
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Jupyter notebook server
     environment:
       - PYTHONPATH=/opt/project
       - PYDEVD_HOST
@@ -29,6 +32,10 @@ services:
     depends_on:
       - consul
     image: drun/base-python-image
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Legion server (serves dummy model)
+      com.epam.drun.container_required: 'false'
     environment:
       - PYTHONPATH=/opt/project
       - PYDEVD_HOST
@@ -37,7 +44,7 @@ services:
       - python3
       - -u
       - /opt/project/drun/bin/legion
-      - pyserve
+      - pyserve-dummy
     ports:
       - 5000:5000
     volumes:
@@ -46,6 +53,9 @@ services:
 
   grafana:
     image: grafana/grafana
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Grafana server
     environment:
       - PYTHONPATH=/opt/project
       - GF_SERVER_ROOT_URL=http://parallels/grafana
@@ -74,6 +84,9 @@ services:
 
   graphite:
     image: hopsoft/graphite-statsd
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Graphite server
     ports:
       - 81:80
       - 8126:8126
@@ -84,6 +97,9 @@ services:
     depends_on:
       - consul
     image: steadyserv/nginx-consul:latest
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Web server (load balancer)
     environment:
       - CONSUL_HTTP_ADDR=http://consul:8500
     ports:
@@ -95,6 +111,9 @@ services:
 
   consul:
     image: library/consul:latest
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Consul server (load balancer)
     ports:
       - 8500:8500
     logging:

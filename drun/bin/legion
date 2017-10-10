@@ -10,44 +10,88 @@ import argparse
 import logging
 
 from drun.pyserve import serve_model
-from drun.deploy import deploy_model, undeploy_model
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("legion")
-
+from drun.deploy import build_model, deploy_model, undeploy_model, inspect
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
+    parser.add_argument('--verbose',
+                        help='verbose log output',
+                        action='store_true')
     subparsers = parser.add_subparsers()
 
+    build_parser = subparsers.add_parser('build', description='build model into new docker image')
+    build_parser.add_argument('model_file',
+                              type=str, help='serialized model file name')
+    build_parser.add_argument('model_id',
+                              type=str, help='alpha-numeric identifier of the model to publish')
+    build_parser.add_argument('--model-type',
+                              type=str, help='drun-python, tensorflow, mleap',
+                              default='drun-python')
+    build_parser.add_argument('--python-package',
+                              type=str, help='path to drun-python package wheel')
+    build_parser.add_argument('--base-docker-image',
+                              type=str, help='base docker image for new image')
+    build_parser.add_argument('--docker-image-tag',
+                              type=str, help='docker image tag')
+    build_parser.set_defaults(func=build_model)
+
     deploy_parser = subparsers.add_parser('deploy', description='deploys a model into a new container')
-    deploy_parser.add_argument('--model-file', type=str, help='serialized model file name')
-    deploy_parser.add_argument('--model-id', type=str, help='alpha-numeric identifier of the model to publish')
-    deploy_parser.add_argument('--model-type', type=str, help='drun-python, tensorflow, mleap', default='drun-python')
-    deploy_parser.add_argument('--python-package', type=str, help='drun-python package', default=None)
-    deploy_parser.add_argument('--docker-network', type=str)
+    deploy_parser.add_argument('--model-id',
+                               type=str, help='model id')
+    deploy_parser.add_argument('--docker-image',
+                               type=str, help='docker sha256 image')
+    deploy_parser.add_argument('--docker-network',
+                               type=str, help='docker network')
     deploy_parser.set_defaults(func=deploy_model)
 
     undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
-    undeploy_parser.add_argument('--model-id', type=str, help='identifier of the model')
+    undeploy_parser.add_argument('model_id',
+                                 type=str, help='identifier of the model')
+    undeploy_parser.add_argument('--docker-network',
+                                 type=str, help='docker network')
     undeploy_parser.set_defaults(func=undeploy_model)
 
+    inspect_parser = subparsers.add_parser('inspect', description='get information about docker network state')
+    inspect_parser.add_argument('--docker-network',
+                                type=str, help='docker network')
+    inspect_parser.set_defaults(func=inspect)
+
     pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
-    pyserve_parser.add_argument('--model-id', type=str)
-    pyserve_parser.add_argument('--model-file', type=str)
-    pyserve_parser.add_argument('--consul-addr', type=str, help='Consul Agent IP address')
-    pyserve_parser.add_argument('--consul-port', type=int, help='Consul Agent port')
-    pyserve_parser.add_argument('--legion-addr', type=str)
-    pyserve_parser.add_argument('--legion-port', type=int)
+    pyserve_parser.add_argument('model_file',
+                                type=str)
+    pyserve_parser.add_argument('model_id',
+                                type=str)
+    pyserve_parser.add_argument('--consul-addr',
+                                type=str, help='Consul Agent IP address')
+    pyserve_parser.add_argument('--consul-port',
+                                type=int, help='Consul Agent port')
+    pyserve_parser.add_argument('--legion-addr',
+                                type=str)
+    pyserve_parser.add_argument('--legion-port',
+                                type=int)
+    pyserve_parser.set_defaults(func=serve_model)
+
+    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model')
+    pyserve_parser.add_argument('--consul-addr',
+                                type=str, help='Consul Agent IP address')
+    pyserve_parser.add_argument('--consul-port',
+                                type=int, help='Consul Agent port')
+    pyserve_parser.add_argument('--legion-addr',
+                                type=str)
+    pyserve_parser.add_argument('--legion-port',
+                                type=int)
     pyserve_parser.set_defaults(func=serve_model)
 
     args = parser.parse_args(sys.argv[1:])
 
     v = vars(args)
 
+    log_level = logging.DEBUG if args.verbose else logging.ERROR
+    logging.basicConfig(level=log_level)
+    logger = logging.getLogger("legion")
+
     if 'func' in v:
         args.func(args)
     else:
         parser.print_help()
         sys.exit(1)
-
