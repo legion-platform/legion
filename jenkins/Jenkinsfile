@@ -1,0 +1,83 @@
+import jenkins.model.Jenkins;
+import jenkins.model.JenkinsLocationConfiguration;
+import hudson.plugins.git.GitSCM;
+import hudson.plugins.git.BranchSpec;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition;
+
+
+@NonCPS
+def removeOld(){
+    items = Jenkins.instance.getItems(org.jenkinsci.plugins.workflow.job.WorkflowJob);
+    for ( int i = 0; i < items.size; i++ ) {
+        it = items[i];
+        println "Processing ${it.name}"
+        if (it.name.startsWith('MODEL (DYNAMIC)')){
+            println "Removing ${it.name}"
+            it.delete();
+        }
+        println "Processed ${it.name}"
+        it = null;
+    }
+	println "All jobs processed"
+	items = null;
+}
+
+
+def createNewJob(name, path){
+    println "Start creating job for founded file ${path}"
+    name = 'MODEL (DYNAMIC) ' + name;
+    
+    // Create job if not exist
+    if (Jenkins.instance.getItemByFullName(name) == null){
+        scm = new GitSCM("https://github.com/akharlamov/drun-examples.git");
+        scm.branches = [new BranchSpec("*/master")];
+        Jenkins.instance.add(new WorkflowJob(Jenkins.instance, name), name);
+        Jenkins.instance.getItemByFullName(name).definition = new CpsScmFlowDefinition(scm, path);
+        println 'Job created ' + name;
+    }
+    
+    return name
+}
+
+def names = []
+
+node { 
+    stage('Clone repos') {
+        sh '''
+        rm -rf ROOT
+        rm -rf Examples
+        '''
+        dir('ROOT') {
+            git credentialsId: 'drun-root-key', url: 'git@github.com:akharlamov/drun-root.git'
+        }
+        dir('Examples') {
+            git url: 'https://github.com/akharlamov/drun-examples.git'
+        }
+    }
+    /*
+    stage('Remove old dynamic jobs'){
+        removeOld()
+    }*/
+    stage('Find Jenkinsfiles'){
+        files = findFiles(glob: '**/Jenkinsfile')
+        println "Founded files: "
+        println files
+        for ( int i = 0; i < files.length; i++ ) {
+            it = files[i];
+            path = it.getPath().substring(9);
+            nameParts = path.split("/");
+            name = nameParts.length > 1 ? nameParts[0] : path
+            if (path[0] != '/')
+                names << createNewJob(name, path)
+            it = null;
+        }
+            
+        files = null;
+    }
+    names.each {
+        stage('Run dynamic job: ' + it){
+            build job: it //, parameters: [[$class: 'StringParameterValue', name: 'systemname', value: systemname]]
+        }
+    }
+}

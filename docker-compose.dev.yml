@@ -57,6 +57,18 @@ services:
       - ./workspace/drun:/drun
       - ./workspace/grafana:/var/lib/grafana
       - .:/opt/project
+
+  jenkins:
+    image: drun/jenkins-server
+    environment:
+      - DOCKER_HOST=${JENKINS_DOCKER_HOST}
+      - DOCKER_CERT_PATH=/home/jenkins/.docker
+      - DOCKER_TLS_VERIFY=1
+    ports:
+      - 8081:8080
+    volumes:
+      - ${JENKINS_DOCKER_KEYS}:/home/jenkins/.docker
+      - ./keys/git-deploy.key:/var/jenkins_home/.ssh/id_rsa
     logging:
       driver: none
 
