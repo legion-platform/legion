@@ -257,7 +257,6 @@ class ModelContainer:
         return iter(self._properties)
 
 
->>>>>>> fb-legion-commands
 def deduce_param_types(data_frame, optional_dictionary=None):
     """
     Deduce param types of pandas DF. Optionally overwrite to custom drun.BaseType
