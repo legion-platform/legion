@@ -42,7 +42,8 @@ node {
 	stage('Run tests'){
 		sh '''
 		cd drun
-		nosetests --with-coverage --cover-package drun
+		nosetests --with-coverage --cover-package drun --with-xunit
 		'''
+		junit 'drun/nosetests.xml'
 	}		
 }
