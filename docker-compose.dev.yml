@@ -5,10 +5,14 @@ services:
     build:
       context: base-python-image
     image: drun/base-python-image:latest
+    networks:
+      - drun_root
     restart: "no"
 
   jupyter:
     image: drun/base-python-image
+    networks:
+      - drun_root
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Jupyter notebook server
@@ -32,6 +36,8 @@ services:
     depends_on:
       - consul
     image: drun/base-python-image
+    networks:
+      - drun_root
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Legion server (serves dummy model)
@@ -53,6 +59,8 @@ services:
 
   grafana:
     image: grafana/grafana
+    networks:
+      - drun_root
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Grafana server
@@ -70,6 +78,8 @@ services:
 
   jenkins:
     image: drun/jenkins-server
+    networks:
+      - drun_root
     environment:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
@@ -84,6 +94,8 @@ services:
 
   graphite:
     image: hopsoft/graphite-statsd
+    networks:
+      - drun_root
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Graphite server
@@ -97,6 +109,8 @@ services:
     depends_on:
       - consul
     image: steadyserv/nginx-consul:latest
+    networks:
+      - drun_root
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Web server (load balancer)
@@ -111,6 +125,8 @@ services:
 
   consul:
     image: library/consul:latest
+    networks:
+      - drun_root
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Consul server (load balancer)
@@ -119,3 +135,6 @@ services:
     logging:
       driver: none
 
+networks:
+  drun_root:
+    driver: bridge
