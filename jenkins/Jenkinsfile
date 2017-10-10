@@ -68,7 +68,8 @@ node {
             path = it.getPath().substring(9);
             nameParts = path.split("/");
             name = nameParts.length > 1 ? nameParts[0] : path
-            names << createNewJob(name, path)
+            if (path[0] != '/')
+                names << createNewJob(name, path)
             it = null;
         }
             
