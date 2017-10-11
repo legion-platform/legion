@@ -48,7 +48,7 @@ class ModelContainer:
 
     ZIP_COMPRESSION = zipfile.ZIP_STORED
     ZIP_FILE_MODEL = 'model'
-    ZIP_FILE_INFO = 'info.ini'
+    ZIP_FILE_INFO = 'info.json'
 
     def __init__(self, file, is_write=False, do_not_load_model=False):
         """
