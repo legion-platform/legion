@@ -17,6 +17,11 @@ http{
 
   lua_package_path "/usr/local/share/lua/5.3/?.lua";
 
+  init_by_lua_block {
+    local statistics_sender = require "statistics_sender"
+    statistics_sender.init()
+  }
+
   {{range services}} {{$name := .Name}} {{$service := service .Name}}
   {{if (.Tags | contains "model") }}
   upstream {{$name}} {
@@ -76,7 +81,11 @@ http{
         expires -1;
         add_header Cache-Control no-cache;
 
-        log_by_lua 'ngx.log(ngx.ERR, "Test!")';
+        log_by_lua_block {
+            local statistics_sender = require "statistics_sender"
+            local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)
+            statistics_sender.send_request_statistics("{{$name}}", latency)
+        }
     }
 
     {{end}}

@@ -31,6 +31,7 @@ RUN set -x \
 
 
 COPY start.sh /start.sh
+COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]
