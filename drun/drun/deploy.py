@@ -194,7 +194,7 @@ def build_model(args):
         args.docker_image_tag
     )
 
-    LOGGER.info('Built image: %s', image)
+    LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
     return image
 
 

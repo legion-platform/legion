@@ -103,10 +103,11 @@ class TestDeploy(unittest2.TestCase):
         container = self.client.containers.get(container.id)
 
         if undeploy:
-            container.stop()
-            container.remove()
+            pass
+            #container.stop()
+            #container.remove()
 
-            self.client.images.remove(image.short_id)
+            #self.client.images.remove(image.short_id)
 
         self.assertEqual(container.status, 'running', 'Wrong status after deploy')
 
@@ -118,6 +119,9 @@ class TestDeploy(unittest2.TestCase):
             model_id=self.MODEL_ID,
             docker_image=None,
             docker_network=None,
+            grafana_server=None,
+            grafana_user=None,
+            grafana_password=None,
         )
 
         self._build_image_deploy_and_test(image, args, True)
@@ -128,6 +132,9 @@ class TestDeploy(unittest2.TestCase):
             model_id=None,
             docker_image=image.id,
             docker_network=None,
+            grafana_server=None,
+            grafana_user=None,
+            grafana_password=None,
         )
 
         self._build_image_deploy_and_test(image, args, True)
@@ -139,6 +146,9 @@ class TestDeploy(unittest2.TestCase):
             model_id=self.MODEL_ID,
             docker_image=None,
             docker_network=None,
+            grafana_server=None,
+            grafana_user=None,
+            grafana_password=None,
         )
 
         container = self._build_image_deploy_and_test(image, args, False)
@@ -146,6 +156,9 @@ class TestDeploy(unittest2.TestCase):
         args = Namespace(
             model_id=self.MODEL_ID,
             docker_network=None,
+            grafana_server=None,
+            grafana_user=None,
+            grafana_password=None,
         )
 
         deploy.undeploy_model(args)

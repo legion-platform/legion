@@ -4,6 +4,8 @@ Graphana API functional for working with models
 
 import json
 
+import drun.external
+import drun.external.base_grafana_client
 from drun.external.base_grafana_client import BaseGrafanaClient
 
 from jinja2 import Environment, PackageLoader, select_autoescape

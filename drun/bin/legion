@@ -55,11 +55,11 @@ if __name__ == '__main__':
                                  type=str, help='identifier of the model')
     undeploy_parser.add_argument('--docker-network',
                                  type=str, help='docker network')
-    deploy_parser.add_argument('--grafana-server',
+    undeploy_parser.add_argument('--grafana-server',
                                type=str, help='Grafana server')
-    deploy_parser.add_argument('--grafana-user',
+    undeploy_parser.add_argument('--grafana-user',
                                type=str, help='Grafana user')
-    deploy_parser.add_argument('--grafana-password',
+    undeploy_parser.add_argument('--grafana-password',
                                type=str, help='Grafana password')
     undeploy_parser.set_defaults(func=undeploy_model)
 
