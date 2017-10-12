@@ -103,11 +103,10 @@ class TestDeploy(unittest2.TestCase):
         container = self.client.containers.get(container.id)
 
         if undeploy:
-            pass
-            #container.stop()
-            #container.remove()
+            container.stop()
+            container.remove()
 
-            #self.client.images.remove(image.short_id)
+            self.client.images.remove(image.short_id)
 
         self.assertEqual(container.status, 'running', 'Wrong status after deploy')
 
