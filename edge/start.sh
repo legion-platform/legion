@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env sh
 #
 #    Copyright 2017 EPAM Systems
 #
@@ -14,16 +14,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-"""
-Default config for DRun
-"""
 
-DOCKER_PYSERVER_BASE = "drun/base-python-image:latest"
+export DOCKER_RESOLVER=`cat /etc/resolv.conf | grep nameserver | awk -e '{ print($2); }'`
 
-MODEL_ID = "dummy-model"
+/usr/local/openresty/bin/openresty
 
-LEGION_ADDR = "0.0.0.0"
-LEGION_PORT = 5000
-
-CONSUL_ADDR = "consul"
-CONSUL_PORT = 8500
+consul-template -template="/nginx.conf.ctmpl:/usr/local/openresty/nginx/conf/nginx.conf:/usr/local/openresty/bin/openresty -s reload"

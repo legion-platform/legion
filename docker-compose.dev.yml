@@ -1,3 +1,18 @@
+#
+#   Copyright 2017 EPAM Systems
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
 version: "3"
 
 services:
@@ -58,6 +73,8 @@ services:
       - .:/opt/project
 
   grafana:
+    build:
+      context: grafana
     image: drun/grafana
     networks:
       - drun_root
@@ -78,7 +95,9 @@ services:
       - .:/opt/project
 
   jenkins:
-    image: drun/jenkins-server
+    build:
+      context: jenkins
+    image: drun/jenkins
     networks:
       - drun_root
     environment:
@@ -114,7 +133,7 @@ services:
       - graphite
     image: drun/edge
     build:
-      context: drun-edge
+      context: edge
     networks:
       - drun_root
     labels:
@@ -125,7 +144,7 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./drun-edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
+      - ./edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
 #    logging:
 #      driver: none
 
