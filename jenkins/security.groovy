@@ -19,3 +19,5 @@ if (hudsonRealm.getAllUsers().size == 0){
 	 
 	Jenkins.instance.getInjector().getInstance(AdminWhitelistRule.class).setMasterKillSwitch(false)
 }
+
+System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "")
