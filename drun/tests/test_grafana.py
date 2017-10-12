@@ -1,13 +1,18 @@
 from __future__ import print_function
 
-import drun.grafana as grafana
+import os
 import unittest2
+
+import drun.grafana as grafana
 
 
 class TestPyserveEndpoints(unittest2.TestCase):
 
     def setUp(self):
-        self.client = grafana.GrafanaClient('http://parallels:80/grafana/', 'admin', 'admin')
+        host = os.environ.get('GRAFANA_URL', 'http://parallels:80/grafana/')
+        user = os.environ.get('GRAFANA_USER', 'admin')
+        password = os.environ.get('GRAFANA_PASSWORD', 'admin')
+        self.client = grafana.GrafanaClient(host, user, password)
 
     def test_dashboard_creation(self):
         model_id = 'test_grafana'

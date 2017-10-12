@@ -42,6 +42,9 @@ class BaseGrafanaClient:
         response = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth)
         answer = json.loads(response.text)
 
+        if response.status_code in (401, 403):
+            raise Exception('Auth failed')
+
         return answer
 
     def delete_dashboard(self, dashboard_uri):

@@ -60,6 +60,20 @@ class GrafanaClient(BaseGrafanaClient):
         :param model_version: str model version
         :return: None
         """
+        return self.create_dashboard_for_model_by_labels({
+            'com.epam.drun.model.id': model_id,
+            'com.epam.drun.model.version': model_version
+        })
+
+    def create_dashboard_for_model_by_labels(self, docker_container_labels):
+        """
+        Create model's dashboard from docker container labels
+        :param docker_container_labels: dict of Docker labels
+        :return: None
+        """
+        model_id = docker_container_labels.get('com.epam.drun.model.id', None)
+        model_version = docker_container_labels.get('com.epam.drun.model.version', None)
+
         self.remove_dashboard_for_model(model_id)
 
         env = Environment(

@@ -9,6 +9,7 @@ import logging
 import drun.utils
 from drun.utils import Colors
 import drun.io
+import drun.grafana
 
 import docker
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -219,6 +220,10 @@ def deploy_model(args):
                                       stderr=True,
                                       detach=True,
                                       labels=container_labels)
+
+    LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))
+    drun.grafana.create_dashboard_for_model_by_labels(container_labels)
+
     return container
 
 
@@ -245,6 +250,8 @@ def undeploy_model(args):
     target_container.stop()
     LOGGER.info('Removing container #%s' % target_container.short_id)
     target_container.remove()
+    LOGGER.info('Removing Grafana dashboard for model %s' % (args.model_id, ))
+    drun.grafana.remove_dashboard_for_model(args.model_id)
 
 
 def get_stack_containers_and_images(client, network_id):
