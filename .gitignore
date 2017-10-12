@@ -104,4 +104,5 @@ ENV/
 # mypy
 .mypy_cache/
 
-/workspace/grafana/plugins/
+/workspace
+

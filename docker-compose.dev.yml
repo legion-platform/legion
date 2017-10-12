@@ -58,7 +58,7 @@ services:
       - .:/opt/project
 
   grafana:
-    image: grafana/grafana
+    image: drun/grafana
     networks:
       - drun_root
     labels:
@@ -69,6 +69,7 @@ services:
       - GF_SERVER_ROOT_URL=http://parallels/grafana
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=
+      - GF_GRAPHITE_DATASOURCE=http://graphite:80
     ports:
       - 3000:3000
     volumes:
@@ -102,13 +103,18 @@ services:
     ports:
       - 81:80
       - 8126:8126
-    logging:
-      driver: none
+#    logging:
+#      driver: none
+    volumes:
+      - ./graphite/config.js:/opt/statsd/config.js
 
-  drun-edge:
+  edge:
     depends_on:
       - consul
-    image: steadyserv/nginx-consul:latest
+      - graphite
+    image: drun/edge
+    build:
+      context: drun-edge
     networks:
       - drun_root
     labels:
@@ -119,9 +125,9 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./drun-edge/nginx.conf.ctmpl:/etc/nginx/nginx.conf.ctmpl
-    logging:
-      driver: none
+      - ./drun-edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
+#    logging:
+#      driver: none
 
   consul:
     image: library/consul:latest
