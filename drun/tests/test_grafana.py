@@ -9,7 +9,7 @@ import drun.grafana as grafana
 class TestPyserveEndpoints(unittest2.TestCase):
 
     def setUp(self):
-        host = os.environ.get('GRAFANA_URL', 'http://parallels:80/grafana/')
+        host = os.environ.get('GRAFANA_URL', 'http://grafana:3000/')
         user = os.environ.get('GRAFANA_USER', 'admin')
         password = os.environ.get('GRAFANA_PASSWORD', 'admin')
         self.client = grafana.GrafanaClient(host, user, password)

@@ -40,10 +40,14 @@ class BaseGrafanaClient:
             auth = (self._user, self._password)
 
         response = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth)
-        answer = json.loads(response.text)
 
         if response.status_code in (401, 403):
             raise Exception('Auth failed')
+
+        if response.status_code != 200:
+            raise Exception('Wrong answer for url = %s: %s' % (full_url, repr(response)))
+
+        answer = json.loads(response.text)
 
         return answer
 

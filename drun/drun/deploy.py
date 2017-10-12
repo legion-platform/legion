@@ -144,25 +144,21 @@ def build_grafana_client(args):
     :param args: arguments
     :return: drun.grafana
     """
-    host = os.environ.get('GRAFANA_URL', 'http://parallels:80/grafana/')
+    host = os.environ.get('GRAFANA_URL', 'http://grafana:3000/')
     user = os.environ.get('GRAFANA_USER', 'admin')
     password = os.environ.get('GRAFANA_PASSWORD', 'admin')
 
     if args.grafana_server:
         host = args.grafana_server
 
-    if args.grafana_server:
-        user = args.grafana_server
+    if args.grafana_user and len(args.grafana_user):
+        user = args.grafana_user
 
-    if args.grafana_server:
-        password = args.grafana_server
+    if args.grafana_password and len(args.grafana_password):
+        password = args.grafana_password
 
-    if user and password and len(user) and len(password):
-        LOGGER.info('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
-        client = drun.grafana.GrafanaClient(host, user, password)
-    else:
-        LOGGER.info('Creating Grafana client for host: %s' % (host, ))
-        client = drun.grafana.GrafanaClient(host)
+    LOGGER.info('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
+    client = drun.grafana.GrafanaClient(host, user, password)
 
     return client
 
