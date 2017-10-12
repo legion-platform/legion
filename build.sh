@@ -7,3 +7,7 @@ cd ..
 cd drun-edge
 docker build -t drun/edge .
 cd ..
+
+cd grafana
+docker build -t drun/grafana .
+cd ..

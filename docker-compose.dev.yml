@@ -45,7 +45,7 @@ services:
       - .:/opt/project
 
   grafana:
-    image: grafana/grafana
+    image: drun/grafana
     environment:
       - PYTHONPATH=/opt/project
       - GF_SERVER_ROOT_URL=http://parallels/grafana
