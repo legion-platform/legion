@@ -42,7 +42,7 @@ curl -s -H "Content-Type: application/json" \
     -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
     -d @- <<EOF
 {
-    "overwrite": false,
+    "overwrite": true,
     "dashboard": {
         "annotations": {
             "list": []
@@ -51,7 +51,7 @@ curl -s -H "Content-Type: application/json" \
         "gnetId": null,
         "graphTooltip": 0,
         "hideControls": false,
-        "id": null,
+        "id": 1,
         "links": [],
         "rows": [
             {

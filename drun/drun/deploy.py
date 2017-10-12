@@ -206,6 +206,8 @@ def build_model(args):
     )
 
     LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
+
+    print('Successfully created docker image %s for model %s' % (image.short_id, args.model_id))
     return image
 
 
@@ -269,6 +271,7 @@ def deploy_model(args):
     LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))
     grafana_client.create_dashboard_for_model_by_labels(container_labels)
 
+    print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
     return container
 
 
@@ -298,6 +301,8 @@ def undeploy_model(args):
     target_container.remove()
     LOGGER.info('Removing Grafana dashboard for model %s' % (args.model_id, ))
     grafana_client.remove_dashboard_for_model(args.model_id)
+
+    print('Successfully undeployed model %s' % (args.model_id, ))
 
 
 def get_stack_containers_and_images(client, network_id):
