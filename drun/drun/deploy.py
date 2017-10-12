@@ -205,7 +205,11 @@ def deploy_model(args):
     grafana_client = build_grafana_client(args)
 
     if args.model_id and args.docker_image:
-        raise Exception('Use only model-id or docker-image')
+        print('Use only --model-id or --docker-image')
+        exit(1)
+    elif not args.model_id and not args.docker_image:
+        print('Use with --model-id or --docker-image')
+        exit(1)
 
     current_containers = get_stack_containers_and_images(client, network_id)
 
