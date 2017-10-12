@@ -138,6 +138,35 @@ def build_docker_client(args):
     return client
 
 
+def build_grafana_client(args):
+    """
+    Build Grafana client from ENV and from command line arguments
+    :param args: arguments
+    :return: drun.grafana
+    """
+    host = os.environ.get('GRAFANA_URL', 'http://parallels:80/grafana/')
+    user = os.environ.get('GRAFANA_USER', 'admin')
+    password = os.environ.get('GRAFANA_PASSWORD', 'admin')
+
+    if args.grafana_server:
+        host = args.grafana_server
+
+    if args.grafana_server:
+        user = args.grafana_server
+
+    if args.grafana_server:
+        password = args.grafana_server
+
+    if user and password and len(user) and len(password):
+        LOGGER.info('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
+        client = drun.grafana.GrafanaClient(host, user, password)
+    else:
+        LOGGER.info('Creating Grafana client for host: %s' % (host, ))
+        client = drun.grafana.GrafanaClient(host)
+
+    return client
+
+
 def build_model(args):
     """
     Build model
@@ -177,6 +206,7 @@ def deploy_model(args):
     """
     client = build_docker_client(args)
     network_id = find_network(client, args)
+    grafana_client = build_grafana_client(args)
 
     if args.model_id and args.docker_image:
         raise Exception('Use only model-id or docker-image')
@@ -222,7 +252,7 @@ def deploy_model(args):
                                       labels=container_labels)
 
     LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))
-    drun.grafana.create_dashboard_for_model_by_labels(container_labels)
+    grafana_client.create_dashboard_for_model_by_labels(container_labels)
 
     return container
 
@@ -235,6 +265,7 @@ def undeploy_model(args):
     """
     client = build_docker_client(args)
     network_id = find_network(client, args)
+    grafana_client = build_grafana_client(args)
 
     current_containers = get_stack_containers_and_images(client, network_id)
 
@@ -251,7 +282,7 @@ def undeploy_model(args):
     LOGGER.info('Removing container #%s' % target_container.short_id)
     target_container.remove()
     LOGGER.info('Removing Grafana dashboard for model %s' % (args.model_id, ))
-    drun.grafana.remove_dashboard_for_model(args.model_id)
+    grafana_client.remove_dashboard_for_model(args.model_id)
 
 
 def get_stack_containers_and_images(client, network_id):
