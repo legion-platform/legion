@@ -1,14 +1,34 @@
+"""
+Base Grafana HTTP API client
+"""
 import json
 import requests
 
 
 class BaseGrafanaClient:
+    """
+    Base Grafana HTTP API client
+    """
+
     def __init__(self, base, user=None, password=None):
+        """
+        Build client
+        :param base: str base url, for example: http://parallels/grafana/
+        :param user: str user name or None
+        :param password: str user password or None
+        """
         self._base = base.strip('/')
         self._user = user
         self._password = password
 
     def _query(self, url, payload=None, action='GET'):
+        """
+        Perform query to Grafana server
+        :param url: query suburl, for example: /api/search/
+        :param payload: dict with payload (will be converted to JSON) or None
+        :param action: str HTTP method (GET, POST, PUT, DELETE)
+        :return: dict of response content
+        """
         full_url = self._base + url
 
         headers = {
@@ -24,16 +44,10 @@ class BaseGrafanaClient:
 
         return answer
 
-    def delete_dashboard(self, model_id):
-        dashboard = self.get_model_dashboard(model_id)
-        self._query('/api/dashboards/%s' % dashboard['uri'], action='DELETE')
-
-    def is_dashboard_exists(self, model_id):
-        return self.get_model_dashboard(model_id) is not None
-
-    def get_model_dashboard(self, model_id):
-        data = self._query('/api/search/?tag=model_%s' % model_id)
-        if not len(data):
-            return None
-
-        return data[0]
+    def delete_dashboard(self, dashboard_uri):
+        """
+        Delete dashboard by url
+        :param dashboard_uri: str dashboard uri
+        :return: None
+        """
+        self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
