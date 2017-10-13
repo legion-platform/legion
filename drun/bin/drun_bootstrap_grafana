@@ -24,6 +24,7 @@ from drun.template import render_template
 
 DATA_SOURCE_NAME = 'graphite'
 
+
 def _is_data_source_created(client, data_source_name):
     try:
         client._query('/api/datasources/name/%s' % data_source_name)

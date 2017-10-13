@@ -82,7 +82,7 @@ services:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Grafana server
     environment:
-      - PYTHONPATH=/opt/project
+      - PYTHONPATH=/opt/project/drun
       - GF_SERVER_ROOT_URL=http://parallels/grafana
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=
