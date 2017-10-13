@@ -19,7 +19,7 @@ if [ ! -f /var/lib/grafana/bootstrapped ] && [ ! -z ${GF_GRAPHITE_DATASOURCE} ];
 	./run.sh "${@}" &
 	sleep 120
 
-	/opt/project/drun/bin/drun_bootstrap_grafana "http://localhost:3000/" "${GF_GRAPHITE_DATASOURCE}"
+	python3 /opt/project/drun/bin/drun_bootstrap_grafana "http://localhost:3000/" "${GF_GRAPHITE_DATASOURCE}"
 
 	pkill grafana-server
 	sleep 10
