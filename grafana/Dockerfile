@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-FROM grafana/grafana
+FROM grafana/grafana:4.5.0
 
 RUN apt-get update && \
     apt-get install --yes \
