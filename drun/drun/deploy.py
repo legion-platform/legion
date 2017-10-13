@@ -25,9 +25,9 @@ import drun.utils
 from drun.utils import Colors
 import drun.io
 import drun.grafana
+from drun.template import render_template
 
 import docker
-from jinja2 import Environment, PackageLoader, select_autoescape
 
 LOGGER = logging.getLogger('deploy')
 
@@ -87,21 +87,16 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
             install_target = os.path.basename(python_package)
             shutil.copy2(python_package, os.path.join(temp_directory.path, install_target))
 
-        env = Environment(
-            loader=PackageLoader(__name__, 'templates'),
-            autoescape=select_autoescape(['tmpl'])
-        )
-
-        template = env.get_template('Dockerfile.tmpl')
+        docker_file_content = render_template('Dockerfile.tmpl', {
+            'DOCKER_BASE_IMAGE': base_image,
+            'MODEL_ID': model_id,
+            'MODEL_FILE': model_filename,
+            'PIP_INSTALL_TARGET': install_target,
+            'PIP_CUSTOM_TARGET': install_target != 'drun'
+        })
 
         with open(os.path.join(temp_directory.path, 'Dockerfile'), 'w') as file:
-            file.write(template.render({
-                'DOCKER_BASE_IMAGE': base_image,
-                'MODEL_ID': model_id,
-                'MODEL_FILE': model_filename,
-                'PIP_INSTALL_TARGET': install_target,
-                'PIP_CUSTOM_TARGET': install_target != 'drun'
-            }))
+            file.write(docker_file_content)
 
         LOGGER.info('Building docker image in folder %s' % (temp_directory.path))
         image = client.images.build(
