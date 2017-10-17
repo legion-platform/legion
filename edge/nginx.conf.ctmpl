@@ -115,7 +115,7 @@ http{
     # Models API
     {{range services}} {{$name := .Name}}
     {{if (.Tags | contains "model")}}
-    location /model/{{$name}} {
+    location /api/model/{{$name}} {
         proxy_pass http://{{$name}};
 
         expires -1;
