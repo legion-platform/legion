@@ -86,7 +86,7 @@ class ModelUnitTests(unittest2.TestCase):
         if not hasattr(self, '_base_url'):
             raise Exception('Firstly call self.setUpModel in self.setUp')
 
-        post_fields = {k: v for (k, v) in values.items() if isinstance(v, str)}
+        post_fields = {k: v for (k, v) in values.items() if not isinstance(v, bytes)}
         post_files = {k: v for (k, v) in values.items() if isinstance(v, bytes)}
         response = requests.post(self._base_url + '/invoke', post_fields, files=post_files)
         self.assertEqual(response.status_code, 200, 'Invalid response code for model call')
