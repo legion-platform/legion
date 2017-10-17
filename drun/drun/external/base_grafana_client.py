@@ -28,9 +28,13 @@ class BaseGrafanaClient:
     def __init__(self, base, user=None, password=None):
         """
         Build client
-        :param base: str base url, for example: http://parallels/grafana/
-        :param user: str user name or None
-        :param password: str user password or None
+
+        :param base: base url, for example: http://parallels/grafana/
+        :type base: str
+        :param user: user name
+        :type user: str or None
+        :param password: user password
+        :type password: str or None
         """
         self._base = base.strip('/')
         self._user = user
@@ -39,10 +43,14 @@ class BaseGrafanaClient:
     def _query(self, url, payload=None, action='GET'):
         """
         Perform query to Grafana server
+
         :param url: query suburl, for example: /api/search/
-        :param payload: dict with payload (will be converted to JSON) or None
-        :param action: str HTTP method (GET, POST, PUT, DELETE)
-        :return: dict of response content
+        :type url: str
+        :param payload: payload (will be converted to JSON) or None
+        :type payload: dict[str, any]
+        :param action: HTTP method (GET, POST, PUT, DELETE)
+        :type action: str
+        :return: dict[str, any] -- response content
         """
         full_url = self._base + url
 
@@ -69,7 +77,9 @@ class BaseGrafanaClient:
     def delete_dashboard(self, dashboard_uri):
         """
         Delete dashboard by url
-        :param dashboard_uri: str dashboard uri
+
+        :param dashboard_uri: dashboard uri
+        :type dashboard_uri: str
         :return: None
         """
         self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
