@@ -34,16 +34,22 @@ class GrafanaClient(BaseGrafanaClient):
     def __init__(self, base, user=None, password=None):
         """
         Build client
-        :param base: str base url, for example: http://parallels/grafana/
-        :param user: str user name or None
-        :param password: str user password or None
+
+        :param base: base url, for example: http://parallels/grafana/
+        :type base: str
+        :param user: user name
+        :type user: str or None
+        :param password: user password
+        :type password: str or None
         """
         super(GrafanaClient, self).__init__(base, user, password)
 
     def remove_dashboard_for_model(self, model_id):
         """
         Remove model's dashboard
-        :param model_id: str model id
+
+        :param model_id: model id
+        :type model_id: str
         :return: None
         """
         if self.is_dashboard_exists(model_id):
@@ -53,15 +59,19 @@ class GrafanaClient(BaseGrafanaClient):
     def is_dashboard_exists(self, model_id):
         """
         Check if model's dashboard exists
-        :param model_id: str model id
-        :return: bool
+
+        :param model_id: model id
+        :type model_id: str
+        :return: bool -- is dashboard exists
         """
         return self.get_model_dashboard(model_id) is not None
 
     def get_model_dashboard(self, model_id):
         """
         Search for model's dashboard
-        :param model_id: str model id
+
+        :param model_id: model id
+        :type model_id: str
         :return: dict with dashboard information or None
         """
         data = self._query('/api/search/?tag=model_%s' % model_id)
@@ -73,8 +83,11 @@ class GrafanaClient(BaseGrafanaClient):
     def create_dashboard_for_model(self, model_id, model_version=None):
         """
         Create model's dashboard from template
-        :param model_id: str model id
-        :param model_version: str model version
+
+        :param model_id: model id
+        :type model_id: str
+        :param model_version: model version
+        :type model_id: str or None
         :return: None
         """
         return self.create_dashboard_for_model_by_labels({
@@ -85,7 +98,9 @@ class GrafanaClient(BaseGrafanaClient):
     def create_dashboard_for_model_by_labels(self, docker_container_labels):
         """
         Create model's dashboard from docker container labels
-        :param docker_container_labels: dict of Docker labels
+
+        :param docker_container_labels: Docker labels
+        :type docker_container_labels: dict[str, str]
         :return: None
         """
         model_id = docker_container_labels.get('com.epam.drun.model.id', None)

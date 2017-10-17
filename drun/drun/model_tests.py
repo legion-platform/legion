@@ -28,8 +28,10 @@ from PIL import Image as PYTHON_Image
 def get_model_base_url(model_name):
     """
     Get model base url from model name
-    :param model_name: str model name
-    :return: str base path for model calls
+
+    :param model_name: model name
+    :type model_name: str
+    :return: str -- base path for model calls
     """
     model_server_url = os.environ.get('MODEL_SERVER_URL', 'http://edge')
     return '%s/api/model/%s' % (model_server_url, model_name)
@@ -43,7 +45,9 @@ class ModelUnitTests(unittest2.TestCase):
     def setUpModel(self, model_name):
         """
         Initialize model
-        :param model_name: str model id (as in legion build / deploy)
+
+        :param model_name: model id (as in legion build / deploy)
+        :type model_name: str
         :return: None
         """
         self._model_name = model_name
@@ -52,8 +56,10 @@ class ModelUnitTests(unittest2.TestCase):
     def _load_image(self, path):
         """
         Load image from local path and check them
-        :param path: str path to local image
-        :return: bytes image content
+
+        :param path: path to local image
+        :type path: str
+        :return: bytes -- image content
         """
         self.assertTrue(os.path.exists(path), 'Image path not exists')
         image = PYTHON_Image.open(path)
@@ -65,8 +71,10 @@ class ModelUnitTests(unittest2.TestCase):
     def _parse_json_response(self, response):
         """
         Parse JSON response from model, check headers and return decoded JSON data
-        :param response: requests.response response from server
-        :return: dict of returned values
+
+        :param response: response from server
+        :type response: :py:class:`requests.response`
+        :return: dict[str, any] -- returned values
         """
         self.assertEqual(response.headers.get('Content-Type'), 'application/json', 'Invalid response mimetype')
 
@@ -80,8 +88,10 @@ class ModelUnitTests(unittest2.TestCase):
     def _query_model(self, **values):
         """
         Query model for calculation
-        :param values: dict values for passing to model. Key should be string (field name), value should be a string
-        :return: dict of output values
+
+        :param values: values for passing to model. Key should be string (field name), value should be a string
+        :type values: dict[str, any]
+        :return: dict -- output values
         """
         if not hasattr(self, '_base_url'):
             raise Exception('Firstly call self.setUpModel in self.setUp')

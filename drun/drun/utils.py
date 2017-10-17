@@ -25,7 +25,8 @@ import os
 def detect_ip():
     """
     Get current machine IP address
-    :return: str IP address
+
+    :return: str -- IP address
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.connect(("8.8.8.8", 80))
@@ -37,8 +38,10 @@ def detect_ip():
 def escape(unescaped_string):
     """
     Escape string (replace .:& with -)
-    :param unescaped_string: str source string
-    :return: str escaped string
+
+    :param unescaped_string: source string
+    :type unescaped_string: str
+    :return: str -- escaped string
     """
     return unescaped_string.replace('.', '-').replace(':', '-').replace('&', '-')
 
@@ -51,8 +54,11 @@ class TemporaryFolder:
     def __init__(self, *args, **kwargs):
         """
         Build temp. folder representation using tempfile.mkdtemp
-        :param args: tuple tempfile.mkdtemp args
-        :param kwargs: dict tempfile.mkdtemp kwargs
+
+        :param args: tempfile.mkdtemp args
+        :type args: tuple
+        :param kwargs: tempfile.mkdtemp kwargs
+        :type kwargs: dict
         """
         self._path = tempfile.mkdtemp(*args, **kwargs)
 
@@ -60,13 +66,15 @@ class TemporaryFolder:
     def path(self):
         """
         Get path to temp. folder
-        :return: str path
+
+        :return: str -- path
         """
         return self._path
 
     def remove(self):
         """
         Try to remove temporary folder (without exceptions)
+
         :return: None
         """
         try:
@@ -81,13 +89,15 @@ class TemporaryFolder:
     def __enter__(self):
         """
         Return self on context enter
-        :return: TemporaryFolder
+
+        :return: :py:class:`drun.utils.TemporaryFolder`
         """
         return self
 
     def __exit__(self, type, value, traceback):
         """
         Call remove on context exit
+
         :param type: -
         :param value: -
         :param traceback: -

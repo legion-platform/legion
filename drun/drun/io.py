@@ -35,9 +35,11 @@ from pandas import DataFrame
 def _get_column_types(param_types):
     """
     Build dict with ColumnInformation from param_types argument for export function
-    :param param_types: tuple of pandas DF with custom dict or pandas DF.
+
+    :param param_types: pandas DF with custom dict or pandas DF.
     Custom dict contains of column_name => drun.BaseType
-    :return: dict of column_name => drun.types.ColumnInformation
+    :type param_types tuple(:py:class:`pandas.DataFrame`, dict) or :py:class:`pandas.DataFrame`
+    :return: dict[str, :py:class:`drun.types.ColumnInformation`] -- column name => column information
     """
     pandas_df_sample = None
     custom_props = None
@@ -68,9 +70,13 @@ class ModelContainer:
     def __init__(self, file, is_write=False, do_not_load_model=False):
         """
         Create model container (archive) from existing (when is_write=False) or from empty (when is_write=True)
-        :param file: str path to file for load or save in future
-        :param is_write: bool flag for create empty container (not read)
-        :param do_not_load_model: bool load only meta information
+
+        :param file: path to file for load or save in future
+        :type file: str
+        :param is_write: flag for create empty container (not read)
+        :type is_write: bool
+        :param do_not_load_model: load only meta information
+        :type do_not_load_model: bool
         """
         self._file = file
         self._is_saved = not is_write
@@ -84,6 +90,7 @@ class ModelContainer:
     def _load(self):
         """
         Load from file
+
         :return: None
         """
         if not os.path.exists(self._file):
@@ -104,7 +111,9 @@ class ModelContainer:
     def _load_info(self, file):
         """
         Read properties from file-like object (using .read)
-        :param file: file-like object
+
+        :param file: source file
+        :type file: file-like object
         :return: None
         """
         self._properties = json.load(file)
@@ -112,7 +121,9 @@ class ModelContainer:
     def _write_info(self, file):
         """
         Write properties to file-like object (using .write)
-        :param file: file-like object
+
+        :param file: target file
+        :type file: file-like object
         :return: None
         """
         json.dump(self._properties, file)
@@ -120,6 +131,7 @@ class ModelContainer:
     def _add_default_properties(self):
         """
         Add default properties during saving of model
+
         :return: None
         """
         self['model.version'] = self._model.version
@@ -132,7 +144,8 @@ class ModelContainer:
     def model(self):
         """
         Get instance of model if it has been loaded or saved
-        :return: IMLModel
+
+        :return: :py:class:`drun.model.IMLModel` -- instance of model
         """
         if not self._is_saved:
             raise Exception('Cannot get model on non-saved container')
@@ -142,7 +155,9 @@ class ModelContainer:
     def save(self, model_instance):
         """
         Save to file
-        :param model_instance: IMLModel model
+
+        :param model_instance: model
+        :type model_instance: :py:class:`drun.model.IMLModel`
         :return: None
         """
         self._model = model_instance
@@ -161,13 +176,15 @@ class ModelContainer:
     def __enter__(self):
         """
         Return self on context enter
-        :return: ModelContainer
+
+        :return: :py:class:`drun.io.ModelContainer`
         """
         return self
 
     def __exit__(self, type, value, traceback):
         """
         Call remove on context exit
+
         :param type: -
         :param value: -
         :param traceback: -
@@ -178,8 +195,11 @@ class ModelContainer:
     def __setitem__(self, key, item):
         """
         Set property value (without save)
-        :param key: str key
-        :param item: str value
+
+        :param key: key
+        :type key: str
+        :param item: value
+        :type key: str
         :return: None
         """
         self._properties[key] = item
@@ -187,22 +207,27 @@ class ModelContainer:
     def __getitem__(self, key):
         """
         Get property value
-        :param key: str key
-        :return: str value
+
+        :param key: key
+        :type key: str
+        :return: str -- value
         """
         return self._properties[key]
 
     def __len__(self):
         """
         Get count of properties
-        :return: int count of properties
+
+        :return: int -- count of properties
         """
         return len(self._properties)
 
     def __delitem__(self, key):
         """
         Remove property by key
-        :param key: str key
+
+        :param key: key
+        :type key: str
         :return: None
         """
         del self._properties[key]
@@ -210,16 +235,21 @@ class ModelContainer:
     def has_key(self, k):
         """
         Check that property with specific key exists
-        :param k: str key
-        :return: bool check result
+
+        :param k: key
+        :type k: str
+        :return: bool -- check result
         """
         return k in self._properties
 
     def update(self, *args, **kwargs):
         """
         Update property dict with another values
-        :param args: tuple args
-        :param kwargs: dict kwargs
+
+        :param args: args
+        :type args: tuple
+        :param kwargs: kwargs
+        :type args: dict
         :return: any result of update
         """
         return self._properties.update(*args, **kwargs)
@@ -227,6 +257,7 @@ class ModelContainer:
     def keys(self):
         """
         Get tuple of properties keys
+
         :return: tuple of properties keys
         """
         return tuple(self._properties.keys())
@@ -234,6 +265,7 @@ class ModelContainer:
     def values(self):
         """
         Get tuple of properties values
+
         :return: tuple of properties values
         """
         return tuple(self._properties.values())
@@ -241,6 +273,7 @@ class ModelContainer:
     def items(self):
         """
         Get tuple of properties (key, value)
+
         :return: tuple of (key, value)
         """
         return self._properties.items()
@@ -248,8 +281,11 @@ class ModelContainer:
     def get(self, key, default=None):
         """
         Get property value or default value
-        :param key: str key
+
+        :param key: key
+        :type key: str
         :param default: any default value
+        :type default: any
         :return: str or value of default
         """
         if key in self._properties:
@@ -259,7 +295,9 @@ class ModelContainer:
     def __contains__(self, k):
         """
         Check that property with specific key exists
-        :param k: str key
+
+        :param k: key
+        :type k: str
         :return: bool check result
         """
         return k in self._properties
@@ -267,6 +305,7 @@ class ModelContainer:
     def __iter__(self):
         """
         Iterate over properties
+
         :return: iterator
         """
         return iter(self._properties)
@@ -275,9 +314,12 @@ class ModelContainer:
 def deduce_param_types(data_frame, optional_dictionary=None):
     """
     Deduce param types of pandas DF. Optionally overwrite to custom drun.BaseType
+
     :param data_frame: pandas DF
-    :param optional_dictionary: custom dict contains of column_name => drun.BaseType
-    :return: dict of column_name => drun.types.ColumnInformation
+    :type data_frame: :py:class:`pandas.DataFrame`
+    :param optional_dictionary: custom dict contains of column_name => drun.types.BaseType
+    :type optional_dictionary: dict[str, :py:class:`drun.types.BaseType`]
+    :return: dict[str, :py:class:`drun.types.ColumnInformation`]
     """
     if optional_dictionary:
         return _get_column_types((data_frame, optional_dictionary))
@@ -288,13 +330,20 @@ def deduce_param_types(data_frame, optional_dictionary=None):
 def export(filename, apply_func, prepare_func=None, param_types=None, input_data_frame=None, version=None):
     """
     Export simple Pandas based model as a bundle
+
     :param filename: the location to write down the model
+    :type filename: str
     :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
     :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
     :param param_types: result of deduce_param_types
+    :type param_types: dict[str, :py:class:`drun.types.ColumnInformation`]
     :param input_data_frame: pandas DF
-    :param version: str of version
-    :return: ScipyModel model instance
+    :type input_data_frame: :py:class:`pandas.DataFrame`
+    :param version: of version
+    :type version: str
+    :return: :py:class:`drun.model.ScipyModel` -- model instance
     """
     if prepare_func is None:
         def prepare_func(input_dict):
