@@ -17,6 +17,7 @@
 
 import argparse
 import json
+import time
 
 from drun.external.base_grafana_client import BaseGrafanaClient
 from drun.template import render_template
@@ -70,8 +71,25 @@ def _set_startup_dashboard(client, dashboard_id):
     client._query('/api/preferences/set-home-dash', payload, action='post')
 
 
+def _get_all_datasources(client):
+    return client._query('/api/datasources')
+
+
 def work(base, graphite_ds_url, user, password):
     client = BaseGrafanaClient(base, user, password)
+
+    start = time.time()
+    while True:
+        elapsed = time.time() - start
+        if elapsed > args.connection_timeout:
+            break
+
+        try:
+            _get_all_datasources(client)
+            break
+        except Exception:
+            print('Reconnecting...')
+            time.sleep(args.socket_reconnect_sleep)
 
     # First, create data source
     _create_graphite_data_source(client, graphite_ds_url)
@@ -90,5 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('graphite_ds_url', type=str, help='Graphite Data Source url')
     parser.add_argument('--user', type=str, help='Server user', default='admin')
     parser.add_argument('--password', type=str, help='Server password', default='admin')
+    parser.add_argument('--connection-timeout', type=int, default=120)
+    parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     args = parser.parse_args()
     work(args.base_url, args.graphite_ds_url, args.user, args.password)
