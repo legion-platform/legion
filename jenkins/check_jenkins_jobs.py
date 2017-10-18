@@ -65,7 +65,23 @@ def work(args):
     :return: None
     """
 
-    server = jenkins.Jenkins(args.jenkins_url, username=args.jenkins_user, password=args.jenkins_password)
+    server = jenkins.Jenkins(args.jenkins_url,
+                             username=args.jenkins_user,
+                             password=args.jenkins_password,
+                             timeout=args.socket_timeout)
+
+    start = time.time()
+    while True:
+        elapsed = time.time() - start
+        if elapsed > args.connection_timeout:
+            break
+
+        try:
+            server.get_all_jobs()
+            break
+        except Exception:
+            print('Reconnecting...')
+            time.sleep(args.socket_reconnect_sleep)
 
     if args.jenkins_run_job:
         if not is_server_busy(server):
@@ -74,10 +90,16 @@ def work(args):
         else:
             print('Server is busy. Skipping run')
 
+    start = time.time()
     while True:
+        elapsed = time.time() - start
+        if elapsed > args.run_timeout:
+            break
+
         if not is_server_busy(server):
             break
 
+        print('Waiting...')
         time.sleep(args.iterate_sleep_sec)
 
     jobs = {j['fullname']: server.get_job_info(j['fullname']) for j in server.get_all_jobs()}
@@ -96,8 +118,12 @@ if __name__ == '__main__':
     parser.add_argument('--jenkins-user', type=str, default='admin')
     parser.add_argument('--jenkins-password', type=str, default='admin')
     parser.add_argument('--jenkins-run-job', type=str)
+    parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--iterate-sleep-sec', type=int, default=5)
     parser.add_argument('--run-sleep-sec', type=int, default=10)
+    parser.add_argument('--run-timeout', type=int, default=120)
+    parser.add_argument('--socket-timeout', type=int, default=10)
+    parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
 
     args = parser.parse_args()
 
