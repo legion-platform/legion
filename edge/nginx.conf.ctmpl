@@ -111,8 +111,8 @@ http{
 		proxy_request_buffering off;
 	}
 
-	location ~ /kibana/(?<kibana_uri>.*) {
-        proxy_pass http://kibana:5601/$kibana_uri;
+	location /kibana/ {
+        proxy_pass http://kibana:5601/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
