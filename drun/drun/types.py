@@ -47,11 +47,16 @@ class BaseType:
     def __init__(self, name=None, native_class=None, description=None, default_numpy_type=np.object):
         """
         Construct base model type
-        :param name: str name of type
+
+        :param name: name of type
+        :type name: str
         :param native_class: type if class builds on native type
         like int, float and etc. (they should be presented in VALID_NATIVE_TYPES)
-        :param description: str of optional type description
+        :type native_class: int, float and etc or None
+        :param description: optional type description
+        :type description: str or None
         :param default_numpy_type: default numpy type
+        :type :py:class:`numpy.dtype`
         """
         self._name = name
         self._description = description
@@ -69,8 +74,9 @@ class BaseType:
     @property
     def name(self):
         """
-        Get description of type
-        :return:
+        Get name of type
+
+        :return: str
         """
         return self._name if self._name else self.__class__.__name__
 
@@ -78,7 +84,8 @@ class BaseType:
     def description(self):
         """
         Get description of type
-        :return:
+
+        :return: str
         """
         return self._description
 
@@ -86,14 +93,17 @@ class BaseType:
     def default_numpy_type(self):
         """
         Get default numpy type
-        :return:
+
+        :return: :py:class:`numpy.dtype`
         """
         return self._default_numpy_type
 
     def parse(self, value):
         """
         Parse input value (str, or bytes for files) for base type
-        :param value: str or bytes
+
+        :param value: input value
+        :type value: str or bytes
         :return: native representation
         """
         if not self._is_native:
@@ -104,6 +114,7 @@ class BaseType:
     def export(self, value):
         """
         Export value for base type
+
         :param value: native representation
         :return: native representation
         """
@@ -115,6 +126,7 @@ class BaseType:
     def __str__(self):
         """
         Get string representation
+
         :return: str
         """
         return '%s(native_class=%s, description=%s, default_numpy_type=%s)' \
@@ -123,6 +135,7 @@ class BaseType:
     def __repr__(self):
         """
         Get string representation
+
         :return: str
         """
         return '%s(native_class=%r, description=%r, default_numpy_type=%r)' \
@@ -138,13 +151,18 @@ class _Bool(BaseType):
     WRONG_STRINGS = 'no', 'false', 'f', '0'
 
     def __init__(self):
+        """
+        Construct Bool type
+        """
         super(_Bool, self).__init__('Bool', default_numpy_type=np.bool_)
 
     def parse(self, value):
         """
         Parse boolean strings like 'yes', 'no' and etc. (all listed TRUE_STRINGS in WRONG_STRINGS)
-        :param value:
-        :return:
+
+        :param value: input value
+        :type value: str or bytes
+        :return: bool -- parsed value
         """
         str_value = value.lower()
 
@@ -153,9 +171,6 @@ class _Bool(BaseType):
                              (value, self.TRUE_STRINGS, self.WRONG_STRINGS))
 
         return str_value in self.TRUE_STRINGS
-
-    def export(self, value):
-        return value
 
 
 class _Image(BaseType):
@@ -166,9 +181,19 @@ class _Image(BaseType):
     BASE64_REGEX = '^data:image/(.+);base64,(.*)$'
 
     def __init__(self):
+        """
+        Construct Image type
+        """
         super(_Image, self).__init__('Image', default_numpy_type=np.object)
 
     def parse(self, value):
+        """
+        Parse image strings or bytes
+
+        :param value: input value
+        :type value: str or bytes
+        :return: :py:class:`PIL.Image.Image` -- parsed value
+        """
         if isinstance(value, str):
             if len(value) > 10 and value[:4] == 'http':
                 return self._load_from_network(value)
@@ -183,6 +208,13 @@ class _Image(BaseType):
             raise Exception('Invalid data type: %s' % (value.__class__))
 
     def _load_from_network(self, url):
+        """
+        Load image from network
+
+        :param url: network image
+        :type url: str
+        :return: :py:class:`PIL.Image.Image` -- loaded value
+        """
         data = urlopen(url).read()
         if isinstance(data, str):
             data = data.encode('ascii')
@@ -191,6 +223,13 @@ class _Image(BaseType):
         return img
 
     def _load_from_base64(self, value):
+        """
+        Load image from base64
+
+        :param value: base64 string
+        :type value: str
+        :return: :py:class:`PIL.Image.Image` -- loaded value
+        """
         search_results = re.search(self.BASE64_REGEX, value)
         data = search_results.group(2)
         if len(data) % 4:
@@ -216,8 +255,11 @@ class ColumnInformation:
     def __init__(self, representation_type, numpy_type=None):
         """
         Build column information
-        :param representation_type:
-        :param numpy_type:
+
+        :param representation_type: type
+        :type representation_type: :py:class:`drun.types.BaseType`
+        :param numpy_type: numpy representation type
+        :type numpy_type: :py:class:`numpy.dtype` or None
         """
         self._representation_type = representation_type
         self._numpy_type = numpy_type
@@ -226,7 +268,8 @@ class ColumnInformation:
     def representation_type(self):
         """
         Get type of column (inherited from BaseType)
-        :return: BaseType
+
+        :return: :py:class:`drun.types.BaseType`
         """
         return self._representation_type
 
@@ -234,7 +277,8 @@ class ColumnInformation:
     def numpy_type(self):
         """
         Get numpy type
-        :return: numpy.dtype
+
+        :return: :py:class:`numpy.dtype`
         """
         if self._numpy_type:
             return self._numpy_type
@@ -245,7 +289,8 @@ class ColumnInformation:
     def numpy_type_name(self):
         """
         Get numpy type name
-        :return: str name of type
+
+        :return: str -- name of type
         """
         type_instance = self.numpy_type
 
@@ -258,7 +303,8 @@ class ColumnInformation:
     def description_for_api(self):
         """
         Get information about columns as a dictionary
-        :return: dict with type and numpy_type columns
+
+        :return: dict[str, any] -- with type and numpy_type columns
         """
         return {
             'type': self.representation_type.name,
@@ -268,6 +314,7 @@ class ColumnInformation:
     def __repr__(self):
         """
         Get string representation
+
         :return: str
         """
         return 'ColumnInformation(representation_type=%r, numpy_type=%r)' % (self.representation_type, self.numpy_type)
@@ -275,6 +322,7 @@ class ColumnInformation:
     def __str__(self):
         """
         Get string representation
+
         :return: str
         """
         return 'ColumnInformation(representation_type=%s, numpy_type=%s)' % (self.representation_type, self.numpy_type)
@@ -284,9 +332,12 @@ class ColumnInformation:
 def deduct_types_on_pandas_df(data_frame, extra_columns=None):
     """
     Deduct types on pandas data frame
+
     :param data_frame: pandas data frame with at least one row
+    :type data_frame: :py:class:`pandas.DataFrame`
     :param extra_columns: optional dict
-    :return:
+    :type extra_columns: dict[str, :py:class:`drun.types.BaseType`] or None
+    :return: dict[str, :py:class:`drun.types.ColumnInformation`]
     """
     types = {}
 
@@ -336,9 +387,12 @@ def deduct_types_on_pandas_df(data_frame, extra_columns=None):
 def build_df(columns_map, input_values):
     """
     Build pandas.DataFrame from map of columns and input map of strings or bytes
-    :param columns_map: dict of str => ColumnInformation
-    :param input_values: dict of str => str or bytes
-    :return: pandas.DataFrame
+
+    :param columns_map: information about columns
+    :type columns_map: dict[str, :py:class:`drun.types.ColumnInformation`]
+    :param input_values: input values
+    :type input_values: dict[str, union[str, bytes]]
+    :return: :py:class:`pandas.DataFrame`
     """
     values = {}
     types = {}

@@ -36,7 +36,9 @@ class HttpProtocolHandler:
     def parse_request(self, input_request):
         """
         Produce a model input dictionary from HTTP request (GET/POST fields, and Files)
-        :param input_request: Flask.request object
+
+        :param input_request: request object
+        :type input_request: :py:class:`Flask.request`
         :return: dict with requested fields
         """
         result = {}
@@ -58,7 +60,9 @@ class HttpProtocolHandler:
     def prepare_response(self, response):
         """
         Produce an HTTP response from a model output
+
         :param response: a model output
+        :type response: dict[str, any]
         :return: bytes
         """
         return jsonify(response)
@@ -73,7 +77,8 @@ blueprint = Blueprint('pyserve', __name__)
 def root():
     """
     Return static file for root query
-    :return: Flask.Response with index file
+
+    :return: :py:class:`Flask.Response` -- response index file
     """
     return redirect('index.html')
 
@@ -83,8 +88,10 @@ def root():
 def model_info(model_id):
     """
     Get model description
-    :param model_id: str of model id
-    :return: Flask.Response of model description
+
+    :param model_id: model id
+    :type model_id: str
+    :return: :py:class:`Flask.Response` -- model description
     """
     # assert model_id == app.config['MODEL_ID']
 
@@ -98,8 +105,10 @@ def model_info(model_id):
 def model_invoke(model_id):
     """
     Call model for calculation
-    :param model_id: str model name
-    :return:Flask.Response with result of calculation
+
+    :param model_id: model name
+    :type model_id: str
+    :return: :py:class:`Flask.Response` -- result of calculation
     """
     # TODO single configuration for Flask/CLI
     # assert model_id == app.config['MODEL_ID']
@@ -117,7 +126,8 @@ def model_invoke(model_id):
 def healthcheck():
     """
     Check that model is OK
-    :return: str status string
+
+    :return: str -- status string
     """
     return 'OK'
 
@@ -125,7 +135,9 @@ def healthcheck():
 def init_model(app):
     """
     Load model from app configuration
+
     :param app: Flask app
+    :type app: :py:class:`Flask.app`
     :return: model instance
     """
     if 'MODEL_FILE' in app.config:
@@ -142,7 +154,8 @@ def init_model(app):
 def create_application():
     """
     Create Flask application
-    :return: Flask application instance
+
+    :return: :py:class:`Flask.app` -- Flask application instance
     """
     app = Flask(__name__, static_url_path='')
     app.config.from_pyfile('config_default.py')
@@ -165,7 +178,9 @@ def create_application():
 def register_service(app):
     """
     Register application in Consul
+
     :param app: Flask application instance
+    :type app: :py:class:`Flask.app`
     :return: None
     """
     client = consul.Consul(
@@ -189,8 +204,11 @@ def register_service(app):
 def apply_cli_args(flask_app, args):
     """
     Set Flask app instance configuration from arguments
+
     :param flask_app: Flask app instance
-    :param args: dict arguments
+    :type flask_app: :py:class:`Flask.app`
+    :param args: arguments
+    :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     args_dict = vars(args)
@@ -202,8 +220,10 @@ def apply_cli_args(flask_app, args):
 def init_application(args):
     """
     Initialize configured Flask application instance
-    :param args: dict configuration arguments
-    :return: Flask application instance
+
+    :param args: arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`Flask.app` -- application instance
     """
     app = create_application()
     apply_cli_args(app, args)
@@ -216,7 +236,9 @@ def serve_model(args):
     """
     Serve models
     Overall configuration priority: config_default.py, instance/config.py, CLI parameters
-    :param args: dict configuration arguments
+
+    :param args: arguments
+    :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     logging.info("legion pyserve initializing")

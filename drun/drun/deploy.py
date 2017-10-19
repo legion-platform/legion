@@ -35,9 +35,12 @@ LOGGER = logging.getLogger('deploy')
 def generate_docker_labels_for_image(model_file, args):
     """
     Generate docker image labels from model file
-    :param model_file: str path to model file
+
+    :param model_file: path to model file
+    :type model_file: str
     :param args: command arguments
-    :return: dict of labels str => str
+    :type args: :py:class:`argparse.Namespace`
+    :return: dict[str, str] of labels
     """
     with drun.io.ModelContainer(model_file, do_not_load_model=True) as container:
         base = {
@@ -55,8 +58,10 @@ def generate_docker_labels_for_image(model_file, args):
 def generate_docker_labels_for_container(image):
     """
     Build container labels from image labels (copy)
-    :param image: docker.models.image.Image
-    :return: dict of labels str => str
+
+    :param image: source Docker image
+    :type image: :py:class:`docker.models.image.Image`
+    :return: dict[str, str] of labels
     """
     return image.labels
 
@@ -64,13 +69,21 @@ def generate_docker_labels_for_container(image):
 def build_docker_image(client, base_image, model_id, model_file, labels, python_package, docker_image_tag):
     """
     Build docker image from base image and model file
-    :param client: docker client
+
+    :param client: Docker client
+    :type client: :py:class:`docker.client.DockerClient`
     :param base_image: name of base image
+    :type base_image: str
     :param model_id: model id
+    :type model_id: str
     :param model_file: path to model file
-    :param labels: dict of image labels
-    :param python_package: str path to wheel or None for install from PIP
+    :type model_file: str
+    :param labels: image labels
+    :type labels: dict[str, str]
+    :param python_package: path to wheel or None for install from PIP
+    :type python_package: str or None
     :param docker_image_tag: str docker image tag
+    :type docker_image_tag: str ot None
     :return: docker.models.Image
     """
     with drun.utils.TemporaryFolder('legion-docker-build') as temp_directory:
@@ -113,8 +126,11 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
 def find_network(client, args):
     """
     Find DRun network on docker host
-    :param client: docker.client
-    :param args: args with .docker_network item
+
+    :param client: Docker client
+    :type client: :py:class:`docker.client.DockerClient`
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
     :return: str id of network
     """
     network_id = args.docker_network
@@ -141,8 +157,10 @@ def find_network(client, args):
 def build_docker_client(args):
     """
     Create docker client
-    :param args: args
-    :return: docker.Client
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`docker.Client`
     """
     client = docker.from_env()
     return client
@@ -151,8 +169,10 @@ def build_docker_client(args):
 def build_grafana_client(args):
     """
     Build Grafana client from ENV and from command line arguments
-    :param args: arguments
-    :return: drun.grafana
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`drun.grafana.GrafanaClient`
     """
     host = os.environ.get('GRAFANA_URL', 'http://grafana:3000/')
     user = os.environ.get('GRAFANA_USER', 'admin')
@@ -176,8 +196,10 @@ def build_grafana_client(args):
 def build_model(args):
     """
     Build model
-    :param args:
-    :return: docker.Image
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`docker.model.Image` docker image
     """
     client = build_docker_client(args)
 
@@ -209,8 +231,10 @@ def build_model(args):
 def deploy_model(args):
     """
     Deploy model to docker host
-    :param args: args with .model_id, .model_file, .docker_network
-    :return: docker.model.Container new instance
+
+    :param args: command arguments with .model_id, .model_file, .docker_network
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`docker.model.Container` new instance
     """
     client = build_docker_client(args)
     network_id = find_network(client, args)
@@ -273,7 +297,9 @@ def deploy_model(args):
 def undeploy_model(args):
     """
     Undeploy model from Docker Host
-    :param args: arguments
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     client = build_docker_client(args)
@@ -303,8 +329,11 @@ def undeploy_model(args):
 def get_stack_containers_and_images(client, network_id):
     """
     Get information about DRun containers and images
-    :param client: docker.Client client
+
+    :param client: Docker client
+    :type client: :py:class:`docker.client.DockerClient`
     :param network_id: docker network
+    :type network_id: str
     :return: dict with lists 'services', 'models' and 'model_images'
     """
     containers = client.containers.list(True)
@@ -326,7 +355,9 @@ def get_stack_containers_and_images(client, network_id):
 def inspect(args):
     """
     Print information about current containers / images state
-    :param args: arguments
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     client = build_docker_client(args)

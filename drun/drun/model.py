@@ -35,13 +35,15 @@ class IMLModel(Interface):
     def description(self):
         """
         Get model description
-        :return: dictionary with model description
+
+        :return: None
         """
         return None
 
     def apply(self, input_vector):
         """
         Apply the model to the provided input_vector
+
         :param input_vector: the input vector
         :return: an arbitrary JSON serializable object
         """
@@ -51,7 +53,8 @@ class IMLModel(Interface):
     def version_string(self):
         """
         Get model version
-        :return: str version
+
+        :return: None
         """
         return None
 
@@ -65,12 +68,15 @@ class ScipyModel(implements(IMLModel)):
     def __init__(self, apply_func, prepare_func, column_types, version='Unknown'):
         """
         Build simple SciPy model
-        :param apply_func: callable object
-        for calculation f(input_dict) -> output
-        :param prepare_func: callable object for
-        prepare input data f(unprocessed_input_dict) -> input_dict
+
+        :param apply_func: an apply function DF->DF
+        :type apply_func: func(x) -> y
+        :param prepare_func: a function to prepare input DF->DF
+        :type prepare_func: func(x) -> y
         :param column_types: dict of column name => type
-        :param version: numeric/string version of model
+        :type column_types: dict[str, :py:class:`drun.types.ColumnInformation`]
+        :param version: version of model
+        :type version: str
         """
         assert apply_func is not None
         assert prepare_func is not None
@@ -84,8 +90,10 @@ class ScipyModel(implements(IMLModel)):
     def apply(self, input_vector):
         """
         Calculate result of model execution
-        :param input_vector: dict of input data
-        :return: dict of output data
+
+        :param input_vector: input data
+        :type input_vector: dict[str, union[str, Image]]
+        :return: dict -- output data
         """
         LOGGER.info('Input vector: %r' % input_vector)
         data_frame = build_df(self.column_types, input_vector)
@@ -100,7 +108,8 @@ class ScipyModel(implements(IMLModel)):
     def version_string(self):
         """
         Get model version
-        :return: str version
+
+        :return: str -- version
         """
         return self.version
 
@@ -108,7 +117,8 @@ class ScipyModel(implements(IMLModel)):
     def description(self):
         """
         Get model description
-        :return: dictionary with model description
+
+        :return: dict[str, any] with model description
         """
         return {
             'version': self.version,
@@ -121,19 +131,12 @@ class DummyModel(implements(IMLModel)):
     A dummy model for testing. Returns input_dict['result'] as output
     """
 
-    def transform(self, input_dict):
-        """
-        Pre-process input dictionary
-        :param input_dict: dict with input data
-        :return: processed dict with data
-        """
-        return input_dict
-
     @property
     def version_string(self):
         """
         Get model version
-        :return: str version
+
+        :return: str -- version
         """
         return 'dummy'
 
@@ -141,13 +144,15 @@ class DummyModel(implements(IMLModel)):
     def description(self):
         """
         Get model description
-        :return: dictionary with model description
+
+        :return: dict[str, any] with model description
         """
         return {'version': 'dummy'}
 
     def apply(self, input_vector):
         """
         Calculate result of model execution
+
         :param input_vector: dict of input data
         :return: dict of output data
         """
