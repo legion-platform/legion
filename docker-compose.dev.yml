@@ -172,24 +172,33 @@ services:
     ports:
       - 9200:9200
     volumes:
-      - ./workspace/elasticsearch/data:/usr/share/elasticsearch/data
+      - ./workspace/elasticsearch/data/node:/usr/share/elasticsearch/data/node
 
   logstash:
     image: drun/logstash
     build: logstash
     networks:
       - drun_root
+    depends_on:
+      - elasticsearch
     labels:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Logstash server
     restart: always
     command: logstash -f /config-dir/logstash.conf
     ports:
-      - 5044:5044
+      - 5000:5000
+      - "5000:5000/udp"
+      - 9600:9600
+      - 12201:12201
+      - "12201:12201/udp"
 
   kibana:
     image: drun/kibana
     build: kibana
+    depends_on:
+      - elasticsearch
+      - logstash
     networks:
       - drun_root
     labels:
@@ -210,6 +219,22 @@ services:
       com.epam.drun.container_type: service
       com.epam.drun.container_description: Curator (scheduled tasks)
     restart: always
+
+  logspout:
+    image: drun/logspout
+    build: logspout
+    networks:
+      - drun_root
+    depends_on:
+      - logstash
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Logspout
+    volumes:
+      - /etc/hostname:/etc/host_hostname:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - ROUTE_URIS=syslog://logstash:12201
 
 networks:
   drun_root:
