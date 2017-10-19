@@ -19,11 +19,8 @@ Graphana API functional for working with models
 
 import json
 
-import drun.external
-import drun.external.base_grafana_client
 from drun.external.base_grafana_client import BaseGrafanaClient
-
-from jinja2 import Environment, PackageLoader, select_autoescape
+from drun.template import render_template
 
 
 class GrafanaClient(BaseGrafanaClient):
@@ -93,13 +90,7 @@ class GrafanaClient(BaseGrafanaClient):
 
         self.remove_dashboard_for_model(model_id)
 
-        env = Environment(
-            loader=PackageLoader(__name__, 'templates'),
-            autoescape=select_autoescape(['tmpl'])
-        )
-
-        template = env.get_template('graphana-dashboard.json.tmpl')
-        json_string = template.render({
+        json_string = render_template('grafana-dashboard.json.tmpl', {
             'MODEL_ID': model_id,
         })
 
