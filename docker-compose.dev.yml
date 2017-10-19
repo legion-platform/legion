@@ -160,6 +160,57 @@ services:
     logging:
       driver: none
 
+  elasticsearch:
+    image: drun/elasticsearch
+    build: elasticsearch
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Elasticsearch server
+    restart: always
+    ports:
+      - 9200:9200
+    volumes:
+      - ./workspace/elasticsearch/data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: drun/logstash
+    build: logstash
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Logstash server
+    restart: always
+    command: logstash -f /config-dir/logstash.conf
+    ports:
+      - 5044:5044
+
+  kibana:
+    image: drun/kibana
+    build: kibana
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Kibana server
+    restart: always
+    ports:
+      - 5601:5601
+    environment:
+      - SERVER_BASEPATH=/kibana
+
+  curator:
+    image: drun/curator
+    build: curator
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Curator (scheduled tasks)
+    restart: always
+
 networks:
   drun_root:
     driver: bridge
