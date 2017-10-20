@@ -1,17 +1,32 @@
-.. DRUN documentation master file, created by
-   sphinx-quickstart on Tue Oct 17 09:32:01 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to DRUN's documentation!
 ================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
-   drun
 
+   installation
+   usage
+   system_architecture
+   model_rest_api
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Architecture:
+
+   jupyter
+   legion
+   grafana_and_graphite
+   jenkins
+   edge
+   consul
+
+.. toctree::
+   :maxdepth: 4
+   :caption: Python package:
+
+   drun
 
 
 Indices and tables
