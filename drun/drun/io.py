@@ -22,6 +22,7 @@ import zipfile
 import json
 
 import drun
+import drun.env
 from drun.model import ScipyModel, IMLModel
 import drun.types
 from drun.types import deduct_types_on_pandas_df
@@ -136,9 +137,9 @@ class ModelContainer:
         """
         self['model.version'] = self._model.version
         self['drun.version'] = drun.__version__
-        self['jenkins.build_number'] = os.environ.get('BUILD_NUMBER')
-        self['jenkins.commit'] = os.environ.get('BUILD_COMMIT')
-        self['jenkins.node_name'] = os.environ.get('NODE_NAME')
+        self['jenkins.build_number'] = os.environ.get(*drun.env.BUILD_NUMBER)
+        self['jenkins.commit'] = os.environ.get(*drun.env.BUILD_COMMIT)
+        self['jenkins.node_name'] = os.environ.get(*drun.env.NODE_NAME)
 
     @property
     def model(self):

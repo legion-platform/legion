@@ -22,6 +22,7 @@ import os
 import requests
 
 import unittest2
+import drun.env
 from PIL import Image as PYTHON_Image
 
 
@@ -33,7 +34,7 @@ def get_model_base_url(model_name):
     :type model_name: str
     :return: str -- base path for model calls
     """
-    model_server_url = os.environ.get('MODEL_SERVER_URL', 'http://edge')
+    model_server_url = os.environ.get(*drun.env.MODEL_SERVER_URL)
     return '%s/api/model/%s' % (model_server_url, model_name)
 
 
