@@ -99,7 +99,9 @@ class ModelUnitTests(unittest2.TestCase):
 
         post_fields = {k: v for (k, v) in values.items() if not isinstance(v, bytes)}
         post_files = {k: v for (k, v) in values.items() if isinstance(v, bytes)}
-        response = requests.post(self._base_url + '/invoke', post_fields, files=post_files)
-        self.assertEqual(response.status_code, 200, 'Invalid response code for model call: %s' % response.text)
+        url = self._base_url + '/invoke'
+        response = requests.post(url, post_fields, files=post_files)
+        self.assertEqual(response.status_code, 200,
+                         'Invalid response code for model call on url %s: %s' % (url, response.text))
 
         return self._parse_json_response(response)

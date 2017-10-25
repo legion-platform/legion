@@ -17,10 +17,11 @@
 Model metrics
 """
 import os
-import typing
 from enum import Enum
 
 import drun.env
+
+import statsd
 
 
 class Metric(Enum):
@@ -33,45 +34,101 @@ class Metric(Enum):
     TRAINING_LOSS = 'training_loss'
 
 
-def get_metric_endpoint() -> typing.Tuple[str, int]:
+_server_connection = None
+_model_name = None
+
+
+def get_metric_endpoint():
     """
     Get metric endpoint
 
     :return: metric server endpoint
     """
-    host = os.getenv(*drun.env.METRIC_ENDPOINT_HOST)
-    port = int(os.getenv(*drun.env.METRIC_ENDPOINT_PORT))
-    return host, port
+    host = os.getenv(*drun.env.STATSD_HOST)
+    port = int(os.getenv(*drun.env.STATSD_PORT))
+    namespace = os.getenv(*drun.env.STATSD_NAMESPACE)
+    return host, port, namespace
 
 
-def get_metric_label() -> str:
+def get_build_number():
     """
-    Get actual metrics label
+    Get current build number
 
-    :return: str -- metrics label (axis X)
+    :return: int -- build number
     """
-    metric_label = os.getenv(*drun.env.METRIC_LABEL)
-    build_number = os.getenv(*drun.env.BUILD_NUMBER)
-
-    if metric_label:
-        return metric_label
-
-    if build_number:
-        return build_number
-
-    raise Exception('Cannot get metrics label: %s and %s are empty'
-                    % (drun.env.METRIC_LABEL[0], drun.env.BUILD_NUMBER[0]))
+    try:
+        return int(os.getenv(*drun.env.BUILD_NUMBER))
+    except ValueError:
+        raise Exception('Cannot parse build number as integer')
 
 
-def send_metric_float(metric: Metric, value: float) -> None:
+def get_metric_name(metric):
     """
-    Send metric value (float)
+    Get metric name on stats server
+
+    :param metric: metric
+    :type metric: :py:class:`drun.metrics.Metric`
+    :return: str -- metric name on stats server
+    """
+    return '%s.metrics.%s_%d' % (_model_name, metric.value, get_build_number())
+
+
+def send_metric(metric, value):
+    """
+    Send metric value
 
     :param metric: metric type
     :type metric: :py:class:`drun.metrics.Metric`
     :param value: metric value
-    :type value: float
+    :type value: float or int
     :return: None
     """
-    pass
+    _connect_to_server()
+    _server_connection.incr(get_metric_name(metric), value)
 
+
+def _connect_to_server():
+    """
+    Connect to metrics server if not yet connected
+
+    :return: None
+    """
+    global _server_connection
+    if _server_connection:
+        return
+
+    host, port, namespace = get_metric_endpoint()
+    _server_connection = statsd.StatsClient(host, port, prefix=namespace)
+
+
+def init_metric(model_name):
+    """
+    Init metrics
+
+    :param model_name: model name
+    :type model_name: str
+    :return: None
+    """
+    global _model_name
+    _model_name = model_name
+
+
+def get_model_name():
+    """
+    Get current model name
+
+    :return: str or None
+    """
+    return _model_name
+
+
+def reset():
+    """
+    Reset model name and connection
+
+    :return: None
+    """
+    global _model_name
+    global _server_connection
+    _model_name = None
+    _server_connection = None
