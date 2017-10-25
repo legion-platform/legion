@@ -6,6 +6,9 @@
   "port": 8125,
   "flushInterval": 10000,
   "percentThreshold": [50, 90, 95, 99],
+  "servers": [
+      { server: "./servers/udp", address: "0.0.0.0", port: 8125 }
+  ],
   "histogram": [
     {
         metric: 'request.time',
