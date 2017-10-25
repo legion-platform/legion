@@ -15,18 +15,39 @@
 --
 local _M = {}
 local Statsd = require("resty_statsd")
+local os = require("os")
+
+function _M.get_config(_, name, default)
+    local value = os.getenv(name)
+    if value ~= Nil then
+        return value
+    else
+        return default
+    end
+end
 
 function _M.push_data(_, time, name)
+    local host = _M:get_config("STATSD_HOST", "graphite")
+    local port = _M:get_config("STATSD_PORT", "8125")
+    local namespace = _M:get_config("STATSD_NAMESPACE", "legion.model")
+
+    ngx.log(ngx.DEBUG, "Connection to host="..host.." port="..port.." namespace="..namespace)
+
     local conn, err = Statsd({
-        host = "graphite",
-        port = 8125,
-        namespace = "legion.model"
+        host = host,
+        port = tonumber(port),
+        namespace = namespace
     })
+
+    local ok = false
+
     if conn ~= Nil then
-        conn:counter(name..".request.count", 1, 1)
-        conn:histogram(name..".request.time", time)
-    else
-        ngx.log(ngx.ERR, err)
+        ok, err = conn:increment(name..".request.count", 1, 1)
+        ok, err = conn:timer(name..".request.time", time)
+    end
+
+    if err ~= Nil then
+        ngx.log(ngx.ERR, "Failed to send Statsd statistics to host="..host.." port="..port.." namespace="..namespace..":", err)
     end
 end
 
