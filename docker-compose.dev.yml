@@ -144,6 +144,7 @@ services:
     ports:
       - 80:80
     volumes:
+      - ./edge/static:/static
       - ./edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
 #    logging:
 #      driver: none
