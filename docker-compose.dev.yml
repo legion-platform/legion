@@ -122,10 +122,11 @@ services:
     ports:
       - 81:80
       - 8126:8126
+      - 8125:8125/udp
 #    logging:
 #      driver: none
     volumes:
-      - ./graphite/config.js:/opt/statsd/config.js
+      - ./graphite/statsd/config.js:/opt/statsd/config_udp.js
 
   edge:
     depends_on:
