@@ -4,3 +4,4 @@ pycodestyle
 pydocstyle
 pylint
 tox
+locustio
