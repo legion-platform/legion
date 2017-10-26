@@ -85,6 +85,7 @@ services:
       - PYTHONPATH=/opt/project/drun
       - GF_SERVER_ROOT_URL=http://parallels/grafana
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_INSTALL_PLUGINS=
       - GF_GRAPHITE_DATASOURCE=http://graphite:80
     ports:
