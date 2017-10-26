@@ -37,7 +37,7 @@ def _is_data_source_created(client, data_source_name):
 def _create_graphite_data_source(client, data_source_url):
     if not _is_data_source_created(client, DATA_SOURCE_NAME):
         json_text = render_template('grafana-datasource.json.tmpl', {
-            'DATA_SOURCE_URL': DATA_SOURCE_NAME
+            'DATA_SOURCE_URL': data_source_url
         })
         client._query('/api/datasources', json.loads(json_text), action='post')
 
