@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 import React, { Component, PropTypes } from 'react';
-// import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
+import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
 
 export default class GrafanaDashboard extends Component {
 
@@ -29,8 +29,7 @@ export default class GrafanaDashboard extends Component {
 
     render() {
         const url =
-        //    `${blueocean.drun.dashboardUrl}/model-information-test_summation?orgId=1`;
-            'http://drun.litarg.ru:90/grafana/dashboard/db/model-information-test_summation?orgId=1';
+            `${blueocean.drun.dashboardUrl}/model-information-test_summation?orgId=1`;
 
         /* eslint-disable react/jsx-closing-bracket-location */
 

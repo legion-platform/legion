@@ -30,7 +30,7 @@ export default class JupyterDashboard extends Component {
 
     render() {
         const url =
-            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
+            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.fullName}` +
             `/${this.runId}/${blueocean.drun.jupyterHtmlPath}`;
 
         /* eslint-disable react/jsx-closing-bracket-location */

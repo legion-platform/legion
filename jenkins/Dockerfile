@@ -31,15 +31,11 @@ RUN apt-get update
 RUN apt-get install --yes docker-ce
 USER jenkins
 
-ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
-ENV JAVA_OPTS="$JAVA_OPTS -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/db"
-ENV JAVA_OPTS="$JAVA_OPTS -Dcom.epam.drun.jenkins.jupyter.html.path=artifact/jupyter_output.html"
 ENV JENKINS_OPTS="--prefix=/jenkins"
 
 COPY security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
 COPY create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
 
-ENV JENKINS_UC_EXPERIMENTAL="http://drun.kharlamov.biz/jenkins"
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
 
