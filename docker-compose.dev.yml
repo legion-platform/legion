@@ -93,6 +93,7 @@ services:
     volumes:
       - ./workspace/drun:/drun
       - ./workspace/grafana:/var/lib/grafana
+      - ./grafana/scripted_dashboards:/usr/share/grafana/public/dashboards
       - .:/opt/project
 
   jenkins:
