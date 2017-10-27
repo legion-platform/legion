@@ -97,6 +97,8 @@ services:
   jenkins:
     build:
       context: jenkins
+    args:
+      - JENKINS_UC_EXPERIMENTAL=http://drun.kharlamov.biz/jenkins
     image: drun/jenkins
     networks:
       - drun_root
@@ -104,7 +106,6 @@ services:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
       - DOCKER_TLS_VERIFY=1
-      - JENKINS_UC_EXPERIMENTAL=http://drun.kharlamov.biz/jenkins
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/db -Dcom.epam.drun.jenkins.jupyter.html.path=artifact/jupyter_output.html"
     ports:
       - 8081:8080
