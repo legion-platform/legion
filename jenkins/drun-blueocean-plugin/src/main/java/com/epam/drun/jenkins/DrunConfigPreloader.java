@@ -26,7 +26,7 @@ Basic drun jenkins plugin configuration
 @Extension
 public class DrunConfigPreloader extends PageStatePreloader {
     static String dashboardUrl = System.getProperty("com.epam.drun.jenkins.dashboard.url",
-            "/grafana/dashboard/db");
+            "/grafana/dashboard/script/model_builds.js?model=");
     static String jupyterHtmlPath = System.getProperty("com.epam.drun.jenkins.jupyter.html.path",
         "artifact/src/sample.html");
 
