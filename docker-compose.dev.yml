@@ -97,8 +97,6 @@ services:
   jenkins:
     build:
       context: jenkins
-    args:
-      - JENKINS_UC_EXPERIMENTAL=http://drun.kharlamov.biz/jenkins
     image: drun/jenkins
     networks:
       - drun_root
