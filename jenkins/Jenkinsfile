@@ -19,6 +19,10 @@ import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.BranchSpec;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition;
+import hudson.model.StringParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.ParameterDefinition;
+
 
 
 @NonCPS
@@ -39,7 +43,16 @@ def removeOld(){
 }
 
 
-def createNewJob(name, path, prefix){
+def addStringProperties(jobName, props){
+    Jenkins.instance.getItemByFullName(jobName).addProperty(
+        new ParametersDefinitionProperty(
+            props.collect { new StringParameterDefinition(it.name, it.defaultValue, it.description) }
+        )
+    );
+}
+
+
+def createNewJob(name, path, prefix, addTestProperties){
     println "Start creating job for founded file ${path}"
     name = prefix + ' ' + name;
     
@@ -49,6 +62,16 @@ def createNewJob(name, path, prefix){
         scm.branches = [new BranchSpec("*/master")];
         Jenkins.instance.add(new WorkflowJob(Jenkins.instance, name), name);
         Jenkins.instance.getItemByFullName(name).definition = new CpsScmFlowDefinition(scm, path);
+
+        if (addTestProperties){
+            addStringProperties(name, [
+                [name:"testUsers", defaultValue:"20", description:"number of Locust users to spawn"],
+                [name:"testHatchRate", defaultValue:"2", description:"number of users to spawn per second"],
+                [name:"testRequestsCount", defaultValue:"10000", description:"number of users to spawn per second"],
+                [name:"host", defaultValue:"http://edge:90", description:"host with model, for example: http://edge:90"],
+            ]);
+        }
+
         println 'Job created ' + name;
     }
     
@@ -82,7 +105,7 @@ node {
             nameParts = path.split("/");
             name = nameParts.length > 1 ? nameParts[0] : path
             if (path[0] != '/')
-                names << createNewJob(name, path, 'MODEL (DYNAMIC)')
+                names << createNewJob(name, path, 'MODEL (DYNAMIC)', false)
             it = null;
         }
             
@@ -96,7 +119,7 @@ node {
             nameParts = path.split("/");
             name = nameParts.length > 1 ? nameParts[0] : path
             if (path[0] != '/')
-                createNewJob(name, path, 'Performance test MODEL')
+                createNewJob(name, path, 'Performance test MODEL', true)
             it = null;
         }
 
