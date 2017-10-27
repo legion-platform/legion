@@ -70,7 +70,16 @@ def get_metric_name(metric):
     :type metric: :py:class:`drun.metrics.Metric`
     :return: str -- metric name on stats server
     """
-    return '%s.metrics.%s_%d' % (_model_name, metric.value, get_build_number())
+    return '%s.metrics.%s' % (_model_name, metric.value)
+
+
+def get_build_metric_name():
+    """
+    Get build # name on stats server
+
+    :return: str -- build # name on stats server
+    """
+    return '%s.metrics.build' % _model_name
 
 
 def send_metric(metric, value):
