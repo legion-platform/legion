@@ -15,7 +15,7 @@
  */
 import React, { Component, PropTypes } from 'react';
 import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
-import { UrlConfig } from '@jenkins-cd/blueocean-core-js';
+import UrlConfig from '../config';
 
 export default class JupyterDashboard extends Component {
 
@@ -30,7 +30,7 @@ export default class JupyterDashboard extends Component {
 
     render() {
         const url =
-            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.fullName}` +
+            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
             `/${this.runId}/${blueocean.drun.jupyterHtmlPath}`;
 
         /* eslint-disable react/jsx-closing-bracket-location */
