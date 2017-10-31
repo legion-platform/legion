@@ -46,7 +46,7 @@ class TestMetrics(unittest2.TestCase):
         metric = metrics.Metric.TEST_ACCURACY
         with MetricContent(model_name, build_number):
             metrics_name = metrics.get_metric_name(metric)
-            self.assertEqual(metrics_name, '%s.metrics.%s_%d' % (model_name, metric.value, build_number))
+            self.assertEqual(metrics_name, '%s.metrics.%s' % (model_name, metric.value))
 
     def test_metrics_get_build_number(self):
         model_name = 'demo'
