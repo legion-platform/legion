@@ -15,7 +15,6 @@
  */
 import React, { Component, PropTypes } from 'react';
 import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
-// import { Fetch } from '@jenkins-cd/blueocean-core-js';
 
 export default class GrafanaDashboard extends Component {
 
@@ -29,14 +28,9 @@ export default class GrafanaDashboard extends Component {
     }
 
     render() {
-        const apiUrl =
-            `/jenkins/job/${this.pipeline.name}/${this.runId}/api/json`;
-        const json = '{ sample: "json"} '; // Fetch.fetch(apiUrl);
-
-        // /jenkins/job/MODEL%20(DYNAMIC)ummation/1/artifact/release-models/summation.model
-
         const url =
-            `${blueocean.drun.dashboardUrl}/model-information-test_summation?orgId=1`;
+            `${blueocean.drun.dashboardUrl}/`;
+        const script = 'this.style.height = this.contentWindow.document.body.scrollHeight + "px"';
 
         /* eslint-disable react/jsx-closing-bracket-location */
 
@@ -45,8 +39,8 @@ export default class GrafanaDashboard extends Component {
         // See src/main/less/extensions.less
         return (
             <div className="drun-dashboard">
-                {url}; api: {apiUrl}; JSON: {json}
-                <iframe id="grafana-iframe" className="grafana-iframe" src={url}>&nbsp;</iframe>
+                <iframe id="grafana-iframe" className="grafana-iframe"
+                  src={url} onload={script}>&nbsp;</iframe>
             </div>
         );
     }

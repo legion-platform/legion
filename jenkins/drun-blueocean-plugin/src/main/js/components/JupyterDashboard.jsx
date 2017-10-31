@@ -31,7 +31,8 @@ export default class JupyterDashboard extends Component {
     render() {
         const url =
             `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
-            `/${this.runId}/${blueocean.drun.jupyterHtmlPath}`;
+            `/${this.runId}/artifact/${blueocean.drun.jupyterHtmlPath}`;
+        const script = 'this.style.height = this.contentWindow.document.body.scrollHeight + "px"';
 
         /* eslint-disable react/jsx-closing-bracket-location */
 
@@ -40,7 +41,8 @@ export default class JupyterDashboard extends Component {
         // See src/main/less/extensions.less
         return (
             <div className="drun-dashboard">
-                <iframe id="jupyter-iframe" className="jupyter-iframe" src={url}>&nbsp;</iframe>
+                <iframe id="jupyter-iframe" className="jupyter-iframe"
+                  src={url} onload={script}>&nbsp;</iframe>
             </div>
         );
     }
