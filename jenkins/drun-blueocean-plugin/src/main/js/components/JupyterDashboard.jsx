@@ -28,11 +28,22 @@ export default class JupyterDashboard extends Component {
         this.t = props.t;
     }
 
+    componentDidMount() {
+        this.refs.iframe.addEventListener('load', this._iframeLoaded.bind(this));
+    }
+
+    _iframeLoaded() {
+        this.refs.iframe.style.height
+            = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
+        this.refs.iframe.contentWindow.document.head.insertAdjacentHTML(
+            'beforeend',
+            '<style type="text/css">#notebook-container {box-shadow: none;}</style>');
+    }
+
     render() {
         const url =
             `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
             `/${this.runId}/artifact/${blueocean.drun.jupyterHtmlPath}`;
-        const script = 'this.style.height = this.contentWindow.document.body.scrollHeight + "px"';
 
         /* eslint-disable react/jsx-closing-bracket-location */
 
@@ -41,8 +52,8 @@ export default class JupyterDashboard extends Component {
         // See src/main/less/extensions.less
         return (
             <div className="drun-dashboard">
-                <iframe id="jupyter-iframe" className="jupyter-iframe"
-                  src={url} onload={script}>&nbsp;</iframe>
+                <iframe ref="iframe" id="jupyter-iframe" className="jupyter-iframe"
+                  src={url} />
             </div>
         );
     }

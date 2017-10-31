@@ -27,10 +27,18 @@ export default class GrafanaDashboard extends Component {
         this.t = props.t;
     }
 
+    componentDidMount() {
+        this.refs.iframe.addEventListener('load', this._iframeLoaded.bind(this));
+    }
+
+    _iframeLoaded() {
+        this.refs.iframe.style.height
+            = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
+    }
+
     render() {
         const url =
             `${blueocean.drun.dashboardUrl}/`;
-        const script = 'this.style.height = this.contentWindow.document.body.scrollHeight + "px"';
 
         /* eslint-disable react/jsx-closing-bracket-location */
 
@@ -39,8 +47,8 @@ export default class GrafanaDashboard extends Component {
         // See src/main/less/extensions.less
         return (
             <div className="drun-dashboard">
-                <iframe id="grafana-iframe" className="grafana-iframe"
-                  src={url} onload={script}>&nbsp;</iframe>
+                <iframe ref="iframe" id="grafana-iframe" className="grafana-iframe"
+                  src={url} />
             </div>
         );
     }
