@@ -53,13 +53,7 @@ http{
     chunked_transfer_encoding on;
 
     location / {
-      auth_basic off;
-      proxy_pass http://legion:5000;
-
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header Authorization  "";
-      proxy_read_timeout 900;
+      root /static;
     }
 
     # Main services
