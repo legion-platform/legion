@@ -46,47 +46,72 @@ dashboard = {
     time: {
         from: "now-6h",
         to: "now"
-    }
+    },
+    style: "light",
+    editMode: false,
+    editable: false,
+    hideControls: true
 };
+
 
 
 return function(callback) {
     getMetricsList(function(data) {
         var metrics = data;
         var metric = null;
+        var i = 1;
         for (metric in metrics) {
-             var targets =[{
-                        "hide": false,
-                        "refId": "A_" + metric,
-                        "target": "alias(removeBelowValue(" + metrics[metric] + ", 0), '" + metric + "')",
-                        "textEditor": true
-                    },{
-                        "hide": false,
-                        "refId": "B_" + metric,
-                        "target": "alias(removeBelowValue(stats.legion.model.image_recognize.metrics.build, 0), 'Build #')",
-                        "textEditor": true
-                    }];
-            console.log(targets);
-
             dashboard.rows.push({
-                title: metric,
-                height: '300px',
-                panels: [{
+                "collapse": false,
+                "height": 250,
+                "panels": [{
                     "aliasColors": {},
-                    "bars": true,
+                    "bars": false,
+                    "dashLength": 10,
+                    "dashes": false,
                     "datasource": "graphite",
                     "fill": 1,
-                    "id": 5,
-                    "lines": false,
-                    "nullPointMode": "null",
+                    "id": i,
+                    "legend": {
+                        "avg": false,
+                        "current": false,
+                        "max": false,
+                        "min": false,
+                        "show": true,
+                        "total": false,
+                        "values": false
+                    },
+                    "lines": true,
+                    "linewidth": 1,
+                    "nullPointMode": "connected",
+                    "percentage": false,
+                    "pointradius": 4,
+                    "points": true,
                     "renderer": "flot",
-                    "seriesOverrides": [],
+                    "seriesOverrides": [{
+                        "alias": "Build #",
+                        "lines": false,
+                        "pointradius": 1,
+                        "points": false,
+                        "yaxis": 2
+                    }],
                     "spaceLength": 10,
                     "span": 12,
-                    "targets": targets,
+                    "stack": false,
+                    "steppedLine": false,
+                    "targets": [{
+                        "refId": "A_" + metric,
+                        "target": "alias(stats.legion.model.Model_1.metrics." + metric + ", '" + metric + "')"
+                    }, {
+                        "refId": "B_" + metric,
+                        "target": "alias(stats.legion.model.Model_1.metrics.build, 'Build #')"
+                    }],
+                    "thresholds": [],
+                    "timeFrom": null,
+                    "timeShift": null,
                     "title": metric,
                     "tooltip": {
-                        "shared": false,
+                        "shared": true,
                         "sort": 0,
                         "value_type": "individual"
                     },
@@ -99,24 +124,30 @@ return function(callback) {
                         "values": []
                     },
                     "yaxes": [{
-                            "format": "short",
-                            "label": null,
-                            "logBase": 1,
-                            "max": null,
-                            "min": null,
-                            "show": true
-                        },
-                        {
-                            "format": "short",
-                            "label": null,
-                            "logBase": 1,
-                            "max": null,
-                            "min": null,
-                            "show": true
-                        }
-                    ]
-                }]
+                        "format": "short",
+                        "label": "",
+                        "logBase": 1,
+                        "max": null,
+                        "min": null,
+                        "show": true
+                    }, {
+                        "format": "short",
+                        "label": "Build #",
+                        "logBase": 1,
+                        "max": "10000000",
+                        "min": null,
+                        "show": false
+                    }]
+                }],
+                "repeat": null,
+                "repeatIteration": null,
+                "repeatRowId": null,
+                "showTitle": false,
+                "title": metric,
+                "titleSize": "h6"
             });
+
+            i += 1;
         }
 
         callback(dashboard);

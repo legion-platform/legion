@@ -17,11 +17,12 @@
 Model metrics
 """
 import os
+import re
+import socket
+import time
 from enum import Enum
 
 import drun.env
-
-import statsd
 
 
 class Metric(Enum):
@@ -34,7 +35,6 @@ class Metric(Enum):
     TRAINING_LOSS = 'training_loss'
 
 
-_server_connection = None
 _model_name = None
 
 
@@ -44,9 +44,9 @@ def get_metric_endpoint():
 
     :return: metric server endpoint
     """
-    host = os.getenv(*drun.env.STATSD_HOST)
-    port = int(os.getenv(*drun.env.STATSD_PORT))
-    namespace = os.getenv(*drun.env.STATSD_NAMESPACE)
+    host = os.getenv(*drun.env.GRAPHITE_HOST)
+    port = int(os.getenv(*drun.env.GRAPHITE_PORT))
+    namespace = os.getenv(*drun.env.GRAPHITE_NAMESPACE)
     return host, port, namespace
 
 
@@ -71,7 +71,7 @@ def get_metric_name(metric):
     :return: str -- metric name on stats server
     """
     name = metric.value if isinstance(metric, Metric) else str(metric)
-    return '%s.metrics.%s' % (_model_name, name)
+    return normalize_name('%s.metrics.%s' % (_model_name, name))
 
 
 def get_build_metric_name():
@@ -83,32 +83,79 @@ def get_build_metric_name():
     return '%s.metrics.build' % _model_name
 
 
+def send_udp(host, port, message):
+    """
+    Send message with UDP
+
+    :param host: target host
+    :type host: str
+    :param port: target port
+    :type port: int
+    :param message: data string or bytes
+    :type message: str or bytes
+    :return: None
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    if isinstance(message, str):
+        message = message.encode('utf-8')
+
+    sock.sendto(message, (host, port))
+
+
+def send_tcp(host, port, message):
+    """
+    Send message with TCP
+
+    :param host: target host
+    :type host: str
+    :param port: target port
+    :type port: int
+    :param message: data string or bytes
+    :type message: str or bytes
+    :return: None
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((host, port))
+
+    if isinstance(message, str):
+        message = message.encode('utf-8')
+
+    sock.send(message)
+    sock.close()
+
+
+def normalize_name(name):
+    """
+    Normalize name
+    :param name: name to normalize
+    :type name: str
+    :return: str -- normalized name
+    """
+    name = name.replace(' ', '_')
+    return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
+
+
 def send_metric(metric, value):
     """
     Send metric value
 
-    :param metric: metric type
-    :type metric: :py:class:`drun.metrics.Metric`
+    :param metric: metric type or metric name
+    :type metric: :py:class:`drun.metrics.Metric` or str
     :param value: metric value
     :type value: float or int
     :return: None
     """
-    _connect_to_server()
-    _server_connection.incr(get_metric_name(metric), value)
-
-
-def _connect_to_server():
-    """
-    Connect to metrics server if not yet connected
-
-    :return: None
-    """
-    global _server_connection
-    if _server_connection:
-        return
-
     host, port, namespace = get_metric_endpoint()
-    _server_connection = statsd.StatsClient(host, port, prefix=namespace)
+
+    metric_name = '%s.%s' % (namespace, get_metric_name(metric))
+    message = "%s %f %d\n" % (metric_name, float(value), int(time.time()))
+    send_tcp(host, port, message)
+
+    build_no = get_build_number()
+    metric_name = '%s.%s' % (namespace, get_metric_name('build'))
+    message = "%s %f %d\n" % (metric_name, build_no, int(time.time()))
+    send_tcp(host, port, message)
 
 
 def init_metric(model_name):
@@ -139,6 +186,4 @@ def reset():
     :return: None
     """
     global _model_name
-    global _server_connection
     _model_name = None
-    _server_connection = None

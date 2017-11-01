@@ -93,7 +93,7 @@ services:
     volumes:
       - ./workspace/drun:/drun
       - ./workspace/grafana:/var/lib/grafana
-      - ./grafana/scripted_dashboards:/usr/share/grafana/public/dashboards
+      - ./grafana/scripted_dashboards/model_builds.js:/usr/share/grafana/public/dashboards/model_builds.js
       - .:/opt/project
 
   jenkins:
@@ -124,6 +124,7 @@ services:
       com.epam.drun.container_description: Graphite server
     ports:
       - 81:80
+      - 2003:2003
       - 8126:8126
       - 8125:8125/udp
 #    logging:

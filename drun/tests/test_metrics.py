@@ -73,22 +73,22 @@ class TestMetrics(unittest2.TestCase):
 
     def test_default_endpoint_detection(self):
         host, port, namespace = metrics.get_metric_endpoint()
-        self.assertEqual(host, env.STATSD_HOST[1])
-        self.assertEqual(port, env.STATSD_PORT[1])
-        self.assertEqual(namespace, env.STATSD_NAMESPACE[1])
+        self.assertEqual(host, env.GRAPHITE_HOST[1])
+        self.assertEqual(port, env.GRAPHITE_PORT[1])
+        self.assertEqual(namespace, env.GRAPHITE_NAMESPACE[1])
 
     def test_custom_endpoint_detection(self):
         new_host = 'localhost'
         new_port = 1000
         new_namespace = 'tes'
 
-        old_host = os.getenv(*env.STATSD_HOST)
-        old_port = os.getenv(*env.STATSD_PORT)
-        old_namespace = os.getenv(*env.STATSD_NAMESPACE)
+        old_host = os.getenv(*env.GRAPHITE_HOST)
+        old_port = os.getenv(*env.GRAPHITE_PORT)
+        old_namespace = os.getenv(*env.GRAPHITE_NAMESPACE)
 
-        os.environ[env.STATSD_HOST[0]] = new_host
-        os.environ[env.STATSD_PORT[0]] = str(new_port)
-        os.environ[env.STATSD_NAMESPACE[0]] = new_namespace
+        os.environ[env.GRAPHITE_HOST[0]] = new_host
+        os.environ[env.GRAPHITE_PORT[0]] = str(new_port)
+        os.environ[env.GRAPHITE_NAMESPACE[0]] = new_namespace
 
         host, port, namespace = metrics.get_metric_endpoint()
         self.assertEqual(host, new_host)
@@ -96,19 +96,19 @@ class TestMetrics(unittest2.TestCase):
         self.assertEqual(namespace, new_namespace)
 
         if old_host:
-            os.environ[env.STATSD_HOST[0]] = old_host
+            os.environ[env.GRAPHITE_HOST[0]] = old_host
         else:
-            os.unsetenv(env.STATSD_HOST[0])
+            os.unsetenv(env.GRAPHITE_HOST[0])
 
         if old_port:
-            os.environ[env.STATSD_PORT[0]] = str(old_port)
+            os.environ[env.GRAPHITE_PORT[0]] = str(old_port)
         else:
-            os.unsetenv(env.STATSD_PORT[0])
+            os.unsetenv(env.GRAPHITE_PORT[0])
 
         if old_namespace:
-            os.environ[env.STATSD_NAMESPACE[0]] = old_namespace
+            os.environ[env.GRAPHITE_NAMESPACE[0]] = old_namespace
         else:
-            os.unsetenv(env.STATSD_NAMESPACE[0])
+            os.unsetenv(env.GRAPHITE_NAMESPACE[0])
 
 
 if __name__ == '__main__':
