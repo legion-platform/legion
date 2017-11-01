@@ -66,11 +66,12 @@ def get_metric_name(metric):
     """
     Get metric name on stats server
 
-    :param metric: metric
-    :type metric: :py:class:`drun.metrics.Metric`
+    :param metric: instance of Metric or custom name
+    :type metric: :py:class:`drun.metrics.Metric` or str
     :return: str -- metric name on stats server
     """
-    return '%s.metrics.%s' % (_model_name, metric.value)
+    name = metric.value if isinstance(metric, Metric) else str(metric)
+    return '%s.metrics.%s' % (_model_name, name)
 
 
 def get_build_metric_name():
