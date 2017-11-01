@@ -131,6 +131,7 @@ services:
     depends_on:
       - consul
       - graphite
+      - kibana
     image: drun/edge
     build:
       context: edge
@@ -187,8 +188,8 @@ services:
     restart: always
     command: logstash -f /config-dir/logstash.conf
     ports:
-      - 5000:5000
-      - "5000:5000/udp"
+      - 5001:5001
+      - "5001:5001/udp"
       - 9600:9600
       - 12201:12201
       - "12201:12201/udp"
