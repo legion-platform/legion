@@ -131,6 +131,7 @@ services:
     depends_on:
       - consul
       - graphite
+      - kibana
     image: drun/edge
     build:
       context: edge
@@ -160,6 +161,82 @@ services:
       - 8500:8500
     logging:
       driver: none
+
+  elasticsearch:
+    image: drun/elasticsearch
+    build: elasticsearch
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Elasticsearch server
+    restart: always
+    ports:
+      - 9200:9200
+    volumes:
+      - ./workspace/elasticsearch/data/node:/usr/share/elasticsearch/data/node
+
+  logstash:
+    image: drun/logstash
+    build: logstash
+    networks:
+      - drun_root
+    depends_on:
+      - elasticsearch
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Logstash server
+    restart: always
+    command: logstash -f /config-dir/logstash.conf
+    ports:
+      - 5001:5001
+      - "5001:5001/udp"
+      - 9600:9600
+      - 12201:12201
+      - "12201:12201/udp"
+
+  kibana:
+    image: drun/kibana
+    build: kibana
+    depends_on:
+      - elasticsearch
+      - logstash
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Kibana server
+    restart: always
+    ports:
+      - 5601:5601
+    environment:
+      - SERVER_BASEPATH=/kibana
+
+  curator:
+    image: drun/curator
+    build: curator
+    networks:
+      - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Curator (scheduled tasks)
+    restart: always
+
+  logspout:
+    image: drun/logspout
+    build: logspout
+    networks:
+      - drun_root
+    depends_on:
+      - logstash
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Logspout
+    volumes:
+      - /etc/hostname:/etc/host_hostname:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - ROUTE_URIS=syslog://logstash:12201
 
 networks:
   drun_root:
