@@ -159,17 +159,15 @@ def send_metric(metric, value):
     send_tcp(host, port, message)
 
 
-def send_metric_link_with_job(model_name, job_name):
+def send_model_name(model_name):
     """
-    Send metrics to another system with job name
+    Send information about model name to stderr
 
     :param model_name: model name
     :type model_name: str
-    :param job_name: job name in CI system
-    :type job_name: str
     :return: None
     """
-    message = 'drun:reporter:link_model_with_job model:%s job:%s' % (normalize_name(model_name), job_name)
+    message = 'X-DRun-Model-Id:%s' % (normalize_name(model_name))
     print(message, file=sys.__stderr__, flush=True)
 
 
@@ -184,9 +182,7 @@ def init_metric(model_name):
     global _model_name
     _model_name = model_name
 
-    job_name = os.getenv(*drun.env.JOB_NAME)
-    if job_name:
-        send_metric_link_with_job(model_name, job_name)
+    send_model_name(model_name)
 
 
 def get_model_name():
