@@ -137,9 +137,17 @@ class ModelContainer:
         """
         self['model.version'] = self._model.version
         self['drun.version'] = drun.__version__
+
         self['jenkins.build_number'] = os.environ.get(*drun.env.BUILD_NUMBER)
-        self['jenkins.commit'] = os.environ.get(*drun.env.BUILD_COMMIT)
+        self['jenkins.build_id'] = os.environ.get(*drun.env.BUILD_ID)
+        self['jenkins.build_tag'] = os.environ.get(*drun.env.BUILD_TAG)
+        self['jenkins.build_url'] = os.environ.get(*drun.env.BUILD_URL)
+
+        self['jenkins.git_commit'] = os.environ.get(*drun.env.GIT_COMMIT)
+        self['jenkins.git_branch'] = os.environ.get(*drun.env.GIT_BRANCH)
+
         self['jenkins.node_name'] = os.environ.get(*drun.env.NODE_NAME)
+        self['jenkins.job_name'] = os.environ.get(*drun.env.JOB_NAME)
 
     @property
     def model(self):
