@@ -67,9 +67,9 @@ def _star_dashboard(client, dashboard_id):
         pass
 
 
-def _set_startup_dashboard(client, dashboard_id, theme=''):
+def _set_startup_dashboard(client, dashboard_id):
     payload = {
-        'theme': theme,
+        'theme': '',
         'homeDashboardId': dashboard_id,
         'timezone': ''
     }
@@ -80,7 +80,7 @@ def _get_all_datasources(client):
     return client._query('/api/datasources')
 
 
-def work(base, graphite_ds_url, user, password, theme, args):
+def work(base, graphite_ds_url, user, password, args):
     client = BaseGrafanaClient(base, user, password)
 
     start = time.time()
@@ -104,7 +104,7 @@ def work(base, graphite_ds_url, user, password, theme, args):
     # Star
     _star_dashboard(client, dashboard_id)
     # And set home
-    _set_startup_dashboard(client, dashboard_id, theme)
+    _set_startup_dashboard(client, dashboard_id)
 
 
 if __name__ == '__main__':
@@ -114,7 +114,6 @@ if __name__ == '__main__':
     parser.add_argument('--user', type=str, help='Server user', default='admin')
     parser.add_argument('--password', type=str, help='Server password', default='admin')
     parser.add_argument('--connection-timeout', type=int, default=120)
-    parser.add_argument('--theme', type=str, default='light')
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     args = parser.parse_args()
-    work(args.base_url, args.graphite_ds_url, args.user, args.password, args.theme, args)
+    work(args.base_url, args.graphite_ds_url, args.user, args.password, args)
