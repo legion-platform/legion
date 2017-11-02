@@ -38,7 +38,7 @@ export default class GrafanaDashboard extends Component {
 
     render() {
         const url =
-            `${blueocean.drun.dashboardUrl}/`;
+            `${blueocean.drun.dashboardUrl}`;
 
         /* eslint-disable react/jsx-closing-bracket-location */
 
