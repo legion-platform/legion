@@ -15,6 +15,11 @@
 #    limitations under the License.
 #
 
+try:
+    import docker_bootup
+except ImportError:
+    pass
+
 import argparse
 import json
 import time
