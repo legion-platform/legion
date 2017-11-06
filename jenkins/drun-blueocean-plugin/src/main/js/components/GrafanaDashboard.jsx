@@ -48,8 +48,6 @@ export default class GrafanaDashboard extends Component {
                 const url = `${blueocean.drun.dashboardUrl}${json.modelName}`;
 
                 this.refs.iframe.src = url;
-
-                debugger;
             }).catch(FetchFunctions.consoleError);
 
         /* eslint-disable react/jsx-closing-bracket-location */
