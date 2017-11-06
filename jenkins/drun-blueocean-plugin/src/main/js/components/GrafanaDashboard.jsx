@@ -52,7 +52,7 @@ export default class GrafanaDashboard extends Component {
 
         Fetch.fetchJSON(encodeURI(modelUrl))
             .then(json => {
-                const url = `http://drun.litarg.ru:90${blueocean.drun.dashboardUrl}${json.modelName}`;
+                const url = `${blueocean.drun.dashboardUrl}${json.modelName}`;
 
                 this.refs.iframe.src = url;
             }).catch(FetchFunctions.consoleError);
