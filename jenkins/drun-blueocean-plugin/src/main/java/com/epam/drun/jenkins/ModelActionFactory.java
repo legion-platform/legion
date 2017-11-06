@@ -31,7 +31,6 @@ public class ModelActionFactory extends TransientActionFactory<Run> {
         return Run.class;
     }
 
-    @Nonnull
     @Override
     public Collection<? extends Action> createFor(@Nonnull Run obj) {
         return Collections.singleton(new ModelAction(obj));

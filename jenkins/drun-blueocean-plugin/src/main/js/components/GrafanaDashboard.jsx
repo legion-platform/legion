@@ -31,9 +31,16 @@ export default class GrafanaDashboard extends Component {
 
     componentDidMount() {
         this.refs.iframe.addEventListener('load', this._iframeLoaded.bind(this));
+        this.refs.iframe.contentWindow.document.addEventListener(
+            'resize', this._documentResized.bind(this));
     }
 
     _iframeLoaded() {
+        this.refs.iframe.style.height
+            = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
+    }
+
+    _documentResized() {
         this.refs.iframe.style.height
             = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
     }
@@ -45,7 +52,7 @@ export default class GrafanaDashboard extends Component {
 
         Fetch.fetchJSON(encodeURI(modelUrl))
             .then(json => {
-                const url = `${blueocean.drun.dashboardUrl}${json.modelName}`;
+                const url = `http://drun.litarg.ru:90${blueocean.drun.dashboardUrl}${json.modelName}`;
 
                 this.refs.iframe.src = url;
             }).catch(FetchFunctions.consoleError);
