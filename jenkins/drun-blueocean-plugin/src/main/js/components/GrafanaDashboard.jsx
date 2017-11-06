@@ -15,6 +15,8 @@
  */
 import React, { Component, PropTypes } from 'react';
 import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
+import { Fetch, FetchFunctions } from '@jenkins-cd/blueocean-core-js';
+import UrlConfig from '../config';
 
 export default class GrafanaDashboard extends Component {
 
@@ -37,18 +39,24 @@ export default class GrafanaDashboard extends Component {
     }
 
     render() {
-        const url =
-            `${blueocean.drun.dashboardUrl}`;
+        const modelUrl =
+            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
+            `/${this.runId}/model/json`;
+
+        Fetch.fetchJSON(encodeURI(modelUrl))
+            .then(json => {
+                const url = `${blueocean.drun.dashboardUrl}${json.modelName}`;
+
+                this.refs.iframe.src = url;
+
+                debugger;
+            }).catch(FetchFunctions.consoleError);
 
         /* eslint-disable react/jsx-closing-bracket-location */
-
-        // Just render a simple <div> with a class name derived from the
-        // status of the run. We then use CSS (via LESS) to style the component.
-        // See src/main/less/extensions.less
         return (
             <div className="drun-dashboard">
-                <iframe ref="iframe" id="grafana-iframe" className="grafana-iframe"
-                  src={url} />
+                <iframe ref="iframe" id="grafana-iframe"
+                  className="grafana-iframe" />
             </div>
         );
     }

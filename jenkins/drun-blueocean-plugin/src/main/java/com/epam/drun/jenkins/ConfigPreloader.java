@@ -15,20 +15,25 @@
  */
 package com.epam.drun.jenkins;
 
-import java.io.StringWriter;
 import hudson.Extension;
-import net.sf.json.util.JSONBuilder;
 import io.jenkins.blueocean.commons.PageStatePreloader;
+import net.sf.json.util.JSONBuilder;
+
+import java.io.StringWriter;
 
 /*
 Basic drun jenkins plugin configuration
  */
 @Extension
-public class DrunConfigPreloader extends PageStatePreloader {
-    static String dashboardUrl = System.getProperty("com.epam.drun.jenkins.dashboard.url",
-            "/grafana/dashboard/db/model-information-test_summation?orgId=1");
-    static String jupyterHtmlPath = System.getProperty("com.epam.drun.jenkins.jupyter.html.path",
-        "notebook.html");
+public class ConfigPreloader extends PageStatePreloader {
+    private final static String dashboardUrlPropertyName =
+            "com.epam.drun.jenkins.dashboard.url";
+    private final static String dashboardUrlPropertyDefault =
+            "/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model=";
+    private final static String jupyterHtmlPathPropertyName =
+            "com.epam.drun.jenkins.jupyter.html.path";
+    private final static String jupyterHtmlPathPropertyDefault =
+            "notebook.html";
 
     @Override
     public String getStatePropertyPath() {
@@ -41,8 +46,10 @@ public class DrunConfigPreloader extends PageStatePreloader {
 
         new JSONBuilder(writer)
             .object()
-                .key("dashboardUrl").value(dashboardUrl)
-                .key("jupyterHtmlPath").value(jupyterHtmlPath)
+                .key("dashboardUrl").value(
+                        System.getProperty(dashboardUrlPropertyName, dashboardUrlPropertyDefault))
+                .key("jupyterHtmlPath").value(
+                        System.getProperty(jupyterHtmlPathPropertyName, jupyterHtmlPathPropertyDefault))
             .endObject();
 
         return writer.toString();
