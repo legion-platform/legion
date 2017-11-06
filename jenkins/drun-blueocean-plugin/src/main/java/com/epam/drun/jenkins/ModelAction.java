@@ -77,15 +77,19 @@ public class ModelAction implements Action {
         if (Files.exists(jsonPath)) {
             modelJson = new String(Files.readAllBytes(jsonPath), jsonEncoding);
         } else {
+            String modelName = getModelName();
+
             JSONObject json = new JSONObject();
-            json.put(modelNameKey, getModelName());
+            json.put(modelNameKey, modelName != null ?
+                    modelName : "#Notebook not logged model name yet#");
             modelJson = json.toString();
 
-            try (BufferedWriter writer = Files.newBufferedWriter(jsonPath, jsonEncoding)){
-                writer.write(modelJson);
-            } catch (IOException ex)
-            {
-                log.log(Level.SEVERE, "Cannot create model json file: " + jsonPath.toString(), ex);
+            if (modelName != null) {
+                try (BufferedWriter writer = Files.newBufferedWriter(jsonPath, jsonEncoding)) {
+                    writer.write(modelJson);
+                } catch (IOException ex) {
+                    log.log(Level.SEVERE, "Cannot create model json file: " + jsonPath.toString(), ex);
+                }
             }
         }
 
@@ -93,7 +97,7 @@ public class ModelAction implements Action {
     }
 
     private String getModelName() {
-        String modelName = "<Please initialize model name>";
+        String modelName = null;
 
         try (BufferedReader reader = new BufferedReader(job.getLogReader())) {
             for(String line = reader.readLine(); line != null; ) {
@@ -111,6 +115,7 @@ public class ModelAction implements Action {
         } catch (IOException ex) {
             log.log(Level.SEVERE, "Cannot read job log file", ex);
         }
+
         return modelName;
     }
 }

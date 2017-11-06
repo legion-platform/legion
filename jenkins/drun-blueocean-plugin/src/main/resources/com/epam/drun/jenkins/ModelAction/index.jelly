@@ -21,5 +21,5 @@
 <!-- Displays a console link for a build. -->
 <j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-        ${it.modelJson}
+        ${it.json}
 </j:jelly>

@@ -14,6 +14,7 @@
  *   limitations under the License.
  */
 
+/* eslint-disable func-names */
 exports.loadConfig = function () {
     const headElement = document.getElementsByTagName('head')[0];
 
