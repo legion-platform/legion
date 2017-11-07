@@ -27,15 +27,26 @@ export default class GrafanaDashboard extends Component {
         this.run = props.run;
         this.runId = props.runId;
         this.t = props.t;
+        this.iframeHeight = 0;
+        this.intervalId = null;
     }
 
     componentDidMount() {
         this.refs.iframe2.addEventListener('load', this._iframeLoaded.bind(this));
     }
 
+    _iframeSizeCheck() {
+        const currentHeight = this.refs.iframe2.contentWindow.document.body.scrollHeight;
+
+        if (currentHeight > this.iframeHeight) {
+            clearInterval(this.intervalId);
+            this.refs.iframe2.style.height = `${currentHeight}px`;
+        }
+    }
+
     _iframeLoaded() {
-        this.refs.iframe2.style.height
-            = `${this.refs.iframe2.contentWindow.document.body.scrollHeight}px`;
+        this.iframeHeight = this.refs.iframe2.contentWindow.document.body.scrollHeight;
+        this.intervalId = setInterval(this._iframeSizeCheck.bind(this), 500);
     }
 
     render() {
