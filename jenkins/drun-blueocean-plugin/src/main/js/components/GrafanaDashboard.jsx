@@ -29,6 +29,7 @@ export default class GrafanaDashboard extends Component {
         this.t = props.t;
         this.iframeHeight = 0;
         this.intervalId = null;
+        this.counter = 0;
     }
 
     componentDidMount() {
@@ -37,8 +38,9 @@ export default class GrafanaDashboard extends Component {
 
     _iframeSizeCheck() {
         const currentHeight = this.refs.iframe2.contentWindow.document.body.scrollHeight;
+        this.counter++;
 
-        if (currentHeight > this.iframeHeight) {
+        if (currentHeight > this.iframeHeight || this.counter >= 10) {
             clearInterval(this.intervalId);
             this.refs.iframe2.style.height = `${currentHeight}px`;
         }
@@ -46,7 +48,7 @@ export default class GrafanaDashboard extends Component {
 
     _iframeLoaded() {
         this.iframeHeight = this.refs.iframe2.contentWindow.document.body.scrollHeight;
-        this.intervalId = setInterval(this._iframeSizeCheck.bind(this), 500);
+        this.intervalId = setInterval(this._iframeSizeCheck.bind(this), 1000);
     }
 
     render() {
