@@ -29,13 +29,13 @@ export default class JupyterDashboard extends Component {
     }
 
     componentDidMount() {
-        this.refs.iframe.addEventListener('load', this._iframeLoaded.bind(this));
+        this.refs.iframe1.addEventListener('load', this._iframeLoaded.bind(this));
     }
 
     _iframeLoaded() {
-        this.refs.iframe.style.height
-            = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
-        this.refs.iframe.contentWindow.document.head.insertAdjacentHTML(
+        this.refs.iframe1.style.height
+            = `${this.refs.iframe1.contentWindow.document.body.scrollHeight}px`;
+        this.refs.iframe1.contentWindow.document.head.insertAdjacentHTML(
             'beforeend',
             '<style type="text/css">#notebook-container {box-shadow: none;}</style>');
     }
@@ -46,13 +46,9 @@ export default class JupyterDashboard extends Component {
             `/${this.runId}/artifact/${blueocean.drun.jupyterHtmlPath}`;
 
         /* eslint-disable react/jsx-closing-bracket-location */
-
-        // Just render a simple <div> with a class name derived from the
-        // status of the run. We then use CSS (via LESS) to style the component.
-        // See src/main/less/extensions.less
         return (
             <div className="drun-dashboard">
-                <iframe ref="iframe" id="jupyter-iframe" className="jupyter-iframe"
+                <iframe ref="iframe1" id="jupyter-iframe" className="jupyter-iframe"
                   src={url} />
             </div>
         );

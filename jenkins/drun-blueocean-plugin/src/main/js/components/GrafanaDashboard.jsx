@@ -30,19 +30,12 @@ export default class GrafanaDashboard extends Component {
     }
 
     componentDidMount() {
-        this.refs.iframe.addEventListener('load', this._iframeLoaded.bind(this));
-        this.refs.iframe.contentWindow.document.addEventListener(
-            'resize', this._documentResized.bind(this));
+        this.refs.iframe2.addEventListener('load', this._iframeLoaded.bind(this));
     }
 
     _iframeLoaded() {
-        this.refs.iframe.style.height
-            = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
-    }
-
-    _documentResized() {
-        this.refs.iframe.style.height
-            = `${this.refs.iframe.contentWindow.document.body.scrollHeight}px`;
+        this.refs.iframe2.style.height
+            = `${this.refs.iframe2.contentWindow.document.body.scrollHeight}px`;
     }
 
     render() {
@@ -54,14 +47,13 @@ export default class GrafanaDashboard extends Component {
             .then(json => {
                 const url = `${blueocean.drun.dashboardUrl}${json.modelName}`;
 
-                this.refs.iframe.src = url;
+                this.refs.iframe2.src = url;
             }).catch(FetchFunctions.consoleError);
 
         /* eslint-disable react/jsx-closing-bracket-location */
         return (
             <div className="drun-dashboard">
-                <iframe ref="iframe" id="grafana-iframe"
-                  className="grafana-iframe" />
+                <iframe ref="iframe2" id="grafana-iframe" className="grafana-iframe" />
             </div>
         );
     }
