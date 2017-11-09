@@ -22,3 +22,5 @@ scipy
 tensorflow
 keras
 Pillow
+statsd
+locustio

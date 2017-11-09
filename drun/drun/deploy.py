@@ -21,6 +21,7 @@ import os
 import shutil
 import logging
 
+import drun.env
 import drun.utils
 from drun.utils import Colors
 import drun.io
@@ -174,9 +175,9 @@ def build_grafana_client(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`drun.grafana.GrafanaClient`
     """
-    host = os.environ.get('GRAFANA_URL', 'http://grafana:3000/')
-    user = os.environ.get('GRAFANA_USER', 'admin')
-    password = os.environ.get('GRAFANA_PASSWORD', 'admin')
+    host = os.environ.get(*drun.env.GRAFANA_URL)
+    user = os.environ.get(*drun.env.GRAFANA_USER)
+    password = os.environ.get(*drun.env.GRAFANA_PASSWORD)
 
     if args.grafana_server:
         host = args.grafana_server

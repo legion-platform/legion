@@ -21,20 +21,42 @@ import json
 import os
 import requests
 
+from drun.model_http_api import load_image, get_requests_parameters_for_model_invoke, get_model_invoke_url
+
 import unittest2
-from PIL import Image as PYTHON_Image
+from locust import HttpLocust, TaskSet, task
 
 
-def get_model_base_url(model_name):
+class LocustTaskSet(TaskSet):
     """
-    Get model base url from model name
-
-    :param model_name: model name
-    :type model_name: str
-    :return: str -- base path for model calls
+    Base class for creating locust performance task sets
     """
-    model_server_url = os.environ.get('MODEL_SERVER_URL', 'http://edge')
-    return '%s/api/model/%s' % (model_server_url, model_name)
+
+    def setup_model(self, model_name):
+        """
+        Initialize model
+
+        :param model_name: model id (as in legion build / deploy)
+        :type model_name: str
+        :return: None
+        """
+        self._model_name = model_name
+
+    def _invoke_model(self, **values):
+        """
+        Query model for calculation
+
+        :param values: values for passing to model. Key should be string (field name), value should be a string
+        :type values: dict[str, any]
+        :return: None
+        """
+        if not hasattr(self, '_model_name') or not getattr(self, '_model_name'):
+            raise Exception('Firstly call self.setUpModel in self.setUp')
+
+        url = get_model_invoke_url(self._model_name, False)
+        parameters = get_requests_parameters_for_model_invoke(**values)
+
+        self.client.post(url, **parameters)
 
 
 class ModelUnitTests(unittest2.TestCase):
@@ -51,7 +73,6 @@ class ModelUnitTests(unittest2.TestCase):
         :return: None
         """
         self._model_name = model_name
-        self._base_url = get_model_base_url(model_name)
 
     def _load_image(self, path):
         """
@@ -62,11 +83,7 @@ class ModelUnitTests(unittest2.TestCase):
         :return: bytes -- image content
         """
         self.assertTrue(os.path.exists(path), 'Image path not exists')
-        image = PYTHON_Image.open(path)
-
-        self.assertIsInstance(image, PYTHON_Image.Image, 'Invalid image type')
-
-        return open(path, 'rb').read()
+        return load_image(path)
 
     def _parse_json_response(self, response):
         """
@@ -93,12 +110,14 @@ class ModelUnitTests(unittest2.TestCase):
         :type values: dict[str, any]
         :return: dict -- output values
         """
-        if not hasattr(self, '_base_url'):
+        if not hasattr(self, '_model_name') or not getattr(self, '_model_name'):
             raise Exception('Firstly call self.setUpModel in self.setUp')
 
-        post_fields = {k: v for (k, v) in values.items() if not isinstance(v, bytes)}
-        post_files = {k: v for (k, v) in values.items() if isinstance(v, bytes)}
-        response = requests.post(self._base_url + '/invoke', post_fields, files=post_files)
-        self.assertEqual(response.status_code, 200, 'Invalid response code for model call: %s' % response.text)
+        url = get_model_invoke_url(self._model_name)
+        parameters = get_requests_parameters_for_model_invoke(**values)
+
+        response = requests.post(url, **parameters)
+        self.assertEqual(response.status_code, 200,
+                         'Invalid response code for model call on url %s: %s' % (url, response.text))
 
         return self._parse_json_response(response)

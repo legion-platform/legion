@@ -103,6 +103,10 @@ def work(args):
         time.sleep(args.iterate_sleep_sec)
 
     jobs = {j['fullname']: server.get_job_info(j['fullname']) for j in server.get_all_jobs()}
+
+    if args.jenkins_check_job_prefix:
+        jobs = {k:v for k,v in jobs.items() if k.startswith(args.jenkins_check_job_prefix)}
+
     for job_name, job in jobs.items():
         last_successful_build = job['lastSuccessfulBuild']['number'] if job['lastSuccessfulBuild'] else None
         last_build = job['lastBuild']['number'] if job['lastBuild'] else None
@@ -118,6 +122,7 @@ if __name__ == '__main__':
     parser.add_argument('--jenkins-user', type=str, default='admin')
     parser.add_argument('--jenkins-password', type=str, default='admin')
     parser.add_argument('--jenkins-run-job', type=str)
+    parser.add_argument('--jenkins-check-job-prefix', type=str)
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--iterate-sleep-sec', type=int, default=5)
     parser.add_argument('--run-sleep-sec', type=int, default=10)

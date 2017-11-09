@@ -19,14 +19,15 @@ import os
 import unittest2
 
 import drun.grafana as grafana
+import drun.env
 
 
-class TestPyserveEndpoints(unittest2.TestCase):
+class TestGrafana(unittest2.TestCase):
 
     def setUp(self):
-        host = os.environ.get('GRAFANA_URL', 'http://grafana:3000/')
-        user = os.environ.get('GRAFANA_USER', 'admin')
-        password = os.environ.get('GRAFANA_PASSWORD', 'admin')
+        host = os.environ.get(*drun.env.GRAFANA_URL)
+        user = os.environ.get(*drun.env.GRAFANA_USER)
+        password = os.environ.get(*drun.env.GRAFANA_PASSWORD)
         self.client = grafana.GrafanaClient(host, user, password)
 
     def test_dashboard_creation(self):

@@ -15,6 +15,11 @@
 #    limitations under the License.
 #
 
+try:
+    import docker_bootup
+except ImportError:
+    pass
+
 import argparse
 import json
 import time
@@ -37,7 +42,7 @@ def _is_data_source_created(client, data_source_name):
 def _create_graphite_data_source(client, data_source_url):
     if not _is_data_source_created(client, DATA_SOURCE_NAME):
         json_text = render_template('grafana-datasource.json.tmpl', {
-            'DATA_SOURCE_URL': DATA_SOURCE_NAME
+            'DATA_SOURCE_URL': data_source_url
         })
         client._query('/api/datasources', json.loads(json_text), action='post')
 
@@ -75,7 +80,7 @@ def _get_all_datasources(client):
     return client._query('/api/datasources')
 
 
-def work(base, graphite_ds_url, user, password):
+def work(base, graphite_ds_url, user, password, args):
     client = BaseGrafanaClient(base, user, password)
 
     start = time.time()
@@ -111,4 +116,4 @@ if __name__ == '__main__':
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     args = parser.parse_args()
-    work(args.base_url, args.graphite_ds_url, args.user, args.password)
+    work(args.base_url, args.graphite_ds_url, args.user, args.password, args)
