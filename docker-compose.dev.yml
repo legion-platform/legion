@@ -26,6 +26,8 @@ services:
 
   jupyter:
     image: drun/base-python-image
+    build:
+      context: base-python-image
     networks:
       - drun_root
     labels:
@@ -51,6 +53,8 @@ services:
     depends_on:
       - consul
     image: drun/base-python-image
+    build:
+      context: base-python-image
     networks:
       - drun_root
     labels:
