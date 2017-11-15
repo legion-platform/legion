@@ -106,6 +106,7 @@ services:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
       - DOCKER_TLS_VERIFY=1
+      - DRUN_MODEL_SERVER_URL=http://edge:80
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.drun.jenkins.jupyter.html.path=notebook.html"
     ports:
       - 8081:8080
