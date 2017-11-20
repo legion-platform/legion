@@ -16,31 +16,48 @@
 from __future__ import print_function
 
 import os
+import time
 import unittest2
+from unittest.mock import patch
 
 import drun.metrics as metrics
-import drun.model_id as model_id
+import drun.model_id
 import drun.env as env
 
 
+def _reset_model_id():
+    drun.model_id._model_name = None
+    drun.model_id._model_initialized_from_function = False
+    if env.MODEL_ID[0] in os.environ:
+        os.unsetenv(env.MODEL_ID[0])
+        del os.environ[env.MODEL_ID[0]]
+
+
 class MetricContent:
-    def __init__(self, model, build):
+    def __init__(self, model, build, init_at_startup=True):
         self._model = model
         self._build = build
         self._old_build_number_env = os.getenv(*env.BUILD_NUMBER)
+        self._init_at_startup = init_at_startup
 
     def __enter__(self):
-        model_id.init_model(self._model)
+        if self._init_at_startup:
+            drun.model_id.init_model(self._model)
         os.environ[env.BUILD_NUMBER[0]] = str(self._build)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        model_id._model_name = None
-        model_id._model_initialized_from_function = False
+        _reset_model_id()
         os.environ[env.BUILD_NUMBER[0]] = str(self._old_build_number_env)
 
 
 class TestMetrics(unittest2.TestCase):
+
+    def setUp(self):
+        _reset_model_id()
+
+    def tearDown(self):
+        _reset_model_id()
 
     def test_metrics_name_building(self):
         model_name = 'demo'
@@ -56,19 +73,61 @@ class TestMetrics(unittest2.TestCase):
         with MetricContent(model_name, build_number):
             self.assertEqual(metrics.get_build_number(), build_number)
 
+    def test_model_id_deduction_exception(self):
+        self.assertEqual(drun.model_id._model_name, None, 'Model ID not empty')
+        self.assertEqual(os.getenv(*env.MODEL_ID), None, 'Model ID ENV not empty')
+        with self.assertRaises(Exception) as context:
+            metrics.send_metric(metrics.Metric.TEST_ACCURACY, 30.0)
+
+    def test_metrics_send(self):
+        model_name = 'demo'
+        build_number = 10
+        metric = metrics.Metric.TEST_ACCURACY
+        value = 30.0
+        host, port, namespace = metrics.get_metric_endpoint()
+        os.environ[env.MODEL_ID[0]] = str(model_name)
+        with patch('drun.model_id.send_model_name') as send_model_name_mock:
+            with MetricContent(model_name, build_number, init_at_startup=False):
+                self.assertEqual(len(send_model_name_mock.call_args_list), 0)
+                with patch('drun.metrics.send_tcp') as send_tcp_mock:
+                    timestamp = int(time.time())
+                    metrics.send_metric(metric, value)
+
+                    self.assertEqual(len(send_model_name_mock.call_args_list), 1)
+                    del os.environ[env.MODEL_ID[0]]
+
+                    self.assertTrue(len(send_tcp_mock.call_args_list) == 2, '2 calls founded')
+                    for call in send_tcp_mock.call_args_list:
+                        self.assertEqual(call[0][0], host)
+                        self.assertEqual(call[0][1], port)
+
+                    delimiter = ' '
+
+                    call_with_metric = send_tcp_mock.call_args_list[0][0][2].strip().split(delimiter)
+                    call_with_build_number = send_tcp_mock.call_args_list[1][0][2].strip().split(delimiter)
+
+                    self.assertEqual(call_with_metric[0], '%s.%s.metrics.%s' % (namespace, model_name, metric.value))
+                    self.assertEqual(float(call_with_metric[1]), value)
+                    self.assertEqual(call_with_metric[2], str(timestamp))
+
+                    self.assertEqual(call_with_build_number[0], '%s.%s.metrics.build' % (namespace, model_name))
+                    self.assertEqual(int(float(call_with_build_number[1])), build_number)
+                    self.assertEqual(call_with_build_number[2], str(timestamp))
+
     def test_set_model_name_and_reset_metrics(self):
         model_name = 'demo'
         build_number = 10
         old_build_number_env = os.getenv(*env.BUILD_NUMBER)
 
-        model_id.init_model(model_name)
+        _reset_model_id()
+
+        drun.model_id.init_model(model_name)
         os.environ[env.BUILD_NUMBER[0]] = str(build_number)
 
         self.assertEqual(metrics.get_model_name(), model_name)
         self.assertEqual(metrics.get_build_number(), build_number)
 
-        model_id._model_name = None
-        model_id._model_initialized_from_function = False
+        _reset_model_id()
 
         self.assertIsNone(metrics.get_model_name())
 
