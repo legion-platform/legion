@@ -23,6 +23,7 @@ import time
 from argparse import Namespace
 
 import drun.deploy as deploy
+import drun.model_id
 import drun.io
 from drun.utils import TemporaryFolder
 
@@ -43,6 +44,11 @@ class TestDeploy(unittest2.TestCase):
         self.client = deploy.build_docker_client(common_arguments)
         self.network = deploy.find_network(self.client, common_arguments)
         self.wheel_path = self._get_latest_bdist()
+        drun.model_id.init_model(self.MODEL_ID)
+
+    def tearDown(self):
+        drun.model_id._model_name = None
+        drun.model_id._model_initialized_from_function = False
 
     def _get_latest_bdist(self):
         dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
@@ -59,7 +65,8 @@ class TestDeploy(unittest2.TestCase):
             container_required = container.labels.get('com.epam.drun.container_required', 'true').lower() \
                                  in ('1', 'yes', 'true')
             if container_required:
-                self.assertEqual(container.status, 'running', 'Wrong status of required container')
+                container_name = container.labels.get('com.epam.drun.container_description', container.image.tags[0])
+                self.assertEqual(container.status, 'running', 'Wrong status of required container %s' % container_name)
 
     def _build_model(self, path, version):
         def prepare(x):
@@ -91,7 +98,8 @@ class TestDeploy(unittest2.TestCase):
             self._build_model(path, self.MODEL_VERSION)
 
             args = Namespace(
-                model_file=path, model_id=self.MODEL_ID,
+                model_file=path,
+                model_id=None,
                 base_docker_image=None,
                 docker_network=None,
                 python_package=self.wheel_path,

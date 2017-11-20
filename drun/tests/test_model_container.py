@@ -21,6 +21,7 @@ import os
 import drun.io
 import drun.model
 import drun.types
+import drun.model_id
 
 import numpy
 import pandas
@@ -45,8 +46,10 @@ class TestModelContainer(unittest2.TestCase):
 
         version = '1.3'
         path = 'test.model'
+        model_id = 'demo_model'
 
         try:
+            drun.model_id.init_model(model_id)
             drun.io.export(path,
                            apply,
                            prepare,
@@ -56,8 +59,10 @@ class TestModelContainer(unittest2.TestCase):
             self.assertTrue(os.path.exists(path), 'File not exists')
 
             with drun.io.ModelContainer(path) as container:
+                self.assertTrue('model.id' in container, 'Property `model.id` is not set')
                 self.assertTrue('model.version' in container, 'Property `model.version` is not set')
                 self.assertEqual(container['model.version'], version, 'Undefined version of model')
+                self.assertEqual(container['model.id'], model_id, 'Undefined id of model')
                 self.assertEqual(container.model.prepare_func({'d_int': 10})['additional'], 10, 'Model check failed')
 
                 self.assertIsInstance(container.model.column_types, dict, 'Column types dict is not dict')

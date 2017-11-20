@@ -33,19 +33,21 @@ import docker
 LOGGER = logging.getLogger('deploy')
 
 
-def generate_docker_labels_for_image(model_file, args):
+def generate_docker_labels_for_image(model_file, model_id, args):
     """
     Generate docker image labels from model file
 
     :param model_file: path to model file
     :type model_file: str
+    :param model_id: model id
+    :type model_id: str
     :param args: command arguments
     :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
     with drun.io.ModelContainer(model_file, do_not_load_model=True) as container:
         base = {
-            'com.epam.drun.model.id': args.model_id,
+            'com.epam.drun.model.id': model_id,
             'com.epam.drun.model.version': container.get('model.version', 'undefined'),
             'com.epam.drun.class': 'pyserve',
             'com.epam.drun.container_type': 'model'
@@ -108,6 +110,8 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
             'PIP_INSTALL_TARGET': install_target,
             'PIP_CUSTOM_TARGET': install_target != 'drun'
         })
+
+        labels = {k: str(v) if v else None for (k, v) in labels.items()}
 
         with open(os.path.join(temp_directory.path, 'Dockerfile'), 'w') as file:
             file.write(docker_file_content)
@@ -207,7 +211,15 @@ def build_model(args):
     if not os.path.exists(args.model_file):
         raise Exception('Cannot find model file: %s' % args.model_file)
 
-    image_labels = generate_docker_labels_for_image(args.model_file, args)
+    with drun.io.ModelContainer(args.model_file, do_not_load_model=True) as container:
+        model_id = container.get('model.id', None)
+        if args.model_id:
+            model_id = args.model_id
+
+    if not model_id:
+        raise Exception('Cannot get model id (not setted in container and not setted in arguments)')
+
+    image_labels = generate_docker_labels_for_image(args.model_file, model_id, args)
 
     base_docker_image = args.base_docker_image
     if not base_docker_image:
@@ -216,7 +228,7 @@ def build_model(args):
     image = build_docker_image(
         client,
         base_docker_image,
-        args.model_id,
+        model_id,
         args.model_file,
         image_labels,
         args.python_package,
@@ -225,7 +237,7 @@ def build_model(args):
 
     LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
 
-    print('Successfully created docker image %s for model %s' % (image.short_id, args.model_id))
+    print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
     return image
 
 

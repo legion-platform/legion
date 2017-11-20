@@ -19,6 +19,7 @@ import os
 import unittest2
 
 import drun.metrics as metrics
+import drun.model_id as model_id
 import drun.env as env
 
 
@@ -29,12 +30,13 @@ class MetricContent:
         self._old_build_number_env = os.getenv(*env.BUILD_NUMBER)
 
     def __enter__(self):
-        metrics.init_metric(self._model)
+        model_id.init_model(self._model)
         os.environ[env.BUILD_NUMBER[0]] = str(self._build)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        metrics.reset()
+        model_id._model_name = None
+        model_id._model_initialized_from_function = False
         os.environ[env.BUILD_NUMBER[0]] = str(self._old_build_number_env)
 
 
@@ -59,13 +61,14 @@ class TestMetrics(unittest2.TestCase):
         build_number = 10
         old_build_number_env = os.getenv(*env.BUILD_NUMBER)
 
-        metrics.init_metric(model_name)
+        model_id.init_model(model_name)
         os.environ[env.BUILD_NUMBER[0]] = str(build_number)
 
         self.assertEqual(metrics.get_model_name(), model_name)
         self.assertEqual(metrics.get_build_number(), build_number)
 
-        metrics.reset()
+        model_id._model_name = None
+        model_id._model_initialized_from_function = False
 
         self.assertIsNone(metrics.get_model_name())
 

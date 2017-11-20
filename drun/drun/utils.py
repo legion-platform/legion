@@ -18,6 +18,7 @@ DRun utils functional
 """
 
 import socket
+import re
 import tempfile
 import os
 
@@ -119,3 +120,15 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+def normalize_name(name):
+    """
+    Normalize name
+
+    :param name: name to normalize
+    :type name: str
+    :return: str -- normalized name
+    """
+    name = name.replace(' ', '_')
+    return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
