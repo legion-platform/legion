@@ -86,7 +86,11 @@ node {
         rm -rf Examples
         '''
         dir('Examples') {
-            git url: 'https://github.com/akharlamov/drun-examples.git'
+            checkout([
+            $class: 'GitSCM',
+            branches: [[name: env.DRUN_EXAMPLES_COMMIT ]],
+            userRemoteConfigs: [[url: 'https://github.com/akharlamov/drun-examples.git']]
+            ])
         }
     }
     /*

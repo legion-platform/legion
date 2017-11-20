@@ -108,6 +108,7 @@ services:
       - drun_root
     environment:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
+      - DRUN_EXAMPLES_COMMIT=${DRUN_EXAMPLES_COMMIT}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
       - DOCKER_TLS_VERIFY=1
       - DRUN_MODEL_SERVER_URL=http://edge:80

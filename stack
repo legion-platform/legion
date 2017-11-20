@@ -34,6 +34,7 @@ chmod uga+r keys/docker/*
 export JENKINS_DOCKER_HOST=${DOCKER_HOST}
 export JENKINS_DOCKER_KEYS="./keys/docker"
 
+export DRUN_EXAMPLES_COMMIT=`cd examples && git rev-parse HEAD`
 
 docker-compose $*
 
