@@ -59,7 +59,7 @@ def createNewJob(name, path, prefix, addTestProperties){
     // Create job if not exist
     if (Jenkins.instance.getItemByFullName(name) == null){
         scm = new GitSCM("https://github.com/akharlamov/drun-examples.git");
-        scm.branches = [new BranchSpec("*/master")];
+        scm.branches = [new BranchSpec(env.DRUN_EXAMPLES_COMMIT)];
         Jenkins.instance.add(new WorkflowJob(Jenkins.instance, name), name);
         Jenkins.instance.getItemByFullName(name).definition = new CpsScmFlowDefinition(scm, path);
 
