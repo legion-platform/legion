@@ -17,48 +17,43 @@ import React, { Component, PropTypes } from 'react';
 import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
 import UrlConfig from '../config';
 
-export default class JupyterDashboard extends Component {
-
-    constructor(props) {
-        super(props);
-        this.params = props.params;
-        this.pipeline = props.pipeline;
-        this.run = props.run;
-        this.runId = props.runId;
-        this.t = props.t;
-    }
-
+export default class TrainingReport extends Component {
     componentDidMount() {
-        this.refs.iframe1.addEventListener('load', this._iframeLoaded.bind(this));
+        this.refs.iframeReport.addEventListener('load', this._iframeLoaded.bind(this));
     }
 
     _iframeLoaded() {
-        this.refs.iframe1.style.height
-            = `${this.refs.iframe1.contentWindow.document.body.scrollHeight}px`;
-        this.refs.iframe1.contentWindow.document.head.insertAdjacentHTML(
+        this.refs.iframeReport.style.height
+            = `${this.refs.iframeReport.contentWindow.document.body.scrollHeight}px`;
+        this.refs.iframeReport.contentWindow.document.head.insertAdjacentHTML(
             'beforeend',
             '<style type="text/css">#notebook-container {box-shadow: none;}</style>');
     }
 
     render() {
-        const url =
-            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
-            `/${this.runId}/artifact/${blueocean.drun.jupyterHtmlPath}`;
-
         /* eslint-disable react/jsx-closing-bracket-location */
-        return (
-            <div className="drun-dashboard">
-                <iframe ref="iframe1" id="jupyter-iframe" className="jupyter-iframe"
+        const display = (this.props.run.state === 'FINISHED') ? 'block' : 'none';
+        const style = { width: '100%', border: 0, margin: 0, display: `${display}` };
+
+        const url =
+            `${UrlConfig.getJenkinsRootURL()}/job/${this.props.pipeline.name}` +
+            `/${this.props.run.id}/artifact/${blueocean.drun.reportHtmlPath}`;
+
+        const result = (
+            <div>
+                <iframe ref="iframeReport" style={style} className="report-iframe"
                   src={url} />
             </div>
         );
+
+        return result;
     }
 }
 
-JupyterDashboard.propTypes = {
+TrainingReport.propTypes = {
     params: PropTypes.object,
     pipeline: PropTypes.object,
     run: PropTypes.object,
-    runId: PropTypes.number,
+    locale: PropTypes.string,
     t: PropTypes.func,
 };

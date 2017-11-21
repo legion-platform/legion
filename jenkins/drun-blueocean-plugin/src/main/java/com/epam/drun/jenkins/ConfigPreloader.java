@@ -26,13 +26,13 @@ Basic drun jenkins plugin configuration
  */
 @Extension
 public class ConfigPreloader extends PageStatePreloader {
-    private final static String dashboardUrlPropertyName =
+    private final static String DASHBOARD_URL_PROPERTY_NAME =
             "com.epam.drun.jenkins.dashboard.url";
-    private final static String dashboardUrlPropertyDefault =
+    private final static String DASHBOARD_URL_PROPERTY_DEFAULT =
             "/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model=";
-    private final static String jupyterHtmlPathPropertyName =
-            "com.epam.drun.jenkins.jupyter.html.path";
-    private final static String jupyterHtmlPathPropertyDefault =
+    private final static String REPORT_HTML_PATH_PROPERTY_NAME =
+            "com.epam.drun.jenkins.report.html.path";
+    private final static String REPORT_HTML_PATH_PROPERTY_DEFAULT =
             "notebook.html";
 
     @Override
@@ -47,9 +47,9 @@ public class ConfigPreloader extends PageStatePreloader {
         new JSONBuilder(writer)
             .object()
                 .key("dashboardUrl").value(
-                        System.getProperty(dashboardUrlPropertyName, dashboardUrlPropertyDefault))
-                .key("jupyterHtmlPath").value(
-                        System.getProperty(jupyterHtmlPathPropertyName, jupyterHtmlPathPropertyDefault))
+                        System.getProperty(DASHBOARD_URL_PROPERTY_NAME, DASHBOARD_URL_PROPERTY_DEFAULT))
+                .key("reportHtmlPath").value(
+                        System.getProperty(REPORT_HTML_PATH_PROPERTY_NAME, REPORT_HTML_PATH_PROPERTY_DEFAULT))
             .endObject();
 
         return writer.toString();
