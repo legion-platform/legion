@@ -101,10 +101,10 @@ return function(callback) {
                     "steppedLine": false,
                     "targets": [{
                         "refId": "A_" + metric,
-                        "target": "alias(stats.legion.model.Model_1.metrics." + metric + ", '" + metric + "')"
+                        "target": "alias(stats.legion.model." + modelId + ".metrics." + metric + ", '" + metric + "')"
                     }, {
                         "refId": "B_" + metric,
-                        "target": "alias(stats.legion.model.Model_1.metrics.build, 'Build #')"
+                        "target": "alias(stats.legion.model." + modelId + ".metrics.build, 'Build #')"
                     }],
                     "thresholds": [],
                     "timeFrom": null,
