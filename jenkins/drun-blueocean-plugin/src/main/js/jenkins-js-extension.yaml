@@ -15,9 +15,6 @@
 #
 
 extensions:
-  - component: components/GrafanaDashboard
-    extensionPoint: jenkins.pipeline.run.tests.header
-
-  - component: components/JupyterDashboard
-    extensionPoint: jenkins.pipeline.run.tests.footer
-
+  - component: RunDetailsModel
+    extensionPoint: jenkins.run.actions
+    ordinal: 250

@@ -36,11 +36,11 @@ import java.util.logging.Logger;
 @ExportedBean
 public class ModelAction implements Action {
 
-    private final Charset jsonEncoding = Charset.forName("UTF-8");
-    //X-DRun-Model-Id:Model_1
-    private final String modelNameTag = "X-DRun-Model-Id:";
-    private final String modelNameKey = "modelName";
-    private final String modelJsonFileName = "model.json";
+    private final Charset JSON_ENCODING = Charset.forName("UTF-8");
+    //Sample Header syyle log entry: X-DRun-Model-Id:Model_1
+    private final String MODEL_NAME_TAG = "X-DRun-Model-Id:";
+    private final String MODEL_NAME_KEY = "modelId";
+    private final String MODEL_JSON_FILE_NAME = "model.json";
 
     private static final Logger log = Logger.getLogger( ModelAction.class.getName() );
     private Run job;
@@ -72,20 +72,20 @@ public class ModelAction implements Action {
     public final String getJson() throws IOException {
         String modelJson;
 
-        Path jsonPath = Paths.get(job.getRootDir().getPath(), modelJsonFileName);
+        Path jsonPath = Paths.get(job.getRootDir().getPath(), MODEL_JSON_FILE_NAME);
 
         if (Files.exists(jsonPath)) {
-            modelJson = new String(Files.readAllBytes(jsonPath), jsonEncoding);
+            modelJson = new String(Files.readAllBytes(jsonPath), JSON_ENCODING);
         } else {
             String modelName = getModelName();
 
             JSONObject json = new JSONObject();
-            json.put(modelNameKey, modelName != null ?
+            json.put(MODEL_NAME_KEY, modelName != null ?
                     modelName : "#Notebook not logged model name yet#");
             modelJson = json.toString();
 
             if (modelName != null) {
-                try (BufferedWriter writer = Files.newBufferedWriter(jsonPath, jsonEncoding)) {
+                try (BufferedWriter writer = Files.newBufferedWriter(jsonPath, JSON_ENCODING)) {
                     writer.write(modelJson);
                 } catch (IOException ex) {
                     log.log(Level.SEVERE, "Cannot create model json file: " + jsonPath.toString(), ex);
@@ -101,10 +101,10 @@ public class ModelAction implements Action {
 
         try (BufferedReader reader = new BufferedReader(job.getLogReader())) {
             for(String line = reader.readLine(); line != null; ) {
-                int pos = line.indexOf(modelNameTag);
+                int pos = line.indexOf(MODEL_NAME_TAG);
                 if (pos >= 0) {
                     modelName = line.substring(
-                            pos + modelNameTag.length(),
+                            pos + MODEL_NAME_TAG.length(),
                             line.length());
 
                     break;
