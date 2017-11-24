@@ -43,14 +43,3 @@ if (store.getCredentials(domain).size() == 0){
 	store.addCredentials(domain, privateKey);
 }
 
-// Create job
-
-name = "DRUN-examples";
-
-if (Jenkins.instance.getJobNames().size() == 0){
-
-	job = new WorkflowJob(Jenkins.instance, name);
-	job.definition = new CpsFlowDefinition(new File('/usr/share/jenkins/initial-job').text, false);
-
-	Jenkins.instance.add(job, name);
-}
