@@ -14,7 +14,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
+"""
+Tool for start and check jobs on remote Jenkins instance
+"""
 import argparse
 import time
 
@@ -34,7 +36,9 @@ class LogicException(Exception):
 def is_server_busy(server):
     """
     Check if server busy
-    :param server: jenkins.Server
+
+    :param server: jenkins server
+    :type server: :py:class:`jenkins.Server`
     :return: bool is server busy with any build
     """
     queue = server.get_queue_info()
@@ -61,7 +65,9 @@ def is_server_busy(server):
 def work(args):
     """
     Perform work on Jenkins server: run build, wait until all build will be finished, analyze build statuses
+
     :param args: arguments
+    :type args: :py:class:`argparse.Namespace`
     :return: None
     """
 

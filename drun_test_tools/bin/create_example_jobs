@@ -14,7 +14,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-
+"""
+Tool for scan local folders and add jobs on remote Jenkins instance
+"""
 import argparse
 import glob
 import os
@@ -22,7 +24,7 @@ import time
 from typing import NamedTuple
 from urllib.parse import quote
 
-from drun_ci.template import render_template
+from drun_test_tools.template import render_template
 
 import jenkins
 
@@ -33,15 +35,17 @@ Options = NamedTuple('Options', [
     ('git_url', str),
     ('git_branch', str),
     ('git_root_key', str),
+    ('model_host', str),
     ('jenkins_user', str),
     ('jenkins_password', str),
     ('dynamic_model_prefix', str),
+    ('perf_test_prefix', str),
     ('connection_timeout', str),
     ('socket_reconnect_sleep', int),
 ])
 
 
-def find_jobs_jenkins_files(base_directory, git_directory):
+def find_jobs_jenkins_files(base_directory, git_directory, jenkins_file_name):
     """
     Find Jenkins files in subdirectories of target directory
 
@@ -49,11 +53,13 @@ def find_jobs_jenkins_files(base_directory, git_directory):
     :type base_directory: str
     :param base_directory: git root directory (paths will be returned relative to this directory)
     :type base_directory: str
+    :param jenkins_file_name: name of Jenkins file
+    :type jenkins_file_name: str
     :return: dict[str, str] -- map of job name => job's Jenkinsfile
     """
     root = os.path.abspath(base_directory)
     git_root = os.path.abspath(git_directory)
-    jenkins_files = glob.glob('%s/**/Jenkinsfile' % root, recursive=True)
+    jenkins_files = glob.glob('%s/**/%s' % (root, jenkins_file_name), recursive=True)
     jenkins_files_map = {}
 
     print('Root: %s' % root)
@@ -101,8 +107,12 @@ def work(options):
             print('Reconnecting...')
             time.sleep(options.socket_reconnect_sleep)
 
-    founded_local_models = find_jobs_jenkins_files(options.base_directory, options.git_directory)
     founded_external_jobs = {job['name']: job for job in client.get_all_jobs()}
+
+    # Build jobs
+    founded_local_models = find_jobs_jenkins_files(options.base_directory,
+                                                   options.git_directory,
+                                                   'Jenkinsfile')
 
     for model_name, jenkins_file in founded_local_models.items():
         job_name = '%s %s' % (options.dynamic_model_prefix, model_name)
@@ -119,6 +129,27 @@ def work(options):
             xml_data = render_template('jenkins_job.tmpl', data)
             client.create_job(job_name, xml_data)
 
+    # Performance jobs
+    founded_local_perf_tests = find_jobs_jenkins_files(options.base_directory,
+                                                       options.git_directory,
+                                                       'performance.Jenkinsfile')
+
+    for model_name, jenkins_file in founded_local_perf_tests.items():
+        job_name = '%s %s' % (options.perf_test_prefix, model_name)
+        if job_name not in founded_external_jobs:
+            data = {
+                'MODEL_NAME': job_name,
+                'MODEL_NAME_ESCAPED': quote(job_name),
+                'DESCRIPTION': 'Automatically created performance test for model %s' % model_name,
+                'GIT_URL': options.git_url,
+                'GIT_BRANCH': options.git_branch,
+                'GIT_ROOT_KEY': options.git_root_key,
+                'JENKINS_PERFORMANCE_FILE': jenkins_file,
+                'MODEL_HOST': options.model_host
+            }
+            xml_data = render_template('jenkins_performance_job.tmpl', data)
+            client.create_job(job_name, xml_data)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Jenkins job creator')
@@ -128,9 +159,11 @@ if __name__ == '__main__':
     parser.add_argument('git_url', type=str, help='Default GIT url')
     parser.add_argument('git_branch', type=str, help='Default GIT branch')
     parser.add_argument('--git-root-key', type=str, help='Git credentials ID', default='drun-root-key')
+    parser.add_argument('--model-host', type=str, help='Host with model', default='http://edge:80')
     parser.add_argument('--jenkins-user', type=str, help='Jenkins server user', default='admin')
     parser.add_argument('--jenkins-password', type=str, help='Jenkins server password', default='admin')
     parser.add_argument('--dynamic-model-prefix', type=str, help='Dynamic model job prefix', default='DYNAMIC MODEL')
+    parser.add_argument('--perf-test-prefix', type=str, help='Performance test prefix', default='PERF TEST')
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     args = parser.parse_args()
@@ -141,9 +174,11 @@ if __name__ == '__main__':
         git_url=args.git_url,
         git_branch=args.git_branch,
         git_root_key=args.git_root_key,
+        model_host=args.model_host,
         jenkins_user=args.jenkins_user,
         jenkins_password=args.jenkins_password,
         dynamic_model_prefix=args.dynamic_model_prefix,
+        perf_test_prefix=args.perf_test_prefix,
         connection_timeout=args.connection_timeout,
         socket_reconnect_sleep=args.socket_reconnect_sleep,
     )

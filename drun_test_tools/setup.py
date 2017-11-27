@@ -46,14 +46,14 @@ def extract_version(filename):
             raise RuntimeError("Unable to find version string in %s." % (file_content,))
 
 
-setup(name='drun_ci',
-      version=extract_version(os.path.join(PACKAGE_ROOT_PATH, 'drun_ci', 'version.py')),
+setup(name='drun_test_tools',
+      version=extract_version(os.path.join(PACKAGE_ROOT_PATH, 'drun_test_tools', 'version.py')),
       description='DRUN CI tools',
       url='http://github.com/akharlamov/drun-root',
       author='Kirill Makhonin',
       author_email='kirill_makhonin@epam.com',
       license='Apache v2',
-      packages=['drun_ci'],
+      packages=['drun_test_tools'],
       include_package_data=True,
       scripts=['bin/create_example_jobs', 'bin/check_jenkins_jobs'],
       install_requires=extract_requirements(os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'base.txt')),
