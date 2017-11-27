@@ -108,6 +108,7 @@ services:
       - drun_root
     environment:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
+      - DRUN_EXAMPLES_COMMIT=${DRUN_EXAMPLES_COMMIT}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
       - DOCKER_TLS_VERIFY=1
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.drun.jenkins.report.html.path=notebook.html"

@@ -17,13 +17,13 @@
 Model metrics
 """
 import os
-import re
 import socket
-import sys
 import time
 from enum import Enum
 
 import drun.env
+from drun.utils import normalize_name
+from drun.model_id import get_model_id, init
 
 
 class Metric(Enum):
@@ -36,7 +36,16 @@ class Metric(Enum):
     TRAINING_LOSS = 'training_loss'
 
 
-_model_name = None
+def get_model_id_for_metrics():
+    """
+    Get model name for metrics
+
+    :return: srt -- model name
+    """
+    if not get_model_id():
+        init()
+
+    return get_model_id()
 
 
 def get_metric_endpoint():
@@ -72,7 +81,7 @@ def get_metric_name(metric):
     :return: str -- metric name on stats server
     """
     name = metric.value if isinstance(metric, Metric) else str(metric)
-    return normalize_name('%s.metrics.%s' % (_model_name, name))
+    return normalize_name('%s.metrics.%s' % (get_model_id_for_metrics(), name))
 
 
 def get_build_metric_name():
@@ -81,7 +90,7 @@ def get_build_metric_name():
 
     :return: str -- build # name on stats server
     """
-    return '%s.metrics.build' % _model_name
+    return '%s.metrics.build' % get_model_id_for_metrics()
 
 
 def send_udp(host, port, message):
@@ -126,17 +135,6 @@ def send_tcp(host, port, message):
     sock.close()
 
 
-def normalize_name(name):
-    """
-    Normalize name
-    :param name: name to normalize
-    :type name: str
-    :return: str -- normalized name
-    """
-    name = name.replace(' ', '_')
-    return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
-
-
 def send_metric(metric, value):
     """
     Send metric value
@@ -157,48 +155,3 @@ def send_metric(metric, value):
     metric_name = '%s.%s' % (namespace, get_metric_name('build'))
     message = "%s %f %d\n" % (metric_name, build_no, int(time.time()))
     send_tcp(host, port, message)
-
-
-def send_model_name(model_name):
-    """
-    Send information about model name to stderr
-
-    :param model_name: model name
-    :type model_name: str
-    :return: None
-    """
-    message = 'X-DRun-Model-Id:%s' % (normalize_name(model_name))
-    print(message, file=sys.__stderr__, flush=True)
-
-
-def init_metric(model_name):
-    """
-    Init metrics
-
-    :param model_name: model name
-    :type model_name: str
-    :return: None
-    """
-    global _model_name
-    _model_name = model_name
-
-    send_model_name(model_name)
-
-
-def get_model_name():
-    """
-    Get current model name
-
-    :return: str or None
-    """
-    return _model_name
-
-
-def reset():
-    """
-    Reset model name and connection
-
-    :return: None
-    """
-    global _model_name
-    _model_name = None

@@ -37,8 +37,8 @@ if __name__ == '__main__':
     build_parser = subparsers.add_parser('build', description='build model into new docker image')
     build_parser.add_argument('model_file',
                               type=str, help='serialized model file name')
-    build_parser.add_argument('model_id',
-                              type=str, help='alpha-numeric identifier of the model to publish')
+    build_parser.add_argument('--model_id',
+                              type=str, help='alpha-numeric identifier of the model to publish (for overriding)')
     build_parser.add_argument('--model-type',
                               type=str, help='drun-python, tensorflow, mleap',
                               default='drun-python')
