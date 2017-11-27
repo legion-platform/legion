@@ -23,7 +23,7 @@ from enum import Enum
 
 import drun.env
 from drun.utils import normalize_name
-from drun.model_id import get_model_name, init_model
+from drun.model_id import get_model_id, init
 
 
 class Metric(Enum):
@@ -36,16 +36,16 @@ class Metric(Enum):
     TRAINING_LOSS = 'training_loss'
 
 
-def get_model_name_for_metrics():
+def get_model_id_for_metrics():
     """
     Get model name for metrics
 
     :return: srt -- model name
     """
-    if not get_model_name():
-        init_model()
+    if not get_model_id():
+        init()
 
-    return get_model_name()
+    return get_model_id()
 
 
 def get_metric_endpoint():
@@ -81,7 +81,7 @@ def get_metric_name(metric):
     :return: str -- metric name on stats server
     """
     name = metric.value if isinstance(metric, Metric) else str(metric)
-    return normalize_name('%s.metrics.%s' % (get_model_name_for_metrics(), name))
+    return normalize_name('%s.metrics.%s' % (get_model_id_for_metrics(), name))
 
 
 def get_build_metric_name():
@@ -90,7 +90,7 @@ def get_build_metric_name():
 
     :return: str -- build # name on stats server
     """
-    return '%s.metrics.build' % get_model_name_for_metrics()
+    return '%s.metrics.build' % get_model_id_for_metrics()
 
 
 def send_udp(host, port, message):

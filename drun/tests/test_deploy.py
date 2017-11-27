@@ -44,10 +44,10 @@ class TestDeploy(unittest2.TestCase):
         self.client = deploy.build_docker_client(common_arguments)
         self.network = deploy.find_network(self.client, common_arguments)
         self.wheel_path = self._get_latest_bdist()
-        drun.model_id.init_model(self.MODEL_ID)
+        drun.model_id.init(self.MODEL_ID)
 
     def tearDown(self):
-        drun.model_id._model_name = None
+        drun.model_id._model_id = None
         drun.model_id._model_initialized_from_function = False
 
     def _get_latest_bdist(self):

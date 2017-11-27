@@ -32,15 +32,15 @@ class LocustTaskSet(TaskSet):
     Base class for creating locust performance task sets
     """
 
-    def setup_model(self, model_name):
+    def setup_model(self, model_id):
         """
         Initialize model
 
-        :param model_name: model id (as in legion build / deploy)
-        :type model_name: str
+        :param model_id: model id (as in legion build / deploy)
+        :type model_id: str
         :return: None
         """
-        self._model_name = model_name
+        self._model_id = model_id
 
     def _invoke_model(self, **values):
         """
@@ -50,10 +50,10 @@ class LocustTaskSet(TaskSet):
         :type values: dict[str, any]
         :return: None
         """
-        if not hasattr(self, '_model_name') or not getattr(self, '_model_name'):
+        if not hasattr(self, '_model_id') or not getattr(self, '_model_id'):
             raise Exception('Firstly call self.setUpModel in self.setUp')
 
-        url = get_model_invoke_url(self._model_name, False)
+        url = get_model_invoke_url(self._model_id, False)
         parameters = get_requests_parameters_for_model_invoke(**values)
 
         self.client.post(url, **parameters)
@@ -64,15 +64,15 @@ class ModelUnitTests(unittest2.TestCase):
     Base class for creating model tests
     """
 
-    def setUpModel(self, model_name):
+    def setUpModel(self, model_id):
         """
         Initialize model
 
-        :param model_name: model id (as in legion build / deploy)
-        :type model_name: str
+        :param model_id: model id (as in legion build / deploy)
+        :type model_id: str
         :return: None
         """
-        self._model_name = model_name
+        self._model_id = model_id
 
     def _load_image(self, path):
         """
@@ -110,10 +110,10 @@ class ModelUnitTests(unittest2.TestCase):
         :type values: dict[str, any]
         :return: dict -- output values
         """
-        if not hasattr(self, '_model_name') or not getattr(self, '_model_name'):
+        if not hasattr(self, '_model_id') or not getattr(self, '_model_id'):
             raise Exception('Firstly call self.setUpModel in self.setUp')
 
-        url = get_model_invoke_url(self._model_name)
+        url = get_model_invoke_url(self._model_id)
         parameters = get_requests_parameters_for_model_invoke(**values)
 
         response = requests.post(url, **parameters)

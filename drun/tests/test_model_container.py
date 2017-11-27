@@ -49,7 +49,7 @@ class TestModelContainer(unittest2.TestCase):
         model_id = 'demo_model'
 
         try:
-            drun.model_id.init_model(model_id)
+            drun.model_id.init(model_id)
             drun.io.export(path,
                            apply,
                            prepare,

@@ -28,7 +28,7 @@ import drun.types
 from drun.types import deduct_types_on_pandas_df
 from drun.types import ColumnInformation
 from drun.utils import TemporaryFolder
-from drun.model_id import get_model_name, is_model_name_auto_deduced
+from drun.model_id import get_model_id, is_model_id_auto_deduced
 
 import dill
 from pandas import DataFrame
@@ -136,8 +136,8 @@ class ModelContainer:
 
         :return: None
         """
-        model_id = get_model_name()
-        if not model_id or is_model_name_auto_deduced():
+        model_id = get_model_id()
+        if not model_id or is_model_id_auto_deduced():
             raise Exception('Cannot get model_id. Please set using drun.init_model(<name>)')
 
         self['model.id'] = model_id
