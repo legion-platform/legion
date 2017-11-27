@@ -1,0 +1,6 @@
+unittest2
+nose
+pycodestyle
+pydocstyle
+pylint
+tox
