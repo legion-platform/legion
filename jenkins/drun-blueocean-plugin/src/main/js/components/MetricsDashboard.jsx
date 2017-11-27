@@ -18,64 +18,64 @@ import { blueocean } from '@jenkins-cd/blueocean-core-js/dist/js/scopes';
 import { Fetch, FetchFunctions } from '@jenkins-cd/blueocean-core-js';
 import UrlConfig from '../config';
 
-export default class GrafanaDashboard extends Component {
+export default class MetricsDashboard extends Component {
 
     constructor(props) {
         super(props);
-        this.params = props.params;
-        this.pipeline = props.pipeline;
-        this.run = props.run;
-        this.runId = props.runId;
-        this.t = props.t;
         this.iframeHeight = 0;
         this.intervalId = null;
         this.counter = 0;
     }
 
     componentDidMount() {
-        this.refs.iframe2.addEventListener('load', this._iframeLoaded.bind(this));
+        this.refs.iframeMetrics.addEventListener('load', this._iframeLoaded.bind(this));
     }
 
     _iframeSizeCheck() {
-        const currentHeight = this.refs.iframe2.contentWindow.document.body.scrollHeight;
-        this.counter++;
+        if (this.refs.iframeMetrics) {
+            const currHeight = this.refs.iframeMetrics.contentWindow.document.body.scrollHeight;
+            this.counter++;
 
-        if (currentHeight > this.iframeHeight || this.counter >= 10) {
-            clearInterval(this.intervalId);
-            this.refs.iframe2.style.height = `${currentHeight}px`;
+            if (currHeight > this.iframeHeight || this.counter >= 10) {
+                clearInterval(this.intervalId);
+                this.refs.iframeMetrics.style.height = `${currHeight + 20}px`;
+            }
         }
     }
 
     _iframeLoaded() {
-        this.iframeHeight = this.refs.iframe2.contentWindow.document.body.scrollHeight;
+        this.iframeHeight = this.refs.iframeMetrics.contentWindow.document.body.scrollHeight;
         this.intervalId = setInterval(this._iframeSizeCheck.bind(this), 1000);
     }
 
     render() {
+        // Request parameter json and get model id
         const modelUrl =
-            `${UrlConfig.getJenkinsRootURL()}/job/${this.pipeline.name}` +
-            `/${this.runId}/model/json`;
+            `${UrlConfig.getJenkinsRootURL()}/job/${this.props.pipeline.name}` +
+            `/${this.props.run.id}/model/json`;
 
         Fetch.fetchJSON(encodeURI(modelUrl))
             .then(json => {
-                const url = `${blueocean.drun.dashboardUrl}${json.modelName}`;
+                const url = `${blueocean.drun.dashboardUrl}${json.modelId}`;
 
-                this.refs.iframe2.src = url;
+                this.refs.iframeMetrics.src = url;
             }).catch(FetchFunctions.consoleError);
+
+        const style = { width: '100%', border: 0, margin: 0 };
 
         /* eslint-disable react/jsx-closing-bracket-location */
         return (
-            <div className="drun-dashboard">
-                <iframe ref="iframe2" id="grafana-iframe" className="grafana-iframe" />
+            <div>
+              <iframe ref="iframeMetrics" style={style} className="metrics-iframe" />
             </div>
         );
     }
 }
 
-GrafanaDashboard.propTypes = {
+MetricsDashboard.propTypes = {
     params: PropTypes.object,
     pipeline: PropTypes.object,
     run: PropTypes.object,
-    runId: PropTypes.number,
+    locale: PropTypes.string,
     t: PropTypes.func,
 };
