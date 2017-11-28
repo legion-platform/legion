@@ -111,7 +111,7 @@ services:
       - DRUN_EXAMPLES_COMMIT=${DRUN_EXAMPLES_COMMIT}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
       - DOCKER_TLS_VERIFY=1
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.drun.jenkins.report.html.path=notebook.html"
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.drun.jenkins.report.html.path=notebook.html"
       - DRUN_MODEL_SERVER_URL=http://edge:80
     ports:
       - 8081:8080
