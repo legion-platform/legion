@@ -1,0 +1,53 @@
+pipeline {
+	agent { 
+		docker {
+			image 'drun.kharlamov.biz/drun/base-python-image:latest'
+			args '-v drun:/drun -u 0:0 --network=drun_drun_root -e "DOCKER_TLS_VERIFY=1" -e "DOCKER_HOST=${DOCKER_HOST}" -e "DOCKER_CERT_PATH=${DOCKER_CERT_PATH}" -e "MODEL_SERVER_URL=${DRUN_MODEL_SERVER_URL}" '
+		}
+	}
+	stages {
+		stage('clone'){
+			steps {
+				sh '''
+				pip install -i https://drun.kharlamov.biz/pypi/ drun
+				'''
+			}
+		}
+		stage('run notebook'){
+			steps {
+				sh '''
+				export GIT_COMMIT=`git rev-parse HEAD`
+				jupyter nbconvert --execute Tensor-Flow-Example/Example.ipynb
+				cp "Tensor-Flow-Example/Example.html" notebook.html
+				mkdir -p release-models
+				cp -rf /drun/* release-models/
+				'''
+			}
+		}
+		stage('archive notebook artifacts'){
+			steps {
+			    archiveArtifacts 'release-models/tf.model'
+				archiveArtifacts 'Tensor-Flow-Example/*.html'
+				archiveArtifacts 'notebook.html'
+			}
+		}
+		stage('deploy to legion'){
+		    steps {
+				sh '''
+				legion build release-models/tf.model tf
+				legion deploy --model-id tf
+				'''
+				sleep time: 20, unit: 'SECONDS'
+			}
+		}
+		stage('run tests'){
+		    steps {
+		        sh '''
+		        cd "Tensor-Flow-Example/tests"
+		        nosetests --with-xunit
+		        '''
+		        junit 'Tensor-Flow-Example/tests/nosetests.xml'
+		    }
+		}
+	}
+}
