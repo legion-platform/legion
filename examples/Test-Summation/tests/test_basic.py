@@ -1,11 +1,13 @@
 from drun.model_tests import ModelUnitTests
+import drun.env
 import unittest2
 import random
+import os
 
 
 class BasicTest(ModelUnitTests):
     def setUp(self):
-        self.setUpModel('test_summation')
+        self.setUpModel(os.environ.get(*drun.env.MODEL_ID))
 
     def test_random_sum(self):
         a = random.randint(0, 100)

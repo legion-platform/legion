@@ -1,49 +1,21 @@
-pipeline {
-	agent { 
-		docker {
-			image 'drun.kharlamov.biz/drun/base-python-image:latest'
-			args '-v drun:/drun -u 0:0 --network=drun_drun_root -e "DOCKER_TLS_VERIFY=1" -e "DOCKER_HOST=${DOCKER_HOST}" -e "DOCKER_CERT_PATH=${DOCKER_CERT_PATH}" -e "MODEL_SERVER_URL=${DRUN_MODEL_SERVER_URL}"'
-		}
-	}
-	environment {
-        def notebookName = 'Income.ipynb'
-        def scriptFile = Jenkins.instance.getItemByFullName(env.JOB_NAME).definition.getScriptPath()
-        def rootDir = scriptFile.substring(0, scriptFile.lastIndexOf('/'))
-	}
-	stages {
-		stage('install drun'){
-		    steps {
-				sh '''
-				pip install -i https://drun.kharlamov.biz/pypi/ drun
-				'''
-			}
-		}
-		stage('run notebook'){
-			steps {
-				sh '''
-				export CONTAINER_DIR="`pwd`"
-				cd ${rootDir}
-				jupyter nbconvert --execute "${notebookName}" --stdout > notebook.html
-				cp notebook.html "${CONTAINER_DIR}"
-				mkdir -p "${CONTAINER_DIR}"/release-models
-				cp -rf /drun/* "${CONTAINER_DIR}"/release-models/
-				'''
-			}
-		}
-		stage('archive notebook artifacts'){
-			steps {
-				archiveArtifacts 'release-models/income.model'
-				archiveArtifacts 'notebook.html'
-			}
-		}
-		stage('deploy to legion'){
-			steps {
-				sh '''
-				legion build release-models/income.model
-				legion deploy --model-id income
-				'''
-				sleep time: 20, unit: 'SECONDS'
-			}
-		}
-	}
+node {
+    def legion = load legion()
+
+    legion.container('drun.kharlamov.biz/drun/base-python-image:latest') {
+        stage('clone repo'){
+            checkout scm
+        }
+        
+        stage('run notebook'){
+            legion.runNotebook('Income.ipynb')
+        }
+
+        stage('build'){
+            legion.build()
+        }
+
+        stage('deploy'){
+            legion.deploy()
+        }
+    }
 }

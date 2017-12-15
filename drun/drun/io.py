@@ -23,11 +23,12 @@ import json
 
 import drun
 import drun.env
+import drun.headers
 from drun.model import ScipyModel, IMLModel
 import drun.types
 from drun.types import deduct_types_on_pandas_df
 from drun.types import ColumnInformation
-from drun.utils import TemporaryFolder
+from drun.utils import TemporaryFolder, send_header_to_stderr
 from drun.model_id import get_model_id, is_model_id_auto_deduced
 
 import dill
@@ -394,5 +395,8 @@ def export(filename, apply_func, prepare_func=None, param_types=None, input_data
 
     with ModelContainer(filename, is_write=True) as container:
         container.save(model)
+
+    send_header_to_stderr(drun.headers.MODEL_PATH, filename)
+    send_header_to_stderr(drun.headers.MODEL_VERSION, version)
 
     return model

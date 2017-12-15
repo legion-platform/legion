@@ -21,6 +21,7 @@ import socket
 import re
 import tempfile
 import os
+import sys
 
 
 def detect_ip():
@@ -132,3 +133,17 @@ def normalize_name(name):
     """
     name = name.replace(' ', '_')
     return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
+
+
+def send_header_to_stderr(header, value):
+    """
+    Send header with specific prefix to stderr
+
+    :param header: name of header (without common prefix)
+    :type header: str
+    :param value: value of header
+    :type value: str
+    :return: None
+    """
+    message = 'X-DRun-%s:%s' % (header, value)
+    print(message, file=sys.__stderr__, flush=True)

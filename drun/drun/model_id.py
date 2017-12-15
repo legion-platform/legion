@@ -19,7 +19,8 @@ Model model_id
 import os
 import sys
 import drun.env
-from drun.utils import normalize_name
+import drun.headers
+from drun.utils import normalize_name, send_header_to_stderr
 
 _model_id = None
 _model_initialized_from_function = False
@@ -33,8 +34,7 @@ def send_model_id(model_id):
     :type model_id: str
     :return: None
     """
-    message = 'X-DRun-Model-Id:%s' % (normalize_name(model_id))
-    print(message, file=sys.__stderr__, flush=True)
+    send_header_to_stderr(drun.headers.MODEL_ID, normalize_name(model_id))
 
 
 def init(model_id=None):
