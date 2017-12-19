@@ -1,7 +1,7 @@
 node {
-    def drun = load drun()
+    def legion = load legion()
 
-    drun.container('drun.kharlamov.biz/drun/base-python-image:latest') {
+    legion.container('drun.kharlamov.biz/drun/base-python-image:latest') {
         stage('clone'){
             git url: 'https://github.com/akharlamov/drun-examples.git'
             sh '''
