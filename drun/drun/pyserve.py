@@ -24,15 +24,14 @@ from flask import Flask, Blueprint, request, jsonify, redirect
 from flask import current_app as app
 
 import drun.io
+import drun.env
 import drun.model as mlmodel
 import drun.utils as utils
 
-
-LOGGER = logging.getLogger('pyserve')
+LOGGER = logging.getLogger(__name__)
 
 
 class HttpProtocolHandler:
-
     def parse_request(self, input_request):
         """
         Produce a model input dictionary from HTTP request (GET/POST fields, and Files)
@@ -132,16 +131,16 @@ def healthcheck():
     return 'OK'
 
 
-def init_model(app):
+def init_model(application):
     """
     Load model from app configuration
 
-    :param app: Flask app
-    :type app: :py:class:`Flask.app`
+    :param application: Flask app
+    :type application: :py:class:`Flask.app`
     :return: model instance
     """
-    if 'MODEL_FILE' in app.config:
-        file = app.config['MODEL_FILE']
+    if 'MODEL_FILE' in application.config:
+        file = application.config['MODEL_FILE']
         LOGGER.info("Loading model from %s", file)
         with drun.io.ModelContainer(file) as container:
             model = container.model
@@ -153,44 +152,33 @@ def init_model(app):
 
 def create_application():
     """
-    Create Flask application
+    Create Flask application and register blueprints
 
     :return: :py:class:`Flask.app` -- Flask application instance
     """
-    app = Flask(__name__, static_url_path='')
-    app.config.from_pyfile('config_default.py')
-#   Instance relative configuration
-    instance_config = os.path.join(app.instance_path, 'config.py')
-    if os.path.exists(instance_config):
-        app.config.from_pyfile(instance_config)
+    application = Flask(__name__, static_url_path='')
 
-    app.config['DEBUG'] = True
+    application.register_blueprint(blueprint)
 
-    cfg_addr = app.config['LEGION_ADDR']
-    if cfg_addr == "" or cfg_addr == "0.0.0.0":
-        app.config['LEGION_ADDR'] = utils.detect_ip()
-
-    app.register_blueprint(blueprint)
-
-    return app
+    return application
 
 
-def register_service(app):
+def register_service(application):
     """
     Register application in Consul
 
-    :param app: Flask application instance
-    :type app: :py:class:`Flask.app`
+    :param application: Flask application instance
+    :type application: :py:class:`Flask.app`
     :return: None
     """
     client = consul.Consul(
-        host=app.config['CONSUL_ADDR'],
-        port=app.config['CONSUL_PORT'])
+        host=application.config['CONSUL_ADDR'],
+        port=int(application.config['CONSUL_PORT']))
 
-    service = app.config['MODEL_ID']
+    service = application.config['MODEL_ID']
 
-    addr = app.config['LEGION_ADDR']
-    port = app.config['LEGION_PORT']
+    addr = application.config['LEGION_ADDR']
+    port = int(application.config['LEGION_PORT'])
 
     LOGGER.info("Registering model service %s @ http://%s:%s", service, addr, port)
     client.agent.service.register(
@@ -201,12 +189,12 @@ def register_service(app):
     )
 
 
-def apply_cli_args(flask_app, args):
+def apply_cli_args(application, args):
     """
     Set Flask app instance configuration from arguments
 
-    :param flask_app: Flask app instance
-    :type flask_app: :py:class:`Flask.app`
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
     :param args: arguments
     :type args: :py:class:`argparse.Namespace`
     :return: None
@@ -214,39 +202,109 @@ def apply_cli_args(flask_app, args):
     args_dict = vars(args)
     for k, v in args_dict.items():
         if v is not None:
-            flask_app.config[k.upper()] = v
+            application.config[k.upper()] = v
 
 
-def init_application(args):
+def apply_env_argument(application, name, cast=None):
     """
-    Initialize configured Flask application instance
+    Update application config if ENV variable exists
 
-    :param args: arguments
-    :type args: :py:class:`argparse.Namespace`
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :param name: environment variable name
+    :type name: str
+    :param cast: casting of str variable
+    :type cast: Callable[[str], Any]
+    :return: None
+    """
+    if name in os.environ:
+        value = os.getenv(name)
+        if cast:
+            value = cast(value)
+
+        application.config[name] = value
+
+
+def apply_env_args(application):
+    """
+    Set Flask app instance configuration from environment
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return: None
+    """
+    apply_env_argument(application, drun.env.MODEL_ID[0])
+    apply_env_argument(application, drun.env.MODEL_FILE[0])
+
+    apply_env_argument(application, drun.env.CONSUL_ADDR[0])
+    apply_env_argument(application, drun.env.CONSUL_PORT[0])
+
+    apply_env_argument(application, drun.env.LEGION_ADDR[0])
+    apply_env_argument(application, drun.env.LEGION_PORT[0])
+    apply_env_argument(application, drun.env.LEGION_AUTODISCOVER[0], utils.string_to_bool)
+
+    apply_env_argument(application, drun.env.DEBUG[0], utils.string_to_bool)
+    apply_env_argument(application, drun.env.REGISTER_ON_CONSUL[0], utils.string_to_bool)
+
+
+def init_application(args=None):
+    """
+    Initialize configured Flask application instance, register application on consul
+    Overall configuration priority: config_default.py, env::FLASK_APP_SETTINGS_FILES file,
+    ENV parameters, CLI parameters
+
+    :param args: arguments if provided
+    :type args: :py:class:`argparse.Namespace` or None
     :return: :py:class:`Flask.app` -- application instance
     """
-    app = create_application()
-    apply_cli_args(app, args)
+    application = create_application()
+
+    # 4th priority: config from file with defaults values
+    application.config.from_pyfile('config_default.py')
+
+    # 3rd priority: config from file (path to file from ENV)
+    application.config.from_envvar(drun.env.FLASK_APP_SETTINGS_FILES[0], True)
+
+    # 2nd priority: config from ENV variables
+    apply_env_args(application)
+
+    # 1st priority: config from CLI args
+    if args:
+        apply_cli_args(application, args)
+
+    # Check LEGION_ADDR if LEGION_AUTODISCOVER enabled (by default)
+    if application.config['LEGION_AUTODISCOVER']:
+        cfg_addr = application.config['LEGION_ADDR']
+        if cfg_addr == "" or cfg_addr == "0.0.0.0":
+            application.config['LEGION_ADDR'] = utils.detect_ip()
+
     # Put a model object into application configuration
-    app.config['model'] = init_model(app)
-    return app
+    application.config['model'] = init_model(application)
+
+    # Register instance on Consul
+    if application.config['REGISTER_ON_CONSUL']:
+        register_service(application)
+        logging.info('Consul consensus achieved')
+    else:
+        logging.info('Registration on Consul has been skipped due to configuration')
+
+    return application
 
 
 def serve_model(args):
     """
-    Serve models
-    Overall configuration priority: config_default.py, instance/config.py, CLI parameters
+    Serve model
 
     :param args: arguments
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    logging.info("legion pyserve initializing")
-    app = init_application(args)
+    logging.info('Legion pyserve initializing')
+    application = init_application(args)
 
-    register_service(app)
-    logging.info("consensus achieved")
+    application.run(host=application.config['LEGION_ADDR'],
+                    port=application.config['LEGION_PORT'],
+                    debug=application.config['DEBUG'],
+                    use_reloader=False)
 
-    app.run(host=app.config['LEGION_ADDR'],
-            port=app.config['LEGION_PORT'],
-            use_reloader=False)
+    return application

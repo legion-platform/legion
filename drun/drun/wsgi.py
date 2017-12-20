@@ -15,16 +15,15 @@
 #    limitations under the License.
 #
 """
-Default config for DRun
+Entry point for WSGI server
+Example of usage: gunicorn drun.wsgi:application -k sync
 """
 
-MODEL_ID = "dummy-model"
+try:
+    import docker_bootup
+except ImportError:
+    pass
 
-LEGION_ADDR = "0.0.0.0"
-LEGION_PORT = 5000
-LEGION_AUTODISCOVER = True
+from drun.pyserve import init_application
 
-CONSUL_ADDR = "consul"
-CONSUL_PORT = 8500
-
-REGISTER_ON_CONSUL = True
+application = init_application()

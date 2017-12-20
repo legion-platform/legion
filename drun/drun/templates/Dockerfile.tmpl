@@ -24,5 +24,12 @@ RUN pip3 install /legion/{{PIP_INSTALL_TARGET}}
 RUN pip3 install -i https://drun.kharlamov.biz/pypi/ {{PIP_INSTALL_TARGET}}
 {% endif %}
 
+ENV MODEL_FILE="/legion/{{MODEL_FILE}}" \
+    MODEL_ID="{{MODEL_ID}}" \
+    GUNICORN_WORKER_CLASS="aiohttp.worker.GunicornWebWorker" \
+    GUNICORN_WORKER_COUNT="1" \
+    GUNICORN_WORKER_PATH="drun.wsgi_aio:aioapp"
 
-CMD /usr/local/bin/legion pyserve /legion/{{MODEL_FILE}} {{MODEL_ID}}
+
+CMD /usr/local/bin/gunicorn -p /legion/gunicorn.pid -w ${GUNICORN_WORKER_COUNT} -k ${GUNICORN_WORKER_CLASS} -n legion -b 0.0.0.0:5000 ${GUNICORN_WORKER_PATH}
+

@@ -134,7 +134,7 @@ def normalize_name(name):
     name = name.replace(' ', '_')
     return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
 
-
+    
 def send_header_to_stderr(header, value):
     """
     Send header with specific prefix to stderr
@@ -147,3 +147,17 @@ def send_header_to_stderr(header, value):
     """
     message = 'X-DRun-%s:%s' % (header, value)
     print(message, file=sys.__stderr__, flush=True)
+    
+    
+def string_to_bool(value):
+    """
+    Convert string to bool
+
+    :param value: string or bool
+    :type value: str or bool
+    :return: bool
+    """
+    if isinstance(value, bool):
+        return value
+
+    return value.lower() in ['true', '1', 't', 'y', 'yes']

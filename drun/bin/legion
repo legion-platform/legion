@@ -26,6 +26,7 @@ import logging
 
 from drun.pyserve import serve_model
 from drun.deploy import build_model, deploy_model, undeploy_model, inspect
+import drun.utils
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
@@ -83,10 +84,10 @@ if __name__ == '__main__':
                                 type=str, help='docker network')
     inspect_parser.set_defaults(func=inspect)
 
-    pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
-    pyserve_parser.add_argument('model_file',
+    pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model using flask')
+    pyserve_parser.add_argument('--model-file',
                                 type=str)
-    pyserve_parser.add_argument('model_id',
+    pyserve_parser.add_argument('--model-id',
                                 type=str)
     pyserve_parser.add_argument('--consul-addr',
                                 type=str, help='Consul Agent IP address')
@@ -96,9 +97,15 @@ if __name__ == '__main__':
                                 type=str)
     pyserve_parser.add_argument('--legion-port',
                                 type=int)
+    pyserve_parser.add_argument('--debug',
+                                type=drun.utils.string_to_bool)
+    pyserve_parser.add_argument('--register-on-consul',
+                                type=drun.utils.string_to_bool)
+    pyserve_parser.add_argument('--legion-autodiscover',
+                                type=drun.utils.string_to_bool)
     pyserve_parser.set_defaults(func=serve_model)
 
-    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model')
+    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model using flask')
     pyserve_parser.add_argument('--consul-addr',
                                 type=str, help='Consul Agent IP address')
     pyserve_parser.add_argument('--consul-port',
