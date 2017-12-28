@@ -21,12 +21,15 @@ except ImportError:
     pass
 
 import sys
+import os
 import argparse
 import logging
 
 from drun.pyserve import serve_model
-from drun.deploy import build_model, deploy_model, undeploy_model, inspect
+from drun.deploy import build_model, deploy_model, undeploy_model, inspect, VALID_SERVING_WORKERS
 import drun.utils
+
+ROOT_LOGGER = logging.getLogger()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
@@ -49,6 +52,11 @@ if __name__ == '__main__':
                               type=str, help='base docker image for new image')
     build_parser.add_argument('--docker-image-tag',
                               type=str, help='docker image tag')
+    build_parser.add_argument('--with-deploy',
+                              action='store_true', help='deploy after build')
+    build_parser.add_argument('--serving',
+                              default=VALID_SERVING_WORKERS[0],
+                              type=str, help='serving worker: %s' % ', '.join(VALID_SERVING_WORKERS))
     build_parser.set_defaults(func=build_model)
 
     deploy_parser = subparsers.add_parser('deploy', description='deploys a model into a new container')
@@ -64,6 +72,8 @@ if __name__ == '__main__':
                                type=str, help='Grafana user')
     deploy_parser.add_argument('--grafana-password',
                                type=str, help='Grafana password')
+    deploy_parser.add_argument('--expose-model-port',
+                               type=int, help='Expose model at specific port')
     deploy_parser.set_defaults(func=deploy_model)
 
     undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
@@ -120,9 +130,12 @@ if __name__ == '__main__':
 
     v = vars(args)
 
-    log_level = logging.DEBUG if args.verbose else logging.ERROR
-    logging.basicConfig(level=log_level)
-    logger = logging.getLogger("legion")
+    if args.verbose or drun.utils.string_to_bool(os.getenv('VERBOSE', '')):
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.ERROR
+
+    ROOT_LOGGER.setLevel(log_level)
 
     if 'func' in v:
         args.func(args)

@@ -19,12 +19,15 @@ import unittest2
 import json
 import os
 import glob
+import requests
 import time
 from argparse import Namespace
 
 import drun.deploy as deploy
 import drun.model_id
 import drun.io
+import drun.env
+import drun.model_http_api
 from drun.utils import TemporaryFolder
 
 import docker
@@ -45,10 +48,18 @@ class TestDeploy(unittest2.TestCase):
         self.network = deploy.find_network(self.client, common_arguments)
         self.wheel_path = self._get_latest_bdist()
         drun.model_id.init(self.MODEL_ID)
+        self.deployed_containers_ids = []
 
     def tearDown(self):
         drun.model_id._model_id = None
         drun.model_id._model_initialized_from_function = False
+        for container_id in self.deployed_containers_ids:
+            try:
+                container = self.client.containers.get(container_id)
+                container.stop()
+                container.remove()
+            except docker.errors.NotFound:
+                pass
 
     def _get_latest_bdist(self):
         dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
@@ -61,6 +72,7 @@ class TestDeploy(unittest2.TestCase):
 
     def test_stack_is_running(self):
         containers = deploy.get_stack_containers_and_images(self.client, self.network)
+        self.assertTrue(len(containers['services']) > 0, 'Cannot found any service container')
         for container in containers['services']:
             container_required = container.labels.get('com.epam.drun.container_required', 'true').lower() \
                                  in ('1', 'yes', 'true')
@@ -90,12 +102,35 @@ class TestDeploy(unittest2.TestCase):
                               input_data_frame=df,
                               version=version)
 
-    def test_model_image_build(self, remove_image=True):
+    def _build_summation_model(self, path, version):
+        def prepare(x):
+            return x
+
+        def apply(x):
+            return x['a'] + x['b']
+
+        df = pandas.DataFrame([{
+            'a': 1,
+            'b': 1,
+        }])
+
+        return drun.io.export(path,
+                              apply,
+                              prepare,
+                              input_data_frame=df,
+                              use_df=False,
+                              version=version)
+
+    def test_model_image_build(self, remove_image=True, summation_model=False):
         self.test_stack_is_running()
 
         with TemporaryFolder('drun-model-image-build') as temp_folder:
             path = os.path.join(temp_folder.path, 'temp.model')
-            self._build_model(path, self.MODEL_VERSION)
+
+            if summation_model:
+                self._build_summation_model(path, self.MODEL_VERSION)
+            else:
+                self._build_model(path, self.MODEL_VERSION)
 
             args = Namespace(
                 model_file=path,
@@ -103,7 +138,8 @@ class TestDeploy(unittest2.TestCase):
                 base_docker_image=None,
                 docker_network=None,
                 python_package=self.wheel_path,
-                docker_image_tag=None
+                docker_image_tag=None,
+                serving=deploy.VALID_SERVING_WORKERS[1]
             )
 
             image = deploy.build_model(args)
@@ -120,6 +156,8 @@ class TestDeploy(unittest2.TestCase):
 
     def _build_image_deploy_and_test(self, image, deploy_args, undeploy=False):
         container = deploy.deploy_model(deploy_args)
+
+        self.deployed_containers_ids.append(container.id)
 
         self.assertIsInstance(container, docker.models.containers.Container)
         time.sleep(3)
@@ -144,9 +182,58 @@ class TestDeploy(unittest2.TestCase):
             grafana_server=None,
             grafana_user=None,
             grafana_password=None,
+            expose_model_port=None
         )
 
         self._build_image_deploy_and_test(image, args, True)
+
+    def test_model_image_deploy_and_query_exposed(self):
+        image = self.test_model_image_build(False, True)
+        model_port = 9009
+        
+        args = Namespace(
+            model_id=self.MODEL_ID,
+            docker_image=None,
+            docker_network=None,
+            grafana_server=None,
+            grafana_user=None,
+            grafana_password=None,
+            expose_model_port=model_port
+        )
+
+        container = self._build_image_deploy_and_test(image, args, False)
+        ports_information = [item for sublist in container.attrs['NetworkSettings']['Ports'].values()
+                             for item in sublist]
+        ports_information = [int(x['HostPort']) for x in ports_information]
+        self.assertTrue(model_port in ports_information, 'Port not binded')
+
+        url = drun.model_http_api.get_model_invoke_url(self.MODEL_ID, False)
+        values = {
+            'a': 10,
+            'b': 20
+        }
+        parameters = drun.model_http_api.get_requests_parameters_for_model_invoke(**values)
+        url = 'http://%s:%s%s' % ('localhost', model_port, url)
+        response = requests.post(url, **parameters)
+
+        response = response.text
+        if isinstance(response, bytes):
+            response = response.decode('utf-8')
+
+        self.assertEqual(response.strip(), '30', 'Incorrect model result')
+
+        args = Namespace(
+            model_id=self.MODEL_ID,
+            docker_network=None,
+            grafana_server=None,
+            grafana_user=None,
+            grafana_password=None,
+        )
+
+        deploy.undeploy_model(args)
+        time.sleep(3)
+
+        self.client.images.remove(image.short_id)
 
     def test_model_image_deploy_by_image_id(self):
         image = self.test_model_image_build(False)
@@ -157,6 +244,7 @@ class TestDeploy(unittest2.TestCase):
             grafana_server=None,
             grafana_user=None,
             grafana_password=None,
+            expose_model_port=None
         )
 
         self._build_image_deploy_and_test(image, args, True)
@@ -171,6 +259,7 @@ class TestDeploy(unittest2.TestCase):
             grafana_server=None,
             grafana_user=None,
             grafana_password=None,
+            expose_model_port=None
         )
 
         container = self._build_image_deploy_and_test(image, args, False)

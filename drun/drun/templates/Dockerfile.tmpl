@@ -15,6 +15,8 @@
 #
 FROM {{DOCKER_BASE_IMAGE}}
 
+{{ ADDITIONAL_DOCKER_CONTENT|safe }}
+
 ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
 
 {% if PIP_CUSTOM_TARGET %}
@@ -28,8 +30,5 @@ ENV MODEL_FILE="/legion/{{MODEL_FILE}}" \
     MODEL_ID="{{MODEL_ID}}" \
     GUNICORN_WORKER_CLASS="aiohttp.worker.GunicornWebWorker" \
     GUNICORN_WORKER_COUNT="1" \
-    GUNICORN_WORKER_PATH="drun.wsgi_aio:aioapp"
-
-
-CMD /usr/local/bin/gunicorn -p /legion/gunicorn.pid -w ${GUNICORN_WORKER_COUNT} -k ${GUNICORN_WORKER_CLASS} -n legion -b 0.0.0.0:5000 ${GUNICORN_WORKER_PATH}
-
+    GUNICORN_WORKER_PATH="drun.wsgi_aio:aioapp" \
+    VERBOSE="false"
