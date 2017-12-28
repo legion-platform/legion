@@ -343,7 +343,7 @@ def deduce_param_types(data_frame, optional_dictionary=None):
         return _get_column_types(data_frame)
 
 
-def export(filename, apply_func, prepare_func=None, param_types=None, input_data_frame=None, version=None):
+def export(filename, apply_func, prepare_func=None, param_types=None, input_data_frame=None, version=None, use_df=True):
     """
     Export simple Pandas based model as a bundle
 
@@ -357,6 +357,8 @@ def export(filename, apply_func, prepare_func=None, param_types=None, input_data
     :type param_types: dict[str, :py:class:`drun.types.ColumnInformation`]
     :param input_data_frame: pandas DF
     :type input_data_frame: :py:class:`pandas.DataFrame`
+    :param use_df: use pandas DF for prepare and apply function
+    :type use_df: bool
     :param version: of version
     :type version: str
     :return: :py:class:`drun.model.ScipyModel` -- model instance
@@ -391,7 +393,8 @@ def export(filename, apply_func, prepare_func=None, param_types=None, input_data
     model = ScipyModel(apply_func=apply_func,
                        column_types=column_types,
                        prepare_func=prepare_func,
-                       version=version)
+                       version=version,
+                       use_df=use_df)
 
     with ModelContainer(filename, is_write=True) as container:
         container.save(model)

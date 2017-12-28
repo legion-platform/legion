@@ -65,7 +65,7 @@ class ScipyModel(implements(IMLModel)):
     Useful for Sklearn/Scipy based model export
     """
 
-    def __init__(self, apply_func, prepare_func, column_types, version='Unknown'):
+    def __init__(self, apply_func, prepare_func, column_types, version='Unknown', use_df=True):
         """
         Build simple SciPy model
 
@@ -76,6 +76,8 @@ class ScipyModel(implements(IMLModel)):
         :param column_types: dict of column name => type
         :type column_types: dict[str, :py:class:`drun.types.ColumnInformation`]
         :param version: version of model
+        :param use_df: use pandas DF for prepare and apply function
+        :type use_df: bool
         :type version: str
         """
         assert apply_func is not None
@@ -86,6 +88,7 @@ class ScipyModel(implements(IMLModel)):
         self.column_types = column_types
         self.prepare_func = prepare_func
         self.version = version
+        self.use_df = use_df
 
     def apply(self, input_vector):
         """
@@ -96,12 +99,12 @@ class ScipyModel(implements(IMLModel)):
         :return: dict -- output data
         """
         LOGGER.info('Input vector: %r' % input_vector)
-        data_frame = build_df(self.column_types, input_vector)
+        data_frame = build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
         data_frame = self.prepare_func(data_frame)
 
-        LOGGER.info('Applying function with DataFrame: %r' % data_frame)
+        LOGGER.info('Applying function with DataFrame: %s' % str(data_frame))
         return self.apply_func(data_frame)
 
     @property
@@ -122,6 +125,7 @@ class ScipyModel(implements(IMLModel)):
         """
         return {
             'version': self.version,
+            'use_df': self.use_df,
             'input_params': {k: v.description_for_api for (k, v) in self.column_types.items()}
         }
 
