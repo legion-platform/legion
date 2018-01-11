@@ -190,7 +190,7 @@ class TestDeploy(unittest2.TestCase):
     def test_model_image_deploy_and_query_exposed(self):
         image = self.test_model_image_build(False, True)
         model_port = 9009
-        
+
         args = Namespace(
             model_id=self.MODEL_ID,
             docker_image=None,

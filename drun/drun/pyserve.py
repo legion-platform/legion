@@ -241,7 +241,7 @@ def apply_env_args(application):
 
     apply_env_argument(application, drun.env.LEGION_ADDR[0])
     apply_env_argument(application, drun.env.LEGION_PORT[0])
-    apply_env_argument(application, drun.env.LEGION_AUTODISCOVER[0], utils.string_to_bool)
+    apply_env_argument(application, drun.env.IP_AUTODISCOVER[0], utils.string_to_bool)
 
     apply_env_argument(application, drun.env.DEBUG[0], utils.string_to_bool)
     apply_env_argument(application, drun.env.REGISTER_ON_CONSUL[0], utils.string_to_bool)
@@ -272,8 +272,8 @@ def init_application(args=None):
     if args:
         apply_cli_args(application, args)
 
-    # Check LEGION_ADDR if LEGION_AUTODISCOVER enabled (by default)
-    if application.config['LEGION_AUTODISCOVER']:
+    # Check LEGION_ADDR if IP_AUTODISCOVER enabled (by default)
+    if application.config['IP_AUTODISCOVER']:
         cfg_addr = application.config['LEGION_ADDR']
         if cfg_addr == "" or cfg_addr == "0.0.0.0":
             application.config['LEGION_ADDR'] = utils.detect_ip()
