@@ -106,6 +106,10 @@ services:
     image: drun/jenkins
     networks:
       - drun_root
+    labels:
+      com.epam.drun.container_type: service
+      com.epam.drun.container_description: Jenkins server
+      com.epam.drun.container_required: 'false'
     environment:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
       - DRUN_EXAMPLES_COMMIT=${DRUN_EXAMPLES_COMMIT}
