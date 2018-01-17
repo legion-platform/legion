@@ -59,17 +59,23 @@ def patch_version_file(file, local_version):
     :type file: str
     :param local_version: local version string
     :type local_version: str
-    :return: None
+    :return: str - base version
     """
     with open(file, 'r') as stream:
         content = stream.read()
         if isinstance(content, bytes):
             content = content.decode('utf-8')
 
+    base_version = re.search(SEARCH_PATTERN, content, flags=re.MULTILINE)
+    if not base_version or not base_version.group(1):
+        raise Exception('Cannot find version string')
+
     content = re.sub(SEARCH_PATTERN, '__version__ = \'\\1+%s\'' % local_version, content, flags=re.MULTILINE)
 
     with open(file, 'w') as stream:
         stream.write(content)
+
+    return base_version.group(1)
 
 
 def work(args):
@@ -99,7 +105,13 @@ def work(args):
 
     local_version_string = '%s.%s.%s' % (date_string, str(build_id), git_revision)
 
-    patch_version_file(args.version_file, local_version_string)
+    base_version = patch_version_file(args.version_file, local_version_string)
+
+    print('%s+%s' % (base_version, local_version_string))
+
+    if args.extended_output:
+        print(base_version)
+        print(local_version_string)
 
 
 if __name__ == '__main__':
@@ -107,6 +119,7 @@ if __name__ == '__main__':
     parser.add_argument('version_file', type=str, help='Path to version file')
     parser.add_argument('--build-id', type=int, help='Override build id. Default from env.BUILD_NUMBER')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')
+    parser.add_argument('--extended-output', action='store_true', help='Output to stdout extended information')
 
     args = parser.parse_args()
 
