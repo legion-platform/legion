@@ -22,6 +22,13 @@ import re
 import tempfile
 import os
 import sys
+import shutil
+import requests
+import requests.auth
+
+import drun.env
+
+import docker
 
 
 def detect_ip():
@@ -46,6 +53,31 @@ def escape(unescaped_string):
     :return: str -- escaped string
     """
     return unescaped_string.replace('.', '-').replace(':', '-').replace('&', '-')
+
+
+def remove_directory(path):
+    """
+    Remove directory and all subdirectories or file
+
+    :param path: path to directory or file
+    :type path: str
+    :return: None
+    """
+    try:
+        if os.path.isdir(path):
+            for root, dirs, files in os.walk(path, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(root, name))
+                for name in dirs:
+                    os.rmdir(os.path.join(root, name))
+
+            os.rmdir(path)
+        elif os.path.isfile(path):
+            os.remove(path)
+        else:
+            raise Exception('Not a directory or file: %s' % path)
+    finally:
+        pass
 
 
 class TemporaryFolder:
@@ -79,14 +111,7 @@ class TemporaryFolder:
 
         :return: None
         """
-        try:
-            for root, dirs, files in os.walk(self.path, topdown=False):
-                for name in files:
-                    os.remove(os.path.join(root, name))
-                for name in dirs:
-                    os.rmdir(os.path.join(root, name))
-        finally:
-            pass
+        remove_directory(self._path)
 
     def __enter__(self):
         """
@@ -133,6 +158,244 @@ def normalize_name(name):
     """
     name = name.replace(' ', '_')
     return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
+
+
+def is_local_resource(path):
+    """
+    Check if path is local resource
+
+    :param path:
+    :type path: str
+    :return:
+    """
+    if any(path.lower().startswith(prefix) for prefix in ['http://', 'https://', '//']):
+        return False
+
+    if '://' in path:
+        raise Exception('Unknown or unavailable resource: %s' % path)
+
+    return True
+
+
+def normalize_external_resource_path(path):
+    """
+    Normalize external resource path
+
+    :param path: non-normalized resource path
+    :type path: str
+    :return: str -- normalized path
+    """
+    default_protocol = os.getenv(*drun.env.EXTERNAL_RESOURCE_PROTOCOL)
+    default_host = os.getenv(*drun.env.EXTERNAL_RESOURCE_HOST)
+
+    if path.lower().startswith('//'):
+        path = '%s:%s' % (default_protocol, path)
+
+    first_double_slash = path.find('//')
+
+    if first_double_slash < 0:
+        raise Exception('Cannot found double slash')
+
+    if len(path) == first_double_slash + 2:
+        return path + default_host
+    elif len(path) > first_double_slash + 2 and path[first_double_slash + 2] == '/':
+        return path[:first_double_slash] + '//' + default_host + path[first_double_slash + 2:]
+
+    return path
+
+
+def _get_auth_credentials_for_external_resource():
+    """
+    Get HTTP auth credentials for requests module
+
+    :return: :py:class:`requests.auth.HTTPBasicAuth` -- credentials
+    """
+    user = os.getenv(*drun.env.EXTERNAL_RESOURCE_USER)
+    password = os.getenv(*drun.env.EXTERNAL_RESOURCE_PASSWORD)
+
+    if user and password and len(user) > 0:
+        return requests.auth.HTTPBasicAuth(user, password)
+
+    return None
+
+
+def save_file(temp_file, target_file, remove_after_delete=False):
+    """
+    Upload local file to external resource
+
+    :param temp_file: path to file on local machine
+    :param target_file: path to file on external resource
+    :param remove_after_delete: remove local file
+    :return: str -- path to file on external resource
+    """
+    try:
+        if is_local_resource(target_file):
+            if os.path.abspath(temp_file) != os.path.abspath(target_file):
+                shutil.copy2(temp_file, target_file)
+            result_path = target_file
+        else:
+            url = normalize_external_resource_path(target_file)
+
+            with open(temp_file, 'rb') as file:
+                auth = _get_auth_credentials_for_external_resource()
+                response = requests.put(url,
+                                        data=file,
+                                        auth=auth)
+                if 400 <= response.status_code:
+                    raise Exception('Wrong status code %d returned for url %s' % (response.status_code, url))
+
+            result_path = url
+
+    finally:
+        if remove_after_delete:
+            os.remove(temp_file)
+
+    return result_path
+
+
+def download_file(target_file):
+    """
+    Download file from external resource and return path to file on local machine
+
+    :param target_file: path to file on external resource
+    :type target_file: str
+    :return: str -- path to file on local machine
+    """
+    if is_local_resource(target_file):
+        return target_file
+
+    # If external resource (only HTTP at this time)
+    url = normalize_external_resource_path(target_file)
+    name = target_file.split('/')[-1]
+
+    response = requests.get(url,
+                            stream=True,
+                            auth=_get_auth_credentials_for_external_resource())
+    temp_file = tempfile.mktemp(suffix=name)
+
+    with open(temp_file, 'wb') as file:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk:
+                file.write(chunk)
+
+    return os.path.abspath(temp_file)
+
+
+class ExternalFileReader:
+    """
+    External file reader for opening files from http://, https:// and local FS
+    """
+
+    def __init__(self, path):
+        """
+        Create external file reader
+
+        :param path: path to file
+        :type path: str
+        """
+        self._path = path
+        self._local_path = None
+        self._is_external_path = not is_local_resource(self._path)
+
+    @property
+    def path(self):
+        """
+        Get path to file on local machine
+
+        :return:
+        """
+        return self._local_path
+
+    def _download(self):
+        """
+        Download external resource
+
+        :return: None
+        """
+        if not self._local_path:
+            if self._is_external_path:
+                self._local_path = download_file(self._path)
+            else:
+                self._local_path = self._path
+
+    def __enter__(self):
+        """
+        Return self on context enter
+
+        :return: :py:class:`drun.utils.ExternalFileReader`
+        """
+        self._download()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """
+        Call remove on context exit
+
+        :param type: -
+        :param value: -
+        :param traceback: -
+        :return: None
+        """
+        if self._is_external_path:
+            remove_directory(self._local_path)
+
+
+class DockerContainerContext:
+    """
+    Context for working with docker containers
+    """
+
+    def __init__(self, image, pull_from_server=True, **kwargs):
+        """
+        Create context for docker container
+
+        :param image: Docker image name
+        :type image: str
+        :param pull_from_server: pull image from docker registry
+        :type  pull_from_server: bool
+        :param kwargs: arguments for creation of container
+        :type kwargs: *dict
+        """
+        self._client = docker.from_env()
+        self._container = None
+        self._image = image
+        self._pull_from_server = pull_from_server
+        self._kwargs = kwargs
+
+    def __enter__(self):
+        """
+        Return self on context enter
+
+        :return: :py:class:`drun.utils.DockerContainerContext`
+        """
+        if self._pull_from_server:
+            self._client.images.pull(self._image)
+
+        self._container = self._client.containers.run(self._image, detach=True, remove=True, **self._kwargs)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Call stop and remove on context exit
+
+        :param type: -
+        :param value: -
+        :param traceback: -
+        :return: None
+        """
+        try:
+            self._container.stop()
+        except Exception:
+            pass
+
+    @property
+    def container(self):
+        """
+        Get docker container
+
+        :return: :py:class:`docker.containers.Container`
+        """
+        return self._client.containers.get(self._container.id)
 
 
 def send_header_to_stderr(header, value):

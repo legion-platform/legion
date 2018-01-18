@@ -23,7 +23,7 @@ import logging
 
 import drun.env
 import drun.utils
-from drun.utils import Colors
+from drun.utils import Colors, ExternalFileReader
 import drun.io
 import drun.grafana
 from drun.template import render_template
@@ -208,37 +208,38 @@ def build_model(args):
     """
     client = build_docker_client(args)
 
-    if not os.path.exists(args.model_file):
-        raise Exception('Cannot find model file: %s' % args.model_file)
+    with ExternalFileReader(args.model_file) as external_reader:
+        if not os.path.exists(external_reader.path):
+            raise Exception('Cannot find model file: %s' % external_reader.path)
 
-    with drun.io.ModelContainer(args.model_file, do_not_load_model=True) as container:
-        model_id = container.get('model.id', None)
-        if args.model_id:
-            model_id = args.model_id
+        with drun.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
+            model_id = container.get('model.id', None)
+            if args.model_id:
+                model_id = args.model_id
 
-    if not model_id:
-        raise Exception('Cannot get model id (not setted in container and not setted in arguments)')
+        if not model_id:
+            raise Exception('Cannot get model id (not setted in container and not setted in arguments)')
 
-    image_labels = generate_docker_labels_for_image(args.model_file, model_id, args)
+        image_labels = generate_docker_labels_for_image(external_reader.path, model_id, args)
 
-    base_docker_image = args.base_docker_image
-    if not base_docker_image:
-        base_docker_image = 'drun/base-python-image:latest'
+        base_docker_image = args.base_docker_image
+        if not base_docker_image:
+            base_docker_image = 'drun/base-python-image:latest'
 
-    image = build_docker_image(
-        client,
-        base_docker_image,
-        model_id,
-        args.model_file,
-        image_labels,
-        args.python_package,
-        args.docker_image_tag
-    )
+        image = build_docker_image(
+            client,
+            base_docker_image,
+            model_id,
+            external_reader.path,
+            image_labels,
+            args.python_package,
+            args.docker_image_tag
+        )
 
-    LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
+        LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
 
-    print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
-    return image
+        print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
+        return image
 
 
 def deploy_model(args):

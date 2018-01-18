@@ -18,6 +18,7 @@ DRun model export / load
 """
 
 import os
+import tempfile
 import zipfile
 import json
 
@@ -28,7 +29,7 @@ from drun.model import ScipyModel, IMLModel
 import drun.types
 from drun.types import deduct_types_on_pandas_df
 from drun.types import ColumnInformation
-from drun.utils import TemporaryFolder, send_header_to_stderr
+from drun.utils import TemporaryFolder, send_header_to_stderr, save_file
 from drun.model_id import get_model_id, is_model_id_auto_deduced
 
 import dill
@@ -393,10 +394,13 @@ def export(filename, apply_func, prepare_func=None, param_types=None, input_data
                        prepare_func=prepare_func,
                        version=version)
 
-    with ModelContainer(filename, is_write=True) as container:
+    temp_file = tempfile.mktemp('model-temp')
+    with ModelContainer(temp_file, is_write=True) as container:
         container.save(model)
 
-    send_header_to_stderr(drun.headers.MODEL_PATH, filename)
+    result_path = save_file(temp_file, filename)
+
+    send_header_to_stderr(drun.headers.MODEL_PATH, result_path)
     send_header_to_stderr(drun.headers.MODEL_VERSION, version)
 
     return model
