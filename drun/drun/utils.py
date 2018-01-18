@@ -18,6 +18,7 @@ DRun utils functional
 """
 
 import socket
+import subprocess
 import re
 import tempfile
 import os
@@ -396,6 +397,34 @@ class DockerContainerContext:
         :return: :py:class:`docker.containers.Container`
         """
         return self._client.containers.get(self._container.id)
+
+
+def get_git_revision(file, use_short_hash=True):
+    """
+    Get current GIT revision of file or directory
+
+    :param file: path to file or directory for check
+    :type file: str
+    :param use_short_hash: return shorten revision id
+    :type use_short_hash: bool
+    :return: str or None -- revision id
+    """
+    try:
+        directory = file
+        if not os.path.isdir(directory):
+            directory = os.path.dirname(file)
+
+        revision = subprocess.check_output(['git', 'rev-parse',
+                                            '--short' if use_short_hash else '',
+                                            'HEAD'],
+                                           cwd=directory)
+    except subprocess.CalledProcessError:
+        return None
+
+    if isinstance(revision, bytes):
+        revision = revision.decode('utf-8')
+
+    return revision.strip()
 
 
 def send_header_to_stderr(header, value):

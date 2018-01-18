@@ -17,8 +17,11 @@
 DRun model export / load
 """
 
+import datetime
+import getpass
 import os
 import tempfile
+import sys
 import zipfile
 import json
 
@@ -29,7 +32,7 @@ from drun.model import ScipyModel, IMLModel
 import drun.types
 from drun.types import deduct_types_on_pandas_df
 from drun.types import ColumnInformation
-from drun.utils import TemporaryFolder, send_header_to_stderr, save_file
+from drun.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision
 from drun.model_id import get_model_id, is_model_id_auto_deduced
 
 import dill
@@ -344,7 +347,39 @@ def deduce_param_types(data_frame, optional_dictionary=None):
         return _get_column_types(data_frame)
 
 
-def export(filename, apply_func, prepare_func=None, param_types=None, input_data_frame=None, version=None):
+def deduce_model_file_name(version=None):
+    """
+    Get model file name
+
+    :param version: version of model
+    :type version: str or None
+    :return: str -- auto deduced file name
+    """
+    if not version:
+        version = '0.0'
+
+    model_id = get_model_id()
+    if not model_id or is_model_id_auto_deduced():
+        raise Exception('Cannot get model_id. Please set using drun.init_model(<name>)')
+
+    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+
+    valid_user_names = [os.getenv(env) for env in drun.env.MODEL_NAMING_UID_ENV if os.getenv(env)]
+    user_id = valid_user_names[0] if len(valid_user_names) > 0 else getpass.getuser()
+
+    commit_id = get_git_revision(os.getcwd())
+    if not commit_id:
+        commit_id = '0000'
+
+    file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(version), date_string, user_id, commit_id)
+
+    if os.getenv(*drun.env.EXTERNAL_RESOURCE_USE_BY_DEFAULT) == 'true':
+        return '///%s' % file_name
+    else:
+        return file_name
+
+
+def export(filename=None, apply_func=None, prepare_func=None, param_types=None, input_data_frame=None, version=None):
     """
     Export simple Pandas based model as a bundle
 
@@ -388,6 +423,11 @@ def export(filename, apply_func, prepare_func=None, param_types=None, input_data
             or not len(column_types.keys()) \
             or not isinstance(list(column_types.values())[0], ColumnInformation):
         raise Exception('Bad param_types / input_data_frame provided')
+
+    if filename:
+        print('Warning! If you pass filename, CI tools would not work correctly', file=sys.__stderr__)
+    else:
+        filename = deduce_model_file_name(version)
 
     model = ScipyModel(apply_func=apply_func,
                        column_types=column_types,
