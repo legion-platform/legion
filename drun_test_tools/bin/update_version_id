@@ -38,10 +38,14 @@ def get_git_revision(file, use_short_hash=True):
     :return: str or None -- revision id
     """
     try:
+        directory = file
+        if not os.path.isdir(directory):
+            directory = os.path.dirname(file)
+
         revision = subprocess.check_output(['git', 'rev-parse',
                                             '--short' if use_short_hash else '',
                                             'HEAD'],
-                                           cwd=os.path.dirname(file))
+                                           cwd=directory)
     except subprocess.CalledProcessError:
         return None
 
