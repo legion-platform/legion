@@ -425,7 +425,7 @@ def export(filename=None, apply_func=None, prepare_func=None, param_types=None, 
         raise Exception('Bad param_types / input_data_frame provided')
 
     if filename:
-        print('Warning! If you pass filename, CI tools would not work correctly', file=sys.__stderr__)
+        print('Warning! If you pass filename, CI tools would not work correctly', file=sys.stderr)
     else:
         filename = deduce_model_file_name(version)
 

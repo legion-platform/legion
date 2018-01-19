@@ -167,7 +167,7 @@ def is_local_resource(path):
 
     :param path:
     :type path: str
-    :return:
+    :return: bool -- is path for local resource
     """
     if any(path.lower().startswith(prefix) for prefix in ['http://', 'https://', '//']):
         return False
@@ -225,8 +225,11 @@ def save_file(temp_file, target_file, remove_after_delete=False):
     Upload local file to external resource
 
     :param temp_file: path to file on local machine
+    :type temp_file: str
     :param target_file: path to file on external resource
+    :type target_file: str
     :param remove_after_delete: remove local file
+    :type remove_after_delete: bool
     :return: str -- path to file on external resource
     """
     try:

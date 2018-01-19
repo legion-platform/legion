@@ -158,6 +158,9 @@ class TestUtilsExternalFile(unittest2.TestCase):
         with patch_env_host_user_password('test', 'http'):
             self.assertEqual(utils.normalize_external_resource_path('///a'), 'http://test/a')
 
+        with patch_env_host_user_password('test:8081/prefix', 'http'):
+            self.assertEqual(utils.normalize_external_resource_path('///a'), 'http://test:8081/prefix/a')
+
         with patch_env_host_user_password('test', 'http'):
             self.assertEqual(utils.normalize_external_resource_path('///'), 'http://test/')
 
