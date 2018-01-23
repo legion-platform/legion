@@ -14,6 +14,6 @@
 #    limitations under the License.
 #
 """
-Version file
+Connections to external APIs
 """
-__version__ = '0.5.6'
+from .base_grafana_client import BaseGrafanaClient
