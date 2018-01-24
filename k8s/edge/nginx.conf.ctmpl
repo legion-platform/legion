@@ -68,7 +68,7 @@ http{
         log_by_lua_block {
             local statistics_sender = require "statistics_sender"
             local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)
-            # statistics_sender.send_request_statistics("{{$name}}", latency)
+            statistics_sender.send_request_statistics("{{$name}}", latency)
         }
     }
     {{end}}
