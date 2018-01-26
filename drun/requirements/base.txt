@@ -9,3 +9,4 @@ numpy
 Pillow
 Jinja2>=2.9
 statsd
+kubernetes

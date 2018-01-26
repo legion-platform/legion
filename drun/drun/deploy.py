@@ -18,7 +18,6 @@ Deploy logic for DRun
 """
 
 import os
-import shutil
 import logging
 
 import drun.env
@@ -26,149 +25,12 @@ import drun.utils
 from drun.utils import Colors, ExternalFileReader
 import drun.io
 import drun.grafana
-from drun.template import render_template
+import drun.docker
 
 import docker
+import docker.errors
 
 LOGGER = logging.getLogger('deploy')
-
-
-def generate_docker_labels_for_image(model_file, model_id, args):
-    """
-    Generate docker image labels from model file
-
-    :param model_file: path to model file
-    :type model_file: str
-    :param model_id: model id
-    :type model_id: str
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: dict[str, str] of labels
-    """
-    with drun.io.ModelContainer(model_file, do_not_load_model=True) as container:
-        base = {
-            'com.epam.drun.model.id': model_id,
-            'com.epam.drun.model.version': container.get('model.version', 'undefined'),
-            'com.epam.drun.class': 'pyserve',
-            'com.epam.drun.container_type': 'model'
-        }
-        for key, value in container.items():
-            base['com.epam.' + key] = value
-
-        return base
-
-
-def generate_docker_labels_for_container(image):
-    """
-    Build container labels from image labels (copy)
-
-    :param image: source Docker image
-    :type image: :py:class:`docker.models.image.Image`
-    :return: dict[str, str] of labels
-    """
-    return image.labels
-
-
-def build_docker_image(client, base_image, model_id, model_file, labels, python_package, docker_image_tag):
-    """
-    Build docker image from base image and model file
-
-    :param client: Docker client
-    :type client: :py:class:`docker.client.DockerClient`
-    :param base_image: name of base image
-    :type base_image: str
-    :param model_id: model id
-    :type model_id: str
-    :param model_file: path to model file
-    :type model_file: str
-    :param labels: image labels
-    :type labels: dict[str, str]
-    :param python_package: path to wheel or None for install from PIP
-    :type python_package: str or None
-    :param docker_image_tag: str docker image tag
-    :type docker_image_tag: str ot None
-    :return: docker.models.Image
-    """
-    with drun.utils.TemporaryFolder('legion-docker-build') as temp_directory:
-        folder, model_filename = os.path.split(model_file)
-
-        shutil.copy2(model_file, os.path.join(temp_directory.path, model_filename))
-
-        install_target = 'drun'
-
-        if python_package:
-            if not os.path.exists(python_package):
-                raise Exception('Python package file not found: %s' % python_package)
-
-            install_target = os.path.basename(python_package)
-            shutil.copy2(python_package, os.path.join(temp_directory.path, install_target))
-
-        docker_file_content = render_template('Dockerfile.tmpl', {
-            'DOCKER_BASE_IMAGE': base_image,
-            'MODEL_ID': model_id,
-            'MODEL_FILE': model_filename,
-            'PIP_INSTALL_TARGET': install_target,
-            'PIP_CUSTOM_TARGET': install_target != 'drun'
-        })
-
-        labels = {k: str(v) if v else None for (k, v) in labels.items()}
-
-        with open(os.path.join(temp_directory.path, 'Dockerfile'), 'w') as file:
-            file.write(docker_file_content)
-
-        LOGGER.info('Building docker image in folder %s' % (temp_directory.path))
-        image = client.images.build(
-            tag=docker_image_tag,
-            nocache=True,
-            path=temp_directory.path,
-            rm=True,
-            labels=labels
-        )
-
-        return image
-
-
-def find_network(client, args):
-    """
-    Find DRun network on docker host
-
-    :param client: Docker client
-    :type client: :py:class:`docker.client.DockerClient`
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: str id of network
-    """
-    network_id = args.docker_network
-
-    if network_id is None:
-        LOGGER.debug('No network provided, trying to detect an active DRun network')
-        nets = client.networks.list()
-        for network in nets:
-            name = network.name
-            if name.startswith('drun'):
-                LOGGER.info('Detected network %s', name)
-                network_id = network.id
-                break
-    else:
-        if network_id not in client.networks.list():
-            network_id = None
-
-    if not network_id:
-        LOGGER.error('Using empty docker network')
-
-    return network_id
-
-
-def build_docker_client(args):
-    """
-    Create docker client
-
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`docker.Client`
-    """
-    client = docker.from_env()
-    return client
 
 
 def build_grafana_client(args):
@@ -206,7 +68,7 @@ def build_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Image` docker image
     """
-    client = build_docker_client(args)
+    client = drun.docker.build_docker_client(args)
 
     with ExternalFileReader(args.model_file) as external_reader:
         if not os.path.exists(external_reader.path):
@@ -220,13 +82,13 @@ def build_model(args):
         if not model_id:
             raise Exception('Cannot get model id (not setted in container and not setted in arguments)')
 
-        image_labels = generate_docker_labels_for_image(external_reader.path, model_id, args)
+        image_labels = drun.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
 
         base_docker_image = args.base_docker_image
         if not base_docker_image:
             base_docker_image = 'drun/base-python-image:latest'
 
-        image = build_docker_image(
+        image = drun.docker.build_docker_image(
             client,
             base_docker_image,
             model_id,
@@ -239,19 +101,35 @@ def build_model(args):
         LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
 
         print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
+
+        if args.push_to_registry:
+            uri = args.push_to_registry # type: str
+            tag_start_position = uri.rfind(':')
+            slash_latest_position = uri.rfind('/')
+
+            if 0 < tag_start_position < slash_latest_position and slash_latest_position > 0:
+                repository = uri
+                tag = 'latest'
+
+            print('Tagging image %s for model %s as %s' % (image.short_id, model_id, args.push_to_registry))
+            image.tag(args.push_to_registry)
+            print('Successfully tagged image %s for model %s as %s' % (image.short_id, model_id, args.push_to_registry))
+            client.images.push(args.push_to_registry)
+            print('Successfully pushed image %s for model %s to %s' % (image.short_id, model_id, args.push_to_registry))
+
         return image
 
 
-def deploy_model(args):
+def deploy_kubernetes(args):
     """
-    Deploy model to docker host
+    Deploy model to kubernetes
 
-    :param args: command arguments with .model_id, .model_file, .docker_network
+    :param args: command arguments with .docker_image, .scale, .text-output, .namespace
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Container` new instance
     """
-    client = build_docker_client(args)
-    network_id = find_network(client, args)
+    client = drun.docker.build_docker_client(args)
+    network_id = drun.docker.find_network(client, args)
     grafana_client = build_grafana_client(args)
 
     if args.model_id and args.docker_image:
@@ -261,7 +139,7 @@ def deploy_model(args):
         print('Use with --model-id or --docker-image')
         exit(1)
 
-    current_containers = get_stack_containers_and_images(client, network_id)
+    current_containers = drun.docker.get_stack_containers_and_images(client, network_id)
 
     if args.model_id:
         for image in current_containers['model_images']:
@@ -273,7 +151,12 @@ def deploy_model(args):
         else:
             raise Exception('Cannot found image for model_id = %s' % (args.model_id,))
     elif args.docker_image:
-        image = client.images.get(args.docker_image)
+        try:
+            image = client.images.get(args.docker_image)
+        except docker.errors.ImageNotFound:
+            print('Cannot find %s locally. Pulling' % args.docker_image)
+            image = client.images.pull(args.docker_image)
+
         model_id = image.labels.get('com.epam.drun.model.id', None)
         if not model_id:
             raise Exception('Cannot detect model_id in image')
@@ -291,7 +174,78 @@ def deploy_model(args):
             LOGGER.info('Removing container #%s' % container.short_id)
             container.remove()
 
-    container_labels = generate_docker_labels_for_container(image)
+    container_labels = drun.docker.generate_docker_labels_for_container(image)
+
+    LOGGER.info('Starting container with image #%s for model %s' % (image.short_id, model_id))
+    container = client.containers.run(image,
+                                      network=network_id,
+                                      stdout=True,
+                                      stderr=True,
+                                      detach=True,
+                                      labels=container_labels)
+
+    LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))
+    grafana_client.create_dashboard_for_model_by_labels(container_labels)
+
+    print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
+    return container
+
+
+def deploy_model(args):
+    """
+    Deploy model to docker host
+
+    :param args: command arguments with .model_id, .model_file, .docker_network
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`docker.model.Container` new instance
+    """
+    client = drun.docker.build_docker_client(args)
+    network_id = drun.docker.find_network(client, args)
+    grafana_client = build_grafana_client(args)
+
+    if args.model_id and args.docker_image:
+        print('Use only --model-id or --docker-image')
+        exit(1)
+    elif not args.model_id and not args.docker_image:
+        print('Use with --model-id or --docker-image')
+        exit(1)
+
+    current_containers = drun.docker.get_stack_containers_and_images(client, network_id)
+
+    if args.model_id:
+        for image in current_containers['model_images']:
+            model_name = image.labels.get('com.epam.drun.model.id', None)
+            if model_name == args.model_id:
+                image = image
+                model_id = model_name
+                break
+        else:
+            raise Exception('Cannot found image for model_id = %s' % (args.model_id,))
+    elif args.docker_image:
+        try:
+            image = client.images.get(args.docker_image)
+        except docker.errors.ImageNotFound:
+            print('Cannot find %s locally. Pulling' % args.docker_image)
+            image = client.images.pull(args.docker_image)
+
+        model_id = image.labels.get('com.epam.drun.model.id', None)
+        if not model_id:
+            raise Exception('Cannot detect model_id in image')
+    else:
+        raise Exception('Provide model-id or docker-image')
+
+    # Detect current existing containers with models, stop and remove them
+    LOGGER.info('Founding containers with model_id=%s' % model_id)
+
+    for container in current_containers['models']:
+        model_name = container.labels.get('com.epam.drun.model.id', None)
+        if model_name == model_id:
+            LOGGER.info('Stopping container #%s' % container.short_id)
+            container.stop()
+            LOGGER.info('Removing container #%s' % container.short_id)
+            container.remove()
+
+    container_labels = drun.docker.generate_docker_labels_for_container(image)
 
     LOGGER.info('Starting container with image #%s for model %s' % (image.short_id, model_id))
     container = client.containers.run(image,
@@ -316,11 +270,11 @@ def undeploy_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    client = build_docker_client(args)
-    network_id = find_network(client, args)
+    client = drun.docker.build_docker_client(args)
+    network_id = drun.docker.find_network(client, args)
     grafana_client = build_grafana_client(args)
 
-    current_containers = get_stack_containers_and_images(client, network_id)
+    current_containers = drun.docker.get_stack_containers_and_images(client, network_id)
 
     for container in current_containers['models']:
         model_name = container.labels.get('com.epam.drun.model.id', None)
@@ -340,32 +294,6 @@ def undeploy_model(args):
     print('Successfully undeployed model %s' % (args.model_id, ))
 
 
-def get_stack_containers_and_images(client, network_id):
-    """
-    Get information about DRun containers and images
-
-    :param client: Docker client
-    :type client: :py:class:`docker.client.DockerClient`
-    :param network_id: docker network
-    :type network_id: str
-    :return: dict with lists 'services', 'models' and 'model_images'
-    """
-    containers = client.containers.list(True)
-    containers = [c
-                  for c in containers
-                  if 'com.epam.drun.container_type' in c.labels
-                  and (not network_id
-                       or network_id in (n['NetworkID'] for n in c.attrs['NetworkSettings']['Networks'].values()))]
-
-    images = client.images.list(filters={'label': 'com.epam.drun.container_type'})
-
-    return {
-        'services': [c for c in containers if c.labels['com.epam.drun.container_type'] == 'service'],
-        'models': [c for c in containers if c.labels['com.epam.drun.container_type'] == 'model'],
-        'model_images': [i for i in images if i.labels['com.epam.drun.container_type'] == 'model'],
-    }
-
-
 def inspect(args):
     """
     Print information about current containers / images state
@@ -374,9 +302,9 @@ def inspect(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    client = build_docker_client(args)
-    network_id = find_network(client, args)
-    containers = get_stack_containers_and_images(client, network_id)
+    client = drun.docker.build_docker_client(args)
+    network_id = drun.docker.find_network(client, args)
+    containers = drun.docker.get_stack_containers_and_images(client, network_id)
 
     all_required_containers_is_ok = True
 

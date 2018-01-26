@@ -25,7 +25,7 @@ import argparse
 import logging
 
 from drun.pyserve import serve_model
-from drun.deploy import build_model, deploy_model, undeploy_model, inspect
+from drun.deploy import build_model, deploy_model, undeploy_model, inspect, deploy_kubernetes
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
@@ -48,6 +48,8 @@ if __name__ == '__main__':
                               type=str, help='base docker image for new image')
     build_parser.add_argument('--docker-image-tag',
                               type=str, help='docker image tag')
+    build_parser.add_argument('--push-to-registry',
+                              type=str, help='docker registry address')
     build_parser.set_defaults(func=build_model)
 
     deploy_parser = subparsers.add_parser('deploy', description='deploys a model into a new container')
@@ -65,17 +67,28 @@ if __name__ == '__main__':
                                type=str, help='Grafana password')
     deploy_parser.set_defaults(func=deploy_model)
 
+    deploy_k8s_parser = subparsers.add_parser('k8s', description='deploys a model into a kubernetes cluster')
+    deploy_k8s_parser.add_argument('--docker-image',
+                                   type=str, help='docker sha256 image')
+    deploy_k8s_parser.add_argument('--scale',
+                                   type=int, help='count of instances')
+    deploy_k8s_parser.add_argument('--namespace',
+                                   type=str, help='kubernetes namespace')
+    deploy_k8s_parser.add_argument('--text-output',
+                                   action='store_true', help='just output deployment configuration')
+    deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
+
     undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
     undeploy_parser.add_argument('model_id',
                                  type=str, help='identifier of the model')
     undeploy_parser.add_argument('--docker-network',
                                  type=str, help='docker network')
     undeploy_parser.add_argument('--grafana-server',
-                               type=str, help='Grafana server')
+                                 type=str, help='Grafana server')
     undeploy_parser.add_argument('--grafana-user',
-                               type=str, help='Grafana user')
+                                 type=str, help='Grafana user')
     undeploy_parser.add_argument('--grafana-password',
-                               type=str, help='Grafana password')
+                                 type=str, help='Grafana password')
     undeploy_parser.set_defaults(func=undeploy_model)
 
     inspect_parser = subparsers.add_parser('inspect', description='get information about docker network state')

@@ -23,6 +23,7 @@ import time
 from argparse import Namespace
 
 import drun.deploy as deploy
+import drun.docker
 import drun.model_id
 import drun.io
 from drun.utils import TemporaryFolder
@@ -41,8 +42,8 @@ class TestDeploy(unittest2.TestCase):
 
     def setUp(self):
         common_arguments = Namespace(docker_network=None)
-        self.client = deploy.build_docker_client(common_arguments)
-        self.network = deploy.find_network(self.client, common_arguments)
+        self.client = drun.docker.build_docker_client(common_arguments)
+        self.network = drun.docker.find_network(self.client, common_arguments)
         self.wheel_path = self._get_latest_bdist()
         drun.model_id.init(self.MODEL_ID)
 
@@ -60,7 +61,7 @@ class TestDeploy(unittest2.TestCase):
         return latest_file
 
     def test_stack_is_running(self):
-        containers = deploy.get_stack_containers_and_images(self.client, self.network)
+        containers = drun.docker.get_stack_containers_and_images(self.client, self.network)
         for container in containers['services']:
             container_required = container.labels.get('com.epam.drun.container_required', 'true').lower() \
                                  in ('1', 'yes', 'true')
