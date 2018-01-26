@@ -24,11 +24,14 @@ import drun.env
 import drun.utils
 from drun.utils import Colors, ExternalFileReader
 import drun.io
+import drun.headers
 import drun.grafana
 import drun.docker
+import drun.k8s as k8s
 
 import docker
 import docker.errors
+from kubernetes import client
 
 LOGGER = logging.getLogger('deploy')
 
@@ -120,6 +123,27 @@ def build_model(args):
         return image
 
 
+def inspect_kubernetes(args):
+    """
+    Inspect kubernetes
+
+    :param args: command arguments with TODO: ADD
+    :type args: :py:class:`argparse.Namespace`
+    :return: TODO: ADD
+    """
+    pass
+
+
+def undeploy_kubernetes(args):
+    """
+    Undeploy model to kubernetes
+
+    :param args: command arguments with TODO: ADD
+    :type args: :py:class:`argparse.Namespace`
+    :return: TODO: ADD
+    """
+    pass
+
 def deploy_kubernetes(args):
     """
     Deploy model to kubernetes
@@ -128,67 +152,103 @@ def deploy_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Container` new instance
     """
-    client = drun.docker.build_docker_client(args)
-    network_id = drun.docker.find_network(client, args)
-    grafana_client = build_grafana_client(args)
+    docker_client = drun.docker.build_docker_client(args)
+    # grafana_client = build_grafana_client(args)
 
-    if args.model_id and args.docker_image:
-        print('Use only --model-id or --docker-image')
-        exit(1)
-    elif not args.model_id and not args.docker_image:
-        print('Use with --model-id or --docker-image')
-        exit(1)
+    graphite_service = k8s.find_service('graphite', args.deployment, args.namespace)
+    graphite_endpoint = k8s.get_service_url(graphite_service, 'statsd').split(':')
 
-    current_containers = drun.docker.get_stack_containers_and_images(client, network_id)
+    grafana_service = k8s.find_service('grafana', args.deployment, args.namespace)
+    grafana_endpoint = k8s.get_service_url(grafana_service, 'http')
 
-    if args.model_id:
-        for image in current_containers['model_images']:
-            model_name = image.labels.get('com.epam.drun.model.id', None)
-            if model_name == args.model_id:
-                image = image
-                model_id = model_name
-                break
-        else:
-            raise Exception('Cannot found image for model_id = %s' % (args.model_id,))
-    elif args.docker_image:
-        try:
-            image = client.images.get(args.docker_image)
-        except docker.errors.ImageNotFound:
-            print('Cannot find %s locally. Pulling' % args.docker_image)
-            image = client.images.pull(args.docker_image)
+    consul_service = k8s.find_service('consul', args.deployment, args.namespace)
+    consul_endpoint = k8s.get_service_url(consul_service, 'http').split(':')
 
-        model_id = image.labels.get('com.epam.drun.model.id', None)
-        if not model_id:
-            raise Exception('Cannot detect model_id in image')
+    # TODO: Question. What do?
+    k8s.build_client()
+
+    try:
+        docker_image = docker_client.images.get(args.image)
+    except docker.errors.ImageNotFound:
+        docker_image = docker_client.images.pull(args.image)
+
+    if args.image_for_k8s:
+        kubernetes_image = args.image_for_k8s
     else:
-        raise Exception('Provide model-id or docker-image')
+        kubernetes_image = args.image
 
-    # Detect current existing containers with models, stop and remove them
-    LOGGER.info('Founding containers with model_id=%s' % model_id)
+    required_headers = [
+        drun.headers.DOMAIN_MODEL_ID,
+        drun.headers.DOMAIN_MODEL_VERSION,
+        drun.headers.DOMAIN_CONTAINER_TYPE
+    ]
 
-    for container in current_containers['models']:
-        model_name = container.labels.get('com.epam.drun.model.id', None)
-        if model_name == model_id:
-            LOGGER.info('Stopping container #%s' % container.short_id)
-            container.stop()
-            LOGGER.info('Removing container #%s' % container.short_id)
-            container.remove()
+    if any(header not in docker_image.labels for header in required_headers):
+        raise Exception('Missed on of %s labels. Available labels: %s' % (
+            ', '.join(required_headers),
+            ', '.join(tuple(docker_image.labels.keys()))
+        ))
 
-    container_labels = drun.docker.generate_docker_labels_for_container(image)
+    deployment_name = "%s.model.%s.%s.deployment" % (
+        args.deployment,
+        drun.utils.normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_ID]),
+        drun.utils.normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_VERSION])
+    )
 
-    LOGGER.info('Starting container with image #%s for model %s' % (image.short_id, model_id))
-    container = client.containers.run(image,
-                                      network=network_id,
-                                      stdout=True,
-                                      stderr=True,
-                                      detach=True,
-                                      labels=container_labels)
+    compatible_labels = {
+        drun.utils.normalize_name_to_dns_1123(k): drun.utils.normalize_name_to_dns_1123(v)
+        for k, v in
+        docker_image.labels.items()
+    }
 
-    LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))
-    grafana_client.create_dashboard_for_model_by_labels(container_labels)
+    container_env_variables = {
+        drun.env.STATSD_HOST[0]: graphite_endpoint[0],
+        drun.env.STATSD_PORT[0]: graphite_endpoint[1],
+        drun.env.GRAFANA_URL[0]: 'http://%s' % grafana_endpoint,
+        drun.env.CONSUL_ADDR[0]: consul_endpoint[0],
+        drun.env.CONSUL_PORT[0]: consul_endpoint[1],
+    }
 
-    print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
-    return container
+    container = client.V1Container(
+        name='model',
+        image=kubernetes_image,
+        env=[
+            client.V1EnvVar(name=k, value=v)
+            for k, v in container_env_variables.items()
+        ],
+        ports=[client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
+
+    template = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(labels=compatible_labels),
+        spec=client.V1PodSpec(containers=[container]))
+
+    deployment_spec = client.ExtensionsV1beta1DeploymentSpec(
+        replicas=args.scale,
+        template=template)
+
+    deployment = client.ExtensionsV1beta1Deployment(
+        api_version="extensions/v1beta1",
+        kind="Deployment",
+        metadata=client.V1ObjectMeta(name=deployment_name, labels=compatible_labels),
+        spec=deployment_spec)
+
+    extensions_v1beta1 = client.ExtensionsV1beta1Api()
+
+    # TODO: Add text output
+    if args.text_output:
+        data_dict = deployment.to_dict()
+        # yaml.dump(data_dict, sys.stdout, default_flow_style=False)
+        print(data_dict)
+    else:
+        api_response = extensions_v1beta1.create_namespaced_deployment(
+            body=deployment,
+            namespace=args.namespace)
+
+        # TODO: Question. Who performs registration?
+        # LOGGER.info('Creatinlg Grafana dashboard for model %s' % (model_id,))
+        # grafana_client.create_dashboard_for_model_by_labels(container_labels)
+
+        return api_response
 
 
 def deploy_model(args):

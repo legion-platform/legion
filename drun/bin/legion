@@ -25,7 +25,10 @@ import argparse
 import logging
 
 from drun.pyserve import serve_model
-from drun.deploy import build_model, deploy_model, undeploy_model, inspect, deploy_kubernetes
+from drun.deploy import \
+    build_model, \
+    deploy_model, undeploy_model, inspect, \
+    deploy_kubernetes, undeploy_kubernetes, inspect_kubernetes
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
@@ -34,6 +37,7 @@ if __name__ == '__main__':
                         action='store_true')
     subparsers = parser.add_subparsers()
 
+    # --------- LOCAL DOCKER SECTION -----------
     build_parser = subparsers.add_parser('build', description='build model into new docker image')
     build_parser.add_argument('model_file',
                               type=str, help='serialized model file name')
@@ -52,7 +56,8 @@ if __name__ == '__main__':
                               type=str, help='docker registry address')
     build_parser.set_defaults(func=build_model)
 
-    deploy_parser = subparsers.add_parser('deploy', description='deploys a model into a new container')
+    deploy_parser = subparsers.add_parser('deploy-local',
+                                          description='deploys a model into a new container (local docker)')
     deploy_parser.add_argument('--model-id',
                                type=str, help='model id')
     deploy_parser.add_argument('--docker-image',
@@ -67,18 +72,8 @@ if __name__ == '__main__':
                                type=str, help='Grafana password')
     deploy_parser.set_defaults(func=deploy_model)
 
-    deploy_k8s_parser = subparsers.add_parser('k8s', description='deploys a model into a kubernetes cluster')
-    deploy_k8s_parser.add_argument('--docker-image',
-                                   type=str, help='docker sha256 image')
-    deploy_k8s_parser.add_argument('--scale',
-                                   type=int, help='count of instances')
-    deploy_k8s_parser.add_argument('--namespace',
-                                   type=str, help='kubernetes namespace')
-    deploy_k8s_parser.add_argument('--text-output',
-                                   action='store_true', help='just output deployment configuration')
-    deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
-
-    undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
+    undeploy_parser = subparsers.add_parser('undeploy-local',
+                                            description='kills all containers service the model (local docker)')
     undeploy_parser.add_argument('model_id',
                                  type=str, help='identifier of the model')
     undeploy_parser.add_argument('--docker-network',
@@ -91,11 +86,33 @@ if __name__ == '__main__':
                                  type=str, help='Grafana password')
     undeploy_parser.set_defaults(func=undeploy_model)
 
-    inspect_parser = subparsers.add_parser('inspect', description='get information about docker network state')
+    inspect_parser = subparsers.add_parser('inspect-local',
+                                           description='get information about docker network state')
     inspect_parser.add_argument('--docker-network',
                                 type=str, help='docker network')
     inspect_parser.set_defaults(func=inspect)
 
+    # --------- KUBERNETES SECTION -----------
+    deploy_k8s_parser = subparsers.add_parser('deploy',
+                                              description='deploys a model into a kubernetes cluster')
+    deploy_k8s_parser.add_argument('image',
+                                   type=str, help='docker image')
+    deploy_k8s_parser.add_argument('--image-for-k8s',
+                                   type=str, help='docker image for kubernetes deployment')
+    deploy_k8s_parser.add_argument('--scale',
+                                   default=1,
+                                   type=int, help='count of instances')
+    deploy_k8s_parser.add_argument('--namespace',
+                                   default='default',
+                                   type=str, help='kubernetes namespace')
+    deploy_k8s_parser.add_argument('--deployment',
+                                   default='drun',
+                                   type=str, help='kubernetes namespace')
+    deploy_k8s_parser.add_argument('--text-output',
+                                   action='store_true', help='just output deployment configuration')
+    deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
+
+    # --------- SERVING SECTION -----------
     pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
     pyserve_parser.add_argument('model_file',
                                 type=str)
@@ -122,6 +139,7 @@ if __name__ == '__main__':
                                 type=int)
     pyserve_parser.set_defaults(func=serve_model)
 
+    # --------- END OF SECTIONS -----------
     args = parser.parse_args(sys.argv[1:])
 
     v = vars(args)

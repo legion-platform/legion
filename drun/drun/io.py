@@ -440,6 +440,9 @@ def export(filename=None, apply_func=None, prepare_func=None, param_types=None, 
 
     result_path = save_file(temp_file, filename)
 
+    if not filename:
+        print('Model has been saved to %s' % result_path, file=sys.stderr)
+
     send_header_to_stderr(drun.headers.MODEL_PATH, result_path)
     send_header_to_stderr(drun.headers.MODEL_VERSION, version)
 

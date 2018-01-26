@@ -161,6 +161,19 @@ def normalize_name(name):
     return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
 
 
+def normalize_name_to_dns_1123(name):
+    """
+    Normalize name to DNS-1123
+
+    :param name: name to normalize
+    :type name: str
+    :return: str -- normalized name
+    """
+    name = name.replace(' ', '-')
+    name = name.replace('_', '-')
+    return re.sub('[^a-zA-Z0-9\-\.]', '', name)
+
+
 def is_local_resource(path):
     """
     Check if path is local resource
@@ -271,10 +284,11 @@ def download_file(target_file):
     # If external resource (only HTTP at this time)
     url = normalize_external_resource_path(target_file)
     name = target_file.split('/')[-1]
-
+    credentials = _get_auth_credentials_for_external_resource()
     response = requests.get(url,
                             stream=True,
-                            auth=_get_auth_credentials_for_external_resource())
+                            verify=False,
+                            auth=credentials)
     temp_file = tempfile.mktemp(suffix=name)
 
     with open(temp_file, 'wb') as file:

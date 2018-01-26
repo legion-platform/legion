@@ -69,16 +69,16 @@ def get_service_url(service, port_name):
     return url
 
 
-def find_service(service_name, namespace='default', search_without_system_filter=False):
+def find_service(service_name, deployment, namespace='default'):
     """
     Find service in cluster
 
     :param service_name: service name
     :type service_name: str
+    :param deployment: deployment name
+    :type deployment: str
     :param namespace: namespace
     :type namespace: str
-    :param search_without_system_filter: search services that not contains K8S_LABEL_PREFIX + 'component'
-    :param search_without_system_filter: bool
     :return: :py:class:`kubernetes.client.models.v1_service.V1Service` or None
     """
     client = build_client()
@@ -86,16 +86,10 @@ def find_service(service_name, namespace='default', search_without_system_filter
     core_api = kubernetes.client.CoreV1Api(client)
     all_services = core_api.list_namespaced_service(namespace)
 
-    service_filter = lambda service: service.metadata.labels \
-                                     and service.metadata.labels.get(K8S_LABEL_PREFIX + 'component') == service_name
-
-    if search_without_system_filter:
-        service_filter = lambda service: service_name in service.metadata.name
-
     valid_services = [
         service
         for service in all_services.items
-        if service_filter(service)
+        if service.metadata.name == '%s-%s' % (deployment, service_name)
     ]
 
     if len(valid_services) > 1:

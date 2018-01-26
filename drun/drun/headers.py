@@ -20,3 +20,10 @@ DRun headers (for meta-information)
 MODEL_ID = 'Model-Id'
 MODEL_PATH = 'Model-Path'
 MODEL_VERSION = 'Model-Version'
+
+DOMAIN_MODEL_ID = 'com.epam.drun.model.id'
+DOMAIN_MODEL_VERSION = 'com.epam.drun.model.version'
+DOMAIN_CLASS = 'com.epam.drun.class'
+DOMAIN_CONTAINER_TYPE = 'com.epam.drun.container_type'
+DOMAIN_CONTAINER_DESCRIPTION = 'com.epam.drun.container_description'
+DOMAIN_CONTAINER_REQUIRED = 'com.epam.drun.container_required'
