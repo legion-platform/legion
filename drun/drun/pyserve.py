@@ -25,6 +25,7 @@ from flask import current_app as app
 
 import drun.io
 import drun.env
+import drun.grafana
 import drun.model as mlmodel
 import drun.utils as utils
 
@@ -171,22 +172,41 @@ def register_service(application):
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    client = consul.Consul(
-        host=application.config['CONSUL_ADDR'],
-        port=int(application.config['CONSUL_PORT']))
+    consul_host = application.config['CONSUL_ADDR']
+    consul_port = int(application.config['CONSUL_PORT'])
+    client = consul.Consul(host=consul_host, port=consul_port)
 
     service = application.config['MODEL_ID']
 
     addr = application.config['LEGION_ADDR']
     port = int(application.config['LEGION_PORT'])
 
-    LOGGER.info("Registering model service %s @ http://%s:%s", service, addr, port)
+    print('Registering model %s located at %s:%d on http://%s:%s' % (service, addr, port, consul_host, consul_port))
+
     client.agent.service.register(
         service,
         address=addr,
         port=port,
-        tags=['legion', 'model']
+        tags=['legion', 'model'],
+        check=consul.Check.http('http://%s:%d/healthcheck' % (addr, port), '2s')
     )
+
+
+def register_dashboard(application):
+    """
+    Register application in Grafana (create dashboard)
+
+    :param application: Flask application instance
+    :type application: :py:class:`Flask.app`
+    :return: None
+    """
+    host = os.environ.get(*drun.env.GRAFANA_URL)
+    user = os.environ.get(*drun.env.GRAFANA_USER)
+    password = os.environ.get(*drun.env.GRAFANA_PASSWORD)
+
+    print('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
+    client = drun.grafana.GrafanaClient(host, user, password)
+    client.create_dashboard_for_model(application.config['MODEL_ID'])
 
 
 def apply_cli_args(application, args):
@@ -287,6 +307,13 @@ def init_application(args=None):
         logging.info('Consul consensus achieved')
     else:
         logging.info('Registration on Consul has been skipped due to configuration')
+
+    # Register dashboard in Grafana
+    # if application.config['REGISTER_ON_GRAFANA']:
+    #     register_dashboard(application)
+    #     logging.info('Grafana dashboard has been registered')
+    # else:
+    #     logging.info('Registration on Grafana has been skipped due to configuration')
 
     return application
 

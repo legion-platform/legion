@@ -22,7 +22,7 @@ import logging
 
 import drun.env
 import drun.utils
-from drun.utils import Colors, ExternalFileReader
+from drun.utils import Colors, ExternalFileReader, normalize_name_to_dns_1123
 import drun.io
 import drun.headers
 import drun.grafana
@@ -99,7 +99,8 @@ def build_model(args):
             external_reader.path,
             image_labels,
             args.python_package,
-            args.docker_image_tag
+            args.docker_image_tag,
+            args.serving
         )
 
         LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
@@ -128,22 +129,109 @@ def inspect_kubernetes(args):
     """
     Inspect kubernetes
 
-    :param args: command arguments with TODO: ADD
+    :param args: command arguments with .namespace
     :type args: :py:class:`argparse.Namespace`
-    :return: TODO: ADD
+    :return: None
     """
-    pass
+    deployments = k8s.find_all_models_deployments(args.namespace)
+    print('%sModel deployments:%s' % (Colors.BOLD, Colors.ENDC))
+    for deployment in deployments:
+        ready_replicas = deployment.status.ready_replicas
+        replicas = deployment.status.replicas
+        line_color = Colors.OKGREEN
+
+        if ready_replicas == 0:
+            line_color = Colors.FAIL
+        elif replicas > ready_replicas > 0:
+            line_color = Colors.WARNING
+
+        container_image = deployment.spec.template.spec.containers[0].image
+
+        model_name = deployment.metadata.labels.get(
+            normalize_name_to_dns_1123(drun.headers.DOMAIN_MODEL_ID), '?'
+        )
+        model_version = deployment.metadata.labels.get(
+            normalize_name_to_dns_1123(drun.headers.DOMAIN_MODEL_VERSION), '?'
+        )
+
+        print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready%s' % (line_color, Colors.ENDC,
+                                                                          Colors.UNDERLINE, model_name, Colors.ENDC,
+                                                                          container_image, model_version,
+                                                                          line_color, ready_replicas, replicas,
+                                                                          Colors.ENDC))
+
+    if not deployments:
+        print('%s-- cannot find any model deployments --%s' % (Colors.WARNING, Colors.ENDC))
 
 
 def undeploy_kubernetes(args):
     """
     Undeploy model to kubernetes
 
-    :param args: command arguments with TODO: ADD
+    :param args: command arguments with .model_id, .namespace
     :type args: :py:class:`argparse.Namespace`
-    :return: TODO: ADD
+    :return: None
     """
-    pass
+    deployment = k8s.find_model_deployment(args.model_id, args.namespace)
+    if not deployment:
+        print('Cannot find deployment for model %s in namespace %s' % (args.model_id, args.namespace))
+    else:
+        k8s.remove_deployment(deployment, args.namespace, args.grace_period)
+
+
+def scale_kubernetes(args):
+    """
+    Scale model instances
+
+    :param args: command arguments with .model_id, .namespace and .scale
+    :type args: :py:class:`argparse.Namespace`
+    :return: None
+    """
+    deployment = k8s.find_model_deployment(args.model_id, args.namespace)
+    if not deployment:
+        print('Cannot find deployment for model %s in namespace %s' % (args.model_id, args.namespace))
+    else:
+        k8s.scale_deployment(deployment, args.scale, args.namespace)
+
+
+def get_kubernetes_meta_from_docker_image(args):
+    """
+    Build meta fields for kubernetes from docker image. Docker image will be pulled automatically.
+
+    :param args: command arguments with .image
+    :type args: :py:class:`argparse.Namespace`
+    :return: tuple[str, dict[str, str]] -- deployment name and labels in DNS-1123 format
+    """
+    docker_client = drun.docker.build_docker_client(args)
+    try:
+        docker_image = docker_client.images.get(args.image)
+    except docker.errors.ImageNotFound:
+        docker_image = docker_client.images.pull(args.image)
+
+    required_headers = [
+        drun.headers.DOMAIN_MODEL_ID,
+        drun.headers.DOMAIN_MODEL_VERSION,
+        drun.headers.DOMAIN_CONTAINER_TYPE
+    ]
+
+    if any(header not in docker_image.labels for header in required_headers):
+        raise Exception('Missed on of %s labels. Available labels: %s' % (
+            ', '.join(required_headers),
+            ', '.join(tuple(docker_image.labels.keys()))
+        ))
+
+    deployment_name = "model.%s.%s.deployment" % (
+        normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_ID]),
+        normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_VERSION])
+    )
+
+    compatible_labels = {
+        normalize_name_to_dns_1123(k): normalize_name_to_dns_1123(v)
+        for k, v in
+        docker_image.labels.items()
+    }
+
+    return deployment_name, compatible_labels
 
 
 def deploy_kubernetes(args):
@@ -169,39 +257,12 @@ def deploy_kubernetes(args):
     # TODO: Question. What do?
     k8s.build_client()
 
-    try:
-        docker_image = docker_client.images.get(args.image)
-    except docker.errors.ImageNotFound:
-        docker_image = docker_client.images.pull(args.image)
-
     if args.image_for_k8s:
         kubernetes_image = args.image_for_k8s
     else:
         kubernetes_image = args.image
 
-    required_headers = [
-        drun.headers.DOMAIN_MODEL_ID,
-        drun.headers.DOMAIN_MODEL_VERSION,
-        drun.headers.DOMAIN_CONTAINER_TYPE
-    ]
-
-    if any(header not in docker_image.labels for header in required_headers):
-        raise Exception('Missed on of %s labels. Available labels: %s' % (
-            ', '.join(required_headers),
-            ', '.join(tuple(docker_image.labels.keys()))
-        ))
-
-    deployment_name = "%s.model.%s.%s.deployment" % (
-        args.deployment,
-        drun.utils.normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_ID]),
-        drun.utils.normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_VERSION])
-    )
-
-    compatible_labels = {
-        drun.utils.normalize_name_to_dns_1123(k): drun.utils.normalize_name_to_dns_1123(v)
-        for k, v in
-        docker_image.labels.items()
-    }
+    deployment_name, compatible_labels = get_kubernetes_meta_from_docker_image(args)
 
     container_env_variables = {
         drun.env.STATSD_HOST[0]: graphite_endpoint[0],
@@ -214,6 +275,7 @@ def deploy_kubernetes(args):
     container = client.V1Container(
         name='model',
         image=kubernetes_image,
+        image_pull_policy='Always',
         env=[
             client.V1EnvVar(name=k, value=v)
             for k, v in container_env_variables.items()
@@ -245,10 +307,6 @@ def deploy_kubernetes(args):
         api_response = extensions_v1beta1.create_namespaced_deployment(
             body=deployment,
             namespace=args.namespace)
-
-        # TODO: Question. Who performs registration?
-        # LOGGER.info('Creatinlg Grafana dashboard for model %s' % (model_id,))
-        # grafana_client.create_dashboard_for_model_by_labels(container_labels)
 
         return api_response
 
@@ -323,7 +381,7 @@ def deploy_model(args):
                                       ports=ports,
                                       labels=container_labels)
 
-    LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))
+    LOGGER.info('Creating Grafana dashboard for model %s' % (model_id,))
     grafana_client.create_dashboard_for_model_by_labels(container_labels)
 
     print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
@@ -356,10 +414,10 @@ def undeploy_model(args):
     target_container.stop()
     LOGGER.info('Removing container #%s' % target_container.short_id)
     target_container.remove()
-    LOGGER.info('Removing Grafana dashboard for model %s' % (args.model_id, ))
+    LOGGER.info('Removing Grafana dashboard for model %s' % (args.model_id,))
     grafana_client.remove_dashboard_for_model(args.model_id)
 
-    print('Successfully undeployed model %s' % (args.model_id, ))
+    print('Successfully undeployed model %s' % (args.model_id,))
 
 
 def inspect(args):

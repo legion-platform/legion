@@ -29,9 +29,9 @@ from drun.pyserve import serve_model
 from drun.deploy import \
     build_model, \
     deploy_model, undeploy_model, inspect, \
-    deploy_kubernetes, undeploy_kubernetes, inspect_kubernetes, VALID_SERVING_WORKERS
+    deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
+    VALID_SERVING_WORKERS
 import drun.utils
-
 
 ROOT_LOGGER = logging.getLogger()
 
@@ -123,6 +123,36 @@ if __name__ == '__main__':
     deploy_k8s_parser.add_argument('--text-output',
                                    action='store_true', help='just output deployment configuration')
     deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
+
+    inspect_k8s_parser = subparsers.add_parser('inspect',
+                                               description='get information about currently deployed models')
+    inspect_k8s_parser.add_argument('--namespace',
+                                    default='default',
+                                    type=str, help='kubernetes namespace')
+    inspect_k8s_parser.set_defaults(func=inspect_kubernetes)
+
+    scale_k8s_parser = subparsers.add_parser('scale',
+                                             description='change count of model pods')
+    scale_k8s_parser.add_argument('model_id',
+                                  type=str, help='docker image')
+    scale_k8s_parser.add_argument('scale',
+                                  type=int, help='new count of replicas')
+    scale_k8s_parser.add_argument('--namespace',
+                                  default='default',
+                                  type=str, help='kubernetes namespace')
+    scale_k8s_parser.set_defaults(func=scale_kubernetes)
+
+    undeploy_k8s_parser = subparsers.add_parser('undeploy',
+                                                description='undeploy model deployment')
+    undeploy_k8s_parser.add_argument('model_id',
+                                     type=str, help='docker image')
+    undeploy_k8s_parser.add_argument('--namespace',
+                                     default='default',
+                                     type=str, help='kubernetes namespace')
+    undeploy_k8s_parser.add_argument('--grace-period',
+                                     default=0,
+                                     type=int, help='removal grace period')
+    undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
 
     # --------- SERVING SECTION -----------
     pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')

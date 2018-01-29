@@ -169,8 +169,8 @@ def normalize_name_to_dns_1123(name):
     :type name: str
     :return: str -- normalized name
     """
-    name = name.replace(' ', '-')
-    name = name.replace('_', '-')
+    for char in ' ', '_', '+':
+        name = name.replace(char, '-')
     return re.sub('[^a-zA-Z0-9\-\.]', '', name)
 
 

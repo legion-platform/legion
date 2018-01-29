@@ -18,17 +18,19 @@ DRun k8s functions
 """
 import logging
 import os
+import urllib3
+import urllib3.exceptions
 
 import drun
 import drun.env
 import drun.headers
+from drun.utils import normalize_name_to_dns_1123
 
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
 
-K8S_LABEL_PREFIX = 'drun/'
 K8S_LOCAL_CLUSTER_DOMAIN = 'cluster.local'
 
 
@@ -42,6 +44,9 @@ def build_client():
         kubernetes.config.load_incluster_config()
     except kubernetes.config.config_exception.ConfigException:
         kubernetes.config.load_kube_config()
+
+    # Disable SSL warning for self-signed certificates
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     return kubernetes.client.ApiClient()
 
@@ -97,3 +102,104 @@ def find_service(service_name, deployment, namespace='default'):
         raise Exception('Cannot found valid service for %s' % service_name)
 
     return valid_services[0]
+
+
+def find_model_deployment(model_id, namespace='default'):
+    """
+    Find model deployment by model id
+
+    :param model_id: model id
+    :type model_id: str
+    :param namespace: namespace
+    :type namespace: str
+    :return: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
+    """
+    client = build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    all_deployments = extension_api.list_namespaced_deployment(namespace)
+
+    type_label_name = normalize_name_to_dns_1123(drun.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_value = 'model'
+
+    model_id_name = normalize_name_to_dns_1123(drun.headers.DOMAIN_MODEL_ID)
+    model_id_value = model_id
+
+    for deployment in all_deployments.items:
+        if deployment.metadata.labels.get(type_label_name) == type_label_value \
+                and deployment.metadata.labels.get(model_id_name) == model_id_value:
+            return deployment
+
+    return None
+
+
+def find_all_models_deployments(namespace='default'):
+    """
+    Find all models deployments
+
+    :param namespace: namespace
+    :type namespace: str
+    :return: list[:py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`]
+    """
+    client = build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    all_deployments = extension_api.list_namespaced_deployment(namespace)
+
+    type_label_name = normalize_name_to_dns_1123(drun.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_value = 'model'
+
+    model_deployments = [
+        deployment
+        for deployment in all_deployments.items
+        if deployment.metadata.labels.get(type_label_name) == type_label_value
+    ]
+
+    return model_deployments
+
+
+def scale_deployment(deployment, new_scale, namespace='default'):
+    """
+    Scale existed deployment
+
+    :param deployment: deployment which we want to scale
+    :type deployment: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
+    :param new_scale: new scale
+    :type new_scale: int
+    :param namespace: namespace
+    :type namespace: str
+    :return: None
+    """
+    client = build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+
+    body = deployment
+    deployment.spec.replicas = new_scale
+
+    extension_api.patch_namespaced_deployment(deployment.metadata.name, namespace, body)
+
+
+def remove_deployment(deployment, namespace='default', grace_period=0):
+    """
+    Remove existed deployment
+
+    :param deployment: deployment which we want to remove
+    :type deployment: `kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
+    :param namespace: namespace
+    :type namespace: str
+    :param grace_period: The duration in seconds before the object should be deleted.
+    Value must be non-negative integer. The value zero indicates delete immediately.
+    If this value is nil, the default grace period for the specified type will be used.
+    Defaults to a per object value if not specified. zero means delete immediately.
+    :type grace_period: int
+    :return: None
+    """
+    client = build_client()
+
+    api_instance = kubernetes.client.AppsV1beta1Api(client)
+
+    body = kubernetes.client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=grace_period)
+
+    api_instance.delete_namespaced_deployment(deployment.metadata.name, namespace, body,
+                                              grace_period_seconds=grace_period)

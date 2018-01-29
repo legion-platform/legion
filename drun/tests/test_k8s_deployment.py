@@ -19,8 +19,6 @@ import unittest2
 from argparse import Namespace
 
 import drun.deploy as deploy
-import drun.k8s as k8s
-import drun.docker
 
 
 class TestK8SDeployment(unittest2.TestCase):
@@ -31,10 +29,11 @@ class TestK8SDeployment(unittest2.TestCase):
     def tearDown(self):
         pass
 
-    def test_k8s(self):
+    def test_k8s_deploy(self):
+        return
         arguments = Namespace(
-            image='nexus.epm.kharlamov.biz/drun_model/a:10',
-            image_for_k8s='nexus.local.epm.kharlamov.biz/drun_model/a:10',
+            image='nexus.epm.kharlamov.biz/drun_model/a:11',
+            image_for_k8s='nexus.local.epm.kharlamov.biz:443/drun_model/a:11',
             scale=2,
             namespace='default',
             deployment='drun',
@@ -43,6 +42,35 @@ class TestK8SDeployment(unittest2.TestCase):
 
         deployment = deploy.deploy_kubernetes(arguments)
         x = 10
+
+    def test_k8s_inspect(self):
+        return
+        arguments = Namespace(
+            namespace='default',
+            deployment='drun'
+        )
+
+        deploy.inspect_kubernetes(arguments)
+        x = 10
+
+    def test_k8s_scale(self):
+        arguments_scale_3 = Namespace(
+            namespace='default',
+            deployment='drun',
+            model_id='recognize-digits',
+            scale=3
+        )
+        arguments_scale_2 = Namespace(
+            namespace='default',
+            deployment='drun',
+            model_id='recognize-digits',
+            scale=2
+        )
+
+        deploy.inspect_kubernetes(arguments_scale_3)
+        deploy.scale_kubernetes(arguments_scale_3)
+        deploy.inspect_kubernetes(arguments_scale_2)
+        deploy.scale_kubernetes(arguments_scale_2)
 
 
 if __name__ == '__main__':

@@ -140,7 +140,8 @@ class TestDeploy(unittest2.TestCase):
                 docker_network=None,
                 python_package=self.wheel_path,
                 docker_image_tag=None,
-                serving=deploy.VALID_SERVING_WORKERS[1]
+                serving=deploy.VALID_SERVING_WORKERS[1],
+                push_to_registry=None
             )
 
             image = deploy.build_model(args)
@@ -260,7 +261,8 @@ class TestDeploy(unittest2.TestCase):
             grafana_server=None,
             grafana_user=None,
             grafana_password=None,
-            expose_model_port=None
+            expose_model_port=None,
+            push_to_registry=None
         )
 
         container = self._build_image_deploy_and_test(image, args, False)

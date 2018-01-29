@@ -103,17 +103,23 @@ class ModelContainer:
         if not os.path.exists(self._file):
             raise Exception('File not existed: %s' % (self._file, ))
 
-        with TemporaryFolder('drun-model-save') as temp_directory:
-            with zipfile.ZipFile(self._file, 'r') as zip:
-                model_path = zip.extract(self.ZIP_FILE_MODEL, os.path.join(temp_directory.path, self.ZIP_FILE_MODEL))
-                info_path = zip.extract(self.ZIP_FILE_INFO, os.path.join(temp_directory.path, self.ZIP_FILE_INFO))
+        try:
+            with TemporaryFolder('drun-model-save') as temp_directory:
+                with zipfile.ZipFile(self._file, 'r') as zip:
+                    model_path = zip.extract(self.ZIP_FILE_MODEL,
+                                             os.path.join(temp_directory.path, self.ZIP_FILE_MODEL))
+                    info_path = zip.extract(self.ZIP_FILE_INFO,
+                                            os.path.join(temp_directory.path, self.ZIP_FILE_INFO))
 
-            if not self._do_not_load_model:
-                with open(model_path, 'rb') as file:
-                    self._model = dill.load(file)
+                if not self._do_not_load_model:
+                    with open(model_path, 'rb') as file:
+                        self._model = dill.load(file)
 
-            with open(info_path, 'r') as file:
-                self._load_info(file)
+                with open(info_path, 'r') as file:
+                    self._load_info(file)
+        except zipfile.BadZipFile:
+            raise Exception('Model files is not a zip file: %s (size: %dKb)' %
+                            (self._file, os.path.getsize(self._file) / 1024))
 
     def _load_info(self, file):
         """
@@ -429,10 +435,12 @@ def export(filename=None,
             or not isinstance(list(column_types.values())[0], ColumnInformation):
         raise Exception('Bad param_types / input_data_frame provided')
 
+    file_name_has_been_deduced = False
     if filename:
         print('Warning! If you pass filename, CI tools would not work correctly', file=sys.stderr)
     else:
         filename = deduce_model_file_name(version)
+        file_name_has_been_deduced = True
 
     model = ScipyModel(apply_func=apply_func,
                        column_types=column_types,
@@ -446,7 +454,7 @@ def export(filename=None,
 
     result_path = save_file(temp_file, filename)
 
-    if not filename:
+    if file_name_has_been_deduced:
         print('Model has been saved to %s' % result_path, file=sys.stderr)
 
     send_header_to_stderr(drun.headers.MODEL_PATH, result_path)

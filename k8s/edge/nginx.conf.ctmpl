@@ -30,8 +30,22 @@ http{
   lua_package_path "/usr/local/share/lua/5.3/?.lua";
 
   init_by_lua_block {
+    local os = require("os")
+    function get_config(name, default)
+        local value = os.getenv(name)
+        if value ~= Nil then
+            return value
+        else
+            return default
+        end
+    end
+
+    local host = get_config("STATSD_HOST", "graphite")
+    local port = get_config("STATSD_PORT", "8125")
+    local namespace = get_config("STATSD_NAMESPACE", "legion.model")
+
     local statistics_sender = require "statistics_sender"
-    statistics_sender.init()
+    statistics_sender.init(host, port, namespace)
   }
 
   {{range services}} {{$name := .Name}} {{$service := service .Name}}

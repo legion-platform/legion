@@ -15,21 +15,12 @@
 --
 local _M = {}
 local Statsd = require("resty_statsd")
-local os = require("os")
 
-function _M.get_config(_, name, default)
-    local value = os.getenv(name)
-    if value ~= Nil then
-        return value
-    else
-        return default
-    end
-end
 
 function _M.push_data(_, time, name)
-    local host = _M:get_config("STATSD_HOST", "graphite")
-    local port = _M:get_config("STATSD_PORT", "8125")
-    local namespace = _M:get_config("STATSD_NAMESPACE", "legion.model")
+    local host = _M.host
+    local port = _M.port
+    local namespace = _M.namespace
 
     ngx.log(ngx.DEBUG, "Connection to host="..host.." port="..port.." namespace="..namespace)
 
@@ -59,8 +50,11 @@ function _M.send_request_statistics(name, latency)
     end
 end
 
-function _M.init()
-    ngx.log(ngx.INFO, "statistics_sender.lua initialized!")
+function _M.init(host, port, namespace)
+    _M.host = host
+    _M.port = port
+    _M.namespace = namespace
+    ngx.log(ngx.ERR, "statistics_sender.lua initialized with host="..host.." port="..port.." namespace="..namespace)
 end
 
 return _M
