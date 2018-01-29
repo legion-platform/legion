@@ -27,6 +27,7 @@ import drun.io
 import drun.headers
 import drun.grafana
 import drun.docker
+from drun.docker import VALID_SERVING_WORKERS
 import drun.k8s as k8s
 
 import docker
@@ -106,7 +107,7 @@ def build_model(args):
         print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
 
         if args.push_to_registry:
-            uri = args.push_to_registry # type: str
+            uri = args.push_to_registry  # type: str
             tag_start_position = uri.rfind(':')
             slash_latest_position = uri.rfind('/')
 
@@ -143,6 +144,7 @@ def undeploy_kubernetes(args):
     :return: TODO: ADD
     """
     pass
+
 
 def deploy_kubernetes(args):
     """
@@ -307,12 +309,18 @@ def deploy_model(args):
 
     container_labels = drun.docker.generate_docker_labels_for_container(image)
 
+    ports = {}
+    if args.expose_model_port:
+        exposing_port = args.expose_model_port
+        ports['%d/tcp' % os.getenv(*drun.env.LEGION_PORT)] = exposing_port
+
     LOGGER.info('Starting container with image #%s for model %s' % (image.short_id, model_id))
     container = client.containers.run(image,
                                       network=network_id,
                                       stdout=True,
                                       stderr=True,
                                       detach=True,
+                                      ports=ports,
                                       labels=container_labels)
 
     LOGGER.info('Creating Grafana dashboard for model %s' % (model_id, ))

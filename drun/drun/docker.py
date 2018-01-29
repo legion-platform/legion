@@ -28,9 +28,11 @@ import drun.utils
 from drun.template import render_template
 
 import docker
+import docker.errors
 
 
 LOGGER = logging.getLogger('docker')
+VALID_SERVING_WORKERS = 'uwsgi', 'gunicorn'
 
 
 def build_docker_client(args):
@@ -45,7 +47,7 @@ def build_docker_client(args):
     return client
 
 
-def build_docker_image(client, base_image, model_id, model_file, labels, python_package, docker_image_tag):
+def build_docker_image(client, base_image, model_id, model_file, labels, python_package, docker_image_tag, serving):
     """
     Build docker image from base image and model file
 
@@ -63,6 +65,8 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
     :type python_package: str or None
     :param docker_image_tag: str docker image tag
     :type docker_image_tag: str ot None
+    :param serving: serving worker, one of VALID_SERVING_WORKERS
+    :type serving: str
     :return: docker.models.Image
     """
     with drun.utils.TemporaryFolder('legion-docker-build') as temp_directory:
@@ -79,7 +83,23 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
             install_target = os.path.basename(python_package)
             shutil.copy2(python_package, os.path.join(temp_directory.path, install_target))
 
+        if serving not in VALID_SERVING_WORKERS:
+            raise Exception('Unknown serving parameter. Should be one of %s' % (', '.join(VALID_SERVING_WORKERS), ))
+
+        # Copy additional payload from templates / docker_files / <serving>
+        additional_directory = os.path.join(os.path.dirname(__file__), 'templates', 'docker_files', serving)
+
+        for file in os.listdir(additional_directory):
+            path = os.path.join(additional_directory, file)
+            if os.path.isfile(path) and file != 'Dockerfile':
+                shutil.copy2(path, os.path.join(temp_directory.path, file))
+
+        additional_docker_file = os.path.join(additional_directory, 'Dockerfile')
+        with open(additional_docker_file, 'r') as additional_docker_file_stream:
+            additional_docker_file_content = additional_docker_file_stream.read()
+
         docker_file_content = render_template('Dockerfile.tmpl', {
+            'ADDITIONAL_DOCKER_CONTENT': additional_docker_file_content,
             'DOCKER_BASE_IMAGE': base_image,
             'MODEL_ID': model_id,
             'MODEL_FILE': model_filename,
@@ -93,13 +113,17 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
             file.write(docker_file_content)
 
         LOGGER.info('Building docker image in folder %s' % (temp_directory.path))
-        image = client.images.build(
-            tag=docker_image_tag,
-            nocache=True,
-            path=temp_directory.path,
-            rm=True,
-            labels=labels
-        )
+        try:
+            image = client.images.build(
+                tag=docker_image_tag,
+                nocache=True,
+                path=temp_directory.path,
+                rm=True,
+                labels=labels
+            )
+        except docker.errors.BuildError as build_error:
+            LOGGER.error('Cannot build image: %s' % (build_error))
+            raise build_error
 
         return image
 

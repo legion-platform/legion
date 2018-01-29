@@ -456,3 +456,17 @@ def send_header_to_stderr(header, value):
     """
     message = 'X-DRun-%s:%s' % (header, value)
     print(message, file=sys.__stderr__, flush=True)
+
+
+def string_to_bool(value):
+    """
+    Convert string to bool
+
+    :param value: string or bool
+    :type value: str or bool
+    :return: bool
+    """
+    if isinstance(value, bool):
+        return value
+
+    return value.lower() in ['true', '1', 't', 'y', 'yes']

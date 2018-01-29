@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 #    Copyright 2017 EPAM Systems
 #
@@ -13,22 +14,21 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM {{DOCKER_BASE_IMAGE}}
+"""
+Entry point for WSGI server
+Example of usage: gunicorn drun.wsgi:application -k sync
+"""
 
-{{ ADDITIONAL_DOCKER_CONTENT|safe }}
+try:
+    import docker_bootup
+except ImportError:
+    pass
 
-ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
 
-{% if PIP_CUSTOM_TARGET %}
-ADD {{PIP_INSTALL_TARGET}} "/legion/{{PIP_INSTALL_TARGET}}"
-RUN pip3 install /legion/{{PIP_INSTALL_TARGET}}
-{% else %}
-RUN pip3 install -i https://drun.kharlamov.biz/pypi/ {{PIP_INSTALL_TARGET}}
-{% endif %}
+from drun.pyserve import init_application
+from drun.logging import redirect_to_stdout, set_log_level
 
-ENV MODEL_FILE="/legion/{{MODEL_FILE}}" \
-    MODEL_ID="{{MODEL_ID}}" \
-    GUNICORN_WORKER_CLASS="aiohttp.worker.GunicornWebWorker" \
-    GUNICORN_WORKER_COUNT="1" \
-    GUNICORN_WORKER_PATH="drun.wsgi_aio:aioapp" \
-    VERBOSE="false"
+set_log_level()
+redirect_to_stdout()
+
+application = init_application()

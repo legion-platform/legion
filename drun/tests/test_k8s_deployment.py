@@ -45,8 +45,5 @@ class TestK8SDeployment(unittest2.TestCase):
         x = 10
 
 
-
-
-
 if __name__ == '__main__':
     unittest2.main()

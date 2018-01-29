@@ -384,15 +384,17 @@ def deduct_types_on_pandas_df(data_frame, extra_columns=None):
     return types
 
 
-def build_df(columns_map, input_values):
+def build_df(columns_map, input_values, return_dict=False):
     """
-    Build pandas.DataFrame from map of columns and input map of strings or bytes
+    Build pandas.DataFrame (or plain dict) from map of columns and input map of strings or bytes
 
     :param columns_map: information about columns
     :type columns_map: dict[str, :py:class:`drun.types.ColumnInformation`]
     :param input_values: input values
     :type input_values: dict[str, union[str, bytes]]
-    :return: :py:class:`pandas.DataFrame`
+    :param return_dict: return dict instead of pandas DF
+    :type return_dict: bool
+    :return: :py:class:`pandas.DataFrame` or dict
     """
     values = {}
     types = {}
@@ -403,6 +405,9 @@ def build_df(columns_map, input_values):
 
         values[column_name] = column_information.representation_type.parse(input_values[column_name])
         types[column_name] = column_information.numpy_type
+
+    if return_dict:
+        return values
 
     data_frame = pd.DataFrame([values])
     data_frame = data_frame.astype(types)

@@ -25,7 +25,6 @@ import drun.headers
 
 import kubernetes
 import kubernetes.client
-#import kubernetes.client.apis.batch_v1_api
 import kubernetes.config
 import kubernetes.config.config_exception
 
@@ -39,7 +38,6 @@ def build_client():
 
     :return: :py:module:`kubernetes.client`
     """
-
     try:
         kubernetes.config.load_incluster_config()
     except kubernetes.config.config_exception.ConfigException:

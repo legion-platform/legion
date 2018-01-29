@@ -24,3 +24,8 @@ keras
 Pillow
 statsd
 locustio
+uwsgi
+gunicorn
+aiohttp
+cchardet
+aiohttp_wsgi
