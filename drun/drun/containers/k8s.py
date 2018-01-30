@@ -16,14 +16,12 @@
 """
 DRun k8s functions
 """
-import logging
-import os
 import urllib3
 import urllib3.exceptions
 
 import drun
-import drun.env
-import drun.headers
+import drun.const.env
+import drun.const.headers
 from drun.utils import normalize_name_to_dns_1123
 
 import kubernetes
@@ -119,10 +117,10 @@ def find_model_deployment(model_id, namespace='default'):
     extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
     all_deployments = extension_api.list_namespaced_deployment(namespace)
 
-    type_label_name = normalize_name_to_dns_1123(drun.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
 
-    model_id_name = normalize_name_to_dns_1123(drun.headers.DOMAIN_MODEL_ID)
+    model_id_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_ID)
     model_id_value = model_id
 
     for deployment in all_deployments.items:
@@ -146,7 +144,7 @@ def find_all_models_deployments(namespace='default'):
     extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
     all_deployments = extension_api.list_namespaced_deployment(namespace)
 
-    type_label_name = normalize_name_to_dns_1123(drun.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
 
     model_deployments = [

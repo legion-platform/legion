@@ -21,10 +21,10 @@ import json
 import os
 import requests
 
-from drun.model_http_api import load_image, get_requests_parameters_for_model_invoke, get_model_invoke_url
+from drun.model.model_http_api import load_image, get_requests_parameters_for_model_invoke, get_model_invoke_url
 
 import unittest2
-from locust import HttpLocust, TaskSet, task
+from locust import TaskSet
 
 
 class LocustTaskSet(TaskSet):

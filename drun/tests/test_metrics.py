@@ -20,14 +20,14 @@ import time
 import unittest2
 from unittest.mock import patch
 
-import drun.metrics as metrics
-import drun.model_id
-import drun.env as env
+import drun.external.metrics as metrics
+import drun.model.model_id
+import drun.const.env as env
 
 
 def _reset_model_id():
-    drun.model_id._model_id = None
-    drun.model_id._model_initialized_from_function = False
+    drun.model.model_id._model_id = None
+    drun.model.model_id._model_initialized_from_function = False
     if env.MODEL_ID[0] in os.environ:
         os.unsetenv(env.MODEL_ID[0])
         del os.environ[env.MODEL_ID[0]]
@@ -42,7 +42,7 @@ class MetricContent:
 
     def __enter__(self):
         if self._init_at_startup:
-            drun.model_id.init(self._model)
+            drun.model.model_id.init(self._model)
         os.environ[env.BUILD_NUMBER[0]] = str(self._build)
         return self
 
@@ -74,7 +74,7 @@ class TestMetrics(unittest2.TestCase):
             self.assertEqual(metrics.get_build_number(), build_number)
 
     def test_model_id_deduction_exception(self):
-        self.assertEqual(drun.model_id._model_id, None, 'Model ID not empty')
+        self.assertEqual(drun.model.model_id._model_id, None, 'Model ID not empty')
         self.assertEqual(os.getenv(*env.MODEL_ID), None, 'Model ID ENV not empty')
         with self.assertRaises(Exception) as context:
             metrics.send_metric(metrics.Metric.TEST_ACCURACY, 30.0)
@@ -86,10 +86,10 @@ class TestMetrics(unittest2.TestCase):
         value = 30.0
         host, port, namespace = metrics.get_metric_endpoint()
         os.environ[env.MODEL_ID[0]] = str(model_id)
-        with patch('drun.model_id.send_model_id') as send_model_id_mock:
+        with patch('drun.model.model_id.send_model_id') as send_model_id_mock:
             with MetricContent(model_id, build_number, init_at_startup=False):
                 self.assertEqual(len(send_model_id_mock.call_args_list), 0)
-                with patch('drun.metrics.send_tcp') as send_tcp_mock:
+                with patch('drun.external.metrics.send_tcp') as send_tcp_mock:
                     timestamp = int(time.time())
                     metrics.send_metric(metric, value)
 
@@ -121,7 +121,7 @@ class TestMetrics(unittest2.TestCase):
 
         _reset_model_id()
 
-        drun.model_id.init(model_id)
+        drun.model.model_id.init(model_id)
         os.environ[env.BUILD_NUMBER[0]] = str(build_number)
 
         self.assertEqual(metrics.get_model_id(), model_id)

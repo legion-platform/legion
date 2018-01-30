@@ -16,12 +16,10 @@
 from __future__ import print_function
 
 import unittest2
-import logging
-import sys
 import json
 import argparse
 
-import drun.pyserve as pyserve
+import drun.serving.pyserve as pyserve
 
 
 class TestPyserveEndpoints(unittest2.TestCase):

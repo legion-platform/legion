@@ -17,7 +17,7 @@ from __future__ import print_function
 
 import unittest2
 
-import drun.types as types
+import drun.model.types as types
 from PIL import Image as PYTHON_Image
 import base64
 import pandas as pd

@@ -25,8 +25,8 @@ import os
 import argparse
 import logging
 
-from drun.pyserve import serve_model
-from drun.deploy import \
+from drun.serving.pyserve import serve_model
+from drun.edi.deploy import \
     build_model, \
     deploy_model, undeploy_model, inspect, \
     deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \

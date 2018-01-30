@@ -27,7 +27,7 @@ import shutil
 import requests
 import requests.auth
 
-import drun.env
+import drun.const.env
 
 import docker
 
@@ -199,8 +199,8 @@ def normalize_external_resource_path(path):
     :type path: str
     :return: str -- normalized path
     """
-    default_protocol = os.getenv(*drun.env.EXTERNAL_RESOURCE_PROTOCOL)
-    default_host = os.getenv(*drun.env.EXTERNAL_RESOURCE_HOST)
+    default_protocol = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_PROTOCOL)
+    default_host = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_HOST)
 
     if path.lower().startswith('//'):
         path = '%s:%s' % (default_protocol, path)
@@ -224,8 +224,8 @@ def _get_auth_credentials_for_external_resource():
 
     :return: :py:class:`requests.auth.HTTPBasicAuth` -- credentials
     """
-    user = os.getenv(*drun.env.EXTERNAL_RESOURCE_USER)
-    password = os.getenv(*drun.env.EXTERNAL_RESOURCE_PASSWORD)
+    user = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_USER)
+    password = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_PASSWORD)
 
     if user and password and len(user) > 0:
         return requests.auth.HTTPBasicAuth(user, password)

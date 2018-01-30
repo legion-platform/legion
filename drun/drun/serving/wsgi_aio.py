@@ -26,7 +26,7 @@ except ImportError:
 
 from aiohttp import web
 from aiohttp_wsgi import WSGIHandler
-from drun.pyserve import init_application
+from drun.serving.pyserve import init_application
 
 
 def make_aiohttp_app():

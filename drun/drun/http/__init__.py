@@ -14,6 +14,5 @@
 #    limitations under the License.
 #
 """
-DRun main package
+HTTP base functionality
 """
-from .version import __version__

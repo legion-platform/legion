@@ -13,7 +13,22 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-"""
-DRun main package
-"""
-from .version import __version__
+FROM {{DOCKER_BASE_IMAGE}}
+
+{{ ADDITIONAL_DOCKER_CONTENT|safe }}
+
+ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
+
+{% if PIP_CUSTOM_TARGET %}
+ADD {{PIP_INSTALL_TARGET}} "/legion/{{PIP_INSTALL_TARGET}}"
+RUN pip3 install /legion/{{PIP_INSTALL_TARGET}}
+{% else %}
+RUN pip3 install -i https://drun.kharlamov.biz/pypi/ {{PIP_INSTALL_TARGET}}
+{% endif %}
+
+ENV MODEL_FILE="/legion/{{MODEL_FILE}}" \
+    MODEL_ID="{{MODEL_ID}}" \
+    GUNICORN_WORKER_CLASS="aiohttp.worker.GunicornWebWorker" \
+    GUNICORN_WORKER_COUNT="1" \
+    GUNICORN_WORKER_PATH="drun.serving.wsgi_aio:aioapp" \
+    VERBOSE="false"

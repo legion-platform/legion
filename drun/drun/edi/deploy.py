@@ -20,21 +20,21 @@ Deploy logic for DRun
 import os
 import logging
 
-import drun.env
 import drun.utils
 from drun.utils import Colors, ExternalFileReader, normalize_name_to_dns_1123
-import drun.io
-import drun.headers
-import drun.grafana
-import drun.docker
-from drun.docker import VALID_SERVING_WORKERS
-import drun.k8s as k8s
+import drun.model.io
+import drun.const.env
+import drun.const.headers
+import drun.external.grafana
+import drun.containers.docker
+import drun.containers.k8s
 
 import docker
 import docker.errors
 from kubernetes import client
 
 LOGGER = logging.getLogger('deploy')
+VALID_SERVING_WORKERS = drun.containers.docker.VALID_SERVING_WORKERS
 
 
 def build_grafana_client(args):
@@ -45,9 +45,9 @@ def build_grafana_client(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`drun.grafana.GrafanaClient`
     """
-    host = os.environ.get(*drun.env.GRAFANA_URL)
-    user = os.environ.get(*drun.env.GRAFANA_USER)
-    password = os.environ.get(*drun.env.GRAFANA_PASSWORD)
+    host = os.environ.get(*drun.const.env.GRAFANA_URL)
+    user = os.environ.get(*drun.const.env.GRAFANA_USER)
+    password = os.environ.get(*drun.const.env.GRAFANA_PASSWORD)
 
     if args.grafana_server:
         host = args.grafana_server
@@ -59,7 +59,7 @@ def build_grafana_client(args):
         password = args.grafana_password
 
     LOGGER.info('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
-    client = drun.grafana.GrafanaClient(host, user, password)
+    client = drun.external.grafana.GrafanaClient(host, user, password)
 
     return client
 
@@ -72,13 +72,13 @@ def build_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Image` docker image
     """
-    client = drun.docker.build_docker_client(args)
+    client = drun.containers.docker.build_docker_client(args)
 
     with ExternalFileReader(args.model_file) as external_reader:
         if not os.path.exists(external_reader.path):
             raise Exception('Cannot find model file: %s' % external_reader.path)
 
-        with drun.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
+        with drun.model.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
             model_id = container.get('model.id', None)
             if args.model_id:
                 model_id = args.model_id
@@ -86,13 +86,13 @@ def build_model(args):
         if not model_id:
             raise Exception('Cannot get model id (not setted in container and not setted in arguments)')
 
-        image_labels = drun.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
+        image_labels = drun.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
 
         base_docker_image = args.base_docker_image
         if not base_docker_image:
             base_docker_image = 'drun/base-python-image:latest'
 
-        image = drun.docker.build_docker_image(
+        image = drun.containers.docker.build_docker_image(
             client,
             base_docker_image,
             model_id,
@@ -133,14 +133,14 @@ def inspect_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    deployments = k8s.find_all_models_deployments(args.namespace)
+    deployments = drun.containers.k8s.find_all_models_deployments(args.namespace)
     print('%sModel deployments:%s' % (Colors.BOLD, Colors.ENDC))
     for deployment in deployments:
         ready_replicas = deployment.status.ready_replicas
         replicas = deployment.status.replicas
         line_color = Colors.OKGREEN
 
-        if ready_replicas == 0:
+        if not ready_replicas or ready_replicas == 0:
             line_color = Colors.FAIL
         elif replicas > ready_replicas > 0:
             line_color = Colors.WARNING
@@ -148,10 +148,10 @@ def inspect_kubernetes(args):
         container_image = deployment.spec.template.spec.containers[0].image
 
         model_name = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(drun.headers.DOMAIN_MODEL_ID), '?'
+            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_ID), '?'
         )
         model_version = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(drun.headers.DOMAIN_MODEL_VERSION), '?'
+            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_VERSION), '?'
         )
 
         print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready%s' % (line_color, Colors.ENDC,
@@ -172,11 +172,11 @@ def undeploy_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    deployment = k8s.find_model_deployment(args.model_id, args.namespace)
+    deployment = drun.containers.k8s.find_model_deployment(args.model_id, args.namespace)
     if not deployment:
         print('Cannot find deployment for model %s in namespace %s' % (args.model_id, args.namespace))
     else:
-        k8s.remove_deployment(deployment, args.namespace, args.grace_period)
+        drun.containers.k8s.remove_deployment(deployment, args.namespace, args.grace_period)
 
 
 def scale_kubernetes(args):
@@ -187,11 +187,11 @@ def scale_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    deployment = k8s.find_model_deployment(args.model_id, args.namespace)
+    deployment = drun.containers.k8s.find_model_deployment(args.model_id, args.namespace)
     if not deployment:
         print('Cannot find deployment for model %s in namespace %s' % (args.model_id, args.namespace))
     else:
-        k8s.scale_deployment(deployment, args.scale, args.namespace)
+        drun.containers.k8s.scale_deployment(deployment, args.scale, args.namespace)
 
 
 def get_kubernetes_meta_from_docker_image(args):
@@ -202,16 +202,16 @@ def get_kubernetes_meta_from_docker_image(args):
     :type args: :py:class:`argparse.Namespace`
     :return: tuple[str, dict[str, str]] -- deployment name and labels in DNS-1123 format
     """
-    docker_client = drun.docker.build_docker_client(args)
+    docker_client = drun.containers.docker.build_docker_client(args)
     try:
         docker_image = docker_client.images.get(args.image)
     except docker.errors.ImageNotFound:
         docker_image = docker_client.images.pull(args.image)
 
     required_headers = [
-        drun.headers.DOMAIN_MODEL_ID,
-        drun.headers.DOMAIN_MODEL_VERSION,
-        drun.headers.DOMAIN_CONTAINER_TYPE
+        drun.const.headers.DOMAIN_MODEL_ID,
+        drun.const.headers.DOMAIN_MODEL_VERSION,
+        drun.const.headers.DOMAIN_CONTAINER_TYPE
     ]
 
     if any(header not in docker_image.labels for header in required_headers):
@@ -221,8 +221,8 @@ def get_kubernetes_meta_from_docker_image(args):
         ))
 
     deployment_name = "model.%s.%s.deployment" % (
-        normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_ID]),
-        normalize_name_to_dns_1123(docker_image.labels[drun.headers.DOMAIN_MODEL_VERSION])
+        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_ID]),
+        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_VERSION])
     )
 
     compatible_labels = {
@@ -242,20 +242,20 @@ def deploy_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Container` new instance
     """
-    docker_client = drun.docker.build_docker_client(args)
+    docker_client = drun.containers.docker.build_docker_client(args)
     # grafana_client = build_grafana_client(args)
 
-    graphite_service = k8s.find_service('graphite', args.deployment, args.namespace)
-    graphite_endpoint = k8s.get_service_url(graphite_service, 'statsd').split(':')
+    graphite_service = drun.containers.k8s.find_service('graphite', args.deployment, args.namespace)
+    graphite_endpoint = drun.containers.k8s.get_service_url(graphite_service, 'statsd').split(':')
 
-    grafana_service = k8s.find_service('grafana', args.deployment, args.namespace)
-    grafana_endpoint = k8s.get_service_url(grafana_service, 'http')
+    grafana_service = drun.containers.k8s.find_service('grafana', args.deployment, args.namespace)
+    grafana_endpoint = drun.containers.k8s.get_service_url(grafana_service, 'http')
 
-    consul_service = k8s.find_service('consul', args.deployment, args.namespace)
-    consul_endpoint = k8s.get_service_url(consul_service, 'http').split(':')
+    consul_service = drun.containers.k8s.find_service('consul', args.deployment, args.namespace)
+    consul_endpoint = drun.containers.k8s.get_service_url(consul_service, 'http').split(':')
 
     # TODO: Question. What do?
-    k8s.build_client()
+    drun.containers.k8s.build_client()
 
     if args.image_for_k8s:
         kubernetes_image = args.image_for_k8s
@@ -265,11 +265,11 @@ def deploy_kubernetes(args):
     deployment_name, compatible_labels = get_kubernetes_meta_from_docker_image(args)
 
     container_env_variables = {
-        drun.env.STATSD_HOST[0]: graphite_endpoint[0],
-        drun.env.STATSD_PORT[0]: graphite_endpoint[1],
-        drun.env.GRAFANA_URL[0]: 'http://%s' % grafana_endpoint,
-        drun.env.CONSUL_ADDR[0]: consul_endpoint[0],
-        drun.env.CONSUL_PORT[0]: consul_endpoint[1],
+        drun.const.env.STATSD_HOST[0]: graphite_endpoint[0],
+        drun.const.env.STATSD_PORT[0]: graphite_endpoint[1],
+        drun.const.env.GRAFANA_URL[0]: 'http://%s' % grafana_endpoint,
+        drun.const.env.CONSUL_ADDR[0]: consul_endpoint[0],
+        drun.const.env.CONSUL_PORT[0]: consul_endpoint[1],
     }
 
     container = client.V1Container(
@@ -319,8 +319,8 @@ def deploy_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Container` new instance
     """
-    client = drun.docker.build_docker_client(args)
-    network_id = drun.docker.find_network(client, args)
+    client = drun.containers.docker.build_docker_client(args)
+    network_id = drun.containers.docker.find_network(client, args)
     grafana_client = build_grafana_client(args)
 
     if args.model_id and args.docker_image:
@@ -330,7 +330,7 @@ def deploy_model(args):
         print('Use with --model-id or --docker-image')
         exit(1)
 
-    current_containers = drun.docker.get_stack_containers_and_images(client, network_id)
+    current_containers = drun.containers.docker.get_stack_containers_and_images(client, network_id)
 
     if args.model_id:
         for image in current_containers['model_images']:
@@ -365,12 +365,12 @@ def deploy_model(args):
             LOGGER.info('Removing container #%s' % container.short_id)
             container.remove()
 
-    container_labels = drun.docker.generate_docker_labels_for_container(image)
+    container_labels = drun.containers.docker.generate_docker_labels_for_container(image)
 
     ports = {}
     if args.expose_model_port:
         exposing_port = args.expose_model_port
-        ports['%d/tcp' % os.getenv(*drun.env.LEGION_PORT)] = exposing_port
+        ports['%d/tcp' % os.getenv(*drun.const.env.LEGION_PORT)] = exposing_port
 
     LOGGER.info('Starting container with image #%s for model %s' % (image.short_id, model_id))
     container = client.containers.run(image,
@@ -396,11 +396,11 @@ def undeploy_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    client = drun.docker.build_docker_client(args)
-    network_id = drun.docker.find_network(client, args)
+    client = drun.containers.docker.build_docker_client(args)
+    network_id = drun.containers.docker.find_network(client, args)
     grafana_client = build_grafana_client(args)
 
-    current_containers = drun.docker.get_stack_containers_and_images(client, network_id)
+    current_containers = drun.containers.docker.get_stack_containers_and_images(client, network_id)
 
     for container in current_containers['models']:
         model_name = container.labels.get('com.epam.drun.model.id', None)
@@ -428,9 +428,9 @@ def inspect(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    client = drun.docker.build_docker_client(args)
-    network_id = drun.docker.find_network(client, args)
-    containers = drun.docker.get_stack_containers_and_images(client, network_id)
+    client = drun.containers.docker.build_docker_client(args)
+    network_id = drun.containers.docker.find_network(client, args)
+    containers = drun.containers.docker.get_stack_containers_and_images(client, network_id)
 
     all_required_containers_is_ok = True
 

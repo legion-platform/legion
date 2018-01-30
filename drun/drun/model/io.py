@@ -26,14 +26,14 @@ import zipfile
 import json
 
 import drun
-import drun.env
-import drun.headers
-from drun.model import ScipyModel, IMLModel
-import drun.types
-from drun.types import deduct_types_on_pandas_df
-from drun.types import ColumnInformation
+import drun.const.env
+import drun.const.headers
+from drun.model.model import ScipyModel
+import drun.model.types
+from drun.model.types import deduct_types_on_pandas_df
+from drun.model.types import ColumnInformation
 from drun.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision
-from drun.model_id import get_model_id, is_model_id_auto_deduced
+from drun.model.model_id import get_model_id, is_model_id_auto_deduced
 
 import dill
 from pandas import DataFrame
@@ -155,16 +155,16 @@ class ModelContainer:
         self['model.version'] = self._model.version
         self['drun.version'] = drun.__version__
 
-        self['jenkins.build_number'] = os.environ.get(*drun.env.BUILD_NUMBER)
-        self['jenkins.build_id'] = os.environ.get(*drun.env.BUILD_ID)
-        self['jenkins.build_tag'] = os.environ.get(*drun.env.BUILD_TAG)
-        self['jenkins.build_url'] = os.environ.get(*drun.env.BUILD_URL)
+        self['jenkins.build_number'] = os.environ.get(*drun.const.env.BUILD_NUMBER)
+        self['jenkins.build_id'] = os.environ.get(*drun.const.env.BUILD_ID)
+        self['jenkins.build_tag'] = os.environ.get(*drun.const.env.BUILD_TAG)
+        self['jenkins.build_url'] = os.environ.get(*drun.const.env.BUILD_URL)
 
-        self['jenkins.git_commit'] = os.environ.get(*drun.env.GIT_COMMIT)
-        self['jenkins.git_branch'] = os.environ.get(*drun.env.GIT_BRANCH)
+        self['jenkins.git_commit'] = os.environ.get(*drun.const.env.GIT_COMMIT)
+        self['jenkins.git_branch'] = os.environ.get(*drun.const.env.GIT_BRANCH)
 
-        self['jenkins.node_name'] = os.environ.get(*drun.env.NODE_NAME)
-        self['jenkins.job_name'] = os.environ.get(*drun.env.JOB_NAME)
+        self['jenkins.node_name'] = os.environ.get(*drun.const.env.NODE_NAME)
+        self['jenkins.job_name'] = os.environ.get(*drun.const.env.JOB_NAME)
 
     @property
     def model(self):
@@ -370,7 +370,7 @@ def deduce_model_file_name(version=None):
 
     date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
 
-    valid_user_names = [os.getenv(env) for env in drun.env.MODEL_NAMING_UID_ENV if os.getenv(env)]
+    valid_user_names = [os.getenv(env) for env in drun.const.env.MODEL_NAMING_UID_ENV if os.getenv(env)]
     user_id = valid_user_names[0] if len(valid_user_names) > 0 else getpass.getuser()
 
     commit_id = get_git_revision(os.getcwd())
@@ -379,7 +379,7 @@ def deduce_model_file_name(version=None):
 
     file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(version), date_string, user_id, commit_id)
 
-    if os.getenv(*drun.env.EXTERNAL_RESOURCE_USE_BY_DEFAULT) == 'true':
+    if os.getenv(*drun.const.env.EXTERNAL_RESOURCE_USE_BY_DEFAULT) == 'true':
         return '///%s' % file_name
     else:
         return file_name
@@ -457,7 +457,7 @@ def export(filename=None,
     if file_name_has_been_deduced:
         print('Model has been saved to %s' % result_path, file=sys.stderr)
 
-    send_header_to_stderr(drun.headers.MODEL_PATH, result_path)
-    send_header_to_stderr(drun.headers.MODEL_VERSION, version)
+    send_header_to_stderr(drun.const.headers.MODEL_PATH, result_path)
+    send_header_to_stderr(drun.const.headers.MODEL_VERSION, version)
 
     return model

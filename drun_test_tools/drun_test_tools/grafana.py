@@ -20,7 +20,7 @@ Graphana API functional for working with models
 import json
 
 from drun.external.base_grafana_client import BaseGrafanaClient
-from drun.template import render_template
+from drun.utils.template import render_template
 
 
 class GrafanaClient(BaseGrafanaClient):

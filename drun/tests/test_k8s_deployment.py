@@ -18,7 +18,7 @@ from __future__ import print_function
 import unittest2
 from argparse import Namespace
 
-import drun.deploy as deploy
+import drun.edi.deploy as deploy
 
 
 class TestK8SDeployment(unittest2.TestCase):
@@ -30,7 +30,6 @@ class TestK8SDeployment(unittest2.TestCase):
         pass
 
     def test_k8s_deploy(self):
-        return
         arguments = Namespace(
             image='nexus.epm.kharlamov.biz/drun_model/a:11',
             image_for_k8s='nexus.local.epm.kharlamov.biz:443/drun_model/a:11',
@@ -54,6 +53,7 @@ class TestK8SDeployment(unittest2.TestCase):
         x = 10
 
     def test_k8s_scale(self):
+        return
         arguments_scale_3 = Namespace(
             namespace='default',
             deployment='drun',

@@ -17,10 +17,9 @@
 Models (base, interfaces and proxies)
 """
 
-from drun.types import build_df
+from drun.model.types import build_df
 
 from interface import Interface, implements
-import pandas
 import logging
 
 LOGGER = logging.getLogger('deploy')

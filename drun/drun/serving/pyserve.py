@@ -23,53 +23,15 @@ import consul
 from flask import Flask, Blueprint, request, jsonify, redirect
 from flask import current_app as app
 
-import drun.io
-import drun.env
-import drun.grafana
-import drun.model as mlmodel
+import drun.model.io
+import drun.const.env
+import drun.external.grafana
+import drun.http.flask
+import drun.model.model as mlmodel
 import drun.utils as utils
 
 LOGGER = logging.getLogger(__name__)
-
-
-class HttpProtocolHandler:
-    def parse_request(self, input_request):
-        """
-        Produce a model input dictionary from HTTP request (GET/POST fields, and Files)
-
-        :param input_request: request object
-        :type input_request: :py:class:`Flask.request`
-        :return: dict with requested fields
-        """
-        result = {}
-
-        # Fill in URL parameters
-        for k in input_request.args:
-            result[k] = input_request.args[k]
-
-        # Fill in POST parameters
-        for k in input_request.form:
-            result[k] = input_request.form[k]
-
-        # Fill in Files:
-        for k in input_request.files:
-            result[k] = input_request.files[k].read()
-
-        return result
-
-    def prepare_response(self, response):
-        """
-        Produce an HTTP response from a model output
-
-        :param response: a model output
-        :type response: dict[str, any]
-        :return: bytes
-        """
-        return jsonify(response)
-
-
-protocol_handler = HttpProtocolHandler()
-
+protocol_handler = drun.http.flask.HttpProtocolHandler()
 blueprint = Blueprint('pyserve', __name__)
 
 
@@ -143,7 +105,7 @@ def init_model(application):
     if 'MODEL_FILE' in application.config:
         file = application.config['MODEL_FILE']
         LOGGER.info("Loading model from %s", file)
-        with drun.io.ModelContainer(file) as container:
+        with drun.model.io.ModelContainer(file) as container:
             model = container.model
     else:
         LOGGER.info("Instantiated dummy model")
@@ -157,7 +119,8 @@ def create_application():
 
     :return: :py:class:`Flask.app` -- Flask application instance
     """
-    application = Flask(__name__, static_url_path='')
+    static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
+    application = Flask(__name__, static_url_path='', static_path=static_folder)
 
     application.register_blueprint(blueprint)
 
@@ -200,71 +163,13 @@ def register_dashboard(application):
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    host = os.environ.get(*drun.env.GRAFANA_URL)
-    user = os.environ.get(*drun.env.GRAFANA_USER)
-    password = os.environ.get(*drun.env.GRAFANA_PASSWORD)
+    host = os.environ.get(*drun.const.env.GRAFANA_URL)
+    user = os.environ.get(*drun.const.env.GRAFANA_USER)
+    password = os.environ.get(*drun.const.env.GRAFANA_PASSWORD)
 
     print('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
-    client = drun.grafana.GrafanaClient(host, user, password)
+    client = drun.external.grafana.GrafanaClient(host, user, password)
     client.create_dashboard_for_model(application.config['MODEL_ID'])
-
-
-def apply_cli_args(application, args):
-    """
-    Set Flask app instance configuration from arguments
-
-    :param application: Flask app instance
-    :type application: :py:class:`Flask.app`
-    :param args: arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: None
-    """
-    args_dict = vars(args)
-    for k, v in args_dict.items():
-        if v is not None:
-            application.config[k.upper()] = v
-
-
-def apply_env_argument(application, name, cast=None):
-    """
-    Update application config if ENV variable exists
-
-    :param application: Flask app instance
-    :type application: :py:class:`Flask.app`
-    :param name: environment variable name
-    :type name: str
-    :param cast: casting of str variable
-    :type cast: Callable[[str], Any]
-    :return: None
-    """
-    if name in os.environ:
-        value = os.getenv(name)
-        if cast:
-            value = cast(value)
-
-        application.config[name] = value
-
-
-def apply_env_args(application):
-    """
-    Set Flask app instance configuration from environment
-
-    :param application: Flask app instance
-    :type application: :py:class:`Flask.app`
-    :return: None
-    """
-    apply_env_argument(application, drun.env.MODEL_ID[0])
-    apply_env_argument(application, drun.env.MODEL_FILE[0])
-
-    apply_env_argument(application, drun.env.CONSUL_ADDR[0])
-    apply_env_argument(application, drun.env.CONSUL_PORT[0])
-
-    apply_env_argument(application, drun.env.LEGION_ADDR[0])
-    apply_env_argument(application, drun.env.LEGION_PORT[0])
-    apply_env_argument(application, drun.env.IP_AUTODISCOVER[0], utils.string_to_bool)
-
-    apply_env_argument(application, drun.env.DEBUG[0], utils.string_to_bool)
-    apply_env_argument(application, drun.env.REGISTER_ON_CONSUL[0], utils.string_to_bool)
 
 
 def init_application(args=None):
@@ -278,19 +183,7 @@ def init_application(args=None):
     :return: :py:class:`Flask.app` -- application instance
     """
     application = create_application()
-
-    # 4th priority: config from file with defaults values
-    application.config.from_pyfile('config_default.py')
-
-    # 3rd priority: config from file (path to file from ENV)
-    application.config.from_envvar(drun.env.FLASK_APP_SETTINGS_FILES[0], True)
-
-    # 2nd priority: config from ENV variables
-    apply_env_args(application)
-
-    # 1st priority: config from CLI args
-    if args:
-        apply_cli_args(application, args)
+    drun.http.flask.configure_application(application, args)
 
     # Check LEGION_ADDR if IP_AUTODISCOVER enabled (by default)
     if application.config['IP_AUTODISCOVER']:

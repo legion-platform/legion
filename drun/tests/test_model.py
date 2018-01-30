@@ -18,8 +18,8 @@ Test models
 """
 
 import drun.model
-import drun.types as types
-import drun.io
+import drun.model.types as types
+import drun.model.io
 
 import unittest2
 import pandas
@@ -50,10 +50,10 @@ class TestScipyModel(unittest2.TestCase):
             'd_str': 'what?'
         }])
 
-        s = drun.model.ScipyModel(
+        s = drun.model.model.ScipyModel(
             apply,
             prepare,
-            drun.io._get_column_types(df),
+            drun.model.io._get_column_types(df),
             version='1.0')
 
         s.apply({'d_int': '1', 'd_float': '2.0', 'd_str': 'omg'})
@@ -96,10 +96,10 @@ class TestScipyModel(unittest2.TestCase):
             assert x['d_str'].dtype in [numpy.str, numpy.object]
             assert x['excessive'].dtype == numpy.bool_
 
-        s = drun.model.ScipyModel(
+        s = drun.model.model.ScipyModel(
             apply,
             lambda x: x,
-            column_types=drun.io._get_column_types((df, {'excessive': CustomBoolObject()})),
+            column_types=drun.model.io._get_column_types((df, {'excessive': CustomBoolObject()})),
             version='1.0')
 
         s.apply({'d_int': '1', 'd_float': '2.0', 'd_str': 'omg', 'excessive': 'of course'})

@@ -16,19 +16,18 @@
 from __future__ import print_function
 
 import unittest2
-import json
 import os
 import glob
 import requests
 import time
 from argparse import Namespace
 
-import drun.deploy as deploy
-import drun.docker
-import drun.model_id
-import drun.io
-import drun.env
-import drun.model_http_api
+import drun.edi.deploy as deploy
+import drun.containers.docker
+import drun.model.model_id
+import drun.model.io
+import drun.const.env
+import drun.model.model_http_api
 from drun.utils import TemporaryFolder
 
 import docker
@@ -45,15 +44,15 @@ class TestDeploy(unittest2.TestCase):
 
     def setUp(self):
         common_arguments = Namespace(docker_network=None)
-        self.client = drun.docker.build_docker_client(common_arguments)
-        self.network = drun.docker.find_network(self.client, common_arguments)
+        self.client = drun.containers.docker.build_docker_client(common_arguments)
+        self.network = drun.containers.docker.find_network(self.client, common_arguments)
         self.wheel_path = self._get_latest_bdist()
-        drun.model_id.init(self.MODEL_ID)
+        drun.model.model_id.init(self.MODEL_ID)
         self.deployed_containers_ids = []
 
     def tearDown(self):
-        drun.model_id._model_id = None
-        drun.model_id._model_initialized_from_function = False
+        drun.model.model_id._model_id = None
+        drun.model.model_id._model_initialized_from_function = False
         for container_id in self.deployed_containers_ids:
             try:
                 container = self.client.containers.get(container_id)
@@ -72,7 +71,7 @@ class TestDeploy(unittest2.TestCase):
         return latest_file
 
     def test_stack_is_running(self):
-        containers = drun.docker.get_stack_containers_and_images(self.client, self.network)
+        containers = drun.containers.docker.get_stack_containers_and_images(self.client, self.network)
         self.assertTrue(len(containers['services']) > 0, 'Cannot found any service container')
         for container in containers['services']:
             container_required = container.labels.get('com.epam.drun.container_required', 'true').lower() \
@@ -97,11 +96,11 @@ class TestDeploy(unittest2.TestCase):
             'd_float': 1.0,
         }])
 
-        return drun.io.export(path,
-                              apply,
-                              prepare,
-                              input_data_frame=df,
-                              version=version)
+        return drun.model.io.export(path,
+                                    apply,
+                                    prepare,
+                                    input_data_frame=df,
+                                    version=version)
 
     def _build_summation_model(self, path, version):
         def prepare(x):
@@ -115,12 +114,12 @@ class TestDeploy(unittest2.TestCase):
             'b': 1,
         }])
 
-        return drun.io.export(path,
-                              apply,
-                              prepare,
-                              input_data_frame=df,
-                              use_df=False,
-                              version=version)
+        return drun.model.io.export(path,
+                                    apply,
+                                    prepare,
+                                    input_data_frame=df,
+                                    use_df=False,
+                                    version=version)
 
     def test_model_image_build(self, remove_image=True, summation_model=False):
         self.test_stack_is_running()
@@ -164,6 +163,10 @@ class TestDeploy(unittest2.TestCase):
         self.assertIsInstance(container, docker.models.containers.Container)
         time.sleep(3)
         container = self.client.containers.get(container.id)
+        logs = container.logs().decode('utf-8')
+
+        print('--- CONTAINER LOGS ---')
+        print(logs)
 
         if undeploy:
             container.stop()
@@ -209,12 +212,12 @@ class TestDeploy(unittest2.TestCase):
         ports_information = [int(x['HostPort']) for x in ports_information]
         self.assertTrue(model_port in ports_information, 'Port not binded')
 
-        url = drun.model_http_api.get_model_invoke_url(self.MODEL_ID, False)
+        url = drun.model.model_http_api.get_model_invoke_url(self.MODEL_ID, False)
         values = {
             'a': 10,
             'b': 20
         }
-        parameters = drun.model_http_api.get_requests_parameters_for_model_invoke(**values)
+        parameters = drun.model.model_http_api.get_requests_parameters_for_model_invoke(**values)
         url = 'http://%s:%s%s' % ('localhost', model_port, url)
         response = requests.post(url, **parameters)
 

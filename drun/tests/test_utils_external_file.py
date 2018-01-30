@@ -19,24 +19,20 @@ import os
 import random
 import requests.auth
 import tempfile
-import time
 import unittest2
 from unittest.mock import patch
 
-import drun.env
-import drun.io
+import drun.const.env
+import drun.model.io
 import drun.utils as utils
-
-import pandas
-import numpy
 
 
 def patch_env_host_user_password(host='localhost', protocol='http', user='', password=''):
     return patch.dict('os.environ', {
-        drun.env.EXTERNAL_RESOURCE_HOST[0]: host,
-        drun.env.EXTERNAL_RESOURCE_PROTOCOL[0]: protocol,
-        drun.env.EXTERNAL_RESOURCE_USER[0]: user,
-        drun.env.EXTERNAL_RESOURCE_PASSWORD[0]: password
+        drun.const.env.EXTERNAL_RESOURCE_HOST[0]: host,
+        drun.const.env.EXTERNAL_RESOURCE_PROTOCOL[0]: protocol,
+        drun.const.env.EXTERNAL_RESOURCE_USER[0]: user,
+        drun.const.env.EXTERNAL_RESOURCE_PASSWORD[0]: password
     })
 
 

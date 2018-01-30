@@ -14,6 +14,5 @@
 #    limitations under the License.
 #
 """
-DRun main package
+DRun constants
 """
-from .version import __version__

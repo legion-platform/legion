@@ -18,10 +18,10 @@ from __future__ import print_function
 import unittest2
 import os
 
-import drun.io
+import drun.model.io
 import drun.model
-import drun.types
-import drun.model_id
+import drun.model.types
+import drun.model.model_id
 
 import numpy
 import pandas
@@ -49,16 +49,16 @@ class TestModelContainer(unittest2.TestCase):
         model_id = 'demo_model'
 
         try:
-            drun.model_id.init(model_id)
-            drun.io.export(path,
-                           apply,
-                           prepare,
-                           input_data_frame=df,
-                           version=version)
+            drun.model.model_id.init(model_id)
+            drun.model.io.export(path,
+                                 apply,
+                                 prepare,
+                                 input_data_frame=df,
+                                 version=version)
 
             self.assertTrue(os.path.exists(path), 'File not exists')
 
-            with drun.io.ModelContainer(path) as container:
+            with drun.model.io.ModelContainer(path) as container:
                 self.assertTrue('model.id' in container, 'Property `model.id` is not set')
                 self.assertTrue('model.version' in container, 'Property `model.version` is not set')
                 self.assertEqual(container['model.version'], version, 'Undefined version of model')
@@ -67,7 +67,8 @@ class TestModelContainer(unittest2.TestCase):
 
                 self.assertIsInstance(container.model.column_types, dict, 'Column types dict is not dict')
                 random_column = container.model.column_types[list(container.model.column_types.keys())[0]]
-                self.assertIsInstance(random_column, drun.types.ColumnInformation, 'Random column is not ColumnInf.')
+                self.assertIsInstance(random_column, drun.model.types.ColumnInformation,
+                                      'Random column is not ColumnInf.')
 
         finally:
             if os.path.exists(path):

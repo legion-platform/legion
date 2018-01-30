@@ -21,9 +21,9 @@ import socket
 import time
 from enum import Enum
 
-import drun.env
+import drun.const.env
 from drun.utils import normalize_name
-from drun.model_id import get_model_id, init
+from drun.model.model_id import get_model_id, init
 
 
 class Metric(Enum):
@@ -54,9 +54,9 @@ def get_metric_endpoint():
 
     :return: metric server endpoint
     """
-    host = os.getenv(*drun.env.GRAPHITE_HOST)
-    port = int(os.getenv(*drun.env.GRAPHITE_PORT))
-    namespace = os.getenv(*drun.env.GRAPHITE_NAMESPACE)
+    host = os.getenv(*drun.const.env.GRAPHITE_HOST)
+    port = int(os.getenv(*drun.const.env.GRAPHITE_PORT))
+    namespace = os.getenv(*drun.const.env.GRAPHITE_NAMESPACE)
     return host, port, namespace
 
 
@@ -67,7 +67,7 @@ def get_build_number():
     :return: int -- build number
     """
     try:
-        return int(os.getenv(*drun.env.BUILD_NUMBER))
+        return int(os.getenv(*drun.const.env.BUILD_NUMBER))
     except ValueError:
         raise Exception('Cannot parse build number as integer')
 

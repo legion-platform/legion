@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #    Copyright 2017 EPAM Systems
 #
@@ -15,20 +14,5 @@
 #    limitations under the License.
 #
 """
-Entry point for WSGI server
-Example of usage: gunicorn drun.wsgi:application -k sync
+Remote api server and client
 """
-
-try:
-    import docker_bootup
-except ImportError:
-    pass
-
-
-from drun.pyserve import init_application
-from drun.logging import redirect_to_stdout, set_log_level
-
-set_log_level()
-redirect_to_stdout()
-
-application = init_application()

@@ -21,11 +21,10 @@ import os
 import shutil
 
 import drun
-import drun.env
-import drun.headers
-import drun.io
+import drun.const.env
+import drun.const.headers
+import drun.model.io
 import drun.utils
-from drun.template import render_template
 
 import docker
 import docker.errors
@@ -87,7 +86,8 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
             raise Exception('Unknown serving parameter. Should be one of %s' % (', '.join(VALID_SERVING_WORKERS), ))
 
         # Copy additional payload from templates / docker_files / <serving>
-        additional_directory = os.path.join(os.path.dirname(__file__), 'templates', 'docker_files', serving)
+        additional_directory = os.path.join(
+            os.path.dirname(__file__), '..', 'utils', 'templates', 'docker_files', serving)
 
         for file in os.listdir(additional_directory):
             path = os.path.join(additional_directory, file)
@@ -98,7 +98,7 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
         with open(additional_docker_file, 'r') as additional_docker_file_stream:
             additional_docker_file_content = additional_docker_file_stream.read()
 
-        docker_file_content = render_template('Dockerfile.tmpl', {
+        docker_file_content = drun.utils.render_template('Dockerfile.tmpl', {
             'ADDITIONAL_DOCKER_CONTENT': additional_docker_file_content,
             'DOCKER_BASE_IMAGE': base_image,
             'MODEL_ID': model_id,
@@ -140,7 +140,7 @@ def generate_docker_labels_for_image(model_file, model_id, args):
     :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
-    with drun.io.ModelContainer(model_file, do_not_load_model=True) as container:
+    with drun.model.io.ModelContainer(model_file, do_not_load_model=True) as container:
         base = {
             'com.epam.drun.model.id': model_id,
             'com.epam.drun.model.version': container.get('model.version', 'undefined'),

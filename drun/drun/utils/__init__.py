@@ -13,22 +13,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM {{DOCKER_BASE_IMAGE}}
-
-{{ ADDITIONAL_DOCKER_CONTENT|safe }}
-
-ADD {{MODEL_FILE}} "/legion/{{MODEL_FILE}}"
-
-{% if PIP_CUSTOM_TARGET %}
-ADD {{PIP_INSTALL_TARGET}} "/legion/{{PIP_INSTALL_TARGET}}"
-RUN pip3 install /legion/{{PIP_INSTALL_TARGET}}
-{% else %}
-RUN pip3 install -i https://drun.kharlamov.biz/pypi/ {{PIP_INSTALL_TARGET}}
-{% endif %}
-
-ENV MODEL_FILE="/legion/{{MODEL_FILE}}" \
-    MODEL_ID="{{MODEL_ID}}" \
-    GUNICORN_WORKER_CLASS="aiohttp.worker.GunicornWebWorker" \
-    GUNICORN_WORKER_COUNT="1" \
-    GUNICORN_WORKER_PATH="drun.wsgi_aio:aioapp" \
-    VERBOSE="false"
+"""
+Utils
+"""
+from .utils import _get_auth_credentials_for_external_resource, \
+    string_to_bool, normalize_name, send_header_to_stderr, \
+    Colors, DockerContainerContext, TemporaryFolder, ExternalFileReader, \
+    normalize_external_resource_path, is_local_resource, \
+    normalize_name_to_dns_1123, save_file, download_file, get_git_revision, remove_directory, detect_ip
+from .template import render_template

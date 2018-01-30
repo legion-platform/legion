@@ -24,7 +24,7 @@ import sys
 import os
 
 import drun.utils
-import drun.env
+import drun.const.env
 
 ROOT_LOGGER = logging.getLogger()
 
