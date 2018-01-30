@@ -15,16 +15,31 @@
 #    limitations under the License.
 #
 """
-Default config for DRun
+Entry point for WSGI server with AIO support
+Example of usage: gunicorn drun.wsgi_aio:aioapp -k aiohttp.worker.GunicornWebWorker
 """
 
-MODEL_ID = "dummy-model"
+try:
+    import docker_bootup
+except ImportError:
+    pass
 
-LEGION_ADDR = "0.0.0.0"
-LEGION_PORT = 5000
-IP_AUTODISCOVER = True
+from aiohttp import web
+from aiohttp_wsgi import WSGIHandler
+from drun.pyserve import init_application
 
-CONSUL_ADDR = "consul"
-CONSUL_PORT = 8500
 
-REGISTER_ON_CONSUL = True
+def make_aiohttp_app():
+    """
+    Create aiohttp application
+
+    :return: :py:class:`aiohttp.web.Application`
+    """
+    application = init_application()
+    wsgi_handler = WSGIHandler(application)
+    aioapp = web.Application()
+    aioapp.router.add_route('*', '/{path_info:.*}', wsgi_handler)
+    return aioapp
+
+
+aioapp = make_aiohttp_app()

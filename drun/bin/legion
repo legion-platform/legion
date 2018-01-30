@@ -21,11 +21,15 @@ except ImportError:
     pass
 
 import sys
+import os
 import argparse
 import logging
 
 from drun.pyserve import serve_model
-from drun.deploy import build_model, deploy_model, undeploy_model, inspect
+from drun.deploy import build_model, deploy_model, undeploy_model, inspect, VALID_SERVING_WORKERS
+import drun.utils
+
+ROOT_LOGGER = logging.getLogger()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DRun Command-Line Interface')
@@ -48,6 +52,11 @@ if __name__ == '__main__':
                               type=str, help='base docker image for new image')
     build_parser.add_argument('--docker-image-tag',
                               type=str, help='docker image tag')
+    build_parser.add_argument('--with-deploy',
+                              action='store_true', help='deploy after build')
+    build_parser.add_argument('--serving',
+                              default=VALID_SERVING_WORKERS[0],
+                              type=str, help='serving worker: %s' % ', '.join(VALID_SERVING_WORKERS))
     build_parser.set_defaults(func=build_model)
 
     deploy_parser = subparsers.add_parser('deploy', description='deploys a model into a new container')
@@ -63,6 +72,8 @@ if __name__ == '__main__':
                                type=str, help='Grafana user')
     deploy_parser.add_argument('--grafana-password',
                                type=str, help='Grafana password')
+    deploy_parser.add_argument('--expose-model-port',
+                               type=int, help='Expose model at specific port')
     deploy_parser.set_defaults(func=deploy_model)
 
     undeploy_parser = subparsers.add_parser('undeploy', description='kills all containers service the model')
@@ -83,10 +94,10 @@ if __name__ == '__main__':
                                 type=str, help='docker network')
     inspect_parser.set_defaults(func=inspect)
 
-    pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
-    pyserve_parser.add_argument('model_file',
+    pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model using flask')
+    pyserve_parser.add_argument('--model-file',
                                 type=str)
-    pyserve_parser.add_argument('model_id',
+    pyserve_parser.add_argument('--model-id',
                                 type=str)
     pyserve_parser.add_argument('--consul-addr',
                                 type=str, help='Consul Agent IP address')
@@ -96,9 +107,15 @@ if __name__ == '__main__':
                                 type=str)
     pyserve_parser.add_argument('--legion-port',
                                 type=int)
+    pyserve_parser.add_argument('--debug',
+                                type=drun.utils.string_to_bool)
+    pyserve_parser.add_argument('--register-on-consul',
+                                type=drun.utils.string_to_bool)
+    pyserve_parser.add_argument('--legion-autodiscover',
+                                type=drun.utils.string_to_bool)
     pyserve_parser.set_defaults(func=serve_model)
 
-    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model')
+    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model using flask')
     pyserve_parser.add_argument('--consul-addr',
                                 type=str, help='Consul Agent IP address')
     pyserve_parser.add_argument('--consul-port',
@@ -113,9 +130,12 @@ if __name__ == '__main__':
 
     v = vars(args)
 
-    log_level = logging.DEBUG if args.verbose else logging.ERROR
-    logging.basicConfig(level=log_level)
-    logger = logging.getLogger("legion")
+    if args.verbose or drun.utils.string_to_bool(os.getenv('VERBOSE', '')):
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.ERROR
+
+    ROOT_LOGGER.setLevel(log_level)
 
     if 'func' in v:
         args.func(args)
