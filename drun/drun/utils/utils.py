@@ -289,6 +289,9 @@ def download_file(target_file):
                             stream=True,
                             verify=False,
                             auth=credentials)
+    if response.status_code >= 400 or response.status_code < 200:
+        raise Exception('Cannot load resource: %s. Returned status code: %d' % (url, response.status_code))
+
     temp_file = tempfile.mktemp(suffix=name)
 
     with open(temp_file, 'wb') as file:
