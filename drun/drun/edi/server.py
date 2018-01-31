@@ -19,15 +19,126 @@ Flask app
 
 import logging
 from flask import Flask, Blueprint
+from flask import current_app as app
 
+import drun.edi.deploy
+import drun.containers.k8s
 import drun.model.io
 import drun.const.env
+import drun.const.api
 import drun.external.grafana
 import drun.http.flask
 
 LOGGER = logging.getLogger(__name__)
-protocol_handler = drun.http.flask.HttpProtocolHandler()
 blueprint = Blueprint('apiserver', __name__)
+
+
+def build_blueprint_url(endpoint_url_template):
+    """
+    Build endpoint url from template
+
+    :param endpoint_url_template: endpoint url template
+    :type endpoint_url_template: str
+    :return: str -- builded url
+    """
+    return endpoint_url_template.format(version=drun.const.api.EDI_VERSION)
+
+
+def authenticate(user, password):
+    """
+    Authenticate validator. For token auth use 'token' as user and token value as password
+
+    :param user: user or 'token' (for token auth)
+    :type user: str or None
+    :param password: password or token value
+    :type password: str or None
+    :raises Exception: if something wrong with authentication process
+    :return: bool -- is user authenticated for performing any operations
+    """
+    if not app.config['AUTH_ENABLED']:
+        return True
+
+    if user == 'token':
+        if app.config['AUTH_TOKEN_ENABLED']:
+            return password == app.config['AUTH_TOKEN']
+
+        return False
+
+    # TODO: Add LDAP authorisation
+    return False
+
+
+@blueprint.route(build_blueprint_url(drun.const.api.EDI_DEPLOY), methods=['POST'])
+@drun.http.flask.provide_json_response
+@drun.http.flask.authenticate(authenticate)
+@drun.http.flask.populate_fields(image=str, count=int, k8s_image=str)
+@drun.http.flask.requested_fields('image')
+def deploy(image, count=1, k8s_image=None):
+    """
+    Deploy API endpoint
+
+    :param image: Docker image for deploy (for jybernetes deployment and local pull)
+    :type image: str
+    :param count: count of pods to create
+    :type count: int
+    :param k8s_image: Docker image for kubernetes deployment
+    :type k8s_image: str or None
+    :return: bool -- True
+    """
+    drun.containers.k8s.deploy(app.config['NAMESPACE'], app.config['DEPLOYMENT'], image, k8s_image, count)
+    return True
+
+
+@blueprint.route(build_blueprint_url(drun.const.api.EDI_UNDEPLOY), methods=['POST'])
+@drun.http.flask.provide_json_response
+@drun.http.flask.authenticate(authenticate)
+@drun.http.flask.populate_fields(model=str, grace_period=int)
+@drun.http.flask.requested_fields('model')
+def undeploy(model, grace_period=0):
+    """
+    Undeploy API endpoint
+
+    :param model: model id
+    :type model: str
+    :param grace_period: grace period for removing
+    :type grace_period: int
+    :return: bool -- True
+    """
+    drun.containers.k8s.undeploy(app.config['NAMESPACE'], model, grace_period)
+    return True
+
+
+@blueprint.route(build_blueprint_url(drun.const.api.EDI_SCALE), methods=['POST'])
+@drun.http.flask.provide_json_response
+@drun.http.flask.authenticate(authenticate)
+@drun.http.flask.populate_fields(model=str, count=int)
+@drun.http.flask.requested_fields('model')
+def scale(model, count):
+    """
+    Scale API endpoint
+
+    :param model: model id
+    :type model: str
+    :param count: count of pods to create
+    :type count: int
+    :return: bool -- True
+    """
+    drun.containers.k8s.scale(app.config['NAMESPACE'], model, count)
+    return True
+
+
+@blueprint.route(build_blueprint_url(drun.const.api.EDI_INSPECT), methods=['GET'])
+@drun.http.flask.provide_json_response
+@drun.http.flask.authenticate(authenticate)
+def inspect():
+    """
+    Inspect API endpoint
+
+    :return: dict -- state of cluster models
+    """
+    model_deployments = drun.containers.k8s.inspect(app.config['NAMESPACE'])
+    # TODO: Change transform to dict algorithm
+    return [{f: getattr(x, f) for f in x._fields} for x in model_deployments]
 
 
 def create_application():
@@ -67,11 +178,11 @@ def serve(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    logging.info('Legion apiserver initializing')
+    logging.info('Legion api server initializing')
     application = init_application(args)
 
-    application.run(host=application.config['LEGION_ADDR'],
-                    port=application.config['LEGION_PORT'],
+    application.run(host=application.config['LEGION_API_ADDR'],
+                    port=application.config['LEGION_API_PORT'],
                     debug=application.config['DEBUG'],
                     use_reloader=False)
 

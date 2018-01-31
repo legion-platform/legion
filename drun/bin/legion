@@ -114,21 +114,26 @@ if __name__ == '__main__':
     deploy_k8s_parser.add_argument('--scale',
                                    default=1,
                                    type=int, help='count of instances')
-    deploy_k8s_parser.add_argument('--namespace',
-                                   default='default',
-                                   type=str, help='kubernetes namespace')
-    deploy_k8s_parser.add_argument('--deployment',
-                                   default='drun',
-                                   type=str, help='kubernetes namespace')
-    deploy_k8s_parser.add_argument('--text-output',
-                                   action='store_true', help='just output deployment configuration')
+    deploy_k8s_parser.add_argument('--edi',
+                                   type=str, help='EDI server host')
+    deploy_k8s_parser.add_argument('--user',
+                                   type=str, help='EDI server user')
+    deploy_k8s_parser.add_argument('--password',
+                                   type=str, help='EDI server password')
+    deploy_k8s_parser.add_argument('--token',
+                                   type=str, help='EDI server token')
     deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
 
     inspect_k8s_parser = subparsers.add_parser('inspect',
                                                description='get information about currently deployed models')
-    inspect_k8s_parser.add_argument('--namespace',
-                                    default='default',
-                                    type=str, help='kubernetes namespace')
+    inspect_k8s_parser.add_argument('--edi',
+                                    type=str, help='EDI server host')
+    inspect_k8s_parser.add_argument('--user',
+                                    type=str, help='EDI server user')
+    inspect_k8s_parser.add_argument('--password',
+                                    type=str, help='EDI server password')
+    inspect_k8s_parser.add_argument('--token',
+                                    type=str, help='EDI server token')
     inspect_k8s_parser.set_defaults(func=inspect_kubernetes)
 
     scale_k8s_parser = subparsers.add_parser('scale',
@@ -137,21 +142,31 @@ if __name__ == '__main__':
                                   type=str, help='docker image')
     scale_k8s_parser.add_argument('scale',
                                   type=int, help='new count of replicas')
-    scale_k8s_parser.add_argument('--namespace',
-                                  default='default',
-                                  type=str, help='kubernetes namespace')
+    scale_k8s_parser.add_argument('--edi',
+                                  type=str, help='EDI server host')
+    scale_k8s_parser.add_argument('--user',
+                                  type=str, help='EDI server user')
+    scale_k8s_parser.add_argument('--password',
+                                  type=str, help='EDI server password')
+    scale_k8s_parser.add_argument('--token',
+                                  type=str, help='EDI server token')
     scale_k8s_parser.set_defaults(func=scale_kubernetes)
 
     undeploy_k8s_parser = subparsers.add_parser('undeploy',
                                                 description='undeploy model deployment')
     undeploy_k8s_parser.add_argument('model_id',
                                      type=str, help='docker image')
-    undeploy_k8s_parser.add_argument('--namespace',
-                                     default='default',
-                                     type=str, help='kubernetes namespace')
     undeploy_k8s_parser.add_argument('--grace-period',
                                      default=0,
                                      type=int, help='removal grace period')
+    undeploy_k8s_parser.add_argument('--edi',
+                                     type=str, help='EDI server host')
+    undeploy_k8s_parser.add_argument('--user',
+                                     type=str, help='EDI server user')
+    undeploy_k8s_parser.add_argument('--password',
+                                     type=str, help='EDI server password')
+    undeploy_k8s_parser.add_argument('--token',
+                                     type=str, help='EDI server token')
     undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
 
     # --------- SERVING SECTION -----------

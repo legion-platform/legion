@@ -34,12 +34,12 @@ LOGGER = logging.getLogger('docker')
 VALID_SERVING_WORKERS = 'uwsgi', 'gunicorn'
 
 
-def build_docker_client(args):
+def build_docker_client(args=None):
     """
     Create docker client
 
     :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
+    :type args: :py:class:`argparse.Namespace` or None
     :return: :py:class:`docker.Client`
     """
     client = docker.from_env()

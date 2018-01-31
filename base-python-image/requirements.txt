@@ -29,3 +29,4 @@ gunicorn
 aiohttp
 cchardet
 aiohttp_wsgi
+jsonschema

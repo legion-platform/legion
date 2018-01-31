@@ -18,18 +18,34 @@ DRun k8s functions
 """
 import urllib3
 import urllib3.exceptions
+import typing
 
 import drun
 import drun.const.env
 import drun.const.headers
+import drun.containers.docker
 from drun.utils import normalize_name_to_dns_1123
 
+import docker
+import docker.errors
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
 
 K8S_LOCAL_CLUSTER_DOMAIN = 'cluster.local'
+
+
+ModelDeploymentDescription = typing.NamedTuple('ModelDeploymentDescription', [
+    ('status', str),
+    ('model', str),
+    ('version', str),
+    ('image', str),
+    ('scale', int),
+    ('ready_replicas', int),
+    ('namespace', str),
+    ('deployment', str),
+])
 
 
 def build_client():
@@ -136,13 +152,16 @@ def find_all_models_deployments(namespace='default'):
     Find all models deployments
 
     :param namespace: namespace
-    :type namespace: str
+    :type namespace: str or none for all
     :return: list[:py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`]
     """
     client = build_client()
 
     extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-    all_deployments = extension_api.list_namespaced_deployment(namespace)
+    if namespace:
+        all_deployments = extension_api.list_namespaced_deployment(namespace)
+    else:
+        all_deployments = extension_api.list_deployment_for_all_namespaces()
 
     type_label_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
@@ -201,3 +220,210 @@ def remove_deployment(deployment, namespace='default', grace_period=0):
 
     api_instance.delete_namespaced_deployment(deployment.metadata.name, namespace, body,
                                               grace_period_seconds=grace_period)
+
+
+def deploy(namespace, deployment, image, k8s_image=None, scale=1):
+    """
+    Deploy model to kubernetes
+
+    :param namespace: namespace
+    :type namespace: str
+    :param deployment: deployment name
+    :type deployment: str
+    :param image: docker image with model
+    :type image: str
+    :param k8s_image: specific image for kubernetes cluster
+    :type k8s_image: str or None
+    :param scale: count of pods
+    :type scale: int
+    :return: :py:class:`docker.model.Container` new instance
+    """
+    client = kubernetes.client
+
+    docker_client = drun.containers.docker.build_docker_client(None)
+    # grafana_client = build_grafana_client(args)
+
+    graphite_service = find_service('graphite', deployment, namespace)
+    graphite_endpoint = get_service_url(graphite_service, 'statsd').split(':')
+
+    grafana_service = find_service('grafana', deployment, namespace)
+    grafana_endpoint = get_service_url(grafana_service, 'http')
+
+    consul_service = find_service('consul', deployment, namespace)
+    consul_endpoint = get_service_url(consul_service, 'http').split(':')
+
+    # TODO: Question. What do?
+    build_client()
+
+    if k8s_image:
+        kubernetes_image = k8s_image
+    else:
+        kubernetes_image = image
+
+    deployment_name, compatible_labels = get_meta_from_docker_image(image)
+
+    container_env_variables = {
+        drun.const.env.STATSD_HOST[0]: graphite_endpoint[0],
+        drun.const.env.STATSD_PORT[0]: graphite_endpoint[1],
+        drun.const.env.GRAFANA_URL[0]: 'http://%s' % grafana_endpoint,
+        drun.const.env.CONSUL_ADDR[0]: consul_endpoint[0],
+        drun.const.env.CONSUL_PORT[0]: consul_endpoint[1],
+    }
+
+    container = client.V1Container(
+        name='model',
+        image=kubernetes_image,
+        image_pull_policy='Always',
+        env=[
+            client.V1EnvVar(name=k, value=v)
+            for k, v in container_env_variables.items()
+        ],
+        ports=[client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
+
+    template = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(labels=compatible_labels),
+        spec=client.V1PodSpec(containers=[container]))
+
+    deployment_spec = client.ExtensionsV1beta1DeploymentSpec(
+        replicas=scale,
+        template=template)
+
+    deployment = client.ExtensionsV1beta1Deployment(
+        api_version="extensions/v1beta1",
+        kind="Deployment",
+        metadata=client.V1ObjectMeta(name=deployment_name, labels=compatible_labels),
+        spec=deployment_spec)
+
+    extensions_v1beta1 = client.ExtensionsV1beta1Api()
+
+    api_response = extensions_v1beta1.create_namespaced_deployment(
+        body=deployment,
+        namespace=namespace)
+
+    return api_response
+
+
+def inspect(namespace=None):
+    """
+    Get model deployments information
+
+    :param namespace:
+    :return: list[:py:class:`drun.containers.k8s.ModelDeploymentDescription`]
+    """
+    deployments = find_all_models_deployments(namespace)
+    models = []
+
+    for deployment in deployments:
+        ready_replicas = deployment.status.ready_replicas
+        if not ready_replicas:
+            ready_replicas = 0
+        replicas = deployment.status.replicas
+        if not replicas:
+            replicas = 0
+        status = 'ok'
+
+        if ready_replicas == 0:
+            status = 'fail'
+        elif replicas > ready_replicas > 0:
+            status = 'warning'
+
+        container_image = deployment.spec.template.spec.containers[0].image
+
+        model_name = deployment.metadata.labels.get(
+            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_ID), '?'
+        )
+        model_version = deployment.metadata.labels.get(
+            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_VERSION), '?'
+        )
+
+        model_information = ModelDeploymentDescription(
+            status=status,
+            model=model_name,
+            version=model_version,
+            image=container_image,
+            scale=replicas,
+            ready_replicas=ready_replicas,
+            namespace=deployment.metadata.namespace,
+            deployment='deployment'
+        )
+        models.append(model_information)
+
+    return models
+
+
+def undeploy(namespace, model_id, grace_period=0):
+    """
+    Undeploy model pods
+
+    :param namespace: namespace
+    :type namespace: str
+    :param model_id: model id
+    :type model_id: str
+    :param grace_period: grace period time in seconds
+    :type grace_period: int
+    :return: None
+    """
+    deployment = find_model_deployment(model_id, namespace)
+    if not deployment:
+        raise Exception('Cannot find deployment for model %s in namespace %s' % (model_id, namespace))
+    else:
+        remove_deployment(deployment, namespace, grace_period)
+
+
+def scale(namespace, model_id, count):
+    """
+    Change count of model pods
+
+    :param namespace: namespace
+    :type namespace: str
+    :param model_id: model id
+    :type model_id: str
+    :param count: new count of pods
+    :type count: int
+    :return: None
+    """
+    deployment = find_model_deployment(model_id, namespace)
+    if not deployment:
+        raise Exception('Cannot find deployment for model %s in namespace %s' % (model_id, namespace))
+    else:
+        scale_deployment(deployment, count, namespace)
+
+
+def get_meta_from_docker_image(image):
+    """
+    Build meta fields for kubernetes from docker image. Docker image will be pulled automatically.
+
+    :param image: docker image
+    :type image: str
+    :return: tuple[str, dict[str, str]] -- deployment name and labels in DNS-1123 format
+    """
+    docker_client = drun.containers.docker.build_docker_client(None)
+    try:
+        docker_image = docker_client.images.get(image)
+    except docker.errors.ImageNotFound:
+        docker_image = docker_client.images.pull(image)
+
+    required_headers = [
+        drun.const.headers.DOMAIN_MODEL_ID,
+        drun.const.headers.DOMAIN_MODEL_VERSION,
+        drun.const.headers.DOMAIN_CONTAINER_TYPE
+    ]
+
+    if any(header not in docker_image.labels for header in required_headers):
+        raise Exception('Missed on of %s labels. Available labels: %s' % (
+            ', '.join(required_headers),
+            ', '.join(tuple(docker_image.labels.keys()))
+        ))
+
+    deployment_name = "model.%s.%s.deployment" % (
+        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_ID]),
+        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_VERSION])
+    )
+
+    compatible_labels = {
+        normalize_name_to_dns_1123(k): normalize_name_to_dns_1123(v)
+        for k, v in
+        docker_image.labels.items()
+    }
+
+    return deployment_name, compatible_labels

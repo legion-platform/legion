@@ -18,7 +18,9 @@ Graphana API functional for working with models
 """
 
 import json
+import os
 
+import drun.const.env
 from drun.external.base_grafana_client import BaseGrafanaClient
 from drun.utils.template import render_template
 
@@ -116,3 +118,29 @@ class GrafanaClient(BaseGrafanaClient):
             'dashboard': dashboard
         }
         self._query('/api/dashboards/db', payload, 'POST')
+
+
+def build_client(args):
+    """
+    Build Grafana client from ENV and from command line arguments
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`drun.grafana.GrafanaClient`
+    """
+    host = os.environ.get(*drun.const.env.GRAFANA_URL)
+    user = os.environ.get(*drun.const.env.GRAFANA_USER)
+    password = os.environ.get(*drun.const.env.GRAFANA_PASSWORD)
+
+    if args.grafana_server:
+        host = args.grafana_server
+
+    if args.grafana_user and len(args.grafana_user):
+        user = args.grafana_user
+
+    if args.grafana_password and len(args.grafana_password):
+        password = args.grafana_password
+
+    client = GrafanaClient(host, user, password)
+
+    return client

@@ -16,48 +16,159 @@
 """
 Flask package
 """
+import functools
 import os
 
 import drun.const.env
 import drun.utils
+import drun.utils.exceptions
 
-from flask import jsonify
+import flask
 
 
-class HttpProtocolHandler:
-    def parse_request(self, input_request):
-        """
-        Produce a model input dictionary from HTTP request (GET/POST fields, and Files)
+def parse_request(input_request):
+    """
+    Produce a input dictionary from HTTP request (GET/POST fields, and Files)
 
-        :param input_request: request object
-        :type input_request: :py:class:`Flask.request`
-        :return: dict with requested fields
-        """
-        result = {}
+    :param input_request: request object
+    :type input_request: :py:class:`Flask.request`
+    :return: dict with requested fields
+    """
+    result = {}
 
-        # Fill in URL parameters
-        for k in input_request.args:
-            result[k] = input_request.args[k]
+    # Fill in URL parameters
+    for k in input_request.args:
+        result[k] = input_request.args[k]
 
-        # Fill in POST parameters
-        for k in input_request.form:
-            result[k] = input_request.form[k]
+    # Fill in POST parameters
+    for k in input_request.form:
+        result[k] = input_request.form[k]
 
-        # Fill in Files:
-        for k in input_request.files:
-            result[k] = input_request.files[k].read()
+    # Fill in Files:
+    for k in input_request.files:
+        result[k] = input_request.files[k].read()
 
-        return result
+    return result
 
-    def prepare_response(self, response):
-        """
-        Produce an HTTP response from a model output
 
-        :param response: a model output
-        :type response: dict[str, any]
-        :return: bytes
-        """
-        return jsonify(response)
+def prepare_response(response):
+    """
+    Produce an HTTP response from dict
+
+    :param response: dict with data
+    :type response: dict[str, any]
+    :return: bytes
+    """
+    return flask.jsonify(response)
+
+
+def provide_json_response(method):
+    """
+    Process response data via JSON formatter
+
+    :param method: decorator function
+    :return: decorated function
+    """
+    @functools.wraps(method)
+    def f(*args, **kwargs):
+        try:
+            response = method(*args, **kwargs)
+            code = 200
+            if isinstance(response, bool):
+                response = {'status': response}
+            elif not isinstance(response, dict) and not isinstance(response, list):
+                raise Exception('Unknown type returned from api call handler: %s' % type(response))
+        except drun.utils.exceptions.EdiHTTPException as edi_http_exception:
+            response = {'error': True, 'message': edi_http_exception.message}
+            code = edi_http_exception.http_code
+        except Exception as exception:
+            response = {'error': True, 'message': str(exception)}
+            code = 500
+
+        response = prepare_response(response)
+        return flask.make_response(response, code)
+
+    return f
+
+
+def populate_fields(**fields):
+    """
+    Populate fields data
+
+    :param fields: fields with formats
+    :type fields: dict[str, type]
+    :return: decorator function
+    """
+    def decorator(method):
+        @functools.wraps(method)
+        def f(*args, **kwargs):
+            parameters = parse_request(flask.request)
+            casted_parameters = {}
+
+            for field, value in parameters.items():
+                if field not in fields:
+                    raise Exception('Unknown parameter: %s' % field)
+
+                try:
+                    casted_parameters[field] = fields[field](value)
+                except ValueError as cast_value_exception:
+                    raise Exception('Cannot cast field %s to %s: %s' % (field, fields[field], cast_value_exception))
+
+            kwargs.update(casted_parameters)
+
+            return method(*args, **kwargs)
+
+        return f
+    return decorator
+
+
+def authenticate(authenticator):
+    """
+    Authenticate user
+
+    :param authenticator: callable obj. for checking credentials. Arguments are user and password. Should returns bool.
+    :type authenticator: function[user, password]: bool
+    :return: decorator function
+    """
+    def decorator(method):
+        @functools.wraps(method)
+        def f(*args, **kwargs):
+            auth = flask.request.authorization
+            username = None
+            password = None
+
+            if auth:
+                username = auth.username
+                password = auth.password
+
+            if not authenticator(username, password):
+                raise drun.utils.exceptions.EdiHTTPAccessDeniedException()
+
+            return method(*args, **kwargs)
+
+        return f
+    return decorator
+
+
+def requested_fields(*fields):
+    """
+    Check that all requested fields has been passed
+
+    :param fields: list of field names
+    :type fields: list[str]
+    :return: decorator function
+    """
+    def decorator(method):
+        @functools.wraps(method)
+        def f(*args, **kwargs):
+            for field in fields:
+                if field not in kwargs:
+                    raise Exception('Requested field %s s not set' % field)
+
+            return method(*args, **kwargs)
+
+        return f
+    return decorator
 
 
 def apply_cli_args(application, args):
@@ -108,14 +219,20 @@ def apply_env_args(application):
     apply_env_argument(application, drun.const.env.MODEL_FILE[0])
 
     apply_env_argument(application, drun.const.env.CONSUL_ADDR[0])
-    apply_env_argument(application, drun.const.env.CONSUL_PORT[0])
+    apply_env_argument(application, drun.const.env.CONSUL_PORT[0], cast=int)
 
     apply_env_argument(application, drun.const.env.LEGION_ADDR[0])
-    apply_env_argument(application, drun.const.env.LEGION_PORT[0])
+    apply_env_argument(application, drun.const.env.LEGION_PORT[0], cast=int)
     apply_env_argument(application, drun.const.env.IP_AUTODISCOVER[0], drun.utils.string_to_bool)
 
     apply_env_argument(application, drun.const.env.DEBUG[0], drun.utils.string_to_bool)
     apply_env_argument(application, drun.const.env.REGISTER_ON_CONSUL[0], drun.utils.string_to_bool)
+
+    apply_env_argument(application, drun.const.env.DEPLOYMENT[0])
+    apply_env_argument(application, drun.const.env.NAMESPACE[0])
+
+    apply_env_argument(application, drun.const.env.LEGION_API_ADDR[0])
+    apply_env_argument(application, drun.const.env.LEGION_API_PORT[0], cast=int)
 
 
 def configure_application(application, args):

@@ -26,42 +26,15 @@ import drun.model.io
 import drun.const.env
 import drun.const.headers
 import drun.external.grafana
+import drun.external.edi
 import drun.containers.docker
 import drun.containers.k8s
 
 import docker
 import docker.errors
-from kubernetes import client
 
 LOGGER = logging.getLogger('deploy')
 VALID_SERVING_WORKERS = drun.containers.docker.VALID_SERVING_WORKERS
-
-
-def build_grafana_client(args):
-    """
-    Build Grafana client from ENV and from command line arguments
-
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`drun.grafana.GrafanaClient`
-    """
-    host = os.environ.get(*drun.const.env.GRAFANA_URL)
-    user = os.environ.get(*drun.const.env.GRAFANA_USER)
-    password = os.environ.get(*drun.const.env.GRAFANA_PASSWORD)
-
-    if args.grafana_server:
-        host = args.grafana_server
-
-    if args.grafana_user and len(args.grafana_user):
-        user = args.grafana_user
-
-    if args.grafana_password and len(args.grafana_password):
-        password = args.grafana_password
-
-    LOGGER.info('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
-    client = drun.external.grafana.GrafanaClient(host, user, password)
-
-    return client
 
 
 def build_model(args):
@@ -133,34 +106,29 @@ def inspect_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    deployments = drun.containers.k8s.find_all_models_deployments(args.namespace)
+    edi_client = drun.external.edi.build_client(args)
+    model_deployments = edi_client.inspect()
+
     print('%sModel deployments:%s' % (Colors.BOLD, Colors.ENDC))
-    for deployment in deployments:
-        ready_replicas = deployment.status.ready_replicas
-        replicas = deployment.status.replicas
-        line_color = Colors.OKGREEN
 
-        if not ready_replicas or ready_replicas == 0:
-            line_color = Colors.FAIL
-        elif replicas > ready_replicas > 0:
+    for deployment in model_deployments:
+        if deployment.status == 'ok':
+            line_color = Colors.OKGREEN
+        elif deployment.status == 'warning':
             line_color = Colors.WARNING
+        else:
+            line_color = Colors.FAIL
 
-        container_image = deployment.spec.template.spec.containers[0].image
-
-        model_name = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_ID), '?'
+        arguments = (
+            line_color, Colors.ENDC,
+            Colors.UNDERLINE, deployment.model, Colors.ENDC,
+            deployment.image, deployment.version,
+            line_color, deployment.ready_replicas, deployment.scale,
+            Colors.ENDC
         )
-        model_version = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_VERSION), '?'
-        )
+        print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready%s' % arguments)
 
-        print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready%s' % (line_color, Colors.ENDC,
-                                                                          Colors.UNDERLINE, model_name, Colors.ENDC,
-                                                                          container_image, model_version,
-                                                                          line_color, ready_replicas, replicas,
-                                                                          Colors.ENDC))
-
-    if not deployments:
+    if len(model_deployments) == 0:
         print('%s-- cannot find any model deployments --%s' % (Colors.WARNING, Colors.ENDC))
 
 
@@ -172,11 +140,8 @@ def undeploy_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    deployment = drun.containers.k8s.find_model_deployment(args.model_id, args.namespace)
-    if not deployment:
-        print('Cannot find deployment for model %s in namespace %s' % (args.model_id, args.namespace))
-    else:
-        drun.containers.k8s.remove_deployment(deployment, args.namespace, args.grace_period)
+    edi_client = drun.external.edi.build_client(args)
+    edi_client.undeploy(args.model_id, args.grace_period)
 
 
 def scale_kubernetes(args):
@@ -187,128 +152,20 @@ def scale_kubernetes(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    deployment = drun.containers.k8s.find_model_deployment(args.model_id, args.namespace)
-    if not deployment:
-        print('Cannot find deployment for model %s in namespace %s' % (args.model_id, args.namespace))
-    else:
-        drun.containers.k8s.scale_deployment(deployment, args.scale, args.namespace)
-
-
-def get_kubernetes_meta_from_docker_image(args):
-    """
-    Build meta fields for kubernetes from docker image. Docker image will be pulled automatically.
-
-    :param args: command arguments with .image
-    :type args: :py:class:`argparse.Namespace`
-    :return: tuple[str, dict[str, str]] -- deployment name and labels in DNS-1123 format
-    """
-    docker_client = drun.containers.docker.build_docker_client(args)
-    try:
-        docker_image = docker_client.images.get(args.image)
-    except docker.errors.ImageNotFound:
-        docker_image = docker_client.images.pull(args.image)
-
-    required_headers = [
-        drun.const.headers.DOMAIN_MODEL_ID,
-        drun.const.headers.DOMAIN_MODEL_VERSION,
-        drun.const.headers.DOMAIN_CONTAINER_TYPE
-    ]
-
-    if any(header not in docker_image.labels for header in required_headers):
-        raise Exception('Missed on of %s labels. Available labels: %s' % (
-            ', '.join(required_headers),
-            ', '.join(tuple(docker_image.labels.keys()))
-        ))
-
-    deployment_name = "model.%s.%s.deployment" % (
-        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_ID]),
-        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_VERSION])
-    )
-
-    compatible_labels = {
-        normalize_name_to_dns_1123(k): normalize_name_to_dns_1123(v)
-        for k, v in
-        docker_image.labels.items()
-    }
-
-    return deployment_name, compatible_labels
+    edi_client = drun.external.edi.build_client(args)
+    edi_client.scale(args.model_id, args.scale)
 
 
 def deploy_kubernetes(args):
     """
-    Deploy model to kubernetes
+    Deploy kubernetes model
 
-    :param args: command arguments with .docker_image, .scale, .text-output, .namespace
+    :param args: command arguments with .model_id, .namespace and .scale
     :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`docker.model.Container` new instance
+    :return: None
     """
-    docker_client = drun.containers.docker.build_docker_client(args)
-    # grafana_client = build_grafana_client(args)
-
-    graphite_service = drun.containers.k8s.find_service('graphite', args.deployment, args.namespace)
-    graphite_endpoint = drun.containers.k8s.get_service_url(graphite_service, 'statsd').split(':')
-
-    grafana_service = drun.containers.k8s.find_service('grafana', args.deployment, args.namespace)
-    grafana_endpoint = drun.containers.k8s.get_service_url(grafana_service, 'http')
-
-    consul_service = drun.containers.k8s.find_service('consul', args.deployment, args.namespace)
-    consul_endpoint = drun.containers.k8s.get_service_url(consul_service, 'http').split(':')
-
-    # TODO: Question. What do?
-    drun.containers.k8s.build_client()
-
-    if args.image_for_k8s:
-        kubernetes_image = args.image_for_k8s
-    else:
-        kubernetes_image = args.image
-
-    deployment_name, compatible_labels = get_kubernetes_meta_from_docker_image(args)
-
-    container_env_variables = {
-        drun.const.env.STATSD_HOST[0]: graphite_endpoint[0],
-        drun.const.env.STATSD_PORT[0]: graphite_endpoint[1],
-        drun.const.env.GRAFANA_URL[0]: 'http://%s' % grafana_endpoint,
-        drun.const.env.CONSUL_ADDR[0]: consul_endpoint[0],
-        drun.const.env.CONSUL_PORT[0]: consul_endpoint[1],
-    }
-
-    container = client.V1Container(
-        name='model',
-        image=kubernetes_image,
-        image_pull_policy='Always',
-        env=[
-            client.V1EnvVar(name=k, value=v)
-            for k, v in container_env_variables.items()
-        ],
-        ports=[client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
-
-    template = client.V1PodTemplateSpec(
-        metadata=client.V1ObjectMeta(labels=compatible_labels),
-        spec=client.V1PodSpec(containers=[container]))
-
-    deployment_spec = client.ExtensionsV1beta1DeploymentSpec(
-        replicas=args.scale,
-        template=template)
-
-    deployment = client.ExtensionsV1beta1Deployment(
-        api_version="extensions/v1beta1",
-        kind="Deployment",
-        metadata=client.V1ObjectMeta(name=deployment_name, labels=compatible_labels),
-        spec=deployment_spec)
-
-    extensions_v1beta1 = client.ExtensionsV1beta1Api()
-
-    # TODO: Add text output
-    if args.text_output:
-        data_dict = deployment.to_dict()
-        # yaml.dump(data_dict, sys.stdout, default_flow_style=False)
-        print(data_dict)
-    else:
-        api_response = extensions_v1beta1.create_namespaced_deployment(
-            body=deployment,
-            namespace=args.namespace)
-
-        return api_response
+    edi_client = drun.external.edi.build_client(args)
+    edi_client.deploy(args.image, args.scale, args.image_for_k8s)
 
 
 def deploy_model(args):
@@ -321,7 +178,7 @@ def deploy_model(args):
     """
     client = drun.containers.docker.build_docker_client(args)
     network_id = drun.containers.docker.find_network(client, args)
-    grafana_client = build_grafana_client(args)
+    grafana_client = drun.external.grafana.build_grafana_client(args)
 
     if args.model_id and args.docker_image:
         print('Use only --model-id or --docker-image')
@@ -398,7 +255,7 @@ def undeploy_model(args):
     """
     client = drun.containers.docker.build_docker_client(args)
     network_id = drun.containers.docker.find_network(client, args)
-    grafana_client = build_grafana_client(args)
+    grafana_client = drun.external.grafana.build_grafana_client(args)
 
     current_containers = drun.containers.docker.get_stack_containers_and_images(client, network_id)
 

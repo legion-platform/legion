@@ -31,7 +31,6 @@ import drun.model.model as mlmodel
 import drun.utils as utils
 
 LOGGER = logging.getLogger(__name__)
-protocol_handler = drun.http.flask.HttpProtocolHandler()
 blueprint = Blueprint('pyserve', __name__)
 
 
@@ -75,13 +74,13 @@ def model_invoke(model_id):
     # TODO single configuration for Flask/CLI
     # assert model_id == app.config['MODEL_ID']
 
-    input_dict = protocol_handler.parse_request(request)
+    input_dict = drun.http.flask.parse_request(request)
 
     model = app.config['model']
 
     output = model.apply(input_dict)
 
-    return protocol_handler.prepare_response(output)
+    return drun.http.flask.prepare_response(output)
 
 
 @blueprint.route('/healthcheck')
