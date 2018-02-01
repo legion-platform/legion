@@ -234,6 +234,9 @@ def apply_env_args(application):
     apply_env_argument(application, drun.const.env.LEGION_API_ADDR[0])
     apply_env_argument(application, drun.const.env.LEGION_API_PORT[0], cast=int)
 
+    apply_env_argument(application, drun.const.env.CLUSTER_CONFIG_PATH[0])
+    apply_env_argument(application, drun.const.env.CLUSTER_SECRETS_PATH[0])
+
 
 def configure_application(application, args):
     """
@@ -241,6 +244,8 @@ def configure_application(application, args):
     Overall configuration priority: config_default.py, env::FLASK_APP_SETTINGS_FILES file,
     ENV parameters, CLI parameters
 
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
     :param args: arguments if provided
     :type args: :py:class:`argparse.Namespace` or None
     :return: None

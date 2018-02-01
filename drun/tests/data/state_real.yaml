@@ -1,0 +1,9 @@
+consul:
+  domain: "drun-consul.default.svc.cluster.local"
+  port: 8500
+graphite:
+  domain: "drun-graphite.default.svc.cluster.local"
+  port: 8125
+grafana:
+  domain: "drun-grafana.default.svc.cluster.local"
+  port: 80

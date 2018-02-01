@@ -30,3 +30,4 @@ aiohttp
 cchardet
 aiohttp_wsgi
 jsonschema
+PyYAML

@@ -30,3 +30,8 @@ AUTH_ENABLED = False
 
 AUTH_TOKEN_ENABLED = True
 AUTH_TOKEN = 'demo-token'
+
+REGISTER_ON_GRAFANA = True
+
+CLUSTER_CONFIG_PATH = '/opt/drun/state/cluster.yaml'
+CLUSTER_SECRETS_PATH = '/opt/drun/secrets'

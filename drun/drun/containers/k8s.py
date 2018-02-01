@@ -19,11 +19,14 @@ DRun k8s functions
 import urllib3
 import urllib3.exceptions
 import typing
+import os
+import os.path
 
 import drun
 import drun.const.env
 import drun.const.headers
 import drun.containers.docker
+import drun.external.grafana
 from drun.utils import normalize_name_to_dns_1123
 
 import docker
@@ -32,8 +35,7 @@ import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
-
-K8S_LOCAL_CLUSTER_DOMAIN = 'cluster.local'
+import yaml
 
 
 ModelDeploymentDescription = typing.NamedTuple('ModelDeploymentDescription', [
@@ -65,57 +67,55 @@ def build_client():
     return kubernetes.client.ApiClient()
 
 
-def get_service_url(service, port_name):
+def load_config(path_to_config):
     """
-    Get service's url for specific port name
+    Load cluster config
 
-    :param service: service object
-    :type service: :py:class:`kubernetes.client.models.v1_service.V1Service`
-    :param port_name: name of port
-    :type port_name: str
-    :return: str -- url to service's port
+    :param path_to_config: path to cluster config file
+    :type path_to_config: str
+    :return: dict -- cluster config
     """
-    ports = {port.name: port for port in service.spec.ports}
-    if port_name not in ports:
-        raise Exception('Cannot found port named %s in %s service' % (port_name, service.metadata.name))
+    if not os.path.exists(path_to_config):
+        raise Exception('config path %s not exists' % path_to_config)
 
-    url = '%s.%s.svc.%s:%d' % (service.metadata.name,
-                               service.metadata.namespace,
-                               K8S_LOCAL_CLUSTER_DOMAIN,
-                               ports[port_name].port)
-    return url
+    if not os.path.isfile(path_to_config):
+        raise Exception('config path %s is not a file' % path_to_config)
+
+    with open(path_to_config, 'r') as stream:
+        return yaml.load(stream)
 
 
-def find_service(service_name, deployment, namespace='default'):
+def load_secrets(path_to_secrets):
     """
-    Find service in cluster
+    Load all secrets from folder to dict
 
-    :param service_name: service name
-    :type service_name: str
-    :param deployment: deployment name
-    :type deployment: str
-    :param namespace: namespace
-    :type namespace: str
-    :return: :py:class:`kubernetes.client.models.v1_service.V1Service` or None
+    :param path_to_secrets: path to secrets directory
+    :type path_to_secrets: str
+    :return: dict[str, str] -- dict of secret name => secret value
     """
-    client = build_client()
+    if not os.path.exists(path_to_secrets):
+        raise Exception('secrets path %s not exists' % path_to_secrets)
 
-    core_api = kubernetes.client.CoreV1Api(client)
-    all_services = core_api.list_namespaced_service(namespace)
+    if not os.path.isdir(path_to_secrets):
+        raise Exception('secrets path %s is not a directory' % path_to_secrets)
 
-    valid_services = [
-        service
-        for service in all_services.items
-        if service.metadata.name == '%s-%s' % (deployment, service_name)
+    files = [
+        (file, os.path.abspath(os.path.join(path_to_secrets, file))) for file
+        in os.listdir(path_to_secrets)
+        if os.path.isfile(os.path.join(path_to_secrets, file))
     ]
 
-    if len(valid_services) > 1:
-        raise Exception('Founded more that one valid service for %s' % service_name)
+    secrets = {}
 
-    if len(valid_services) == 0:
-        raise Exception('Cannot found valid service for %s' % service_name)
-
-    return valid_services[0]
+    for name, path in files:
+        try:
+            with open(path, 'r') as stream:
+                secrets[name] = stream.read()
+                if isinstance(secrets[name], bytes):
+                    secrets[name] = secrets[name].decode('utf-8')
+        except IOError:
+            pass
+    return secrets
 
 
 def find_model_deployment(model_id, namespace='default'):
@@ -222,10 +222,15 @@ def remove_deployment(deployment, namespace='default', grace_period=0):
                                               grace_period_seconds=grace_period)
 
 
-def deploy(namespace, deployment, image, k8s_image=None, scale=1):
+def deploy(cluster_config, cluster_secrets, namespace,
+           deployment, image, k8s_image=None, scale=1, register_on_grafana=True):
     """
     Deploy model to kubernetes
 
+    :param cluster_config: cluster configuration
+    :type cluster_config: dict
+    :param cluster_secrets: secrets with credentials
+    :type cluster_secrets: dict[str, str]
     :param namespace: namespace
     :type namespace: str
     :param deployment: deployment name
@@ -236,21 +241,11 @@ def deploy(namespace, deployment, image, k8s_image=None, scale=1):
     :type k8s_image: str or None
     :param scale: count of pods
     :type scale: int
+    :param register_on_grafana: register model in grafana (create dashboard)
+    :type register_on_grafana: bool
     :return: :py:class:`docker.model.Container` new instance
     """
     client = kubernetes.client
-
-    docker_client = drun.containers.docker.build_docker_client(None)
-    # grafana_client = build_grafana_client(args)
-
-    graphite_service = find_service('graphite', deployment, namespace)
-    graphite_endpoint = get_service_url(graphite_service, 'statsd').split(':')
-
-    grafana_service = find_service('grafana', deployment, namespace)
-    grafana_endpoint = get_service_url(grafana_service, 'http')
-
-    consul_service = find_service('consul', deployment, namespace)
-    consul_endpoint = get_service_url(consul_service, 'http').split(':')
 
     # TODO: Question. What do?
     build_client()
@@ -260,14 +255,21 @@ def deploy(namespace, deployment, image, k8s_image=None, scale=1):
     else:
         kubernetes_image = image
 
-    deployment_name, compatible_labels = get_meta_from_docker_image(image)
+    deployment_name, compatible_labels, model_id, model_version = get_meta_from_docker_image(image)
+
+    if register_on_grafana:
+        grafana_url = 'http://%s:%d' % (cluster_config['grafana']['domain'], cluster_config['grafana']['port'])
+        grafana_client = drun.external.grafana.GrafanaClient(grafana_url,
+                                                             cluster_secrets['grafana.user'],
+                                                             cluster_secrets['grafana.password'])
+
+        grafana_client.create_dashboard_for_model(model_id, model_version)
 
     container_env_variables = {
-        drun.const.env.STATSD_HOST[0]: graphite_endpoint[0],
-        drun.const.env.STATSD_PORT[0]: graphite_endpoint[1],
-        drun.const.env.GRAFANA_URL[0]: 'http://%s' % grafana_endpoint,
-        drun.const.env.CONSUL_ADDR[0]: consul_endpoint[0],
-        drun.const.env.CONSUL_PORT[0]: consul_endpoint[1],
+        drun.const.env.STATSD_HOST[0]: cluster_config['graphite']['domain'],
+        drun.const.env.STATSD_PORT[0]: str(cluster_config['graphite']['port']),
+        drun.const.env.CONSUL_ADDR[0]: cluster_config['consul']['domain'],
+        drun.const.env.CONSUL_PORT[0]: str(cluster_config['consul']['port']),
     }
 
     container = client.V1Container(
@@ -303,10 +305,14 @@ def deploy(namespace, deployment, image, k8s_image=None, scale=1):
     return api_response
 
 
-def inspect(namespace=None):
+def inspect(cluster_config, cluster_secrets, namespace=None):
     """
     Get model deployments information
 
+    :param cluster_config: cluster configuration
+    :type cluster_config: dict
+    :param cluster_secrets: secrets with credentials
+    :type cluster_secrets: dict[str, str]
     :param namespace:
     :return: list[:py:class:`drun.containers.k8s.ModelDeploymentDescription`]
     """
@@ -351,16 +357,22 @@ def inspect(namespace=None):
     return models
 
 
-def undeploy(namespace, model_id, grace_period=0):
+def undeploy(cluster_config, cluster_secrets, namespace, model_id, grace_period=0, register_on_grafana=True):
     """
     Undeploy model pods
 
+    :param cluster_config: cluster configuration
+    :type cluster_config: dict
+    :param cluster_secrets: secrets with credentials
+    :type cluster_secrets: dict[str, str]
     :param namespace: namespace
     :type namespace: str
     :param model_id: model id
     :type model_id: str
     :param grace_period: grace period time in seconds
     :type grace_period: int
+    :param register_on_grafana: has been model register?
+    :type register_on_grafana: bool
     :return: None
     """
     deployment = find_model_deployment(model_id, namespace)
@@ -369,11 +381,24 @@ def undeploy(namespace, model_id, grace_period=0):
     else:
         remove_deployment(deployment, namespace, grace_period)
 
+    if register_on_grafana:
+        grafana_url = 'http://%s:%d' % (cluster_config['grafana']['domain'], cluster_config['grafana']['port'])
+        grafana_client = drun.external.grafana.GrafanaClient(grafana_url,
+                                                             cluster_secrets['grafana.user'],
+                                                             cluster_secrets['grafana.password'])
 
-def scale(namespace, model_id, count):
+        if grafana_client.is_dashboard_exists(model_id):
+            grafana_client.remove_dashboard_for_model(model_id)
+
+
+def scale(cluster_config, cluster_secrets, namespace, model_id, count):
     """
     Change count of model pods
 
+    :param cluster_config: cluster configuration
+    :type cluster_config: dict
+    :param cluster_secrets: secrets with credentials
+    :type cluster_secrets: dict[str, str]
     :param namespace: namespace
     :type namespace: str
     :param model_id: model id
@@ -395,7 +420,7 @@ def get_meta_from_docker_image(image):
 
     :param image: docker image
     :type image: str
-    :return: tuple[str, dict[str, str]] -- deployment name and labels in DNS-1123 format
+    :return: tuple[str, dict[str, str], str, str] -- deployment name, labels in DNS-1123 format, model id and version
     """
     docker_client = drun.containers.docker.build_docker_client(None)
     try:
@@ -409,6 +434,9 @@ def get_meta_from_docker_image(image):
         drun.const.headers.DOMAIN_CONTAINER_TYPE
     ]
 
+    model_id = docker_image.labels[drun.const.headers.DOMAIN_MODEL_ID]
+    model_version = docker_image.labels[drun.const.headers.DOMAIN_MODEL_VERSION]
+
     if any(header not in docker_image.labels for header in required_headers):
         raise Exception('Missed on of %s labels. Available labels: %s' % (
             ', '.join(required_headers),
@@ -416,8 +444,8 @@ def get_meta_from_docker_image(image):
         ))
 
     deployment_name = "model.%s.%s.deployment" % (
-        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_ID]),
-        normalize_name_to_dns_1123(docker_image.labels[drun.const.headers.DOMAIN_MODEL_VERSION])
+        normalize_name_to_dns_1123(model_id),
+        normalize_name_to_dns_1123(model_version)
     )
 
     compatible_labels = {
@@ -426,4 +454,4 @@ def get_meta_from_docker_image(image):
         docker_image.labels.items()
     }
 
-    return deployment_name, compatible_labels
+    return deployment_name, compatible_labels, model_id, model_version

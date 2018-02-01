@@ -85,7 +85,10 @@ def deploy(image, count=1, k8s_image=None):
     :type k8s_image: str or None
     :return: bool -- True
     """
-    drun.containers.k8s.deploy(app.config['NAMESPACE'], app.config['DEPLOYMENT'], image, k8s_image, count)
+    register_on_grafana = app.config['REGISTER_ON_GRAFANA']
+    drun.containers.k8s.deploy(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
+                               app.config['NAMESPACE'], app.config['DEPLOYMENT'], image, k8s_image, count,
+                               register_on_grafana)
     return True
 
 
@@ -104,7 +107,10 @@ def undeploy(model, grace_period=0):
     :type grace_period: int
     :return: bool -- True
     """
-    drun.containers.k8s.undeploy(app.config['NAMESPACE'], model, grace_period)
+    register_on_grafana = app.config['REGISTER_ON_GRAFANA']
+    drun.containers.k8s.undeploy(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
+                                 app.config['NAMESPACE'], model, grace_period,
+                                 register_on_grafana)
     return True
 
 
@@ -123,7 +129,8 @@ def scale(model, count):
     :type count: int
     :return: bool -- True
     """
-    drun.containers.k8s.scale(app.config['NAMESPACE'], model, count)
+    drun.containers.k8s.scale(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
+                              app.config['NAMESPACE'], model, count)
     return True
 
 
@@ -136,7 +143,8 @@ def inspect():
 
     :return: dict -- state of cluster models
     """
-    model_deployments = drun.containers.k8s.inspect(app.config['NAMESPACE'])
+    model_deployments = drun.containers.k8s.inspect(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
+                                                    app.config['NAMESPACE'])
     # TODO: Change transform to dict algorithm
     return [{f: getattr(x, f) for f in x._fields} for x in model_deployments]
 
@@ -154,6 +162,18 @@ def create_application():
     return application
 
 
+def load_cluster_config(application):
+    """
+    Load cluster configuration into Flask
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return: None
+    """
+    application.config['CLUSTER_SECRETS'] = drun.containers.k8s.load_secrets(application.config['CLUSTER_SECRETS_PATH'])
+    application.config['CLUSTER_STATE'] = drun.containers.k8s.load_config(application.config['CLUSTER_CONFIG_PATH'])
+
+
 def init_application(args=None):
     """
     Initialize configured Flask application instance
@@ -166,6 +186,7 @@ def init_application(args=None):
     """
     application = create_application()
     drun.http.flask.configure_application(application, args)
+    load_cluster_config(application)
 
     return application
 
