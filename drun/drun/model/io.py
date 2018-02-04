@@ -32,7 +32,7 @@ from drun.model.model import ScipyModel
 import drun.model.types
 from drun.model.types import deduct_types_on_pandas_df
 from drun.model.types import ColumnInformation
-from drun.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision
+from drun.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 from drun.model.model_id import get_model_id, is_model_id_auto_deduced
 
 import dill
@@ -379,10 +379,14 @@ def deduce_model_file_name(version=None):
 
     file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(version), date_string, user_id, commit_id)
 
-    if os.getenv(*drun.const.env.EXTERNAL_RESOURCE_USE_BY_DEFAULT) == 'true':
+    if string_to_bool(os.getenv(*drun.const.env.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
         return '///%s' % file_name
     else:
-        return file_name
+        default_prefix = os.getenv(*drun.const.env.LOCAL_DEFAULT_RESOURCE_PREFIX)
+        if len(default_prefix) > 0:
+            return os.path.join(default_prefix, file_name)
+        else:
+            return file_name
 
 
 def export(filename=None,
