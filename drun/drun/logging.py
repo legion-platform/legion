@@ -20,11 +20,11 @@ Logging controller
 
 
 import logging
-import sys
 import os
+import sys
 
+import drun.config
 import drun.utils
-import drun.const.env
 
 ROOT_LOGGER = logging.getLogger()
 
@@ -34,11 +34,11 @@ def redirect_to_stdout():
     Redirect ROOT log output to stdout
     :return: None
     """
-    ch = logging.StreamHandler(sys.stderr)
-    ch.setLevel(logging.DEBUG)
+    channel = logging.StreamHandler(sys.stderr)
+    channel.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    ROOT_LOGGER.addHandler(ch)
+    channel.setFormatter(formatter)
+    ROOT_LOGGER.addHandler(channel)
 
 
 def set_log_level(target=None):

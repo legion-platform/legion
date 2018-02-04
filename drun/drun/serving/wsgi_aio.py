@@ -37,9 +37,9 @@ def make_aiohttp_app():
     """
     application = init_application()
     wsgi_handler = WSGIHandler(application)
-    aioapp = web.Application()
-    aioapp.router.add_route('*', '/{path_info:.*}', wsgi_handler)
-    return aioapp
+    aioapp_instance = web.Application()
+    aioapp_instance.router.add_route('*', '/{path_info:.*}', wsgi_handler)
+    return aioapp_instance
 
 
 aioapp = make_aiohttp_app()

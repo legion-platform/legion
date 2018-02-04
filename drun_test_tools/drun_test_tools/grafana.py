@@ -19,13 +19,14 @@ Graphana API functional for working with models
 
 import json
 
-from drun.external.base_grafana_client import BaseGrafanaClient
-from drun.utils.template import render_template
+from drun_test_tools.template import render_template
+
+import requests
 
 
-class GrafanaClient(BaseGrafanaClient):
+class GrafanaClient:
     """
-    Grafana API client for working with models
+    Base Grafana HTTP API client
     """
 
     def __init__(self, base, user=None, password=None):
@@ -39,7 +40,53 @@ class GrafanaClient(BaseGrafanaClient):
         :param password: user password
         :type password: str or None
         """
-        super(GrafanaClient, self).__init__(base, user, password)
+        self._base = base.strip('/')
+        self._user = user
+        self._password = password
+
+    def _query(self, url, payload=None, action='GET'):
+        """
+        Perform query to Grafana server
+
+        :param url: query suburl, for example: /api/search/
+        :type url: str
+        :param payload: payload (will be converted to JSON) or None
+        :type payload: dict[str, any]
+        :param action: HTTP method (GET, POST, PUT, DELETE)
+        :type action: str
+        :return: dict[str, any] -- response content
+        """
+        full_url = self._base + url
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+
+        auth = None
+        if self._user and self._password:
+            auth = (self._user, self._password)
+
+        response = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth)
+
+        if response.status_code in (401, 403):
+            raise Exception('Auth failed')
+
+        if response.status_code != 200:
+            raise Exception('Wrong answer for url = %s: %s' % (full_url, repr(response)))
+
+        answer = json.loads(response.text)
+
+        return answer
+
+    def delete_dashboard(self, dashboard_uri):
+        """
+        Delete dashboard by url
+
+        :param dashboard_uri: dashboard uri
+        :type dashboard_uri: str
+        :return: None
+        """
+        self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
 
     def remove_dashboard_for_model(self, model_id):
         """
@@ -72,7 +119,7 @@ class GrafanaClient(BaseGrafanaClient):
         :return: dict with dashboard information or None
         """
         data = self._query('/api/search/?tag=model_%s' % model_id)
-        if not len(data):
+        if not data:
             return None
 
         return data[0]
@@ -101,7 +148,6 @@ class GrafanaClient(BaseGrafanaClient):
         :return: None
         """
         model_id = docker_container_labels.get('com.epam.drun.model.id', None)
-        model_version = docker_container_labels.get('com.epam.drun.model.version', None)
 
         self.remove_dashboard_for_model(model_id)
 

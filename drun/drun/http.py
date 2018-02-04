@@ -19,9 +19,8 @@ Flask package
 import functools
 import os
 
-import drun.const.env
+import drun.config
 import drun.utils
-import drun.utils.exceptions
 
 import flask
 
@@ -70,7 +69,7 @@ def provide_json_response(method):
     :return: decorated function
     """
     @functools.wraps(method)
-    def f(*args, **kwargs):
+    def decorated_function(*args, **kwargs):
         try:
             response = method(*args, **kwargs)
             code = 200
@@ -78,7 +77,7 @@ def provide_json_response(method):
                 response = {'status': response}
             elif not isinstance(response, dict) and not isinstance(response, list):
                 raise Exception('Unknown type returned from api call handler: %s' % type(response))
-        except drun.utils.exceptions.EdiHTTPException as edi_http_exception:
+        except drun.utils.EdiHTTPException as edi_http_exception:
             response = {'error': True, 'message': edi_http_exception.message}
             code = edi_http_exception.http_code
         except Exception as exception:
@@ -88,7 +87,7 @@ def provide_json_response(method):
         response = prepare_response(response)
         return flask.make_response(response, code)
 
-    return f
+    return decorated_function
 
 
 def populate_fields(**fields):
@@ -101,7 +100,7 @@ def populate_fields(**fields):
     """
     def decorator(method):
         @functools.wraps(method)
-        def f(*args, **kwargs):
+        def decorated_function(*args, **kwargs):
             parameters = parse_request(flask.request)
             casted_parameters = {}
 
@@ -118,7 +117,7 @@ def populate_fields(**fields):
 
             return method(*args, **kwargs)
 
-        return f
+        return decorated_function
     return decorator
 
 
@@ -132,7 +131,7 @@ def authenticate(authenticator):
     """
     def decorator(method):
         @functools.wraps(method)
-        def f(*args, **kwargs):
+        def decorated_function(*args, **kwargs):
             auth = flask.request.authorization
             username = None
             password = None
@@ -142,11 +141,11 @@ def authenticate(authenticator):
                 password = auth.password
 
             if not authenticator(username, password):
-                raise drun.utils.exceptions.EdiHTTPAccessDeniedException()
+                raise drun.utils.EdiHTTPAccessDeniedException()
 
             return method(*args, **kwargs)
 
-        return f
+        return decorated_function
     return decorator
 
 
@@ -160,14 +159,14 @@ def requested_fields(*fields):
     """
     def decorator(method):
         @functools.wraps(method)
-        def f(*args, **kwargs):
+        def decorated_function(*args, **kwargs):
             for field in fields:
                 if field not in kwargs:
                     raise Exception('Requested field %s s not set' % field)
 
             return method(*args, **kwargs)
 
-        return f
+        return decorated_function
     return decorator
 
 
@@ -182,9 +181,9 @@ def apply_cli_args(application, args):
     :return: None
     """
     args_dict = vars(args)
-    for k, v in args_dict.items():
-        if v is not None:
-            application.config[k.upper()] = v
+    for argument, value in args_dict.items():
+        if value is not None:
+            application.config[argument.upper()] = value
 
 
 def apply_env_argument(application, name, cast=None):
@@ -215,27 +214,27 @@ def apply_env_args(application):
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    apply_env_argument(application, drun.const.env.MODEL_ID[0])
-    apply_env_argument(application, drun.const.env.MODEL_FILE[0])
+    apply_env_argument(application, drun.config.MODEL_ID[0])
+    apply_env_argument(application, drun.config.MODEL_FILE[0])
 
-    apply_env_argument(application, drun.const.env.CONSUL_ADDR[0])
-    apply_env_argument(application, drun.const.env.CONSUL_PORT[0], cast=int)
+    apply_env_argument(application, drun.config.CONSUL_ADDR[0])
+    apply_env_argument(application, drun.config.CONSUL_PORT[0], cast=int)
 
-    apply_env_argument(application, drun.const.env.LEGION_ADDR[0])
-    apply_env_argument(application, drun.const.env.LEGION_PORT[0], cast=int)
-    apply_env_argument(application, drun.const.env.IP_AUTODISCOVER[0], drun.utils.string_to_bool)
+    apply_env_argument(application, drun.config.LEGION_ADDR[0])
+    apply_env_argument(application, drun.config.LEGION_PORT[0], cast=int)
+    apply_env_argument(application, drun.config.IP_AUTODISCOVER[0], drun.utils.string_to_bool)
 
-    apply_env_argument(application, drun.const.env.DEBUG[0], drun.utils.string_to_bool)
-    apply_env_argument(application, drun.const.env.REGISTER_ON_CONSUL[0], drun.utils.string_to_bool)
+    apply_env_argument(application, drun.config.DEBUG[0], drun.utils.string_to_bool)
+    apply_env_argument(application, drun.config.REGISTER_ON_CONSUL[0], drun.utils.string_to_bool)
 
-    apply_env_argument(application, drun.const.env.DEPLOYMENT[0])
-    apply_env_argument(application, drun.const.env.NAMESPACE[0])
+    apply_env_argument(application, drun.config.DEPLOYMENT[0])
+    apply_env_argument(application, drun.config.NAMESPACE[0])
 
-    apply_env_argument(application, drun.const.env.LEGION_API_ADDR[0])
-    apply_env_argument(application, drun.const.env.LEGION_API_PORT[0], cast=int)
+    apply_env_argument(application, drun.config.LEGION_API_ADDR[0])
+    apply_env_argument(application, drun.config.LEGION_API_PORT[0], cast=int)
 
-    apply_env_argument(application, drun.const.env.CLUSTER_CONFIG_PATH[0])
-    apply_env_argument(application, drun.const.env.CLUSTER_SECRETS_PATH[0])
+    apply_env_argument(application, drun.config.CLUSTER_CONFIG_PATH[0])
+    apply_env_argument(application, drun.config.CLUSTER_SECRETS_PATH[0])
 
 
 def configure_application(application, args):
@@ -254,7 +253,7 @@ def configure_application(application, args):
     application.config.from_pyfile('config_default.py')
 
     # 3rd priority: config from file (path to file from ENV)
-    application.config.from_envvar(drun.const.env.FLASK_APP_SETTINGS_FILES[0], True)
+    application.config.from_envvar(drun.config.FLASK_APP_SETTINGS_FILES[0], True)
 
     # 2nd priority: config from ENV variables
     apply_env_args(application)

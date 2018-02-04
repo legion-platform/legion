@@ -19,7 +19,7 @@ Model HTTP API and utils
 
 import os
 
-import drun.const.env
+import drun.config
 from PIL import Image as PYTHON_Image
 
 
@@ -34,10 +34,10 @@ def get_model_base_url(model_name, include_host=True):
     :return: str -- base URL for model calls
     """
     if include_host:
-        model_server_url = os.environ.get(*drun.const.env.MODEL_SERVER_URL)
+        model_server_url = os.environ.get(*drun.config.MODEL_SERVER_URL)
         return '%s/api/model/%s' % (model_server_url, model_name)
-    else:
-        return '/api/model/%s' % model_name
+
+    return '/api/model/%s' % model_name
 
 
 def get_model_invoke_url(model_name, include_host=True):

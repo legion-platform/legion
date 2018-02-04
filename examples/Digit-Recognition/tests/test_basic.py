@@ -13,15 +13,15 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import ModelUnitTests
-import drun.env
+from drun.model.model_tests import ModelUnitTests
+import drun.config
 import unittest2
 import os
 
 
 class BasicTest(ModelUnitTests):
     def setUp(self):
-        self.setUpModel(os.environ.get(*drun.env.MODEL_ID))
+        self.setUpModel(os.environ.get(*drun.config.MODEL_ID))
 
     def test_nine_decode(self):
         image = self._load_image(os.path.join('files', 'nine.png'))

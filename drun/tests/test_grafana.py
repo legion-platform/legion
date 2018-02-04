@@ -16,18 +16,18 @@
 from __future__ import print_function
 
 import os
-import unittest2
 
+import drun.config
 import drun.external.grafana as grafana
-import drun.const.env
+import unittest2
 
 
 class TestGrafana(unittest2.TestCase):
 
     def setUp(self):
-        host = os.environ.get(*drun.const.env.GRAFANA_URL)
-        user = os.environ.get(*drun.const.env.GRAFANA_USER)
-        password = os.environ.get(*drun.const.env.GRAFANA_PASSWORD)
+        host = os.environ.get(*drun.config.GRAFANA_URL)
+        user = os.environ.get(*drun.config.GRAFANA_USER)
+        password = os.environ.get(*drun.config.GRAFANA_PASSWORD)
         self.client = grafana.GrafanaClient(host, user, password)
 
     def test_dashboard_creation(self):

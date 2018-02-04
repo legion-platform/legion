@@ -17,11 +17,10 @@ from __future__ import print_function
 
 import os
 import os.path
-import unittest2
-from unittest.mock import patch
 
 import drun.containers.k8s
-import drun.const.env
+import drun.config
+import unittest2
 
 
 class TestK8S(unittest2.TestCase):

@@ -17,12 +17,12 @@ from __future__ import print_function
 
 import os
 import time
-import unittest2
 from unittest.mock import patch
 
-import drun.external.metrics as metrics
+import drun.config as env
+import drun.metrics as metrics
 import drun.model.model_id
-import drun.const.env as env
+import unittest2
 
 
 def _reset_model_id():
@@ -89,7 +89,7 @@ class TestMetrics(unittest2.TestCase):
         with patch('drun.model.model_id.send_model_id') as send_model_id_mock:
             with MetricContent(model_id, build_number, init_at_startup=False):
                 self.assertEqual(len(send_model_id_mock.call_args_list), 0)
-                with patch('drun.external.metrics.send_tcp') as send_tcp_mock:
+                with patch('drun.metrics.send_tcp') as send_tcp_mock:
                     timestamp = int(time.time())
                     metrics.send_metric(metric, value)
 

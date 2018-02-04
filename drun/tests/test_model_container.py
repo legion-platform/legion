@@ -15,16 +15,15 @@
 #
 from __future__ import print_function
 
-import unittest2
 import os
 
-import drun.model.io
+import drun.io
 import drun.model
-import drun.model.types
 import drun.model.model_id
-
+import drun.model.types
 import numpy
 import pandas
+import unittest2
 
 
 class TestModelContainer(unittest2.TestCase):
@@ -50,15 +49,15 @@ class TestModelContainer(unittest2.TestCase):
 
         try:
             drun.model.model_id.init(model_id)
-            drun.model.io.export(path,
-                                 apply,
-                                 prepare,
-                                 input_data_frame=df,
-                                 version=version)
+            drun.io.export(path,
+                           apply,
+                           prepare,
+                           input_data_frame=df,
+                           version=version)
 
             self.assertTrue(os.path.exists(path), 'File not exists')
 
-            with drun.model.io.ModelContainer(path) as container:
+            with drun.io.ModelContainer(path) as container:
                 self.assertTrue('model.id' in container, 'Property `model.id` is not set')
                 self.assertTrue('model.version' in container, 'Property `model.version` is not set')
                 self.assertEqual(container['model.version'], version, 'Undefined version of model')

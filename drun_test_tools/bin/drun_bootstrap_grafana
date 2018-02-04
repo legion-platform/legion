@@ -24,7 +24,7 @@ import argparse
 import json
 import time
 
-from drun_test_tools.external.base_grafana_client import BaseGrafanaClient
+from drun_test_tools.grafana import GrafanaClient
 from drun_test_tools.template import render_template
 
 

@@ -19,23 +19,22 @@ DRun model export / load
 
 import datetime
 import getpass
-import os
-import tempfile
-import sys
-import zipfile
 import json
-
-import drun
-import drun.const.env
-import drun.const.headers
-from drun.model.model import ScipyModel
-import drun.model.types
-from drun.model.types import deduct_types_on_pandas_df
-from drun.model.types import ColumnInformation
-from drun.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
-from drun.model.model_id import get_model_id, is_model_id_auto_deduced
+import os
+import sys
+import tempfile
+import zipfile
 
 import dill
+import drun
+import drun.containers.headers
+import drun.config
+import drun.model.types
+from drun.model.model import ScipyModel
+from drun.model.model_id import get_model_id, is_model_id_auto_deduced
+from drun.model.types import ColumnInformation
+from drun.model.types import deduct_types_on_pandas_df
+from drun.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 from pandas import DataFrame
 
 
@@ -101,15 +100,15 @@ class ModelContainer:
         :return: None
         """
         if not os.path.exists(self._file):
-            raise Exception('File not existed: %s' % (self._file, ))
+            raise Exception('File not existed: %s' % (self._file,))
 
         try:
             with TemporaryFolder('drun-model-save') as temp_directory:
-                with zipfile.ZipFile(self._file, 'r') as zip:
-                    model_path = zip.extract(self.ZIP_FILE_MODEL,
-                                             os.path.join(temp_directory.path, self.ZIP_FILE_MODEL))
-                    info_path = zip.extract(self.ZIP_FILE_INFO,
-                                            os.path.join(temp_directory.path, self.ZIP_FILE_INFO))
+                with zipfile.ZipFile(self._file, 'r') as stream:
+                    model_path = stream.extract(self.ZIP_FILE_MODEL,
+                                                os.path.join(temp_directory.path, self.ZIP_FILE_MODEL))
+                    info_path = stream.extract(self.ZIP_FILE_INFO,
+                                               os.path.join(temp_directory.path, self.ZIP_FILE_INFO))
 
                 if not self._do_not_load_model:
                     with open(model_path, 'rb') as file:
@@ -155,16 +154,16 @@ class ModelContainer:
         self['model.version'] = self._model.version
         self['drun.version'] = drun.__version__
 
-        self['jenkins.build_number'] = os.environ.get(*drun.const.env.BUILD_NUMBER)
-        self['jenkins.build_id'] = os.environ.get(*drun.const.env.BUILD_ID)
-        self['jenkins.build_tag'] = os.environ.get(*drun.const.env.BUILD_TAG)
-        self['jenkins.build_url'] = os.environ.get(*drun.const.env.BUILD_URL)
+        self['jenkins.build_number'] = os.environ.get(*drun.config.BUILD_NUMBER)
+        self['jenkins.build_id'] = os.environ.get(*drun.config.BUILD_ID)
+        self['jenkins.build_tag'] = os.environ.get(*drun.config.BUILD_TAG)
+        self['jenkins.build_url'] = os.environ.get(*drun.config.BUILD_URL)
 
-        self['jenkins.git_commit'] = os.environ.get(*drun.const.env.GIT_COMMIT)
-        self['jenkins.git_branch'] = os.environ.get(*drun.const.env.GIT_BRANCH)
+        self['jenkins.git_commit'] = os.environ.get(*drun.config.GIT_COMMIT)
+        self['jenkins.git_branch'] = os.environ.get(*drun.config.GIT_BRANCH)
 
-        self['jenkins.node_name'] = os.environ.get(*drun.const.env.NODE_NAME)
-        self['jenkins.job_name'] = os.environ.get(*drun.const.env.JOB_NAME)
+        self['jenkins.node_name'] = os.environ.get(*drun.config.NODE_NAME)
+        self['jenkins.job_name'] = os.environ.get(*drun.config.JOB_NAME)
 
     @property
     def model(self):
@@ -195,9 +194,9 @@ class ModelContainer:
             with open(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), 'wt') as file:
                 self._write_info(file)
 
-            with zipfile.ZipFile(self._file, 'w', self.ZIP_COMPRESSION) as zip:
-                zip.write(os.path.join(temp_directory.path, self.ZIP_FILE_MODEL), self.ZIP_FILE_MODEL)
-                zip.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
+            with zipfile.ZipFile(self._file, 'w', self.ZIP_COMPRESSION) as stream:
+                stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_MODEL), self.ZIP_FILE_MODEL)
+                stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
 
     def __enter__(self):
         """
@@ -207,11 +206,11 @@ class ModelContainer:
         """
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exit_type, value, traceback):
         """
         Call remove on context exit
 
-        :param type: -
+        :param exit_type: -
         :param value: -
         :param traceback: -
         :return: None
@@ -349,8 +348,8 @@ def deduce_param_types(data_frame, optional_dictionary=None):
     """
     if optional_dictionary:
         return _get_column_types((data_frame, optional_dictionary))
-    else:
-        return _get_column_types(data_frame)
+
+    return _get_column_types(data_frame)
 
 
 def deduce_model_file_name(version=None):
@@ -370,8 +369,8 @@ def deduce_model_file_name(version=None):
 
     date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
 
-    valid_user_names = [os.getenv(env) for env in drun.const.env.MODEL_NAMING_UID_ENV if os.getenv(env)]
-    user_id = valid_user_names[0] if len(valid_user_names) > 0 else getpass.getuser()
+    valid_user_names = [os.getenv(env) for env in drun.config.MODEL_NAMING_UID_ENV if os.getenv(env)]
+    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
 
     commit_id = get_git_revision(os.getcwd())
     if not commit_id:
@@ -379,14 +378,14 @@ def deduce_model_file_name(version=None):
 
     file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(version), date_string, user_id, commit_id)
 
-    if string_to_bool(os.getenv(*drun.const.env.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
+    if string_to_bool(os.getenv(*drun.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
         return '///%s' % file_name
-    else:
-        default_prefix = os.getenv(*drun.const.env.LOCAL_DEFAULT_RESOURCE_PREFIX)
-        if len(default_prefix) > 0:
-            return os.path.join(default_prefix, file_name)
-        else:
-            return file_name
+
+    default_prefix = os.getenv(*drun.config.LOCAL_DEFAULT_RESOURCE_PREFIX)
+    if default_prefix:
+        return os.path.join(default_prefix, file_name)
+
+    return file_name
 
 
 def export(filename=None,
@@ -435,7 +434,7 @@ def export(filename=None,
         column_types = _get_column_types(input_data_frame)
 
     if not isinstance(column_types, dict) \
-            or not len(column_types.keys()) \
+            or not column_types.keys() \
             or not isinstance(list(column_types.values())[0], ColumnInformation):
         raise Exception('Bad param_types / input_data_frame provided')
 
@@ -461,7 +460,7 @@ def export(filename=None,
     if file_name_has_been_deduced:
         print('Model has been saved to %s' % result_path, file=sys.stderr)
 
-    send_header_to_stderr(drun.const.headers.MODEL_PATH, result_path)
-    send_header_to_stderr(drun.const.headers.MODEL_VERSION, version)
+    send_header_to_stderr(drun.containers.headers.MODEL_PATH, result_path)
+    send_header_to_stderr(drun.containers.headers.MODEL_VERSION, version)
 
     return model

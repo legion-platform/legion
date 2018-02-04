@@ -24,8 +24,8 @@ import argparse
 import json
 import time
 
-from drun.external.base_grafana_client import BaseGrafanaClient
-from drun.utils.template import render_template
+from drun.external.grafana import BaseGrafanaClient
+from drun.utils import render_template
 
 
 DATA_SOURCE_NAME = 'graphite'

@@ -31,3 +31,4 @@ cchardet
 aiohttp_wsgi
 jsonschema
 PyYAML
+kubernetes

@@ -17,18 +17,18 @@
 Flask app
 """
 
-import os
 import logging
-import consul
-from flask import Flask, Blueprint, request, jsonify, redirect
-from flask import current_app as app
+import os
 
-import drun.model.io
-import drun.const.env
+import consul
+import drun.config
 import drun.external.grafana
-import drun.http.flask
+import drun.http
+import drun.io
 import drun.model.model as mlmodel
 import drun.utils as utils
+from flask import Flask, Blueprint, request, jsonify, redirect
+from flask import current_app as app
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('pyserve', __name__)
@@ -74,13 +74,13 @@ def model_invoke(model_id):
     # TODO single configuration for Flask/CLI
     # assert model_id == app.config['MODEL_ID']
 
-    input_dict = drun.http.flask.parse_request(request)
+    input_dict = drun.http.parse_request(request)
 
     model = app.config['model']
 
     output = model.apply(input_dict)
 
-    return drun.http.flask.prepare_response(output)
+    return drun.http.prepare_response(output)
 
 
 @blueprint.route('/healthcheck')
@@ -104,7 +104,7 @@ def init_model(application):
     if 'MODEL_FILE' in application.config:
         file = application.config['MODEL_FILE']
         LOGGER.info("Loading model from %s", file)
-        with drun.model.io.ModelContainer(file) as container:
+        with drun.io.ModelContainer(file) as container:
             model = container.model
     else:
         LOGGER.info("Instantiated dummy model")
@@ -162,9 +162,9 @@ def register_dashboard(application):
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    host = os.environ.get(*drun.const.env.GRAFANA_URL)
-    user = os.environ.get(*drun.const.env.GRAFANA_USER)
-    password = os.environ.get(*drun.const.env.GRAFANA_PASSWORD)
+    host = os.environ.get(*drun.config.GRAFANA_URL)
+    user = os.environ.get(*drun.config.GRAFANA_USER)
+    password = os.environ.get(*drun.config.GRAFANA_PASSWORD)
 
     print('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
     client = drun.external.grafana.GrafanaClient(host, user, password)
@@ -182,7 +182,7 @@ def init_application(args=None):
     :return: :py:class:`Flask.app` -- application instance
     """
     application = create_application()
-    drun.http.flask.configure_application(application, args)
+    drun.http.configure_application(application, args)
 
     # Check LEGION_ADDR if IP_AUTODISCOVER enabled (by default)
     if application.config['IP_AUTODISCOVER']:

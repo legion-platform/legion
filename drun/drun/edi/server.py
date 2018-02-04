@@ -18,19 +18,23 @@ Flask app
 """
 
 import logging
+
+import drun.config
+import drun.containers.k8s
+import drun.external.grafana
+import drun.http
+import drun.io
 from flask import Flask, Blueprint
 from flask import current_app as app
 
-import drun.edi.deploy
-import drun.containers.k8s
-import drun.model.io
-import drun.const.env
-import drun.const.api
-import drun.external.grafana
-import drun.http.flask
-
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
+
+EDI_VERSION = '1.0'
+EDI_DEPLOY = '/api/{version}/deploy'
+EDI_UNDEPLOY = '/api/{version}/undeploy'
+EDI_SCALE = '/api/{version}/scale'
+EDI_INSPECT = '/api/{version}/inspect'
 
 
 def build_blueprint_url(endpoint_url_template):
@@ -41,7 +45,7 @@ def build_blueprint_url(endpoint_url_template):
     :type endpoint_url_template: str
     :return: str -- builded url
     """
-    return endpoint_url_template.format(version=drun.const.api.EDI_VERSION)
+    return endpoint_url_template.format(version=EDI_VERSION)
 
 
 def authenticate(user, password):
@@ -68,11 +72,11 @@ def authenticate(user, password):
     return False
 
 
-@blueprint.route(build_blueprint_url(drun.const.api.EDI_DEPLOY), methods=['POST'])
-@drun.http.flask.provide_json_response
-@drun.http.flask.authenticate(authenticate)
-@drun.http.flask.populate_fields(image=str, count=int, k8s_image=str)
-@drun.http.flask.requested_fields('image')
+@blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
+@drun.http.provide_json_response
+@drun.http.authenticate(authenticate)
+@drun.http.populate_fields(image=str, count=int, k8s_image=str)
+@drun.http.requested_fields('image')
 def deploy(image, count=1, k8s_image=None):
     """
     Deploy API endpoint
@@ -92,11 +96,11 @@ def deploy(image, count=1, k8s_image=None):
     return True
 
 
-@blueprint.route(build_blueprint_url(drun.const.api.EDI_UNDEPLOY), methods=['POST'])
-@drun.http.flask.provide_json_response
-@drun.http.flask.authenticate(authenticate)
-@drun.http.flask.populate_fields(model=str, grace_period=int)
-@drun.http.flask.requested_fields('model')
+@blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
+@drun.http.provide_json_response
+@drun.http.authenticate(authenticate)
+@drun.http.populate_fields(model=str, grace_period=int)
+@drun.http.requested_fields('model')
 def undeploy(model, grace_period=0):
     """
     Undeploy API endpoint
@@ -114,11 +118,11 @@ def undeploy(model, grace_period=0):
     return True
 
 
-@blueprint.route(build_blueprint_url(drun.const.api.EDI_SCALE), methods=['POST'])
-@drun.http.flask.provide_json_response
-@drun.http.flask.authenticate(authenticate)
-@drun.http.flask.populate_fields(model=str, count=int)
-@drun.http.flask.requested_fields('model')
+@blueprint.route(build_blueprint_url(EDI_SCALE), methods=['POST'])
+@drun.http.provide_json_response
+@drun.http.authenticate(authenticate)
+@drun.http.populate_fields(model=str, count=int)
+@drun.http.requested_fields('model')
 def scale(model, count):
     """
     Scale API endpoint
@@ -134,9 +138,9 @@ def scale(model, count):
     return True
 
 
-@blueprint.route(build_blueprint_url(drun.const.api.EDI_INSPECT), methods=['GET'])
-@drun.http.flask.provide_json_response
-@drun.http.flask.authenticate(authenticate)
+@blueprint.route(build_blueprint_url(EDI_INSPECT), methods=['GET'])
+@drun.http.provide_json_response
+@drun.http.authenticate(authenticate)
 def inspect():
     """
     Inspect API endpoint
@@ -185,7 +189,7 @@ def init_application(args=None):
     :return: :py:class:`Flask.app` -- application instance
     """
     application = create_application()
-    drun.http.flask.configure_application(application, args)
+    drun.http.configure_application(application, args)
     load_cluster_config(application)
 
     return application

@@ -17,19 +17,73 @@
 DRun utils functional
 """
 
+import os
+import re
+import shutil
 import socket
 import subprocess
-import re
-import tempfile
-import os
 import sys
-import shutil
-import requests
-import requests.auth
+import tempfile
 
-import drun.const.env
+import drun.config
 
 import docker
+import requests
+import requests.auth
+from jinja2 import Environment, PackageLoader, select_autoescape
+
+
+def render_template(template_name, values=None):
+    """
+    Render template with parameters
+    :param template_name: name of template without path (all templates should be placed in drun.templates directory)
+    :param values: dict template variables or None
+    :return: str rendered template
+    """
+    env = Environment(
+        loader=PackageLoader(__name__, 'templates'),
+        autoescape=select_autoescape(['tmpl'])
+    )
+
+    if not values:
+        values = {}
+
+    template = env.get_template(template_name)
+    return template.render(values)
+
+
+class EdiHTTPException(Exception):
+    """
+    Exception for EDI server (with HTTP code)
+    """
+
+    def __init__(self, http_code, message):
+        """
+        Build exception
+
+        :param http_code: HTTP code
+        :type http_code: int
+        :param message: message for user
+        :type message: str
+        """
+        super(EdiHTTPException, self).__init__(message)
+        self.http_code = http_code
+        self.message = message
+
+
+class EdiHTTPAccessDeniedException(EdiHTTPException):
+    """
+    Exception for EDI server -- access denied
+    """
+
+    def __init__(self, message='Access denied'):
+        """
+        Build exception
+
+        :param message: message for user
+        :type message: str
+        """
+        super(EdiHTTPAccessDeniedException, self).__init__(403, message)
 
 
 def detect_ip():
@@ -122,11 +176,11 @@ class TemporaryFolder:
         """
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exit_type, value, traceback):
         """
         Call remove on context exit
 
-        :param type: -
+        :param exit_type: -
         :param value: -
         :param traceback: -
         :return: None
@@ -199,8 +253,8 @@ def normalize_external_resource_path(path):
     :type path: str
     :return: str -- normalized path
     """
-    default_protocol = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_PROTOCOL)
-    default_host = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_HOST)
+    default_protocol = os.getenv(*drun.config.EXTERNAL_RESOURCE_PROTOCOL)
+    default_host = os.getenv(*drun.config.EXTERNAL_RESOURCE_HOST)
 
     if path.lower().startswith('//'):
         path = '%s:%s' % (default_protocol, path)
@@ -224,10 +278,10 @@ def _get_auth_credentials_for_external_resource():
 
     :return: :py:class:`requests.auth.HTTPBasicAuth` -- credentials
     """
-    user = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_USER)
-    password = os.getenv(*drun.const.env.EXTERNAL_RESOURCE_PASSWORD)
+    user = os.getenv(*drun.config.EXTERNAL_RESOURCE_USER)
+    password = os.getenv(*drun.config.EXTERNAL_RESOURCE_PASSWORD)
 
-    if user and password and len(user) > 0:
+    if user and password:
         return requests.auth.HTTPBasicAuth(user, password)
 
     return None
@@ -258,7 +312,7 @@ def save_file(temp_file, target_file, remove_after_delete=False):
                 response = requests.put(url,
                                         data=file,
                                         auth=auth)
-                if 400 <= response.status_code:
+                if response.status_code >= 400:
                     raise Exception('Wrong status code %d returned for url %s' % (response.status_code, url))
 
             result_path = url
@@ -348,11 +402,11 @@ class ExternalFileReader:
         self._download()
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exit_type, value, traceback):
         """
         Call remove on context exit
 
-        :param type: -
+        :param exit_type: -
         :param value: -
         :param traceback: -
         :return: None

@@ -17,20 +17,24 @@
 EDI client
 """
 
-import logging
-import requests
-import requests.exceptions
 import json
+import logging
 import os
 
-import drun.const.env
-import drun.const.api
 import drun.containers.k8s
+import drun.edi.server
+import drun.config
+import requests
+import requests.exceptions
 
 LOGGER = logging.getLogger(__name__)
 
 
 class EdiClient:
+    """
+    EDI client
+    """
+
     def __init__(self, base, user=None, password=None, token=None):
         """
         Build client
@@ -48,7 +52,7 @@ class EdiClient:
         self._user = user
         self._password = password
         self._token = token
-        self._version = drun.const.api.EDI_VERSION
+        self._version = drun.edi.server.EDI_VERSION
 
     def _query(self, url_template, payload=None, action='GET'):
         """
@@ -68,9 +72,9 @@ class EdiClient:
         auth = None
         headers = {}
 
-        if self._user and self._password and len(self._user) and len(self._password):
+        if self._user and self._password:
             auth = (self._user, self._password)
-        elif self._token and len(self._token):
+        elif self._token:
             auth = ('token', self._token)
 
         try:
@@ -102,7 +106,7 @@ class EdiClient:
 
         :return: list[:py:class:`drun.containers.k8s.ModelDeploymentDescription`]
         """
-        answer = self._query(drun.const.api.EDI_INSPECT)
+        answer = self._query(drun.edi.server.EDI_INSPECT)
         return [drun.containers.k8s.ModelDeploymentDescription(**x) for x in answer]
 
     def deploy(self, image, count=1, k8s_image=None):
@@ -125,7 +129,7 @@ class EdiClient:
         if k8s_image:
             payload['k8s_image'] = k8s_image
 
-        return self._query(drun.const.api.EDI_DEPLOY, action='POST', payload=payload)['status']
+        return self._query(drun.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']
 
     def undeploy(self, model, grace_period=0):
         """
@@ -143,7 +147,7 @@ class EdiClient:
         if grace_period:
             payload['grace_period'] = grace_period
 
-        return self._query(drun.const.api.EDI_UNDEPLOY, action='POST', payload=payload)['status']
+        return self._query(drun.edi.server.EDI_UNDEPLOY, action='POST', payload=payload)['status']
 
     def scale(self, model, count):
         """
@@ -159,7 +163,7 @@ class EdiClient:
             'model': model,
             'count': count
         }
-        return self._query(drun.const.api.EDI_SCALE, action='POST', payload=payload)['status']
+        return self._query(drun.edi.server.EDI_SCALE, action='POST', payload=payload)['status']
 
 
 def build_client(args):
@@ -170,21 +174,21 @@ def build_client(args):
     :type args: :py:class:`argparse.Namespace`
     :return:
     """
-    host = os.environ.get(*drun.const.env.EDI_URL)
-    user = os.environ.get(*drun.const.env.EDI_USER)
-    password = os.environ.get(*drun.const.env.EDI_PASSWORD)
-    token = os.environ.get(*drun.const.env.EDI_TOKEN)
+    host = os.environ.get(*drun.config.EDI_URL)
+    user = os.environ.get(*drun.config.EDI_USER)
+    password = os.environ.get(*drun.config.EDI_PASSWORD)
+    token = os.environ.get(*drun.config.EDI_TOKEN)
 
     if args.edi:
         host = args.edi
 
-    if args.user and len(args.user):
+    if args.user:
         user = args.user
 
-    if args.password and len(args.password):
+    if args.password:
         password = args.password
 
-    if args.token and len(args.token):
+    if args.token:
         token = args.token
 
     client = EdiClient(host, user, password, token)

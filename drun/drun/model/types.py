@@ -18,18 +18,15 @@ Model types for API calls
 """
 
 try:
-    from urllib.parse import urlparse, urlencode
-    from urllib.request import urlopen, Request
-    from urllib.error import HTTPError
+    from urllib.request import urlopen
 except ImportError:
-    from urlparse import urlparse
-    from urllib import urlencode
-    from urllib2 import urlopen, Request, HTTPError
+    from urllib2 import urlopen
 
 from io import BytesIO
-from PIL import Image as PYTHON_Image
-import base64
 import re
+
+import base64
+from PIL import Image as PYTHON_Image
 import numpy as np
 import pandas as pd
 
@@ -207,7 +204,8 @@ class _Image(BaseType):
         else:
             raise Exception('Invalid data type: %s' % (value.__class__))
 
-    def _load_from_network(self, url):
+    @staticmethod
+    def _load_from_network(url):
         """
         Load image from network
 
@@ -282,8 +280,8 @@ class ColumnInformation:
         """
         if self._numpy_type:
             return self._numpy_type
-        else:
-            return self.representation_type.default_numpy_type
+
+        return self.representation_type.default_numpy_type
 
     @property
     def numpy_type_name(self):
@@ -296,8 +294,8 @@ class ColumnInformation:
 
         if isinstance(type_instance, type):
             return type_instance.__name__
-        else:
-            return type_instance.name
+
+        return type_instance.name
 
     @property
     def description_for_api(self):

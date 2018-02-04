@@ -16,27 +16,25 @@
 """
 DRun k8s functions
 """
-import urllib3
-import urllib3.exceptions
-import typing
 import os
 import os.path
-
-import drun
-import drun.const.env
-import drun.const.headers
-import drun.containers.docker
-import drun.external.grafana
-from drun.utils import normalize_name_to_dns_1123
+import typing
 
 import docker
 import docker.errors
+import drun
+import drun.containers.docker
+import drun.containers.headers
+import drun.config
+import drun.external.grafana
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
+import urllib3
+import urllib3.exceptions
 import yaml
-
+from drun.utils import normalize_name_to_dns_1123
 
 ModelDeploymentDescription = typing.NamedTuple('ModelDeploymentDescription', [
     ('status', str),
@@ -133,10 +131,10 @@ def find_model_deployment(model_id, namespace='default'):
     extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
     all_deployments = extension_api.list_namespaced_deployment(namespace)
 
-    type_label_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_name = normalize_name_to_dns_1123(drun.containers.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
 
-    model_id_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_ID)
+    model_id_name = normalize_name_to_dns_1123(drun.containers.headers.DOMAIN_MODEL_ID)
     model_id_value = model_id
 
     for deployment in all_deployments.items:
@@ -163,7 +161,7 @@ def find_all_models_deployments(namespace='default'):
     else:
         all_deployments = extension_api.list_deployment_for_all_namespaces()
 
-    type_label_name = normalize_name_to_dns_1123(drun.const.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_name = normalize_name_to_dns_1123(drun.containers.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
 
     model_deployments = [
@@ -223,7 +221,7 @@ def remove_deployment(deployment, namespace='default', grace_period=0):
 
 
 def deploy(cluster_config, cluster_secrets, namespace,
-           deployment, image, k8s_image=None, scale=1, register_on_grafana=True):
+           deployment, image, k8s_image=None, count=1, register_on_grafana=True):
     """
     Deploy model to kubernetes
 
@@ -239,8 +237,8 @@ def deploy(cluster_config, cluster_secrets, namespace,
     :type image: str
     :param k8s_image: specific image for kubernetes cluster
     :type k8s_image: str or None
-    :param scale: count of pods
-    :type scale: int
+    :param count: count of pods
+    :type count: int
     :param register_on_grafana: register model in grafana (create dashboard)
     :type register_on_grafana: bool
     :return: :py:class:`docker.model.Container` new instance
@@ -266,10 +264,10 @@ def deploy(cluster_config, cluster_secrets, namespace,
         grafana_client.create_dashboard_for_model(model_id, model_version)
 
     container_env_variables = {
-        drun.const.env.STATSD_HOST[0]: cluster_config['graphite']['domain'],
-        drun.const.env.STATSD_PORT[0]: str(cluster_config['graphite']['port']),
-        drun.const.env.CONSUL_ADDR[0]: cluster_config['consul']['domain'],
-        drun.const.env.CONSUL_PORT[0]: str(cluster_config['consul']['port']),
+        drun.config.STATSD_HOST[0]: cluster_config['graphite']['domain'],
+        drun.config.STATSD_PORT[0]: str(cluster_config['graphite']['port']),
+        drun.config.CONSUL_ADDR[0]: cluster_config['consul']['domain'],
+        drun.config.CONSUL_PORT[0]: str(cluster_config['consul']['port']),
     }
 
     container = client.V1Container(
@@ -287,7 +285,7 @@ def deploy(cluster_config, cluster_secrets, namespace,
         spec=client.V1PodSpec(containers=[container]))
 
     deployment_spec = client.ExtensionsV1beta1DeploymentSpec(
-        replicas=scale,
+        replicas=count,
         template=template)
 
     deployment = client.ExtensionsV1beta1Deployment(
@@ -336,10 +334,10 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
         container_image = deployment.spec.template.spec.containers[0].image
 
         model_name = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_ID), '?'
+            normalize_name_to_dns_1123(drun.containers.headers.DOMAIN_MODEL_ID), '?'
         )
         model_version = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(drun.const.headers.DOMAIN_MODEL_VERSION), '?'
+            normalize_name_to_dns_1123(drun.containers.headers.DOMAIN_MODEL_VERSION), '?'
         )
 
         model_information = ModelDeploymentDescription(
@@ -429,13 +427,13 @@ def get_meta_from_docker_image(image):
         docker_image = docker_client.images.pull(image)
 
     required_headers = [
-        drun.const.headers.DOMAIN_MODEL_ID,
-        drun.const.headers.DOMAIN_MODEL_VERSION,
-        drun.const.headers.DOMAIN_CONTAINER_TYPE
+        drun.containers.headers.DOMAIN_MODEL_ID,
+        drun.containers.headers.DOMAIN_MODEL_VERSION,
+        drun.containers.headers.DOMAIN_CONTAINER_TYPE
     ]
 
-    model_id = docker_image.labels[drun.const.headers.DOMAIN_MODEL_ID]
-    model_version = docker_image.labels[drun.const.headers.DOMAIN_MODEL_VERSION]
+    model_id = docker_image.labels[drun.containers.headers.DOMAIN_MODEL_ID]
+    model_version = docker_image.labels[drun.containers.headers.DOMAIN_MODEL_VERSION]
 
     if any(header not in docker_image.labels for header in required_headers):
         raise Exception('Missed on of %s labels. Available labels: %s' % (

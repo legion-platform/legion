@@ -15,27 +15,26 @@
 #
 from __future__ import print_function
 
-import unittest2
-import os
 import glob
-import requests
+import os
 import time
 from argparse import Namespace
 
-import drun.edi.deploy as deploy
-import drun.containers.docker
-import drun.model.model_id
-import drun.model.io
-import drun.const.env
-import drun.model.model_http_api
-from drun.utils import TemporaryFolder
-
 import docker
 import docker.errors
-import docker.models.images
 import docker.models.containers
-import pandas
+import docker.models.images
+import drun.config
+import drun.containers.docker
+import drun.edi.deploy as deploy
+import drun.io
+import drun.model.model_http_api
+import drun.model.model_id
 import numpy
+import pandas
+import requests
+import unittest2
+from drun.utils import TemporaryFolder
 
 
 class TestDeploy(unittest2.TestCase):
@@ -96,11 +95,11 @@ class TestDeploy(unittest2.TestCase):
             'd_float': 1.0,
         }])
 
-        return drun.model.io.export(path,
-                                    apply,
-                                    prepare,
-                                    input_data_frame=df,
-                                    version=version)
+        return drun.io.export(path,
+                              apply,
+                              prepare,
+                              input_data_frame=df,
+                              version=version)
 
     def _build_summation_model(self, path, version):
         def prepare(x):
@@ -114,12 +113,12 @@ class TestDeploy(unittest2.TestCase):
             'b': 1,
         }])
 
-        return drun.model.io.export(path,
-                                    apply,
-                                    prepare,
-                                    input_data_frame=df,
-                                    use_df=False,
-                                    version=version)
+        return drun.io.export(path,
+                              apply,
+                              prepare,
+                              input_data_frame=df,
+                              use_df=False,
+                              version=version)
 
     def test_model_image_build(self, remove_image=True, summation_model=False):
         self.test_stack_is_running()

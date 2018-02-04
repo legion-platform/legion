@@ -17,8 +17,9 @@
 Model model_id
 """
 import os
-import drun.const.env
-import drun.const.headers
+
+import drun.containers.headers
+import drun.config
 from drun.utils import normalize_name, send_header_to_stderr
 
 _model_id = None
@@ -33,7 +34,7 @@ def send_model_id(model_id):
     :type model_id: str
     :return: None
     """
-    send_header_to_stderr(drun.const.headers.MODEL_ID, normalize_name(model_id))
+    send_header_to_stderr(drun.containers.headers.MODEL_ID, normalize_name(model_id))
 
 
 def init(model_id=None):
@@ -54,15 +55,15 @@ def init(model_id=None):
         _model_initialized_from_function = True
     else:
         _model_initialized_from_function = False
-        deducted_model_id = os.getenv(*drun.const.env.MODEL_ID)
+        deducted_model_id = os.getenv(*drun.config.MODEL_ID)
         if not deducted_model_id:
-            raise Exception('Cannot deduct model name. ENV %s is empty' % drun.const.env.MODEL_ID[0])
+            raise Exception('Cannot deduct model name. ENV %s is empty' % drun.config.MODEL_ID[0])
         else:
             model_id = deducted_model_id
 
     model_id = normalize_name(model_id)
 
-    if len(model_id) == 0:
+    if not model_id:
         raise Exception('Model name string length should be greater that 1 (after normalization)')
 
     _model_id = normalize_name(model_id)

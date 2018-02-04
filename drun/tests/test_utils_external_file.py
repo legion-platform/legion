@@ -17,22 +17,22 @@ from __future__ import print_function
 
 import os
 import random
-import requests.auth
 import tempfile
-import unittest2
 from unittest.mock import patch
 
-import drun.const.env
-import drun.model.io
+import drun.config
+import drun.io
 import drun.utils as utils
+import requests.auth
+import unittest2
 
 
 def patch_env_host_user_password(host='localhost', protocol='http', user='', password=''):
     return patch.dict('os.environ', {
-        drun.const.env.EXTERNAL_RESOURCE_HOST[0]: host,
-        drun.const.env.EXTERNAL_RESOURCE_PROTOCOL[0]: protocol,
-        drun.const.env.EXTERNAL_RESOURCE_USER[0]: user,
-        drun.const.env.EXTERNAL_RESOURCE_PASSWORD[0]: password
+        drun.config.EXTERNAL_RESOURCE_HOST[0]: host,
+        drun.config.EXTERNAL_RESOURCE_PROTOCOL[0]: protocol,
+        drun.config.EXTERNAL_RESOURCE_USER[0]: user,
+        drun.config.EXTERNAL_RESOURCE_PASSWORD[0]: password
     })
 
 

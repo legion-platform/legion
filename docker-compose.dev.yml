@@ -37,6 +37,8 @@ services:
       - PYTHONPATH=/opt/project
       - PYDEVD_HOST
       - PYDEVD_PORT=5501
+      - EXTERNAL_RESOURCE_USE_BY_DEFAULT=false
+      - LOCAL_DEFAULT_RESOURCE_PREFIX=/drun
     entrypoint:
       - python3
       - -u

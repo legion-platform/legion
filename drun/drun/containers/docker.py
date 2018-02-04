@@ -20,15 +20,13 @@ import logging
 import os
 import shutil
 
-import drun
-import drun.const.env
-import drun.const.headers
-import drun.model.io
-import drun.utils
-
 import docker
 import docker.errors
-
+import drun
+import drun.config
+import drun.containers.headers
+import drun.io
+import drun.utils
 
 LOGGER = logging.getLogger('docker')
 VALID_SERVING_WORKERS = 'uwsgi', 'gunicorn'
@@ -87,7 +85,7 @@ def build_docker_image(client, base_image, model_id, model_file, labels, python_
 
         # Copy additional payload from templates / docker_files / <serving>
         additional_directory = os.path.join(
-            os.path.dirname(__file__), '..', 'utils', 'templates', 'docker_files', serving)
+            os.path.dirname(__file__), '..', 'templates', 'docker_files', serving)
 
         for file in os.listdir(additional_directory):
             path = os.path.join(additional_directory, file)
@@ -140,7 +138,7 @@ def generate_docker_labels_for_image(model_file, model_id, args):
     :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
-    with drun.model.io.ModelContainer(model_file, do_not_load_model=True) as container:
+    with drun.io.ModelContainer(model_file, do_not_load_model=True) as container:
         base = {
             'com.epam.drun.model.id': model_id,
             'com.epam.drun.model.version': container.get('model.version', 'undefined'),

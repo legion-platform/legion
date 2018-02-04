@@ -25,8 +25,8 @@ except ImportError:
     pass
 
 
+from drun.logging import redirect_to_stdout, set_log_level
 from drun.serving.pyserve import init_application
-from drun.utils.logging import redirect_to_stdout, set_log_level
 
 set_log_level()
 redirect_to_stdout()

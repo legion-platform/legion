@@ -17,21 +17,20 @@
 Deploy logic for DRun
 """
 
-import os
 import logging
-
-import drun.utils
-from drun.utils import Colors, ExternalFileReader, normalize_name_to_dns_1123
-import drun.model.io
-import drun.const.env
-import drun.const.headers
-import drun.external.grafana
-import drun.external.edi
-import drun.containers.docker
-import drun.containers.k8s
+import os
 
 import docker
 import docker.errors
+import drun.config
+import drun.containers.docker
+import drun.containers.headers
+import drun.containers.k8s
+import drun.external.edi
+import drun.external.grafana
+import drun.io
+import drun.utils
+from drun.utils import Colors, ExternalFileReader
 
 LOGGER = logging.getLogger('deploy')
 VALID_SERVING_WORKERS = drun.containers.docker.VALID_SERVING_WORKERS
@@ -51,7 +50,7 @@ def build_model(args):
         if not os.path.exists(external_reader.path):
             raise Exception('Cannot find model file: %s' % external_reader.path)
 
-        with drun.model.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
+        with drun.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
             model_id = container.get('model.id', None)
             if args.model_id:
                 model_id = args.model_id
@@ -76,19 +75,11 @@ def build_model(args):
             args.serving
         )
 
-        LOGGER.info('Built image: %s with python package: %s' % (image, args.python_package))
+        LOGGER.info('Built image: %s with python package: %s', image, args.python_package)
 
         print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
 
         if args.push_to_registry:
-            uri = args.push_to_registry  # type: str
-            tag_start_position = uri.rfind(':')
-            slash_latest_position = uri.rfind('/')
-
-            if 0 < tag_start_position < slash_latest_position and slash_latest_position > 0:
-                repository = uri
-                tag = 'latest'
-
             print('Tagging image %s for model %s as %s' % (image.short_id, model_id, args.push_to_registry))
             image.tag(args.push_to_registry)
             print('Successfully tagged image %s for model %s as %s' % (image.short_id, model_id, args.push_to_registry))
@@ -128,7 +119,7 @@ def inspect_kubernetes(args):
         )
         print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready%s' % arguments)
 
-    if len(model_deployments) == 0:
+    if not model_deployments:
         print('%s-- cannot find any model deployments --%s' % (Colors.WARNING, Colors.ENDC))
 
 
@@ -178,7 +169,7 @@ def deploy_model(args):
     """
     client = drun.containers.docker.build_docker_client(args)
     network_id = drun.containers.docker.find_network(client, args)
-    grafana_client = drun.external.grafana.build_grafana_client(args)
+    grafana_client = drun.external.grafana.build_client(args)
 
     if args.model_id and args.docker_image:
         print('Use only --model-id or --docker-image')
@@ -212,14 +203,14 @@ def deploy_model(args):
         raise Exception('Provide model-id or docker-image')
 
     # Detect current existing containers with models, stop and remove them
-    LOGGER.info('Founding containers with model_id=%s' % model_id)
+    LOGGER.info('Founding containers with model_id=%s', model_id)
 
     for container in current_containers['models']:
         model_name = container.labels.get('com.epam.drun.model.id', None)
         if model_name == model_id:
-            LOGGER.info('Stopping container #%s' % container.short_id)
+            LOGGER.info('Stopping container #%s', container.short_id)
             container.stop()
-            LOGGER.info('Removing container #%s' % container.short_id)
+            LOGGER.info('Removing container #%s', container.short_id)
             container.remove()
 
     container_labels = drun.containers.docker.generate_docker_labels_for_container(image)
@@ -227,9 +218,9 @@ def deploy_model(args):
     ports = {}
     if args.expose_model_port:
         exposing_port = args.expose_model_port
-        ports['%d/tcp' % os.getenv(*drun.const.env.LEGION_PORT)] = exposing_port
+        ports['%d/tcp' % os.getenv(*drun.config.LEGION_PORT)] = exposing_port
 
-    LOGGER.info('Starting container with image #%s for model %s' % (image.short_id, model_id))
+    LOGGER.info('Starting container with image #%s for model %s', image.short_id, model_id)
     container = client.containers.run(image,
                                       network=network_id,
                                       stdout=True,
@@ -255,7 +246,7 @@ def undeploy_model(args):
     """
     client = drun.containers.docker.build_docker_client(args)
     network_id = drun.containers.docker.find_network(client, args)
-    grafana_client = drun.external.grafana.build_grafana_client(args)
+    grafana_client = drun.external.grafana.build_client(args)
 
     current_containers = drun.containers.docker.get_stack_containers_and_images(client, network_id)
 
@@ -267,11 +258,11 @@ def undeploy_model(args):
     else:
         raise Exception('Cannot found container for model_id = %s' % (args.model_id,))
 
-    LOGGER.info('Stopping container #%s' % target_container.short_id)
+    LOGGER.info('Stopping container #%s', target_container.short_id)
     target_container.stop()
-    LOGGER.info('Removing container #%s' % target_container.short_id)
+    LOGGER.info('Removing container #%s', target_container.short_id)
     target_container.remove()
-    LOGGER.info('Removing Grafana dashboard for model %s' % (args.model_id,))
+    LOGGER.info('Removing Grafana dashboard for model %s', args.model_id)
     grafana_client.remove_dashboard_for_model(args.model_id)
 
     print('Successfully undeployed model %s' % (args.model_id,))

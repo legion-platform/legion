@@ -14,7 +14,7 @@
 #    limitations under the License.
 #
 from drun.model_tests import ModelUnitTests
-import drun.env
+import drun.config
 import unittest2
 import random
 import os
@@ -22,7 +22,7 @@ import os
 
 class BasicTest(ModelUnitTests):
     def setUp(self):
-        self.setUpModel(os.environ.get(*drun.env.MODEL_ID))
+        self.setUpModel(os.environ.get(*drun.config.MODEL_ID))
 
     def test_random_sum(self):
         a = random.randint(0, 100)
