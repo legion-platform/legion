@@ -13,9 +13,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import LocustTaskSet, load_image
-from locust import HttpLocust, task
 import os
+
+from legion.model.model_tests import LocustTaskSet, load_image
+
+from locust import HttpLocust, task
 
 
 class TaskSet(LocustTaskSet):

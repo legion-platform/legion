@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM drun/base-python-image
+FROM legion/base-python-image
 
 RUN apt-get update && apt-get install --yes \
     apt-transport-https \
@@ -30,9 +30,9 @@ RUN apt-get update && apt-get install --yes docker-ce
 
 
 ARG pip_extra_index_params=""
-ARG pip_drun_version_string=""
+ARG pip_legion_version_string=""
 
-RUN pip install $pip_extra_index_params drun$pip_drun_version_string
+RUN pip install $pip_extra_index_params legion$pip_legion_version_string
 
 ENV TINI_VERSION v0.16.1
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini

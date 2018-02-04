@@ -112,5 +112,5 @@ workflow-scm-step:2.6
 workflow-step-api:2.13
 workflow-support:2.15
 ws-cleanup:0.34
-drun-jenkins-plugin:experimental
+legion-jenkins-plugin:experimental
 permissive-script-security:0.3

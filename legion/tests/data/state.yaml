@@ -1,0 +1,3 @@
+grafana:
+  domain: "legion-grafana.default.svc.cluster.local"
+  port: 123

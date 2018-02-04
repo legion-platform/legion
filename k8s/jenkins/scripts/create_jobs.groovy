@@ -33,7 +33,7 @@ store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.Sys
 if (store.getCredentials(domain).size() == 0){
 	privateKey = new BasicSSHUserPrivateKey(
 		CredentialsScope.GLOBAL,
-		"drun-root-key",
+		"legion-root-key",
 		"git",
 		new BasicSSHUserPrivateKey.UsersPrivateKeySource(),
 		"",

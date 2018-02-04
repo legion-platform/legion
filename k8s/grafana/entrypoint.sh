@@ -18,7 +18,9 @@
 if [ ! -f /var/lib/grafana/bootstrapped ] && [ ! -z ${GF_GRAPHITE_DATASOURCE} ]; then
 	./run.sh "${@}" &
 
-	drun_bootstrap_grafana "http://localhost:3000/" "${GF_GRAPHITE_DATASOURCE}"
+    echo "Bootstrapping grafana for ${GF_GRAPHITE_DATASOURCE}..."
+	legion_bootstrap_grafana "http://localhost:3000/" "${GF_GRAPHITE_DATASOURCE}"
+    echo "Grafana has been bootstrapped"
 
 	touch /var/lib/grafana/bootstrapped
 

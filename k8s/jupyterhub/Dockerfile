@@ -16,8 +16,8 @@
 FROM jupyter/scipy-notebook:cf1a3aa8fbd4
 
 ARG pip_extra_index_params=""
-ARG pip_drun_version_string=""
+ARG pip_legion_version_string=""
 
-RUN pip install $pip_extra_index_params drun$pip_drun_version_string
+RUN pip install $pip_extra_index_params legion$pip_legion_version_string
 
 WORKDIR $HOME

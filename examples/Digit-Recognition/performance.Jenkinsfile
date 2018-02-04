@@ -1,16 +1,13 @@
 node {
     def legion = load legion()
 
-    legion.container('drun.kharlamov.biz/drun/base-python-image:latest') {
-        stage('clone'){
-            git url: 'https://github.com/akharlamov/drun-examples.git'
-            sh '''
-            pip install -i https://drun.kharlamov.biz/pypi/ drun
-            '''
+    legion.container(null) {
+        stage('clone repo') {
+            checkout scm
         }
-        stage('run performance tests'){
-            sh "cd Digit-Recognition/performance/ && locust -f test_basic.py --no-web -c ${params.testUsers} -r ${params.testHatchRate} -n ${params.testRequestsCount} --host ${params.host} --only-summary --logfile locust.log"
-            archiveArtifacts 'Digit-Recognition/performance/locust.log'
+
+        stage('run perf tests'){
+            legion.runPerformanceTests('test_basic.py')
         }
     }
 }

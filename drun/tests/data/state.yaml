@@ -1,3 +1,0 @@
-grafana:
-  domain: "drun-grafana.default.svc.cluster.local"
-  port: 123

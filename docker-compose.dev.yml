@@ -19,26 +19,26 @@ services:
   base-python-image:
     build:
       context: base-python-image
-    image: drun/base-python-image:latest
+    image: legion/base-python-image:latest
     networks:
-      - drun_root
+      - legion_root
     restart: "no"
 
   jupyter:
-    image: drun/base-python-image
+    image: legion/base-python-image
     build:
       context: base-python-image
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Jupyter notebook server
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Jupyter notebook server
     environment:
       - PYTHONPATH=/opt/project
       - PYDEVD_HOST
       - PYDEVD_PORT=5501
       - EXTERNAL_RESOURCE_USE_BY_DEFAULT=false
-      - LOCAL_DEFAULT_RESOURCE_PREFIX=/drun
+      - LOCAL_DEFAULT_RESOURCE_PREFIX=/legion
     entrypoint:
       - python3
       - -u
@@ -47,22 +47,22 @@ services:
       - 8888:8888
     working_dir: /opt/project/jupyter
     volumes:
-      - ./workspace/drun:/drun
+      - ./workspace/legion:/legion
       - ./examples:/notebooks
       - ./:/opt/project
 
   legion:
     depends_on:
       - consul
-    image: drun/base-python-image
+    image: legion/base-python-image
     build:
       context: base-python-image
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Legion server (serves dummy model)
-      com.epam.drun.container_required: 'false'
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Legion server (serves dummy model)
+      com.epam.legion.container_required: 'false'
     environment:
       - PYTHONPATH=/opt/project
       - PYDEVD_HOST
@@ -70,23 +70,23 @@ services:
     entrypoint:
       - python3
       - -u
-      - /opt/project/drun/bin/legion
+      - /opt/project/legion/bin/legionctl
       - pyserve-dummy
     ports:
       - 5000:5000
     volumes:
-      - ./workspace/drun:/drun
+      - ./workspace/legion:/legion
       - .:/opt/project
 
   grafana:
     build:
       context: grafana
-    image: drun/grafana
+    image: legion/grafana
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Grafana server
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Grafana server
     environment:
       - PYTHONPATH=/opt/project
       - GF_SERVER_ROOT_URL=http://parallels/grafana
@@ -97,7 +97,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./workspace/drun:/drun
+      - ./workspace/legion:/legion
       - ./workspace/grafana:/var/lib/grafana
       - ./grafana/scripted_dashboards/model_builds.js:/usr/share/grafana/public/dashboards/model_builds.js
       - .:/opt/project
@@ -105,20 +105,20 @@ services:
   jenkins:
     build:
       context: jenkins
-    image: drun/jenkins
+    image: legion/jenkins
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Jenkins server
-      com.epam.drun.container_required: 'false'
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Jenkins server
+      com.epam.legion.container_required: 'false'
     environment:
       - DOCKER_HOST=${JENKINS_DOCKER_HOST}
-      - DRUN_EXAMPLES_COMMIT=${DRUN_EXAMPLES_COMMIT}
+      - LEGION_EXAMPLES_COMMIT=${LEGION_EXAMPLES_COMMIT}
       - DOCKER_CERT_PATH=/home/jenkins/.docker
       - DOCKER_TLS_VERIFY=1
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.drun.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.drun.jenkins.report.html.path=notebook.html"
-      - DRUN_MODEL_SERVER_URL=http://edge:80
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.legion.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.legion.jenkins.report.html.path=notebook.html"
+      - legion_MODEL_SERVER_URL=http://edge:80
     ports:
       - 8081:8080
     volumes:
@@ -130,10 +130,10 @@ services:
   graphite:
     image: hopsoft/graphite-statsd
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Graphite server
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Graphite server
     ports:
       - 81:80
       - 2003:2003
@@ -148,15 +148,14 @@ services:
     depends_on:
       - consul
       - graphite
-      - kibana
-    image: drun/edge
+    image: legion/edge
     build:
       context: edge
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Web server (load balancer)
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Web server (load balancer)
     environment:
       - CONSUL_HTTP_ADDR=http://consul:8500
     ports:
@@ -170,91 +169,15 @@ services:
   consul:
     image: library/consul:latest
     networks:
-      - drun_root
+      - legion_root
     labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Consul server (load balancer)
+      com.epam.legion.container_type: service
+      com.epam.legion.container_description: Consul server (load balancer)
     ports:
       - 8500:8500
     logging:
       driver: none
 
-  elasticsearch:
-    image: drun/elasticsearch
-    build: elasticsearch
-    networks:
-      - drun_root
-    labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Elasticsearch server
-    restart: always
-    ports:
-      - 9200:9200
-    volumes:
-      - ./workspace/elasticsearch/data/node:/usr/share/elasticsearch/data/node
-
-  logstash:
-    image: drun/logstash
-    build: logstash
-    networks:
-      - drun_root
-    depends_on:
-      - elasticsearch
-    labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Logstash server
-    restart: always
-    command: logstash -f /config-dir/logstash.conf
-    ports:
-      - 5001:5001
-      - "5001:5001/udp"
-      - 9600:9600
-      - 12201:12201
-      - "12201:12201/udp"
-
-  kibana:
-    image: drun/kibana
-    build: kibana
-    depends_on:
-      - elasticsearch
-      - logstash
-    networks:
-      - drun_root
-    labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Kibana server
-    restart: always
-    ports:
-      - 5601:5601
-    environment:
-      - SERVER_BASEPATH=/kibana
-
-  curator:
-    image: drun/curator
-    build: curator
-    networks:
-      - drun_root
-    labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Curator (scheduled tasks)
-    restart: always
-
-  logspout:
-    image: drun/logspout
-    build: logspout
-    networks:
-      - drun_root
-    depends_on:
-      - logstash
-    labels:
-      com.epam.drun.container_type: service
-      com.epam.drun.container_description: Logspout
-    volumes:
-      - /etc/hostname:/etc/host_hostname:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - ROUTE_URIS=syslog://logstash:12201
-
 networks:
-  drun_root:
+  legion_root:
     driver: bridge

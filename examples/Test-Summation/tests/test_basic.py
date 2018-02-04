@@ -13,16 +13,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import ModelUnitTests
-import drun.config
-import unittest2
 import random
 import os
+
+from legion.model.model_tests import ModelUnitTests
+import legion.config
+
+import unittest2
 
 
 class BasicTest(ModelUnitTests):
     def setUp(self):
-        self.setUpModel(os.environ.get(*drun.config.MODEL_ID))
+        self.setUpModel(os.environ.get(*legion.config.MODEL_ID))
 
     def test_random_sum(self):
         a = random.randint(0, 100)

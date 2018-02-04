@@ -25,10 +25,10 @@ COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod a+rwx /entrypoint.sh
 
 ARG pip_extra_index_params=""
-ARG pip_drun_version_string=""
+ARG pip_legion_version_string=""
 
 RUN pip3 install --force-reinstall -U pip
-RUN pip3 install $pip_extra_index_params drun_test_tools$pip_drun_version_string
+RUN pip3 install $pip_extra_index_params legion_test$pip_legion_version_string
 
 ENTRYPOINT ["/entrypoint.sh"]
 

@@ -1,4 +1,0 @@
-graft drun_test_tools/templates
-graft drun_test_tools/external
-recursive-include requirements *.txt
-

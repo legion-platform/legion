@@ -18,7 +18,7 @@ import sys
 
 print("Executing docker dev bootup")
 
-SUBPROJECT_DIRS = ['/opt/project/drun', '/opt/project/jupyter']
+SUBPROJECT_DIRS = ['/opt/project/legion', '/opt/project/jupyter']
 
 sys.path.extend(SUBPROJECT_DIRS)
 

@@ -16,17 +16,17 @@
 #
 
 cd base-python-image
-docker build -t drun/base-python-image:latest .
+docker build -t legion/base-python-image:latest .
 cd ..
 
 cd edge
-docker build -t drun/edge .
+docker build -t legion/edge .
 cd ..
 
 cd grafana
-docker build -t drun/grafana .
+docker build -t legion/grafana .
 cd ..
 
 cd jenkins
-docker build -t drun/jenkins-server:latest .
+docker build -t legion/jenkins-server:latest .
 cd ..
