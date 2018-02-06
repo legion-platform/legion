@@ -126,6 +126,11 @@ if __name__ == '__main__':
                                    type=str, help='EDI server password')
     deploy_k8s_parser.add_argument('--token',
                                    type=str, help='EDI server token')
+    deploy_k8s_parser.add_argument('--no-wait',
+                                   action='store_true', help='wait until pods will be ready')
+    deploy_k8s_parser.add_argument('--wait-timeout',
+                                   default=120,
+                                   type=int, help='timeout in s. for wait (if no-wait is off). Infinite if 0')
     deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
 
     inspect_k8s_parser = subparsers.add_parser('inspect',
@@ -171,6 +176,8 @@ if __name__ == '__main__':
                                      type=str, help='EDI server password')
     undeploy_k8s_parser.add_argument('--token',
                                      type=str, help='EDI server token')
+    undeploy_k8s_parser.add_argument('--ignore-not-found',
+                                     action='store_true', help='ignore if cannot found pod')
     undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
 
     # --------- SERVING SECTION -----------

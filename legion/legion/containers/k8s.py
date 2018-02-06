@@ -20,13 +20,15 @@ import os
 import os.path
 import typing
 
-import docker
-import docker.errors
 import legion
 import legion.containers.docker
 import legion.containers.headers
 import legion.config
 import legion.external.grafana
+from legion.model import ModelClient
+
+import docker
+import docker.errors
 import kubernetes
 import kubernetes.client
 import kubernetes.config
@@ -45,6 +47,8 @@ ModelDeploymentDescription = typing.NamedTuple('ModelDeploymentDescription', [
     ('ready_replicas', int),
     ('namespace', str),
     ('deployment', str),
+    ('model_api_ok', bool),
+    ('model_api_info', dict),
 ])
 
 
@@ -135,7 +139,7 @@ def find_model_deployment(model_id, namespace='default'):
     type_label_value = 'model'
 
     model_id_name = normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_MODEL_ID)
-    model_id_value = model_id
+    model_id_value = normalize_name_to_dns_1123(model_id)
 
     for deployment in all_deployments.items:
         if deployment.metadata.labels.get(type_label_name) == type_label_value \
@@ -317,6 +321,8 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
     deployments = find_all_models_deployments(namespace)
     models = []
 
+    edge_url = 'http://%s:%d' % (cluster_config['edge']['domain'], cluster_config['edge']['port'])
+
     for deployment in deployments:
         ready_replicas = deployment.status.ready_replicas
         if not ready_replicas:
@@ -340,6 +346,15 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
             normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_MODEL_VERSION), '?'
         )
 
+        model_api_ok = True
+        model_api_info = {}
+
+        try:
+            model_client = ModelClient(model_name, host=edge_url)
+            model_api_info = model_client.info()
+        except Exception:
+            model_api_ok = False
+
         model_information = ModelDeploymentDescription(
             status=status,
             model=model_name,
@@ -348,7 +363,9 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
             scale=replicas,
             ready_replicas=ready_replicas,
             namespace=deployment.metadata.namespace,
-            deployment='deployment'
+            deployment='deployment',
+            model_api_ok=model_api_ok,
+            model_api_info=model_api_info
         )
         models.append(model_information)
 

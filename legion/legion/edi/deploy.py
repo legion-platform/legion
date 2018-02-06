@@ -19,6 +19,7 @@ Deploy logic for legion
 
 import logging
 import os
+import time
 
 import docker
 import docker.errors
@@ -64,6 +65,7 @@ def build_model(args):
         if not base_docker_image:
             base_docker_image = 'legion/base-python-image:latest'
 
+        print('Building docker image...')
         image = legion.containers.docker.build_docker_image(
             client,
             base_docker_image,
@@ -78,16 +80,42 @@ def build_model(args):
         )
 
         LOGGER.info('Built image: %s with python package: %s', image, args.python_package)
-        print('Built image: %s with python package: %s' % (image, args.python_package))
-
-        print('Successfully created docker image %s for model %s' % (image.short_id, model_id))
+        print('Built image: %s with python package: %s for model %s' % (image, args.python_package, model_id))
 
         if args.push_to_registry:
-            print('Tagging image %s for model %s as %s' % (image.short_id, model_id, args.push_to_registry))
-            image.tag(args.push_to_registry)
-            print('Successfully tagged image %s for model %s as %s' % (image.short_id, model_id, args.push_to_registry))
-            client.images.push(args.push_to_registry)
-            print('Successfully pushed image %s for model %s to %s' % (image.short_id, model_id, args.push_to_registry))
+            external_image_name = args.push_to_registry
+            docker_registry = external_image_name
+            version = None
+
+            registry_delimiter = docker_registry.find('/')
+            if registry_delimiter < 0:
+                raise Exception('Invalid registry format. Valid format: host:port/repository/image:tag')
+
+            registry = docker_registry[:registry_delimiter]
+            image_name = docker_registry[registry_delimiter+1:]
+
+            version_delimiter = image_name.find(':')
+            if version_delimiter > 0:
+                version = image_name[version_delimiter+1:]
+                image_name = image_name[:version_delimiter]
+
+            docker_registry_user = os.getenv(*legion.config.DOCKER_REGISTRY_USER)
+            docker_registry_password = os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD)
+            auth_config = None
+
+            if docker_registry_user and docker_registry_password:
+                auth_config = {
+                    'username': docker_registry_user,
+                    'password': docker_registry_password
+                }
+
+            image_and_registry = '{}/{}'.format(registry, image_name)
+
+            print('Tagging image %s v %s for model %s as %s' % (image.short_id, version, model_id, image_and_registry))
+            image.tag(image_and_registry, version)
+            print('Pushing %s:%s to %s' % (image_and_registry, version, registry))
+            client.images.push(image_and_registry, tag=version, auth_config=auth_config)
+            print('Successfully pushed image %s:%s' % (image_and_registry, version))
 
         return image
 
@@ -106,21 +134,29 @@ def inspect_kubernetes(args):
     print('%sModel deployments:%s' % (Colors.BOLD, Colors.ENDC))
 
     for deployment in model_deployments:
-        if deployment.status == 'ok':
+        if deployment.status == 'ok' and deployment.model_api_ok:
             line_color = Colors.OKGREEN
         elif deployment.status == 'warning':
             line_color = Colors.WARNING
         else:
             line_color = Colors.FAIL
 
+        errors = ''
+
+        if not deployment.model_api_ok:
+            errors = 'MODEL API DOES NOT RESPOND'
+
+        if errors:
+            errors = 'ERROR: {}'.format(errors)
+
         arguments = (
             line_color, Colors.ENDC,
             Colors.UNDERLINE, deployment.model, Colors.ENDC,
             deployment.image, deployment.version,
-            line_color, deployment.ready_replicas, deployment.scale,
+            line_color, deployment.ready_replicas, deployment.scale, errors,
             Colors.ENDC
         )
-        print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready%s' % arguments)
+        print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready %s%s' % arguments)
 
     if not model_deployments:
         print('%s-- cannot find any model deployments --%s' % (Colors.WARNING, Colors.ENDC))
@@ -135,7 +171,13 @@ def undeploy_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    edi_client.undeploy(args.model_id, args.grace_period)
+    try:
+        edi_client.undeploy(args.model_id, args.grace_period)
+    except Exception as exception:
+        if 'Cannot find deployment' in str(exception) and args.ignore_not_found:
+            print('Cannot find deployment - ignoring')
+        else:
+            raise exception
 
 
 def scale_kubernetes(args):
@@ -160,6 +202,29 @@ def deploy_kubernetes(args):
     """
     edi_client = legion.external.edi.build_client(args)
     edi_client.deploy(args.image, args.scale, args.image_for_k8s)
+
+    if not args.no_wait:
+        start = time.time()
+
+        while True:
+            elapsed = time.time() - start
+            if elapsed > args.wait_timeout and args.wait_timeout != 0:
+                break
+
+            information = [info for info in edi_client.inspect() if info.image == args.image]
+
+            if not information:
+                raise Exception('Cannot found deployment with image = {}'.format(args.image))
+
+            if len(information) > 1:
+                raise Exception('Founded too many deployments with image = {}'.format(args.image))
+
+            deployment = information[0]
+
+            if deployment.ready_replicas >= deployment.scale and deployment.model_api_ok:
+                break
+
+            time.sleep(1)
 
 
 def deploy_model(args):
