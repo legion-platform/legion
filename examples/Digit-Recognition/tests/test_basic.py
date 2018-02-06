@@ -15,19 +15,19 @@
 #
 import os
 
-from legion.model.model_tests import ModelUnitTests
+from legion.model import ModelClient, load_image
 import legion.config
 
 import unittest2
 
 
-class BasicTest(ModelUnitTests):
+class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self.setUpModel(os.environ.get(*legion.config.MODEL_ID))
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID))
 
     def test_nine_decode(self):
-        image = self._load_image(os.path.join('files', 'nine.png'))
-        response = self._query_model(image=image)
+        image = load_image(os.path.join('files', 'nine.png'))
+        response = self._client.invoke(image=image)
         self.assertEqual(response['digit'], 9)
 
 

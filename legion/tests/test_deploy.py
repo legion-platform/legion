@@ -24,8 +24,9 @@ import legion.config
 import legion.containers.docker
 import legion.edi.deploy as deploy
 import legion.io
-import legion.model.model_http_api
+import legion.model.client
 import legion.model.model_id
+from legion.model import ModelClient
 from legion.utils import TemporaryFolder
 
 import docker
@@ -107,7 +108,7 @@ class TestDeploy(unittest2.TestCase):
             return x
 
         def apply(x):
-            return x['a'] + x['b']
+            return {'x': x['a'] + x['b']}
 
         df = pandas.DataFrame([{
             'a': 1,
@@ -214,20 +215,23 @@ class TestDeploy(unittest2.TestCase):
         ports_information = [int(x['HostPort']) for x in ports_information]
         self.assertTrue(model_port in ports_information, 'Port not binded')
 
-        url = legion.model.model_http_api.get_model_invoke_url(self.MODEL_ID, False)
         values = {
             'a': 10,
             'b': 20
         }
-        parameters = legion.model.model_http_api.get_requests_parameters_for_model_invoke(**values)
-        url = 'http://%s:%s%s' % ('localhost', model_port, url)
-        response = requests.post(url, **parameters)
 
-        response = response.text
-        if isinstance(response, bytes):
-            response = response.decode('utf-8')
+        client = ModelClient(self.MODEL_ID, 'http://{}:{}'.format('localhost', model_port))
 
-        self.assertEqual(response.strip(), '30', 'Incorrect model result')
+        model_information = client.info()
+        self.assertEqual(model_information['version'], self.MODEL_VERSION, 'Incorrect model version')
+        self.assertEqual(model_information['use_df'], False, 'Incorrect model use_df field')
+        self.assertDictEqual(model_information['input_params'],
+                             {'b': {'numpy_type': 'int64', 'type': 'Integer'},
+                              'a': {'numpy_type': 'int64', 'type': 'Integer'}},
+                             'Incorrect model input_params')
+
+        invoke_result = client.invoke(**values)
+        self.assertEqual(invoke_result['x'], 30, 'Incorrect model result')
 
         args = Namespace(
             model_id=self.MODEL_ID,

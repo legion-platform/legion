@@ -13,21 +13,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import os
+from legion.model import ModelClient
 
-from legion.model.model_tests import LocustTaskSet
-import legion.config
-
-from locust import HttpLocust, task
+from locust import HttpLocust, task, TaskSet
 
 
-class TaskSet(LocustTaskSet):
+class ModelTaskSet(TaskSet):
     @task()
     def invoke_nine_decode(self):
-        self._invoke_model(a=10, b=20)
+        self._model_client.invoke(a=10, b=20)
 
     def on_start(self):
-        self.setup_model('test_summation')
+        self._model_client = ModelClient('test_summation', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):

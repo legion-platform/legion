@@ -16,3 +16,4 @@
 """
 Model functionality
 """
+from .client import ModelClient, load_image

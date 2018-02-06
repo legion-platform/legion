@@ -7,7 +7,6 @@ h5py
 dill
 python-interface
 pandas
-traitlets
 unittest2
 nose
 flask
@@ -19,8 +18,6 @@ pydevd
 python-consul
 matplotlib
 scipy
-tensorflow
-keras
 Pillow
 statsd
 locustio
@@ -29,6 +26,5 @@ gunicorn
 aiohttp
 cchardet
 aiohttp_wsgi
-jsonschema
 PyYAML
 kubernetes

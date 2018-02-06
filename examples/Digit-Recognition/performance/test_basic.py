@@ -15,22 +15,22 @@
 #
 import os
 
-from legion.model.model_tests import LocustTaskSet, load_image
+from legion.model import load_image, ModelClient
 
-from locust import HttpLocust, task
+from locust import HttpLocust, task, TaskSet
 
 
-class TaskSet(LocustTaskSet):
+class ModelTaskSet(TaskSet):
     @task()
     def invoke_nine_decode(self):
         image = load_image(os.path.join('files', 'nine.png'))
-        self._invoke_model(image=image)
+        self._model_client.invoke(image=image)
 
     def on_start(self):
-        self.setup_model('recognize_digits')
+        self._model_client = ModelClient('recognize_digits', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):
-    task_set = TaskSet
+    task_set = ModelTaskSet
     min_wait = 0
     max_wait = 0

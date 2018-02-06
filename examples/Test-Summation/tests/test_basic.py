@@ -16,20 +16,20 @@
 import random
 import os
 
-from legion.model.model_tests import ModelUnitTests
+from legion.model import ModelClient
 import legion.config
 
 import unittest2
 
 
-class BasicTest(ModelUnitTests):
+class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self.setUpModel(os.environ.get(*legion.config.MODEL_ID))
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID))
 
     def test_random_sum(self):
         a = random.randint(0, 100)
         b = random.randint(0, 100)
-        response = self._query_model(a=a, b=b)
+        response = self._client.invoke(a=a, b=b)
 
         self.assertEqual(response['result'], a + b)
 

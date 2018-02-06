@@ -1,7 +1,6 @@
 dill
 python-interface
 pandas
-traitlets
 docker
 python-consul
 flask
@@ -10,5 +9,4 @@ Pillow
 Jinja2>=2.9
 statsd
 kubernetes
-jsonschema
 PyYAML
