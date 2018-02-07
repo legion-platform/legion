@@ -37,7 +37,7 @@ def dockerArgs() {
 
     dnsArguments = "--dns=$nameserver $searchArguments "
 
-    return "-v legion:/legion -v /var/run/docker.sock:/var/run/docker.sock $dnsArguments -u 0:0 $envParameters"
+    return "-m 16g -v legion:/legion -v /var/run/docker.sock:/var/run/docker.sock $dnsArguments -u 0:0 $envParameters"
 }
 
 def modelId() {
