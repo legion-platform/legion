@@ -211,8 +211,9 @@ def normalize_name(name):
     :type name: str
     :return: str -- normalized name
     """
-    name = name.replace(' ', '_')
-    return re.sub('[^a-zA-Z0-9\-_\.]', '', name)
+    for char in ' ', '_', '+':
+        name = name.replace(char, '-')
+    return re.sub('[^a-zA-Z0-9\-\.]', '', name)
 
 
 def normalize_name_to_dns_1123(name):
@@ -223,9 +224,7 @@ def normalize_name_to_dns_1123(name):
     :type name: str
     :return: str -- normalized name
     """
-    for char in ' ', '_', '+':
-        name = name.replace(char, '-')
-    return re.sub('[^a-zA-Z0-9\-\.]', '', name)
+    return normalize_name(name)
 
 
 def is_local_resource(path):

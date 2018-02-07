@@ -176,8 +176,17 @@ def undeploy_kubernetes(args):
     except Exception as exception:
         if 'Cannot find deployment' in str(exception) and args.ignore_not_found:
             print('Cannot find deployment - ignoring')
+            return
         else:
             raise exception
+
+    while True:
+        information = [info for info in edi_client.inspect() if info.model == args.model_id]
+
+        if not information:
+            break
+
+        time.sleep(1)
 
 
 def scale_kubernetes(args):

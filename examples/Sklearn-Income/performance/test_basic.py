@@ -21,10 +21,24 @@ from locust import HttpLocust, task, TaskSet
 class ModelTaskSet(TaskSet):
     @task()
     def invoke_nine_decode(self):
-        self._model_client.invoke(a=10, b=20)
+        dataset = {'age': 31,
+                   'capital-gain': 14084,
+                   'capital-loss': 0,
+                   'education': 'Bachelors',
+                   'education-num': 13,
+                   'fnlwgt': 77516,
+                   'hours-per-week': 40,
+                   'marital-status': 'Married-civ-spouse',
+                   'native-country': 'United-States',
+                   'occupation': 'Exec-managerial',
+                   'race': 'White',
+                   'relationship': 'Husband',
+                   'sex': 'Male',
+                   'workclass': 'Private'}
+        self._model_client.invoke(**dataset)
 
     def on_start(self):
-        self._model_client = ModelClient('test_summation', use_relative_url=True, http_client=self.client)
+        self._model_client = ModelClient('income', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):

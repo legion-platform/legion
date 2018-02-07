@@ -346,13 +346,16 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
             normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_MODEL_VERSION), '?'
         )
 
-        model_api_ok = True
-        model_api_info = {}
+        model_api_info = {
+            'host': edge_url
+        }
 
         try:
             model_client = ModelClient(model_name, host=edge_url)
-            model_api_info = model_client.info()
-        except Exception:
+            model_api_info['result'] = model_client.info()
+            model_api_ok = True
+        except Exception as model_api_exception:
+            model_api_info['exception'] = str(model_api_exception)
             model_api_ok = False
 
         model_information = ModelDeploymentDescription(

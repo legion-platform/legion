@@ -17,11 +17,14 @@
  */
 
 def dockerArgs() {
-    def envToPass = ["LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
-                     "LEGION_BASE_IMAGE_REPOSITORY", "MODEL_SERVER_URL", "EDI_URL", "EDI_USER",
-                     "EDI_PASSOWRD", "EDI_TOKEN", "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST",
-                     "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD", "MODEL_IMAGES_REGISTRY",
-                     "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
+    def envToPass = [
+        "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
+        "LEGION_BASE_IMAGE_REPOSITORY",
+        "MODEL_SERVER_URL",
+        "EDI_URL", "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
+        "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
+        "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
+        "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
     ]
 
     def envParameters = envToPass.collect({ name -> "-e \"${name}=${System.getenv(name)}\"" }).join(" ")
@@ -46,7 +49,15 @@ def modelId() {
 def modelVersion() {
     def modelVersion = legionProperties()['modelVersion']
 
-    return (modelVersion == null) ? 'undefined' : modelVersion
+    fileName = modelFileName()
+    extendedVersionSubstring = (fileName =~ /\+(.+)\.model/)
+
+    if (extendedVersionSubstring)
+        extendedVersionSubstring = '-' + extendedVersionSubstring[0][1]
+    else
+        extendedVersionSubstring = ''
+
+    return ((modelVersion == null) ? 'undefined' : modelVersion) + extendedVersionSubstring
 }
 
 def modelFileName() {
@@ -112,6 +123,28 @@ def runNotebook(notebookName) {
     archiveArtifacts 'notebook.html'
 }
 
+def runScript(scriptPath){
+    env.ROOT_DIR = rootDir()
+    env.TARGET_SCRIPT_PATH = scriptPath
+    env.MODEL_ID = defaultModelId(scriptPath)
+
+    echo 'ROOT_DIR = ' + env.ROOT_DIR
+    echo 'TARGET_SCRIPT_PATH = ' + env.TARGET_SCRIPT_PATH
+    echo 'MODEL_ID = ' + env.MODEL_ID
+
+    sh '''
+    pip install --extra-index-url ${LEGION_PACKAGE_REPOSITORY} legion==${LEGION_PACKAGE_VERSION}
+    export CONTAINER_DIR="`pwd`"
+    cd ${ROOT_DIR}
+    python3 "${TARGET_SCRIPT_PATH}" > script-log.txt
+    cp script-log.txt "${CONTAINER_DIR}"
+    '''
+
+    sleep time: 1, unit: 'SECONDS'
+
+    archiveArtifacts 'script-log.txt'
+}
+
 def generateModelTemporaryImageName(modelId, modelVersion){
     Random random = new Random()
     randInt = random.nextInt(3000)
@@ -128,38 +161,19 @@ def build() {
     baseDockerImage = getDefaultImageName()
     modelVersion = modelVersion()
 
-    // TODO: What to use for version of model image?
     modelImageVersion = modelVersion
-    temporaryDockerImageName = generateModelTemporaryImageName(env.MODEL_ID, modelVersion)
-    externalImageName = "${env.MODEL_IMAGES_REGISTRY}${env.MODEL_ID}:${modelImageVersion}"
-    env.EXTERNAL_IMAGE_NAME = externalImageName
-
-    // TODO: Move to Dockerfile ?
-    sh """
-    apt-get update && apt-get install --yes apt-transport-https ca-certificates curl software-properties-common
-    curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian jessie stable"
-    apt-get update && apt-get install --yes docker-ce
-    """
+    env.TEMPORARY_DOCKER_IMAGE_NAME = generateModelTemporaryImageName(env.MODEL_ID, modelVersion)
+    env.EXTERNAL_IMAGE_NAME = "${env.MODEL_IMAGES_REGISTRY}${env.MODEL_ID}:${modelImageVersion}"
 
     sh """
     legionctl build --python-package-version ${env.LEGION_PACKAGE_VERSION} \
     --python-repository ${env.LEGION_PACKAGE_REPOSITORY} --base-docker-image $baseDockerImage \
-    --docker-image-tag ${temporaryDockerImageName} \
+    --docker-image-tag ${env.TEMPORARY_DOCKER_IMAGE_NAME} \
+    --push-to-registry  ${env.EXTERNAL_IMAGE_NAME} \
     ${env.MODEL_FILE_NAME}
     """
 
-    sh """
-    docker login -u ${env.EXTERNAL_RESOURCE_USER} -p ${env.EXTERNAL_RESOURCE_PASSWORD} ${env.MODEL_IMAGES_REGISTRY}
-
-    docker tag ${temporaryDockerImageName} ${externalImageName}
-    docker push ${externalImageName}
-
-    docker rmi ${temporaryDockerImageName}
-    docker rmi ${externalImageName}
-    """
 }
-
 def deploy() {
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
@@ -167,15 +181,11 @@ def deploy() {
     echo 'MODEL_ID = ' + env.MODEL_ID
     echo 'MODEL_FILE_NAME = ' + env.MODEL_FILE_NAME
 
-    sh '''
-    legionctl deploy $EXTERNAL_IMAGE_NAME
-    '''
-
-    sleep time: 10, unit: 'SECONDS'
-
-    sh '''
+    sh """
+    legionctl undeploy --ignore-not-found ${env.MODEL_ID}
+    legionctl deploy ${env.EXTERNAL_IMAGE_NAME}
     legionctl inspect
-    '''
+    """
 }
 
 def runTests() {
