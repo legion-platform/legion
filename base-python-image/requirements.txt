@@ -2,8 +2,6 @@ nose
 pydot-ng
 cython
 requests
-elasticsearch
-h5py
 dill
 python-interface
 pandas
@@ -28,3 +26,4 @@ cchardet
 aiohttp_wsgi
 PyYAML
 kubernetes
+surprise
