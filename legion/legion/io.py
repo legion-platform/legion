@@ -402,7 +402,7 @@ def export(filename=None,
     :param prepare_func: a function to prepare input DF->DF
     :type prepare_func: func(x) -> y
     :param param_types: result of deduce_param_types
-    :type param_types: dict[str, :py:class:`legion.types.ColumnInformation`]
+    :type param_types: dict[str, :py:class:`legion.model.types.ColumnInformation`]
     :param input_data_frame: pandas DF
     :type input_data_frame: :py:class:`pandas.DataFrame`
     :param use_df: use pandas DF for prepare and apply function

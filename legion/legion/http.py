@@ -35,6 +35,8 @@ def parse_request(input_request):
     """
     result = {}
 
+    # TODO: Add array handl
+
     # Fill in URL parameters
     for k in input_request.args:
         result[k] = input_request.args[k]

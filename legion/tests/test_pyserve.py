@@ -18,25 +18,44 @@ from __future__ import print_function
 import unittest2
 import json
 import argparse
+try:
+    from .legion_test_utils import patch_environ, ModelServeTestBuild
+    from .legion_test_models import create_simple_summation_model_by_df
+except ImportError:
+    from legion_test_utils import patch_environ, ModelServeTestBuild
+    from legion_test_models import create_simple_summation_model_by_df
 
+import legion.config
 import legion.serving.pyserve as pyserve
 
 
 class TestPyserveEndpoints(unittest2.TestCase):
     def setUp(self):
-        self.app = pyserve.init_application(argparse.Namespace())
+        with patch_environ({legion.config.REGISTER_ON_CONSUL[0]: 'false'}):
+            self.app = pyserve.init_application(argparse.Namespace())
+
         self.app.testing = True
         self.client = self.app.test_client()
 
-    def _parse_json_response(self, response):
-        self.assertEqual(response.mimetype, 'application/json', 'Invalid response mimetype')
-
+    @staticmethod
+    def _load_response_text(response):
         data = response.data
 
         if isinstance(data, bytes):
             data = data.decode('utf-8')
 
+        return data
+
+    def _parse_json_response(self, response):
+        self.assertEqual(response.mimetype, 'application/json', 'Invalid response mimetype')
+
+        data = self._load_response_text(response)
         return json.loads(data)
+
+    def test_health_check(self):
+        response = self.client.get('/healthcheck')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._load_response_text(response), 'OK')
 
     def test_model_info(self):
         resp = self.client.get('/api/model/dummy-model/info')

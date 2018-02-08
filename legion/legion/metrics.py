@@ -31,9 +31,9 @@ class Metric(Enum):
     Metric type
     """
 
-    TRAINING_ACCURACY = 'training_accuracy'
-    TEST_ACCURACY = 'test_accuracy'
-    TRAINING_LOSS = 'training_loss'
+    TRAINING_ACCURACY = 'training-accuracy'
+    TEST_ACCURACY = 'test-accuracy'
+    TRAINING_LOSS = 'training-loss'
 
 
 def get_model_id_for_metrics():

@@ -45,7 +45,7 @@ class TestModelContainer(unittest2.TestCase):
 
         version = '1.3'
         path = 'test.model'
-        model_id = 'demo_model'
+        model_id = 'demo-model'
 
         try:
             legion.model.model_id.init(model_id)

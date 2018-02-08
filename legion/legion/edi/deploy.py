@@ -246,7 +246,6 @@ def deploy_model(args):
     """
     client = legion.containers.docker.build_docker_client(args)
     network_id = legion.containers.docker.find_network(client, args)
-    grafana_client = legion.external.grafana.build_client(args)
 
     if args.model_id and args.docker_image:
         print('Use only --model-id or --docker-image')
@@ -293,9 +292,18 @@ def deploy_model(args):
     container_labels = legion.containers.docker.generate_docker_labels_for_container(image)
 
     ports = {}
-    if args.expose_model_port:
+    if args.expose_model_port is not None:
         exposing_port = args.expose_model_port
         ports['%d/tcp' % os.getenv(*legion.config.LEGION_PORT)] = exposing_port
+
+    environment = {}
+    envs_to_copy_in_new_container = (
+        legion.config.REGISTER_ON_CONSUL[0],
+    )
+
+    for env in envs_to_copy_in_new_container:
+        if env in os.environ:
+            environment[env] = os.environ.get(env)
 
     LOGGER.info('Starting container with image #%s for model %s', image.short_id, model_id)
     container = client.containers.run(image,
@@ -303,11 +311,14 @@ def deploy_model(args):
                                       stdout=True,
                                       stderr=True,
                                       detach=True,
+                                      environment=environment,
                                       ports=ports,
                                       labels=container_labels)
 
-    LOGGER.info('Creating Grafana dashboard for model %s' % (model_id,))
-    grafana_client.create_dashboard_for_model_by_labels(container_labels)
+    if legion.utils.string_to_bool(os.getenv(*legion.config.REGISTER_ON_GRAFANA)):
+        LOGGER.info('Creating Grafana dashboard for model %s' % (model_id,))
+        grafana_client = legion.external.grafana.build_client(args)
+        grafana_client.create_dashboard_for_model_by_labels(container_labels)
 
     print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
     return container
