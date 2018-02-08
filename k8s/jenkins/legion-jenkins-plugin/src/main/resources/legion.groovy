@@ -137,12 +137,19 @@ def runScript(scriptPath){
     export CONTAINER_DIR="`pwd`"
     cd ${ROOT_DIR}
     python3 "${TARGET_SCRIPT_PATH}" > script-log.txt
+
+    echo "<html><body><h2>Script output</h2><code>" > notebook.html
+    cat script-log.txt >> notebook.html
+    echo "</code></body></html>" >> notebook.html
+
     cp script-log.txt "${CONTAINER_DIR}"
+    cp notebook.html "${CONTAINER_DIR}"
     '''
 
     sleep time: 1, unit: 'SECONDS'
 
     archiveArtifacts 'script-log.txt'
+    archiveArtifacts 'notebook.html'
 }
 
 def generateModelTemporaryImageName(modelId, modelVersion){

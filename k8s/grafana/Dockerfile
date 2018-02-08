@@ -22,6 +22,7 @@ RUN apt-get update && \
     apt-get clean
 
 COPY ./entrypoint.sh /entrypoint.sh
+COPY ./scripted_dashboards/model_builds.js /usr/share/grafana/public/dashboards/model_builds.js
 RUN chmod a+rwx /entrypoint.sh
 
 ARG pip_extra_index_params=""
