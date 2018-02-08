@@ -1,18 +1,27 @@
 from surprise import Dataset, Reader
 from surprise import KNNBasic, SVD
-from surprise.builtin_datasets import download_builtin_dataset
+from surprise.builtin_datasets import download_builtin_dataset, BuiltinDataset, get_dataset_dir
+import surprise.builtin_datasets
 
 from collections import defaultdict
 import pandas as pd
-import os, io
+import os, io, os.path
 
 import legion.model.model_id
-from legion.metrics import send_metric
 import legion.io
 import time
 
 use_built_in = True
 legion.model.model_id.init('movie-lens')
+
+surprise.builtin_datasets.BUILTIN_DATASETS['ml-latest-cut'] = BuiltinDataset(
+    url='https://s3.us-east-2.amazonaws.com/iqvia-epam-test/ml-latest-cut.zip',
+    path=os.path.join(get_dataset_dir(), 'ml-latest-cut/ml-latest-cut/ratings.csv'),
+    reader_params=dict(line_format='user item rating timestamp',
+                       rating_scale=(1, 5),
+                       skip_lines=1,
+                       sep=',')
+)
 
 
 class Profiler(object):
@@ -33,9 +42,7 @@ class Profiler(object):
         self._start_time = time.time()
 
     def __exit__(self, type, value, traceback):
-        duration = time.time() - self._start_time
-        print("Name: " + self._name + " Elapsed time: {:.3f} sec".format(duration))
-        send_metric(self._name, duration)
+        print("Name: " + self._name + " Elapsed time: {:.3f} sec".format(time.time() - self._start_time))
 
 
 # get item names for built-in 100k dataset
@@ -54,6 +61,20 @@ def read_movies_100k():
     return movieData
 
 
+# get item names for custom dataset
+def read_movies_custom():
+    """Read the u.item file from MovieLens custom dataset and returns a
+    mapping to convert raw ids into movie names.
+    """
+    file_name = (os.path.expanduser('~') +
+                 '/.surprise_data/ml-latest-cut/ml-latest-cut/movies.csv')
+    movies = pd.read_csv(file_name, index_col='movieId')
+    movies.index = movies.index.astype(str)
+    movieData = movies.title.to_dict()
+    print("Loaded movie ")
+    return movieData
+
+
 # get movie data from latest file
 def read_movies_latest():
     file_path = os.path.expanduser('~/OneDrive - Quintiles/data/testing/ml-latest/movies.csv')
@@ -68,9 +89,9 @@ def read_movies_latest():
 def get_data():
     # get data
     if use_built_in:
-        download_builtin_dataset("ml-100k")
-        data = Dataset.load_builtin("ml-100k")
-        movie_names = read_movies_100k()
+        download_builtin_dataset("ml-latest-cut")
+        data = Dataset.load_builtin("ml-latest-cut")
+        movie_names = read_movies_custom()
     return data, movie_names
 
 
@@ -139,20 +160,7 @@ if with_optimisation:
 
 
     def recommend(input):
-        uid = input['uid']
-        i = list(recs[uid].keys())[0]
-        recommendations = recs[uid][i]
-        return {
-            'uid': uid,
-            'recommendations': [
-                {
-                    'movie_id': int(movie_id),
-                    'rating': rating,
-                    'movie_name': movie_names.get(movie_id, 'unknown film #{}'.format(movie_id))
-                }
-                for movie_id, rating in recommendations
-            ]
-        }
+        return recs[input['uid']]
 else:
     with Profiler('Cross-validation'):
         # get predictions based on training set
@@ -170,7 +178,6 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-
 df = pd.DataFrame([{
     'uid': 1,
 }])
@@ -182,10 +189,6 @@ legion.io.export(
     use_df=False,
     version='1.0'
 )
-
-recommendation_example = recommend({'uid': 1})
-print(repr(recommendation_example))
-
 
 # Additional memory workload
 file_path = (os.path.expanduser('~') + '/.surprise_data/ml-100k/ml-100k/u.data')
