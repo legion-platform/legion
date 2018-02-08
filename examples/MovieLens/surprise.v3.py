@@ -4,10 +4,12 @@ from surprise.builtin_datasets import download_builtin_dataset
 
 from collections import defaultdict
 import pandas as pd
+import numpy as np
 import os, io
 
 import legion.model.model_id
 from legion.metrics import send_metric
+import legion.model.types
 import legion.io
 import time
 
@@ -121,6 +123,7 @@ with Profiler('Training'):
 
 with_optimisation = True
 
+
 if with_optimisation:
     with Profiler('Generate predictions'):
         recs = {}
@@ -170,15 +173,12 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-
-df = pd.DataFrame([{
-    'uid': 1,
-}])
-
 legion.io.export(
     prepare_func=lambda x: x,
     apply_func=recommend,
-    input_data_frame=df,
+    param_types={
+        'uid': legion.model.types.ColumnInformation(legion.model.types.Integer, np.int32)
+    },
     use_df=False,
     version='1.0'
 )
