@@ -1,13 +1,13 @@
 node {
     def legion = load legion()
 
-    legion.container('drun.kharlamov.biz/drun/base-python-image:latest') {
+    legion.container(null) {
         stage('clone repo'){
             checkout scm
         }
         
         stage('run notebook'){
-            legion.runNotebook('Income.ipynb')
+            legion.runNotebook('Income-wo-df.ipynb')
         }
 
         stage('build'){

@@ -1,0 +1,38 @@
+---
+- name: Get Dashboard helm status
+  shell: helm ls --all dash
+  register: dashboard_deployment_status
+
+- set_fact:
+    dashboard_deployed: "{{ dashboard_deployment_status.stdout_lines|length > 1 }}"
+
+- name: Remove dashboard helm
+  shell: helm delete --purge dash
+  when: dashboard_deployed
+
+- name: Remove old TLS secret
+  shell: "kubectl delete secret {{ domain }}-tls --namespace=kube-system --ignore-not-found=true"
+    
+- name: Add TLS secret
+  shell: "kubectl create secret tls {{ domain }}-tls --namespace kube-system --key {{ cert_dir }}/{{ domain }}/{{ domain }}.key --cert {{ cert_dir }}/{{ domain }}/{{ domain }}.crt"
+
+- name: Create Dashboard configuration (values) file
+  template:
+    src: dashboard-values.yaml.j2
+    dest: ~/dashboard-values.yaml
+    mode: 0644
+
+- name: Apply Dashboard configuration
+  shell: 'helm install stable/kubernetes-dashboard --namespace kube-system --name dash  -f ~/dashboard-values.yaml'
+
+- name: Wait for Dashboard up
+  shell: "kubectl get po --namespace kube-system | grep 'dashboard'"
+  register: dashboard_list_status
+  until: dashboard_list_status.stdout.find(' Running') != -1
+  retries: 5
+  delay: 10
+  ignore_errors: true
+
+- debug: 
+    msg: "Welcome to cluster dashboard admin at {{ domain }}"
+

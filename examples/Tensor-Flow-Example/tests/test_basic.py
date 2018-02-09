@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import ModelUnitTests
+from legion.model_tests import ModelUnitTests
 import unittest2
 import os
 

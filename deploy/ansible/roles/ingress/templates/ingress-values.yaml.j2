@@ -1,0 +1,12 @@
+controller:
+  service:
+    externalIPs:
+    - {{ public_ip }}
+    - {{ private_ip }}
+  stats:
+    service:
+      externalIPs:
+      - {{ public_ip }}
+      - {{ private_ip }}
+rbac:
+  create: true

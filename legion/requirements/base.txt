@@ -1,0 +1,12 @@
+dill
+python-interface
+pandas
+docker
+python-consul
+flask
+numpy
+Pillow
+Jinja2>=2.9
+statsd
+kubernetes
+PyYAML

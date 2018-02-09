@@ -13,22 +13,24 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import LocustTaskSet, load_image
-from locust import HttpLocust, task
 import os
 
+from legion.model import load_image, ModelClient
 
-class TaskSet(LocustTaskSet):
+from locust import HttpLocust, task, TaskSet
+
+
+class ModelTaskSet(TaskSet):
     @task()
     def invoke_nine_decode(self):
         image = load_image(os.path.join('files', 'nine.png'))
-        self._invoke_model(image=image)
+        self._model_client.invoke(image=image)
 
     def on_start(self):
-        self.setup_model('recognize_digits')
+        self._model_client = ModelClient('recognize_digits', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):
-    task_set = TaskSet
+    task_set = ModelTaskSet
     min_wait = 0
     max_wait = 0

@@ -13,21 +13,23 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import ModelUnitTests
-import drun.env
-import unittest2
 import random
 import os
 
+from legion.model import ModelClient
+import legion.config
 
-class BasicTest(ModelUnitTests):
+import unittest2
+
+
+class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self.setUpModel(os.environ.get(*drun.env.MODEL_ID))
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID))
 
     def test_random_sum(self):
         a = random.randint(0, 100)
         b = random.randint(0, 100)
-        response = self._query_model(a=a, b=b)
+        response = self._client.invoke(a=a, b=b)
 
         self.assertEqual(response['result'], a + b)
 

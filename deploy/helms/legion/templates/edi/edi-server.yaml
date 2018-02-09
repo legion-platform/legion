@@ -1,0 +1,105 @@
+{{- if .Values.edi.enabled }}
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-edi"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-edi"
+spec:
+  replicas: {{ .Values.edi.replicas }}
+  selector:
+    component: "{{ .Release.Name }}-edi"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-edi"
+    spec:
+      serviceAccountName: edi
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      - name: cluster-secrets
+        secret:
+          secretName: "{{ .Release.Name }}-cluster-secrets"
+      - name: cluster-state
+        configMap:
+          name: "{{ .Release.Name }}-cluster-state"
+      containers:
+      - name: edi
+        image: "{{ .Values.edi.image.repository }}:{{ .Values.edi.image.tag }}"
+        imagePullPolicy: "{{ .Values.edi.image.pullPolicy }}"
+        env:
+        - name: DEPLOYMENT
+          value: "{{ .Release.Name }}"
+        - name: NAMESPACE
+          value: "{{ .Release.Namespace }}"
+        - name: LEGION_API_ADDR 
+          value: "0.0.0.0"
+        - name: LEGION_API_PORT
+          value: "80"
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket 
+        - mountPath: /opt/legion/secrets
+          name: cluster-secrets
+          readOnly: true
+        - mountPath: /opt/legion/state
+          name: cluster-state
+          readOnly: true
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-edi"
+  labels:
+    component: "{{ .Release.Name }}-edi"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-edi"
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+---
+{{- if .Values.edi.ingress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.edi.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-edi"
+  name: "{{ .Release.Name }}-edi"
+spec:
+  rules:
+    - host: "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-edi"
+              servicePort: 80
+  {{- if .Values.edi.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    {{- if .Values.edi.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.edi.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

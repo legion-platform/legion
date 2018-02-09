@@ -1,0 +1,92 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-grafana"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-grafana"
+spec:
+  replicas: 1
+  selector:
+    component: "{{ .Release.Name }}-grafana"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-grafana"
+    spec:
+      containers:
+      - name: grafana
+        image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
+        imagePullPolicy: "{{ .Values.grafana.image.pullPolicy }}"
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "admin"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_INSTALL_PLUGINS
+          value: ""
+        - name: GF_GRAPHITE_DATASOURCE
+        {{- if .Values.grafana.graphite }}
+          value: "{{ .Values.grafana.graphite }}"
+        {{- else }}
+          value: "http://{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:80"
+        {{- end }}
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-grafana"
+  labels:
+    component: "{{ .Release.Name }}-grafana"
+    legion/system: "yes"
+    legion/component: "grafana"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-grafana"
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+---
+{{- if .Values.grafana.ingress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.grafana.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-grafana"
+  name: "{{ .Release.Name }}-grafana"
+spec:
+  rules:
+    - host: "{{ .Values.grafana.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-grafana"
+              servicePort: 80
+  {{- if .Values.grafana.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.grafana.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    {{- if .Values.grafana.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.grafana.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.grafana.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

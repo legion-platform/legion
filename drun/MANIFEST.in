@@ -1,5 +1,0 @@
-graft drun/templates
-graft drun/static
-graft drun/external
-recursive-include requirements *.txt
-

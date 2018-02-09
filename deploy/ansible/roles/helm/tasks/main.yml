@@ -1,0 +1,57 @@
+- name: Download helm
+  get_url:
+    url: "{{ helm_url }}" 
+    dest: "{{ helm_temp_directory }}/helm.tar.gz"
+
+- name: Make helm directory
+  file:
+    path: "{{ helm_temp_directory }}/helm"
+    state: directory
+
+- name: Unarchive helm
+  unarchive:
+    copy: no
+    src: "{{ helm_temp_directory }}/helm.tar.gz"
+    dest: "{{ helm_temp_directory }}/helm"
+
+- name: Copy helm to bin
+  become: yes
+  with_items:
+    - helm
+  copy:
+    remote_src: true
+    src: "{{ helm_temp_directory }}/helm/linux-amd64/helm"
+    dest: "{{ helm_bin_dest }}"
+    mode: ugo=rx
+
+- name: Cleanup helm
+  with_items:
+    - "helm"
+    - "helm.tar.gz"
+  file:
+    path: "{{ helm_temp_directory }}/{{item}}"
+    state: absent
+
+- name: Check helm status
+  shell: helm list
+  register: helm_list_status
+  ignore_errors: true
+
+- name: Install helm's tiller and update helm repos
+  shell: |
+    helm init
+    kubectl create serviceaccount --namespace kube-system tiller
+    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+    kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+    helm repo update
+  when: helm_list_status.stdout.find('could not find tiller') == -1
+# '
+
+- name: Wait for helm ready
+  shell: kubectl get no
+  register: helm_list_status
+  until: helm_list_status.stdout.find('could not find a ready tiller pod') == -1
+  retries: 5
+  delay: 10
+  ignore_errors: true
+

@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 \
     libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
     tcl8.6-dev tk8.6-dev python-tk python3-tk
 
-
+RUN pip3 install "numpy>=1.11.2"
 
 RUN pip3 install --upgrade pip \
     && pip3 install -r /root/requirements.txt

@@ -1,0 +1,28 @@
+---
+- name: get public IP
+  ipify_facts:
+
+- name: print public IP
+  debug: msg="Public IP - {{ ipify_public_ip }} for domain {{ partial }}.{{ base_domain }}."
+  
+- name: "create the DNS record {{ partial }}.{{ base_domain }}"
+  route53:
+    command: create
+    zone: "{{ ler53_route_53_domain }}"
+    record: "{{ partial }}.{{ base_domain }}"
+    type: A
+    value: "{{ ipify_public_ip }}"
+    overwrite: yes
+    wait: yes
+  connection: local
+
+- name: "create local DNS record {{ partial }}.local.{{ base_domain }}"
+  route53:
+    command: create
+    zone: "{{ ler53_route_53_domain }}"
+    record: "{{ partial }}.local.{{ base_domain }}"
+    type: A
+    value: "{{ ansible_ssh_host }}"
+    overwrite: yes
+    wait: yes
+  connection: local

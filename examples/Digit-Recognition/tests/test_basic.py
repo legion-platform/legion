@@ -13,19 +13,21 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from drun.model_tests import ModelUnitTests
-import drun.env
-import unittest2
 import os
 
+from legion.model import ModelClient, load_image
+import legion.config
 
-class BasicTest(ModelUnitTests):
+import unittest2
+
+
+class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self.setUpModel(os.environ.get(*drun.env.MODEL_ID))
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID))
 
     def test_nine_decode(self):
-        image = self._load_image(os.path.join('files', 'nine.png'))
-        response = self._query_model(image=image)
+        image = load_image(os.path.join('files', 'nine.png'))
+        response = self._client.invoke(image=image)
         self.assertEqual(response['digit'], 9)
 
 

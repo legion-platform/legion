@@ -1,0 +1,11 @@
+log.*
+*.log
+*.retry
+hosts
+
+# Compiled files
+*.tfstate
+*.tfstate.backup
+
+# Module directory
+.terraform/

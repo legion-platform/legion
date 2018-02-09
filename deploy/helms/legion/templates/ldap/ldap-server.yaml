@@ -1,0 +1,150 @@
+{{- if .Values.ldap.server.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-ldap-server-bootstrap"
+data:
+  06-custom.ldif: |-
+    # Entry 3: ou=employees,dc=legion
+    dn: ou=employees,dc=legion
+    objectclass: organizationalUnit
+    objectclass: top
+    ou: employees
+    
+    # Entry 4: cn=Adam Adam,ou=employees,dc=legion
+    dn: cn=Adam Adam,ou=employees,dc=legion
+    cn: Adam Adam
+    description: Password: adam1
+    objectclass: organizationalPerson
+    objectclass: top
+    sn: adam
+    userpassword: {SHA}ij7Vx8UWuPn4kbXVGvy971zFJNo=
+    
+    # Entry 5: cn=Joe Joe,ou=employees,dc=legion
+    dn: cn=Joe Joe,ou=employees,dc=legion
+    cn: Joe Joe
+    description: Password: joe1
+    objectclass: organizationalPerson
+    objectclass: person
+    objectclass: top
+    sn: joe
+    userpassword: {SHA}PAHIWG0OQihyeEQIV0eF4lRbjG4=
+    
+    # Entry 6: cn=Monica Monica,ou=employees,dc=legion
+    dn: cn=Monica Monica,ou=employees,dc=legion
+    cn: Monica Monica
+    description: Password monica1
+    objectclass: organizationalPerson
+    objectclass: top
+    objectclass: person
+    sn: monica
+    userpassword: {MD5}5oCIX+Z8Tc3DVmj8WPp8Kg==
+    
+    # Entry 7: ou=groups,dc=legion
+    dn: ou=groups,dc=legion
+    description: There are groups
+    objectclass: organizationalUnit
+    objectclass: top
+    ou: groups
+    
+    # Entry 8: cn=pip-uploaders,ou=groups,dc=legion
+    dn: cn=pip-uploaders,ou=groups,dc=legion
+    cn: pip-uploaders
+    objectclass: groupOfUniqueNames
+    objectclass: top
+    uniquemember: cn=Adam Adam,ou=employees,dc=legion
+    
+    # Entry 9: ou=systems,dc=legion
+    dn: ou=systems,dc=legion
+    objectclass: organizationalUnit
+    objectclass: top
+    ou: systems
+    
+    # Entry 10: cn=pypi,ou=systems,dc=legion
+    dn: cn=pypi,ou=systems,dc=legion
+    cn: pypi
+    description: password pypipass
+    objectclass: inetOrgPerson
+    objectclass: top
+    sn: pypi
+    userpassword: {SHA}7+MpyrU0ULKFIkQdMaszM7VjgK8=
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-ldap-server-pvc"
+spec:
+  accessModes:
+    - {{ .Values.ldap.server.storage.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.ldap.server.storage.size }}
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-ldap-server"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-ldap-server"
+spec:
+  replicas: 1
+  selector:
+    component: "{{ .Release.Name }}-ldap-server"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-ldap-server"
+    spec:
+      containers:
+      - name: openldap
+        image: "{{ .Values.ldap.server.image.repository }}:{{ .Values.ldap.server.image.tag }}"
+        imagePullPolicy: "{{ .Values.ldap.server.image.pullPolicy }}"
+        args: ["--copy-service"]
+        env:
+        - name: LDAP_ORGANISATION
+          value: {{ .Values.ldap.server.organisation | quote }}
+        - name: LDAP_DOMAIN
+          value: {{ .Values.ldap.server.domain | quote }}
+        - name: LDAP_ADMIN_PASSWORD
+          value: {{ .Values.secrets.ldap.admin | quote }}
+        volumeMounts:
+        - name: ldap-store
+          mountPath: /var/lib/ldap
+        - name: ldap-bootup
+          mountPath: /container/service/slapd/assets/config/bootstrap/ldif/06-custom.ldif
+          subPath: 06-custom.ldif
+        ports:
+        - containerPort: {{ .Values.ldap.server.ports.plain }}
+          name: ldap
+          protocol: TCP
+        - containerPort: {{ .Values.ldap.server.ports.ssl }}
+          name: ldap-ssl
+          protocol: TCP
+      volumes:
+      - name: ldap-bootup
+        configMap:
+          name: "{{ .Release.Name }}-ldap-server-bootstrap"
+      - name: ldap-store
+        persistentVolumeClaim:
+          claimName: "{{ .Release.Name }}-ldap-server-pvc"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-ldap-server"
+  labels:
+    component: "{{ .Release.Name }}-ldap-server"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-ldap-server"
+  ports:
+  - name: ldap
+    port: {{ .Values.ldap.server.ports.plain }}
+    protocol: TCP
+  - name: ldap-ssl
+    port: {{ .Values.ldap.server.ports.ssl }}
+    protocol: TCP
+{{- end }}

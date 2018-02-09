@@ -1,0 +1,11 @@
+name: legion
+version: 0.0.1
+appVersion: 1.7.1
+description: Full Legion stack
+keywords:
+- ML
+maintainers:
+- name: Alexey Kharlamov
+  email: alexey@kharlamov.biz
+- name: Kirill Makhonin
+  email: kirill.a.makhonin@gmail.com

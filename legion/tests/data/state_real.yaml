@@ -1,0 +1,9 @@
+consul:
+  domain: "legion-consul.default.svc.cluster.local"
+  port: 8500
+graphite:
+  domain: "legion-graphite.default.svc.cluster.local"
+  port: 8125
+grafana:
+  domain: "legion-grafana.default.svc.cluster.local"
+  port: 80

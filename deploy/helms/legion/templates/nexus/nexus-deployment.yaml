@@ -1,0 +1,72 @@
+{{- if .Values.nexus.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-nexus"
+  labels:
+    app: "{{ .Release.Name }}-nexus"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-nexus"
+  replicas: {{ .Values.nexus.replicas }}
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-nexus"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      containers:
+        - name: nexus
+          image: "{{ .Values.nexus.image.repository }}:{{ .Values.nexus.image.tag }}"
+          imagePullPolicy: {{ .Values.nexus.image.pullPolicy }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "/opt/bootup/start.sh"]
+          ports:
+            - containerPort: {{ .Values.nexus.port }}
+            {{- if .Values.nexus.docker.enabled }}
+            - containerPort: {{ .Values.nexus.docker.port }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.nexus.port }}
+            initialDelaySeconds: {{ .Values.nexus.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.nexus.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.nexus.port }}
+            initialDelaySeconds: {{ .Values.nexus.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.nexus.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.nexus.readinessProbe.failureThreshold }}
+          resources:
+{{ toYaml .Values.nexus.resources | indent 12 }}
+          volumeMounts:
+          - mountPath: /nexus-data
+            name: nexus-data-volume
+          - name: bootup-config
+            mountPath: /opt/bootup
+      volumes:
+        - name: bootup-config
+          configMap:
+            name: "{{ .Release.Name }}-nexus-scripts"
+        - name: nexus-data-volume
+          {{- if .Values.nexus.persistence.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.nexus.persistence.existingClaim }}
+            claimName: {{ .Values.nexus.persistence.existingClaim }}
+            {{- else}}
+            claimName: "{{ .Release.Name }}-nexus"
+            {{- end}}
+          {{- else }}
+          emptyDir: {}
+          {{- end -}}
+{{- end }}

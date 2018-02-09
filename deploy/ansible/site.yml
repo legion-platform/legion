@@ -1,0 +1,104 @@
+- hosts: all
+  gather_facts: False
+
+  vars:
+    profile: "{{ lookup('env', 'PROFILE') }}"
+    base_version: "{{ lookup('env', 'BASE_VERSION') }}"
+    local_version: "{{ lookup('env', 'LOCAL_VERSION') }}"
+    install_only_chart: "{{ lookup('env', 'INSTALL_ONLY_CHART') }}"
+
+  pre_tasks:         
+  - name: Wait 600 seconds for target connection to become reachable/usable
+    wait_for:
+      port: 22
+      host: '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+      search_regex: OpenSSH
+      delay: 10
+    connection: local
+    when: install_only_chart == "no"
+
+  - name: Refresh apt cache
+    become: no
+    local_action: shell ssh -q -i {{ ansible_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=5 {{ ansible_ssh_user }}@{{ inventory_hostname }} sudo apt-get update
+    when: install_only_chart == "no"
+      
+  - name: Install Python-apt to pull in Python
+    become: no
+    local_action: shell ssh -q -i {{ ansible_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=5 {{ ansible_ssh_user }}@{{ inventory_hostname }} sudo apt-get install --no-install-recommends --assume-yes python-apt
+    when: install_only_chart == "no"
+
+  tasks:
+    - name: Load vars from {{ profile }} profile
+      include_vars: "../profiles/{{ profile }}.ansible.yml"
+  
+    - name: Install K8S
+      include_role:
+        name: k8s
+      when: install_only_chart == "no"
+
+    - name: Install HELM
+      include_role:
+        name: helm
+      when: install_only_chart == "no"
+
+    - name: Request certificates
+      include_role:
+        name: certificates
+      vars:
+        ler53_route_53_domain: "{{ route53_zone }}"
+        ler53_cert_common_name: "{{ domain }}.{{ base_domain }}"
+        ler53_cert_dir: "{{ cert_dir }}/{{ ler53_cert_common_name }}"
+        ler53_account_email: "{{ certificate_email }}"
+        ler53_cert_files_owner: ubuntu
+        ler53_cert_files_group: ubuntu
+        ler53_agreement: "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
+      with_items: "{{ subdomains }}"
+      loop_control:
+        loop_var: domain
+      when: install_only_chart == "no"
+
+    - name: Remove old TLS secrets
+      shell: "kubectl delete secret {{ subdomain }}.{{ base_domain }}-tls --ignore-not-found=true"
+      with_items: "{{ subdomains }}"
+      loop_control:
+        loop_var: subdomain
+      when: install_only_chart == "no"
+
+    - name: Add TLS secrets
+      shell: "kubectl create secret tls {{ subdomain }}.{{ base_domain }}-tls --key {{ cert_dir }}/{{ subdomain }}.{{ base_domain }}/{{ subdomain }}.{{ base_domain }}.key --cert {{ cert_dir }}/{{ subdomain }}.{{ base_domain }}/{{ subdomain }}.{{ base_domain }}.crt"
+      with_items: "{{ subdomains }}"
+      loop_control:
+        loop_var: subdomain
+      when: install_only_chart == "no"
+
+    - name: Create DNS records
+      include_role:
+        name: dns_records
+      vars:
+        ler53_route_53_domain: "{{ route53_zone }}"
+        partial: "{{ subdomain }}"
+      with_items: "{{ subdomains }}"
+      loop_control:
+        loop_var: subdomain
+      when: install_only_chart == "no"
+
+    - name: Create Ingress
+      include_role:
+        name: ingress
+      when: install_only_chart == "no"
+
+    - name: Create dashboard
+      include_role:
+        name: k8s_dashboard
+      vars:
+        domain: "dashboard.{{ base_domain }}"
+      when: install_only_chart == "no"
+
+    - name: Install legion chart
+      include_role:
+        name: legion_chart
+
+    - name: Debug output data
+      include_role:
+        name: debug
+
