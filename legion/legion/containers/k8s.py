@@ -36,7 +36,7 @@ import kubernetes.config.config_exception
 import urllib3
 import urllib3.exceptions
 import yaml
-from legion.utils import normalize_name_to_dns_1123
+from legion.utils import normalize_name
 
 ModelDeploymentDescription = typing.NamedTuple('ModelDeploymentDescription', [
     ('status', str),
@@ -135,11 +135,11 @@ def find_model_deployment(model_id, namespace='default'):
     extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
     all_deployments = extension_api.list_namespaced_deployment(namespace)
 
-    type_label_name = normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_name = normalize_name(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
 
-    model_id_name = normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_MODEL_ID)
-    model_id_value = normalize_name_to_dns_1123(model_id)
+    model_id_name = normalize_name(legion.containers.headers.DOMAIN_MODEL_ID)
+    model_id_value = normalize_name(model_id)
 
     for deployment in all_deployments.items:
         if deployment.metadata.labels.get(type_label_name) == type_label_value \
@@ -165,7 +165,7 @@ def find_all_models_deployments(namespace='default'):
     else:
         all_deployments = extension_api.list_deployment_for_all_namespaces()
 
-    type_label_name = normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_name = normalize_name(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
     type_label_value = 'model'
 
     model_deployments = [
@@ -340,10 +340,10 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
         container_image = deployment.spec.template.spec.containers[0].image
 
         model_name = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_MODEL_ID), '?'
+            normalize_name(legion.containers.headers.DOMAIN_MODEL_ID), '?'
         )
         model_version = deployment.metadata.labels.get(
-            normalize_name_to_dns_1123(legion.containers.headers.DOMAIN_MODEL_VERSION), '?'
+            normalize_name(legion.containers.headers.DOMAIN_MODEL_VERSION), '?'
         )
 
         model_api_info = {
@@ -462,12 +462,12 @@ def get_meta_from_docker_image(image):
         ))
 
     deployment_name = "model.%s.%s.deployment" % (
-        normalize_name_to_dns_1123(model_id),
-        normalize_name_to_dns_1123(model_version)
+        normalize_name(model_id),
+        normalize_name(model_version)
     )
 
     compatible_labels = {
-        normalize_name_to_dns_1123(k): normalize_name_to_dns_1123(v)
+        normalize_name(k): normalize_name(v)
         for k, v in
         docker_image.labels.items()
     }

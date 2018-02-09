@@ -42,45 +42,16 @@ services:
     entrypoint:
       - python3
       - -u
-      - /opt/project/jupyter/jupyter.py
-    ports:
-      - 8888:8888
-    working_dir: /opt/project/jupyter
+      - /opt/project/local-deployment/jupyter/jupyter.py
+    working_dir: /opt/project/local-deployment/jupyter
     volumes:
       - ./workspace/legion:/legion
       - ./examples:/notebooks
       - ./:/opt/project
 
-  legion:
-    depends_on:
-      - consul
-    image: legion/base-python-image
-    build:
-      context: base-python-image
-    networks:
-      - legion_root
-    labels:
-      com.epam.legion.container_type: service
-      com.epam.legion.container_description: Legion server (serves dummy model)
-      com.epam.legion.container_required: 'false'
-    environment:
-      - PYTHONPATH=/opt/project
-      - PYDEVD_HOST
-      - PYDEVD_PORT=5502
-    entrypoint:
-      - python3
-      - -u
-      - /opt/project/legion/bin/legionctl
-      - pyserve-dummy
-    ports:
-      - 5000:5000
-    volumes:
-      - ./workspace/legion:/legion
-      - .:/opt/project
-
   grafana:
     build:
-      context: grafana
+      context: local-deployment/grafana
     image: legion/grafana
     networks:
       - legion_root
@@ -94,38 +65,11 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_INSTALL_PLUGINS=
       - GF_GRAPHITE_DATASOURCE=http://graphite:80
-    ports:
-      - 3000:3000
     volumes:
       - ./workspace/legion:/legion
       - ./workspace/grafana:/var/lib/grafana
-      - ./grafana/scripted_dashboards/model_builds.js:/usr/share/grafana/public/dashboards/model_builds.js
+      - ./local-deployment/grafana/scripted_dashboards/model_builds.js:/usr/share/grafana/public/dashboards/model_builds.js
       - .:/opt/project
-
-  jenkins:
-    build:
-      context: jenkins
-    image: legion/jenkins
-    networks:
-      - legion_root
-    labels:
-      com.epam.legion.container_type: service
-      com.epam.legion.container_description: Jenkins server
-      com.epam.legion.container_required: 'false'
-    environment:
-      - DOCKER_HOST=${JENKINS_DOCKER_HOST}
-      - LEGION_EXAMPLES_COMMIT=${LEGION_EXAMPLES_COMMIT}
-      - DOCKER_CERT_PATH=/home/jenkins/.docker
-      - DOCKER_TLS_VERIFY=1
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.legion.jenkins.dashboard.url=/grafana/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.legion.jenkins.report.html.path=notebook.html"
-      - legion_MODEL_SERVER_URL=http://edge:80
-    ports:
-      - 8081:8080
-    volumes:
-      - ${JENKINS_DOCKER_KEYS}:/home/jenkins/.docker
-      - ./keys/git-deploy.key:/var/jenkins_home/.ssh/id_rsa
-    logging:
-      driver: none
 
   graphite:
     image: hopsoft/graphite-statsd
@@ -134,23 +78,17 @@ services:
     labels:
       com.epam.legion.container_type: service
       com.epam.legion.container_description: Graphite server
-    ports:
-      - 81:80
-      - 2003:2003
-      - 8126:8126
-      - 8125:8125/udp
-#    logging:
-#      driver: none
     volumes:
-      - ./graphite/statsd/config.js:/opt/statsd/config_udp.js
+      - ./local-deployment/graphite/statsd/config.js:/opt/statsd/config_udp.js
 
   edge:
     depends_on:
       - consul
       - graphite
+      - jupyter
     image: legion/edge
     build:
-      context: edge
+      context: local-deployment/edge
     networks:
       - legion_root
     labels:
@@ -161,10 +99,8 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./edge/static:/static
-      - ./edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
-#    logging:
-#      driver: none
+      - ./local-deployment/edge/static:/static
+      - ./local-deployment/edge/nginx.conf.ctmpl:/nginx.conf.ctmpl
 
   consul:
     image: library/consul:latest
@@ -175,8 +111,6 @@ services:
       com.epam.legion.container_description: Consul server (load balancer)
     ports:
       - 8500:8500
-    logging:
-      driver: none
 
 networks:
   legion_root:

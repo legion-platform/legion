@@ -18,23 +18,5 @@
 # Use default interface as PYDEVD server IP
 export PYDEVD_HOST=`ifconfig en0 inet | grep inet | awk '{ print($2); }'`
 
-# Ensuring docker machine is configured and ready
-if [ "$DOCKER_MACHINE_NAME" == "" ]; then
-    echo "No docker machine configured. Please, run 'eval \$(docker-machine env mydocker)'"
-    exit 1
-fi
-
-# Copying keys
-mkdir -p keys/docker/
-cp -f ${DOCKER_CERT_PATH}/*.pem keys/docker/
-cp -f ${DOCKER_CERT_PATH}/*.json keys/docker/
-cp -f ${DOCKER_CERT_PATH}/*.pub keys/docker/
-chmod uga+r keys/docker/*
-
-export JENKINS_DOCKER_HOST=${DOCKER_HOST}
-export JENKINS_DOCKER_KEYS="./keys/docker"
-
-export LEGION_EXAMPLES_COMMIT=`cd examples && git rev-parse HEAD`
-
 docker-compose $*
 

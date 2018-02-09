@@ -33,8 +33,13 @@ from flask import current_app as app
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('pyserve', __name__)
 
+SERVE_ROOT = '/'
+SERVE_INFO = '/api/model/{model_id}/info'
+SERVE_INVOKE = '/api/model/{model_id}/invoke'
+SERVE_HEALTH_CHECK = '/healthcheck'
 
-@blueprint.route('/')
+
+@blueprint.route(SERVE_ROOT)
 def root():
     """
     Return static file for root query
@@ -44,8 +49,7 @@ def root():
     return redirect('index.html')
 
 
-# TODO: Add model check
-@blueprint.route('/api/model/<model_id>/info')
+@blueprint.route(SERVE_INFO.format(model_id='<model_id>'))
 def model_info(model_id):
     """
     Get model description
@@ -54,15 +58,15 @@ def model_info(model_id):
     :type model_id: str
     :return: :py:class:`Flask.Response` -- model description
     """
-    # assert model_id == app.config['MODEL_ID']
+    if model_id != app.config['MODEL_ID']:
+        raise Exception('Invalid model handler: {}, not {}'.format(app.config['MODEL_ID'], model_id))
 
     model = app.config['model']
 
     return jsonify(model.description)
 
 
-# TODO: Add model check
-@blueprint.route('/api/model/<model_id>/invoke', methods=['POST', 'GET'])
+@blueprint.route(SERVE_INVOKE.format(model_id='<model_id>'), methods=['POST', 'GET'])
 def model_invoke(model_id):
     """
     Call model for calculation
@@ -71,8 +75,8 @@ def model_invoke(model_id):
     :type model_id: str
     :return: :py:class:`Flask.Response` -- result of calculation
     """
-    # TODO single configuration for Flask/CLI
-    # assert model_id == app.config['MODEL_ID']
+    if model_id != app.config['MODEL_ID']:
+        raise Exception('Invalid model handler: {}, not {}'.format(app.config['MODEL_ID'], model_id))
 
     input_dict = legion.http.parse_request(request)
 
@@ -83,7 +87,7 @@ def model_invoke(model_id):
     return legion.http.prepare_response(output)
 
 
-@blueprint.route('/healthcheck')
+@blueprint.route(SERVE_HEALTH_CHECK)
 def healthcheck():
     """
     Check that model is OK
@@ -107,8 +111,7 @@ def init_model(application):
         with legion.io.ModelContainer(file) as container:
             model = container.model
     else:
-        LOGGER.info("Instantiated dummy model")
-        model = mlmodel.DummyModel()
+        raise Exception('Unknown model file')
     return model
 
 

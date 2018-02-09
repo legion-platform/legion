@@ -18,6 +18,7 @@ from __future__ import print_function
 import unittest2
 import json
 import argparse
+
 try:
     from .legion_test_utils import patch_environ, ModelServeTestBuild
     from .legion_test_models import create_simple_summation_model_by_df
@@ -25,17 +26,12 @@ except ImportError:
     from legion_test_utils import patch_environ, ModelServeTestBuild
     from legion_test_models import create_simple_summation_model_by_df
 
-import legion.config
 import legion.serving.pyserve as pyserve
 
 
-class TestPyserveEndpoints(unittest2.TestCase):
-    def setUp(self):
-        with patch_environ({legion.config.REGISTER_ON_CONSUL[0]: 'false'}):
-            self.app = pyserve.init_application(argparse.Namespace())
-
-        self.app.testing = True
-        self.client = self.app.test_client()
+class TestModelApiEndpoints(unittest2.TestCase):
+    MODEL_ID = 'temp'
+    MODEL_VERSION = '1.8'
 
     @staticmethod
     def _load_response_text(response):
@@ -53,24 +49,42 @@ class TestPyserveEndpoints(unittest2.TestCase):
         return json.loads(data)
 
     def test_health_check(self):
-        response = self.client.get('/healthcheck')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._load_response_text(response), 'OK')
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            response = model.client.get(pyserve.SERVE_HEALTH_CHECK)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(self._load_response_text(response), 'OK')
 
     def test_model_info(self):
-        resp = self.client.get('/api/model/dummy-model/info')
-        data = self._parse_json_response(resp)
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID))
+            data = self._parse_json_response(response)
 
-        self.assertDictEqual(data, {'version': 'dummy'})
+            self.assertIsInstance(data, dict, 'Data is not a dictionary')
+            self.assertTrue('version' in data, 'Cannot find version field')
+            self.assertTrue('use_df' in data, 'Cannot find use_df field')
+            self.assertTrue('input_params' in data, 'Cannot find input_params field')
+
+            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
+            self.assertEqual(data['use_df'], False, 'Incorrect model use_df field')
+            self.assertDictEqual(data['input_params'],
+                                 {'b': {'numpy_type': 'int64', 'type': 'Integer'},
+                                  'a': {'numpy_type': 'int64', 'type': 'Integer'}},
+                                 'Incorrect model input_params')
 
     def test_model_invoke(self):
-        resp = self.client.post('/api/model/dummy-model/invoke', data={
-            'result': "It's working!",
-            'age': 35
-        })
-        data = self._parse_json_response(resp)
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            a = 10
+            b = 20
 
-        self.assertDictEqual(data, {'result': 'It\'s working!'})
+            response = model.client.get(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID) + '?a={}&b={}'.format(a, b))
+            result = self._parse_json_response(response)
+
+            self.assertIsInstance(result, dict, 'Result not a dict')
+            self.assertDictEqual(result, {'x': a + b})
 
 
 if __name__ == '__main__':

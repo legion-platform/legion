@@ -216,17 +216,6 @@ def normalize_name(name):
     return re.sub('[^a-zA-Z0-9\-\.]', '', name)
 
 
-def normalize_name_to_dns_1123(name):
-    """
-    Normalize name to DNS-1123
-
-    :param name: name to normalize
-    :type name: str
-    :return: str -- normalized name
-    """
-    return normalize_name(name)
-
-
 def is_local_resource(path):
     """
     Check if path is local resource
@@ -412,64 +401,6 @@ class ExternalFileReader:
         """
         if self._is_external_path:
             remove_directory(self._local_path)
-
-
-class DockerContainerContext:
-    """
-    Context for working with docker containers
-    """
-
-    def __init__(self, image, pull_from_server=True, **kwargs):
-        """
-        Create context for docker container
-
-        :param image: Docker image name
-        :type image: str
-        :param pull_from_server: pull image from docker registry
-        :type  pull_from_server: bool
-        :param kwargs: arguments for creation of container
-        :type kwargs: *dict
-        """
-        self._client = docker.from_env()
-        self._container = None
-        self._image = image
-        self._pull_from_server = pull_from_server
-        self._kwargs = kwargs
-
-    def __enter__(self):
-        """
-        Return self on context enter
-
-        :return: :py:class:`legion.utils.DockerContainerContext`
-        """
-        if self._pull_from_server:
-            self._client.images.pull(self._image)
-
-        self._container = self._client.containers.run(self._image, detach=True, remove=True, **self._kwargs)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Call stop and remove on context exit
-
-        :param type: -
-        :param value: -
-        :param traceback: -
-        :return: None
-        """
-        try:
-            self._container.stop()
-        except Exception:
-            pass
-
-    @property
-    def container(self):
-        """
-        Get docker container
-
-        :return: :py:class:`docker.containers.Container`
-        """
-        return self._client.containers.get(self._container.id)
 
 
 def get_git_revision(file, use_short_hash=True):

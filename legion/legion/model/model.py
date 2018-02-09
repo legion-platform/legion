@@ -32,7 +32,7 @@ class IMLModel(Interface):
     """
 
     @property
-    def description(self):
+    def description(self):  # pragma: no cover
         """
         Get model description
 
@@ -40,7 +40,7 @@ class IMLModel(Interface):
         """
         return None
 
-    def apply(self, input_vector):
+    def apply(self, input_vector):  # pragma: no cover
         """
         Apply the model to the provided input_vector
 
@@ -50,7 +50,7 @@ class IMLModel(Interface):
         pass
 
     @property
-    def version_string(self):
+    def version_string(self):  # pragma: no cover
         """
         Get model version
 
@@ -128,36 +128,3 @@ class ScipyModel(implements(IMLModel)):
             'use_df': self.use_df,
             'input_params': {k: v.description_for_api for (k, v) in self.column_types.items()}
         }
-
-
-class DummyModel(implements(IMLModel)):
-    """
-    A dummy model for testing. Returns input_dict['result'] as output
-    """
-
-    @property
-    def version_string(self):
-        """
-        Get model version
-
-        :return: str -- version
-        """
-        return 'dummy'
-
-    @property
-    def description(self):
-        """
-        Get model description
-
-        :return: dict[str, any] with model description
-        """
-        return {'version': 'dummy'}
-
-    def apply(self, input_vector):
-        """
-        Calculate result of model execution
-
-        :param input_vector: dict of input data
-        :return: dict of output data
-        """
-        return {'result': input_vector['result']}

@@ -35,10 +35,12 @@ def load_image(path):
     :type path: str
     :return: bytes -- image content
     """
-    image = PYTHON_Image.open(path)
-    if not isinstance(image, PYTHON_Image.Image):
-        raise Exception('Invalid image type')
-    return open(path, 'rb').read()
+    with PYTHON_Image.open(path) as image:
+        if not isinstance(image, PYTHON_Image.Image):
+            raise Exception('Invalid image type')
+
+        with open(path, 'rb') as stream:
+            return stream.read()
 
 
 class ModelClient:
@@ -112,8 +114,7 @@ class ModelClient:
         :return: dict -- parsed response
         """
         if not 200 <= response.status_code < 400:
-            raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'
-                            .format(response.status_code, response.text, response.url))
+            raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'.format(response.status_code, response.text, response.url))
 
         data = response.text
 

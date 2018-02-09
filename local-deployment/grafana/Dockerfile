@@ -21,7 +21,7 @@ RUN apt-get update && \
     pip3 install Jinja2>=2.9 && \
     apt-get clean
 
-COPY ./entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod a+rwx /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

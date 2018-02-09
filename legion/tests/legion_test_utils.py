@@ -82,7 +82,8 @@ class ModelServeTestBuild:
         """
         try:
             print('Building model file {} v {}'.format(self._model_id, self._model_version))
-            legion.model.model_id.init(self._model_id)
+            legion.model.model_id._model_id = self._model_id
+            legion.model.model_id._model_initialized_from_function = True
             self._model_builder(self._model_path, self._model_version)
             print('Model file has been built')
 
