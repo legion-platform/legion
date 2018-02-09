@@ -1,21 +1,16 @@
 def ansibleIp = ''
+def baseDomain = ''
+def BASE_DOMAIN = false
+def ip = ''
 
 node {
     try {
-    	stage('Checkout GIT'){
-	        checkout([
-				$class: 'GitSCM', 
-				branches: [[name: 'refs/heads/master']], 
-				doGenerateSubmoduleConfigurations: false, 
-				userRemoteConfigs: [[
-					credentialsId: 'deploy_terraform_git', 
-					url: 'git@github.com:kirillmakhonin/drun-terraform-test.git'
-				]]
-			])
-    	}
+        stage('Checkout GIT'){
+            checkout scm
+        }
     	stage('Terraforming'){
     	    if (params.USE_TERRAFORM){
-        	    dir('terraform'){
+        	    dir('deploy/terraform'){
         	        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
                 	    sh "terraform --version"
                 	    if (fileExists("status")) {
@@ -107,32 +102,94 @@ node {
                         else {
                             print("Skipping apply process of terraform")
                         }
-        	        }
-        	    }
-    	    }
-    	    else {
-    	        print("Skipping terraform")
-    	    }
-    	}
-    	stage('Ansible'){
-    	    if (params.USE_ANSIBLE){
-        	    def ip = ''
-        	    
-        	    if (ansibleIp.length() > 0){
-        	        print("Using IP from terraform stage: $ansibleIp")
-        	        ip = ansibleIp
-        	    }
-        	    else if (params.ANSIBLE_SPECIFIC_IP.length() > 0){
-        	        print("Using IP from parameter: ${params.ANSIBLE_SPECIFIC_IP}")
-        	        ip = params.ANSIBLE_SPECIFIC_IP
-        	    }
-        	    else {
-        	        error "Cannot detect IP for ansible"
-        	    }
-        	    
-        	    sh "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ${params.TF_VAR_SSH_USER} -e \"ansible_ssh_user=${params.TF_VAR_SSH_USER}\" --private-key \"${params.TF_VAR_SSH_KEY}\" -i \"${ip},\" ansible/site.yml"
-    	    }
-    	}
+                    }
+                }
+            }
+            else {
+                print("Skipping terraform")
+            }
+        }
+        stage('IP'){
+
+            if (ansibleIp.length() > 0){
+                print("Using IP from terraform stage: $ansibleIp")
+                ip = ansibleIp
+            }
+            else if (params.ANSIBLE_SPECIFIC_IP.length() > 0){
+                print("Using IP from parameter: ${params.ANSIBLE_SPECIFIC_IP}")
+                ip = params.ANSIBLE_SPECIFIC_IP
+            }
+            else {
+                error "Cannot detect IP for ansible"
+            }
+        }
+        stage('Ansible'){
+            if (params.USE_ANSIBLE){
+                sh """
+                ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
+                -u ${params.TF_VAR_SSH_USER} \
+                -e "ansible_ssh_user=${params.TF_VAR_SSH_USER}" \
+                --private-key "${params.TF_VAR_SSH_KEY}" -i "$ip," deploy/ansible/site.yml
+                """
+
+                // Loading result values from
+                load "deploy/ansible/output.groovy"
+            }
+            else {
+                print("Skipping ansible")
+            }
+        }
+        stage('Domain'){
+            if (BASE_DOMAIN){
+                print("Using Domain from ansible stage: $BASE_DOMAIN")
+                baseDomain = BASE_DOMAIN
+            }
+            else if (params.BASE_DOMAIN_OVERRIDE.length() > 0){
+                print("Using domain from parameter: ${params.BASE_DOMAIN_OVERRIDE}")
+                baseDomain = params.BASE_DOMAIN_OVERRIDE
+            }
+            else {
+                error "Cannot detect domain for post-ansible jobs"
+            }
+        }
+        stage('Create & check jenkins jobs'){
+            if (params.CreateJenkinsTests){
+                sh """
+                create_example_jobs \
+                "http://jenkins.local.${baseDomain}" \
+                examples \
+                . \
+                "git@github.com:akharlamov/drun-root.git" \
+                ${params.GitBranch} \
+                --git-root-key "legion-root-key" \
+                --model-host "" \
+                --dynamic-model-prefix "DYNAMIC MODEL"
+                """
+
+                if (params.RunJenkinsTests){
+                    sh """
+                    check_jenkins_jobs \
+                    --jenkins-url "http://jenkins.local.${baseDomain}" \
+                    --jenkins-run-jobs-prefix "DYNAMIC MODEL" \
+                    --connection-timeout 360 \
+                    --run-sleep-sec 30 \
+                    --run-timeout 1800 \
+                    --jenkins-check-running-jobs \
+                    --run-parameter "GitRepository=git@github.com:akharlamov/drun-root.git" \
+                    --run-parameter "GitBranch=${params.GitBranch}"
+                    """
+
+                }
+                else {
+                    println('Skipped due to RunModelTestsInAnotherJenkins property')
+                }
+
+
+            }
+            else {
+                print("Skipping Jenkins")
+            }
+        }
     }
     catch (e) {
         // If there was an exception thrown, the build failed
@@ -145,29 +202,29 @@ node {
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {
-  // build status of null means successful
-  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+    // build status of null means successful
+    buildStatus =  buildStatus ?: 'SUCCESSFUL'
 
-  // Default values
-  def colorName = 'RED'
-  def colorCode = '#FF0000'
-  def subject = "Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}*"
-  def summary = "@channel ${subject} \n<${env.BUILD_URL}|Open>"
+    // Default values
+    def colorName = 'RED'
+    def colorCode = '#FF0000'
+    def subject = "Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}*"
+    def summary = "@channel ${subject} \n<${env.BUILD_URL}|Open>"
 
-  // Override default values based on build status
-  if (buildStatus == 'STARTED') {
-    color = 'YELLOW'
-    colorCode = '#FFFF00'
-  } else if (buildStatus == 'SUCCESSFUL') {
-    color = 'GREEN'
-    colorCode = '#00FF00'
-  } else {
-    color = 'RED'
-    colorCode = '#FF0000'
-  }
+    // Override default values based on build status
+    if (buildStatus == 'STARTED') {
+        color = 'YELLOW'
+        colorCode = '#FFFF00'
+    } else if (buildStatus == 'SUCCESSFUL') {
+        color = 'GREEN'
+        colorCode = '#00FF00'
+    } else {
+        color = 'RED'
+        colorCode = '#FF0000'
+    }
 
-  // Send notifications
-  if (params.SLACK_NOTIFICATION_ENABLED){
-    slackSend (color: colorCode, message: summary)
-  }
+    // Send notifications
+    if (params.SLACK_NOTIFICATION_ENABLED){
+        slackSend (color: colorCode, message: summary)
+    }
 }

@@ -102,7 +102,7 @@ node {
     		cd ../../
     		'''
 
-            sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(python3 -c 'import legion; print(legion.__version__);')_build_${fullBuildNumber}/\""
+            sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(python3 -c 'import legion; print(legion.__version__);')/\""
         }
         stage('Run Python code analyzers'){
             sh '''
@@ -177,9 +177,11 @@ node {
         stage('Run Python tests'){
             sh '''
             cd legion
-            nosetests --with-coverage --cover-package legion --with-xunit
+            nosetests --with-coverage --cover-package legion --with-xunit --cover-html
             '''
             junit 'legion/nosetests.xml'
+
+            sh "cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(python3 -c 'import legion; print(legion.__version__);')-cover/\""
         }
     }
     catch (e) {

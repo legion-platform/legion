@@ -1,18 +1,10 @@
 node {
     try {
     	stage('Checkout GIT'){
-	        checkout([
-				$class: 'GitSCM', 
-				branches: [[name: 'refs/heads/master']], 
-				doGenerateSubmoduleConfigurations: false, 
-				userRemoteConfigs: [[
-					credentialsId: 'deploy_terraform_git', 
-					url: 'git@github.com:kirillmakhonin/drun-terraform-test.git'
-				]]
-			])
-    	}
+            checkout scm
+        }
     	stage('Terraforming'){
-    	    dir('terraform'){
+    	    dir('deploy/terraform'){
     	        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
             	    sh "terraform --version"
             	    if (fileExists("status")) {
