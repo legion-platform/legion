@@ -19,8 +19,6 @@ Graphana API functional for working with models
 
 import json
 
-from legion_test.template import render_template
-
 import requests
 
 
@@ -77,88 +75,3 @@ class GrafanaClient:
         answer = json.loads(response.text)
 
         return answer
-
-    def delete_dashboard(self, dashboard_uri):
-        """
-        Delete dashboard by url
-
-        :param dashboard_uri: dashboard uri
-        :type dashboard_uri: str
-        :return: None
-        """
-        self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
-
-    def remove_dashboard_for_model(self, model_id):
-        """
-        Remove model's dashboard
-
-        :param model_id: model id
-        :type model_id: str
-        :return: None
-        """
-        if self.is_dashboard_exists(model_id):
-            dashboard = self.get_model_dashboard(model_id)
-            self.delete_dashboard(dashboard['uri'])
-
-    def is_dashboard_exists(self, model_id):
-        """
-        Check if model's dashboard exists
-
-        :param model_id: model id
-        :type model_id: str
-        :return: bool -- is dashboard exists
-        """
-        return self.get_model_dashboard(model_id) is not None
-
-    def get_model_dashboard(self, model_id):
-        """
-        Search for model's dashboard
-
-        :param model_id: model id
-        :type model_id: str
-        :return: dict with dashboard information or None
-        """
-        data = self._query('/api/search/?tag=model_%s' % model_id)
-        if not data:
-            return None
-
-        return data[0]
-
-    def create_dashboard_for_model(self, model_id, model_version=None):
-        """
-        Create model's dashboard from template
-
-        :param model_id: model id
-        :type model_id: str
-        :param model_version: model version
-        :type model_id: str or None
-        :return: None
-        """
-        return self.create_dashboard_for_model_by_labels({
-            'com.epam.legion.model.id': model_id,
-            'com.epam.legion.model.version': model_version
-        })
-
-    def create_dashboard_for_model_by_labels(self, docker_container_labels):
-        """
-        Create model's dashboard from docker container labels
-
-        :param docker_container_labels: Docker labels
-        :type docker_container_labels: dict[str, str]
-        :return: None
-        """
-        model_id = docker_container_labels.get('com.epam.legion.model.id', None)
-
-        self.remove_dashboard_for_model(model_id)
-
-        json_string = render_template('grafana-dashboard.json.tmpl', {
-            'MODEL_ID': model_id,
-        })
-
-        dashboard = json.loads(json_string)
-
-        payload = {
-            'overwrite': False,
-            'dashboard': dashboard
-        }
-        self._query('/api/dashboards/db', payload, 'POST')

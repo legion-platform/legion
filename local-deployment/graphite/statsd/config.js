@@ -12,7 +12,7 @@
   "histogram": [
     {
         metric: 'request.time',
-        bins: [ 10, 50, 100, 150, 200, 400, 600, 1000, 'inf']
+        bins: [ 5, 10, 50, 100, 200, 400, 'inf']
     }
   ]
 }
