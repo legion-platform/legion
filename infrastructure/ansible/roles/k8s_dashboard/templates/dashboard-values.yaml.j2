@@ -1,0 +1,15 @@
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+  hosts:
+    - {{ domain }}
+
+  tls:
+    - secretName: {{ domain }}-tls
+      hosts:
+        - {{ domain }}
+
+rbac:
+  create: true

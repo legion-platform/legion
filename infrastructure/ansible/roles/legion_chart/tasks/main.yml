@@ -1,0 +1,95 @@
+---
+- name: Add helm repositories
+  shell: helm repo add {{ item }}
+  with_items:
+    - jupyterhub https://jupyterhub.github.io/helm-chart/
+    - default http://storage.googleapis.com/kubernetes-charts/
+
+- name: Update helm repos
+  shell: helm repo update
+
+- name: Get legion chart status
+  shell: helm ls --all legion
+  register: legion_deployment_status
+
+- set_fact:
+    legion_deployed: "{{ legion_deployment_status.stdout_lines|length > 1 }}"
+
+- name: Remove legion chart
+  shell: helm delete --purge legion
+  when: legion_deployed
+
+- name: Remove already deployed models
+  shell: kubectl delete deploy  --selector=com.epam.legion.container-type=model --ignore-not-found=true
+
+- name: Remove current chart of server
+  file:
+    state: absent
+    path: ~/helms
+
+- name: Copy actual version of helm chart
+  copy:
+    src: ../helms/legion
+    dest: ~/helms
+    owner: ubuntu
+    group: ubuntu
+
+- name: Update dependencies of legion chart
+  shell: helm dependency update
+  args:
+    chdir: ~/helms/legion
+
+- name: Get public IP
+  ipify_facts:
+
+- name: Generate jupyter hub proxy secret
+  command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(60))[:32])'
+  register: jupyter_hub_proxy_secret_output
+
+- name: Copy git deploy key to host
+  copy:
+    src: "{{ git_key }}"
+    dest: ~/git.deploy
+    owner: ubuntu
+    group: ubuntu
+
+- name: Remove old GIT secret
+  shell: kubectl delete secret legion-git-deploy  --ignore-not-found=true
+
+- name: Create GIT secret
+  shell: kubectl create secret generic legion-git-deploy --from-file=id_rsa=/home/ubuntu/git.deploy
+
+- name: Create legion configuration (values) file
+  template:
+    src: legion-values.yaml.j2
+    dest: ~/legion-values.yaml
+    mode: 0644
+  vars:
+    public_ip: "{{ ipify_public_ip }}"
+    private_ip: "{{ inventory_hostname }}"
+    jupyter_hub_proxy_secret: "{{ jupyter_hub_proxy_secret_output.stdout }}"
+    git_secret_name: legion-git-deploy
+
+- name: Fetch config
+  fetch:
+    src: /home/ubuntu/.kube/config
+    dest: "{{ playbook_dir }}/config-{{inventory_hostname }}"
+    fail_on_missing: yes
+    flat: yes
+
+- name: Pre run with dumping
+  shell: helm install legion --name legion --debug --dry-run -f  ~/legion-values.yaml
+  register: helm_install_output
+  args:
+    chdir: ~/helms
+
+- name: Save pre run result
+  copy:
+    content: "{{ helm_install_output.stdout }}"
+    dest: ~/helm.debug
+
+- name: Install legion chart
+  shell: helm install legion --name legion -f  ~/legion-values.yaml
+  args:
+    chdir: ~/helms
+

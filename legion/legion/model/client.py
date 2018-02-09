@@ -114,7 +114,8 @@ class ModelClient:
         :return: dict -- parsed response
         """
         if not 200 <= response.status_code < 400:
-            raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'.format(response.status_code, response.text, response.url))
+            raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'
+                            .format(response.status_code, response.text, response.url))
 
         data = response.text
 

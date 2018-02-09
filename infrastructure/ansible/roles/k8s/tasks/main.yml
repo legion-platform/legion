@@ -1,0 +1,156 @@
+- name: Install Docker
+  become: yes
+  apt:
+    name: "docker.io={{ k8s_docker_version  }}.1-*"
+    state: present
+    update_cache: yes
+
+- name: Install apt-transport-https
+  become: yes
+  apt:
+    name: apt-transport-https
+    state: present
+
+- name: Add apt key for kubernetes
+  become: yes
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add kubernetes repository
+  become: yes
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Install k8s core
+  become: yes
+  apt:
+    name: "{{item}}"
+    state: present
+  with_items:
+  - kubelet
+  - kubeadm
+  - kubectl
+  - kubernetes-cni
+
+- name: Gather private IP
+  shell: "ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'"
+  register: local_ip_output
+
+- set_fact:
+    local_ip: "{{ local_ip_output.stdout }}"
+
+- name: Check existing of token file
+  stat:
+    path: "~/token.yml"
+  register: token_file
+
+- name: Generate admission_token
+  command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(15))[:6] + "." + binascii.b2a_hex(os.urandom(30))[:16])'
+  register: token_raw
+  when: token_file.stat.islnk is not defined
+
+- set_fact:
+    admission_token: '{{ token_raw.stdout }}'
+  when: token_file.stat.islnk is not defined
+
+- name: Save token to token.yml
+  copy:
+    dest: "~/token.yml"
+    content: "admission_token: {{ admission_token }}"
+  when: token_file.stat.islnk is not defined
+
+- name: Init k8s cluster with kubeadm
+  become: yes
+  shell: "kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address={{ local_ip }} --token={{admission_token}}"
+  when: token_file.stat.islnk is not defined
+
+- name: Create kube conf file directory in home
+  file:
+    path: ~/.kube
+    state: directory
+  when: token_file.stat.islnk is not defined
+
+- name: Copy kubernetes config to config in home
+  become: no
+  shell: "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config"
+  when: token_file.stat.islnk is not defined
+
+- name: Change ownership of config directory
+  become: no
+  shell: "sudo chown $(id -u):$(id -g) $HOME/.kube/config"
+  when: token_file.stat.islnk is not defined
+
+- name: Gather private IP
+  shell: "ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'"
+  register: local_ip_output
+
+- set_fact:
+    local_ip: "{{ local_ip_output.stdout }}"
+
+- name: Copy resolv.conf
+  become: yes
+  copy:
+    src: /etc/resolv.conf
+    dest: /etc/resolv.conf.kubelet
+
+- name: Add local nameserver to resolv.conf
+  become: yes
+  lineinfile:
+    path: /etc/resolv.conf.kubelet
+    insertbefore: 'nameserver *'
+    line: 'nameserver {{ local_ip }}'
+
+- name: Update kubelet service info
+  become: yes
+  replace:
+    backup: yes
+    dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    regexp: '^(.*)KUBELET_DNS_ARGS=(--resolv-conf=[\s\w\d/\.]+)?(.*)"$'
+    replace: '\1KUBELET_DNS_ARGS=--resolv-conf=/etc/resolv.conf.kubelet \3"'
+
+- name: Restart kubelet
+  become: yes
+  service:
+    name: kubelet
+    state: restarted
+
+- name: Untaint master node
+  shell: 'kubectl taint nodes --all node-role.kubernetes.io/master-'
+  ignore_errors: yes
+
+- name: Add network layer RBAC
+  shell: 'kubectl apply --namespace kube-system -f {{ k8s_network_layer_rbac }}'
+
+- name: Add network layer
+  shell: 'kubectl apply -f {{ k8s_network_layer  }}'
+
+- name: Add hostpath provisioner RBAC
+  shell: 'kubectl apply -f https://raw.githubusercontent.com/MaZderMind/hostpath-provisioner/master/manifests/rbac.yaml'
+
+- name: Add hostpath provisioner deployment
+  shell: 'kubectl apply -f https://raw.githubusercontent.com/MaZderMind/hostpath-provisioner/master/manifests/deployment.yaml'
+
+- name: Add hostpath provisioner storageclass
+  shell: 'kubectl apply -f https://raw.githubusercontent.com/MaZderMind/hostpath-provisioner/master/manifests/storageclass.yaml'
+
+- name: Allow forward in IPTABLES
+  become: yes
+  shell: 'iptables -P FORWARD ACCEPT'
+  when: k8s_allow_iptables_forward
+
+- name: Restart kubelet
+  become: yes
+  service:
+    name: kubelet
+    state: restarted
+
+- name: Wait for kubernetes ready
+  shell: kubectl get no
+  register: kubernetes_no_status
+  until: kubernetes_no_status.stdout.find(' Ready ') != -1
+  retries: 5
+  delay: 10
+# yes for vim - '
+

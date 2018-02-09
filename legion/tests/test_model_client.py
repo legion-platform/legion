@@ -63,5 +63,6 @@ class TestModelClient(unittest2.TestCase):
             self.assertEqual(client.info_url, root_url + '/info')
             self.assertEqual(client.invoke_url, root_url + '/invoke')
 
+
 if __name__ == '__main__':
     unittest2.main()

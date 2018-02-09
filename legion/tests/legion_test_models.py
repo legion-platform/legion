@@ -50,5 +50,3 @@ def create_simple_summation_model_untyped(path, version):
 
 def create_simple_summation_model_lists(path, version):
     pass
-
-

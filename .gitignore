@@ -120,5 +120,5 @@ ENV/
 # mypy
 .mypy_cache/
 
-/workspace
-/keys
+workspace/
+keys/

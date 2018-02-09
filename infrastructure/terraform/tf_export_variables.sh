@@ -1,0 +1,13 @@
+#!/bin/sh
+export TF_VAR_AWS_INSTANCE_TYPE='t2.xlarge'
+export TF_VAR_INSTANCE_NAME='legion-ansible-demo-instance'
+export TF_VAR_AWS_REGION='us-east-2'
+export TF_VAR_AWS_SECURITY_GROUPS='epam-europe,default,epam-by-ru,epam-world'
+export TF_VAR_AWS_IMAGE='ami-10547475'
+export TF_VAR_AWS_KEY_NAME='BDCC-LEGION-ANSIBLE'
+export TF_VAR_AWS_SUBNET_ID='subnet-265cab4f'
+export TF_VAR_AWS_VOLUME_SIZE='30'
+export TF_VAR_STATE_S3_BUCKET='legion-ci-configuration'
+export TF_VAR_STATE_S3_REGION='us-east-2'
+export TF_VAR_STATE_S3_KEY='terraform/state'
+export TF_VAR_SSH_KEY='/var/lib/jenkins/.aws/BDCC-LEGION-ANSIBLE'

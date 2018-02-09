@@ -1,0 +1,86 @@
+{{- if .Values.nexus.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-nexus-scripts"
+data:
+  cleanup_old_repositories.json: |-
+    {
+      "name": "cleanup_old_repositories",
+      "type": "groovy",
+      "content": "repository.repositoryManager.browse().each { repository.repositoryManager.delete(it.getName()) }"
+    }
+  create_ldap.json: |-
+    {
+      "name": "create_ldap",
+      "type": "groovy",
+      "content": "import org.sonatype.nexus.ldap.persist.*; import org.sonatype.nexus.ldap.*; import org.sonatype.nexus.ldap.persist.entity.*; def manager = container.lookup(LdapConfigurationManager.class.name); manager.addLdapServerConfiguration(new LdapConfiguration(name: 'LDAP_NAME', connection: new Connection(host: new Connection.Host(Connection.Protocol.ldap, 'LDAP_HOST', 'LDAP_PORT'), maxIncidentsCount: 'LDAP_maxIncidentsCount', connectionRetryDelay: 'LDAP_connectionRetryDelay', connectionTimeout: 'LDAP_connectionTimeout', searchBase: 'LDAP_searchBase', authScheme: 'LDAP_authScheme', systemPassword: 'LDAP_systemPassword', systemUsername: 'LDAP_systemUsername'), mapping: new Mapping(ldapGroupsAsRoles: 'LDAP_ldapGroupsAsRoles', emailAddressAttribute: 'LDAP_emailAddressAttribute', userIdAttribute: 'LDAP_userIdAttribute', userMemberOfAttribute: 'LDAP_userMemberOfAttribute', userObjectClass: 'LDAP_userObjectClass', userPasswordAttribute: 'LDAP_userPasswordAttribute', userRealNameAttribute: 'LDAP_userRealNameAttribute', userBaseDn: 'LDAP_userBaseDn')))"
+    }
+  create_repositories.json: |-
+    {
+      "name": "create_repositories",
+      "type": "groovy",
+      "content": "import org.sonatype.nexus.repository.config.Configuration; import org.sonatype.nexus.repository.storage.WritePolicy; repository.createRepository(new Configuration(repositoryName: 'docker-hosted', recipeName: 'docker-hosted', online: true, attributes: [storage: [blobStoreName: 'default', writePolicy: WritePolicy.ALLOW, strictContentTypeValidation: true] as Map, docker: [httpPort: 5509, v1Enabled: true, forceBasicAuth: false] as Map] as Map)); repository.createRawHosted('raw')"
+    }
+  reset_password.json: |-
+    {
+      "name": "reset_password",
+      "type": "groovy",
+      "content": "security.securitySystem.changePassword('admin', '{{ .Values.secrets.nexus.admin }}')"
+    }
+  update_base_url.json: |-
+    {
+      "name": "update_base_url",
+      "type": "groovy",
+      "content": "core.baseUrl('https://{{ .Values.nexus.ingress.domain.partial }}.{{ .Values.rootDomain }}')"
+    }
+  add_docker_realm.json: |-
+    {
+      "name": "add_docker_realm",
+      "type": "groovy",
+      "content": "import org.sonatype.nexus.security.realm.RealmManager; realmManager = container.lookup(RealmManager.class.getName()); realmManager.enableRealm('DockerToken')"
+    }
+  start.sh: |-
+    #!/bin/bash
+    apk --no-cache add curl
+    
+    if [ -f "/opt/created" ]
+    then
+        echo "Skipping obsollete (duplicated) run" >> /opt/log.log
+        return 0
+    fi
+
+    until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8081); do
+        printf '.'
+        sleep 5
+    done
+    echo "Server up" >> /opt/log.log
+
+    for f in /opt/bootup/*.json; do
+        echo "Pushing $f" >> /opt/log.log
+        curl -v -X POST -u admin:admin123 --header "Content-Type: application/json" 'http://localhost:8081/service/siesta/rest/v1/script' -d @$f >> /opt/log.log
+        echo "Pushed $f" >> /opt/log.log
+    done
+    
+    echo "Resetting password" >> /opt/log.log
+    curl -v -X POST -u admin:admin123 --header "Content-Type: text/plain" 'http://localhost:8081/service/siesta/rest/v1/script/reset_password/run' >> /opt/log.log
+    echo "Resetted password" >> /opt/log.log
+
+    SCRIPTS=cleanup_old_repositories,create_repositories,update_base_url,add_docker_realm
+    for i in $(echo $SCRIPTS | sed "s/,/ /g")
+    do
+        echo "Calling $i script" >> /opt/log.log
+        curl -v -X POST -u admin:{{ .Values.secrets.nexus.admin }} --header "Content-Type: text/plain" "http://localhost:8081/service/siesta/rest/v1/script/$i/run" >> /opt/log.log
+        echo "Called $i script" >> /opt/log.log
+    done
+    
+    curl -v -X DELETE -u admin:{{ .Values.secrets.nexus.admin }} 'http://localhost:8081/service/siesta/rest/v1/script/reset_password'
+    
+    for i in $(echo $SCRIPTS | sed "s/,/ /g")
+    do
+        curl -v -X DELETE -u admin:{{ .Values.secrets.nexus.admin }} --header "Content-Type: text/plain" "http://localhost:8081/service/siesta/rest/v1/script/$i"
+    done
+
+    touch /opt/created
+
+{{- end }}

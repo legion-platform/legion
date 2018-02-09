@@ -206,7 +206,7 @@ class ModelTestDeployment:
 
                     print('--- CONTAINER LOGS ---')
                     print(logs)
-                except:
+                except Exception:
                     print('Cannot get logs of container')
 
                 raise Exception('Invalid container state: {}'.format(self.container.status))

@@ -1,0 +1,32 @@
+{{- if .Values.nexus.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-nexus"
+  labels:
+    app: "{{ .Release.Name }}-nexus"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+{{- if .Values.nexus.service.annotations }}
+  annotations:
+{{ toYaml .Values.nexus.service.annotations | indent 4 }}
+{{- end }}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.nexus.port }}
+      targetPort: {{ .Values.nexus.port }}
+      nodePort: {{ .Values.nexus.hostport }}
+      protocol: TCP
+      name: nexus
+    {{- if .Values.nexus.docker.enabled }}
+    - port: {{ .Values.nexus.docker.port }}
+      targetPort: {{ .Values.nexus.docker.port }}
+      nodePort: {{ .Values.nexus.docker.hostport }}
+      protocol: TCP
+      name: nexus-docker
+    {{- end }}
+  selector:
+    app: "{{ .Release.Name }}-nexus"
+{{- end }}

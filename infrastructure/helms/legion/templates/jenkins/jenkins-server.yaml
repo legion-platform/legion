@@ -1,0 +1,180 @@
+{{- if .Values.jenkins.enabled }}
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-jenkins"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-jenkins"
+spec:
+  replicas: 1
+  selector:
+    component: "{{ .Release.Name }}-jenkins"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-jenkins"
+    spec:
+      serviceAccountName: jenkins
+      containers:
+      - name: jenkins
+        image: "{{ .Values.jenkins.image.repository }}:{{ .Values.jenkins.image.tag }}"
+        imagePullPolicy: "{{ .Values.jenkins.image.pullPolicy }}"
+        env:
+        - name: JAVA_OPTS
+          value: "-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.legion.jenkins.dashboard.url=/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.legion.jenkins.report.html.path=notebook.html"
+        # Information for building corect images
+        - name: LEGION_PACKAGE_VERSION
+          value: "{{ .Values.package.version }}"
+        - name: LEGION_PACKAGE_REPOSITORY
+          value: "{{ .Values.package.repository }}"
+        - name: LEGION_BASE_IMAGE_TAG
+          value: "{{ .Values.package.baseImage.tag }}"
+        - name: LEGION_BASE_IMAGE_REPOSITORY
+          value: "{{ .Values.package.baseImage.repository }}"
+        # Address for tests
+        - name: MODEL_SERVER_URL
+          value: "http://{{ .Release.Name }}-edge.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+        # EDI credentials
+        - name: EDI_URL
+          value: "http://{{ .Release.Name }}-edi.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+        - name: EDI_USER
+          value: ""
+        - name: EDI_PASSOWRD
+          value: ""
+        - name: EDI_TOKEN
+          value: ""
+        # External resource (saving and loading model files)
+        - name: EXTERNAL_RESOURCE_PROTOCOL
+          value: "http"
+        - name: EXTERNAL_RESOURCE_HOST
+          value: "{{ .Release.Name }}-nexus.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8081/repository/raw"
+        - name: EXTERNAL_RESOURCE_USER
+          value: "admin"
+        - name: EXTERNAL_RESOURCE_PASSWORD
+          value: "{{ .Values.secrets.nexus.admin }}"
+        # Storage of docker images with models
+        - name: MODEL_IMAGES_REGISTRY
+          value: "localhost:31111/legion_model/"
+        - name: DOCKER_REGISTRY_USER
+          value: "admin"
+        - name: DOCKER_REGISTRY_PASSWORD
+          value: "{{ .Values.secrets.nexus.admin }}"
+        # Model configuration
+        - name: GRAPHITE_HOST
+          value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+        - name: STATSD_HOST
+          value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+        - name: STATSD_PORT
+          value: "8125"
+        - name: CONSUL_ADDR
+          value: "{{ .Release.Name }}-consul.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+        - name: CONSUL_PORT
+          value: "8500"
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/jenkins_home/workspace
+          name: jenkins-workdir
+        - mountPath: /var/run/docker.sock
+          name: docker-socket
+        {{- if .Values.jenkins.git_secret_name }}
+        - mountPath: /var/jenkins_home/.ssh
+          name: git-secret
+          readOnly: true
+        {{- end }}
+      initContainers:
+      - name: prepare-workdir
+        image: busybox
+        command: ['sh', '-c', 'chmod a+rwx -R /var/jenkins_home/workspace']
+        volumeMounts:
+        - mountPath: /var/jenkins_home/workspace
+          name: jenkins-workdir
+      volumes:
+      - name: jenkins-workdir
+        hostPath:
+          path: /var/jenkins_home/workspace
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      {{- if .Values.jenkins.git_secret_name }}
+      - name: git-secret
+        secret:
+          secretName: "{{ .Values.jenkins.git_secret_name }}"
+      {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-jenkins"
+  labels:
+    component: "{{ .Release.Name }}-jenkins"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-jenkins"
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+---
+{{- if .Values.jenkins.ingress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.jenkins.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-jenkins"
+  name: "{{ .Release.Name }}-jenkins"
+spec:
+  rules:
+    - host: "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-jenkins"
+              servicePort: 80
+          - path: "/dashboard"
+            backend:
+              serviceName: "{{ .Release.Name }}-grafana"
+              servicePort: 80
+          - path: "/public"
+            backend:
+              serviceName: "{{ .Release.Name }}-grafana"
+              servicePort: 80
+          - path: "/api/datasources"
+            backend:
+              serviceName: "{{ .Release.Name }}-grafana"
+              servicePort: 80
+
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.jenkins.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-jenkins"
+              servicePort: 80
+    {{- end }}
+  {{- if .Values.jenkins.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    {{- if .Values.jenkins.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.jenkins.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

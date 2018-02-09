@@ -1,0 +1,15 @@
+route53_zone: epm.kharlamov.biz
+base_domain: k8s-nightly.epm.kharlamov.biz
+certificate_email: kroks.rus@gmail.com
+git_key: "/home/jenkins/deploy.cert"
+cert_dir: "/etc/ssl"
+subdomains:
+  - dashboard
+  - nexus
+  - jupyter
+  - ldap
+  - jenkins
+  - edge
+  - consul
+  - grafana
+  - edi

@@ -1,0 +1,26 @@
+{{- if .Values.nexus.enabled }}
+{{- if and .Values.nexus.persistence.enabled (not .Values.nexus.persistence.existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-nexus"
+  labels:
+    app: "{{ .Release.Name }}-nexus"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  accessModes:
+    - {{ .Values.nexus.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.nexus.persistence.size | quote }}
+{{- if .Values.nexus.persistence.storageClass }}
+{{- if (eq "-" .Values.nexus.persistence.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.nexus.persistence.storageClass }}"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,113 @@
+rootDomain: {{ base_domain }}
+namespace: default
+localDomain: "cluster.local"
+
+package:
+  version: "{{ base_version }}+{{ local_version }}"
+  repository: "https://nexus.local.epm.kharlamov.biz/repository/pypi-hosted/simple"
+
+  baseImage:
+    repository: "nexus.local.epm.kharlamov.biz:443/legion/base-python-image"
+    tag: "{{ base_version }}-{{ local_version }}"
+
+IPs:
+  external:
+  - {{ private_ip }}
+  - {{ public_ip }}
+
+secrets:
+  ldap:
+    admin: "jonny"
+  nexus:
+    admin: "jonny"
+
+consul:
+  enabled: true
+
+  Replicas: 3
+  antiAffinity: soft
+  
+  uiIngress:
+    enabled: true
+    hosts:
+      - consul.{{ base_domain }}
+
+graphite:
+  enabled: true
+  image:
+    repository: "hopsoft/graphite-statsd"
+    tag: "latest"
+
+grafana:
+  enabled: true
+  image:
+    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-grafana"
+    tag: "{{ base_version }}-{{ local_version }}"
+
+edge:
+  enabled: true
+  replicas: 2
+  image: 
+    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-edge"
+    tag: "{{ base_version }}-{{ local_version }}"
+
+edi:
+  enabled: true
+  replicas: 2
+  image:
+    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-edi"
+    tag: "{{ base_version }}-{{ local_version }}"
+
+jenkins:
+  enabled: true
+  image:
+    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-jenkins"
+    tag: "{{ base_version }}-{{ local_version }}"
+
+  git_secret_name: "{{ git_secret_name }}"
+
+nexus:
+  enabled: true
+
+jupyterhub:
+  enabled: true
+
+  proxy:
+    secretToken: "{{ jupyter_hub_proxy_secret }}"
+
+  singleuser:
+    extraEnv:
+      EXTERNAL_RESOURCE_PROTOCOL: "http"
+      EXTERNAL_RESOURCE_HOST: "legion-nexus.default.svc.cluster.local:8081/repository/raw"
+      EXTERNAL_RESOURCE_USER: "admin"
+      EXTERNAL_RESOURCE_PASSWORD: "jonny"
+    image:
+      name: "nexus.local.epm.kharlamov.biz:443/legion/jupyterhub"
+      tag: "{{ base_version }}-{{ local_version }}"
+    storage:
+      capacity: 30Gi
+  nfs:
+    enabled: false
+
+  ingress:
+    hosts:
+    - jupyter.{{ base_domain }}
+    tls:
+    - hosts:
+      - jupyter.{{ base_domain }}
+      secretName: jupyter.{{ base_domain }}-tls
+
+ldap:
+  server:
+    enabled: true
+
+  gui:
+    enabled: true
+
+    ingress:
+      enabled: true    
+      tls:
+      - hosts:
+        - ldap.{{ base_domain }}
+        secretName: ldap.{{ base_domain }}-tls
+  
