@@ -13,3 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+from .robot.dashboard import Dashboard
+from .robot.jenkins import Jenkins
+from .robot.utils import Utils
+from .robot.grafana import Grafana

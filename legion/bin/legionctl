@@ -30,7 +30,7 @@ from legion.edi.deploy import \
     build_model, \
     deploy_model, undeploy_model, inspect, \
     deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
-    VALID_SERVING_WORKERS
+    VALID_INSPECT_FORMATS, VALID_SERVING_WORKERS
 import legion.utils
 
 ROOT_LOGGER = logging.getLogger()
@@ -143,6 +143,11 @@ if __name__ == '__main__':
                                     type=str, help='EDI server password')
     inspect_k8s_parser.add_argument('--token',
                                     type=str, help='EDI server token')
+    inspect_k8s_parser.add_argument('--filter',
+                                    type=str, help='Model ID filter ')
+    inspect_k8s_parser.add_argument('--format',
+                                    default=VALID_INSPECT_FORMATS[0],
+                                    choices=VALID_INSPECT_FORMATS, help='output format')
     inspect_k8s_parser.set_defaults(func=inspect_kubernetes)
 
     scale_k8s_parser = subparsers.add_parser('scale',
@@ -200,17 +205,6 @@ if __name__ == '__main__':
                                 type=legion.utils.string_to_bool)
     pyserve_parser.add_argument('--legion-autodiscover',
                                 type=legion.utils.string_to_bool)
-    pyserve_parser.set_defaults(func=serve_model)
-
-    pyserve_parser = subparsers.add_parser('pyserve-dummy', description='serve a dummy python model using flask')
-    pyserve_parser.add_argument('--consul-addr',
-                                type=str, help='Consul Agent IP address')
-    pyserve_parser.add_argument('--consul-port',
-                                type=int, help='Consul Agent port')
-    pyserve_parser.add_argument('--legion-addr',
-                                type=str)
-    pyserve_parser.add_argument('--legion-port',
-                                type=int)
     pyserve_parser.set_defaults(func=serve_model)
 
     # --------- END OF SECTIONS -----------
