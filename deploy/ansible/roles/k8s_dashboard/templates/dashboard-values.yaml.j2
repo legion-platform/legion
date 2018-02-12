@@ -5,6 +5,7 @@ ingress:
 
   hosts:
     - {{ domain }}
+    - dashboard.local.{{ base_domain }}
 
   tls:
     - secretName: {{ domain }}-tls

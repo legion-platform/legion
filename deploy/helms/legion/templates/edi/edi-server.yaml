@@ -91,6 +91,14 @@ spec:
           - backend:
               serviceName: "{{ .Release.Name }}-edi"
               servicePort: 80
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.edi.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-edi"
+              servicePort: 80
+    {{- end }}
   {{- if .Values.edi.ingress.tls.enabled }}
   tls:
   - hosts:

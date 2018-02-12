@@ -16,17 +16,17 @@ node {
                 	    if (fileExists("status")) {
                             sh "rm status"
                         }
-                        
+
                         if (fileExists(".terraform/terraform.tfstate")){
                             sh "rm .terraform/terraform.tfstate"
                         }
-						
+
 						if (!fileExists("../profiles/" + params.PROFILE + ".tfvars")){
 							sh "pwd"
 							sh "ls -lah ../profiles/"
 							error "Cannot found profile ${params.PROFILE} files"
 						}
-                        
+
                         sh '''
                         terraform init \
                             -var-file="../profiles/$PROFILE.tfvars" \
@@ -34,13 +34,13 @@ node {
                             -backend-config="key=$TF_VAR_STATE_S3_KEY.$PROFILE" \
                             -backend-config="region=$TF_VAR_STATE_S3_REGION"
                         '''
-                        
+
                         sh "set +e; terraform plan -var-file=\"../profiles/\$PROFILE.tfvars\" -out=plan.out -detailed-exitcode; echo \$? > status"
-                        
+
                         def exitCode = readFile('status').trim()
                         def apply = false
                         echo "Terraform Plan Exit Code: ${exitCode}"
-                        
+
                         if (exitCode == "0") {
                             currentBuild.result = 'SUCCESS'
                         }
@@ -52,7 +52,7 @@ node {
                         }
                         if (exitCode == "2") {
                             stash name: "plan", includes: "plan.out"
-                            
+
                             if (!params.TF_AUTO_APPLY){
                                 if (params.SLACK_NOTIFICATION_ENABLED){
                                     slackSend color: 'good', message: "Plan Awaiting Approval: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
@@ -72,20 +72,20 @@ node {
                                 apply = true
                             }
                         }
-                        
+
                         if (apply) {
                             unstash 'plan'
-                            
+
                             if (fileExists("status.apply")) {
                                 sh "rm status.apply"
                             }
-                            
+
                             sh 'set +e; terraform apply plan.out; echo \$? > status.apply'
-                            
+
                             def applyExitCode = readFile('status.apply').trim()
                             if (applyExitCode == "0") {
                                 if (params.SLACK_NOTIFICATION_ENABLED){
-                                    slackSend color: 'good', message: "Changes Applied ${env.JOB_NAME} - ${env.BUILD_NUMBER}"    
+                                    slackSend color: 'good', message: "Changes Applied ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
                                 }
                             } else {
                                 if (params.SLACK_NOTIFICATION_ENABLED){
@@ -93,11 +93,11 @@ node {
                                 }
                                 currentBuild.result = 'FAILURE'
                             }
-                            
+
                             ansibleIp = sh(returnStdout: true, script: "terraform output -json private_ip | jq '.value'").trim().replaceAll("\"", "")
-                            
+
                             print("Terra IP: $ansibleIp")
-                            
+
                         }
                         else {
                             print("Skipping apply process of terraform")
@@ -132,6 +132,9 @@ node {
                 --private-key "${params.TF_VAR_SSH_KEY}" -i "$ip," deploy/ansible/site.yml
                 """
 
+                archiveArtifacts 'deploy/ansible/helm.debug'
+                archiveArtifacts 'deploy/ansible/helm.status'
+
                 // Loading result values from
                 load "deploy/ansible/output.groovy"
             }
@@ -159,8 +162,9 @@ node {
                 "http://jenkins.local.${baseDomain}" \
                 examples \
                 . \
-                "git@github.com:akharlamov/drun-root.git" \
+                "git@github.com:epam/legion.git" \
                 ${params.GitBranch} \
+                --connection-timeout 600 \
                 --git-root-key "legion-root-key" \
                 --model-host "" \
                 --dynamic-model-prefix "DYNAMIC MODEL"
@@ -175,7 +179,7 @@ node {
                     --run-sleep-sec 30 \
                     --run-timeout 1800 \
                     --jenkins-check-running-jobs \
-                    --run-parameter "GitRepository=git@github.com:akharlamov/drun-root.git" \
+                    --run-parameter "GitRepository=git@github.com:epam/legion.git" \
                     --run-parameter "GitBranch=${params.GitBranch}"
                     """
 
@@ -188,6 +192,31 @@ node {
             }
             else {
                 print("Skipping Jenkins")
+            }
+        }
+        stage('Run robot tests'){
+            if (params.UseRegressionTests){
+                sh '''
+                cd legion_test
+                sudo python3 setup.py develop
+                cd -
+
+                cd tests
+                python3 -m robot.run --exitonfailure *.robot || true
+                '''
+                step([
+                    $class : 'RobotPublisher',
+                    outputPath : 'tests/',
+                    outputFileName : "*.xml",
+                    disableArchiveOutput : false,
+                    passThreshold : 100,
+                    unstableThreshold: 95.0,
+                    onlyCritical : true,
+                    otherFiles : "*.png",
+                ])
+            }
+            else {
+                println('Skipped due to UseRegressionTests property')
             }
         }
     }

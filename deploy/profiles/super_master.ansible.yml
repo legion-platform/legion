@@ -13,3 +13,15 @@ subdomains:
   - consul
   - grafana
   - edi
+namespace: default
+deployment: legion
+test_base_domain: local.k8s-daily.epm.kharlamov.biz
+dashboard_protocol: https
+test_protocol: http
+service_account:
+  login:  admin
+  password: admin
+examples_to_test:
+  - Test-Summation
+  - Sklearn-Income
+  - Digit-Recognition

@@ -1,4 +1,5 @@
 graft legion_test/templates
+graft legion_test/robot
 graft legion_test/external
 recursive-include requirements *.txt
 

@@ -88,8 +88,35 @@
     content: "{{ helm_install_output.stdout }}"
     dest: ~/helm.debug
 
+- name: Save pre run result localy
+  local_action:
+    module: copy
+    content: "{{ helm_install_output.stdout }}"
+    dest: ./helm.debug
+
 - name: Install legion chart
-  shell: helm install legion --name legion -f  ~/legion-values.yaml
+  shell: helm install legion --name legion --wait --timeout 600 -f  ~/legion-values.yaml
   args:
     chdir: ~/helms
+
+- name: Copy HELM status checker
+  copy:
+    src: payloads/examine_helm_deployed
+    dest: ~/helms/examine_helm_deployed
+    owner: ubuntu
+    group: ubuntu
+    mode: a+rx
+
+- name: Run HELM status checker
+  shell: ~/helms/examine_helm_deployed legion
+
+- name: Dump current HELM status
+  shell: helm status legion
+  register: helm_status_output
+
+- name: Save HELM status localy
+  local_action:
+    module: copy
+    content: "{{ helm_status_output.stdout }}"
+    dest: ./helm.status
 
