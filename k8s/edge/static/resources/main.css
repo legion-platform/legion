@@ -1,0 +1,80 @@
+
+html, body, div, span, a {
+    padding: 0;
+    margin: 0;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: "Segoe UI", Sans-Serif, Serif;
+}
+
+h1 {
+    margin-bottom: 30px;
+    font-size: 26px;
+    color: #000;
+    text-align: center;
+}
+
+h1 span {
+    color: #fa2816;
+}
+
+.clear {
+    clear: both;
+}
+
+.servers-links {
+    margin: 0 50px;
+    background: #fff;
+    text-align: center;
+}
+
+.servers-links a {
+    display: block;
+    float: left;
+    width: 29%;
+    height: 50px;
+    margin: 10px 1%;
+
+    text-align: center;
+
+    background-color: #fff;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+
+    text-decoration: none;
+    font-size: 0;
+
+    border: 1px solid #cacaca;
+    border-radius: 5px;
+}
+.servers-links a:hover {
+    opacity: 0.8;
+}
+
+@media screen and (max-width: 980px) {
+     .servers-links a {
+        width: 100%;
+    }
+}
+
+.bottom-links {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.bottom-links a {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 14px;
+    color: #3d3d3d;
+    text-decoration: underline;
+}
