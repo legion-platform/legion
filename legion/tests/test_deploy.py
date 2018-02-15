@@ -49,7 +49,7 @@ class TestDeploy(unittest2.TestCase):
         with ModelTestDeployment(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df, self.wheel_path) as deployment:
             self.assertEqual(deployment.model_information['version'], self.MODEL_VERSION, 'Incorrect model version')
-            self.assertEqual(deployment.model_information['use_df'], False, 'Incorrect model use_df field')
+            self.assertEqual(deployment.model_information['use_df'], True, 'Incorrect model use_df field')
             self.assertDictEqual(deployment.model_information['input_params'],
                                  {'b': {'numpy_type': 'int64', 'type': 'Integer'},
                                   'a': {'numpy_type': 'int64', 'type': 'Integer'}},

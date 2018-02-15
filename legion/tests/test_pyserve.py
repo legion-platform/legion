@@ -56,7 +56,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(self._load_response_text(response), 'OK')
 
-    def test_model_info(self):
+    def test_model_info_with_df(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID))
@@ -68,7 +68,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertTrue('input_params' in data, 'Cannot find input_params field')
 
             self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
-            self.assertEqual(data['use_df'], False, 'Incorrect model use_df field')
+            self.assertEqual(data['use_df'], True, 'Incorrect model use_df field')
             self.assertDictEqual(data['input_params'],
                                  {'b': {'numpy_type': 'int64', 'type': 'Integer'},
                                   'a': {'numpy_type': 'int64', 'type': 'Integer'}},

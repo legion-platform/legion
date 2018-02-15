@@ -25,19 +25,20 @@ def create_simple_summation_model_by_df(path, version):
         return x
 
     def apply(x):
-        return {'x': x['a'] + x['b']}
+        a = x.iloc[0]['a']
+        b = x.iloc[0]['b']
+        return {'x': int(a + b)}
 
     df = pandas.DataFrame([{
         'a': 1,
         'b': 1,
     }])
 
-    return legion.io.export(path,
-                            apply,
-                            prepare,
-                            input_data_frame=df,
-                            use_df=False,
-                            version=version)
+    return legion.io.export_df(apply,
+                               df,
+                               filename=path,
+                               prepare_func=prepare,
+                               version=version)
 
 
 def create_simple_summation_model_by_types(path, version):

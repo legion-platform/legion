@@ -386,8 +386,8 @@ def build_df(columns_map, input_values, return_dict=False):
     """
     Build pandas.DataFrame (or plain dict) from map of columns and input map of strings or bytes
 
-    :param columns_map: information about columns
-    :type columns_map: dict[str, :py:class:`legion.types.ColumnInformation`]
+    :param columns_map: information about columns or None
+    :type columns_map: dict[str, :py:class:`legion.types.ColumnInformation`] or None
     :param input_values: input values
     :type input_values: dict[str, union[str, bytes]]
     :param return_dict: return dict instead of pandas DF
@@ -396,6 +396,9 @@ def build_df(columns_map, input_values, return_dict=False):
     """
     values = {}
     types = {}
+
+    if not columns_map:
+        return input_values
 
     for column_name, column_information in columns_map.items():
         if column_name not in input_values:
@@ -410,3 +413,20 @@ def build_df(columns_map, input_values, return_dict=False):
     data_frame = pd.DataFrame([values])
     data_frame = data_frame.astype(types)
     return data_frame
+
+
+int8 = ColumnInformation(Integer, np.int8)
+uint8 = ColumnInformation(Integer, np.uint8)
+int16 = ColumnInformation(Integer, np.int16)
+uint16 = ColumnInformation(Integer, np.uint16)
+int32 = ColumnInformation(Integer, np.int32)
+uint32 = ColumnInformation(Integer, np.uint32)
+int64 = ColumnInformation(Integer, np.int64)
+uint64 = ColumnInformation(Integer, np.uint64)
+
+float32 = ColumnInformation(Integer, np.float32)
+float64 = ColumnInformation(Integer, np.float64)
+
+string = ColumnInformation(String)
+boolean = ColumnInformation(Bool)
+image = ColumnInformation(Image)

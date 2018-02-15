@@ -49,11 +49,7 @@ class TestModelContainer(unittest2.TestCase):
 
         try:
             legion.model.model_id.init(model_id)
-            legion.io.export(path,
-                             apply,
-                             prepare,
-                             input_data_frame=df,
-                             version=version)
+            legion.io.export_df(apply, df, filename=path, prepare_func=prepare, version=version)
 
             self.assertTrue(os.path.exists(path), 'File not exists')
 
