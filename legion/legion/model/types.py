@@ -424,6 +424,7 @@ uint32 = ColumnInformation(Integer, np.uint32)
 int64 = ColumnInformation(Integer, np.int64)
 uint64 = ColumnInformation(Integer, np.uint64)
 
+float16 = ColumnInformation(Integer, np.float16)
 float32 = ColumnInformation(Integer, np.float32)
 float64 = ColumnInformation(Integer, np.float64)
 

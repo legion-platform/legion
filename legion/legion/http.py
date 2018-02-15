@@ -25,6 +25,32 @@ import legion.utils
 import flask
 
 
+def parse_multi_dict(multi_dict, map=None):
+    """
+    Parse MultiDict object and detect lists if they presents (using [] in the end of name)
+
+    :param multi_dict: request data
+    :type multi_dict: :py:class:`werkzeug.datastructures.MultiDict`
+    :param map: function to map all values
+    :type map: function VAL -> NEW VAL
+    :return: dict[str, Any] or dict[str, list[Any]]
+    """
+    result = {}
+
+    for k in multi_dict:
+        if len(k) > 2 and k.endswith('[]'):
+            key = k[:-2]
+            result[key] = multi_dict.getlist(k)
+            if map:
+                result[key] = [map(val) for val in result[key]]
+        else:
+            result[k] = multi_dict[k]
+            if map:
+                result[k] = map(result[k])
+
+    return result
+
+
 def parse_request(input_request):
     """
     Produce a input dictionary from HTTP request (GET/POST fields, and Files)
@@ -35,19 +61,14 @@ def parse_request(input_request):
     """
     result = {}
 
-    # TODO: Add array handl
-
     # Fill in URL parameters
-    for k in input_request.args:
-        result[k] = input_request.args[k]
+    result.update(parse_multi_dict(input_request.args))
 
     # Fill in POST parameters
-    for k in input_request.form:
-        result[k] = input_request.form[k]
+    result.update(parse_multi_dict(input_request.form))
 
     # Fill in Files:
-    for k in input_request.files:
-        result[k] = input_request.files[k].read()
+    result.update(parse_multi_dict(input_request.files, lambda file: file.read()))
 
     return result
 

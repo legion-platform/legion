@@ -101,9 +101,9 @@ class ModelServeTestBuild:
 
             return self
         except Exception as build_exception:
-            self.__exit__(build_exception)
+            self.__exit__(exception=build_exception)
 
-    def __exit__(self, *args):
+    def __exit__(self, *args, exception=None):
         """
         Exit from context with cleaning fs temp directory, temporary container and image
 
@@ -113,8 +113,8 @@ class ModelServeTestBuild:
         print('Removing temporary directory')
         remove_directory(self._temp_directory)
 
-        if args[0]:
-            raise args[0]
+        if exception:
+            raise exception
 
 
 class ModelTestDeployment:
