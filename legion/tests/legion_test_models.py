@@ -16,6 +16,7 @@
 from __future__ import print_function
 
 import legion.io
+import legion.model
 
 import pandas
 
@@ -42,11 +43,37 @@ def create_simple_summation_model_by_df(path, version):
 
 
 def create_simple_summation_model_by_types(path, version):
-    pass
+    def prepare(x):
+        return x
+
+    def apply(x):
+        return {'x': int(x['a'] + x['b'])}
+
+    parameters = {
+        'a': legion.model.int32,
+        'b': legion.model.int32,
+    }
+
+    return legion.io.export(apply,
+                            parameters,
+                            filename=path,
+                            prepare_func=prepare,
+                            version=version)
 
 
 def create_simple_summation_model_untyped(path, version):
-    pass
+    def prepare(x):
+        return x
+
+    def apply(x):
+        keys = sorted(tuple(x.keys()))
+
+        return {'keys': ','.join(keys), 'sum': sum(int(val) for val in x.values())}
+
+    return legion.io.export_untyped(apply,
+                                    filename=path,
+                                    prepare_func=prepare,
+                                    version=version)
 
 
 def create_simple_summation_model_lists(path, version):

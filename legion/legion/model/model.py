@@ -82,7 +82,6 @@ class ScipyModel(implements(IMLModel)):
         """
         assert apply_func is not None
         assert prepare_func is not None
-        assert column_types is not None
 
         self.apply_func = apply_func
         self.column_types = column_types
@@ -105,7 +104,10 @@ class ScipyModel(implements(IMLModel)):
         data_frame = self.prepare_func(data_frame)
 
         LOGGER.info('Applying function with DataFrame: %s' % str(data_frame))
-        return self.apply_func(data_frame)
+        response = self.apply_func(data_frame)
+        LOGGER.info('Returning response: %s' % str(response))
+
+        return response
 
     @property
     def version_string(self):
