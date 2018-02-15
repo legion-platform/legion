@@ -20,6 +20,7 @@ Deploy logic for legion
 import logging
 import os
 import time
+import re
 
 import docker
 import docker.errors
@@ -35,6 +36,10 @@ from legion.utils import Colors, ExternalFileReader
 
 LOGGER = logging.getLogger('deploy')
 VALID_SERVING_WORKERS = legion.containers.docker.VALID_SERVING_WORKERS
+
+INSPECT_FORMAT_COLORIZED = 'colorized'
+INSPECT_FORMAT_TABULAR = 'column'
+VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
 
 def build_model(args):
@@ -82,6 +87,8 @@ def build_model(args):
         LOGGER.info('Built image: %s with python package: %s', image, args.python_package)
         print('Built image: %s with python package: %s for model %s' % (image, args.python_package, model_id))
 
+        legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.id)
+
         if args.push_to_registry:
             external_image_name = args.push_to_registry
             docker_registry = external_image_name
@@ -117,6 +124,8 @@ def build_model(args):
             client.images.push(image_and_registry, tag=version, auth_config=auth_config)
             print('Successfully pushed image %s:%s' % (image_and_registry, version))
 
+            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)
+
         return image
 
 
@@ -131,7 +140,7 @@ def inspect_kubernetes(args):
     edi_client = legion.external.edi.build_client(args)
     model_deployments = edi_client.inspect()
 
-    print('%sModel deployments:%s' % (Colors.BOLD, Colors.ENDC))
+    data = []
 
     for deployment in model_deployments:
         if deployment.status == 'ok' and deployment.model_api_ok:
@@ -149,17 +158,55 @@ def inspect_kubernetes(args):
         if errors:
             errors = 'ERROR: {}'.format(errors)
 
-        arguments = (
-            line_color, Colors.ENDC,
-            Colors.UNDERLINE, deployment.model, Colors.ENDC,
-            deployment.image, deployment.version,
-            line_color, deployment.ready_replicas, deployment.scale, errors,
-            Colors.ENDC
-        )
-        print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready %s%s' % arguments)
+        if args.filter:
+            if not re.match('^' + args.filter + '$', deployment.model):
+                continue
 
-    if not model_deployments:
-        print('%s-- cannot find any model deployments --%s' % (Colors.WARNING, Colors.ENDC))
+        data.append({
+            'deployment': deployment,
+            'errors': errors,
+            'line_color': line_color
+        })
+
+    if args.format == INSPECT_FORMAT_COLORIZED:
+        if data:
+            print('%sModel deployments:%s' % (Colors.BOLD, Colors.ENDC))
+
+            for item in data:
+                arguments = (
+                    item['line_color'], Colors.ENDC,
+                    Colors.UNDERLINE, item['deployment'].model, Colors.ENDC,
+                    item['deployment'].image, item['deployment'].version,
+                    item['line_color'], item['deployment'].ready_replicas, item['deployment'].scale, item['errors'],
+                    Colors.ENDC
+                )
+                print('%s*%s %s%s%s %s (version: %s) - %s%s / %d pods ready %s%s' % arguments)
+
+        if not model_deployments:
+            print('%s-- cannot find any model deployments --%s' % (Colors.WARNING, Colors.ENDC))
+
+        if not data and model_deployments:
+            print('%s-- cannot find any model deployments after filtering --%s' % (Colors.WARNING, Colors.ENDC))
+    elif args.format == INSPECT_FORMAT_TABULAR:
+        headers = 'Model ID', 'Image', 'Version', 'Ready', 'Scale', 'Errors'
+        items = [[
+            item['deployment'].model,
+            item['deployment'].image,
+            item['deployment'].version,
+            str(item['deployment'].ready_replicas),
+            str(item['deployment'].scale),
+            item['errors'],
+        ] for item in data]
+
+        if data:
+            columns_width = [max(len(val[col_idx]) for val in items) for col_idx, column in enumerate(headers)]
+            columns_width = [max(columns_width[col_idx], len(column)) for col_idx, column in enumerate(headers)]
+
+            print('|'. join('{name:{width}} '.format(name=column, width=columns_width[col_idx])
+                            for col_idx, column in enumerate(headers)))
+            for item in items:
+                print('|'.join('{name:{width}} '.format(name=column, width=columns_width[col_idx])
+                               for col_idx, column in enumerate(item)))
 
 
 def undeploy_kubernetes(args):

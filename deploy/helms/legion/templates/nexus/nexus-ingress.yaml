@@ -31,6 +31,15 @@ spec:
             backend:
               serviceName: "{{ .Release.Name }}-nexus"
               servicePort: {{ .Values.nexus.port }}
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.nexus.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: "{{ .Release.Name }}-nexus"
+              servicePort: {{ .Values.nexus.port }}
+    {{- end }}
   {{- if .Values.nexus.ingress.tls.enabled }}
   tls:
   - hosts:

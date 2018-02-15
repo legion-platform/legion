@@ -1,0 +1,168 @@
+#!/usr/bin/env python
+#
+#   Copyright 2017 EPAM Systems
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+"""
+Tool for checking that helm chart fully deployed
+"""
+from __future__ import print_function
+import argparse
+import sys
+import re
+import subprocess
+import time
+
+
+def get_deployment_state(deployment):
+    """
+    Request deployment status from helm (using system call)
+
+    :param deployment: name of helm deployment
+    :type deployment: str
+    :raises: Exception
+    :return: str -- stdout
+    """
+    data = subprocess.check_output(['helm', 'status', deployment])
+    if isinstance(data, bytes):
+        data = data.decode('utf-8')
+
+    return data
+
+
+def get_tables_from_deployment_status(text):
+    """
+    Parse deployment status output and find tables (lines after each '==> ')
+
+    :param text: stdout of helm status
+    :type text: str
+    :raises: Exception
+    :return: dict[str, list[dict(str, str)]] -- dict of Table => List[{Column: Value}]
+    """
+    groups = {}
+    lines = text.splitlines()
+
+    start = None
+    title = None
+
+    for idx, line in enumerate(lines):
+
+        if line.startswith('==> '):
+            title = line[4:]
+            start = idx + 1
+
+        if len(line) == 0 and start:
+            table_lines = [[item.strip() for item in  re.split('\s{2,}', line)] for line in lines[start:idx]]
+            table = [{column: line[index] for index, column in enumerate(table_lines[0])} for line in table_lines[1:]]
+            groups[title] = table
+            start = None
+
+    return groups
+
+
+def check_pods_ready(pods_table):
+    """
+    Check that all pods are ready
+
+    :param pods_table: pods table
+    :type pods_table: list[dict(str, str)] -- List[{Column: Value}]
+    :raises: Exception
+    :return: None
+    """
+    for line in pods_table:
+        if line.get('STATUS').lower() != 'running':
+            raise Exception('{} not ready. Status = {}'.format(line.get('NAME', '?'), line.get('STATUS')))
+
+        ready, desired = line.get('READY').split('/')
+        if int(ready) < int(desired):
+            raise Exception('{} not ready. Ready = {} but Desired = {}'
+                            .format(line.get('NAME', '?'), ready, desired))
+
+
+def check_columns_equal(table, column_a, column_b):
+    """
+    Check that columns are equal
+
+    :param table:
+    :param column_a:
+    :param column_b:
+    :return:
+    """
+    for line in table:
+        if line[column_a] != line[column_b]:
+            raise Exception('{} not ready. {} = {} but {} = {}'
+                            .format(line.get('NAME', '?'), column_a, line[column_a], column_b, line[column_b]))
+
+
+def check(deployment):
+    """
+    Validate state of deployment
+
+    :param deployment: name of helm deployment
+    :type deployment: str
+    :raises: Exception
+    :return: None
+    """
+    state = get_deployment_state(deployment)
+    tables = get_tables_from_deployment_status(state)
+
+    if 'v1/Pod(related)' in tables:
+        check_pods_ready(tables['v1/Pod(related)'])
+
+    if 'v1/ReplicationController' in tables:
+        check_columns_equal(tables['v1/ReplicationController'], 'DESIRED', 'READY')
+
+    if 'v1beta1/Deployment' in tables:
+        check_columns_equal(tables['v1beta1/Deployment'], 'DESIRED', 'AVAILABLE')
+
+
+def work(deployment, timeout, sleep):
+    """
+    Check deployment state until time out (with sleep between checks)
+
+    :param deployment: deployment name
+    :type deployment: str
+    :param timeout: time limit in seconds
+    :type timeout: int
+    :param sleep: delay between checks in seconds
+    :type sleep: int
+    :return: None
+    """
+    start = time.time()
+    while True:
+        if time.time() - start > timeout > 0:
+            print('Time out', file=sys.stderr)
+            exit(1)
+
+        try:
+            check(deployment)
+            break
+        except Exception as check_exception:
+            print('Exception: {}'.format(check_exception), file=sys.stderr)
+            time.sleep(sleep)
+
+    print('All OK')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('HELM chart status checker')
+    parser.add_argument('deployment', type=str, help='name of deployment')
+    parser.add_argument('--timeout', type=int, default=600,
+                        help='Timeout in sec. to wait')
+    parser.add_argument('--sleep', type=int, default=10,
+                        help='Timeout in sec. between check operations')
+
+    args = parser.parse_args()
+
+    work(args.deployment, args.timeout, args.sleep)
