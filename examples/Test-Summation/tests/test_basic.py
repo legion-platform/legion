@@ -31,7 +31,7 @@ class BasicTest(unittest2.TestCase):
         b = random.randint(0, 100)
         response = self._client.invoke(a=a, b=b)
 
-        self.assertEqual(response['result'], a + b)
+        self.assertEqual(response['result'], a + b, 'Wrong answer for a={} and b={}'.format(a, b))
 
 
 if __name__ == '__main__':
