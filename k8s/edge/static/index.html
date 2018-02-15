@@ -3,69 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Legion home</title>
-    <style type="text/css">
-        html, body, div, span, a {
-            padding: 0;
-            margin: 0;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-        }
+    <link media="all" type="text/css" rel="stylesheet" href="/resources/main.css" />
+</head>
+<body>
+    <h1>Welcome to <span>Legion</span> command center</h1>
 
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+    <div class="center">
+        <div class="servers-links">
+            <a href="#" data-target-system="dashboard" style="background-image: url('/resources/kubernetes.png')" title="Kubernetes">Kubernetes</a>
+            <a href="#" data-target-system="consul" style="background-image: url('/resources/consul.png')" title="Consul">Consul</a>
+            <a href="#" data-target-system="jupyter" style="background-image: url('/resources/jupyter.png')" title="Jupyter">Jupyter</a>
+            <a href="#" data-target-system="jenkins" style="background-image: url('/resources/jenkins.png')" title="Jenkins">Jenkins</a>
+            <a href="#" data-target-system="grafana" style="background-image: url('/resources/grafana.png')" title="Grafana">Grafana</a>
+            <a href="#" data-target-system="nexus" style="background-image: url('/resources/nexus.png')" title="Nexus">Nexus</a>
+            <div class="clear">&nbsp;</div>
+        </div>
 
-        h1 {
-            margin-bottom: 30px;
-            font-size: 25px;
-            color: #000;
-            text-align: center;
-        }
+        <div class="bottom-links">
+            <a href="https://github.com/epam/legion">GitHub repository</a>
+            <a href="#documentation">Version: {VERSION}</a>
+            <a href="#documentation">Commit: {COMMIT}</a>
+            <a href="#documentation">Build info: {BUILD_INFO}</a>
+            <a href="/docs">Documentation</a>
+        </div>
+    </div>
 
-        .servers-links {
-            margin: 0 50px;
-            background: #fff;
-        }
+    <script type="text/javascript">
+        var currentHostName = window.location.hostname;
 
-        .servers-links a {
-            display: block;
-            float: left;
-            width: 50%;
+        function processLink(domElement){
+            var targetSystem = domElement.getAttribute('data-target-system');
 
-            text-align: center;
-
-            padding: 100px 0;
-
-            background-color: #fff;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: 50% 50%;
-
-            text-decoration: none;
-            font-size: 0;
-        }
-        .servers-links a:hover {
-            opacity: 0.8;
-        }
-
-        @media screen and (max-width: 980px) {
-             .servers-links a {
-                width: 100%;
+            if (targetSystem) {
+                domElement.href = window.location.protocol + '//' + currentHostName.replace('edge.', targetSystem + '.');
             }
         }
 
-    </style>
-</head>
-<body>
-<h1>Welcome to legion command center</h1>
-<div class="servers-links">
-    <a href="/jupyter/" style="background-image: url('/resources/jupyter.png')" title="Jupyter">Jupyter</a>
-    <a href="/jenkins/" style="background-image: url('/resources/jenkins.png')" title="Jenkins">Jenkins</a>
-    <a href="/grafana" style="background-image: url('/resources/grafana.png')" title="Grafana">Grafana</a>
-</div>
+        var links = document.getElementsByTagName('a');
+
+        for(var i = 0; i< links.length; i++){
+            processLink(links[i]);
+        }
+    </script>
 </body>
 </html>

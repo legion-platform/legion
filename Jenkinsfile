@@ -6,6 +6,8 @@ node {
     try {
         stage('Checkout GIT'){
             checkout scm
+            rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed "s/\\(.*\\)/\\1/"'
+            rootCommit = rootCommit.trim()
         }
         stage('Install build dependencies'){
             sh '''
@@ -141,6 +143,15 @@ node {
     	    """
 
             sh """
+            rm -rf k8s/edge/static/docs
+            cp -rf legion/docs/build/html/ k8s/edge/static/docs/
+
+            build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
+
+            sed -i "s/{VERSION}/${baseVersion} ${localVersion}/" k8s/edge/static/index.html
+            sed -i "s/{COMMIT}/${rootCommit}/" k8s/edge/static/index.html
+            sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
+
     	    cd k8s/edge
     	    docker build $dockerCacheArg -t legion/k8s-edge .
     	    """
