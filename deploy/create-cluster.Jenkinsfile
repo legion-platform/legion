@@ -135,8 +135,20 @@ node {
                 archiveArtifacts 'deploy/ansible/helm.debug'
                 archiveArtifacts 'deploy/ansible/helm.status'
 
-                // Loading result values from
-                load "deploy/ansible/output.groovy"
+                // load variables
+                def map = [:]
+                def envs = sh returnStdout: true, script: "cat deploy/ansible/output.ini"
+
+                envs.split("\n").each {
+                    kv = it.split('=', 2)
+                    print "Loaded ${kv[0]} = ${kv[1]}"
+                    map[kv[0]] = kv[1]
+                }
+
+                BASE_DOMAIN = map["BASE_DOMAIN"]
+
+                print "Loaded base domain ${BASE_DOMAIN}"
+                // \ load variables
             }
             else {
                 print("Skipping ansible")

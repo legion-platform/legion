@@ -3,5 +3,5 @@
   local_action:
     module: template
     src: output.groovy.j2
-    dest: ./output.groovy
+    dest: ./output.ini
     mode: 0644
