@@ -63,8 +63,9 @@ def get_tables_from_deployment_status(text):
             start = idx + 1
 
         if len(line) == 0 and start:
-            table_lines = [[item.strip() for item in  re.split('\s{2,}', line)] for line in lines[start:idx]]
-            table = [{column: line[index] for index, column in enumerate(table_lines[0])} for line in table_lines[1:]]
+            table_lines = [[item.strip() for item in re.split('\s{2,}', line)] for line in lines[start:idx]]
+            table = [{column: dict(enumerate(line)).get(index) for index, column in enumerate(table_lines[0])}
+                     for line in table_lines[1:]]
             groups[title] = table
             start = None
 

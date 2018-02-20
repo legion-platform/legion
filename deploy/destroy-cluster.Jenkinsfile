@@ -47,19 +47,28 @@ node {
                     }
                     if (exitCode == "2") {
                         stash name: "plan", includes: "plan.out"
-                        
-                        if (params.SLACK_NOTIFICATION_ENABLED){
-                            slackSend color: 'good', message: "Plan Awaiting Approval: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-                        }
-                        try {
-                            input message: 'Apply Plan?', ok: 'Apply'
-                            apply = true
-                        } catch (err) {
+
+                        if (!params.TF_AUTO_APPLY){
                             if (params.SLACK_NOTIFICATION_ENABLED){
-                                slackSend color: 'warning', message: "Plan Discarded: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
+                                slackSend color: 'good', message: "Plan Awaiting Approval: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
                             }
-                            apply = false
-                            currentBuild.result = 'UNSTABLE'
+                            try {
+                                input message: 'Apply Plan?', ok: 'Apply'
+                                apply = true
+                            } catch (err) {
+                                if (params.SLACK_NOTIFICATION_ENABLED){
+                                    slackSend color: 'warning', message: "Plan Discarded: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
+                                }
+                                apply = false
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                        }
+                        else {
+                            echo "Auto applying plan"
+                            if (params.SLACK_NOTIFICATION_ENABLED){
+                                slackSend color: 'good', message: "Plan has been auto applied: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
+                            }
+                            apply = true
                         }
                     }
                     
