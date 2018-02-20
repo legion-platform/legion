@@ -18,12 +18,6 @@ secrets:
     cookieSecret: "67d0fa8039db03ecc683602e1aa66259b5af9c01acdd9d0b8817ff543372f3a0"
     secretToken: "1679182b276937843dbc0fe8a5a48b66a8dbf94f2e5bb67b27c8067253effeb7"
 
-# ?
-bootstrapper:
-  # Configure Grafana
-  # Configure Nexus
-  enabled: false
-
 consul:
   service:
     labels:
@@ -47,7 +41,7 @@ edi:
     domain:
       partial: edi
     tls:
-      enabled: false
+      enabled: true
       autoSecretNameDeduction: true
 
 
@@ -67,7 +61,7 @@ edge:
     domain:
       partial: edge
     tls:
-      enabled: false
+      enabled: true
       autoSecretNameDeduction: true
 
 jenkins:
@@ -85,7 +79,7 @@ jenkins:
     domain:
       partial: jenkins
     tls:
-      enabled: false
+      enabled: true
       autoSecretNameDeduction: true
 
   git_secret_name: false
@@ -113,35 +107,11 @@ grafana:
     domain:
       partial: grafana
     tls:
-      enabled: false
+      enabled: true
       autoSecretNameDeduction: true
 
 graphite:
   enabled: true
-  
-
-# TODO: not implemented
-fluentd:
-  # Fluentd logging
-  enabled: false
-  endpoint:
-
-# TODO: not implemented
-elk:
-  elasticsearch:
-    enabled: false
-
-  logstash:
-    enabled: false
-
-  kibana:
-    enabled: false
-
-    ingress:
-      enabled: true
-      domain:
-        partial: ldap-gui
-      tls:
 
 ldap:
   # LDAP Configuration
@@ -184,11 +154,6 @@ ldap:
       domain:
         partial: ldap
       tls:
-
-  # TODO: not implemented
-  client:
-    # LDAP Connections
-    searchBase: ""
 
 jupyterhub:
   # Jupyter hub configuration
@@ -276,4 +241,3 @@ nexus:
 connections:
   docker:
     type: proxy
-
