@@ -1,4 +1,8 @@
 ---
+- name: get the username
+  local_action: command whoami
+  register: whoami_output
+
 - name: update apt cache
   become: yes
   apt:
@@ -21,7 +25,7 @@
   file:
     path: "{{ ler53_cert_dir }}"
     state: directory
-    owner: ubuntu
+    owner: "{{ whoami_output.stdout }}"
     mode: 0755
   connection: local
 
@@ -29,7 +33,7 @@
   become: yes
   file:
     path: "{{ ler53_account_key_dir }}"
-    owner: ubuntu
+    owner: "{{ whoami_output.stdout }}"
     mode: 0700
     state: directory
   connection: local
@@ -44,8 +48,8 @@
   become: yes
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   connection: local
 
@@ -63,8 +67,8 @@
   become: yes
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   connection: local
 
@@ -78,7 +82,7 @@
   become: yes
   file:
     path: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
-    owner: ubuntu
+    owner: "{{ whoami_output.stdout }}"
     mode: 0600
   connection: local
 
@@ -141,8 +145,8 @@
 - name: set the cert file permissions
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   connection: local
 
@@ -150,8 +154,8 @@
   get_url:
     url: https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem
     dest: "{{ ler53_cert_dir }}/{{ ler53_intermediate_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   register: ler53_intermediate_download_task
   when: ler53_intermediate_download
@@ -175,8 +179,8 @@
   copy:
     content: "{{ ler53_certificate_content['stdout'] + '\n' + ler53_intermediate_content['stdout'] + '\n' }}"
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_and_intermediate_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   when: ler53_intermediate_download
   connection: local
