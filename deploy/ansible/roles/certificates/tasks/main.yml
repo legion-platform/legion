@@ -3,6 +3,7 @@
   become: yes
   apt:
     update_cache: yes
+  connection: local
 
 - name: install the required dependencies
   become: yes
@@ -13,6 +14,7 @@
   - openssl
   - python-boto
   - python-openssl
+  connection: local
 
 - name: "create the {{ ler53_cert_dir }} directory"
   become: yes
@@ -21,6 +23,7 @@
     state: directory
     owner: ubuntu
     mode: 0755
+  connection: local
 
 - name: "create the {{ ler53_account_key_dir }} directory"
   become: yes
@@ -29,11 +32,13 @@
     owner: ubuntu
     mode: 0700
     state: directory
+  connection: local
 
 - name: generate the private key
   openssl_privatekey:
     path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
     size: "{{ ler53_key_size }}"
+  connection: local
 
 - name: set the private key file permissions
   become: yes
@@ -42,6 +47,7 @@
     owner: "{{ ler53_cert_files_owner }}"
     group: "{{ ler53_cert_files_group }}"
     mode: "{{ ler53_cert_files_mode }}"
+  connection: local
 
 - name: generate the CSR
   openssl_csr:
@@ -51,6 +57,7 @@
     key_usage: "{{ ler53_cert_key_usages }}"
     subject_alt_name: "DNS:{{ ler53_cert_common_name }}{{ ',DNS:' + ',DNS:'.join(ler53_cert_sans) if ler53_cert_sans else '' }}"
   register: generate_csr
+  connection: local
 
 - name: set the CSR file permissions
   become: yes
@@ -59,11 +66,13 @@
     owner: "{{ ler53_cert_files_owner }}"
     group: "{{ ler53_cert_files_group }}"
     mode: "{{ ler53_cert_files_mode }}"
+  connection: local
 
 - name: generate the Let's Encrypt account key
   openssl_privatekey:
     path: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     size: "{{ ler53_account_key_size }}"
+  connection: local
 
 - name: set the Let's Encrypt account key file permissions
   become: yes
@@ -71,6 +80,7 @@
     path: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     owner: ubuntu
     mode: 0600
+  connection: local
 
 - name: delete existing certificate
   become: yes
@@ -78,6 +88,7 @@
     path: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     state: absent
   when: generate_csr.changed and ler53_new_cert_when_csr_changes
+  connection: local
 
 - name: initiate the Let's Encrypt challenge
   letsencrypt:
@@ -90,6 +101,7 @@
     remaining_days: "{{ ler53_cert_remaining_days_before_renewal }}"
     agreement: "{{ ler53_agreement | default(omit) }}"
   register: lets_encrypt_challenge
+  connection: local
 
 - name: create the DNS records for the challenge
   route53:
@@ -113,6 +125,7 @@
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     account_email: "{{ ler53_account_email }}"
     data: "{{ lets_encrypt_challenge }}"
+  connection: local
 
 - name: delete the DNS records for the challenge
   route53:
@@ -131,6 +144,7 @@
     owner: "{{ ler53_cert_files_owner }}"
     group: "{{ ler53_cert_files_group }}"
     mode: "{{ ler53_cert_files_mode }}"
+  connection: local
 
 - name: download the Let's Encrypt intermediate CA
   get_url:
@@ -141,18 +155,21 @@
     mode: "{{ ler53_cert_files_mode }}"
   register: ler53_intermediate_download_task
   when: ler53_intermediate_download
+  connection: local
 
 - name: get content of the certificate
   command: "cat {{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
   register: ler53_certificate_content
   changed_when: false
   when: ler53_intermediate_download
+  connection: local
 
 - name: get content of the intermediate CA
   command: "cat {{ ler53_cert_dir }}/{{ ler53_intermediate_file_name }}"
   register: ler53_intermediate_content
   changed_when: false
   when: ler53_intermediate_download
+  connection: local
 
 - name: create a file with the certificate and intermediate CA concatenated
   copy:
@@ -162,3 +179,8 @@
     group: "{{ ler53_cert_files_group }}"
     mode: "{{ ler53_cert_files_mode }}"
   when: ler53_intermediate_download
+  connection: local
+
+- name: copy certificate to target machine
+  debug:
+    msg: "Copying of certificate not implemented"
