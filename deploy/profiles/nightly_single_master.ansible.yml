@@ -1,9 +1,9 @@
 route53_zone: epm.kharlamov.biz
-base_domain: nightly.epm.kharlamov.biz
+base_domain: n.epm.kharlamov.biz
 certificate_email: Kirill_Makhonin@epam.com
 git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/ssl"
-use_https: "no"
+use_https: "yes"
 use_https_for_tests: "no"
 subdomains:
   - dashboard
@@ -17,7 +17,7 @@ subdomains:
   - edi
 namespace: default
 deployment: legion
-test_base_domain: local.nightly.epm.kharlamov.biz
+test_base_domain: local.n.epm.kharlamov.biz
 service_account:
   login:  admin
   password: admin
