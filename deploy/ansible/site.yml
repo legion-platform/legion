@@ -55,21 +55,21 @@
       with_items: "{{ subdomains }}"
       loop_control:
         loop_var: domain
-      when: install_only_chart == "no"
+      when: install_only_chart == "no" and use_https == "yes"
 
     - name: Remove old TLS secrets
       shell: "kubectl delete secret {{ subdomain }}.{{ base_domain }}-tls --ignore-not-found=true"
       with_items: "{{ subdomains }}"
       loop_control:
         loop_var: subdomain
-      when: install_only_chart == "no"
+      when: install_only_chart == "no" and use_https == "yes"
 
     - name: Add TLS secrets
       shell: "kubectl create secret tls {{ subdomain }}.{{ base_domain }}-tls --key {{ cert_dir }}/{{ subdomain }}.{{ base_domain }}/{{ subdomain }}.{{ base_domain }}.key --cert {{ cert_dir }}/{{ subdomain }}.{{ base_domain }}/{{ subdomain }}.{{ base_domain }}.crt"
       with_items: "{{ subdomains }}"
       loop_control:
         loop_var: subdomain
-      when: install_only_chart == "no"
+      when: install_only_chart == "no" and use_https == "yes"
 
     - name: Create DNS records
       include_role:
@@ -102,3 +102,5 @@
       include_role:
         name: debug
 
+    - debug:
+        msg: "Installation finished with HTTPS={{ use_https }} BASE_DOMAIN={{ base_domain}} ONLY_CHART={{ install_only_chart }}"

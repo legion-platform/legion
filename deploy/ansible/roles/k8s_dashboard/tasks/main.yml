@@ -12,9 +12,11 @@
 
 - name: Remove old TLS secret
   shell: "kubectl delete secret {{ domain }}-tls --namespace=kube-system --ignore-not-found=true"
+  when: use_https == "yes"
     
 - name: Add TLS secret
   shell: "kubectl create secret tls {{ domain }}-tls --namespace kube-system --key {{ cert_dir }}/{{ domain }}/{{ domain }}.key --cert {{ cert_dir }}/{{ domain }}/{{ domain }}.crt"
+  when: use_https == "yes"
 
 - name: Create Dashboard configuration (values) file
   template:

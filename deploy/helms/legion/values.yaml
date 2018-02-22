@@ -154,6 +154,8 @@ ldap:
       domain:
         partial: ldap
       tls:
+        enabled: true
+        autoSecretNameDeduction: true
 
 jupyterhub:
   # Jupyter hub configuration

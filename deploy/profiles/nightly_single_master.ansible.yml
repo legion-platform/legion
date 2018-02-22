@@ -3,6 +3,8 @@ base_domain: nightly.epm.kharlamov.biz
 certificate_email: Kirill_Makhonin@epam.com
 git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/ssl"
+use_https: "no"
+use_https_for_tests: "no"
 subdomains:
   - dashboard
   - nexus
@@ -16,8 +18,6 @@ subdomains:
 namespace: default
 deployment: legion
 test_base_domain: local.nightly.epm.kharlamov.biz
-dashboard_protocol: http
-test_protocol: http
 service_account:
   login:  admin
   password: admin

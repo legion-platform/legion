@@ -19,7 +19,7 @@ Run EDI inspect
     [Return]        ${edi_state}
 
 Connect to kubernetes
-    Gather kubernetes dashboard info                        ${DASHBOARD_PROTOCOL}://dashboard.${HOST_BASE_DOMAIN}          ${CLUSTER_NAMESPACE}
+    Gather kubernetes dashboard info                        ${HOST_PROTOCOL}://dashboard.${HOST_BASE_DOMAIN}          ${CLUSTER_NAMESPACE}
 
 Test model pipeline
     [Arguments]              ${model_name}
