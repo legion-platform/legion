@@ -1,4 +1,28 @@
 {{- if .Values.jenkins.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-jenkins-dynamic-scripts"
+data:
+  configure-cloud.groovy: |-
+    import org.csanchez.jenkins.plugins.kubernetes.*
+    import jenkins.model.*
+
+    cloud = new KubernetesCloud(
+        'kubernetes', // name
+        null, // templates
+        null, // server url
+        '{{ .Release.Namespace }}', // namespace
+        'http://{{ .Release.Name }}-jenkins/', // jenkins-url
+        '40', // container capacity
+        0, // connect timeout
+        0, // read timeout
+        5 // retention timeout
+    )
+
+    Jenkins.getInstance().clouds.replace(cloud)
+    Jenkins.getInstance().save()
+---
 apiVersion: v1
 kind: ReplicationController
 metadata:
@@ -81,35 +105,23 @@ spec:
           name: jenkins
           protocol: TCP
         volumeMounts:
-        - mountPath: /var/jenkins_home/workspace
-          name: jenkins-workdir
-        - mountPath: /var/run/docker.sock
-          name: docker-socket
+        - mountPath: /usr/share/jenkins/ref/init.groovy.d/configure-cloud.groovy
+          subPath: configure-cloud.groovy
+          name: dynamic-scripts
         {{- if .Values.jenkins.git_secret_name }}
         - mountPath: /var/jenkins_home/.ssh
           name: git-secret
           readOnly: true
         {{- end }}
-      initContainers:
-      - name: prepare-workdir
-        image: busybox
-        command: ['sh', '-c', 'chmod a+rwx -R /var/jenkins_home/workspace']
-        volumeMounts:
-        - mountPath: /var/jenkins_home/workspace
-          name: jenkins-workdir
       volumes:
-      - name: jenkins-workdir
-        hostPath:
-          path: /var/jenkins_home/workspace
-      - name: docker-socket
-        hostPath:
-          path: /var/run/docker.sock
+      - name: dynamic-scripts
+        configMap:
+          name: "{{ .Release.Name }}-jenkins-dynamic-scripts"
       {{- if .Values.jenkins.git_secret_name }}
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
       {{- end }}
-
 ---
 apiVersion: v1
 kind: Service
