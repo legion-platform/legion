@@ -77,6 +77,9 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+        - containerPort: 50000
+          name: jenkins
+          protocol: TCP
         volumeMounts:
         - mountPath: /var/jenkins_home/workspace
           name: jenkins-workdir
@@ -121,6 +124,10 @@ spec:
   - name: http
     port: 80
     targetPort: 8080
+    protocol: TCP
+  - name: jenkins
+    port: 50000
+    targetPort: 50000
     protocol: TCP
 ---
 {{- if .Values.jenkins.ingress.enabled -}}
