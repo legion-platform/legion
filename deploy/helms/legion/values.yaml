@@ -84,6 +84,14 @@ jenkins:
 
   git_secret_name: false
 
+  airflow:
+    enabled: false
+    rest_url: ''
+    s3_url: ''
+    expected_output: ''
+
+    dags_volume_pvc: ''
+
 graphite:
   enabled: true
   image:

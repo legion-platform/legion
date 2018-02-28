@@ -1,86 +1,96 @@
-# VERSION 1.8.0.0
-# AUTHOR: Yusuke KUOKA
-# DESCRIPTION: Docker image to run Airflow on Kubernetes which is capable of creating Kubernetes jobs
-# BUILD: docker build --rm -t mumoshu/kube-airflow
-# SOURCE: https://github.com/mumoshu/kube-airflow
+#   Copyright 2018 Bruno Faria
+#   Repository: https://github.com/brunocfnba/docker-airflow
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
 
-FROM debian:jessie
-MAINTAINER Yusuke KUOKA <ykuoka@gmail.com>
+#Airflow Image
+FROM ubuntu:16.04
 
-# Never prompts the user for choices on installation/configuration of packages
-ENV DEBIAN_FRONTEND noninteractive
-ENV TERM linux
+ENV AIRFLOW_HOME /home/airflow
 
-# Airflow
-ARG AIRFLOW_VERSION=1.6.1
-ENV AIRFLOW_HOME /usr/local/airflow
+RUN apt-get update && apt-get install -y \
+ wget \
+ default-jdk \
+ python3.5 \
+ python3.5-dev \
+ vim \
+ cron \
+ libkrb5-dev \
+ libsasl2-dev \
+ libssl-dev \
+ libffi-dev \
+ build-essential \
+ libblas-dev \
+ liblapack-dev \
+ python3-pip \
+ apt-utils \
+ curl \
+ netcat \
+ iputils-ping \
+ openssh-client \
+ python-requests \
+ libpq-dev \
+ libmysqlclient-dev \
+ sshpass \
+ sudo \
+ redis-tools
 
-# Define en_US.
-ENV LANGUAGE en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LC_CTYPE en_US.UTF-8
-ENV LC_MESSAGES en_US.UTF-8
-ENV LC_ALL  en_US.UTF-8
+RUN service cron stop \
+ && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow
 
-RUN set -ex \
-    && buildDeps=' \
-        python-pip \
-        python-dev \
-        libkrb5-dev \
-        libsasl2-dev \
-        libxml2-dev \
-        libssl-dev \
-        libffi-dev \
-        build-essential \
-        libblas-dev \
-        liblapack-dev \
-        libxslt1-dev \
-        zlib1g-dev \
-    ' \
-    && echo "deb http://http.debian.net/debian jessie-backports main" >/etc/apt/sources.list.d/backports.list \
-    && apt-get update -yqq \
-    && apt-get install -yqq --no-install-recommends \
-        $buildDeps \
-        apt-utils \
-        curl \
-        netcat \
-        locales \
-    && apt-get install -yqq -t jessie-backports python-requests libpq-dev \
-    && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
-    && locale-gen \
-    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
-    && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
-    && pip uninstall setuptools \
-    && pip install setuptools==33.1.1 \
-    && pip install pytz==2015.7 \
-    && pip install cryptography \
-    && pip install pyOpenSSL \
-    && pip install ndg-httpsclient \
-    && pip install pyasn1 \
-    && pip install psycopg2 \
-    && pip install airflow[celery,postgresql,hive]==${AIRFLOW_VERSION} \
-    && apt-get remove --purge -yqq $buildDeps libpq-dev \
-    && apt-get clean \
-    && rm -rf \
-        /var/lib/apt/lists/* \
-        /tmp/* \
-        /var/tmp/* \
-        /usr/share/man \
-        /usr/share/doc \
-        /usr/share/doc-base
+RUN pip3 install --upgrade pip \
+ && pip3 install Cython \
+ && pip3 install cryptography \
+ && pip3 install apache-airflow[postgres,jdbc,password,mysql,celery,redis,s3]==1.9.0 \
+ && pip3 install pyOpenSSL \
+ && pip3 install ndg-httpsclient \
+ && pip3 install pyasn1 \
+ && pip3 install psycopg2-binary \
+ && pip3 install redis \
+ && pip3 install hiredis
 
-ARG KUBECTL_VERSION=1.6.1
+RUN apt-get install -y git && \
+    cd  /home/airflow && \
+    mkdir temp && cd temp && \
+    git clone https://github.com/teamclairvoyant/airflow-rest-api-plugin.git && \
+    mkdir -p /home/airflow/plugins && \
+    touch /home/airflow/plugins/__init__.py && \
+    mv /home/airflow/temp/airflow-rest-api-plugin/plugins /home/airflow/plugins/rest_api && \
+    rm -rf /home/airflow/temp
 
-RUN curl -L -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
 
-COPY entrypoint.sh ${AIRFLOW_HOME}/entrypoint.sh
+RUN rm -rf \
+    /var/lib/apt/lists/* \
+    /tmp/* \
+    /var/tmp/* \
+    /usr/share/man \
+    /usr/share/doc \
+    /usr/share/doc-base
 
-RUN chown -R airflow: ${AIRFLOW_HOME} \
-    && chmod +x ${AIRFLOW_HOME}/entrypoint.sh
+COPY entrypoint.sh /home/airflow/init.sh
 
-EXPOSE 8080 5555 8793
+COPY requirements.txt /home/airflow/requirements.txt
+RUN pip install -r /home/airflow/requirements.txt
+
+RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME}
+
+RUN chmod a+x /home/airflow/init.sh
+
+COPY create_secrets.py /home/airflow/create_secrets.py
+
+EXPOSE 8080
 
 USER airflow
 WORKDIR ${AIRFLOW_HOME}
-ENTRYPOINT ["./entrypoint.sh"]
+
+ENTRYPOINT ["sh", "/home/airflow/init.sh"]

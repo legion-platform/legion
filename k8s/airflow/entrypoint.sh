@@ -1,34 +1,40 @@
 #!/usr/bin/env bash
 
 CMD="airflow"
-TRY_LOOP="10"
-POSTGRES_HOST="postgres"
-POSTGRES_PORT="5432"
-RABBITMQ_HOST="rabbitmq"
-RABBITMQ_CREDS="airflow:airflow"
-FERNET_KEY=$(python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print FERNET_KEY")
+TRY_LOOP=${TRY_LOOP:-"10"}
 
-# Generate Fernet key
-sed -i "s/{FERNET_KEY}/${FERNET_KEY}/" $AIRFLOW_HOME/airflow.cfg
+POSTGRES_HOST=${POSTGRES_HOST:-"postgres"}
+POSTGRES_PORT=${POSTGRES_PORT:-"5432"}
 
-# wait for rabbitmq
-if [ "$1" = "webserver" ] || [ "$1" = "worker" ] || [ "$1" = "scheduler" ] || [ "$1" = "flower" ] ; then
+REDIS_HOST=${REDIS_HOST:-"redis"}
+REDIS_CLI=${REDIS_CLI:-"/usr/bin/redis-cli"}
+
+BOOTUP_CHECK_TIMEOUT=${BOOTUP_CHECK_TIMEOUT:-"10"}
+BOOTUP_DIRECTORY=${BOOTUP_DIRECTORY:-"/opt/bootup"}
+
+# wait for redis
+if [ "$2" = "webserver" ] || [ "$2" = "worker" ] || [ "$2" = "scheduler" ] || [ "$2" = "flower" ] ; then
+  echo "CHECKING REDIS"
+  X="`timeout $BOOTUP_CHECK_TIMEOUT $REDIS_CLI -h $REDIS_HOST ping`"
   j=0
-  while ! curl -sI -u $RABBITMQ_CREDS http://$RABBITMQ_HOST:15672/api/whoami |grep '200 OK'; do
+  while [ "${X}" != "PONG" ]; do
     j=`expr $j + 1`
     if [ $j -ge $TRY_LOOP ]; then
-      echo "$(date) - $RABBITMQ_HOST still not reachable, giving up"
+      echo "$(date) - $REDIS_HOST still not reachable, giving up"
       exit 1
     fi
-    echo "$(date) - waiting for RabbitMQ... $j/$TRY_LOOP"
+    echo "$(date) - waiting for Redis... $j/$TRY_LOOP"
     sleep 5
+    X="`timeout $BOOTUP_CHECK_TIMEOUT $REDIS_CLI -h $REDIS_HOST ping`"
   done
+  echo "REDIS READY"
 fi
 
 # wait for DB
-if [ "$1" = "webserver" ] || [ "$1" = "worker" ] || [ "$1" = "scheduler" ] ; then
+if [ "$2" = "webserver" ] || [ "$2" = "worker" ] || [ "$2" = "scheduler" ]; then
+  echo "CHECKING PG"
   i=0
-  while ! nc $POSTGRES_HOST $POSTGRES_PORT >/dev/null 2>&1 < /dev/null; do
+  while ! nc -v -w $BOOTUP_CHECK_TIMEOUT  $POSTGRES_HOST $POSTGRES_PORT >/dev/null 2>&1 < /dev/null; do
     i=`expr $i + 1`
     if [ $i -ge $TRY_LOOP ]; then
       echo "$(date) - ${POSTGRES_HOST}:${POSTGRES_PORT} still not reachable, giving up"
@@ -37,11 +43,15 @@ if [ "$1" = "webserver" ] || [ "$1" = "worker" ] || [ "$1" = "scheduler" ] ; the
     echo "$(date) - waiting for ${POSTGRES_HOST}:${POSTGRES_PORT}... $i/$TRY_LOOP"
     sleep 5
   done
-  if [ "$1" = "webserver" ]; then
+  echo "PG READY"
+
+  if [ "$2" = "webserver" ] ; then
     echo "Initialize database..."
     $CMD initdb
+
+    python3 create_secrets.py
   fi
   sleep 5
 fi
 
-exec $CMD "$@"
+exec "$@"

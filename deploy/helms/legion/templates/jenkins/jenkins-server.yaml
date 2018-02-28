@@ -97,6 +97,16 @@ spec:
           value: "{{ .Release.Name }}-consul.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: CONSUL_PORT
           value: "8500"
+        {{- if .Values.jenkins.airflow.enabled }}
+        - name: AIRFLOW_DAGS_DIRECTORY
+          value: /airflow-dags
+        - name: AIRFLOW_REST_API
+          value: "{{ .Values.jenkins.airflow.rest_url }}"
+        - name: AIRFLOW_EXPECTED_OUTPUT
+          value: "{{ .Values.jenkins.airflow.expected_output }}"
+        - name: AIRFLOW_S3_URL
+          value: "{{ .Values.jenkins.airflow.s3_url }}"
+        {{- end }}
         ports:
         - containerPort: 8080
           name: http
@@ -113,6 +123,10 @@ spec:
           name: git-secret
           readOnly: true
         {{- end }}
+        {{- if .Values.jenkins.airflow.enabled }}
+        - mountPath: /airflow-dags
+          name: airflow-dags
+        {{- end }}
       volumes:
       - name: dynamic-scripts
         configMap:
@@ -121,6 +135,11 @@ spec:
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
+      {{- end }}
+      {{- if .Values.jenkins.airflow.enabled }}
+      - name: airflow-dags
+        persistentVolumeClaim:
+          claimName: "{{ .Values.jenkins.airflow.dags_volume_pvc }}"
       {{- end }}
 ---
 apiVersion: v1

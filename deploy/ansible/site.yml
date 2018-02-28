@@ -30,6 +30,11 @@
   tasks:
     - name: Load vars from {{ profile }} profile
       include_vars: "../profiles/{{ profile }}.ansible.yml"
+
+    - name: Load secrets variable
+      include_vars:
+        file: "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
+        name: secrets
   
     - name: Install K8S
       include_role:
@@ -54,6 +59,11 @@
         ler53_agreement: "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
       when: install_only_chart == "no" and use_https == "yes"
 
+
+    - name: Shared K8S resources
+      include_role:
+        name: shared_k8s_resources
+
     - name: Create DNS records
       include_role:
         name: dns_records
@@ -72,6 +82,10 @@
     - name: Install legion chart
       include_role:
         name: legion_chart
+
+    - name: Install airflow chart
+      include_role:
+        name: airflow_chart
 
     - name: Debug output data
       include_role:

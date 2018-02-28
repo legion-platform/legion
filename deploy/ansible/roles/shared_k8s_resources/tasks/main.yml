@@ -1,0 +1,12 @@
+---
+- name: Create PVC configuration
+  template:
+    src: pvc.yml.j2
+    dest: ~/shared-pvc.yaml
+    mode: 0644
+
+- name: Remove old PVC
+  shell: 'kubectl delete --ignore-not-found=true -f ~/shared-pvc.yaml'
+
+- name: Apply new PVC
+  shell: 'kubectl apply -f ~/shared-pvc.yaml'

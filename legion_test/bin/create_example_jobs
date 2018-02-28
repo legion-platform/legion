@@ -42,10 +42,11 @@ Options = NamedTuple('Options', [
     ('perf_test_prefix', str),
     ('connection_timeout', str),
     ('socket_reconnect_sleep', int),
+    ('plain_tasks', bool),
 ])
 
 
-def find_jobs_jenkins_files(base_directory, git_directory, jenkins_file_name):
+def find_jobs_jenkins_files(base_directory, git_directory, jenkins_file_name, plain_jobs=False):
     """
     Find Jenkins files in subdirectories of target directory
 
@@ -55,6 +56,8 @@ def find_jobs_jenkins_files(base_directory, git_directory, jenkins_file_name):
     :type base_directory: str
     :param jenkins_file_name: name of Jenkins file
     :type jenkins_file_name: str
+    :param plain_jobs: create plain jobs (from Jenkinsfile and script templates)
+    :type plain_jobs: bool
     :return: dict[str, str] -- map of job name => job's Jenkinsfile
     """
     root = os.path.abspath(base_directory)
@@ -71,12 +74,21 @@ def find_jobs_jenkins_files(base_directory, git_directory, jenkins_file_name):
             print('Ignoring due to incorrect path prefix')
             continue
 
+        job_template = None
+        stored_directory = os.path.dirname(file)
+
+        if plain_jobs:
+            job_template = os.path.join(stored_directory, 'job.xml')
+            if not os.path.exists(job_template):
+                print('Ignoring due to impossible to found job.xml in %s directory' % stored_directory)
+                continue
+
         relative_path = file[len(git_root) + 1:]
         paths = relative_path.split(os.sep)
 
         if len(paths) > 1:
             name = paths[-2]
-            jenkins_files_map[name] = relative_path
+            jenkins_files_map[name] = (relative_path, job_template)
             print('Registered %s as %s' % (relative_path, name))
         else:
             print('Ignoring due to impossible to found name from path')
@@ -84,37 +96,47 @@ def find_jobs_jenkins_files(base_directory, git_directory, jenkins_file_name):
     return jenkins_files_map
 
 
-def work(options):
+def create_plain_jobs(client, options):
     """
-    Connect to Jenkins, check that all jobs for models is existed
+    Create plain jobs
 
-    :param options: options
-    :type options: :py:class:`Options`
+    :param client: Jenkins client
+    :param options: CLI options
     :return: None
     """
-    client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
-
-    start = time.time()
-    while True:
-        elapsed = time.time() - start
-        if elapsed > options.connection_timeout:
-            break
-
-        try:
-            client.get_all_jobs()
-            break
-        except Exception:
-            print('Reconnecting...')
-            time.sleep(options.socket_reconnect_sleep)
-
     founded_external_jobs = {job['name']: job for job in client.get_all_jobs()}
+    # Build jobs
+    founded_local_jobs = find_jobs_jenkins_files(options.base_directory,
+                                                 options.git_directory,
+                                                 'Jenkinsfile', True)
 
+    for job_name, (jenkins_file, job_xml) in founded_local_jobs.items():
+        if job_name not in founded_external_jobs:
+            data = {
+                'GIT_URL': options.git_url,
+                'GIT_BRANCH': options.git_branch,
+                'GIT_ROOT_KEY': options.git_root_key,
+                'JENKINS_FILE': jenkins_file
+            }
+            xml_data = render_template(job_xml, data, use_filesystem_loader=True)
+            client.create_job(job_name, xml_data)
+
+
+def create_dynamic_models_jobs(client, options):
+    """
+    Create jobs for building models
+
+    :param client: Jenkins client
+    :param options: CLI options
+    :return: None
+    """
+    founded_external_jobs = {job['name']: job for job in client.get_all_jobs()}
     # Build jobs
     founded_local_models = find_jobs_jenkins_files(options.base_directory,
                                                    options.git_directory,
                                                    'Jenkinsfile')
 
-    for model_name, jenkins_file in founded_local_models.items():
+    for model_name, (jenkins_file, _) in founded_local_models.items():
         job_name = '%s %s' % (options.dynamic_model_prefix, model_name)
         if job_name not in founded_external_jobs:
             data = {
@@ -134,7 +156,7 @@ def work(options):
                                                        options.git_directory,
                                                        'performance.Jenkinsfile')
 
-    for model_name, jenkins_file in founded_local_perf_tests.items():
+    for model_name, (jenkins_file, _) in founded_local_perf_tests.items():
         job_name = '%s %s' % (options.perf_test_prefix, model_name)
         if job_name not in founded_external_jobs:
             data = {
@@ -149,6 +171,40 @@ def work(options):
             }
             xml_data = render_template('jenkins_performance_job.tmpl', data)
             client.create_job(job_name, xml_data)
+
+
+def work(options):
+    """
+    Connect to Jenkins, check that all jobs for models is existed
+
+    :param options: options
+    :type options: :py:class:`Options`
+    :return: None
+    """
+
+    if os.getenv('PYTHONHTTPSVERIFY', None) == '0':
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
+
+    client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
+
+    start = time.time()
+    while True:
+        elapsed = time.time() - start
+        if elapsed > options.connection_timeout:
+            break
+
+        try:
+            client.get_all_jobs()
+            break
+        except Exception as connection_exception:
+            print('Reconnecting... %s' % connection_exception)
+            time.sleep(options.socket_reconnect_sleep)
+
+    if options.plain_tasks:
+        create_plain_jobs(client, options)
+    else:
+        create_dynamic_models_jobs(client, options)
 
 
 if __name__ == '__main__':
@@ -166,6 +222,8 @@ if __name__ == '__main__':
     parser.add_argument('--perf-test-prefix', type=str, help='Performance test prefix', default='PERF TEST')
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
+    parser.add_argument('--plain-tasks', action='store_true', help='Create plain jenkins tasks '
+                                                                   '(not for dynamic model using founded template)')
     args = parser.parse_args()
     arguments = Options(
         jenkins_url=args.jenkins_url,
@@ -181,5 +239,6 @@ if __name__ == '__main__':
         perf_test_prefix=args.perf_test_prefix,
         connection_timeout=args.connection_timeout,
         socket_reconnect_sleep=args.socket_reconnect_sleep,
+        plain_tasks=args.plain_tasks,
     )
     work(arguments)

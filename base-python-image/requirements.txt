@@ -23,7 +23,7 @@ uwsgi
 gunicorn
 aiohttp
 cchardet
-aiohttp_wsgi
+aiohttp_wsgi==0.7.1
 PyYAML
 kubernetes
 surprise
