@@ -16,6 +16,30 @@
  *   limitations under the License.
  */
 
+def dockerArgs() {
+    def envToPass = [
+            "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
+            "LEGION_BASE_IMAGE_REPOSITORY",
+            "MODEL_SERVER_URL",
+            "EDI_URL", "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
+            "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
+            "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
+            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
+    ]
+
+    def envParameters = envToPass.collect({ name -> "-e \"${name}=${System.getenv(name)}\"" }).join(" ")
+    data = new File('/etc/resolv.conf').text
+
+    nameserver = (data =~ /nameserver ([0-9\.]+)/)[0][1]
+    search = (data =~ /search ([^$\n]+)/)[0][1].split(" ")
+
+    searchArguments = search.collect({ name -> "--dns-search=$name" }).join(" ")
+
+    dnsArguments = "--dns=$nameserver $searchArguments "
+
+    return "-m 16g -v legion:/legion -v /var/run/docker.sock:/var/run/docker.sock $dnsArguments -u 0:0 $envParameters"
+}
+
 def modelId() {
     def modelId = legionProperties()['modelId']
 
@@ -55,7 +79,7 @@ def getDefaultImageName(){
     return System.getenv("LEGION_BASE_IMAGE_REPOSITORY") + ":" + System.getenv("LEGION_BASE_IMAGE_TAG")
 }
 
-def pod(myImageName, Closure body) {
+def pod(myImageName = null, memory = '4Gi', Closure body) {
     if (myImageName == null)
         myImageName = getDefaultImageName()
 
@@ -73,8 +97,6 @@ def pod(myImageName, Closure body) {
 
     envVars = envToPass.collect({ name -> envVar(key: name, value: System.getenv(name)) })
 
-    //pod.withHostPath('/legion', 'legion')
-
     label = "jenkins-build-${UUID.randomUUID().toString()}"
     podTemplate(
             label: label,
@@ -82,8 +104,7 @@ def pod(myImageName, Closure body) {
                 containerTemplate(
                         name: 'model',
                         image: myImageName,
-                        resourceLimitMemory: '16Gi',
-                        resourceRequestMemory: '200Mi',
+                        resourceLimitMemory: memory,
                         ttyEnabled: true,
                         command: 'cat',
                         envVars: envVars),
