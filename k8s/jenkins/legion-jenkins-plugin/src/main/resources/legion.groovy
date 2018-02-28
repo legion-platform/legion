@@ -16,30 +16,6 @@
  *   limitations under the License.
  */
 
-def dockerArgs() {
-    def envToPass = [
-        "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
-        "LEGION_BASE_IMAGE_REPOSITORY",
-        "MODEL_SERVER_URL",
-        "EDI_URL", "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
-        "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
-        "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
-        "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
-    ]
-
-    def envParameters = envToPass.collect({ name -> "-e \"${name}=${System.getenv(name)}\"" }).join(" ")
-    data = new File('/etc/resolv.conf').text
-
-    nameserver = (data =~ /nameserver ([0-9\.]+)/)[0][1]
-    search = (data =~ /search ([^$\n]+)/)[0][1].split(" ")
-
-    searchArguments = search.collect({ name -> "--dns-search=$name" }).join(" ")
-
-    dnsArguments = "--dns=$nameserver $searchArguments "
-
-    return "-m 16g -v legion:/legion -v /var/run/docker.sock:/var/run/docker.sock $dnsArguments -u 0:0 $envParameters"
-}
-
 def modelId() {
     def modelId = legionProperties()['modelId']
 
@@ -79,11 +55,46 @@ def getDefaultImageName(){
     return System.getenv("LEGION_BASE_IMAGE_REPOSITORY") + ":" + System.getenv("LEGION_BASE_IMAGE_TAG")
 }
 
-def container(myImageName, Closure body) {
+def pod(myImageName, Closure body) {
     if (myImageName == null)
         myImageName = getDefaultImageName()
 
-    docker.image(myImageName).inside(dockerArgs(), body)
+    print "Image name: ${myImageName}"
+
+    envToPass = [
+            "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
+            "LEGION_BASE_IMAGE_REPOSITORY",
+            "MODEL_SERVER_URL",
+            "EDI_URL", "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
+            "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
+            "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
+            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
+    ]
+
+    envVars = envToPass.collect({ name -> envVar(key: name, value: System.getenv(name)) })
+
+    //pod.withHostPath('/legion', 'legion')
+
+    label = "jenkins-build-${UUID.randomUUID().toString()}"
+    podTemplate(
+            label: label,
+            containers: [
+                containerTemplate(
+                        name: 'model',
+                        image: myImageName,
+                        resourceLimitMemory: '16Gi',
+                        resourceRequestMemory: '200Mi',
+                        ttyEnabled: true,
+                        command: 'cat',
+                        envVars: envVars),
+            ],
+            volumes: [
+                hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')
+            ]) {
+        node(label){
+            container('model', body)
+        }
+    }
 }
 
 def rootDir() {
@@ -110,13 +121,13 @@ def runNotebook(notebookName) {
     echo 'NOTEBOOK_NAME = ' + env.NOTEBOOK_NAME
     echo 'MODEL_ID = ' + env.MODEL_ID
 
-    sh '''
-    pip install --extra-index-url ${LEGION_PACKAGE_REPOSITORY} legion==${LEGION_PACKAGE_VERSION}
+    sh """
+    pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     export CONTAINER_DIR="`pwd`"
-    cd ${ROOT_DIR}
-    jupyter nbconvert --execute "${NOTEBOOK_NAME}" --stdout > notebook.html
-    cp notebook.html "${CONTAINER_DIR}"
-    '''
+    cd ${env.ROOT_DIR}
+    jupyter nbconvert --execute "${env.NOTEBOOK_NAME}" --stdout > notebook.html
+    cp notebook.html "\$CONTAINER_DIR"
+    """
 
     sleep time: 1, unit: 'SECONDS'
 
@@ -132,19 +143,19 @@ def runScript(scriptPath){
     echo 'TARGET_SCRIPT_PATH = ' + env.TARGET_SCRIPT_PATH
     echo 'MODEL_ID = ' + env.MODEL_ID
 
-    sh '''
-    pip install --extra-index-url ${LEGION_PACKAGE_REPOSITORY} legion==${LEGION_PACKAGE_VERSION}
+    sh """
+    pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     export CONTAINER_DIR="`pwd`"
-    cd ${ROOT_DIR}
-    python3 "${TARGET_SCRIPT_PATH}" > script-log.txt
+    cd ${env.ROOT_DIR}
+    python3 "${env.TARGET_SCRIPT_PATH}" > script-log.txt
 
     echo "<html><body><h2>Script output</h2><code>" > notebook.html
     cat script-log.txt >> notebook.html
     echo "</code></body></html>" >> notebook.html
 
-    cp script-log.txt "${CONTAINER_DIR}"
-    cp notebook.html "${CONTAINER_DIR}"
-    '''
+    cp script-log.txt "\$CONTAINER_DIR"
+    cp notebook.html "\$CONTAINER_DIR"
+    """
 
     sleep time: 1, unit: 'SECONDS'
 
@@ -170,11 +181,11 @@ def build() {
 
     modelImageVersion = modelVersion
     env.TEMPORARY_DOCKER_IMAGE_NAME = generateModelTemporaryImageName(env.MODEL_ID, modelVersion)
-    env.EXTERNAL_IMAGE_NAME = "${env.MODEL_IMAGES_REGISTRY}${env.MODEL_ID}:${modelImageVersion}"
+    env.EXTERNAL_IMAGE_NAME = "${System.getenv('MODEL_IMAGES_REGISTRY')}${env.MODEL_ID}:${modelImageVersion}"
 
     sh """
-    legionctl build --python-package-version ${env.LEGION_PACKAGE_VERSION} \
-    --python-repository ${env.LEGION_PACKAGE_REPOSITORY} --base-docker-image $baseDockerImage \
+    legionctl build --python-package-version \$LEGION_PACKAGE_VERSION \
+    --python-repository \$LEGION_PACKAGE_REPOSITORY --base-docker-image $baseDockerImage \
     --docker-image-tag ${env.TEMPORARY_DOCKER_IMAGE_NAME} \
     --push-to-registry  ${env.EXTERNAL_IMAGE_NAME} \
     ${env.MODEL_FILE_NAME}
@@ -199,13 +210,12 @@ def runTests() {
     env.ROOT_DIR = rootDir()
     env.MODEL_ID = modelId()
 
-    echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'MODEL_ID = ' + env.MODEL_ID
 
-    sh '''
-    cd "${ROOT_DIR}/tests"
-    nosetests --with-xunit
-    '''
+    sh """
+    cd "${env.ROOT_DIR}/tests"
+    MODEL_ID="${env.MODEL_ID}" nosetests --with-xunit
+    """
 
     junit rootDir() + '/tests/nosetests.xml'
 }
@@ -217,10 +227,10 @@ def runPerformanceTests(testScript) {
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'TEST_SCRIPT = ' + env.TEST_SCRIPT
 
-    modelApiHost = (params.host && params.host.length() > 0) ? params.host : env.MODEL_SERVER_URL
+    modelApiHost = (params.host && params.host.length() > 0) ? params.host : System.getenv('MODEL_SERVER_URL')
 
     sh """
-    pip install --extra-index-url ${env.LEGION_PACKAGE_REPOSITORY} legion==${env.LEGION_PACKAGE_VERSION}
+    pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     cd ${env.ROOT_DIR}/performance/ && locust -f ${env.TEST_SCRIPT} --no-web -c ${params.testUsers} -r ${params.testHatchRate} -n ${params.testRequestsCount} --host ${modelApiHost} --only-summary --logfile locust.log
     """
 

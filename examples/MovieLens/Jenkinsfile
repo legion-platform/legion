@@ -1,7 +1,7 @@
 node {
     def legion = load legion()
 
-    legion.container(null) {
+    legion.pod(null) {
         stage('clone repo'){
             checkout scm
         }
