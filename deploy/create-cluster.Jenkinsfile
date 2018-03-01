@@ -2,11 +2,13 @@ def ansibleIp = ''
 def baseDomain = ''
 def BASE_DOMAIN = false
 def ip = ''
+def targetBranch = params.GitBranch
 
 node {
     try {
         stage('Checkout GIT'){
-            checkout scm
+            def scmVars = checkout scm
+            targetBranch = scmVars.GIT_COMMIT
         }
     	stage('Terraforming'){
     	    if (params.USE_TERRAFORM){
@@ -175,7 +177,7 @@ node {
                 examples \
                 . \
                 "git@github.com:epam/legion.git" \
-                ${params.GitBranch} \
+                ${targetBranch} \
                 --connection-timeout 600 \
                 --git-root-key "legion-root-key" \
                 --model-host "" \
@@ -192,7 +194,7 @@ node {
                     --run-timeout 1800 \
                     --jenkins-check-running-jobs \
                     --run-parameter "GitRepository=git@github.com:epam/legion.git" \
-                    --run-parameter "GitBranch=${params.GitBranch}"
+                    --run-parameter "GitBranch=${targetBranch}"
                     """
 
                 }
