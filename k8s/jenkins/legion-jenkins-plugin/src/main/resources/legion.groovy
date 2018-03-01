@@ -79,11 +79,13 @@ def getDefaultImageName(){
     return System.getenv("LEGION_BASE_IMAGE_REPOSITORY") + ":" + System.getenv("LEGION_BASE_IMAGE_TAG")
 }
 
-def pod(myImageName = null, memory = '4Gi', Closure body) {
-    if (myImageName == null)
-        myImageName = getDefaultImageName()
+def pod(Map params=null, Closure body) {
+    if (params == null)
+        params = [:]
 
-    print "Image name: ${myImageName}"
+    image = params.get('image', getDefaultImageName())
+    cpu = params.get('cpu', '330m')
+    ram = params.get('ram', '4Gi')
 
     envToPass = [
             "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
@@ -101,16 +103,17 @@ def pod(myImageName = null, memory = '4Gi', Closure body) {
     podTemplate(
             label: label,
             containers: [
-                containerTemplate(
-                        name: 'model',
-                        image: myImageName,
-                        resourceLimitMemory: memory,
-                        ttyEnabled: true,
-                        command: 'cat',
-                        envVars: envVars),
+                    containerTemplate(
+                            name: 'model',
+                            image: image,
+                            resourceLimitMemory: ram,
+                            resourceLimitCpu: cpu,
+                            ttyEnabled: true,
+                            command: 'cat',
+                            envVars: envVars),
             ],
             volumes: [
-                hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')
+                    hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')
             ]) {
         node(label){
             container('model', body)
