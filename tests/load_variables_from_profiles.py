@@ -51,8 +51,8 @@ def get_variables(arg):
         'CLUSTER_NAMESPACE': data['namespace'],
         'DEPLOYMENT': data['deployment'],
 
-        'HOST_PROTOCOL': data['test_protocol'],
-        'DASHBOARD_PROTOCOL': data['dashboard_protocol'],
+        'USE_HTTPS': data['use_https'] == 'yes',
+        'USE_HTTPS_FOR_TESTS': data['use_https_for_tests'] == 'yes',
 
         'HOST_BASE_DOMAIN': data['test_base_domain'],
         'REAL_HOST_BASE_DOMAIN': data['base_domain'],
@@ -63,5 +63,7 @@ def get_variables(arg):
         'SUBDOMAINS': data['subdomains'],
         'JENKINS_JOBS': data['examples_to_test'],
     }
+
+    variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
 
     return variables

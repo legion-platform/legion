@@ -73,9 +73,15 @@ spec:
           - backend:
               serviceName: "{{ .Release.Name }}-ldap-gui"
               servicePort: {{ .Values.ldap.gui.port }}
-  {{- if .Values.ldap.gui.ingress.tls }}
+  {{- if .Values.ldap.gui.ingress.tls.enabled }}
   tls:
-{{ toYaml .Values.ldap.gui.ingress.tls | indent 4 }}
-  {{- end -}}
+  - hosts:
+    - "{{ .Values.ldap.gui.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    {{- if .Values.ldap.gui.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.ldap.gui.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.ldap.gui.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}

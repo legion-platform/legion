@@ -7,10 +7,12 @@ ingress:
     - {{ domain }}
     - dashboard.local.{{ base_domain }}
 
+{% if use_https == "yes" %}
   tls:
     - secretName: {{ domain }}-tls
       hosts:
         - {{ domain }}
+{% endif %}
 
 rbac:
   create: true

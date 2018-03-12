@@ -150,7 +150,7 @@
   shell: kubectl get no
   register: kubernetes_no_status
   until: kubernetes_no_status.stdout.find(' Ready ') != -1
-  retries: 5
+  retries: 10
   delay: 10
 # yes for vim - '
 

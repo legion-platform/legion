@@ -1,8 +1,44 @@
 ---
+- name: get the username
+  local_action: command whoami
+  register: whoami_output
+
+- name: "Recursively find old certificate for {{ ler53_cert_common_name }}"
+  find:
+    paths: "{{ ler53_cert_dir }}"
+    age: 30d
+    recurse: yes
+    pattern: "*{{ ler53_cert_common_name }}.*"
+  become: yes
+  register: old_certificate_found_result
+
+- name: "Recursively find valid certificate for {{ ler53_cert_common_name }}"
+  find:
+    paths: "{{ ler53_cert_dir }}"
+    age: 0
+    recurse: yes
+    pattern: "*{{ ler53_cert_common_name }}.*"
+  become: yes
+  register: valid_certificate_found_result
+
+- debug:
+    msg: "old_certificate_found_result = {{ old_certificate_found_result }}, v = {{ valid_certificate_found_result }}"
+
+- name: "Store initial information about files"
+  set_fact:
+    valid_certificate_not_exists: true
+
+- name: "Store gathered information about files"
+  set_fact:
+    valid_certificate_not_exists: false
+  when: old_certificate_found_result == 0 and valid_certificate_found_result > 0
+
 - name: update apt cache
   become: yes
   apt:
     update_cache: yes
+  connection: local
+  when: valid_certificate_not_exists
 
 - name: install the required dependencies
   become: yes
@@ -13,35 +49,41 @@
   - openssl
   - python-boto
   - python-openssl
+  connection: local
+  when: valid_certificate_not_exists
 
 - name: "create the {{ ler53_cert_dir }} directory"
   become: yes
   file:
     path: "{{ ler53_cert_dir }}"
     state: directory
-    owner: ubuntu
+    owner: "{{ whoami_output.stdout }}"
     mode: 0755
+  connection: local
 
 - name: "create the {{ ler53_account_key_dir }} directory"
   become: yes
   file:
     path: "{{ ler53_account_key_dir }}"
-    owner: ubuntu
+    owner: "{{ whoami_output.stdout }}"
     mode: 0700
     state: directory
+  connection: local
 
 - name: generate the private key
   openssl_privatekey:
     path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
     size: "{{ ler53_key_size }}"
+  connection: local
 
 - name: set the private key file permissions
   become: yes
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
+  connection: local
 
 - name: generate the CSR
   openssl_csr:
@@ -51,26 +93,30 @@
     key_usage: "{{ ler53_cert_key_usages }}"
     subject_alt_name: "DNS:{{ ler53_cert_common_name }}{{ ',DNS:' + ',DNS:'.join(ler53_cert_sans) if ler53_cert_sans else '' }}"
   register: generate_csr
+  connection: local
 
 - name: set the CSR file permissions
   become: yes
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
+  connection: local
 
 - name: generate the Let's Encrypt account key
   openssl_privatekey:
     path: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     size: "{{ ler53_account_key_size }}"
+  connection: local
 
 - name: set the Let's Encrypt account key file permissions
   become: yes
   file:
     path: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
-    owner: ubuntu
+    owner: "{{ whoami_output.stdout }}"
     mode: 0600
+  connection: local
 
 - name: delete existing certificate
   become: yes
@@ -78,6 +124,7 @@
     path: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     state: absent
   when: generate_csr.changed and ler53_new_cert_when_csr_changes
+  connection: local
 
 - name: initiate the Let's Encrypt challenge
   letsencrypt:
@@ -90,6 +137,7 @@
     remaining_days: "{{ ler53_cert_remaining_days_before_renewal }}"
     agreement: "{{ ler53_agreement | default(omit) }}"
   register: lets_encrypt_challenge
+  connection: local
 
 - name: create the DNS records for the challenge
   route53:
@@ -113,6 +161,7 @@
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     account_email: "{{ ler53_account_email }}"
     data: "{{ lets_encrypt_challenge }}"
+  connection: local
 
 - name: delete the DNS records for the challenge
   route53:
@@ -128,37 +177,63 @@
 - name: set the cert file permissions
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
+  connection: local
 
 - name: download the Let's Encrypt intermediate CA
   get_url:
     url: https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem
     dest: "{{ ler53_cert_dir }}/{{ ler53_intermediate_file_name }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   register: ler53_intermediate_download_task
   when: ler53_intermediate_download
+  connection: local
 
 - name: get content of the certificate
   command: "cat {{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
   register: ler53_certificate_content
   changed_when: false
   when: ler53_intermediate_download
+  connection: local
 
 - name: get content of the intermediate CA
   command: "cat {{ ler53_cert_dir }}/{{ ler53_intermediate_file_name }}"
   register: ler53_intermediate_content
   changed_when: false
   when: ler53_intermediate_download
+  connection: local
 
 - name: create a file with the certificate and intermediate CA concatenated
   copy:
     content: "{{ ler53_certificate_content['stdout'] + '\n' + ler53_intermediate_content['stdout'] + '\n' }}"
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_and_intermediate_file_name }}"
+    owner: "{{ whoami_output.stdout }}"
+    group: "{{ whoami_output.stdout }}"
+    mode: "{{ ler53_cert_files_mode }}"
+  when: ler53_intermediate_download
+  connection: local
+
+- name: "create the {{ ler53_cert_dir }} directory on target machine"
+  become: yes
+  file:
+    path: "{{ ler53_cert_dir }}"
+    state: directory
+    owner: "{{ ler53_cert_files_owner }}"
+    mode: 0755
+
+- name: copy certificate to target machine
+  copy:
+    src: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}{{ extension }}"
+    dest: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}{{ extension }}"
     owner: "{{ ler53_cert_files_owner }}"
     group: "{{ ler53_cert_files_group }}"
     mode: "{{ ler53_cert_files_mode }}"
-  when: ler53_intermediate_download
+  with_items:
+    - ".key"
+    - ".crt"
+  loop_control:
+    loop_var: extension

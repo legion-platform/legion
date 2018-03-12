@@ -44,6 +44,10 @@ grafana:
     repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-grafana"
     tag: "{{ base_version }}-{{ local_version }}"
 
+  ingress:
+    tls:
+      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+
 edge:
   enabled: true
   replicas: 2
@@ -51,12 +55,20 @@ edge:
     repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-edge"
     tag: "{{ base_version }}-{{ local_version }}"
 
+  ingress:
+    tls:
+      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+
 edi:
   enabled: true
   replicas: 2
   image:
     repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-edi"
     tag: "{{ base_version }}-{{ local_version }}"
+
+  ingress:
+    tls:
+      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
 
 jenkins:
   enabled: true
@@ -66,8 +78,16 @@ jenkins:
 
   git_secret_name: "{{ git_secret_name }}"
 
+  ingress:
+    tls:
+      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+
 nexus:
   enabled: true
+
+  ingress:
+    tls:
+      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
 
 jupyterhub:
   enabled: true
@@ -92,10 +112,12 @@ jupyterhub:
   ingress:
     hosts:
     - jupyter.{{ base_domain }}
+{% if use_https == "yes" %}
     tls:
     - hosts:
       - jupyter.{{ base_domain }}
       secretName: jupyter.{{ base_domain }}-tls
+{% endif %}
 
 ldap:
   server:
@@ -105,9 +127,7 @@ ldap:
     enabled: true
 
     ingress:
-      enabled: true    
+      enabled: true
       tls:
-      - hosts:
-        - ldap.{{ base_domain }}
-        secretName: ldap.{{ base_domain }}-tls
+        enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
   
