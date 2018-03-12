@@ -38,8 +38,3 @@ ARG jenkins_plugin_server="http://nexus.epm.kharlamov.biz/jenkins"
 ENV JENKINS_UC_EXPERIMENTAL=$jenkins_plugin_server
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
-
-USER root
-COPY chmod-docker-and-run-jenkins.sh /usr/local/bin/chmod-docker-and-run-jenkins.sh
-RUN chmod a+rwx /usr/local/bin/chmod-docker-and-run-jenkins.sh
-ENTRYPOINT ["/bin/tini", "--", "/usr/local/bin/chmod-docker-and-run-jenkins.sh"]
