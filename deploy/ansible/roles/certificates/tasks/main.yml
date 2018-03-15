@@ -3,35 +3,29 @@
   local_action: command whoami
   register: whoami_output
 
-- name: "Recursively find old certificate for {{ ler53_cert_common_name }}"
-  find:
-    paths: "{{ ler53_cert_dir }}"
-    age: 30d
-    recurse: yes
-    pattern: "*{{ ler53_cert_common_name }}.*"
-  become: yes
-  register: old_certificate_found_result
+- name: Check that certificate exists
+  stat:
+    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+  register: exists_certificate
 
-- name: "Recursively find valid certificate for {{ ler53_cert_common_name }}"
-  find:
-    paths: "{{ ler53_cert_dir }}"
-    age: 0
-    recurse: yes
-    pattern: "*{{ ler53_cert_common_name }}.*"
-  become: yes
-  register: valid_certificate_found_result
+- name: Calculate date in future for certificate check
+  command: python -c 'import datetime; print((datetime.datetime.now() + datetime.timedelta(days=10)).strftime("%Y%m%d%H%M%SZ"))'
+  register: certificate_check_date
 
-- debug:
-    msg: "old_certificate_found_result = {{ old_certificate_found_result }}, v = {{ valid_certificate_found_result }}"
+- name: Ensure that the existing certificate is still valid tommorow
+  openssl_certificate:
+    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+    provider: assertonly
+    valid_at: "{{ certificate_check_date.stdout }}"
 
 - name: "Store initial information about files"
   set_fact:
     valid_certificate_not_exists: true
 
-- name: "Store gathered information about files"
-  set_fact:
-    valid_certificate_not_exists: false
-  when: old_certificate_found_result == 0 and valid_certificate_found_result > 0
+#- name: "Store gathered information about files"
+#  set_fact:
+#    valid_certificate_not_exists: false
+#  when: old_certificate_found_result == 0 and valid_certificate_found_result > 0
 
 - name: update apt cache
   become: yes
@@ -91,7 +85,7 @@
     privatekey_path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
     common_name: "{{ ler53_cert_common_name }}"
     key_usage: "{{ ler53_cert_key_usages }}"
-    subject_alt_name: "DNS:{{ ler53_cert_common_name }}{{ ',DNS:' + ',DNS:'.join(ler53_cert_sans) if ler53_cert_sans else '' }}"
+    subject_alt_name: "DNS:{{ ler53_cert_common_name }},DNS:*.{{ ler53_cert_common_name }}"
   register: generate_csr
   connection: local
 
@@ -128,13 +122,16 @@
 
 - name: initiate the Let's Encrypt challenge
   letsencrypt:
-    acme_directory: https://acme-v01.api.letsencrypt.org/directory
+    acme_directory: "{{ ler53_acme_url }}"
+    acme_version: 2
+    validate_certs: false
     challenge: dns-01
     account_key: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     csr: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     account_email: "{{ ler53_account_email }}"
     remaining_days: "{{ ler53_cert_remaining_days_before_renewal }}"
+    terms_agreed: true
     agreement: "{{ ler53_agreement | default(omit) }}"
   register: lets_encrypt_challenge
   connection: local
@@ -154,7 +151,9 @@
 
 - name: validate the Let's Encrypt challenge
   letsencrypt:
-    acme_directory: https://acme-v01.api.letsencrypt.org/directory
+    acme_directory: "{{ ler53_acme_url }}"
+    acme_version: 2
+    validate_certs: false
     challenge: dns-01
     account_key: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     csr: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
