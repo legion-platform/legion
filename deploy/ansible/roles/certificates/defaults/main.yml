@@ -1,4 +1,5 @@
 ---
+ler53_check_delta_days: "10"
 ler53_acme_url: "https://acme-staging-v02.api.letsencrypt.org/directory"
 ler53_backup: "https://acme-v02.api.letsencrypt.org/directory"
 ler53_cert_remaining_days_before_renewal: 10
