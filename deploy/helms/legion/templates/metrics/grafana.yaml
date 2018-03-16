@@ -91,7 +91,7 @@ spec:
   - hosts:
     - "{{ .Values.grafana.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.grafana.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.grafana.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.grafana.ingress.tls.secretName  }}
     {{- end }}

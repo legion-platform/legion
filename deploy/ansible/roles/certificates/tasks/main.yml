@@ -26,9 +26,6 @@
   set_fact:
     valid_certificate_not_exists: true
 
-- debug:
-    msg: "STAT = {{ exists_certificate_file.stat }}  AND CHECK = {{ certificate_content_check }}"
-
 - name: "Store gathered information about files"
   set_fact:
     valid_certificate_not_exists: false
@@ -139,7 +136,7 @@
   letsencrypt:
     acme_directory: "{{ ler53_acme_url }}"
     acme_version: 2
-    validate_certs: false
+    validate_certs: "{{ ler52_acme_certificate_check }}"
     challenge: dns-01
     account_key: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     csr: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
@@ -170,7 +167,7 @@
   letsencrypt:
     acme_directory: "{{ ler53_acme_url }}"
     acme_version: 2
-    validate_certs: false
+    validate_certs: "{{ ler52_acme_certificate_check }}"
     challenge: dns-01
     account_key: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     csr: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
@@ -256,3 +253,15 @@
     - ".crt"
   loop_control:
     loop_var: extension
+
+- name: Remove old TLS secret to kube-system namespace
+  shell: "kubectl delete secret {{ ler53_cert_common_name }}-tls --namespace=kube-system --ignore-not-found=true"
+
+- name: Add TLS secret to kube-system namespace
+  shell: "kubectl create secret tls {{ ler53_cert_common_name }}-tls --namespace kube-system --key {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.key --cert {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+
+- name: Remove old TLS secret to default namespace
+  shell: "kubectl delete secret {{ ler53_cert_common_name }}-tls --ignore-not-found=true"
+
+- name: Add TLS secret to default namespace
+  shell: "kubectl create secret tls {{ ler53_cert_common_name }}-tls --key {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.key --cert {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"

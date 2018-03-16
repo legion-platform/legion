@@ -104,7 +104,7 @@ spec:
   - hosts:
     - "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.edi.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.edi.ingress.tls.secretName  }}
     {{- end }}

@@ -1,18 +1,26 @@
+- name: Get initial helm status
+  shell: helm list
+  register: helm_list_initial_status
+  ignore_errors: true
+
 - name: Download helm
   get_url:
     url: "{{ helm_url }}" 
     dest: "{{ helm_temp_directory }}/helm.tar.gz"
+  when: helm_list_initial_status.failed
 
 - name: Make helm directory
   file:
     path: "{{ helm_temp_directory }}/helm"
     state: directory
+  when: helm_list_initial_status.failed
 
 - name: Unarchive helm
   unarchive:
     copy: no
     src: "{{ helm_temp_directory }}/helm.tar.gz"
     dest: "{{ helm_temp_directory }}/helm"
+  when: helm_list_initial_status.failed
 
 - name: Copy helm to bin
   become: yes
@@ -23,6 +31,7 @@
     src: "{{ helm_temp_directory }}/helm/linux-amd64/helm"
     dest: "{{ helm_bin_dest }}"
     mode: ugo=rx
+  when: helm_list_initial_status.failed
 
 - name: Cleanup helm
   with_items:
@@ -31,11 +40,13 @@
   file:
     path: "{{ helm_temp_directory }}/{{item}}"
     state: absent
+  when: helm_list_initial_status.failed
 
 - name: Check helm status
   shell: helm list
   register: helm_list_status
   ignore_errors: true
+  when: helm_list_initial_status.failed
 
 - name: Install helm's tiller and update helm repos
   shell: |
@@ -44,14 +55,15 @@
     kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
     kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
     helm repo update
-  when: helm_list_status.stdout.find('could not find tiller') == -1
+  when: helm_list_initial_status.failed and helm_list_status.stdout.find('could not find tiller') == -1
 # '
 
 - name: Wait for helm ready
-  shell: kubectl get no
-  register: helm_list_status
-  until: helm_list_status.stdout.find('could not find a ready tiller pod') == -1
+  shell: helm ls
+  register: helm_list_status_after_install
+  until: helm_list_status_after_install.stdout.find('not find a ready tiller') == -1
   retries: 5
   delay: 10
   ignore_errors: true
+  when: helm_list_initial_status.failed
 

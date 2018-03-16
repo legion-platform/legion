@@ -116,7 +116,7 @@ jupyterhub:
     tls:
     - hosts:
       - jupyter.{{ base_domain }}
-      secretName: jupyter.{{ base_domain }}-tls
+      secretName: {{ base_domain }}-tls
 {% endif %}
 
 ldap:

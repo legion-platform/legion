@@ -45,7 +45,7 @@ spec:
   - hosts:
     - "{{ .Values.nexus.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.nexus.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.nexus.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.nexus.ingress.tls.secretName  }}
     {{- end }}

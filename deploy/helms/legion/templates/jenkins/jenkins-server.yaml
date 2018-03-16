@@ -190,7 +190,7 @@ spec:
   - hosts:
     - "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.jenkins.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.jenkins.ingress.tls.secretName  }}
     {{- end }}

@@ -78,7 +78,7 @@ spec:
   - hosts:
     - "{{ .Values.ldap.gui.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.ldap.gui.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.ldap.gui.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.ldap.gui.ingress.tls.secretName  }}
     {{- end }}
