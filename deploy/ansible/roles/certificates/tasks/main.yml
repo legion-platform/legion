@@ -3,26 +3,24 @@
   local_action: command whoami
   register: whoami_output
 
-- name: "Recursively find old certificate for {{ ler53_cert_common_name }}"
-  find:
-    paths: "{{ ler53_cert_dir }}"
-    age: 30d
-    recurse: yes
-    pattern: "*{{ ler53_cert_common_name }}.*"
-  become: yes
-  register: old_certificate_found_result
+- name: Check that certificate exists
+  connection: local
+  stat:
+    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+  register: exists_certificate_file
 
-- name: "Recursively find valid certificate for {{ ler53_cert_common_name }}"
-  find:
-    paths: "{{ ler53_cert_dir }}"
-    age: 0
-    recurse: yes
-    pattern: "*{{ ler53_cert_common_name }}.*"
-  become: yes
-  register: valid_certificate_found_result
+- name: Calculate date in future for certificate check
+  command: python -c 'import datetime; print((datetime.datetime.now() + datetime.timedelta(days={{ ler53_check_delta_days }})).strftime("%Y%m%d%H%M%SZ"))'
+  register: certificate_check_date
 
-- debug:
-    msg: "old_certificate_found_result = {{ old_certificate_found_result }}, v = {{ valid_certificate_found_result }}"
+- name: "Ensure that the existing certificate is still valid in {{ ler53_check_delta_days }} days"
+  connection: local
+  openssl_certificate:
+    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+    provider: assertonly
+    valid_at: "{{ certificate_check_date.stdout }}"
+  register: certificate_content_check
+  ignore_errors: True
 
 - name: "Store initial information about files"
   set_fact:
@@ -31,7 +29,7 @@
 - name: "Store gathered information about files"
   set_fact:
     valid_certificate_not_exists: false
-  when: old_certificate_found_result == 0 and valid_certificate_found_result > 0
+  when: exists_certificate_file.stat.exists and not certificate_content_check.failed
 
 - name: update apt cache
   become: yes
@@ -60,6 +58,7 @@
     owner: "{{ whoami_output.stdout }}"
     mode: 0755
   connection: local
+  when: valid_certificate_not_exists
 
 - name: "create the {{ ler53_account_key_dir }} directory"
   become: yes
@@ -69,12 +68,14 @@
     mode: 0700
     state: directory
   connection: local
+  when: valid_certificate_not_exists
 
 - name: generate the private key
   openssl_privatekey:
     path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
     size: "{{ ler53_key_size }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: set the private key file permissions
   become: yes
@@ -84,6 +85,7 @@
     group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: generate the CSR
   openssl_csr:
@@ -91,9 +93,10 @@
     privatekey_path: "{{ ler53_cert_dir }}/{{ ler53_key_file_name }}"
     common_name: "{{ ler53_cert_common_name }}"
     key_usage: "{{ ler53_cert_key_usages }}"
-    subject_alt_name: "DNS:{{ ler53_cert_common_name }}{{ ',DNS:' + ',DNS:'.join(ler53_cert_sans) if ler53_cert_sans else '' }}"
+    subject_alt_name: "DNS:{{ ler53_cert_common_name }},DNS:*.{{ ler53_cert_common_name }}"
   register: generate_csr
   connection: local
+  when: valid_certificate_not_exists
 
 - name: set the CSR file permissions
   become: yes
@@ -103,12 +106,14 @@
     group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: generate the Let's Encrypt account key
   openssl_privatekey:
     path: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     size: "{{ ler53_account_key_size }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: set the Let's Encrypt account key file permissions
   become: yes
@@ -117,27 +122,32 @@
     owner: "{{ whoami_output.stdout }}"
     mode: 0600
   connection: local
+  when: valid_certificate_not_exists
 
 - name: delete existing certificate
   become: yes
   file:
     path: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     state: absent
-  when: generate_csr.changed and ler53_new_cert_when_csr_changes
+  when: valid_certificate_not_exists and generate_csr.changed and ler53_new_cert_when_csr_changes
   connection: local
 
 - name: initiate the Let's Encrypt challenge
   letsencrypt:
-    acme_directory: https://acme-v01.api.letsencrypt.org/directory
+    acme_directory: "{{ ler53_acme_url }}"
+    acme_version: 2
+    validate_certs: "{{ ler52_acme_certificate_check }}"
     challenge: dns-01
     account_key: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     csr: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
     account_email: "{{ ler53_account_email }}"
     remaining_days: "{{ ler53_cert_remaining_days_before_renewal }}"
+    terms_agreed: true
     agreement: "{{ ler53_agreement | default(omit) }}"
   register: lets_encrypt_challenge
   connection: local
+  when: valid_certificate_not_exists
 
 - name: create the DNS records for the challenge
   route53:
@@ -151,10 +161,13 @@
     wait: yes
   with_dict: "{{ lets_encrypt_challenge['challenge_data'] | default({}) }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: validate the Let's Encrypt challenge
   letsencrypt:
-    acme_directory: https://acme-v01.api.letsencrypt.org/directory
+    acme_directory: "{{ ler53_acme_url }}"
+    acme_version: 2
+    validate_certs: "{{ ler52_acme_certificate_check }}"
     challenge: dns-01
     account_key: "{{ ler53_account_key_dir }}/{{ ler53_account_key_file_name }}"
     csr: "{{ ler53_cert_dir }}/{{ ler53_csr_file_name }}"
@@ -162,6 +175,7 @@
     account_email: "{{ ler53_account_email }}"
     data: "{{ lets_encrypt_challenge }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: delete the DNS records for the challenge
   route53:
@@ -173,6 +187,7 @@
     value: "\"{{ item.value['dns-01']['resource_value'] }}\""
   with_dict: "{{ lets_encrypt_challenge['challenge_data'] | default({}) }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: set the cert file permissions
   file:
@@ -181,6 +196,7 @@
     group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   connection: local
+  when: valid_certificate_not_exists
 
 - name: download the Let's Encrypt intermediate CA
   get_url:
@@ -190,21 +206,21 @@
     group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
   register: ler53_intermediate_download_task
-  when: ler53_intermediate_download
+  when: valid_certificate_not_exists and ler53_intermediate_download
   connection: local
 
 - name: get content of the certificate
   command: "cat {{ ler53_cert_dir }}/{{ ler53_cert_file_name }}"
   register: ler53_certificate_content
   changed_when: false
-  when: ler53_intermediate_download
+  when: valid_certificate_not_exists and ler53_intermediate_download
   connection: local
 
 - name: get content of the intermediate CA
   command: "cat {{ ler53_cert_dir }}/{{ ler53_intermediate_file_name }}"
   register: ler53_intermediate_content
   changed_when: false
-  when: ler53_intermediate_download
+  when: valid_certificate_not_exists and ler53_intermediate_download
   connection: local
 
 - name: create a file with the certificate and intermediate CA concatenated
@@ -214,7 +230,7 @@
     owner: "{{ whoami_output.stdout }}"
     group: "{{ whoami_output.stdout }}"
     mode: "{{ ler53_cert_files_mode }}"
-  when: ler53_intermediate_download
+  when: valid_certificate_not_exists and ler53_intermediate_download
   connection: local
 
 - name: "create the {{ ler53_cert_dir }} directory on target machine"
@@ -237,3 +253,15 @@
     - ".crt"
   loop_control:
     loop_var: extension
+
+- name: Remove old TLS secret to kube-system namespace
+  shell: "kubectl delete secret {{ ler53_cert_common_name }}-tls --namespace=kube-system --ignore-not-found=true"
+
+- name: Add TLS secret to kube-system namespace
+  shell: "kubectl create secret tls {{ ler53_cert_common_name }}-tls --namespace kube-system --key {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.key --cert {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+
+- name: Remove old TLS secret to default namespace
+  shell: "kubectl delete secret {{ ler53_cert_common_name }}-tls --ignore-not-found=true"
+
+- name: Add TLS secret to default namespace
+  shell: "kubectl create secret tls {{ ler53_cert_common_name }}-tls --key {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.key --cert {{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"

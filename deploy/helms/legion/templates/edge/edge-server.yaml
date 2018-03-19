@@ -95,7 +95,7 @@ spec:
   - hosts:
     - "{{ .Values.edge.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.edge.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.edge.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.edge.ingress.tls.secretName  }}
     {{- end }}

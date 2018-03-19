@@ -10,22 +10,25 @@
   shell: helm delete --purge dash
   when: dashboard_deployed
 
-- name: Remove old TLS secret
-  shell: "kubectl delete secret {{ domain }}-tls --namespace=kube-system --ignore-not-found=true"
-  when: use_https == "yes"
-    
-- name: Add TLS secret
-  shell: "kubectl create secret tls {{ domain }}-tls --namespace kube-system --key {{ cert_dir }}/{{ domain }}/{{ domain }}.key --cert {{ cert_dir }}/{{ domain }}/{{ domain }}.crt"
-  when: use_https == "yes"
-
 - name: Create Dashboard configuration (values) file
   template:
     src: dashboard-values.yaml.j2
     dest: ~/dashboard-values.yaml
     mode: 0644
 
+- name: Pre run with dumping
+  shell: helm install stable/kubernetes-dashboard --version {{ dashboard_chart_version }} --namespace kube-system --name dash --debug --dry-run -f ~/dashboard-values.yaml
+  register: helm_install_output
+  args:
+    chdir: ~/helms
+
+- name: Save pre run result
+  copy:
+    content: "{{ helm_install_output.stdout }}"
+    dest: ~/dashboard.helm.debug
+
 - name: Apply Dashboard configuration
-  shell: 'helm install stable/kubernetes-dashboard --namespace kube-system --name dash  -f ~/dashboard-values.yaml'
+  shell: helm install stable/kubernetes-dashboard --version {{ dashboard_chart_version }} --namespace kube-system --name dash  -f ~/dashboard-values.yaml
 
 - name: Wait for Dashboard up
   shell: "kubectl get po --namespace kube-system | grep 'dashboard'"
@@ -36,5 +39,5 @@
   ignore_errors: true
 
 - debug: 
-    msg: "Welcome to cluster dashboard admin at {{ domain }}"
+    msg: "Welcome to cluster dashboard admin at dashboard.{{ base_domain }}"
 

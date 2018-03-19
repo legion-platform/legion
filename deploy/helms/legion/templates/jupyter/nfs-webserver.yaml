@@ -84,7 +84,7 @@ spec:
   - hosts:
     - "{{ .Values.jupyterhub.nfs.ingress.domain.partial }}.{{ .Values.rootDomain }}"
     {{- if .Values.jupyterhub.nfs.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.jupyterhub.nfs.ingress.domain.partial }}.{{ .Values.rootDomain }}-tls"
+    secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}
     secretName: {{ .Values.jupyterhub.nfs.ingress.tls.secretName  }}
     {{- end }}
