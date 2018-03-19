@@ -388,10 +388,10 @@ def deduce_model_file_name(version=None):
     return file_name
 
 
-def export(filename=None,
-           apply_func=None, prepare_func=None,
-           param_types=None, input_data_frame=None,
-           version=None, use_df=True):
+def _export(filename=None,
+            apply_func=None, prepare_func=None,
+            column_types=None,
+            version=None, use_df=True):
     """
     Export simple Pandas based model as a bundle
 
@@ -401,16 +401,23 @@ def export(filename=None,
     :type apply_func: func(x) -> y
     :param prepare_func: a function to prepare input DF->DF
     :type prepare_func: func(x) -> y
-    :param param_types: result of deduce_param_types
-    :type param_types: dict[str, :py:class:`legion.model.types.ColumnInformation`]
-    :param input_data_frame: pandas DF
-    :type input_data_frame: :py:class:`pandas.DataFrame`
+    :param column_types: result of deduce_param_types or prepared column information or None
+    :type column_types: dict[str, :py:class:`legion.model.types.ColumnInformation`] or None
     :param use_df: use pandas DF for prepare and apply function
     :type use_df: bool
     :param version: of version
     :type version: str
     :return: :py:class:`legion.model.ScipyModel` -- model instance
     """
+    if not hasattr(apply_func, '__call__'):
+        raise Exception('Provided non-callable object as apply_function')
+
+    if column_types:
+        if not isinstance(column_types, dict) \
+                or not column_types.keys() \
+                or not isinstance(list(column_types.values())[0], ColumnInformation):
+            raise Exception('Bad param_types / input_data_frame provided')
+
     if prepare_func is None:
         def prepare_func(input_dict):
             """
@@ -419,24 +426,6 @@ def export(filename=None,
             :return: dict of values
             """
             return input_dict
-
-    column_types = None
-
-    if param_types is not None and input_data_frame is not None:
-        raise Exception('You cannot provide param_types and input_data_frame in one time')
-
-    if param_types is None and input_data_frame is None:
-        raise Exception('You should provide param_types or input_data_frame')
-
-    if param_types is not None:
-        column_types = param_types
-    elif input_data_frame is not None:
-        column_types = _get_column_types(input_data_frame)
-
-    if not isinstance(column_types, dict) \
-            or not column_types.keys() \
-            or not isinstance(list(column_types.values())[0], ColumnInformation):
-        raise Exception('Bad param_types / input_data_frame provided')
 
     file_name_has_been_deduced = False
     if filename:
@@ -464,3 +453,65 @@ def export(filename=None,
     send_header_to_stderr(legion.containers.headers.MODEL_VERSION, version)
 
     return model
+
+
+def export_df(apply_func, input_data_frame,
+              filename=None, prepare_func=None,
+              version=None):
+    """
+    Export simple Pandas DF based model as a bundle
+
+    :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
+    :param input_data_frame: pandas DF
+    :type input_data_frame: :py:class:`pandas.DataFrame`
+    :param filename: the location to write down the model
+    :type filename: str
+    :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
+    :param version: of version
+    :type version: str
+    :return: :py:class:`legion.model.ScipyModel` -- model instance
+    """
+    column_types = _get_column_types(input_data_frame)
+    return _export(filename, apply_func, prepare_func, column_types, version, True)
+
+
+def export(apply_func, column_types,
+           filename=None, prepare_func=None,
+           version=None):
+    """
+    Export simple parameters defined model as a bundle
+
+    :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
+    :param column_types: result of deduce_param_types or prepared column information
+    :type column_types: dict[str, :py:class:`legion.model.types.ColumnInformation`]
+    :param filename: the location to write down the model
+    :type filename: str
+    :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
+    :param version: of version
+    :type version: str
+    :return: :py:class:`legion.model.ScipyModel` -- model instance
+    """
+    return _export(filename, apply_func, prepare_func, column_types, version, False)
+
+
+def export_untyped(apply_func,
+                   filename=None, prepare_func=None,
+                   version=None):
+    """
+    Export simple untyped model as a bundle
+
+    :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
+    :param filename: the location to write down the model
+    :type filename: str
+    :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
+    :param version: of version
+    :type version: str
+    :return: :py:class:`legion.model.ScipyModel` -- model instance
+    """
+    return _export(filename, apply_func, prepare_func, None, version, False)

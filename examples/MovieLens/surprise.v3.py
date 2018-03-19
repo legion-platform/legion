@@ -7,14 +7,13 @@ import pandas as pd
 import numpy as np
 import os, io
 
-import legion.model.model_id
 from legion.metrics import send_metric
-import legion.model.types
+import legion.model
 import legion.io
 import time
 
 use_built_in = True
-legion.model.model_id.init('movie-lens')
+legion.model.init('movie-lens')
 
 
 class Profiler(object):
@@ -174,12 +173,10 @@ else:
         return top3_recommendations[input['uid']]
 
 legion.io.export(
-    prepare_func=lambda x: x,
-    apply_func=recommend,
-    param_types={
-        'uid': legion.model.types.ColumnInformation(legion.model.types.Integer, np.int32)
+    recommend,
+    {
+        'uid': legion.model.types.ColumnInformation(legion.model.types.Integer, legion.model.int32)
     },
-    use_df=False,
     version='1.0'
 )
 

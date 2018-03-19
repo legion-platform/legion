@@ -18,3 +18,6 @@ Model functionality
 """
 from .client import ModelClient, load_image
 from .model_id import init
+from .types import int8, uint8, int16, uint16, int32, uint32, int64, uint64
+from .types import float32, float64
+from .types import string, boolean, image

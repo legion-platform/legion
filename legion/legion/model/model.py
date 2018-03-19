@@ -73,8 +73,8 @@ class ScipyModel(implements(IMLModel)):
         :type apply_func: func(x) -> y
         :param prepare_func: a function to prepare input DF->DF
         :type prepare_func: func(x) -> y
-        :param column_types: dict of column name => type
-        :type column_types: dict[str, :py:class:`legion.types.ColumnInformation`]
+        :param column_types: dict of column name => type or None
+        :type column_types: dict[str, :py:class:`legion.types.ColumnInformation`] or None
         :param version: version of model
         :param use_df: use pandas DF for prepare and apply function
         :type use_df: bool
@@ -82,7 +82,6 @@ class ScipyModel(implements(IMLModel)):
         """
         assert apply_func is not None
         assert prepare_func is not None
-        assert column_types is not None
 
         self.apply_func = apply_func
         self.column_types = column_types
@@ -105,7 +104,10 @@ class ScipyModel(implements(IMLModel)):
         data_frame = self.prepare_func(data_frame)
 
         LOGGER.info('Applying function with DataFrame: %s' % str(data_frame))
-        return self.apply_func(data_frame)
+        response = self.apply_func(data_frame)
+        LOGGER.info('Returning response: %s' % str(response))
+
+        return response
 
     @property
     def version_string(self):
@@ -123,8 +125,14 @@ class ScipyModel(implements(IMLModel)):
 
         :return: dict[str, any] with model description
         """
-        return {
+        data = {
             'version': self.version,
-            'use_df': self.use_df,
-            'input_params': {k: v.description_for_api for (k, v) in self.column_types.items()}
+            'use_df': self.use_df
         }
+
+        if self.column_types:
+            data['input_params'] = {k: v.description_for_api for (k, v) in self.column_types.items()}
+        else:
+            data['input_params'] = False
+
+        return data
