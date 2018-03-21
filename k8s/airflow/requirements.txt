@@ -1,0 +1,2 @@
+simple_salesforce==0.73.0
+smart-open==1.5.6

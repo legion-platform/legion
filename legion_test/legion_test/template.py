@@ -17,19 +17,28 @@
 Template generator
 """
 
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, PackageLoader, FileSystemLoader, select_autoescape
 
 
-def render_template(template_name, values=None):
+def render_template(template_name, values=None, use_filesystem_loader=False):
     """
     Render template with parameters
 
     :param template_name: name of template without path (all templates should be placed in legion.templates directory)
+    or path if use_filesystem_loader enabled
+    :type template_name: str
     :param values: dict template variables or None
+    :type values: dict
+    :param use_filesystem_loader: use filesystem loader and load templates from any location
+    :type use_filesystem_loader: bool
     :return: str rendered template
     """
+    environment = PackageLoader(__name__, 'templates')
+    if use_filesystem_loader:
+        environment = FileSystemLoader('/')
+
     env = Environment(
-        loader=PackageLoader(__name__, 'templates'),
+        loader=environment,
         autoescape=select_autoescape(['tmpl'])
     )
 

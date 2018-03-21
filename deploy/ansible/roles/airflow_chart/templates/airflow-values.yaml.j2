@@ -1,0 +1,46 @@
+rootDomain: {{ base_domain }}
+namespace: default
+localDomain: "cluster.local"
+
+image: "nexus.local.epm.kharlamov.biz:443/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
+
+secrets:
+  postgres:
+    user: airflow
+    password: airflow
+    db: airflow
+
+  rabbitmq:
+    user: airflow
+    password: airflow
+    vhost: airflow
+
+  fernet_key: {{ secret_fernet_key }}
+  flask: {{ secret_flask }}
+
+connections:
+{{ secrets.airflow.connections|to_yaml }}
+
+core:
+  logging_level: info
+  remote_logging: true
+  remote_base_log_folder: {{ airflow.s3_log_url }}
+  remote_log_conn_id: s3_conn
+
+smtp:
+  smtp_host: {{ secrets.airflow.email.smtp_host }}
+  smtp_starttls: {{ secrets.airflow.email.smtp_starttls }}
+  smtp_ssl: {{ secrets.airflow.email.smtp_ssl }}
+  smtp_user: {{ secrets.airflow.email.smtp_user }}
+  smtp_port: {{ secrets.airflow.email.smtp_port }}
+  smtp_password: {{ secrets.airflow.email.smtp_password }}
+  smtp_mail_from: {{ secrets.airflow.email.smtp_mail_from }}
+
+storage:
+    use_specified_pvc: true
+    pvc_name: "legion-airflow-shared" # from shared_k8s_resources/templates
+
+ingress:
+  enabled: true
+  tls:
+    enabled: true

@@ -165,10 +165,15 @@ node {
     	    cd k8s/edi
     	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${baseVersion}+${localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi .
     	    """
+
+            sh """
+    	    cd k8s/airflow
+    	    docker build $dockerCacheArg -t legion/k8s-airflow .
+    	    """
         }
         stage('Publish Docker images'){
             if (params.PushDockerImages){
-                def images = ["legion/base-python-image", "legion/jupyterhub", "legion/k8s-edge", "legion/k8s-jenkins", "legion/k8s-grafana", "legion/k8s-edi"]
+                def images = ["legion/base-python-image", "legion/jupyterhub", "legion/k8s-edge", "legion/k8s-jenkins", "legion/k8s-grafana", "legion/k8s-edi", "legion/k8s-airflow"]
 
                 images.each {
                     sh """

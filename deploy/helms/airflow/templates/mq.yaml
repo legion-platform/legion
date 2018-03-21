@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-redis"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-redis"
+spec:
+  selector:
+    app: "{{ .Release.Name }}-redis"
+  ports:
+    - name: node
+      protocol: TCP
+      port: 6379
+      targetPort: node
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-redis"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-redis"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-redis"
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: redis
+        image: redis:3
+        ports:
+        - name: node
+          containerPort: 6379

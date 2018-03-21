@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-worker"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-worker"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-airflow-worker"
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: worker
+        image: "{{ .Values.image }}"
+        env:
+        - name: POSTGRES_HOST
+        {{- if .Values.postgres.external}}
+          value: "{{ .Values.postgres.host }}"
+        {{- else }}
+          value: "{{ .Release.Name }}-postgres"
+        {{- end }}
+        - name: POSTGRES_PORT
+          value: "{{ .Values.postgres.port }}"
+        - name: REDIS_HOST
+          value: "{{ .Release.Name }}-redis"
+        - name: AIRFLOW_HOME
+          value: "/home/airflow"
+        volumeMounts:
+        - name: airflow-config
+          mountPath: /home/airflow/airflow.cfg
+          subPath: airflow.cfg
+        - name: dag-volume
+          mountPath: /home/airflow/dags
+        - name: airflow-config-dir
+          mountPath: /home/airflow/config
+        args: ["airflow", "worker"]
+      volumes:
+      - name: airflow-config-dir
+        configMap:
+          name: "{{ .Release.Name }}-log-config"
+      - name: airflow-config
+        secret:
+          secretName: "{{ .Release.Name }}-config"
+          items:
+          - key: airflow.cfg
+            path: airflow.cfg
+      - name: dag-volume
+        persistentVolumeClaim:
+          {{- if .Values.storage.use_specified_pvc }}
+          claimName: {{ .Values.storage.pvc_name }}
+          {{- else}}
+          claimName: "{{ .Release.Name }}-dag-pvc"
+          {{- end}}
