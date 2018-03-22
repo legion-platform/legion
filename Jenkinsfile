@@ -11,10 +11,13 @@ node {
         }
         stage('Install build dependencies'){
             sh '''
+            sudo rm -rf .venv
+            virtualenv .venv
+
             sudo chmod a+r -R .
     	    cd legion
-    	    sudo pip3 install -r requirements/base.txt
-    	    sudo pip3 install -r requirements/test.txt
+    	    ../.venv/bin/pip3 install -r requirements/base.txt
+    	    ../.venv/bin/pip3 install -r requirements/test.txt
     	    '''
         }
         stage('Build Jenkins plugin'){
@@ -42,13 +45,13 @@ node {
         stage('Build Python packages') {
             sh '''
 			cd legion_test
-    		sudo python3 setup.py sdist
-    		sudo python3 setup.py bdist_wheel
-    		sudo python3 setup.py develop
+    		../.venv/bin/python3 setup.py sdist
+    		../.venv/bin/python3 setup.py bdist_wheel
+    		../.venv/bin/python3 setup.py develop
     		cd -
     		'''
 
-            def version = sh returnStdout: true, script: 'update_version_id --extended-output legion/legion/version.py'
+            def version = sh returnStdout: true, script: '.venv/bin/update_version_id --extended-output legion/legion/version.py'
             print("Detected legion version:\n" + version)
 
             version = version.split("\n")
@@ -71,20 +74,20 @@ node {
             sh """
 			cp legion/legion/version.py legion_test/legion_test/version.py
 			cd legion_test
-    		sudo python3 setup.py sdist
-    		sudo python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
-    		sudo python3 setup.py bdist_wheel
-    		sudo python3 setup.py develop
+    		../.venv/bin/python3 setup.py sdist
+    		../.venv/bin/python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+    		../.venv/bin/python3 setup.py bdist_wheel
+    		../.venv/bin/python3 setup.py develop
     		cd -
     		"""
 
             print('Build and distributing legion')
             sh """
     		cd legion
-    		sudo python3 setup.py sdist
-    		sudo python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
-    		sudo python3 setup.py bdist_wheel
-    		sudo python3 setup.py develop
+    		../.venv/bin/python3 setup.py sdist
+    		../.venv/bin/python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+    		../.venv/bin/python3 setup.py bdist_wheel
+    		../.venv/bin/python3 setup.py develop
     		cd -
     		"""
         }
@@ -94,7 +97,7 @@ node {
 
             sh '''
     		cd legion
-    		LEGION_VERSION="\$(python3 -c 'import legion; print(legion.__version__);')"
+    		LEGION_VERSION="\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')"
 
     		cd docs
     		sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
@@ -109,14 +112,14 @@ node {
         stage('Run Python code analyzers'){
             sh '''
     		cd legion
-    		pycodestyle legion
-    		pycodestyle tests
-    		pydocstyle legion
+    		../.venv/bin/pycodestyle legion
+    		../.venv/bin/pycodestyle tests
+    		../.venv/bin/pydocstyle legion
 
     		export TERM="linux"
     		rm -f pylint.log
-    		pylint legion >> pylint.log || exit 0
-    		pylint tests >> pylint.log || exit 0
+    		../.venv/bin/pylint legion >> pylint.log || exit 0
+    		../.venv/bin/pylint tests >> pylint.log || exit 0
     		cd ..
     		'''
 
@@ -193,11 +196,11 @@ node {
         stage('Run Python tests'){
             sh '''
             cd legion
-            nosetests --with-coverage --cover-package legion --with-xunit --cover-html
+            ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html
             '''
             junit 'legion/nosetests.xml'
 
-            sh "cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(python3 -c 'import legion; print(legion.__version__);')-cover/\""
+            sh "cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')-cover/\""
         }
     }
     catch (e) {
