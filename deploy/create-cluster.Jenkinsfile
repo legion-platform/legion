@@ -10,6 +10,15 @@ node {
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
         }
+        stage('Install tools package'){
+            sh '''
+            sudo rm -rf .venv
+            virtualenv .venv
+
+            cd legion_test
+            ../.venv/bin/python3 setup.py develop
+            '''
+        }
     	stage('Terraforming'){
     	    if (params.USE_TERRAFORM){
         	    dir('deploy/terraform'){
@@ -174,7 +183,7 @@ node {
         stage('Create & check jenkins jobs'){
             if (params.CreateJenkinsTests){
                 sh """
-                create_example_jobs \
+                .venv/bin/create_example_jobs \
                 "http://jenkins.local.${baseDomain}" \
                 examples \
                 . \
@@ -188,7 +197,7 @@ node {
 
                 if (params.RunJenkinsTests){
                     sh """
-                    check_jenkins_jobs \
+                    .venv/bin/check_jenkins_jobs \
                     --jenkins-url "http://jenkins.local.${baseDomain}" \
                     --jenkins-run-jobs-prefix "DYNAMIC MODEL" \
                     --connection-timeout 360 \
@@ -213,12 +222,8 @@ node {
         stage('Run robot tests'){
             if (params.UseRegressionTests){
                 sh '''
-                cd legion_test
-                sudo python3 setup.py develop
-                cd -
-
                 cd tests
-                python3 -m robot.run --exitonfailure *.robot || true
+                ../.venv/bin/python3 -m robot.run --exitonfailure *.robot || true
                 '''
                 step([
                     $class : 'RobotPublisher',
