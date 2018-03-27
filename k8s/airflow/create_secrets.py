@@ -28,6 +28,26 @@ SECRETS_DIRECTORY = 'SECRETS_DIRECTORY'
 AIRFLOW_BINARY = 'AIRFLOW_BINARY'
 
 
+def remove_connection(connection_info):
+    """
+    Remove connection from airflow
+
+    :param connection_info: dict with next fields: connection_id, connection_type,  host, port, schema, login, password, extra
+    :type connection_info: dict
+    :return: None
+    """
+    if 'connection_id' not in connection_info:
+        raise Exception('connection_id not found in %s' % repr(connection_info))
+
+    airflow_binary = os.getenv(AIRFLOW_BINARY, 'airflow')
+
+    arguments = [airflow_binary, 'connections', '--delete',
+                 '--conn_id', connection_info['connection_id']]
+
+    arguments = [str(x) for x in arguments]
+    subprocess.check_call(arguments)
+
+
 def add_connection(connection_info):
     """
     Add connection to airflow
@@ -92,9 +112,10 @@ def process_file(path):
 
             for connection in connections:
                 try:
+                    remove_connection(connection)
                     add_connection(connection)
                 except Exception as add_exception:
-                    print('Cannot add connection %s from file %s - %s' % (repr(connection), path, add_exception))
+                    print('Cannot remove/add connection %s from file %s - %s' % (repr(connection), path, add_exception))
     except Exception as read_exception:
         print('Cannot correctly read file %s - %s' % (path, read_exception))
 
