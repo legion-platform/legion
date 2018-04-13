@@ -16,3 +16,4 @@
     - certificates
     - k8s_create_cluster
     - k8s_resources
+    - aws_resources

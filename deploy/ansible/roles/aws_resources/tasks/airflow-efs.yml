@@ -1,0 +1,49 @@
+---
+
+- name: Airflow EFS Security Group
+  ec2_group:
+    name: "{{env_name}}-airflow-efs-sg"
+    description: "Airflow EFS SG"
+    vpc_id: "{{ aws_vpc_id }}"
+    region: "{{ aws_region }}"
+    tags:
+      vendor: "{{ vendor }}"
+      env_name: "{{ env_name }}"
+    rules:
+      - proto: tcp
+        from_port: 2049
+        to_port: 2049
+        group_id: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
+    rules_egress:
+      - proto: tcp
+        from_port: 0
+        to_port: 65535
+        cidr_ip: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
+
+- name: Get Airflow EFS SG
+  ec2_group_facts:
+    region: "{{ aws_region }}"
+    filters: 
+      group_name: "{{env_name}}-airflow-efs-sg"
+  register: airflow_efs_sg_facts
+
+- name: set EFS targets
+  set_fact:
+    efs_targets: "{{ efs_targets + [ {'subnet_id': item, 'security_groups': (airflow_efs_sg_facts.security_groups|map(attribute='group_id')|list) } ] }}"
+  with_items: "{{ subnet_facts.subnets|map(attribute='subnet_id')|list }}"
+
+- name: Create Airflow EFS
+  efs:
+    state: present
+    name:  "{{env_name}}-airflow-efs"
+    region: "{{ aws_region }}"
+    tags:
+      Name: "{{env_name}}-airflow-efs"
+      vendor: "{{ vendor }}"
+      env_name: "{{ env_name }}"
+      purpose: "airflow_storage"
+    targets: "{{ efs_targets }}"
+  register: airflow_efs
+
+- debug: 
+   msg: "Airflow EFS Endpoint: {{ airflow_efs.efs.mount_point }}"
