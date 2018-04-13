@@ -1,0 +1,8 @@
+---
+
+####################
+# Install Kubernetes Dashboard
+####################
+
+- name: Launch Kubernetes dashboard service
+  command: "kubectl apply -f https://raw.githubusercontent.com/kubernetes/kops/master/addons/kubernetes-dashboard/v1.8.1.yaml"

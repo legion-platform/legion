@@ -1,0 +1,18 @@
+---
+###########################
+# Setup Kubernetes Cluster
+###########################
+
+# NOTICE:
+# You Must specify profile name as an extra var (--extra-vars "profile=XXXX") 
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - "../profiles/{{ profile }}.yml"
+
+  roles:
+    - certificates
+    - k8s_create_cluster
+    - k8s_resources

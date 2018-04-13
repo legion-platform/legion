@@ -1,4 +1,8 @@
 ---
+
+- name: Configure kubectl using kops
+  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+
 - name: Add helm repositories
   shell: helm repo add {{ item }}
   with_items:

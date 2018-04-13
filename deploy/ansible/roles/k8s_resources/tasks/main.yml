@@ -1,0 +1,6 @@
+---
+
+- include: dashboard.yaml
+- include: autoscaler.yaml
+- include: ingress.yaml
+- include: pvc.yaml

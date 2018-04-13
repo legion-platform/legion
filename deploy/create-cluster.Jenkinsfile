@@ -1,148 +1,34 @@
-def ansibleIp = ''
 def baseDomain = ''
 def BASE_DOMAIN = false
-def ip = ''
 def targetBranch = params.GitBranch
 
 node {
-    try {
+    try{
         stage('Checkout GIT'){
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
         }
+        
         stage('Install tools package'){
-            sh '''
-            sudo rm -rf .venv
-            virtualenv .venv
-
-            cd legion_test
-            ../.venv/bin/python3 setup.py develop
-            '''
+                sh '''
+                sudo rm -rf .venv
+                virtualenv .venv
+    
+                cd legion_test
+                ../.venv/bin/python3 setup.py develop
+                '''
         }
-    	stage('Terraforming'){
-    	    if (params.USE_TERRAFORM){
-        	    dir('deploy/terraform'){
-        	        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
-                	    sh "terraform --version"
-                	    if (fileExists("status")) {
-                            sh "rm status"
-                        }
 
-                        if (fileExists(".terraform/terraform.tfstate")){
-                            sh "rm .terraform/terraform.tfstate"
-                        }
-
-						if (!fileExists("../profiles/" + params.PROFILE + ".tfvars")){
-							sh "pwd"
-							sh "ls -lah ../profiles/"
-							error "Cannot found profile ${params.PROFILE} files"
-						}
-
-                        sh '''
-                        terraform init \
-                            -var-file="../profiles/$PROFILE.tfvars" \
-                            -backend-config="bucket=$TF_VAR_STATE_S3_BUCKET" \
-                            -backend-config="key=$TF_VAR_STATE_S3_KEY.$PROFILE" \
-                            -backend-config="region=$TF_VAR_STATE_S3_REGION"
-                        '''
-
-                        sh "set +e; terraform plan -var-file=\"../profiles/\$PROFILE.tfvars\" -out=plan.out -detailed-exitcode; echo \$? > status"
-
-                        def exitCode = readFile('status').trim()
-                        def apply = false
-                        echo "Terraform Plan Exit Code: ${exitCode}"
-
-                        if (exitCode == "0") {
-                            currentBuild.result = 'SUCCESS'
-                        }
-                        if (exitCode == "1") {
-                            if (params.SLACK_NOTIFICATION_ENABLED){
-                                slackSend color: '#0080ff', message: "Plan Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-                            }
-                            currentBuild.result = 'FAILURE'
-                        }
-                        if (exitCode == "2") {
-                            stash name: "plan", includes: "plan.out"
-
-                            if (!params.TF_AUTO_APPLY){
-                                if (params.SLACK_NOTIFICATION_ENABLED){
-                                    slackSend color: 'good', message: "Plan Awaiting Approval: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-                                }
-                                try {
-                                    input message: 'Apply Plan?', ok: 'Apply'
-                                    apply = true
-                                } catch (err) {
-                                    if (params.SLACK_NOTIFICATION_ENABLED){
-                                        slackSend color: 'warning', message: "Plan Discarded: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-                                    }
-                                    apply = false
-                                    currentBuild.result = 'UNSTABLE'
-                                }
-                            }
-                            else {
-                                apply = true
-                            }
-                        }
-
-                        if (apply) {
-                            unstash 'plan'
-
-                            if (fileExists("status.apply")) {
-                                sh "rm status.apply"
-                            }
-
-                            sh 'set +e; terraform apply plan.out; echo \$? > status.apply'
-
-                            def applyExitCode = readFile('status.apply').trim()
-                            if (applyExitCode == "0") {
-                                if (params.SLACK_NOTIFICATION_ENABLED){
-                                    slackSend color: 'good', message: "Changes Applied ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-                                }
-                            } else {
-                                if (params.SLACK_NOTIFICATION_ENABLED){
-                                    slackSend color: 'danger', message: "Apply Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-                                }
-                                currentBuild.result = 'FAILURE'
-                            }
-
-                            ansibleIp = sh(returnStdout: true, script: "terraform output -json private_ip | jq '.value'").trim().replaceAll("\"", "")
-
-                            print("Terra IP: $ansibleIp")
-
-                        }
-                        else {
-                            print("Skipping apply process of terraform")
-                        }
-                    }
-                }
-            }
-            else {
-                print("Skipping terraform")
-            }
-        }
-        stage('IP'){
-
-            if (ansibleIp.length() > 0){
-                print("Using IP from terraform stage: $ansibleIp")
-                ip = ansibleIp
-            }
-            else if (params.ANSIBLE_SPECIFIC_IP.length() > 0){
-                print("Using IP from parameter: ${params.ANSIBLE_SPECIFIC_IP}")
-                ip = params.ANSIBLE_SPECIFIC_IP
-            }
-            else {
-                error "Cannot detect IP for ansible"
-            }
-        }
-        stage('Ansible'){
-            if (params.USE_ANSIBLE){
-                withCredentials([file(credentialsId: params.CREDENTIAL_SECRETS_NAME, variable: 'CREDENTIAL_SECRETS')]) {
-                    sh """
-                    ANSIBLE_HOST_KEY_CHECKING=False CREDENTIAL_SECRETS="${env.CREDENTIAL_SECRETS}" ansible-playbook \
-                    -u ${params.TF_VAR_SSH_USER} \
-                    -e "ansible_ssh_user=${params.TF_VAR_SSH_USER}" \
-                    --private-key "${params.TF_VAR_SSH_KEY}" -i "$ip," deploy/ansible/site.yml
-                    """
+        stage('Create Kubernetes Cluster') {
+               dir('deploy/ansible'){
+                   withAWS(credentials: 'kops') {
+                       wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                           ansiblePlaybook(
+                               playbook: 'delete-cluster.yml --extra-vars "profile=${Profile}"',
+                               colorized: true
+                           )
+                       }
+                   }
                 }
 
                 archiveArtifacts 'deploy/ansible/helm.airflow.debug'
@@ -162,11 +48,8 @@ node {
 
                 print "Loaded base domain ${BASE_DOMAIN}"
                 // \ load variables
-            }
-            else {
-                print("Skipping ansible")
-            }
         }
+
         stage('Domain'){
             if (BASE_DOMAIN){
                 print("Using Domain from ansible stage: $BASE_DOMAIN")
@@ -180,6 +63,7 @@ node {
                 error "Cannot detect domain for post-ansible jobs"
             }
         }
+
         stage('Create & check jenkins jobs'){
             if (params.CreateJenkinsTests){
                 sh """
@@ -219,6 +103,7 @@ node {
                 print("Skipping Jenkins")
             }
         }
+
         stage('Run robot tests'){
             if (params.UseRegressionTests){
                 sh '''
