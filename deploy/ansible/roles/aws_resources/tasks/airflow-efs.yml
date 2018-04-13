@@ -4,7 +4,7 @@
   ec2_group:
     name: "{{env_name}}-airflow-efs-sg"
     description: "Airflow EFS SG"
-    vpc_id: "{{ aws_vpc_id }}"
+    vpc_id: "{{ vpc_id }}"
     region: "{{ aws_region }}"
     tags:
       vendor: "{{ vendor }}"

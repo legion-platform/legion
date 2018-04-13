@@ -8,7 +8,7 @@ spec:
     loadBalancer:
       type: Public
       additionalSecurityGroups:
-      - {{ elb_sg }}
+      - {{ external_access_sg }}
   authorization:
     rbac: {}
   kubeAPIServer:
@@ -41,7 +41,7 @@ spec:
   kubernetesVersion: {{ kubernetes_version }}
   masterPublicName: api.{{ cluster_name }}
   networkCIDR: {{ private_network }}.0.0/16
-  networkID: {{ network_id }}
+  networkID: {{ vpc_id }}
   networking:
     flannel: {}
   nonMasqueradeCIDR: 100.64.0.0/10
@@ -87,9 +87,9 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: null
   labels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: master-{{ aws_region }}a
 spec:
@@ -98,9 +98,9 @@ spec:
   maxSize: 1
   minSize: 1
   nodeLabels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/instancegroup: master-{{ aws_region }}a
   role: Master
   subnets:
@@ -113,9 +113,9 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: null
   labels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: master-{{ aws_region }}b
 spec:
@@ -124,9 +124,9 @@ spec:
   maxSize: 1
   minSize: 1
   nodeLabels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/instancegroup: master-{{ aws_region }}b
   role: Master
   subnets:
@@ -139,9 +139,9 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: null
   labels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: master-{{ aws_region }}c
 spec:
@@ -150,9 +150,9 @@ spec:
   maxSize: 1
   minSize: 1
   nodeLabels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}    
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}    
     kops.k8s.io/instancegroup: master-{{ aws_region }}c
   role: Master
   subnets:
@@ -165,9 +165,9 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: null
   labels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: nodes
 spec:
@@ -176,9 +176,9 @@ spec:
   maxSize: {{ node_autoscaler_max }}
   minSize: {{ node_autoscaler_min }}
   nodeLabels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes
   role: Node
   subnets:
@@ -193,9 +193,9 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: null
   labels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: bastions
 spec:
@@ -204,9 +204,9 @@ spec:
   maxSize: 1
   minSize: 1
   nodeLabels:
-    vendor: {{ vendor_label }}
-    env_type: {{ env_label }}
-    env_name: {{ env_name_label }}
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
     kops.k8s.io/instancegroup: bastions
   role: Bastion
   subnets:
