@@ -2,24 +2,29 @@ rootDomain: {{ base_domain }}
 namespace: default
 localDomain: "cluster.local"
 
-image: "nexus.local.epm.kharlamov.biz:443/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
+image: "{{ nexus_docker_repo }}/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
 
 secrets:
   postgres:
-    user: airflow
-    password: airflow
-    db: airflow
+    user: {{ airflow_rds_user }}
+    password: {{ airflow_rds_pass }}
+    db: {{ airflow_db_name }}
 
   rabbitmq:
     user: airflow
     password: airflow
     vhost: airflow
 
-  fernet_key: {{ secret_fernet_key }}
+  fernet_key: {{ secrets.airflow.fernet_key }}
   flask: {{ secret_flask }}
 
 connections:
 {{ secrets.airflow.connections|to_yaml }}
+
+postgres:
+  external: true
+  host: {{ airflow_rds_instance.instance.endpoint }}
+  port: 5432
 
 core:
   logging_level: info
@@ -37,8 +42,8 @@ smtp:
   smtp_mail_from: {{ secrets.airflow.email.smtp_mail_from }}
 
 storage:
-    use_specified_pvc: true
-    pvc_name: "legion-airflow-shared" # from shared_k8s_resources/templates
+  use_specified_pvc: true
+  pvc_name: "legion-airflow-shared" # from shared_k8s_resources/templates
 
 ingress:
   enabled: true

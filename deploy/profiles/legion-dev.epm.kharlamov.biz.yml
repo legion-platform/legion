@@ -1,0 +1,76 @@
+# Common
+aws_profile: default
+vendor: legion
+env_type: dev
+env_name: legion-dev
+base_domain: legion-dev.epm.kharlamov.biz
+route53_zone: epm.kharlamov.biz
+
+# AWS 
+aws_region: us-east-2
+node_autoscaler_min: 3
+node_autoscaler_max: 5
+bastion_shape: t2.micro
+master_shape: t2.large
+node_shape: t2.large
+vpc_id: vpc-5729c13e
+cluster_zones:
+  - us-east-2a
+  - us-east-2b
+  - us-east-2c
+external_access_sgs: 
+  - sg-f92af090
+  - sg-fa2af093
+  - sg-fb2af092
+airflow_rds_shape: "db.t2.medium"
+airflow_rds_size: "50"
+airflow_db_name: "airflow"
+airflow_rds_user: "airflow"
+airflow_rds_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          34366361306466653334626530646330623064633130363434366362626638346338623865346663
+          3464333731653465326166626661366134633530646332660a656334633239636135353833396361
+          31303238306361313337663333303335376134633535363339393332636135346366383238376534
+          3531623736653164340a313132373730336231383232383166333563343933666233643934313563
+          3761
+
+# Kops
+cluster_name: legion-dev.epm.kharlamov.biz
+state_store: s3://legion-cluster
+aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
+kubernetes_version: 1.8.7
+private_network: '172.31'
+kops_zone_a_cidr: "{{ private_network }}.100.0/24"
+kops_zone_b_cidr: "{{ private_network }}.101.0/24"
+kops_zone_c_cidr: "{{ private_network }}.102.0/24"
+kops_utility_zone_a_cidr: "{{ private_network }}.103.0/24"
+kops_utility_zone_b_cidr: "{{ private_network }}.104.0/24"
+kops_utility_zone_c_cidr: "{{ private_network }}.105.0/24"
+
+# Legion specific variables
+ssh_public_key: ~/.ssh/id_rsa.pub
+certificate_email: legion@epam.com
+git_key: "/home/jenkins/deploy.cert"
+cert_dir: "/etc/dynssl"
+use_https: "yes"
+use_https_for_tests: "no"
+nexus_pypi_repo: "https://nexus.local.epm.kharlamov.biz/repository/pypi-hosted/simple"
+nexus_docker_repo: "nexus.local.epm.kharlamov.biz:443"
+namespace: default
+deployment: legion
+test_base_domain: local.legion-dev.epm.kharlamov.biz
+dashboard_protocol: http
+test_protocol: http
+service_account:
+  login:  admin
+  password: admin
+examples_to_test:
+  - Test-Summation
+  - Sklearn-Income
+  - Digit-Recognition
+storageclass: efs
+airflow:
+  s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
+  s3_url: 's3://epm-legion-data-dev/'
+  expected_output: 'expected-data/'
+  pvc: 200m

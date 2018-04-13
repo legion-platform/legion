@@ -1,0 +1,39 @@
+---
+
+####################
+# Install Ingress
+####################
+
+# Deploy ingress and default backend
+
+- name: Deploy ingress and the default backend
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/namespace.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/default-backend.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/configmap.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/tcp-services-configmap.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/udp-services-configmap.yaml
+
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/rbac.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/with-rbac.yaml
+
+    kubectl patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
+        --patch="$(curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/publish-service-patch.yaml)"
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/aws/service-l4.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/aws/patch-configmap-l4.yaml
+
+- name: Get Ingress ELB endpoint
+  shell: kubectl describe services ingress-nginx --namespace ingress-nginx |grep .elb.amazonaws.com| awk '{ print $3 }'
+  register: ingress_elb_endpoint
+  until: ingress_elb_endpoint.stdout.find(".elb.amazonaws.com") != -1
+  retries: 6
+  delay: 10
+
+- name: Create ingress DNS record
+  route53:
+    state: present
+    zone: "{{ route53_zone }}"
+    record: "*.{{ base_domain }}"
+    type: CNAME
+    value: "{{ ingress_elb_endpoint.stdout }}"
+    overwrite: true

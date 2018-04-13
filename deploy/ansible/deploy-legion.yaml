@@ -1,0 +1,23 @@
+---
+##################
+# Install Legion 
+##################
+
+# NOTICE:
+# You Must specify the next variables as extra vars (--extra-vars "XXXX=YYYY") 
+# profile - unique cluster name
+# base_version - major legion version string
+# local_version - minor legion version string
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - "../profiles/{{ profile }}.yml"
+
+  roles:
+    - helm
+    - core_chart
+    - legion_chart
+    - airflow_chart
+    - debug

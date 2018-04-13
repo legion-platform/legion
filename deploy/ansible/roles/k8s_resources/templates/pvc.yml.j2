@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: "legion-airflow-shared"
+  labels:
+    app: "legion-airflow-shared"
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "{{ airflow.pvc }}"
+  storageClassName: "{{ storageclass }}"

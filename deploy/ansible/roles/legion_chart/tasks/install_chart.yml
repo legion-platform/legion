@@ -1,20 +1,7 @@
 ---
-- name: "Remove {{ tenant }} namespace"
-  shell: "kubectl delete namespace {{ tenant }} --ignore-not-found=true --grace-period=10"
-
-- name: "Check that {{ tenant }} namespace has been removed"
-  shell: "kubectl get namespace {{ tenant }}"
-  register: namespace_check
-  until: namespace_check.stderr.find(' not found') != -1
-  retries: 5
-  delay: 10
-  ignore_errors: true
 
 - name: "Create {{ tenant }} namespace"
   shell: "kubectl create namespace {{ tenant }}"
-
-- name: "Remove old TLS secret {{ root_domain }}-tls from { tenant }} namespace"
-  shell: "kubectl delete secret {{ root_domain }}-tls --namespace={{ tenant }} --ignore-not-found=true"
 
 - name: Copy TLS secret
   shell: "kubectl get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ tenant }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
@@ -22,7 +9,7 @@
 - name: Update dependencies of legion chart
   shell: helm dependency update
   args:
-    chdir: ~/helms/legion
+    chdir: ../helms/legion
 
 - name: Generate jupyter hub proxy secret
   command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(60))[:32])'
@@ -37,44 +24,30 @@
     jupyter_hub_proxy_secret: "{{ jupyter_hub_proxy_secret_output.stdout }}"
     git_secret_name: legion-git-deploy
 
-- name: Fetch config
-  fetch:
-    src: /home/ubuntu/.kube/config
-    dest: "{{ playbook_dir }}/config-{{inventory_hostname }}"
-    fail_on_missing: yes
-    flat: yes
-
 - name: Pre run with dumping
   shell: "helm install legion --name legion-{{ tenant }} --namespace {{ tenant }} --debug --dry-run -f  ~/legion-values.yaml"
-  register: helm_install_output
+  register: helm_legion_install_output
   args:
-    chdir: ~/helms
+    chdir: ../helms
 
 - name: Save pre run result
   copy:
-    content: "{{ helm_install_output.stdout }}"
-    dest: ~/helm.debug
-
-- name: Save pre run result localy
-  local_action:
-    module: copy
-    content: "{{ helm_install_output.stdout }}"
-    dest: ./helm.debug
+    content: "{{ helm_legion_install_output.stdout }}"
+    dest: ./helm.legion_{{ tenant }}.debug
 
 - name: Install legion chart
   shell: "helm install legion --name legion-{{ tenant }} --namespace {{ tenant }} --wait --timeout 600 -f  ~/legion-values.yaml"
   args:
-    chdir: ~/helms
+    chdir: ../helms
 
 - name: Run HELM status checker
-  shell: "~/helms/examine_helm_deployed legion-{{ tenant }}"
+  shell: "payloads/examine_helm_deployed legion-{{ tenant }}"
 
 - name: Dump current HELM status
   shell: "helm status legion-{{ tenant }}"
-  register: helm_status_output
+  register: helm_legion_status_output
 
 - name: Save HELM status localy
-  local_action:
-    module: copy
-    content: "{{ helm_status_output.stdout }}"
-    dest: "./helm.{{ tenant }}.status"
+  copy:
+    content: "{{ helm_legion_status_output.stdout }}"
+    dest: "./helm.legion_{{ tenant }}.status"
