@@ -12,6 +12,7 @@
     group: admin
     mode: 0755
     force: yes
+    sha256sum: "{{ kops_sha256sum }}"
   when: ansible_os_family == 'Darwin'
   become: true
 
@@ -23,5 +24,6 @@
     group: root
     mode: 0755
     force: yes
+    sha256sum: "{{ kops_sha256sum }}"
   when: ansible_os_family != 'Darwin'
   become: true

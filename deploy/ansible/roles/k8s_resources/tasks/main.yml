@@ -1,5 +1,9 @@
 ---
 
+# Make sure kubectl is configured with proper cluster
+- name: Configure kubectl using kops
+  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+
 - include: dashboard.yaml
 - include: autoscaler.yaml
 - include: ingress.yaml

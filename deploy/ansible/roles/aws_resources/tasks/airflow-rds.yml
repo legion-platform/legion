@@ -18,7 +18,7 @@
       - proto: tcp
         from_port: 0
         to_port: 65535
-        cidr_ip: "{{ private_network }}"
+        cidr_ip: "{{ private_network }}.0.0/16"
 
 - name: Get Airflow RDS SG
   ec2_group_facts:
@@ -26,9 +26,6 @@
     filters: 
       group_name: "{{env_name}}-airflow-rds-sg"
   register: airflow_rds_sg_facts
-
-- debug: 
-    var: airflow_rds_sg_facts.security_groups.0.group_id
 
 - name: Create Airflow RDS subnet group
   rds_subnet_group:

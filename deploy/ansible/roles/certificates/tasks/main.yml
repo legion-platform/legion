@@ -163,6 +163,10 @@
   connection: local
   when: valid_certificate_not_exists
 
+- name: Wait for DNS changes propagation
+  shell: sleep 180
+  when: valid_certificate_not_exists
+
 - name: validate the Let's Encrypt challenge
   letsencrypt:
     acme_directory: "{{ ler53_acme_url }}"

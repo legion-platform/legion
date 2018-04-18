@@ -1,8 +1,8 @@
 # Common
-aws_profile: "legion-dev"
-vendor: "legion"
-env_type: "dev"
-env_name: "legion-dev"
+aws_profile: default
+vendor: legion
+env_type: dev
+env_name: legion-dev
 base_domain: legion-dev.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
@@ -13,7 +13,11 @@ node_autoscaler_max: 5
 bastion_shape: t2.micro
 master_shape: t2.large
 node_shape: t2.large
-vpc_id: "vpc-5729c13e"
+vpc_id: vpc-5729c13e
+cluster_zones:
+  - us-east-2a
+  - us-east-2b
+  - us-east-2c
 external_access_sgs: 
   - sg-f92af090
   - sg-fa2af093
@@ -66,7 +70,7 @@ examples_to_test:
   - Digit-Recognition
 storageclass: efs
 airflow:
-  s3_log_url: "s3://epm-legion-data-dev/airflow-logs/"
+  s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
   s3_url: 's3://epm-legion-data-dev/'
   expected_output: 'expected-data/'
   pvc: 200m

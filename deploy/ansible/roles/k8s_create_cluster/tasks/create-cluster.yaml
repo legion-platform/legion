@@ -5,7 +5,7 @@
 
 - name: Configure kubectl using kops
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
-  
+
 - name: Create kops configuration
   template:
     src: kops.yaml.j2
@@ -27,5 +27,3 @@
   until: cmd_result.rc == 0
   retries: 20
   delay: 60
-
-

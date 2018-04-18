@@ -18,7 +18,7 @@
       - proto: tcp
         from_port: 0
         to_port: 65535
-        cidr_ip: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
+        group_id: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
 
 - name: Get Airflow EFS SG
   ec2_group_facts:
@@ -27,10 +27,14 @@
       group_name: "{{env_name}}-airflow-efs-sg"
   register: airflow_efs_sg_facts
 
+- name: init EFS targets list
+  set_fact:
+    efs_targets: []
+
 - name: set EFS targets
   set_fact:
     efs_targets: "{{ efs_targets + [ {'subnet_id': item, 'security_groups': (airflow_efs_sg_facts.security_groups|map(attribute='group_id')|list) } ] }}"
-  with_items: "{{ subnet_facts.subnets|map(attribute='subnet_id')|list }}"
+  with_items: "{{ subnet_facts.results|map(attribute='subnets.0.id')|list }}"
 
 - name: Create Airflow EFS
   efs:
@@ -45,5 +49,5 @@
     targets: "{{ efs_targets }}"
   register: airflow_efs
 
-- debug: 
-   msg: "Airflow EFS Endpoint: {{ airflow_efs.efs.mount_point }}"
+-  debug: 
+    msg: "Airflow EFS Endpoint: {{ airflow_efs.efs.mount_point }}"

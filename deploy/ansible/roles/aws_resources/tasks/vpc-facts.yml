@@ -9,7 +9,8 @@
   with_items: "{{ cluster_zones }}"
   register: subnet_facts
 
-- debug: 
+- name: Cluster subnets
+  debug: 
     msg: "{{ subnet_facts.results|map(attribute='subnets.0.id')|list }}"
 
 - name: Gather kubernetes workers security groups
@@ -18,7 +19,8 @@
       "tag:Name": "nodes.{{ cluster_name }}"
   register: workers_sg_facts
 
-- debug:
+- name: Workers security groups
+  debug:
     msg: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
 
 

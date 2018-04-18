@@ -15,7 +15,7 @@ node {
                     wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                         ansiblePlaybook(
                             playbook: 'delete-cluster.yml --extra-vars "profile=${Profile}"',
-                            colorized: true
+                            colo  rized: true
                         )
                     }
                 }
