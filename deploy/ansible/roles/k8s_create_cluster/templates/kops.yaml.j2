@@ -8,7 +8,7 @@ spec:
     loadBalancer:
       type: Public
       additionalSecurityGroups:
-      - {{ external_access_sg }}
+      - {{ external_access_sgs }}
   authorization:
     rbac: {}
   kubeAPIServer:

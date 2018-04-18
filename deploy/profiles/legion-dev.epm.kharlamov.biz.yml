@@ -1,19 +1,23 @@
 # Common
-aws_profile: "drun-dev"
-vendor: "drun"
+aws_profile: "legion-dev"
+vendor: "legion"
 env_type: "dev"
-env_name: "drun-dev"
-base_domain: drun-dev.epm.kharlamov.biz
+env_name: "legion-dev"
+base_domain: legion-dev.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
 # AWS 
-aws_region: us-east-1
+aws_region: us-east-2
 node_autoscaler_min: 3
-node_autoscaler_max: 10
+node_autoscaler_max: 5
 bastion_shape: t2.micro
-master_shape: m3.medium
-node_shape: m4.large
-vpc_id: "vpc-2968d652"
+master_shape: t2.large
+node_shape: t2.large
+vpc_id: "vpc-5729c13e"
+external_access_sgs: 
+  - sg-f92af090
+  - sg-fa2af093
+  - sg-fb2af092
 airflow_rds_shape: "db.t2.medium"
 airflow_rds_size: "50"
 airflow_db_name: "airflow"
@@ -27,17 +31,17 @@ airflow_rds_pass: !vault |
           3761
 
 # Kops
-cluster_name: drun-dev.epm.kharlamov.biz
-state_store: s3://drun-quinada-kops-dev
+cluster_name: legion-dev.epm.kharlamov.biz
+state_store: s3://legion-cluster
 aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
 kubernetes_version: 1.8.7
-private_network: '10.0'
-kops_zone_a_cidr: "{{ private_network }}.32.0/19"
-kops_zone_b_cidr: "{{ private_network }}.64.0/19"
-kops_zone_c_cidr: "{{ private_network }}.96.0/19"
-kops_utility_zone_a_cidr: "{{ private_network }}.4.0/22"
-kops_utility_zone_b_cidr: "{{ private_network }}.8.0/22"
-kops_utility_zone_c_cidr: "{{ private_network }}.12.0/22"
+private_network: '172.31'
+kops_zone_a_cidr: "{{ private_network }}.100.0/24"
+kops_zone_b_cidr: "{{ private_network }}.101.0/24"
+kops_zone_c_cidr: "{{ private_network }}.102.0/24"
+kops_utility_zone_a_cidr: "{{ private_network }}.103.0/24"
+kops_utility_zone_b_cidr: "{{ private_network }}.104.0/24"
+kops_utility_zone_c_cidr: "{{ private_network }}.105.0/24"
 
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
@@ -46,11 +50,11 @@ git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
 use_https_for_tests: "no"
-nexus_pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
-nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443"
+nexus_pypi_repo: "https://nexus.local.epm.kharlamov.biz/repository/pypi-hosted/simple"
+nexus_docker_repo: "nexus.local.epm.kharlamov.biz:443"
 namespace: default
 deployment: legion
-test_base_domain: local.drun-dev.epm.kharlamov.biz
+test_base_domain: local.legion-dev.epm.kharlamov.biz
 dashboard_protocol: http
 test_protocol: http
 service_account:
@@ -62,7 +66,7 @@ examples_to_test:
   - Digit-Recognition
 storageclass: efs
 airflow:
-  s3_log_url: 's3://drun-quinada-data-dev/single_master/airflow-logs/'
-  s3_url: 's3://drun-quinada-data-dev/'
+  s3_log_url: "s3://epm-legion-data-dev/airflow-logs/"
+  s3_url: 's3://epm-legion-data-dev/'
   expected_output: 'expected-data/'
   pvc: 200m
