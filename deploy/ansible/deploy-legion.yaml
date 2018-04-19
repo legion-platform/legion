@@ -17,6 +17,7 @@
 
   roles:
     - helm
+    - core_chart
     - legion_chart
-    - common_chart
+    - airflow_chart
     - debug

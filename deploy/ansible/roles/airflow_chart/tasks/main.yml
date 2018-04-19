@@ -1,8 +1,4 @@
 ---
-
-- name: Configure kubectl using kops
-  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
-
 - name: Get airflow chart status
   shell: helm ls --all airflow
   register: airflow_deployment_status
@@ -14,25 +10,12 @@
   shell: helm delete --purge airflow
   when: airflow_deployed
 
-- name: Remove current chart of server
-  file:
-    state: absent
-    path: ~/helms/airflow
+- name: WORKAROUND delete pods in phase terminating
+  shell: kubectl delete --grace-period=0 --force po $(kubectl get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
-- name: Copy actual version of helm chart
-  copy:
-    src: ../helms/airflow
-    dest: ~/helms
-    owner: ubuntu
-    group: ubuntu
-
-- name: Install PIP
-  become: true
-  command: apt install --no-install-recommends --assume-yes python-pip
-
-- name: Install crypto package
-  become: true
-  command: python -m pip install cryptography
+- name: Remove legion core chart
+  shell: payloads/helm_delete_by_chart_name airflow
+  ignore_errors: true
 
 - name: Generate fernet key
   command: python -c 'from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)'
@@ -53,32 +36,26 @@
 
 - name: Pre run with dumping
   shell: helm install airflow --name airflow --debug --dry-run -f  ~/airflow-values.yaml
-  register: helm_install_output
+  register: helm_airflow_install_output
   args:
-    chdir: ~/helms
+    chdir: ../helms
 
 - name: Save pre run result
   copy:
-    content: "{{ helm_install_output.stdout }}"
-    dest: ~/helm.airflow.debug
-
-- name: Save pre run result localy
-  local_action:
-    module: copy
-    content: "{{ helm_install_output.stdout }}"
+    content: "{{ helm_airflow_install_output.stdout }}"
     dest: ./helm.airflow.debug
 
 - name: Install airflow chart
   shell: helm install airflow --name airflow --wait --timeout 600 -f  ~/airflow-values.yaml
   args:
-    chdir: ~/helms
+    chdir: ../helms
 
 - name: Dump current HELM status
   shell: helm status airflow
-  register: helm_status_output
+  register: helm_airflow_status_output
 
 - name: Save HELM status localy
   local_action:
     module: copy
-    content: "{{ helm_status_output.stdout }}"
+    content: "{{ helm_airflow_status_output.stdout }}"
     dest: ./helm.airflow.status

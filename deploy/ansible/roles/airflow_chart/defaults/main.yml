@@ -1,1 +1,4 @@
 ---
+helm_url: https://storage.googleapis.com/kubernetes-helm/helm-v2.7.2-linux-amd64.tar.gz
+helm_temp_directory: /tmp
+helm_bin_dest: /usr/local/bin/helm
