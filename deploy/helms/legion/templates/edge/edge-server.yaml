@@ -76,7 +76,7 @@ metadata:
   name: "{{ .Release.Name }}-edge"
 spec:
   rules:
-    - host: "{{ .Values.edge.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - host: "{{ .Values.edge.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:
@@ -93,7 +93,7 @@ spec:
   {{- if .Values.edge.ingress.tls.enabled }}
   tls:
   - hosts:
-    - "{{ .Values.edge.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - "{{ .Values.edge.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
     {{- if .Values.edge.ingress.tls.autoSecretNameDeduction }}
     secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}

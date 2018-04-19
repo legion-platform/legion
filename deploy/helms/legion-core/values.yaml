@@ -1,0 +1,111 @@
+rootDomain: k8s-nightly.epm.kharlamov.biz
+localDomain: "cluster.local"
+tenantDeploymentPrefix: "legion-"
+domainDelimiter: "."
+
+secrets:
+  nexus:
+    admin: "jonny"
+
+jenkins:
+  enabled: true
+  image:
+    repository: "legion/k8s-jenkins"
+    tag: "latest"
+    pullPolicy: "Always"
+
+  rbac: true
+  
+  ingress:
+    enabled: true
+    annotations: {}
+    domain:
+      partial: jenkins
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
+
+  git_secret_name: false
+
+  airflow:
+    enabled: false
+    rest_url: ''
+    s3_url: ''
+    expected_output: ''
+
+    dags_volume_pvc: ''
+
+nexus:
+  # Nexus repository configuration
+  enabled: false
+  replicas: 1
+
+  image:
+    repository: "cavemandaveman/nexus"
+    tag: "3.6.0-02"
+
+  resources: {}
+
+  port: 8081
+  hostport: 31110
+
+  service:
+    annotations: {}
+
+  docker:
+    enabled: true
+    port: 5509
+    hostport: 31111
+    host: localhost
+
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 6
+
+  persistence:
+    enabled: true
+    storageClass: "hostpath"
+    accessMode: ReadWriteOnce
+    # existingClaim: ""
+    size: 20Gi
+
+  ## Create an Ingress for the Web UI
+  ingress:
+    enabled: true
+    annotations: {}
+    domain:
+      partial: nexus
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
+      # secretName: nexus.k8s-nightly.epm.kharlamov.biz-tlsa
+
+connections:
+  docker:
+    type: proxy
+
+grafana:
+  enabled: true
+  image:
+    repository: "legion/k8s-grafana"
+    tag: "latest"
+    pullPolicy: "Always"
+
+  # graphite: "aaaa"
+
+  ingress:
+    enabled: true
+    annotations: {}
+    domain:
+      partial: grafana
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
+
+graphite:
+  enabled: true

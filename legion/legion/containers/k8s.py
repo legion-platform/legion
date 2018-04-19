@@ -224,8 +224,7 @@ def remove_deployment(deployment, namespace='default', grace_period=0):
                                               grace_period_seconds=grace_period)
 
 
-def deploy(cluster_config, cluster_secrets, namespace,
-           deployment, image, k8s_image=None, count=1, register_on_grafana=True):
+def deploy(cluster_config, cluster_secrets, image, k8s_image=None, count=1, register_on_grafana=True):
     """
     Deploy model to kubernetes
 
@@ -233,10 +232,6 @@ def deploy(cluster_config, cluster_secrets, namespace,
     :type cluster_config: dict
     :param cluster_secrets: secrets with credentials
     :type cluster_secrets: dict[str, str]
-    :param namespace: namespace
-    :type namespace: str
-    :param deployment: deployment name
-    :type deployment: str
     :param image: docker image with model
     :type image: str
     :param k8s_image: specific image for kubernetes cluster
@@ -247,6 +242,7 @@ def deploy(cluster_config, cluster_secrets, namespace,
     :type register_on_grafana: bool
     :return: :py:class:`docker.model.Container` new instance
     """
+    namespace = cluster_config.get('namespace')
     client = kubernetes.client
 
     # TODO: Question. What do?
@@ -307,7 +303,7 @@ def deploy(cluster_config, cluster_secrets, namespace,
     return api_response
 
 
-def inspect(cluster_config, cluster_secrets, namespace=None):
+def inspect(cluster_config, cluster_secrets):
     """
     Get model deployments information
 
@@ -315,9 +311,9 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
     :type cluster_config: dict
     :param cluster_secrets: secrets with credentials
     :type cluster_secrets: dict[str, str]
-    :param namespace:
     :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
     """
+    namespace = cluster_config.get('namespace')
     deployments = find_all_models_deployments(namespace)
     models = []
 
@@ -375,7 +371,7 @@ def inspect(cluster_config, cluster_secrets, namespace=None):
     return models
 
 
-def undeploy(cluster_config, cluster_secrets, namespace, model_id, grace_period=0, register_on_grafana=True):
+def undeploy(cluster_config, cluster_secrets, model_id, grace_period=0, register_on_grafana=True):
     """
     Undeploy model pods
 
@@ -383,8 +379,6 @@ def undeploy(cluster_config, cluster_secrets, namespace, model_id, grace_period=
     :type cluster_config: dict
     :param cluster_secrets: secrets with credentials
     :type cluster_secrets: dict[str, str]
-    :param namespace: namespace
-    :type namespace: str
     :param model_id: model id
     :type model_id: str
     :param grace_period: grace period time in seconds
@@ -393,6 +387,7 @@ def undeploy(cluster_config, cluster_secrets, namespace, model_id, grace_period=
     :type register_on_grafana: bool
     :return: None
     """
+    namespace = cluster_config.get('namespace')
     deployment = find_model_deployment(model_id, namespace)
     if not deployment:
         raise Exception('Cannot find deployment for model %s in namespace %s' % (model_id, namespace))
@@ -409,7 +404,7 @@ def undeploy(cluster_config, cluster_secrets, namespace, model_id, grace_period=
             grafana_client.remove_dashboard_for_model(model_id)
 
 
-def scale(cluster_config, cluster_secrets, namespace, model_id, count):
+def scale(cluster_config, cluster_secrets, model_id, count):
     """
     Change count of model pods
 
@@ -417,14 +412,13 @@ def scale(cluster_config, cluster_secrets, namespace, model_id, count):
     :type cluster_config: dict
     :param cluster_secrets: secrets with credentials
     :type cluster_secrets: dict[str, str]
-    :param namespace: namespace
-    :type namespace: str
     :param model_id: model id
     :type model_id: str
     :param count: new count of pods
     :type count: int
     :return: None
     """
+    namespace = cluster_config.get('namespace')
     deployment = find_model_deployment(model_id, namespace)
     if not deployment:
         raise Exception('Cannot find deployment for model %s in namespace %s' % (model_id, namespace))

@@ -3,6 +3,11 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-jenkins"
   name: jenkins
 rules:
 - apiGroups: [""]
@@ -21,6 +26,11 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-jenkins"
   name: jenkins
 subjects:
 - kind: ServiceAccount
@@ -34,6 +44,11 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-jenkins"
   name: jenkins
 {{- end }}
 {{- end }}

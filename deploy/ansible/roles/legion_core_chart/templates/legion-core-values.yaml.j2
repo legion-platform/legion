@@ -1,6 +1,7 @@
-rootDomain: {{ root_domain }}
-tenantName: "{{ tenant }}"
+rootDomain: {{ base_domain }}
 namespace: default
+localDomain: "cluster.local"
+addLocalDomain: true
 
 package:
   version: "{{ base_version }}+{{ local_version }}"
@@ -10,17 +11,38 @@ package:
     repository: "nexus.local.epm.kharlamov.biz:443/legion/base-python-image"
     tag: "{{ base_version }}-{{ local_version }}"
 
-consul:
-  uiIngress:
-    enabled: true
-    hosts:
-    - consul{{ domain_delimiter }}{{ root_domain }}
+secrets:
+  nexus:
+    admin: "jonny"
+
+jenkins:
+  enabled: true
+  image:
+    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-jenkins"
+    tag: "{{ base_version }}-{{ local_version }}"
+
+  git_secret_name: "{{ git_secret_name }}"
+
+  ingress:
     tls:
-    - hosts:
-      - consul{{ domain_delimiter }}{{ root_domain }}
-      secretName: {{ root_domain }}-tls
+      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+
+  airflow:
+    enabled: true
+    rest_url: 'http://airflow-web:8080/admin/rest_api'
+    s3_url: '{{ airflow.s3_url }}'
+    expected_output: '{{ airflow.expected_output }}'
+
+    dags_volume_pvc: 'legion-airflow-shared' # from shared_k8s_resources/templates
+
+graphite:
+  enabled: true
+  image:
+    repository: "hopsoft/graphite-statsd"
+    tag: "latest"
 
 grafana:
+  enabled: true
   image:
     repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-grafana"
     tag: "{{ base_version }}-{{ local_version }}"
@@ -29,23 +51,8 @@ grafana:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
 
-edge:
+nexus:
   enabled: true
-  replicas: 2
-  image: 
-    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-edge"
-    tag: "{{ base_version }}-{{ local_version }}"
-
-  ingress:
-    tls:
-      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
-
-edi:
-  enabled: true
-  replicas: 2
-  image:
-    repository: "nexus.local.epm.kharlamov.biz:443/legion/k8s-edi"
-    tag: "{{ base_version }}-{{ local_version }}"
 
   ingress:
     tls:

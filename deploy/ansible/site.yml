@@ -64,10 +64,29 @@
       include_role:
         name: shared_k8s_resources
 
-    - name: Create DNS records
+    - name: Create DNS records for clusterwide resources
       include_role:
         name: dns_records
+      vars:
+        current_subdomains: "{{ subdomains }}"
+        root_domain: "{{ base_domain }}"
       when: install_only_chart == "no"
+
+    - name: Create DNS records for tenant {{ tenant }}
+      include_role:
+        name: dns_records
+      vars:
+        current_subdomains: "{{ tenant_subdomains }}"
+        root_domain: "{{ tenant }}.{{ base_domain }}"
+        domain_delimiter: "-"
+      with_items: "{{ tenants }}"
+      loop_control:
+        loop_var: tenant
+      when: install_only_chart == "no"
+
+    - name: Install charts common dependencies
+      include_role:
+        name: charts_common
 
     - name: Create Ingress
       include_role:
@@ -79,13 +98,25 @@
         name: k8s_dashboard
       when: install_only_chart == "no"
 
-    - name: Install legion chart
+    - name: Install legion clusterwide chart
       include_role:
-        name: legion_chart
+        name: legion_core_chart
 
-    - name: Install airflow chart
+    - name: Install airflow clusterwide chart
       include_role:
         name: airflow_chart
+
+    - name: "Install legion chart for {{ tenant }}"
+      include_role:
+        name: legion_chart
+      vars:
+        root_domain: "{{ tenant }}.{{ base_domain }}"
+        domain_delimiter: "-"
+        namespace: "{{ tenant }}"
+        source_secret_name: "{{ base_domain }}-tls"
+      with_items: "{{ tenants }}"
+      loop_control:
+        loop_var: tenant
 
     - name: Debug output data
       include_role:

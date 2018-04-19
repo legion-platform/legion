@@ -189,17 +189,26 @@ def work(options):
     client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
 
     start = time.time()
-    while True:
+
+    connected = False
+
+    while not connected:
         elapsed = time.time() - start
         if elapsed > options.connection_timeout:
             break
 
         try:
             client.get_all_jobs()
-            break
+            connected = True
         except Exception as connection_exception:
             print('Reconnecting... %s' % connection_exception)
             time.sleep(options.socket_reconnect_sleep)
+
+    if not connected:
+        print('Failed to connect to %s' % options.jenkins_url)
+        exit(1)
+
+    print('Connection established')
 
     if options.plain_tasks:
         create_plain_jobs(client, options)

@@ -1,0 +1,95 @@
+{{- if .Values.graphite.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-graphite-config"
+data:
+  config_udp.js: |-
+    {
+      "graphiteHost": "127.0.0.1",
+      "graphitePort": 2003,
+      "debug": true,
+      "dumpMessages": true,
+      "port": 8125,
+      "flushInterval": 10000,
+      "percentThreshold": [50, 90, 95, 99],
+      "servers": [
+          { server: "./servers/udp", address: "0.0.0.0", port: 8125 }
+      ],
+      "histogram": [
+        {
+            metric: 'request.time',
+            bins: [ 5, 10, 50, 100, 200, 400, 'inf']
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-graphite"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-graphite"
+spec:
+  replicas: 1
+  selector:
+    component: "{{ .Release.Name }}-graphite"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-graphite"
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: "{{ .Release.Name }}-graphite-config"
+      containers:
+      - name: graphite
+        image: "{{ .Values.graphite.image.repository }}:{{ .Values.graphite.image.tag }}"
+        imagePullPolicy: "{{ .Values.graphite.image.pullPolicy }}"
+        volumeMounts:
+        - mountPath: /opt/statsd/config_udp.js
+          name: config
+          subPath: config_udp.js
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 2003
+          name: carbon-reciever
+          protocol: TCP
+        - containerPort: 8126
+          name: statsd-admin
+          protocol: TCP
+        - containerPort: 8125
+          name: statsd
+          protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-graphite"
+  labels:
+    component: "{{ .Release.Name }}-graphite"
+    legion/system: "yes"
+    legion/component: "graphite"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-graphite"
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: carbon-reciever
+    port: 2003
+    protocol: TCP
+  - name: statsd-admin
+    port: 8126
+    protocol: TCP
+  - name: statsd
+    port: 8125
+    protocol: UDP
+{{- end }}

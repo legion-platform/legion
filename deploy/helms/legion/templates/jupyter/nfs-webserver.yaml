@@ -72,7 +72,7 @@ metadata:
     {{- end }}
 spec:
   rules:
-    - host: "{{ .Values.jupyterhub.nfs.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - host: "{{ .Values.jupyterhub.nfs.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
       http:
         paths:
           - path: /
@@ -82,7 +82,7 @@ spec:
   {{- if .Values.jupyterhub.nfs.ingress.tls.enabled }}
   tls:
   - hosts:
-    - "{{ .Values.jupyterhub.nfs.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - "{{ .Values.jupyterhub.nfs.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
     {{- if .Values.jupyterhub.nfs.ingress.tls.autoSecretNameDeduction }}
     secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}

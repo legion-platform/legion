@@ -16,29 +16,6 @@
  *   limitations under the License.
  */
 
-def dockerArgs() {
-    def envToPass = [
-            "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
-            "LEGION_BASE_IMAGE_REPOSITORY",
-            "MODEL_SERVER_URL",
-            "EDI_URL", "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
-            "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
-            "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
-            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
-    ]
-
-    def envParameters = envToPass.collect({ name -> "-e \"${name}=${System.getenv(name)}\"" }).join(" ")
-    data = new File('/etc/resolv.conf').text
-
-    nameserver = (data =~ /nameserver ([0-9\.]+)/)[0][1]
-    search = (data =~ /search ([^$\n]+)/)[0][1].split(" ")
-
-    searchArguments = search.collect({ name -> "--dns-search=$name" }).join(" ")
-
-    dnsArguments = "--dns=$nameserver $searchArguments "
-
-    return "-m 16g -v legion:/legion -v /var/run/docker.sock:/var/run/docker.sock $dnsArguments -u 0:0 $envParameters"
-}
 
 def modelId() {
     def modelId = legionProperties()['modelId']
@@ -79,25 +56,29 @@ def getDefaultImageName(){
     return System.getenv("LEGION_BASE_IMAGE_REPOSITORY") + ":" + System.getenv("LEGION_BASE_IMAGE_TAG")
 }
 
-def pod(Map params=null, Closure body) {
-    if (params == null)
-        params = [:]
+def pod(Map podParams=null, Closure body) {
+    if (podParams == null)
+        podParams = [:]
 
-    image = params.get('image', getDefaultImageName())
-    cpu = params.get('cpu', '330m')
-    ram = params.get('ram', '4Gi')
+    image = podParams.get('image', getDefaultImageName())
+    cpu = podParams.get('cpu', '330m')
+    ram = podParams.get('ram', '4Gi')
 
     envToPass = [
             "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
             "LEGION_BASE_IMAGE_REPOSITORY",
-            "MODEL_SERVER_URL",
-            "EDI_URL", "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
+            "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
             "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
             "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
-            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_ADDR", "CONSUL_PORT"
+            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_PORT"
     ]
 
     envVars = envToPass.collect({ name -> envVar(key: name, value: System.getenv(name)) })
+
+    envVars << envVar(key: 'TENANT_DEPLOYMENT_PREFIX', value: "${env.TENANT_DEPLOYMENT_PREFIX}")
+    envVars << envVar(key: 'MODEL_SERVER_URL', value: "http://${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-edge.${params.Tenant}")
+    envVars << envVar(key: 'EDI_URL', value: "http://${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-edi.${params.Tenant}")
+    envVars << envVar(key: 'CONSUL_ADDR', value: "${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-consul.${params.Tenant}")
 
     label = "jenkins-build-${UUID.randomUUID().toString()}"
     podTemplate(
@@ -146,6 +127,8 @@ def runNotebook(notebookName) {
     echo 'MODEL_ID = ' + env.MODEL_ID
 
     sh """
+    echo \$GRAPHITE_HOST
+
     pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     export CONTAINER_DIR="`pwd`"
     cd ${env.ROOT_DIR}
@@ -173,9 +156,9 @@ def runScript(scriptPath){
     cd ${env.ROOT_DIR}
     python3 "${env.TARGET_SCRIPT_PATH}" > script-log.txt
 
-    echo "<html><body><h2>Script output</h2><code>" > notebook.html
+    echo "<html><body><h2>Script output</h2><pre>" > notebook.html
     cat script-log.txt >> notebook.html
-    echo "</code></body></html>" >> notebook.html
+    echo "</pre></body></html>" >> notebook.html
 
     cp script-log.txt "\$CONTAINER_DIR"
     cp notebook.html "\$CONTAINER_DIR"
@@ -247,13 +230,15 @@ def runTests() {
 def runPerformanceTests(testScript) {
     env.ROOT_DIR = rootDir()
     env.TEST_SCRIPT = testScript
+    env.TENANT_DEPLOYMENT_PREFIX = sh(returnStdout: true, script: 'echo $TENANT_DEPLOYMENT_PREFIX').trim()
 
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'TEST_SCRIPT = ' + env.TEST_SCRIPT
 
-    modelApiHost = (params.host && params.host.length() > 0) ? params.host : System.getenv('MODEL_SERVER_URL')
+    modelApiHost = (params.host && params.host.length() > 0) ? params.host : "http://${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-edge.${params.Tenant}"
 
     sh """
+    echo "Starting quering ${modelApiHost}"
     pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     cd ${env.ROOT_DIR}/performance/ && locust -f ${env.TEST_SCRIPT} --no-web -c ${params.testUsers} -r ${params.testHatchRate} -n ${params.testRequestsCount} --host ${modelApiHost} --only-summary --logfile locust.log
     """

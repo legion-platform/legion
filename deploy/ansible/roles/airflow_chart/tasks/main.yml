@@ -1,26 +1,6 @@
 ---
-- name: Get airflow chart status
-  shell: helm ls --all airflow
-  register: airflow_deployment_status
-
-- set_fact:
-    airflow_deployed: "{{ airflow_deployment_status.stdout_lines|length > 1 }}"
-
-- name: Remove airflow chart
-  shell: helm delete --purge airflow
-  when: airflow_deployed
-
-- name: Remove current chart of server
-  file:
-    state: absent
-    path: ~/helms/airflow
-
-- name: Copy actual version of helm chart
-  copy:
-    src: ../helms/airflow
-    dest: ~/helms
-    owner: ubuntu
-    group: ubuntu
+- name: Remove legion core chart
+  shell: ~/helms/helm_delete_by_chart_name airflow
 
 - name: Install PIP
   become: true
