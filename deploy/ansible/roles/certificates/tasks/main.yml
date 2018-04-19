@@ -45,7 +45,6 @@
     state: present
   with_items:
   - openssl
-  - python-boto
   - python-openssl
   connection: local
   when: valid_certificate_not_exists
@@ -153,7 +152,7 @@
   route53:
     command: create
     zone: "{{ ler53_route_53_domain }}"
-    record: "_acme-challenge.{{ item.key }}"
+    record: "{{ item.value['dns-01']['record'] }}"  
     type: TXT
     ttl: 5
     value: "\"{{ item.value['dns-01']['resource_value'] }}\""
@@ -164,7 +163,7 @@
   when: valid_certificate_not_exists
 
 - name: Wait for DNS changes propagation
-  shell: sleep 180
+  shell: sleep 60
   when: valid_certificate_not_exists
 
 - name: validate the Let's Encrypt challenge
@@ -185,7 +184,7 @@
   route53:
     command: delete
     zone: "{{ ler53_route_53_domain }}"
-    record: "_acme-challenge.{{ item.key }}"
+    record: "{{ item.value['dns-01']['record'] }}"
     type: TXT
     ttl: 5
     value: "\"{{ item.value['dns-01']['resource_value'] }}\""
@@ -237,7 +236,7 @@
   when: valid_certificate_not_exists and ler53_intermediate_download
   connection: local
 
-- name: "create the {{ ler53_cert_dir }} directory on target machine"
+- name: "create the {{ ler53_cert_dir }} directory"
   become: yes
   file:
     path: "{{ ler53_cert_dir }}"
@@ -245,13 +244,13 @@
     owner: "{{ ler53_cert_files_owner }}"
     mode: 0755
 
-- name: copy certificate to target machine
+- name: copy certificates to the target location
   copy:
     src: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}{{ extension }}"
     dest: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}{{ extension }}"
-    owner: "{{ ler53_cert_files_owner }}"
-    group: "{{ ler53_cert_files_group }}"
-    mode: "{{ ler53_cert_files_mode }}"
+#    owner: "{{ ler53_cert_files_owner }}"
+#    group: "{{ ler53_cert_files_group }}"
+#    mode: "{{ ler53_cert_files_mode }}"
   with_items:
     - ".key"
     - ".crt"
