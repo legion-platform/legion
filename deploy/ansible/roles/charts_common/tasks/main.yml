@@ -1,0 +1,47 @@
+---
+- name: Add helm repositories
+  shell: helm repo add {{ item }}
+  with_items:
+    - jupyterhub https://jupyterhub.github.io/helm-chart/
+    - default http://storage.googleapis.com/kubernetes-charts/
+
+- name: Update helm repositories
+  shell: helm repo update
+
+- name: Remove current charts on server
+  file:
+    state: absent
+    path: ~/helms
+
+- name: Copy actual version of helm charts
+  copy:
+    src: ../helms
+    dest: /home/ubuntu
+    owner: ubuntu
+    group: ubuntu
+
+- name: Copy HELM tools
+  copy:
+    src: payloads/{{ item }}
+    dest: ~/helms/{{ item }}
+    owner: ubuntu
+    group: ubuntu
+    mode: a+rx
+  with_items:
+    - examine_helm_deployed
+    - helm_delete_by_chart_name
+
+- name: Remove already deployed models
+  shell: kubectl delete deploy  --selector=com.epam.legion.container-type=model --ignore-not-found=true
+
+- name: Remove already deployed tenants
+  shell: "~/helms/helm_delete_by_chart_name legion"
+
+- name: Download jq
+  get_url:
+    url: "{{ jq_download_url }}"
+    dest: "/usr/bin/jq"
+    owner: root
+    group: root
+    mode: a+rx
+  become: yes

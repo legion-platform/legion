@@ -132,9 +132,18 @@ class ModelClient:
         :type parameters: dict[str, object] -- dictionary with parameters
         :return: dict -- parsed model response
         """
-        post_fields = {k: v for (k, v) in parameters.items() if not isinstance(v, bytes)}
+        post_fields_dict = {k: v for (k, v) in parameters.items() if not isinstance(v, bytes)}
         post_files = {k: v for (k, v) in parameters.items() if isinstance(v, bytes)}
-        response = self._http_client.post(self.invoke_url, data=post_fields, files=post_files)
+
+        post_fields_list = []
+        for (k, v) in post_fields_dict.items():
+            if isinstance(v, tuple) or isinstance(v, list):
+                for item in v:
+                    post_fields_list.append((k + '[]', item))
+            else:
+                post_fields_list.append((k, v))
+
+        response = self._http_client.post(self.invoke_url, data=post_fields_list, files=post_files)
 
         return self._parse_response(response)
 

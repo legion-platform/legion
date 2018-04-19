@@ -67,7 +67,7 @@ metadata:
   name: "{{ .Release.Name }}-ldap-gui"
 spec:
   rules:
-    - host: "{{ .Values.ldap.gui.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - host: "{{ .Values.ldap.gui.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:
@@ -76,7 +76,7 @@ spec:
   {{- if .Values.ldap.gui.ingress.tls.enabled }}
   tls:
   - hosts:
-    - "{{ .Values.ldap.gui.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - "{{ .Values.ldap.gui.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
     {{- if .Values.ldap.gui.ingress.tls.autoSecretNameDeduction }}
     secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}

@@ -10,12 +10,9 @@
 
     <div class="center">
         <div class="servers-links">
-            <a href="#" data-target-system="dashboard" style="background-image: url('/resources/kubernetes.png')" title="Kubernetes">Kubernetes</a>
             <a href="#" data-target-system="consul" style="background-image: url('/resources/consul.png')" title="Consul">Consul</a>
             <a href="#" data-target-system="jupyter" style="background-image: url('/resources/jupyter.png')" title="Jupyter">Jupyter</a>
-            <a href="#" data-target-system="jenkins" style="background-image: url('/resources/jenkins.png')" title="Jenkins">Jenkins</a>
             <a href="#" data-target-system="grafana" style="background-image: url('/resources/grafana.png')" title="Grafana">Grafana</a>
-            <a href="#" data-target-system="nexus" style="background-image: url('/resources/nexus.png')" title="Nexus">Nexus</a>
             <div class="clear">&nbsp;</div>
         </div>
 
@@ -35,7 +32,7 @@
             var targetSystem = domElement.getAttribute('data-target-system');
 
             if (targetSystem) {
-                domElement.href = window.location.protocol + '//' + currentHostName.replace('edge.', targetSystem + '.');
+                domElement.href = window.location.protocol + '//' + currentHostName.replace('edge', targetSystem);
             }
         }
 

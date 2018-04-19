@@ -49,6 +49,10 @@ spec:
         env:
         - name: JAVA_OPTS
           value: "-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.legion.jenkins.dashboard.url=/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.legion.jenkins.report.html.path=notebook.html"
+        - name: CORE_DEPLOYMENT_PREFIX
+          value: "{{ .Release.Name }}-"
+        - name: TENANT_DEPLOYMENT_PREFIX
+          value: "{{ .Values.tenantDeploymentPrefix }}"
         # Information for building corect images
         - name: LEGION_PACKAGE_VERSION
           value: "{{ .Values.package.version }}"
@@ -58,12 +62,7 @@ spec:
           value: "{{ .Values.package.baseImage.tag }}"
         - name: LEGION_BASE_IMAGE_REPOSITORY
           value: "{{ .Values.package.baseImage.repository }}"
-        # Address for tests
-        - name: MODEL_SERVER_URL
-          value: "http://{{ .Release.Name }}-edge.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         # EDI credentials
-        - name: EDI_URL
-          value: "http://{{ .Release.Name }}-edi.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: EDI_USER
           value: ""
         - name: EDI_PASSOWRD
@@ -197,7 +196,7 @@ spec:
               servicePort: 80
 
     {{- if .Values.addLocalDomain }}
-    - host: "{{ .Values.jenkins.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+    - host: "local-{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:

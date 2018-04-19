@@ -32,7 +32,7 @@ spec:
               serviceName: "{{ .Release.Name }}-nexus"
               servicePort: {{ .Values.nexus.port }}
     {{- if .Values.addLocalDomain }}
-    - host: "{{ .Values.nexus.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+    - host: "local-{{ .Values.nexus.ingress.domain.partial }}.{{ .Values.rootDomain }}"
       http:
         paths:
           - path: /

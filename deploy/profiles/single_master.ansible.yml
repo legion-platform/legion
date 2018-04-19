@@ -8,18 +8,22 @@ use_https_for_tests: "no"
 subdomains:
   - dashboard
   - nexus
-  - jupyter
-  - ldap
   - jenkins
+  - jupyter
+  - airflow
+  - flower
+tenant_subdomains:
+  - ldap
   - edge
   - consul
   - grafana
   - edi
-  - airflow
-  - flower
+tenants:
+  - company-a
+  - company-b
 namespace: default
 deployment: legion
-test_base_domain: local.k8s-nightly.epm.kharlamov.biz
+use_local_prefix: true
 service_account:
   login:  admin
   password: admin

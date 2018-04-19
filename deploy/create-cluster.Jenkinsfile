@@ -184,7 +184,7 @@ node {
             if (params.CreateJenkinsTests){
                 sh """
                 .venv/bin/create_example_jobs \
-                "http://jenkins.local.${baseDomain}" \
+                "http://local-jenkins.${baseDomain}" \
                 examples \
                 . \
                 "git@github.com:epam/legion.git" \
@@ -198,7 +198,7 @@ node {
                 if (params.RunJenkinsTests){
                     sh """
                     .venv/bin/check_jenkins_jobs \
-                    --jenkins-url "http://jenkins.local.${baseDomain}" \
+                    --jenkins-url "http://local-jenkins.${baseDomain}" \
                     --jenkins-run-jobs-prefix "DYNAMIC MODEL" \
                     --connection-timeout 360 \
                     --run-sleep-sec 30 \
