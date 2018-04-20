@@ -75,10 +75,10 @@ def pod(Map podParams=null, Closure body) {
 
     envVars = envToPass.collect({ name -> envVar(key: name, value: System.getenv(name)) })
 
-    envVars << envVar(key: 'TENANT_DEPLOYMENT_PREFIX', value: "${env.TENANT_DEPLOYMENT_PREFIX}")
-    envVars << envVar(key: 'MODEL_SERVER_URL', value: "http://${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-edge.${params.Tenant}")
-    envVars << envVar(key: 'EDI_URL', value: "http://${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-edi.${params.Tenant}")
-    envVars << envVar(key: 'CONSUL_ADDR', value: "${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-consul.${params.Tenant}")
+    envVars << envVar(key: 'ENCLAVE_DEPLOYMENT_PREFIX', value: "${env.ENCLAVE_DEPLOYMENT_PREFIX}")
+    envVars << envVar(key: 'MODEL_SERVER_URL', value: "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edge.${params.Enclave}")
+    envVars << envVar(key: 'EDI_URL', value: "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edi.${params.Enclave}")
+    envVars << envVar(key: 'CONSUL_ADDR', value: "${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-consul.${params.Enclave}")
 
     label = "jenkins-build-${UUID.randomUUID().toString()}"
     podTemplate(
@@ -230,12 +230,12 @@ def runTests() {
 def runPerformanceTests(testScript) {
     env.ROOT_DIR = rootDir()
     env.TEST_SCRIPT = testScript
-    env.TENANT_DEPLOYMENT_PREFIX = sh(returnStdout: true, script: 'echo $TENANT_DEPLOYMENT_PREFIX').trim()
+    env.ENCLAVE_DEPLOYMENT_PREFIX = sh(returnStdout: true, script: 'echo $ENCLAVE_DEPLOYMENT_PREFIX').trim()
 
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'TEST_SCRIPT = ' + env.TEST_SCRIPT
 
-    modelApiHost = (params.host && params.host.length() > 0) ? params.host : "http://${env.TENANT_DEPLOYMENT_PREFIX}${params.Tenant}-edge.${params.Tenant}"
+    modelApiHost = (params.host && params.host.length() > 0) ? params.host : "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edge.${params.Enclave}"
 
     sh """
     echo "Starting quering ${modelApiHost}"

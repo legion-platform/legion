@@ -31,7 +31,6 @@
   rds_subnet_group:
     name: "{{env_name}}-airflow-rds-subnets"
     state: present
-    profile: "{{ aws_profile }}"
     region: "{{ aws_region }}"
     description: Airflow RDS Subnet Group
     subnets: "{{ subnet_facts.results|map(attribute='subnets.0.id')|list }}"
@@ -42,15 +41,14 @@
     command: create
     instance_name: "{{ env_name }}-airflow-rds"
     db_engine: "postgres"
-    profile: "{{ aws_profile }}"
     region: "{{ aws_region }}"
     size: "{{ airflow_rds_size }}"
     subnet: "{{env_name}}-airflow-rds-subnets"
     vpc_security_groups: "{{ airflow_rds_sg_facts.security_groups.0.group_id }}"
     instance_type: "{{ airflow_rds_shape }}"
-    username: "{{ airflow_rds_user }}"
-    password: "{{ airflow_rds_pass }}"
-    db_name: "{{ airflow_db_name }}"
+    username: "{{ aws.rds.username }}"
+    password: "{{ aws.rds.password }}"
+    db_name: "{{ aws.rds.database_name }}"
     wait: yes
     wait_timeout: 900
     tags:

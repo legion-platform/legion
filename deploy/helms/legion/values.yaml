@@ -1,9 +1,14 @@
 rootDomain: k8s-nightly.epm.kharlamov.biz
 domainDelimiter: "-"
 namespace: default
-tenantName: unknown
+enclaveName: unknown
 localDomain: "cluster.local"
 addLocalDomain: false
+
+IPs:
+  external:
+  - 10.0.0.29
+  - 35.170.177.113
 
 secrets:
   ldap:
@@ -58,6 +63,34 @@ edge:
     tls:
       enabled: true
       autoSecretNameDeduction: true
+
+jenkins:
+  enabled: true
+  image:
+    repository: "legion/k8s-jenkins"
+    tag: "latest"
+    pullPolicy: "Always"
+
+  rbac: true
+  
+  ingress:
+    enabled: true
+    annotations: {}
+    domain:
+      partial: jenkins
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
+
+  git_secret_name: false
+
+  airflow:
+    enabled: false
+    rest_url: ''
+    s3_url: ''
+    expected_output: ''
+
+    dags_volume_pvc: ''
 
 graphite:
   enabled: true
@@ -145,7 +178,7 @@ jupyterhub:
 
     persistence:
       enabled: true
-      storageClass: "hostpath"
+      storageClass: ""
       accessMode: ReadWriteOnce
       # existingClaim: ""
       size: 20Gi
@@ -162,6 +195,56 @@ jupyterhub:
     enabled: true
     hosts:
     - jupyter.k8s-test.epm.kharlamov.biz
+
+nexus:
+  # Nexus repository configuration
+  enabled: true
+  replicas: 1
+
+  image:
+    repository: "cavemandaveman/nexus"
+    tag: "3.6.0-02"
+
+  resources: {}
+
+  port: 8081
+  hostport: 31110
+
+  service:
+    annotations: {}
+
+  docker:
+    enabled: true
+    port: 5509
+    hostport: 31111
+    host: localhost
+
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 6
+
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    # existingClaim: ""
+    size: 20Gi
+
+  ## Create an Ingress for the Web UI
+  ingress:
+    enabled: true
+    annotations: {}
+    domain:
+      partial: nexus
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
+      # secretName: nexus.k8s-nightly.epm.kharlamov.biz-tlsa
 
 connections:
   docker:

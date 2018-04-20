@@ -1,41 +1,41 @@
 # Common
 vendor: legion
-env_type: dev
-env_name: legion-dev
-base_domain: legion-dev.epm.kharlamov.biz
+env_type: ci
+env_name: legion-ci
+base_domain: legion-ci.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
 # AWS 
 aws_region: us-east-2
-node_autoscaler_min: 3
+node_autoscaler_min: 2
 node_autoscaler_max: 5
 bastion_shape: t2.micro
 master_shape: t2.large
 node_shape: t2.large
 vpc_id: vpc-5729c13e
-external_access_sgs: 
-  - sg-f92af090
-  - sg-fa2af093
-  - sg-fb2af092
 airflow_rds_shape: "db.t2.medium"
 airflow_rds_size: "50"
 
 # Kops
-cluster_name: legion-dev.epm.kharlamov.biz
+cluster_name: legion-ci.epm.kharlamov.biz
 state_store: s3://legion-cluster
 aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
 kubernetes_version: 1.8.7
 private_network: '172.31'
 cluster_zones:
   - zone_name: us-east-2a
-    kops_cidr: "{{ private_network }}.100.0/24"
-    kops_utility_cidr: "{{ private_network }}.103.0/24"
+    kops_cidr: "{{ private_network }}.106.0/24"
+    kops_utility_cidr: "{{ private_network }}.107.0/24"
   - zone_name: us-east-2b
-    kops_cidr: "{{ private_network }}.101.0/24"
-    kops_utility_cidr: "{{ private_network }}.104.0/24"
+    kops_cidr: "{{ private_network }}.108.0/24"
+    kops_utility_cidr: "{{ private_network }}.109.0/24"
   - zone_name: us-east-2c
-    kops_cidr: "{{ private_network }}.102.0/24"
-    kops_utility_cidr: "{{ private_network }}.105.0/24"
+    kops_cidr: "{{ private_network }}.110.0/24"
+    kops_utility_cidr: "{{ private_network }}.111.0/24"
+external_access_sgs: 
+  - sg-f92af090
+  - sg-fa2af093
+  - sg-fb2af092
 
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
@@ -48,7 +48,7 @@ nexus_pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hoste
 nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443"
 namespace: default
 deployment: legion
-test_base_domain: local.legion-dev.epm.kharlamov.biz
+test_base_domain: local.legion-ci.epm.kharlamov.biz
 dashboard_protocol: http
 test_protocol: http
 service_account:
@@ -68,7 +68,7 @@ enclaves:
   - company-a
   - company-b
 storageclass: efs
-airflow_s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
-airflow_s3_url: 's3://epm-legion-data-dev/'
+airflow_s3_log_url: 's3://epm-legion-data-ci/airflow-logs/'
+airflow_s3_url: 's3://epm-legion-data-ci/'
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m

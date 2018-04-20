@@ -1,4 +1,8 @@
 ---
+
+- name: Configure kubectl using kops
+  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+
 - name: Get airflow chart status
   shell: helm ls --all airflow
   register: airflow_deployment_status
@@ -24,6 +28,13 @@
 - name: Generate flask key
   command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(60))[:32])'
   register: flask_key_output
+
+- name: Get Airflow Postgres RDS endpoint
+  rds:
+    command: facts
+    region: "{{ aws_region }}"
+    instance_name: "{{ env_name }}-airflow-rds"
+  register: airflow_rds_instance_facts
 
 - name: Create airflow configuration (values) file
   template:

@@ -14,10 +14,12 @@
   gather_facts: False
   vars_files:
     - "../profiles/{{ profile }}.yml"
+    - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
 
   roles:
     - helm
-    - core_chart
-    - legion_chart
+    - charts_common
+    - legion_core_chart
     - airflow_chart
+    - legion_chart
     - debug

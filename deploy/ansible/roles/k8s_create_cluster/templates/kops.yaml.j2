@@ -18,20 +18,16 @@ spec:
   configBase: {{ state_store }}/{{ cluster_name }}
   etcdClusters:
   - etcdMembers:
-    - instanceGroup: master-{{ aws_region }}a
-      name: a
-    - instanceGroup: master-{{ aws_region }}b
-      name: b
-    - instanceGroup: master-{{ aws_region }}c
-      name: c
+{% for zone in cluster_zones %}
+    - instanceGroup: master-{{ zone.zone_name }}
+      name: {{ zone.zone_name }}
+{% endfor %}
     name: main
   - etcdMembers:
-    - instanceGroup: master-{{ aws_region }}a
-      name: a
-    - instanceGroup: master-{{ aws_region }}b
-      name: b
-    - instanceGroup: master-{{ aws_region }}c
-      name: c
+{% for zone in cluster_zones %}
+    - instanceGroup: master-{{ zone.zone_name }}
+      name: {{ zone.zone_name }}
+{% endfor %}
     name: events
   iam:
     allowContainerRegistry: true
@@ -43,35 +39,23 @@ spec:
   networkCIDR: {{ private_network }}.0.0/16
   networkID: {{ vpc_id }}
   networking:
-    flannel: {}
+    weave: {}
   nonMasqueradeCIDR: 100.64.0.0/10
   sshAccess:
   - 0.0.0.0/0
   subnets:
-  - cidr: {{ kops_zone_a_cidr }}
-    name: {{ aws_region }}a
+{% for zone in cluster_zones %}
+  - cidr: {{ zone.kops_cidr }}
+    name: {{ zone.zone_name }}
     type: Private
-    zone: {{ aws_region }}a
-  - cidr: {{ kops_zone_b_cidr }}
-    name: {{ aws_region }}b
-    type: Private
-    zone: {{ aws_region }}b
-  - cidr: {{ kops_zone_c_cidr }}
-    name: {{ aws_region }}c
-    type: Private
-    zone: {{ aws_region }}c
-  - cidr: {{ kops_utility_zone_a_cidr }}
-    name: utility-{{ aws_region }}a
+    zone: {{ zone.zone_name }}
+{% endfor %}
+{% for zone in cluster_zones %}
+  - cidr: {{ zone.kops_utility_cidr }}
+    name: utility-{{ zone.zone_name }}
     type: Utility
-    zone: {{ aws_region }}a
-  - cidr: {{ kops_utility_zone_b_cidr }}
-    name: utility-{{ aws_region }}b
-    type: Utility
-    zone: {{ aws_region }}b
-  - cidr: {{ kops_utility_zone_c_cidr }}
-    name: utility-{{ aws_region }}c
-    type: Utility
-    zone: {{ aws_region }}c
+    zone: {{ zone.zone_name }}
+{% endfor %}
   topology:
     bastion:
       bastionPublicName: bastion.{{ cluster_name }}
@@ -81,7 +65,7 @@ spec:
     nodes: private
 
 ---
-
+{% for zone in cluster_zones %}
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
 metadata:
@@ -91,7 +75,7 @@ metadata:
     env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
-  name: master-{{ aws_region }}a
+  name: master-{{ zone.zone_name }}
 spec:
   image: {{ aws_image }}
   machineType: {{ master_shape }}
@@ -101,64 +85,13 @@ spec:
     vendor: {{ vendor }}
     env_type: {{ env_type }}
     env_name: {{ env_name }}
-    kops.k8s.io/instancegroup: master-{{ aws_region }}a
+    kops.k8s.io/instancegroup: master-{{ zone.zone_name }}
   role: Master
   subnets:
-  - {{ aws_region }}a
+  - {{ zone.zone_name }}
 
 ---
-
-apiVersion: kops/v1alpha2
-kind: InstanceGroup
-metadata:
-  creationTimestamp: null
-  labels:
-    vendor: {{ vendor }}
-    env_type: {{ env_type }}
-    env_name: {{ env_name }}
-    kops.k8s.io/cluster: {{ cluster_name }}
-  name: master-{{ aws_region }}b
-spec:
-  image: {{ aws_image }}
-  machineType: {{ master_shape }}
-  maxSize: 1
-  minSize: 1
-  nodeLabels:
-    vendor: {{ vendor }}
-    env_type: {{ env_type }}
-    env_name: {{ env_name }}
-    kops.k8s.io/instancegroup: master-{{ aws_region }}b
-  role: Master
-  subnets:
-  - {{ aws_region }}b
-
----
-
-apiVersion: kops/v1alpha2
-kind: InstanceGroup
-metadata:
-  creationTimestamp: null
-  labels:
-    vendor: {{ vendor }}
-    env_type: {{ env_type }}
-    env_name: {{ env_name }}
-    kops.k8s.io/cluster: {{ cluster_name }}
-  name: master-{{ aws_region }}c
-spec:
-  image: {{ aws_image }}
-  machineType: {{ master_shape }}
-  maxSize: 1
-  minSize: 1
-  nodeLabels:
-    vendor: {{ vendor }}
-    env_type: {{ env_type }}
-    env_name: {{ env_name }}    
-    kops.k8s.io/instancegroup: master-{{ aws_region }}c
-  role: Master
-  subnets:
-  - {{ aws_region }}c
-
----
+{% endfor %}
 
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
@@ -182,9 +115,9 @@ spec:
     kops.k8s.io/instancegroup: nodes
   role: Node
   subnets:
-  - {{ aws_region }}a
-  - {{ aws_region }}b
-  - {{ aws_region }}c
+  {% for zone in cluster_zones %}
+    - utility-{{ zone.zone_name }}
+  {% endfor %}
 
 ---
 
@@ -210,6 +143,6 @@ spec:
     kops.k8s.io/instancegroup: bastions
   role: Bastion
   subnets:
-  - utility-{{ aws_region }}a
-  - utility-{{ aws_region }}b
-  - utility-{{ aws_region }}c
+  {% for zone in cluster_zones %}
+    - utility-{{ zone.zone_name }}
+  {% endfor %}

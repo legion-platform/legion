@@ -4,7 +4,7 @@
 - name: Configure kubectl using kops
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
+- include: ingress.yaml
 - include: dashboard.yaml
 - include: autoscaler.yaml
-- include: ingress.yaml
 - include: pvc.yaml

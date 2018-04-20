@@ -1,7 +1,3 @@
-def baseDomain = ''
-def BASE_DOMAIN = false
-def targetBranch = params.GitBranch
-
 node {
     try {
         stage('Checkout GIT'){
@@ -9,13 +5,14 @@ node {
             targetBranch = scmVars.GIT_COMMIT
         }
 
-        stage('Delete Cluster') {
+        stage('Terminate Cluster') {
             dir('deploy/ansible'){
                 withAWS(credentials: 'kops') {
                     wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                         ansiblePlaybook(
-                            playbook: 'delete-cluster.yml --extra-vars "profile=${Profile}"',
-                            colo  rized: true
+                            playbook: 'terminate-cluster.yml',
+                            extras: ' --extra-vars "profile=${Profile}"',
+                            colorized: true
                         )
                     }
                 }
