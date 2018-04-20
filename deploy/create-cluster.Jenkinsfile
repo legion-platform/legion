@@ -21,7 +21,7 @@ node {
                         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                             ansiblePlaybook(
                                 playbook: 'create-cluster.yml',
-                                extras: ' --extra-vars "profile=${Profile}"',
+                                extras: ' --extra-vars "profile=${Profile} skip_kops=${Skip_kops}"',
                                 colorized: true
                             )
                         }
@@ -29,6 +29,16 @@ node {
                 }
             }
         }
+    }
+    catch (e) {
+        // If there was an exception thrown, the build failed
+        currentBuild.result = "FAILED"
+        throw e
+    } finally {
+        // Success or failure, always send notifications
+        notifyBuild(currentBuild.result)
+    }
+}
 
 def notifyBuild(String buildStatus = 'STARTED') {
     // build status of null means successful

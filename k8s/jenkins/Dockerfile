@@ -34,7 +34,7 @@ USER jenkins
 COPY scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
 COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
 
-ARG jenkins_plugin_server="http://nexus.cc.epm.kharlamov.biz/jenkins"
+ARG jenkins_plugin_server="http://nexus-local.cc.epm.kharlamov.biz/jenkins"
 ENV JENKINS_UC_EXPERIMENTAL=$jenkins_plugin_server
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt

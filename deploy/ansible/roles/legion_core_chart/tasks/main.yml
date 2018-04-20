@@ -27,7 +27,7 @@
   shell: kubectl delete secret legion-aws-s3-credentials --ignore-not-found=true
 
 - name: Create AWS S3 credentials secret
-  command: "kubectl create secret generic legion-aws-s3-credentials --from-literal=AWS_ACCESS_KEY_ID={{ (secrets|json_query('airflow.connections[?connection_id==`s3_conn`].extra.aws_access_key_id')).0 }} --from-literal=AWS_SECRET_ACCESS_KEY={{ (secrets|json_query('airflow.connections[?connection_id==`s3_conn`].extra.aws_secret_access_key')).0 }}"
+  command: "kubectl create secret generic legion-aws-s3-credentials --from-literal=AWS_ACCESS_KEY_ID={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_access_key_id')).0 }} --from-literal=AWS_SECRET_ACCESS_KEY={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_secret_access_key')).0 }}"
 
 - name: Create legion configuration (values) file
   template:

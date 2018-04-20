@@ -25,7 +25,7 @@ node {
                         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                             ansiblePlaybook(
                                 playbook: 'deploy-legion.yml',
-                                extras: ' --extra-vars "profile=${param.Profile} base_version=${params.BaseVersion} local_version=${params.LocalVersion}"',
+                                extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion} local_version=${LocalVersion}"',
                                 colorized: true
                             )
                         }

@@ -30,8 +30,8 @@ jenkins:
   airflow:
     enabled: true
     rest_url: 'http://airflow-web:8080/admin/rest_api'
-    s3_url: '{{ airflow.s3_url }}'
-    expected_output: '{{ airflow.expected_output }}'
+    s3_url: '{{ airflow_s3_url }}'
+    expected_output: '{{ airflow_expected_output }}'
 
     dags_volume_pvc: 'legion-airflow-shared' # from shared_k8s_resources/templates
 

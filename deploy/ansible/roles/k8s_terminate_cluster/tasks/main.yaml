@@ -57,9 +57,6 @@
 ## Delete Kubernetes cluster using Kops
 #####################
 
-- name: Configure kubectl using kops
-  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
-
 - name: Delete the cluster
   shell: "kops delete cluster {{ cluster_name }} --state {{ state_store }} --yes"
 

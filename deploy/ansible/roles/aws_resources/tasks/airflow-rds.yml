@@ -46,9 +46,9 @@
     subnet: "{{env_name}}-airflow-rds-subnets"
     vpc_security_groups: "{{ airflow_rds_sg_facts.security_groups.0.group_id }}"
     instance_type: "{{ airflow_rds_shape }}"
-    username: "{{ secrets.aws.rds.username }}"
-    password: "{{ secrets.aws.rds.password }}"
-    db_name: "{{ secrets.aws.rds.database_name }}"
+    username: "{{ aws.rds.username }}"
+    password: "{{ aws.rds.password }}"
+    db_name: "{{ aws.rds.database_name }}"
     wait: yes
     wait_timeout: 900
     tags:

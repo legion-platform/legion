@@ -44,8 +44,8 @@ git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
 use_https_for_tests: "no"
-nexus_pypi_repo: "https://nexus.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
-nexus_docker_repo: "nexus.cc.epm.kharlamov.biz:443"
+nexus_pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
+nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443"
 namespace: default
 deployment: legion
 test_base_domain: local.legion-dev.epm.kharlamov.biz
@@ -68,8 +68,7 @@ tenants:
   - company-a
   - company-b
 storageclass: efs
-airflow:
-  s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
-  s3_url: 's3://epm-legion-data-dev/'
-  expected_output: 'expected-data/'
-  pvc: 200m
+airflow_s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
+airflow_s3_url: 's3://epm-legion-data-dev/'
+airflow_expected_output: 'expected-data/'
+airflow_pvc: 200m

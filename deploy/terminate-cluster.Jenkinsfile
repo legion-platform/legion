@@ -1,7 +1,3 @@
-def baseDomain = ''
-def BASE_DOMAIN = false
-def targetBranch = params.GitBranch
-
 node {
     try {
         stage('Checkout GIT'){
@@ -14,8 +10,9 @@ node {
                 withAWS(credentials: 'kops') {
                     wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                         ansiblePlaybook(
-                            playbook: 'terminate-cluster.yml --extra-vars "profile=${Profile}"',
-                            colo  rized: true
+                            playbook: 'terminate-cluster.yml',
+                            extras: ' --extra-vars "profile=${params.Profile}"',
+                            colorized: true
                         )
                     }
                 }
