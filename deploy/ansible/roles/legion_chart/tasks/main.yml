@@ -1,6 +1,14 @@
 ---
 
-- include: delete_chart.yml
-- include: install_chart.yml
-  tags: 
-    - install
+- name: Configure kubectl using kops
+  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+
+- include: install_tenant.yml
+  vars:
+    root_domain: "{{ tenant }}.{{ base_domain }}"
+    domain_delimiter: "-"
+    namespace: "{{ tenant }}"
+    source_secret_name: "{{ base_domain }}-tls"
+  with_items: "{{ tenants }}"
+  loop_control:
+    loop_var: tenant

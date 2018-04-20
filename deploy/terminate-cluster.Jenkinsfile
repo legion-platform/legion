@@ -9,12 +9,12 @@ node {
             targetBranch = scmVars.GIT_COMMIT
         }
 
-        stage('Delete Cluster') {
+        stage('Terminate Cluster') {
             dir('deploy/ansible'){
                 withAWS(credentials: 'kops') {
                     wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                         ansiblePlaybook(
-                            playbook: 'delete-cluster.yml --extra-vars "profile=${Profile}"',
+                            playbook: 'terminate-cluster.yml --extra-vars "profile=${Profile}"',
                             colo  rized: true
                         )
                     }

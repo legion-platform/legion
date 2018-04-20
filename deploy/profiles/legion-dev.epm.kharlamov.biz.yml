@@ -68,6 +68,15 @@ examples_to_test:
   - Test-Summation
   - Sklearn-Income
   - Digit-Recognition
+tenant_subdomains:
+  - ldap
+  - edge
+  - consul
+  - grafana
+  - edi
+tenants:
+  - company-a
+  - company-b
 storageclass: efs
 airflow:
   s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'

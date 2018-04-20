@@ -13,4 +13,4 @@
     - "../profiles/{{ profile }}.yml"
 
   roles:
-    - k8s_delete_cluster
+    - k8s_terminate_cluster
