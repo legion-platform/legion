@@ -81,6 +81,8 @@ http{
         expires -1;
         add_header Cache-Control no-cache;
 
+        add_header 'Access-Control-Allow-Origin' '*';
+
         log_by_lua_block {
             local statistics_sender = require "statistics_sender"
             local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)

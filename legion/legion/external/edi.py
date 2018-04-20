@@ -109,6 +109,14 @@ class EdiClient:
         answer = self._query(legion.edi.server.EDI_INSPECT)
         return [legion.containers.k8s.ModelDeploymentDescription(**x) for x in answer]
 
+    def info(self):
+        """
+        Perform info query on EDI server
+
+        :return: dict[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+        """
+        return self._query(legion.edi.server.EDI_INFO)
+
     def deploy(self, image, count=1, k8s_image=None):
         """
         Deploy API endpoint

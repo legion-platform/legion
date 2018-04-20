@@ -31,10 +31,14 @@ LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
 
 EDI_VERSION = '1.0'
+EDI_ROOT = '/'
 EDI_DEPLOY = '/api/{version}/deploy'
 EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
 EDI_INSPECT = '/api/{version}/inspect'
+EDI_INFO = '/api/{version}/info'
+
+ALL_EDI_API_ENDPOINTS = EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, EDI_INFO
 
 
 def build_blueprint_url(endpoint_url_template):
@@ -72,6 +76,22 @@ def authenticate(user, password):
     return False
 
 
+@blueprint.route(build_blueprint_url(EDI_ROOT), methods=['GET'])
+@legion.http.provide_json_response
+@legion.http.authenticate(authenticate)
+def root():
+    """
+    Root API endpoint
+
+    :return: dict -- root information
+    """
+    return {
+        'component': 'EDI server',
+        'version': EDI_VERSION,
+        'endpoints': [build_blueprint_url(url) for url in ALL_EDI_API_ENDPOINTS]
+    }
+
+
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
@@ -91,7 +111,7 @@ def deploy(image, count=1, k8s_image=None):
     """
     register_on_grafana = app.config['REGISTER_ON_GRAFANA']
     legion.containers.k8s.deploy(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                 app.config['NAMESPACE'], app.config['DEPLOYMENT'], image, k8s_image, count,
+                                 image, k8s_image, count,
                                  register_on_grafana)
     return True
 
@@ -113,7 +133,7 @@ def undeploy(model, grace_period=0):
     """
     register_on_grafana = app.config['REGISTER_ON_GRAFANA']
     legion.containers.k8s.undeploy(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                   app.config['NAMESPACE'], model, grace_period,
+                                   model, grace_period,
                                    register_on_grafana)
     return True
 
@@ -134,7 +154,7 @@ def scale(model, count):
     :return: bool -- True
     """
     legion.containers.k8s.scale(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                app.config['NAMESPACE'], model, count)
+                                model, count)
     return True
 
 
@@ -147,10 +167,21 @@ def inspect():
 
     :return: dict -- state of cluster models
     """
-    model_deployments = legion.containers.k8s.inspect(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                                      app.config['NAMESPACE'])
+    model_deployments = legion.containers.k8s.inspect(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'])
     # TODO: Change transform to dict algorithm
     return [{f: getattr(x, f) for f in x._fields} for x in model_deployments]
+
+
+@blueprint.route(build_blueprint_url(EDI_INFO), methods=['GET'])
+@legion.http.provide_json_response
+@legion.http.authenticate(authenticate)
+def info():
+    """
+    Info API endpoint
+
+    :return: dict -- state of cluster
+    """
+    return app.config['CLUSTER_STATE']
 
 
 def create_application():

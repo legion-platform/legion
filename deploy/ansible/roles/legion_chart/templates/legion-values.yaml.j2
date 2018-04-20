@@ -15,10 +15,10 @@ consul:
     enabled: true
     hosts:
     - consul{{ domain_delimiter }}{{ root_domain }}
-#    tls:
-#    - hosts:
-#      - consul{{ domain_delimiter }}{{ root_domain }}
-#      secretName: {{ root_domain }}-tls
+    tls:
+    - hosts:
+      - consul{{ domain_delimiter }}{{ root_domain }}
+      secretName: {{ root_domain }}-tls
 
 grafana:
   image:

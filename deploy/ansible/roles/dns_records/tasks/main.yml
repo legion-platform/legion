@@ -3,43 +3,44 @@
   ipify_facts:
 
 - name: print public IP
-  debug: msg="Public IP - {{ ipify_public_ip }} for domains in {{ base_domain }}."
+  debug: msg="Public IP - {{ ipify_public_ip }} for domains in {{ root_domain }}."
   
-- name: "create the DNS record {{ base_domain }}"
+- name: "create the DNS record {{ root_domain }}"
   route53:
     command: create
     zone: "{{ route53_zone }}"
-    record: "{{ base_domain }}"
+    record: "{{ root_domain }}"
     type: A
     value: "{{ ipify_public_ip }}"
     overwrite: yes
     wait: yes
   connection: local
 
-- name: "create the DNS record {{ partial }}.{{ base_domain }}"
+- name: "create DNS records for {{ domain_delimiter }}{{ root_domain }}"
   route53:
     command: create
     zone: "{{ route53_zone }}"
-    record: "{{ subdomain }}.{{ base_domain }}"
+    record: "{{ subdomain }}{{ domain_delimiter }}{{ root_domain }}"
     type: A
     value: "{{ ipify_public_ip }}"
     overwrite: yes
     wait: yes
   connection: local
-  with_items: "{{ subdomains }}"
+  with_items: "{{ current_subdomains }}"
   loop_control:
     loop_var: subdomain
 
-- name: "create local DNS record {{ partial }}.local.{{ base_domain }}"
+- name: "create DNS records with prefix local- for {{ domain_delimiter }}{{ root_domain }}"
   route53:
     command: create
     zone: "{{ route53_zone }}"
-    record: "{{ subdomain }}.local.{{ base_domain }}"
+    record: "local-{{ subdomain }}{{ domain_delimiter }}{{ root_domain }}"
     type: A
     value: "{{ ansible_ssh_host }}"
     overwrite: yes
     wait: yes
   connection: local
-  with_items: "{{ subdomains }}"
+  with_items: "{{ current_subdomains }}"
   loop_control:
     loop_var: subdomain
+

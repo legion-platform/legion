@@ -1,7 +1,6 @@
 ---
 
 - include: delete_chart.yml
-
 - include: install_chart.yml
   tags: 
     - install

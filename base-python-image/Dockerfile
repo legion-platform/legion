@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 \
 
 RUN pip3 install "numpy>=1.11.2"
 
-RUN pip3 install --upgrade pip \
+RUN pip3 install --upgrade pip==9.0.3 \
     && pip3 install -r /root/requirements.txt
 
 WORKDIR /app

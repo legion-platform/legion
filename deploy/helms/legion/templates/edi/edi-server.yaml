@@ -61,6 +61,7 @@ metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
     component: "{{ .Release.Name }}-edi"
+    legion.component: "edi"
 spec:
   selector:
     component: "{{ .Release.Name }}-edi"
@@ -85,7 +86,7 @@ metadata:
   name: "{{ .Release.Name }}-edi"
 spec:
   rules:
-    - host: "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - host: "{{ .Values.edi.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:
@@ -102,7 +103,7 @@ spec:
   {{- if .Values.edi.ingress.tls.enabled }}
   tls:
   - hosts:
-    - "{{ .Values.edi.ingress.domain.partial }}.{{ .Values.rootDomain }}"
+    - "{{ .Values.edi.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
     {{- if .Values.edi.ingress.tls.autoSecretNameDeduction }}
     secretName: "{{ .Values.rootDomain }}-tls"
     {{- else }}

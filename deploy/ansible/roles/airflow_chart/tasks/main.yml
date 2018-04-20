@@ -1,4 +1,5 @@
 ---
+
 - name: Get airflow chart status
   shell: helm ls --all airflow
   register: airflow_deployment_status
