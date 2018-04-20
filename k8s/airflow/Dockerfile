@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y \
 RUN service cron stop \
  && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow
 
-RUN pip3 install --upgrade pip \
+RUN pip3 install --upgrade pip==9.0.3 \
  && pip3 install Cython \
  && pip3 install cryptography \
  && pip3 install apache-airflow[postgres,jdbc,password,mysql,celery,redis,s3]==1.9.0 \
