@@ -6,9 +6,9 @@ image: "{{ nexus_docker_repo }}/legion/k8s-airflow:{{ base_version }}-{{ local_v
 
 secrets:
   postgres:
-    user: {{ airflow_rds_user }}
-    password: {{ airflow_rds_pass }}
-    db: {{ airflow_db_name }}
+    user: {{ secrets.aws.rds.username }}
+    password: {{ secrets.aws.rds.password }}
+    db: {{ secrets.aws.rds.database_name }}
 
   rabbitmq:
     user: airflow

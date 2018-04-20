@@ -1,5 +1,4 @@
 # Common
-aws_profile: default
 vendor: legion
 env_type: dev
 env_name: legion-dev
@@ -24,15 +23,6 @@ external_access_sgs:
   - sg-fb2af092
 airflow_rds_shape: "db.t2.medium"
 airflow_rds_size: "50"
-airflow_db_name: "airflow"
-airflow_rds_user: "airflow"
-airflow_rds_pass: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          34366361306466653334626530646330623064633130363434366362626638346338623865346663
-          3464333731653465326166626661366134633530646332660a656334633239636135353833396361
-          31303238306361313337663333303335376134633535363339393332636135346366383238376534
-          3531623736653164340a313132373730336231383232383166333563343933666233643934313563
-          3761
 
 # Kops
 cluster_name: legion-dev.epm.kharlamov.biz
@@ -54,8 +44,8 @@ git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
 use_https_for_tests: "no"
-nexus_pypi_repo: "https://nexus.local.epm.kharlamov.biz/repository/pypi-hosted/simple"
-nexus_docker_repo: "nexus.local.epm.kharlamov.biz:443"
+nexus_pypi_repo: "https://nexus.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
+nexus_docker_repo: "nexus.cc.epm.kharlamov.biz:443"
 namespace: default
 deployment: legion
 test_base_domain: local.legion-dev.epm.kharlamov.biz

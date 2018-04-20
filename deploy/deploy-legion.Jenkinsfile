@@ -1,5 +1,4 @@
 def baseDomain = ''
-def BASE_DOMAIN = false
 def targetBranch = params.GitBranch
 
 node {
@@ -19,22 +18,24 @@ node {
                 '''
         }
 
-        stage('Create Kubernetes Cluster') {
+        stage('Deploy Legion') {
             dir('deploy/ansible'){
-                withAWS(credentials: 'kops') {
-                    wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                        ansiblePlaybook(
-                            playbook: 'deploy-legion.yml',
-                            extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion} local_version=${LocalVersion}" --vault-password-file ~/ansible-vault-pass',
-                            colorized: true
-                        )
+                withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                    withAWS(credentials: 'kops') {
+                        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                            ansiblePlaybook(
+                                playbook: 'deploy-legion.yml',
+                                extras: ' --extra-vars "profile=${param.Profile} base_version=${params.BaseVersion} local_version=${params.LocalVersion}"',
+                                colorized: true
+                            )
+                        }
                     }
                 }
             }
         }
 
         stage('Domain'){
-            baseDomain = params.PROFILE
+            baseDomain = params.Profile
         }
         
         stage('Create & check jenkins jobs'){

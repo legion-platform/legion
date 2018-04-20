@@ -1,12 +1,7 @@
-def baseDomain = ''
-def BASE_DOMAIN = false
-def targetBranch = params.GitBranch
-
 node {
     try{
         stage('Checkout GIT'){
-            def scmVars = checkout scm
-            targetBranch = scmVars.GIT_COMMIT
+            checkout scm
         }
         
         stage('Install tools package'){
@@ -21,13 +16,15 @@ node {
 
         stage('Create Kubernetes Cluster') {
             dir('deploy/ansible'){
-                withAWS(credentials: 'kops') {
-                    wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                        ansiblePlaybook(
-                            playbook: 'create-cluster.yml',
-                            extras: ' --extra-vars "profile=${Profile}" --vault-password-file ~/ansible-vault-pass',
-                            colorized: true
-                        )
+                withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                    withAWS(credentials: 'kops') {
+                        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                            ansiblePlaybook(
+                                playbook: 'create-cluster.yml',
+                                extras: ' --extra-vars "profile=${Profile}"',
+                                colorized: true
+                            )
+                        }
                     }
                 }
             }
