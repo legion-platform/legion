@@ -27,14 +27,6 @@ RUN set -ex \
   && chmod +x /usr/bin/dumb-init \
   && apk del .install-deps
 
-# Consul templates
-ENV CTMPL_VERSION 0.19.3
-RUN set -x \
-  && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl \
-  && wget https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_linux_amd64.zip \
-  && unzip -d /bin consul-template_${CTMPL_VERSION}_linux_amd64.zip \
-  && apk del .install-deps
-
 # LUA
 RUN set -x \
   && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl git curl luarocks5.3 \
@@ -45,7 +37,7 @@ RUN set -x \
 COPY start.sh /start.sh
 COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 COPY static /static
-COPY nginx.conf.ctmpl /nginx.conf.ctmpl
+COPY nginx.conf.k8stmpl /nginx.conf.k8stmpl
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]
