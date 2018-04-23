@@ -1,0 +1,10 @@
+---
+# Install kops
+- include: install-kops.yaml
+
+# Install kubectl
+- include: install-kubectl.yaml
+
+# Create cluster with kops if needed
+- include: create-cluster.yaml
+  when: not skip_kops

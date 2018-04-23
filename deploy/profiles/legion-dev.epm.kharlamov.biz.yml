@@ -1,0 +1,74 @@
+# Common
+vendor: legion
+env_type: dev
+env_name: legion-dev
+base_domain: legion-dev.epm.kharlamov.biz
+route53_zone: epm.kharlamov.biz
+
+# AWS 
+aws_region: us-east-2
+node_autoscaler_min: 3
+node_autoscaler_max: 5
+bastion_shape: t2.micro
+master_shape: t2.large
+node_shape: t2.large
+vpc_id: vpc-5729c13e
+cluster_zones:
+  - us-east-2a
+  - us-east-2b
+  - us-east-2c
+external_access_sgs: 
+  - sg-f92af090
+  - sg-fa2af093
+  - sg-fb2af092
+airflow_rds_shape: "db.t2.medium"
+airflow_rds_size: "50"
+
+# Kops
+cluster_name: legion-dev.epm.kharlamov.biz
+state_store: s3://legion-cluster
+aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
+kubernetes_version: 1.8.7
+private_network: '172.31'
+kops_zone_a_cidr: "{{ private_network }}.100.0/24"
+kops_zone_b_cidr: "{{ private_network }}.101.0/24"
+kops_zone_c_cidr: "{{ private_network }}.102.0/24"
+kops_utility_zone_a_cidr: "{{ private_network }}.103.0/24"
+kops_utility_zone_b_cidr: "{{ private_network }}.104.0/24"
+kops_utility_zone_c_cidr: "{{ private_network }}.105.0/24"
+
+# Legion specific variables
+ssh_public_key: ~/.ssh/id_rsa.pub
+certificate_email: legion@epam.com
+git_key: "/home/jenkins/deploy.cert"
+cert_dir: "/etc/dynssl"
+use_https: "yes"
+use_https_for_tests: "no"
+nexus_pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
+nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443"
+namespace: default
+deployment: legion
+test_base_domain: local.legion-dev.epm.kharlamov.biz
+dashboard_protocol: http
+test_protocol: http
+service_account:
+  login:  admin
+  password: admin
+examples_to_test:
+  - Test-Summation
+  - Sklearn-Income
+  - Digit-Recognition
+tenant_subdomains:
+  - ldap
+  - edge
+  - consul
+  - grafana
+  - edi
+tenants:
+  - company-a
+  - company-b
+storageclass: efs
+airflow_s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
+airflow_s3_url: 's3://epm-legion-data-dev/'
+airflow_expected_output: 'expected-data/'
+airflow_pvc: 200m

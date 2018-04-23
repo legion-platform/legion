@@ -1,0 +1,22 @@
+---
+- name: Create PVC configuration
+  template:
+    src: pvc.yml.j2
+    dest: /tmp/shared-pvc.yaml
+    mode: 0644
+
+- name: Create EFS provisioner
+  template:
+    src: provisioner.yaml.j2
+    dest: /tmp/provisioner.yaml.j2
+    mode: 0644
+
+- name: Create NFS persistance provisioner
+  command: "kubectl apply -f /tmp/provisioner.yaml.j2"
+
+- name: Remove old PVC
+  shell: 'kubectl delete --ignore-not-found=true -f /tmp/shared-pvc.yaml'
+  ignore_errors: yes
+
+- name: Apply new PVC
+  shell: 'kubectl apply -f /tmp/shared-pvc.yaml'

@@ -2,43 +2,48 @@ rootDomain: {{ base_domain }}
 namespace: default
 localDomain: "cluster.local"
 
-image: "nexus.local.epm.kharlamov.biz:443/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
+image: "{{ nexus_docker_repo }}/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
 
 secrets:
   postgres:
-    user: airflow
-    password: airflow
-    db: airflow
+    user: {{ aws.rds.username }}
+    password: {{ aws.rds.password }}
+    db: {{ aws.rds.database_name }}
 
   rabbitmq:
     user: airflow
     password: airflow
     vhost: airflow
 
-  fernet_key: {{ secret_fernet_key }}
+  fernet_key: {{ airflow.fernet_key }}
   flask: {{ secret_flask }}
 
 connections:
-{{ secrets.airflow.connections|to_yaml }}
+{{ airflow.connections|to_yaml }}
+
+postgres:
+  external: true
+  host: {{ airflow_rds_instance.instance.endpoint }}
+  port: 5432
 
 core:
   logging_level: info
   remote_logging: true
-  remote_base_log_folder: {{ airflow.s3_log_url }}
+  remote_base_log_folder: {{ airflow_s3_log_url }}
   remote_log_conn_id: s3_conn
 
 smtp:
-  smtp_host: {{ secrets.airflow.email.smtp_host }}
-  smtp_starttls: {{ secrets.airflow.email.smtp_starttls }}
-  smtp_ssl: {{ secrets.airflow.email.smtp_ssl }}
-  smtp_user: {{ secrets.airflow.email.smtp_user }}
-  smtp_port: {{ secrets.airflow.email.smtp_port }}
-  smtp_password: {{ secrets.airflow.email.smtp_password }}
-  smtp_mail_from: {{ secrets.airflow.email.smtp_mail_from }}
+  smtp_host: {{ airflow.email.smtp_host }}
+  smtp_starttls: {{ airflow.email.smtp_starttls }}
+  smtp_ssl: {{ airflow.email.smtp_ssl }}
+  smtp_user: {{ airflow.email.smtp_user }}
+  smtp_port: {{ airflow.email.smtp_port }}
+  smtp_password: {{ airflow.email.smtp_password }}
+  smtp_mail_from: {{ airflow.email.smtp_mail_from }}
 
 storage:
-    use_specified_pvc: true
-    pvc_name: "legion-airflow-shared" # from shared_k8s_resources/templates
+  use_specified_pvc: true
+  pvc_name: "legion-airflow-shared" # from shared_k8s_resources/templates
 
 ingress:
   enabled: true
