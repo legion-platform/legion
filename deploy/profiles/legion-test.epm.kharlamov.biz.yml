@@ -33,13 +33,13 @@ cluster_zones:
   - zone_name: us-east-2b
     kops_cidr: "{{ private_network }}.114.0/24"
     kops_utility_cidr: "{{ private_network }}.115.0/24"
-  - zone_name: us-east-2b
+  - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.116.0/24"
     kops_utility_cidr: "{{ private_network }}.117.0/24"
 
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
-certificate_email: legion@epam.com
+certificate_email: Kirill_Makhonin@epam.com
 git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
