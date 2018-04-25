@@ -60,7 +60,7 @@
     sleep 1
     helm init --service-account tiller
     helm repo update
-  when: helm_list_initial_status.failed and helm_list_status.stdout.find('could not find tiller') == -1
+  when: helm_list_initial_status.failed and helm_list_status.stdout.find('could not find a ready tiller') == -1
 
 - name: Wait for helm ready
   shell: helm ls

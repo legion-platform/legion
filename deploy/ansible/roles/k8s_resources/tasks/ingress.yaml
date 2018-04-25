@@ -6,21 +6,29 @@
 
 # Deploy ingress and default backend
 
+- name: Create Ingress configuration
+  template:
+    src: "{{ item }}.yml.j2"
+    dest: "/tmp/{{ item }}.yml"
+    mode: 0644
+  with_items:
+    - ingress-k8s
+    - ingress-rbac
+    - ingress-aws
+
 - name: Deploy ingress and the default backend
   shell: |
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/namespace.yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/default-backend.yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/configmap.yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/tcp-services-configmap.yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/udp-services-configmap.yaml
+    kubectl apply -f /tmp/ingress-k8s.yml
+    kubectl apply -f /tmp/ingress-rbac.yml
 
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/rbac.yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/with-rbac.yaml
-
+- name: Patch Ingress controller
+  shell: |
     kubectl patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
         --patch="$(curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/publish-service-patch.yaml)"
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/aws/service-l4.yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/aws/patch-configmap-l4.yaml
+
+- name: Deploy aws ingress
+  shell: |
+    kubectl apply -f /tmp/ingress-aws.yml
 
 - name: Get Ingress ELB endpoint
   shell: kubectl describe services ingress-nginx --namespace ingress-nginx |grep .elb.amazonaws.com| awk '{ print $3 }'

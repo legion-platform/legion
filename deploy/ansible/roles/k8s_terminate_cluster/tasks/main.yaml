@@ -59,6 +59,3 @@
 
 - name: Delete the cluster
   shell: "kops delete cluster {{ cluster_name }} --state {{ state_store }} --yes"
-
-
-

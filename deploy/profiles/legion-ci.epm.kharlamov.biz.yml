@@ -4,10 +4,9 @@ env_type: ci
 env_name: legion-ci
 base_domain: legion-ci.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
-
 # AWS 
 aws_region: us-east-2
-node_autoscaler_min: 2
+node_autoscaler_min: 3
 node_autoscaler_max: 5
 bastion_shape: t2.micro
 master_shape: t2.large
@@ -15,7 +14,6 @@ node_shape: t2.large
 vpc_id: vpc-5729c13e
 airflow_rds_shape: "db.t2.medium"
 airflow_rds_size: "50"
-
 # Kops
 cluster_name: legion-ci.epm.kharlamov.biz
 state_store: s3://legion-cluster
@@ -32,11 +30,6 @@ cluster_zones:
   - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.110.0/24"
     kops_utility_cidr: "{{ private_network }}.111.0/24"
-external_access_sgs: 
-  - sg-f92af090
-  - sg-fa2af093
-  - sg-fb2af092
-
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: legion@epam.com

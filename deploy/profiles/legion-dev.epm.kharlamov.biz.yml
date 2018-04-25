@@ -13,10 +13,6 @@ bastion_shape: t2.micro
 master_shape: t2.large
 node_shape: t2.large
 vpc_id: vpc-5729c13e
-external_access_sgs: 
-  - sg-f92af090
-  - sg-fa2af093
-  - sg-fb2af092
 airflow_rds_shape: "db.t2.medium"
 airflow_rds_size: "50"
 
