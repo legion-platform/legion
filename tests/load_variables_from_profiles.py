@@ -40,7 +40,7 @@ def get_variables(arg):
         raise Exception('Cannot get profile - script should be run with one argument that '
                         'provides path to profiles dir. Current argument: {}'.format(arg))
 
-    profile = os.path.join(arg, '{}.ansible.yml'.format(profile))
+    profile = os.path.join(arg, '{}.yml'.format(profile))
     if not os.path.exists(profile):
         raise Exception('Cannot get profile - file not found {}'.format(profile))
 
@@ -51,19 +51,17 @@ def get_variables(arg):
         'CLUSTER_NAMESPACE': data['namespace'],
         'DEPLOYMENT': data['deployment'],
 
-        'USE_HTTPS': data['use_https'] == 'yes',
-        'USE_HTTPS_FOR_TESTS': data['use_https_for_tests'] == 'yes',
-
-        'HOST_BASE_DOMAIN': data['test_base_domain'],
-        'REAL_HOST_BASE_DOMAIN': data['base_domain'],
+        'HOST_BASE_DOMAIN': data.get('test_base_domain', data['base_domain']),
+        'USE_HTTPS_FOR_TESTS': data.get('use_https_for_tests', 'yes') == 'yes',
 
         'SERVICE_ACCOUNT': data['service_account']['login'],
         'SERVICE_PASSWORD': data['service_account']['password'],
 
-        'SUBDOMAINS': data['subdomains'],
         'JENKINS_JOBS': data['examples_to_test'],
+        'ENCLAVES': data.get('enclaves', []),
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
+    variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if len(variables['ENCLAVES']) > 0 else 'UNKNOWN_ENCLAVE'
 
     return variables

@@ -39,14 +39,11 @@ certificate_email: legion@epam.com
 git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
-use_https_for_tests: "no"
+use_https_for_tests: "yes"
 nexus_pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
 nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443"
 namespace: default
 deployment: legion
-test_base_domain: local.legion-dev.epm.kharlamov.biz
-dashboard_protocol: http
-test_protocol: http
 service_account:
   login:  admin
   password: admin
@@ -54,12 +51,6 @@ examples_to_test:
   - Test-Summation
   - Sklearn-Income
   - Digit-Recognition
-enclave_subdomains:
-  - ldap
-  - edge
-  - consul
-  - grafana
-  - edi
 enclaves:
   - company-a
   - company-b

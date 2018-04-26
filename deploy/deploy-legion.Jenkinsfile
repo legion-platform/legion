@@ -47,7 +47,12 @@ node {
         stage('Create jenkins jobs'){
             if (params.CreateJenkinsTests){
                 sh """
-                PYTHONHTTPSVERIFY=0
+                cd legion_test
+                ../.venv/bin/pip install -r requirements/base.txt
+                ../.venv/bin/pip install -r requirements/test.txt
+                ../.venv/bin/python setup.py develop
+                cd ..
+
                 .venv/bin/create_example_jobs \
                 "https://jenkins.${baseDomain}" \
                 examples \
@@ -68,8 +73,22 @@ node {
         stage('Run robot tests'){
             if (params.UseRegressionTests){
                 sh '''
-                cd tests
-                ../.venv/bin/python3 -m robot.run --exitonfailure *.robot || true
+                cd legion_test
+                ../.venv/bin/pip install -r requirements/base.txt
+                ../.venv/bin/pip install -r requirements/test.txt
+                ../.venv/bin/python setup.py develop
+
+                cd ../tests
+                ../.venv/bin/pip install yq
+
+                PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
+                CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
+                CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+                echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+
+                kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+
+                DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
                 '''
                 step([
                     $class : 'RobotPublisher',
