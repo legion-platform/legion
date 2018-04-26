@@ -14,4 +14,3 @@ Connect to Airflow and check it
     Should not be empty         ${dags}
     ${failed_dags} =            Get failed Airflow DAGs
     should be empty             ${failed_dags}
-
