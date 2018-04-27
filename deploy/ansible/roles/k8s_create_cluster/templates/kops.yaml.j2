@@ -110,6 +110,9 @@ spec:
     env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes
+  cloudLabels:
+    k8s.io/cluster-autoscaler/enabled: "yes"
+    kubernetes.io/cluster/{{ cluster_name }}: "true"
   role: Node
   subnets:
   {% for zone in cluster_zones %}
@@ -117,6 +120,39 @@ spec:
   {% endfor %}
 
 ---
+
+{% for shape in node_extra_shapes %}
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/cluster: {{ cluster_name }}
+  name: nodes.{{ shape }}
+spec:
+  image: {{ aws_image }}
+  machineType: {{ shape }}
+  maxSize: {{ node_extra_max }}
+  minSize: {{ node_extra_min }}
+  nodeLabels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/instancegroup: nodes.{{ shape }}
+  cloudLabels:
+    k8s.io/cluster-autoscaler/enabled: "yes"
+    kubernetes.io/cluster/{{ cluster_name }}: "true"
+  role: Node
+  subnets:
+  {% for zone in cluster_zones %}
+    - utility-{{ zone.zone_name }}
+  {% endfor %}
+
+---
+{% endfor %}
 
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
