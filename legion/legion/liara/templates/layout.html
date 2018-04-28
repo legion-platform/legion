@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Liara Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  </head>
+  <body>
+    <div>
+      <div id="menu">
+        <h2>Liara</h2>
+        <nav>
+          <ul>
+            {% for menu_item in menu_items %}
+              <li>{{menu_item}}</li>
+            {% endfor %}
+          </ul>
+        </nav>
+      </div>
+      <div id="content">
+        {% block content %}
+        {% endblock %}
+      </div>
+    </div>
+  </body>
+</html>
