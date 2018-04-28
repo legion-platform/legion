@@ -8,7 +8,7 @@
 
 - hosts: localhost
   connection: local
-  gather_facts: True
+  gather_facts: False
   vars_files:
     - "../profiles/{{ profile }}.yml"
     - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
