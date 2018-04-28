@@ -35,7 +35,7 @@ if (store.getCredentials(domain).size() == 0){
 		CredentialsScope.GLOBAL,
 		"legion-root-key",
 		"git",
-		new BasicSSHUserPrivateKey.UsersPrivateKeySource(),
+		new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource('/var/jenkins.ssh/id_rsa'),
 		"",
 		""
 	);

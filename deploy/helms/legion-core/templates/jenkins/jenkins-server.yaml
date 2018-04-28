@@ -117,8 +117,10 @@ spec:
         - mountPath: /usr/share/jenkins/ref/init.groovy.d/configure-cloud.groovy
           subPath: configure-cloud.groovy
           name: dynamic-scripts
+        - mountPath: /var/jenkins_home
+          name: jenkins-home
         {{- if .Values.jenkins.git_secret_name }}
-        - mountPath: /var/jenkins_home/.ssh
+        - mountPath: /var/jenkins.ssh
           name: git-secret
           readOnly: true
         {{- end }}
@@ -127,6 +129,9 @@ spec:
           name: airflow-dags
         {{- end }}
       volumes:
+      - name: jenkins-home
+        persistentVolumeClaim:
+          claimName: "{{ .Release.Name }}-jenkins-master-home"
       - name: dynamic-scripts
         configMap:
           name: "{{ .Release.Name }}-jenkins-dynamic-scripts"

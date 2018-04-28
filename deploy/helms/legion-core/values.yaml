@@ -27,6 +27,11 @@ jenkins:
 
   git_secret_name: false
 
+  persistence:
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 20Gi
+
   airflow:
     enabled: false
     rest_url: ''
