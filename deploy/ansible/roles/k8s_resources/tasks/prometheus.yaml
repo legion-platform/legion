@@ -1,0 +1,17 @@
+---
+- name: Create Prometheus configuration (values) file
+  template:
+    src: prometheus.yml.j2
+    dest: /tmp/prometheus.yml
+    mode: 0644
+
+- name: Add prometheus helm repo
+  command: helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/
+
+- name: Install prometheus operator
+  command: "helm install --version {{ prometheus_operator }} coreos/prometheus-operator --name prometheus-operator --namespace kube-system"
+  ignore_errors: true
+
+- name: Install Prometheus
+  command: "helm install --version {{ kube_prometheus }} coreos/kube-prometheus --name kube-prometheus --namespace kube-system -f /tmp/prometheus.yml"
+  ignore_errors: true

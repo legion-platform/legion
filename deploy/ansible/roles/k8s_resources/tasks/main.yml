@@ -7,4 +7,5 @@
 - include: ingress.yaml
 - include: dashboard.yaml
 - include: autoscaler.yaml
+- include: prometheus.yaml
 - include: pvc.yaml
