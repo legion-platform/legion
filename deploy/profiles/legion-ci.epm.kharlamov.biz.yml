@@ -10,8 +10,8 @@ tmp_dir: /tmp/
 
 # AWS 
 aws_region: us-east-2
-node_autoscaler_min: 3
-node_autoscaler_max: 5
+node_autoscaler_min: 4
+node_autoscaler_max: 6
 bastion_shape: t2.micro
 master_shape: t2.large
 node_shape: t2.large
@@ -43,12 +43,15 @@ cluster_zones:
   - zone_name: us-east-2a
     kops_cidr: "{{ private_network }}.106.0/24"
     kops_utility_cidr: "{{ private_network }}.107.0/24"
+    create_k8s_master: true
   - zone_name: us-east-2b
     kops_cidr: "{{ private_network }}.108.0/24"
     kops_utility_cidr: "{{ private_network }}.109.0/24"
+    create_k8s_master: false
   - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.110.0/24"
     kops_utility_cidr: "{{ private_network }}.111.0/24"
+    create_k8s_master: false
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: legion@epam.com
