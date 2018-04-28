@@ -29,7 +29,8 @@ class Airflow:
     ROBOT_LIBRARY_SCOPE = 'TEST SUITE'
     SIMPLE_ROW = re.compile("'b'([^\\[\\\\]+)\\\\n")
     SIMPLE_LOG_ROW = re.compile("'b'([^\\\\]+)\\\\n")
-    BASE_URL_TEMPLATE = '%s/admin/rest_api/'
+    BASE_REST_API_URL_TEMPLATE = '%s/admin/rest_api/'
+    BASE_URL_TEMPLATE = '%s/admin/'
 
     _TIMEOUT_SEC = 10
 
@@ -37,7 +38,7 @@ class Airflow:
         """
         Init client
         """
-        self.base_url = None  # Airflow Rest API Base url, type: str
+        self.root_url = None  # Airflow Rest API Base url, type: str
 
     def connect_to_airflow(self, root_url):
         """
@@ -50,20 +51,25 @@ class Airflow:
         if not root_url:
             raise Exception('"domain" parameter is required')
 
-        self.base_url = self.BASE_URL_TEMPLATE % root_url
+        self.root_url = root_url
 
         if self.get_airflow_version().get('status', '-') != 'OK':
             raise RequestException('Rest API is not available %s' % self.base_url)
 
-    def _get(self, path, params=None, **kwargs):
+    def _get(self, path, params=None, use_rest_api_root=True, **kwargs):
         """Sends a GET request.
             :param path: Path within API.
             :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
+            :param use_rest_api_root: (optional) Indicated, if Rest API Plugin Context Root should be added
             :param \*\*kwargs: Optional arguments that ``request`` takes.
             :return: json-encoded content of a response, if any.
             :rtype: dict
             """
-        response = requests.get(self.base_url + path, params, timeout = self._TIMEOUT_SEC, **kwargs)
+        if use_rest_api_root:
+            url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
+        else:
+            url = (self.BASE_URL_TEMPLATE % self.root_url) + path
+        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, **kwargs)
         if response.status_code == 200:
             return response.json()
         else:
@@ -109,6 +115,21 @@ class Airflow:
             :param report: (Optional) Boolean, Show DagBag loading report"""
         return self._find_lines_in_stdout(self._get('api?api=list_dags'
                                                     , params={'subdir': subdir, 'report': report}))[3:]
+
+    def get_failed_airflow_dags(self):
+        """
+        Get Failed airflow dags
+        :rtype list[str]
+        :return: A list of failed dags names
+        """
+        data = self._get('airflow/task_stats', use_rest_api_root = False)
+        failed_dags = []
+        for dag_id, dag_runs in data.items():
+            for dag_run in dag_runs:
+                if dag_run.get('color', '') == 'red' and dag_run.get('count', 0) > 0:
+                    failed_dags.append(dag_id)
+                    break
+        return failed_dags
 
     @staticmethod
     def _find_lines_in_stdout(response, first_pattern=SIMPLE_ROW, second_pattern=None):
