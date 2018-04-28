@@ -1,13 +1,15 @@
-node {
-    def rootCommit
-    def baseVersion
-    def localVersion
+class Globals {
+    static String rootCommit = null
+    static String baseVersion = null
+    static String localVersion = null
+}
 
+node {
     try {
         stage('Checkout GIT'){
             checkout scm
-            rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed "s/\\(.*\\)/\\1/"'
-            rootCommit = rootCommit.trim()
+            Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed "s/\\(.*\\)/\\1/"'
+            Globals.rootCommit = Globals.rootCommit.trim()
         }
         stage('Install build dependencies'){
             sh '''
@@ -55,18 +57,18 @@ node {
             print("Detected legion version:\n" + version)
 
             version = version.split("\n")
-            baseVersion = version[1]
-            localVersion = version[2]
+            Globals.baseVersion = version[1]
+            Globals.localVersion = version[2]
 
-            print("Base version " + baseVersion + " local version " + localVersion)
+            print("Base version " + Globals.baseVersion + " local version " + Globals.localVersion)
 
             print('Building shared artifact')
             envFile = 'file.env'
             sh """
             rm -f $envFile
             touch $envFile
-            echo "BASE_VERSION=$baseVersion" >> $envFile
-            echo "LOCAL_VERSION=$localVersion" >> $envFile
+            echo "BASE_VERSION=${Globals.baseVersion}" >> $envFile
+            echo "LOCAL_VERSION=${Globals.localVersion}" >> $envFile
             """
             archiveArtifacts envFile
 
@@ -137,12 +139,12 @@ node {
 
             sh """
     	    cd k8s/jupyterhub
-    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${baseVersion}+${localVersion}" -t legion/jupyterhub .
+    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/jupyterhub .
     	    """
 
             sh """
     	    cd k8s/grafana
-    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${baseVersion}+${localVersion}" -t legion/k8s-grafana .
+    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-grafana .
     	    """
 
             sh """
@@ -151,8 +153,8 @@ node {
 
             build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
 
-            sed -i "s/{VERSION}/${baseVersion} ${localVersion}/" k8s/edge/static/index.html
-            sed -i "s/{COMMIT}/${rootCommit}/" k8s/edge/static/index.html
+            sed -i "s/{VERSION}/${Globals.baseVersion} ${Globals.localVersion}/" k8s/edge/static/index.html
+            sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
             sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
 
     	    cd k8s/edge
@@ -166,7 +168,7 @@ node {
 
             sh """
     	    cd k8s/edi
-    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${baseVersion}+${localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi .
+    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi .
     	    """
 
             sh """
@@ -181,11 +183,11 @@ node {
                 images.each {
                     sh """
     				docker tag ${it} ${params.DockerRegistry}/${it}:latest
-    				docker tag ${it} ${params.DockerRegistry}/${it}:${baseVersion}
-    				docker tag ${it} ${params.DockerRegistry}/${it}:${baseVersion}-${localVersion}
+    				docker tag ${it} ${params.DockerRegistry}/${it}:${Globals.baseVersion}
+    				docker tag ${it} ${params.DockerRegistry}/${it}:${Globals.baseVersion}-${Globals.localVersion}
     				docker push ${params.DockerRegistry}/${it}:latest
-    				docker push ${params.DockerRegistry}/${it}:${baseVersion}
-    				docker push ${params.DockerRegistry}/${it}:${baseVersion}-${localVersion}
+    				docker push ${params.DockerRegistry}/${it}:${Globals.baseVersion}
+    				docker push ${params.DockerRegistry}/${it}:${Globals.baseVersion}-${Globals.localVersion}
     				"""
                 }
             }
@@ -212,7 +214,7 @@ node {
         notifyBuild(currentBuild.result)
     }
 
-    print("Base version " + baseVersion + " local version " + localVersion)
+    print("Base version ${Globals.baseVersion} local version ${Globals.localVersion}")
 }
 
 
@@ -221,26 +223,41 @@ def notifyBuild(String buildStatus = 'STARTED') {
     // build status of null means successful
     buildStatus =  buildStatus ?: 'SUCCESSFUL'
 
+    def previousBuild = currentBuild.getPreviousBuild()
+    def previousBuildResult = previousBuild != null ? previousBuild.result : null
+
+    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
+    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
+
+    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
+
+    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
+
+    if (!masterOrDevelopBuild)
+        return
+
+    // Skip green -> green
+    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
+        return
+
     // Default values
-    def colorName = 'RED'
     def colorCode = '#FF0000'
-    def subject = "Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}*"
-    def summary = "@channel ${subject} \nbranch *${params.GitBranch}*\n<${env.BUILD_URL}|Open>"
+    def summary = """\
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
+    branch *${params.GitBranch}*
+    commit *${Globals.rootCommit}*
+    version *${Globals.baseVersion}  ${Globals.localVersion}*
+    Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
+    """.stripIndent()
 
     // Override default values based on build status
     if (buildStatus == 'STARTED') {
-        color = 'YELLOW'
         colorCode = '#FFFF00'
     } else if (buildStatus == 'SUCCESSFUL') {
-        color = 'GREEN'
         colorCode = '#00FF00'
     } else {
-        color = 'RED'
         colorCode = '#FF0000'
     }
 
-    // Send notifications
-    if (params.SLACK_NOTIFICATION_ENABLED){
-        slackSend (color: colorCode, message: summary)
-    }
+    slackSend (color: colorCode, message: summary)
 }
