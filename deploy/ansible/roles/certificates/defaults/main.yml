@@ -4,7 +4,8 @@ ler53_acme_url: "https://acme-v02.api.letsencrypt.org/directory"
 ler52_acme_certificate_check: yes
 ler53_acme_url_debug: "https://acme-staging-v02.api.letsencrypt.org/directory"
 ler53_cert_remaining_days_before_renewal: 10
-ler53_cert_common_name: "{{ ansible_fqdn }}"
+ler53_cert_common_name: "{{ base_domain }}"
+ler53_route_53_domain: "{{ route53_zone }}"
 ler53_cert_sans: []
 ler53_cert_key_usages:
 - digitalSignature
@@ -16,6 +17,7 @@ ler53_cert_file_name: "{{ ler53_cert_common_name }}.crt"
 ler53_csr_file_name: "{{ ler53_cert_common_name }}.csr"
 ler53_intermediate_download: true
 ler53_intermediate_file_name: "{{ ler53_cert_common_name }}.intermediate.crt"
+ler53_fullchain_file_name: "{{ ler53_cert_common_name }}.fullchain.crt"
 ler53_cert_and_intermediate_file_name: "{{ ler53_cert_common_name }}.pem"
 ler53_cert_files_mode: 0600
 ler53_cert_files_owner: root
@@ -25,3 +27,6 @@ ler53_account_key_size: 2048
 ler53_account_key_dir: /etc/ssl/lets_encrypt
 ler53_account_key_file_name: lets_encrypt_account.key
 ler53_new_cert_when_csr_changes: false
+tls_certificates_target_namespaces:
+- kube-system
+- default

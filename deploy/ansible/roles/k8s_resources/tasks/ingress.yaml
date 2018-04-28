@@ -1,0 +1,47 @@
+---
+
+####################
+# Install Ingress
+####################
+
+# Deploy ingress and default backend
+
+- name: Create Ingress configuration
+  template:
+    src: "{{ item }}.yml.j2"
+    dest: "/tmp/{{ item }}.yml"
+    mode: 0644
+  with_items:
+    - ingress-k8s
+    - ingress-rbac
+    - ingress-aws
+
+- name: Deploy ingress and the default backend
+  shell: |
+    kubectl apply -f /tmp/ingress-k8s.yml
+    kubectl apply -f /tmp/ingress-rbac.yml
+
+- name: Patch Ingress controller
+  shell: |
+    kubectl patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
+        --patch="$(curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/publish-service-patch.yaml)"
+
+- name: Deploy aws ingress
+  shell: |
+    kubectl apply -f /tmp/ingress-aws.yml
+
+- name: Get Ingress ELB endpoint
+  shell: kubectl describe services ingress-nginx --namespace ingress-nginx |grep .elb.amazonaws.com| awk '{ print $3 }'
+  register: ingress_elb_endpoint
+  until: ingress_elb_endpoint.stdout.find(".elb.amazonaws.com") != -1
+  retries: 6
+  delay: 10
+
+- name: Create ingress DNS record
+  route53:
+    state: present
+    zone: "{{ route53_zone }}"
+    record: "*.{{ base_domain }}"
+    type: CNAME
+    value: "{{ ingress_elb_endpoint.stdout }}"
+    overwrite: true

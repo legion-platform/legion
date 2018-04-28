@@ -1,0 +1,145 @@
+apiVersion: kops/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: {{ cluster_name }}
+spec:
+  api:
+    loadBalancer:
+      type: Public
+      additionalSecurityGroups: {{ external_access_sgs|to_yaml }}
+  authorization:
+    rbac: {}
+  kubeAPIServer:
+    authorizationRbacSuperUser: admin
+  channel: stable
+  cloudProvider: aws
+  configBase: {{ state_store }}/{{ cluster_name }}
+  etcdClusters:
+  - etcdMembers:
+{% for zone in cluster_zones %}
+    - instanceGroup: master-{{ zone.zone_name }}
+      name: {{ zone.zone_name }}
+{% endfor %}
+    name: main
+  - etcdMembers:
+{% for zone in cluster_zones %}
+    - instanceGroup: master-{{ zone.zone_name }}
+      name: {{ zone.zone_name }}
+{% endfor %}
+    name: events
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubernetesApiAccess: {{ allowed_wan_ips|to_yaml }}
+  kubernetesVersion: {{ kubernetes_version }}
+  masterPublicName: api.{{ cluster_name }}
+  networkCIDR: {{ private_network }}.0.0/16
+  networkID: {{ vpc_id }}
+  networking:
+    weave: {}
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess: {{ allowed_wan_ips|to_yaml }}
+  subnets:
+{% for zone in cluster_zones %}
+  - cidr: {{ zone.kops_cidr }}
+    name: {{ zone.zone_name }}
+    type: Private
+    zone: {{ zone.zone_name }}
+{% endfor %}
+{% for zone in cluster_zones %}
+  - cidr: {{ zone.kops_utility_cidr }}
+    name: utility-{{ zone.zone_name }}
+    type: Utility
+    zone: {{ zone.zone_name }}
+{% endfor %}
+  topology:
+    bastion:
+      bastionPublicName: bastion.{{ cluster_name }}
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+
+---
+{% for zone in cluster_zones %}
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/cluster: {{ cluster_name }}
+  name: master-{{ zone.zone_name }}
+spec:
+  image: {{ aws_image }}
+  machineType: {{ master_shape }}
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/instancegroup: master-{{ zone.zone_name }}
+  role: Master
+  subnets:
+  - {{ zone.zone_name }}
+
+---
+{% endfor %}
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/cluster: {{ cluster_name }}
+  name: nodes
+spec:
+  image: {{ aws_image }}
+  machineType: {{ node_shape }}
+  maxSize: {{ node_autoscaler_max }}
+  minSize: {{ node_autoscaler_min }}
+  nodeLabels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/instancegroup: nodes
+  role: Node
+  subnets:
+  {% for zone in cluster_zones %}
+    - utility-{{ zone.zone_name }}
+  {% endfor %}
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/cluster: {{ cluster_name }}
+  name: bastions
+spec:
+  image: {{ aws_image }}
+  machineType: {{ bastion_shape }}
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    vendor: {{ vendor }}
+    env_type: {{ env_type }}
+    env_name: {{ env_name }}
+    kops.k8s.io/instancegroup: bastions
+  role: Bastion
+  subnets:
+  {% for zone in cluster_zones %}
+    - utility-{{ zone.zone_name }}
+  {% endfor %}

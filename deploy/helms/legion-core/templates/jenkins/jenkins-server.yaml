@@ -51,8 +51,8 @@ spec:
           value: "-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.legion.jenkins.dashboard.url=/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.legion.jenkins.report.html.path=notebook.html"
         - name: CORE_DEPLOYMENT_PREFIX
           value: "{{ .Release.Name }}-"
-        - name: TENANT_DEPLOYMENT_PREFIX
-          value: "{{ .Values.tenantDeploymentPrefix }}"
+        - name: ENCLAVE_DEPLOYMENT_PREFIX
+          value: "{{ .Values.enclaveDeploymentPrefix }}"
         # Information for building corect images
         - name: LEGION_PACKAGE_VERSION
           value: "{{ .Values.package.version }}"

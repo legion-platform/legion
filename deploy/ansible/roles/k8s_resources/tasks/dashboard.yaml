@@ -1,0 +1,17 @@
+---
+
+####################
+# Install Kubernetes Dashboard
+####################
+
+- name: Launch Kubernetes dashboard service
+  command: "kubectl apply -f https://raw.githubusercontent.com/kubernetes/kops/master/addons/kubernetes-dashboard/v1.8.3.yaml"
+
+- name: Create kubernetes-dashboard ingress configuration
+  template:
+    src: "dashboard.ing.yml.j2"
+    dest: "/tmp/dashboard.ing.yml"
+    mode: 0644
+
+- name: Apply kubernetes-dashboard ingress configuration
+  command: kubectl apply -f /tmp/dashboard.ing.yml

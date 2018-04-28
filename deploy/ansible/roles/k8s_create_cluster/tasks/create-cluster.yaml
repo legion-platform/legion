@@ -1,0 +1,26 @@
+---
+####################
+# Create Kubernetes cluster using Kops
+####################
+
+- name: Create kops configuration
+  template:
+    src: kops.yaml.j2
+    dest: /tmp/kops.yaml
+    mode: 0644
+
+- name: Configure the cluster
+  shell: "kops create -f /tmp/kops.yaml --state {{ state_store }}"
+
+- name: Configure ssh key
+  shell: "kops create secret --name {{ cluster_name }} sshpublickey admin -i  {{ ssh_public_key }} --state {{ state_store }}"
+
+- name: Create the physical cluster
+  shell: "kops update cluster {{ cluster_name }} --yes --state {{ state_store }}"
+
+- name: Verify that all Kubernetes nodes are ready
+  shell: kubectl get nodes
+  register: cmd_result
+  until: cmd_result.rc == 0
+  retries: 20
+  delay: 60

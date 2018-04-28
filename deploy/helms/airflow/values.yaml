@@ -62,7 +62,7 @@ webserver:
 
   filter_by_owner: false
 
-  email_backend: airflow.utils.send_email_smtp
+  email_backend: airflow.utils.email.send_email_smtp
 
 smtp:
   smtp_host: localhost
@@ -107,7 +107,7 @@ mesos:
 storage:
   accessMode: ReadWriteMany
   persistenceSize: 20Gi
-  storageClass: 'hostpath'
+  storageClass: 'efs'
 
   use_specified_pvc: false
   pvc_name: ''

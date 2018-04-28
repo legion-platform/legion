@@ -1,29 +1,39 @@
 *** Settings ***
 Documentation       Legion robot resources
+Resource            variables.robot
 Library             String
 Library             OperatingSystem
 Library             Collections
-Library             legion_test.robot.Dashboard
+Library             legion_test.robot.K8s
 Library             legion_test.robot.Jenkins
 Library             legion_test.robot.Utils
 Library             legion_test.robot.Grafana
+Library             legion_test.robot.Airflow
 
 *** Keywords ***
-Connect to endpoints
-    Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}                      ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
-    Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}                      ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
+Connect to enclave Grafana
+    [Arguments]           ${enclave}
+    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}                      ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
+
+Connect to Jenkins endpoint
+    Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}                                 ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
+
+Connect to Airflow endpoint
+    Connect to Airflow    ${HOST_PROTOCOL}://airflow.${HOST_BASE_DOMAIN}
+
+Connect to Flower endpoint
+    Connect to Flower    ${HOST_PROTOCOL}://flower.${HOST_BASE_DOMAIN}
+
 
 Run EDI inspect
-    ${edi_state}=   Run      legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                      EDI returns ${edi_state}
+    [Arguments]           ${enclave}
+    ${edi_state}=   Run   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+    Log                   EDI returns ${edi_state}
     [Return]        ${edi_state}
 
-Connect to kubernetes
-    Gather kubernetes dashboard info                        ${HOST_PROTOCOL}://dashboard.${HOST_BASE_DOMAIN}          ${CLUSTER_NAMESPACE}
-
 Test model pipeline
-    [Arguments]              ${model_name}
-    Run Jenkins job                                         DYNAMIC MODEL ${model_name}
+    [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
+    Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
     Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
     Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
     Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
@@ -35,8 +45,19 @@ Test model pipeline
     ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
     Log                  External model URL is ${model_url}
     Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
+    Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}
     Sleep                15s
     Metric should be presented                              ${model_id}
     ${edi_state}=        Run      legionctl inspect --filter ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
     Log                  State of ${model_id} is ${edi_state}
+
+Check if all enclave domains are registered
+    [Arguments]             ${enclave}
+    :FOR    ${enclave_subdomain}    IN    @{ENCLAVE_SUBDOMAINS}
+    \   Check domain exists  ${enclave_subdomain}-${enclave}.${HOST_BASE_DOMAIN}
+
+Run, wait and check jenkins jobs for enclave
+    [Arguments]             ${enclave}
+    :FOR  ${model_name}  IN  @{JENKINS_JOBS}
+    \    Test model pipeline  ${model_name}  ${enclave}

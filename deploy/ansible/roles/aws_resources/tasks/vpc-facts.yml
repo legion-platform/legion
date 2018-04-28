@@ -1,0 +1,25 @@
+---
+
+- name: Get VPC Cluster workers subnets
+  ec2_vpc_subnet_facts:
+    region: "{{ aws_region }}"
+    filters: 
+      "tag:Name": "{{ item.zone_name }}.{{ cluster_name }}"
+      "tag:KubernetesCluster": "{{ cluster_name }}"
+  with_items: "{{ cluster_zones }}"
+  register: subnet_facts
+
+- name: Cluster subnets
+  debug: 
+    msg: "{{ subnet_facts.results|map(attribute='subnets.0.id')|list }}"
+
+- name: Gather kubernetes workers security groups
+  ec2_group_facts:
+    region: "{{ aws_region }}"
+    filters:
+      "tag:Name": "nodes.{{ cluster_name }}"
+  register: workers_sg_facts
+
+- name: Workers security groups
+  debug:
+    msg: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"

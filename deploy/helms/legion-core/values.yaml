@@ -1,6 +1,6 @@
 rootDomain: k8s-nightly.epm.kharlamov.biz
 localDomain: "cluster.local"
-tenantDeploymentPrefix: "legion-"
+enclaveDeploymentPrefix: "legion-"
 domainDelimiter: "."
 
 secrets:
@@ -69,7 +69,7 @@ nexus:
 
   persistence:
     enabled: true
-    storageClass: "hostpath"
+    storageClass: ""
     accessMode: ReadWriteOnce
     # existingClaim: ""
     size: 20Gi

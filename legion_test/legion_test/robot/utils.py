@@ -70,3 +70,34 @@ class Utils:
             raise Exception('Returned wrong status code: {}'.format(response.status_code))
 
         response.close()
+
+    @staticmethod
+    def sum_up(*values):
+        """
+        Sum up arguments
+
+        :param values: Values to sum up
+        :type values: int[]
+        :return: Sum
+        :rtype: int
+        """
+        result = 0
+        for value in values:
+            result += value
+        return result
+
+    @staticmethod
+    def subtract(minuend, *values):
+        """
+        Subtract arguments from minuend
+
+        :param minuend: A Minuend
+        :type minuend: int
+        :param values: Values to subtract from minuend
+        :type values: int[]
+        :rtype: int
+        """
+        result = minuend
+        for value in values:
+            result -= value
+        return result

@@ -1,0 +1,27 @@
+- name: Check that certificate exists
+  connection: local
+  stat:
+    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+  register: exists_certificate_file
+
+- name: Calculate date in future for certificate check
+  command: python -c 'import datetime; print((datetime.datetime.now() + datetime.timedelta(days={{ ler53_check_delta_days }})).strftime("%Y%m%d%H%M%SZ"))'
+  register: certificate_check_date
+
+- name: "Ensure that the existing certificate is still valid in {{ ler53_check_delta_days }} days"
+  connection: local
+  openssl_certificate:
+    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+    provider: assertonly
+    valid_at: "{{ certificate_check_date.stdout }}"
+  register: certificate_content_check
+  ignore_errors: True
+
+- name: "Store initial information about files"
+  set_fact:
+    valid_certificate_not_exists: true
+
+- name: "Store gathered information about files"
+  set_fact:
+    valid_certificate_not_exists: false
+  when: exists_certificate_file.stat.exists and not certificate_content_check.failed
