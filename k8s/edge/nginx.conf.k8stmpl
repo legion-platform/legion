@@ -50,15 +50,13 @@ http{
     statistics_sender.init(host, port, namespace)
   }
 
-  {% for service in services %}
-    {% if "model" in service.Tags %}
-  upstream {{ service.Name }} {
-    zone upstream-{{ service.Name }} 64k;
+  {% for service in services %}{% if "com.epam.legion.model.id" in service.metadata.labels %}
+  upstream {{ service.metadata.name }} {
+    zone upstream-{{ service.metadata.name }} 64k;
     server {{ service.Address}}:{{ service.Port}} max_fails=3 fail_timeout=60 weight=1;
     #server 127.0.0.1:65535; # force a 502
   }
-    {% endif %}
-  {% endfor %}
+   {% endif %}{% endfor %}
 
   server {
     listen 80;
@@ -73,10 +71,9 @@ http{
     }
 
     # Models API
-    {% for service in services %}
-      {% if "model" in service.Tags %}
-    location /api/model/{{ service.name }} {
-        proxy_pass http://{{ service.name }};
+    {% for service in services %}{% if "com.epam.legion.model.id" in service.metadata.labels %}
+    location /api/model/{{ service.metadata.name }} {
+        proxy_pass http://{{ service.metadata.name }};
 
         expires -1;
         add_header Cache-Control no-cache;
@@ -86,10 +83,9 @@ http{
         log_by_lua_block {
             local statistics_sender = require "statistics_sender"
             local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)
-            statistics_sender.send_request_statistics("{{ service.name }}", latency)
+            statistics_sender.send_request_statistics("{{ service.metadata.name }}", latency)
         }
     }
-      {% endif %}
-    {% endfor %}
+    {% endif %}{% endfor %}
   }
 }

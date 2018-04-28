@@ -149,6 +149,38 @@ def find_model_deployment(model_id, namespace='default'):
     return None
 
 
+def find_model_service(model_id, model_version=None, namespace='default'):
+    """
+    Find model service by model id
+
+    :param model_id: model id
+    :type model_id: str
+    :param model_version: version (Optional)
+    :type model_version: str
+    :param namespace: namespace
+    :type namespace: str
+    :return: :py:class:`kubernetes.client.models.v1_service.V1Service`
+    """
+    client = build_client()
+
+    client_api = kubernetes.client.CoreV1Api(client)
+    all_services = client_api.list_namespaced_service(namespace)
+
+    model_id_name = normalize_name(legion.containers.headers.DOMAIN_MODEL_ID)
+    model_id_value = normalize_name(model_id)
+
+    model_version_name = normalize_name(legion.containers.headers.DOMAIN_MODEL_VERSION)
+    model_version_value = normalize_name(model_version) if model_version is not None else None
+
+    for service in all_services.items:
+        if service.metadata.labels.get(model_id_name) == model_id_value \
+                and (model_version is None
+                     or service.metadata.labels.get(model_version_name) == model_version_value):
+            return service
+
+    return None
+
+
 def find_all_models_deployments(namespace='default'):
     """
     Find all models deployments
@@ -299,6 +331,23 @@ def remove_deployment(deployment, namespace='default', grace_period=0):
                                               grace_period_seconds=grace_period)
 
 
+def remove_service(service, namespace='default'):
+    """
+    Remove existed service
+
+    :param service: service which we want to remove
+    :type service: `kubernetes.client.models.v1_service.V1Service`
+    :param namespace: namespace
+    :type namespace: str
+    :return: None
+    """
+    client = build_client()
+
+    api_instance = kubernetes.client.CoreV1Api(client)
+
+    api_instance.delete_namespaced_service(service.metadata.name, namespace)
+
+
 def deploy(cluster_config, cluster_secrets, image, k8s_image=None, count=1, register_on_grafana=True):
     """
     Deploy model to kubernetes
@@ -320,7 +369,6 @@ def deploy(cluster_config, cluster_secrets, image, k8s_image=None, count=1, regi
     namespace = cluster_config.get('namespace')
     client = kubernetes.client
 
-    # TODO: Question. What do?
     build_client()
 
     if k8s_image:
@@ -340,9 +388,7 @@ def deploy(cluster_config, cluster_secrets, image, k8s_image=None, count=1, regi
 
     container_env_variables = {
         legion.config.STATSD_HOST[0]: cluster_config['graphite']['domain'],
-        legion.config.STATSD_PORT[0]: str(cluster_config['graphite']['port']),
-        legion.config.CONSUL_ADDR[0]: cluster_config['consul']['domain'],
-        legion.config.CONSUL_PORT[0]: str(cluster_config['consul']['port']),
+        legion.config.STATSD_PORT[0]: str(cluster_config['graphite']['port'])
     }
 
     container = client.V1Container(
@@ -371,11 +417,34 @@ def deploy(cluster_config, cluster_secrets, image, k8s_image=None, count=1, regi
 
     extensions_v1beta1 = client.ExtensionsV1beta1Api()
 
-    api_response = extensions_v1beta1.create_namespaced_deployment(
+    api_response_deployment = extensions_v1beta1.create_namespaced_deployment(
         body=deployment,
         namespace=namespace)
 
-    return api_response
+    # Creating a service
+
+    core_v1api = client.CoreV1Api()
+
+    service_selector = {k: v for k, v in compatible_labels.items()
+                        if k in [legion.containers.headers.DOMAIN_MODEL_ID,
+                                 legion.containers.headers.DOMAIN_MODEL_VERSION]}  # Id and Version
+    service_name = "model-%s" % normalize_name(model_id)
+
+    service_spec = client.V1ServiceSpec(
+        selector=service_selector,
+        ports=[client.V1ServicePort(name='api', protocol='TCP', port=5000, target_port='api')])
+
+    service = client.V1Service(
+        api_version="v1",
+        kind="Service",
+        metadata=client.V1ObjectMeta(name=service_name, labels=compatible_labels),
+        spec=service_spec)
+
+    api_response_service = core_v1api.create_namespaced_service(
+        body=service,
+        namespace=namespace)
+
+    return [api_response_deployment, api_response_service]
 
 
 def inspect(cluster_config, cluster_secrets):
@@ -463,6 +532,13 @@ def undeploy(cluster_config, cluster_secrets, model_id, grace_period=0, register
     :return: None
     """
     namespace = cluster_config.get('namespace')
+
+    service = find_model_service(model_id, namespace)
+    if not service:
+        raise Exception('Cannot find service for model %s in namespace %s' % (model_id, namespace))
+    else:
+        remove_service(service, namespace)
+
     deployment = find_model_deployment(model_id, namespace)
     if not deployment:
         raise Exception('Cannot find deployment for model %s in namespace %s' % (model_id, namespace))

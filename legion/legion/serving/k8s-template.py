@@ -15,6 +15,11 @@
 #    limitations under the License.
 #
 
+"""
+k8s-template application is a replacement of consul-template app.
+It can generate config files based on K8s API response and execute a reload command.
+"""
+
 import sys
 import os
 import argparse
@@ -59,10 +64,10 @@ if __name__ == '__main__':
     j2_template = j2_env.get_template(args.template)
 
     while True:
-        values = legion.containers.k8s.find_all_models_deployments()
+        values = legion.containers.k8s.find_all_services()
         with open(args.output, 'w') as output_file:
             logging.debug('Output file path: %s' % output_file.name)
-            output_file.write(j2_template.render(values))
+            output_file.write(j2_template.render({'services': values}))
 
         if args.command:
             os.system(args.command)
