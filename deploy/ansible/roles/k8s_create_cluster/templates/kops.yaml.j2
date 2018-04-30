@@ -143,6 +143,7 @@ spec:
     env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes.{{ shape }}
+    dedicated: jenkins-slave
   cloudLabels:
     k8s.io/cluster-autoscaler/enabled: "yes"
     kubernetes.io/cluster/{{ cluster_name }}: "true"
@@ -151,6 +152,8 @@ spec:
   {% for zone in cluster_zones %}
     - utility-{{ zone.zone_name }}
   {% endfor %}
+  taints:
+  - dedicated=jenkins-slave:NoSchedule
 
 ---
 {% endfor %}
