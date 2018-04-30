@@ -148,12 +148,12 @@ spec:
     k8s.io/cluster-autoscaler/enabled: "yes"
     kubernetes.io/cluster/{{ cluster_name }}: "true"
   role: Node
+  taints:
+  - dedicated=jenkins-slave:NoSchedule
   subnets:
   {% for zone in cluster_zones %}
     - utility-{{ zone.zone_name }}
   {% endfor %}
-  taints:
-  - dedicated=jenkins-slave:NoSchedule
 
 ---
 {% endfor %}
