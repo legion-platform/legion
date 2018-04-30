@@ -49,10 +49,7 @@
 - name: Check helm status
   shell: helm list
   register: helm_list_status
-  until: helm_list_status.rc == 0
-  ignore_errors: false
-  retries: 5
-  delay: 10
+  ignore_errors: true
   when: helm_list_initial_status.failed
 
 - name: Install helm's tiller and update helm repos
