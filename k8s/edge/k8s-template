@@ -51,21 +51,21 @@ def build_client():
 
     return kubernetes.client.ApiClient()
 
-def find_all_services(namespace='', component=''):
+def find_all_services(component=''):
     """
     Find all services details
-    :param namespace: namespace
-    :type namespace: str or none for all
     :type component: filter by specified component value, or none for all
     :return: list[V1Service]
     """
     client = build_client()
 
+    namespace = os.environ.get('NAMESPACE', '')
+
     core_api = kubernetes.client.CoreV1Api(client)
     if namespace:
         all_services = core_api.list_namespaced_service(namespace)
     else:
-        all_services = core_api.list_service_for_all_namespaces()
+        raise ValueError("NAMESPACE wasn't found in env var.")
 
     type_label_name = 'legion.component'
     if component:

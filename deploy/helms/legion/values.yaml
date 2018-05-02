@@ -53,6 +53,7 @@ edge:
     tag: "latest"
     pullPolicy: "Always"
 
+  rbac: true
   # consul: "special-consul-address:8500"
 
   ingress:
