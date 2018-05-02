@@ -17,4 +17,4 @@
 
 /usr/local/openresty/bin/openresty
 
-python3 k8s-template -=template="/nginx.conf.ctmpl:/usr/local/openresty/nginx/conf/nginx.conf:/usr/local/openresty/bin/openresty -s reload"
+k8s-template --template="/nginx.conf.ctmpl" --output="/usr/local/openresty/nginx/conf/nginx.conf" --command="/usr/local/openresty/bin/openresty -s reload"
