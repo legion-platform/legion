@@ -65,8 +65,8 @@
 - name: Wait for helm ready
   shell: helm ls
   register: helm_list_status_after_install
-  until: helm_list_status_after_install.stdout.find('not find a ready tiller') == -1
+  until: helm_list_status_after_install.rc == 0
   retries: 5
   delay: 10
-  ignore_errors: true
+  ignore_errors: false
   when: helm_list_initial_status.failed
