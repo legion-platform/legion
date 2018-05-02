@@ -27,6 +27,11 @@ RUN set -ex \
   && chmod +x /usr/bin/dumb-init \
   && apk del .install-deps
 
+# Python3
+RUN apk update \
+  && apk add python3 python3-dev bash \
+  && python3 -m pip install argparse jinja2 kubernetes urllib3
+
 # LUA
 RUN set -x \
   && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl git curl luarocks5.3 \
@@ -38,6 +43,8 @@ COPY start.sh /start.sh
 COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 COPY static /static
 COPY nginx.conf.k8stmpl /nginx.conf.k8stmpl
+COPY k8s-template /k8s-template
+RUN chmod a+rwx /k8s-template
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]

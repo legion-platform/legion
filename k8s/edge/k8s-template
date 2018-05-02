@@ -26,10 +26,58 @@ import argparse
 import logging
 import time
 from jinja2 import Environment, FileSystemLoader
-import legion.utils
-import legion.containers.k8s
+import kubernetes
+import kubernetes.client
+import kubernetes.config
+import kubernetes.config.config_exception
+import urllib3
+import urllib3.exceptions
 
 ROOT_LOGGER = logging.getLogger()
+
+def build_client():
+    """
+    Configure and returns kubernetes client
+
+    :return: :py:module:`kubernetes.client`
+    """
+    try:
+        kubernetes.config.load_incluster_config()
+    except kubernetes.config.config_exception.ConfigException:
+        kubernetes.config.load_kube_config()
+
+    # Disable SSL warning for self-signed certificates
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    return kubernetes.client.ApiClient()
+
+def find_all_services(namespace='', component=''):
+    """
+    Find all services details
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :type component: filter by specified component value, or none for all
+    :return: list[V1Service]
+    """
+    client = build_client()
+
+    core_api = kubernetes.client.CoreV1Api(client)
+    if namespace:
+        all_services = core_api.list_namespaced_service(namespace)
+    else:
+        all_services = core_api.list_service_for_all_namespaces()
+
+    type_label_name = 'legion.component'
+    if component:
+        all_services = [
+            service
+            for service in all_services.items
+            if service.metadata.labels.get(type_label_name) == component
+        ]
+    else:
+        all_services = all_services.items
+
+    return all_services
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='K8S Template Renderer')
@@ -50,7 +98,7 @@ if __name__ == '__main__':
 
     v = vars(args)
 
-    if args.verbose or legion.utils.string_to_bool(os.getenv('VERBOSE', '')):
+    if args.verbose or os.getenv('VERBOSE', ''):
         log_level = logging.DEBUG
     else:
         log_level = logging.ERROR
@@ -64,7 +112,7 @@ if __name__ == '__main__':
     j2_template = j2_env.get_template(args.template)
 
     while True:
-        values = legion.containers.k8s.find_all_services()
+        values = find_all_services()
         with open(args.output, 'w') as output_file:
             logging.debug('Output file path: %s' % output_file.name)
             output_file.write(j2_template.render({'services': values}))
