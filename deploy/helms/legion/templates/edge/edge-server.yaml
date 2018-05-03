@@ -25,7 +25,9 @@ spec:
         - name: STATSD_HOST
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
-          value: "8125" 
+          value: "8125"
+        - name: NAMESPACE
+          value: "{{ .Release.Namespace }}"
         - name: CONSUL_HTTP_ADDR
         {{- if .Values.edge.consul }}
           value: "{{ .Values.edge.consul }}"
