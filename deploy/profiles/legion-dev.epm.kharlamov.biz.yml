@@ -74,3 +74,8 @@ airflow_s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
 airflow_s3_url: 's3://epm-legion-data-dev/'
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
+
+# Addons
+dashboard:
+  version: "1.8.3"
+  insecure: true
