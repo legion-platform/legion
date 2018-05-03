@@ -14,9 +14,11 @@ spec:
   resources:
     requests:
       storage: {{ .Values.jenkins.persistence.size | quote }}
+{{- if .Values.jenkins.persistence.storageClass }}
 {{- if (eq "-" .Values.jenkins.persistence.storageClass) }}
   storageClassName: ""
 {{- else }}
   storageClassName: "{{ .Values.jenkins.persistence.storageClass }}"
+{{- end }}
 {{- end }}
 {{- end }}
