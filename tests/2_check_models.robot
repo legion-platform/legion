@@ -13,7 +13,6 @@ Running, waiting and checks jobs in Jenkins
     Connect to Jenkins endpoint
     Run, wait and check jenkins jobs for enclave     ${MODEL_TEST_ENCLAVE}
 
-
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
     [Tags] jenkins model

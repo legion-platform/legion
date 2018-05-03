@@ -65,7 +65,6 @@ examples_to_test:
   - Digit-Recognition
 enclaves:
   - company-a
-  - company-b
 storageclass: efs
 airflow_s3_log_url: 's3://epm-legion-data-ci/airflow-logs/'
 airflow_s3_url: 's3://epm-legion-data-ci/'
