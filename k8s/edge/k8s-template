@@ -28,12 +28,14 @@ import time
 from jinja2 import Environment, FileSystemLoader
 import kubernetes
 import kubernetes.client
+import kubernetes.client.models
 import kubernetes.config
 import kubernetes.config.config_exception
 import urllib3
 import urllib3.exceptions
 
 ROOT_LOGGER = logging.getLogger()
+
 
 def build_client():
     """
@@ -50,6 +52,7 @@ def build_client():
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     return kubernetes.client.ApiClient()
+
 
 def find_all_services(component=''):
     """
@@ -69,15 +72,16 @@ def find_all_services(component=''):
 
     type_label_name = 'legion.component'
     if component:
-        all_services = [
+        filtered_services = [
             service
             for service in all_services.items
             if service.metadata.labels.get(type_label_name) == component
         ]
     else:
-        all_services = all_services.items
+        filtered_services = all_services.items
 
-    return all_services
+    return filtered_services
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='K8S Template Renderer')
