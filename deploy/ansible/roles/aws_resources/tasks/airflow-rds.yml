@@ -14,6 +14,10 @@
         from_port: 5432
         to_port: 5432
         group_id: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
+      - proto: tcp
+        from_port: 5432
+        to_port: 5432
+        group_id: "{{ jenkins_cc_sg }}"
     rules_egress:
       - proto: tcp
         from_port: 0

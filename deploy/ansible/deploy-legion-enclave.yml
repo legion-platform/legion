@@ -18,7 +18,6 @@
     - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
 
   tasks:
-
   - name: Install charts common dependencies
     include_role:
       name: charts_common

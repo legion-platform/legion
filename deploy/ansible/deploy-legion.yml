@@ -22,7 +22,8 @@
     - legion_core_chart
 
   tasks:
-    include_role: legion_enclave
-    with_items: "{{ enclaves }}"
-    loop_control:
-      loop_var: enclave
+    - include_role:
+        name: legion_enclave
+      with_items: "{{ enclaves }}"
+      loop_control:
+        loop_var: enclave
