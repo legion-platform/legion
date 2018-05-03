@@ -533,7 +533,7 @@ def undeploy(cluster_config, cluster_secrets, model_id, grace_period=0, register
     """
     namespace = cluster_config.get('namespace')
 
-    service = find_model_service(model_id, namespace)
+    service = find_model_service(model_id, namespace=namespace)
     if not service:
         raise Exception('Cannot find service for model %s in namespace %s' % (model_id, namespace))
     else:
