@@ -1,0 +1,32 @@
+---
+##################
+# Install Legion Enclave
+##################
+
+# NOTICE:
+# You Must specify the next variables as extra vars (--extra-vars "XXXX=YYYY") 
+# profile - unique cluster name
+# base_version - major legion version string
+# local_version - minor legion version string
+# enclave_name - enclave name to deploy
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - "../profiles/{{ profile }}.yml"
+    - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
+
+  tasks:
+
+  - name: Install charts common dependencies
+    include_role:
+      name: charts_common
+
+  - name: "Deploy Legion enclave"
+    include_role:
+      name: legion_chart
+    vars:
+      enclaves:
+        - "{{ enclave_name }}"
+

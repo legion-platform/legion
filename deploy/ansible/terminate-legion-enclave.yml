@@ -1,0 +1,40 @@
+---
+##################
+# Install Legion Enclave
+##################
+
+# NOTICE:
+# You Must specify the next variables as extra vars (--extra-vars "XXXX=YYYY") 
+# profile - unique cluster name
+# base_version - major legion version string
+# local_version - minor legion version string
+# enclave_name - enclave name to deploy
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - "../profiles/{{ profile }}.yml"
+    - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
+
+  tasks:
+  - name: Configure kubectl using kops
+    shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+  
+  - name: Remove legion chart
+    shell: helm delete --purge legion-{{ enclave_name }}
+    ignore_errors: true
+  
+  - name: "Remove {{ enclave_name }} namespace"
+    shell: "kubectl delete namespace {{ enclave_name }} --ignore-not-found=true --grace-period=10"
+  
+  - name: "Check that {{ enclave_name }} namespace has been removed"
+    shell: "kubectl get namespace {{ enclave_name }}"
+    register: namespace_check
+    until: namespace_check.stderr.find(' not found') != -1
+    retries: 5
+    delay: 10
+    ignore_errors: true
+  
+  - name: WORKAROUND delete pods in phase terminating
+    shell: kubectl --namespace {{ enclave_name }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
