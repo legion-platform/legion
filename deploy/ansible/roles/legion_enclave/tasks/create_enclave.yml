@@ -1,0 +1,22 @@
+---
+
+# Create kubernetes namespace for enclave
+- name: "Remove {{ enclave }} namespace"
+  shell: "kubectl --kube-context {{ cluster_name }} delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
+
+- name: "Check that {{ enclave }} namespace has been removed"
+  shell: "kubectl --kube-context {{ cluster_name }} get namespace {{ enclave }}"
+  register: namespace_check
+  until: namespace_check.stderr.find(' not found') != -1
+  retries: 5
+  delay: 10
+  ignore_errors: true
+
+- name: WORKAROUND delete pods in phase terminating
+  shell: kubectl --kube-context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+
+- name: "Create {{ enclave }} namespace"
+  shell: "kubectl --kube-context {{ cluster_name }} create namespace {{ enclave }}"
+
+- name: Copy TLS secret
+  shell: "kubectl --kube-context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"

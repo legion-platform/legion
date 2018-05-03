@@ -25,7 +25,7 @@
 
   - name: "Deploy Legion enclave"
     include_role:
-      name: legion_chart
+      name: legion_enclave
     vars:
       enclaves:
         - "{{ enclave_name }}"

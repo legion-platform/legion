@@ -20,6 +20,9 @@
     - helm
     - charts_common
     - legion_core_chart
-    - airflow_chart
-    - legion_chart
-    - debug
+
+  tasks:
+    include_role: legion_enclave
+    with_items: "{{ enclaves }}"
+    loop_control:
+      loop_var: enclave
