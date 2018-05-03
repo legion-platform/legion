@@ -111,15 +111,17 @@ def create_plain_jobs(client, options):
                                                  'Jenkinsfile', True)
 
     for job_name, (jenkins_file, job_xml) in founded_local_jobs.items():
+        data = {
+            'GIT_URL': options.git_url,
+            'GIT_BRANCH': options.git_branch,
+            'GIT_ROOT_KEY': options.git_root_key,
+            'JENKINS_FILE': jenkins_file
+        }
+        xml_data = render_template(job_xml, data, use_filesystem_loader=True)
         if job_name not in founded_external_jobs:
-            data = {
-                'GIT_URL': options.git_url,
-                'GIT_BRANCH': options.git_branch,
-                'GIT_ROOT_KEY': options.git_root_key,
-                'JENKINS_FILE': jenkins_file
-            }
-            xml_data = render_template(job_xml, data, use_filesystem_loader=True)
             client.create_job(job_name, xml_data)
+        else:
+            client.reconfig_job(job_name, xml_data)
 
 
 def create_dynamic_models_jobs(client, options):
@@ -138,18 +140,21 @@ def create_dynamic_models_jobs(client, options):
 
     for model_name, (jenkins_file, _) in founded_local_models.items():
         job_name = '%s %s' % (options.dynamic_model_prefix, model_name)
+        data = {
+            'MODEL_NAME': job_name,
+            'MODEL_NAME_ESCAPED': quote(job_name),
+            'DESCRIPTION': 'Automatically created job for model %s' % model_name,
+            'GIT_URL': options.git_url,
+            'GIT_BRANCH': options.git_branch,
+            'GIT_ROOT_KEY': options.git_root_key,
+            'JENKINS_FILE': jenkins_file
+        }
+        xml_data = render_template('jenkins_job.tmpl', data)
+
         if job_name not in founded_external_jobs:
-            data = {
-                'MODEL_NAME': job_name,
-                'MODEL_NAME_ESCAPED': quote(job_name),
-                'DESCRIPTION': 'Automatically created job for model %s' % model_name,
-                'GIT_URL': options.git_url,
-                'GIT_BRANCH': options.git_branch,
-                'GIT_ROOT_KEY': options.git_root_key,
-                'JENKINS_FILE': jenkins_file
-            }
-            xml_data = render_template('jenkins_job.tmpl', data)
             client.create_job(job_name, xml_data)
+        else:
+            client.reconfig_job(job_name, xml_data)
 
     # Performance jobs
     founded_local_perf_tests = find_jobs_jenkins_files(options.base_directory,
