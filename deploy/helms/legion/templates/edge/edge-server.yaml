@@ -28,12 +28,6 @@ spec:
           value: "8125"
         - name: NAMESPACE
           value: "{{ .Release.Namespace }}"
-        - name: CONSUL_HTTP_ADDR
-        {{- if .Values.edge.consul }}
-          value: "{{ .Values.edge.consul }}"
-        {{- else }}
-          value: "{{ .Release.Name }}-consul.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8500"
-        {{- end}}
         ports:
         - containerPort: 80
           name: http

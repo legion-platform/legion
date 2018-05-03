@@ -20,7 +20,6 @@ Welcome to legion's documentation!
    grafana_and_graphite
    jenkins
    edge
-   consul
 
 .. toctree::
    :maxdepth: 4

@@ -344,13 +344,6 @@ def deploy_model(args):
         ports['%d/tcp' % os.getenv(*legion.config.LEGION_PORT)] = exposing_port
 
     environment = {}
-    envs_to_copy_in_new_container = (
-        legion.config.REGISTER_ON_CONSUL[0],
-    )
-
-    for env in envs_to_copy_in_new_container:
-        if env in os.environ:
-            environment[env] = os.environ.get(env)
 
     LOGGER.info('Starting container with image #%s for model %s', image.short_id, model_id)
     container = client.containers.run(image,

@@ -19,7 +19,7 @@ secrets:
     secretToken: ""
 
 consul:
-  enabled: true
+  enabled: false
 
   Replicas: 3
   antiAffinity: soft

@@ -20,7 +20,6 @@ Flask app
 import logging
 import os
 
-import consul
 import legion.config
 import legion.external.grafana
 import legion.http
@@ -129,34 +128,6 @@ def create_application():
     return application
 
 
-def register_service(application):
-    """
-    Register application in Consul
-
-    :param application: Flask application instance
-    :type application: :py:class:`Flask.app`
-    :return: None
-    """
-    consul_host = application.config['CONSUL_ADDR']
-    consul_port = int(application.config['CONSUL_PORT'])
-    client = consul.Consul(host=consul_host, port=consul_port)
-
-    service = application.config['MODEL_ID']
-
-    addr = application.config['LEGION_ADDR']
-    port = int(application.config['LEGION_PORT'])
-
-    print('Registering model %s located at %s:%d on http://%s:%s' % (service, addr, port, consul_host, consul_port))
-
-    client.agent.service.register(
-        service,
-        address=addr,
-        port=port,
-        tags=['legion', 'model'],
-        check=consul.Check.http('http://%s:%d/healthcheck' % (addr, port), '2s')
-    )
-
-
 def register_dashboard(application):
     """
     Register application in Grafana (create dashboard)
@@ -195,13 +166,6 @@ def init_application(args=None):
 
     # Put a model object into application configuration
     application.config['model'] = init_model(application)
-
-    # Register instance on Consul
-    if application.config['REGISTER_ON_CONSUL']:
-        register_service(application)
-        logging.info('Consul consensus achieved')
-    else:
-        logging.info('Registration on Consul has been skipped due to configuration')
 
     # Register dashboard in Grafana
     # if application.config['REGISTER_ON_GRAFANA']:
