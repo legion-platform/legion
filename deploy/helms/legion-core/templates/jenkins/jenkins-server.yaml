@@ -42,6 +42,8 @@ spec:
         component: "{{ .Release.Name }}-jenkins"
     spec:
       serviceAccountName: jenkins
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: jenkins
         image: "{{ .Values.jenkins.image.repository }}:{{ .Values.jenkins.image.tag }}"
