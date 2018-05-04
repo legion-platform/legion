@@ -113,13 +113,12 @@ if __name__ == '__main__':
         loader=FileSystemLoader([os.getcwd(), os.path.dirname(os.path.abspath(__file__))])
     )
 
-    j2_template = j2_env.get_template(args.template)
-
     while True:
         values = find_all_services()
         with open(args.output, 'w') as output_file:
             logging.debug('Output file path: %s' % output_file.name)
-            output_file.write(j2_template.render({'services': values}))
+            # Reloading template on each iteration, in case it's changed
+            output_file.write(j2_env.get_template(args.template).render({'services': values}))
 
         if args.command:
             os.system(args.command)

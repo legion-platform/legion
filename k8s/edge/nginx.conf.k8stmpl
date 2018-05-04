@@ -50,14 +50,6 @@ http{
     statistics_sender.init(host, port, namespace)
   }
 
-  {% for service in services %}{% if "com.epam.legion.model.id" in service.metadata.labels %}
-  upstream {{ service.metadata.name }} {
-    zone upstream-{{ service.metadata.name }} 64k;
-    server {{ service.Address}}:{{ service.Port}} max_fails=3 fail_timeout=60 weight=1;
-    #server 127.0.0.1:65535; # force a 502
-  }
-   {% endif %}{% endfor %}
-
   server {
     listen 80;
     server_name edge;
@@ -73,7 +65,7 @@ http{
     # Models API
     {% for service in services %}{% if "com.epam.legion.model.id" in service.metadata.labels %}
     location /api/model/{{ service.metadata.name }} {
-        proxy_pass http://{{ service.metadata.name }};
+        proxy_pass http://{{ service.metadata.name }}:5000;
 
         expires -1;
         add_header Cache-Control no-cache;
