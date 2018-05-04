@@ -26,11 +26,7 @@ import argparse
 import logging
 import time
 from jinja2 import Environment, FileSystemLoader
-import kubernetes
-import kubernetes.client
-import kubernetes.client.models
-import kubernetes.config
-import kubernetes.config.config_exception
+from kubernetes import client, config, watch
 import urllib3
 import urllib3.exceptions
 
@@ -44,44 +40,43 @@ def build_client():
     :return: :py:module:`kubernetes.client`
     """
     try:
-        kubernetes.config.load_incluster_config()
-    except kubernetes.config.config_exception.ConfigException:
-        kubernetes.config.load_kube_config()
+        config.load_incluster_config()
+    except config.config_exception.ConfigException:
+        config.load_kube_config()
 
     # Disable SSL warning for self-signed certificates
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    return kubernetes.client.ApiClient()
+    return client.ApiClient()
 
 
-def find_all_services(component=''):
+def render_template(all_services, template_path, output_file_path, command=''):
     """
-    Find all services details
-    :type component: filter by specified component value, or none for all
-    :return: list[V1Service]
+    Render a template with passed list of services into output file.
+
+    :param all_services: a list of services
+    :rtype all_services: list[V1Service]
+    :param template_path: template file path
+    :rtype template_path: str
+    :param output_file_path: output file path
+    :rtype output_file_path: str
+    :param command: a command line which is executed after rendering
+    :rtype command: str
+    :return: None
     """
-    client = build_client()
 
-    namespace = os.environ.get('NAMESPACE', '')
+    # Configuring Environment for template
+    j2_env = Environment(
+        loader=FileSystemLoader([os.getcwd(), os.path.dirname(os.path.abspath(__file__))])
+    )
+    with open(output_file_path, 'w') as output_file:
+        logging.debug('Output file path: %s' % output_file.name)
+        # Reloading template on each iteration, in case it's changed
+        template = j2_env.get_template(template_path)
+        output_file.write(template.render({'services': all_services}))
 
-    core_api = kubernetes.client.CoreV1Api(client)
-    if namespace:
-        all_services = core_api.list_namespaced_service(namespace)
-    else:
-        raise ValueError("NAMESPACE wasn't found in env var.")
-
-    type_label_name = 'legion.component'
-    if component:
-        filtered_services = [
-            service
-            for service in all_services.items
-            if service.metadata.labels.get(type_label_name) == component
-        ]
-    else:
-        filtered_services = all_services.items
-
-    return filtered_services
-
+    if command:
+        os.system(args.command)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='K8S Template Renderer')
@@ -94,13 +89,11 @@ if __name__ == '__main__':
                         help='Command to reload configuration', required=False)
     parser.add_argument('--once', '-n', action='store_true',
                         help='Render template Once', required=False)
-    parser.add_argument('--pause', '-p', help='Pause length, in seconds', type=int,
-                        default=5, required=False)
+    parser.add_argument('--required-label', '-p', help='Pause length, in seconds', type=str,
+                        default='', required=False)
 
     # --------- END OF SECTIONS -----------
     args = parser.parse_args(sys.argv[1:])
-
-    v = vars(args)
 
     if args.verbose or os.getenv('VERBOSE', ''):
         log_level = logging.DEBUG
@@ -109,21 +102,33 @@ if __name__ == '__main__':
 
     ROOT_LOGGER.setLevel(log_level)
 
-    j2_env = Environment(
-        loader=FileSystemLoader([os.getcwd(), os.path.dirname(os.path.abspath(__file__))])
-    )
+    # Reading Namespace from env.vars.
+    namespace = os.environ.get('NAMESPACE', '')
+    if not namespace:
+        raise ValueError("NAMESPACE wasn't found in env var.")
 
-    while True:
-        values = find_all_services()
-        with open(args.output, 'w') as output_file:
-            logging.debug('Output file path: %s' % output_file.name)
-            # Reloading template on each iteration, in case it's changed
-            output_file.write(j2_env.get_template(args.template).render({'services': values}))
+    # Creating Kubernetes client
+    core_api = client.CoreV1Api(build_client())
 
-        if args.command:
-            os.system(args.command)
+    # Reading a list of all services
+    all_services_items = core_api.list_namespaced_service(namespace).items
+    all_services = { service.metadata.name: service for service in all_services_items}
+    render_template(all_services.values(), args.template, args.output, args.command)
 
-        if args.once:
-            break
-        else:
-            time.sleep(args.pause)
+    if not args.once:
+        while True:
+            try:
+                w = watch.Watch()
+                for event in w.stream(core_api.list_namespaced_service, namespace, _request_timeout=60):
+                    service = event['object']
+                    event_type = event['type']
+                    if not args.required_label or args.required_label in service.metadata.labels:
+                        service_name = service.metadata.name
+                        if event['type'] == 'ADDED' or event['type'] == 'MODIFIED':
+                            all_services[service.metadata.name] = service
+                        elif event['type'] == 'DELETED' and service_name in all_services:
+                            del all_services[service_name]
+                        render_template(all_services.values(), args.template, args.output, args.command)
+            except urllib3.exceptions.ReadTimeoutError:
+                logging.debug('Caught ReadTimeoutError')
+                continue
