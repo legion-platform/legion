@@ -18,8 +18,14 @@
 - name: WORKAROUND delete pods in phase terminating
   shell: kubectl --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
+- name: Create namespace configurate file
+  template:
+    src: namespace.yaml.j2
+    dest: ~/namespace.{{ enclave }}.yaml
+    mode: 0644
+
 - name: "Create {{ enclave }} namespace"
-  shell: "kubectl create namespace {{ enclave }}"
+  shell: "kubectl apply -f ~/namespace.{{ enclave }}.yaml"
 
 - name: Copy TLS secret
   shell: "kubectl get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"

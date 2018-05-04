@@ -45,8 +45,8 @@ metadata:
   name: "{{ .Release.Name }}-grafana"
   labels:
     component: "{{ .Release.Name }}-grafana"
-    legion/system: "yes"
-    legion/component: "grafana"
+    legion.system: "yes"
+    legion.component: "grafana"
 spec:
   selector:
     component: "{{ .Release.Name }}-grafana"

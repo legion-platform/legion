@@ -14,6 +14,5 @@
 #    limitations under the License.
 #
 """
-wiki plugin
+enclave-grafana plugin
 """
-import legion.liara.plugins.wiki.view

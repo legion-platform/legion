@@ -16,64 +16,46 @@
 """
 liara web application
 """
-import logging
-
 from flask import Flask, Markup
 
 import legion.config
-import legion.containers.k8s
+from legion.containers import k8s
 import legion.external.grafana
 import legion.http
 import legion.io
 from legion.liara import plugins
 
-LOGGER = logging.getLogger(__name__)
-MENU_ITEMS = []
 
-
-def add_menu_item(label: str, href: str, index: int):
+class Liara:
     """
-    Add link as item to menu
-
-    :param label: link name to display
-    :type label: str
-    :param href: href to resource
-    :type href: str
-    :param index: item index in menu
-    :type index: int
-    :return: None
+    Liara server class
     """
-    MENU_ITEMS.insert(index, Markup('<a href="{}">{}</a>'.format(href, label)))
+
+    main_menu_items = []
+
+    def start(self, args):
+        """
+        Start liara server
+
+        :param args: arguments
+        :type args: :py:class:`argparse.Namespace`
+        :return: :py:class:`flask.Flask` -- liara web application
+        """
+        app = Flask(__name__)
+        app.context_processor = lambda: dict(main_menu_label=Markup('<h2>Liara</h2>'),
+                                             main_menu_items=self.main_menu_items)
+        legion.http.configure_application(app, args)
+        app.config['CLUSTER_SECRETS'] = k8s.load_secrets(app.config['CLUSTER_SECRETS_PATH'])
+        with app.app_context():
+            plugins.load()
+        app.run(host=app.config['LEGION_API_ADDR'],
+                port=app.config['LEGION_API_PORT'],
+                debug=app.config['DEBUG'],
+                use_reloader=False)
+        return app
+
+    def add_menu_item(self, menu_item: Markup):
+        self.main_menu_items.append(menu_item)
 
 
-def add_custom_menu_item(item: str, index: int):
-    """
-    Add custom html as item to menu
-
-    :param item: html code
-    :type item: str
-    :param index: item index in menu
-    :type index: int
-    :return: None
-    """
-    MENU_ITEMS.insert(index, Markup(item))
-
-
-def serve(args):
-    """
-    Start liara server
-
-    :param args: arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`flask.Flask` -- liara web application
-    """
-    application = Flask(__name__)
-    application.context_processor = lambda: dict(menu_items=MENU_ITEMS)
-    legion.http.configure_application(application, args)
-    with application.app_context():
-        plugins.load()
-    application.run(host=application.config['LEGION_API_ADDR'],
-                    port=application.config['LEGION_API_PORT'],
-                    debug=application.config['DEBUG'],
-                    use_reloader=False)
-    return application
+liara = Liara()

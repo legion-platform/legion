@@ -16,4 +16,3 @@
 """
 homepage plugin
 """
-import legion.liara.plugins.homepage.view

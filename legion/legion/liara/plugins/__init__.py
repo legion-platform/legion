@@ -16,18 +16,15 @@
 """
 liara plugins package
 """
-import os
 import importlib
 
 
 def load():
     """
-    Load all available plugins in package
+    Load plugins listed below
 
     :return: None
     """
-    plugins_path = os.path.dirname(os.path.abspath(__file__))
-    for plugin_name in os.listdir(plugins_path):
-        if os.path.isdir(os.path.join(plugins_path, plugin_name)):
-            plugin_module = __name__ + '.' + plugin_name
-            importlib.import_module(plugin_module)
+    importlib.import_module('legion.liara.plugins.homepage.view')
+    importlib.import_module('legion.liara.plugins.hello.view')
+    importlib.import_module('legion.liara.plugins.enclave-grafana.view')

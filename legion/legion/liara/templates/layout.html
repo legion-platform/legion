@@ -6,15 +6,10 @@
   </head>
   <body>
     <div>
-      <div id="menu">
-        <h2>Liara</h2>
-        <nav>
-          <ul>
-            {% for menu_item in menu_items %}
-              <li>{{menu_item}}</li>
-            {% endfor %}
-          </ul>
-        </nav>
+      <div id="main_menu">
+        {% with label=main_menu_label, items=main_menu_items %}
+          {% include "menu.html" %}
+        {% endwith %}
       </div>
       <div id="content">
         {% block content %}

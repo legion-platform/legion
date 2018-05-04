@@ -16,31 +16,37 @@
 """
 hello plugin package
 """
-from flask import Markup, render_template
+from flask import render_template
 
 from legion.liara.plugins.enclave_plugin import EnclavePlugin
 
 
-class HelloView(EnclavePlugin):
+class GrafanaView(EnclavePlugin):
     """
-    hello plugin
+    Enclave`s grafana plugin
     """
+
+    grafanas = {}
 
     def __init__(self):
-        super(HelloView, self).__init__(plugin_name='hello', url_prefix='/hello')
+        super(GrafanaView, self).__init__(plugin_name='enclave-grafana', url_prefix='/enclave-grafana')
+        for enclave in self.list_enclaves():
+            grafana = self.list_enclave_services(enclave).get('services').get('grafana')
+            self.grafanas[enclave] = grafana.get('public')
 
 
-HELLO_PLUGIN = HelloView()
+ENCLAVE_GRAFANA_PLUGIN = GrafanaView()
 
 
-@HELLO_PLUGIN.blueprint.route('/<enclave>', methods=['GET'])
-def hello(enclave):
+@ENCLAVE_GRAFANA_PLUGIN.blueprint.route('/<enclave>', methods=['GET'])
+def grafana(enclave):
     """
     Render page
 
     :return: None
     """
-    return render_template('hello.html', enclave=enclave)
+    url = 'http://' + ENCLAVE_GRAFANA_PLUGIN.grafanas.get(enclave)
+    return render_template('enclave-grafana.html', grafana_url=url)
 
 
-HELLO_PLUGIN.register_plugin()
+ENCLAVE_GRAFANA_PLUGIN.register_plugin()

@@ -16,9 +16,9 @@
 """
 homepage plugin package
 """
-from flask import render_template
+from flask import render_template, current_app
 
-from legion.liara.plugin import Plugin
+from legion.liara.plugins.plugin import Plugin
 
 
 class HomepageView(Plugin):
@@ -27,12 +27,12 @@ class HomepageView(Plugin):
     """
 
     def __init__(self):
-        super(HomepageView, self).__init__('homepage', url_prefix='')
+        super(HomepageView, self).__init__('homepage', url_prefix='/')
 
 
 HOMEPAGE_PLUGIN = HomepageView()
-HOMEPAGE_PLUGIN.add_menu_item('Home', '/', 0)
-HOMEPAGE_PLUGIN.blueprint.static_url_path = '/homepage'
+HOMEPAGE_PLUGIN.blueprint.static_url_path = 'homepage'
+DASHBOARD_URL = 'http://' + current_app.config['CLUSTER_SECRETS']['dashboard.public']
 
 
 @HOMEPAGE_PLUGIN.blueprint.route('/', methods=['GET'])
@@ -42,7 +42,7 @@ def homepage():
 
     :return: None
     """
-    return render_template('homepage.html')
+    return render_template('homepage.html', dashboard_url=DASHBOARD_URL)
 
 
 HOMEPAGE_PLUGIN.register_plugin()
