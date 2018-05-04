@@ -19,11 +19,11 @@ liara web application
 from flask import Flask, Markup
 
 import legion.config
-from legion.containers import k8s
 import legion.external.grafana
 import legion.http
 import legion.io
 from legion.liara import plugins
+from legion.containers import k8s
 
 
 class Liara:
@@ -32,6 +32,9 @@ class Liara:
     """
 
     main_menu_items = []
+    enclaves_menu_items = {}
+    for enclave in k8s.list_enclaves():
+        enclaves_menu_items[enclave] = []
 
     def start(self, args):
         """
@@ -43,7 +46,8 @@ class Liara:
         """
         app = Flask(__name__)
         app.context_processor = lambda: dict(main_menu_label=Markup('<h2>Liara</h2>'),
-                                             main_menu_items=self.main_menu_items)
+                                             main_menu_items=self.main_menu_items,
+                                             enclaves_menu_items=self.enclaves_menu_items)
         legion.http.configure_application(app, args)
         app.config['CLUSTER_SECRETS'] = k8s.load_secrets(app.config['CLUSTER_SECRETS_PATH'])
         with app.app_context():
@@ -56,6 +60,9 @@ class Liara:
 
     def add_menu_item(self, menu_item: Markup):
         self.main_menu_items.append(menu_item)
+
+    def add_enclave_menu_item(self, enclave_name: str, menu_item: Markup):
+        self.enclaves_menu_items[enclave_name].append(menu_item)
 
 
 liara = Liara()

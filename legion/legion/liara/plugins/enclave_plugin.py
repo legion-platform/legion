@@ -16,15 +16,11 @@
 """
 liara enclave plugin module
 """
-from flask import Markup, render_template
+from flask import Markup
 
 from legion.containers import k8s
 from legion.liara.plugins.plugin import Plugin
-
-
-PER_ENCLAVE_ITEMS = {}
-for enclave in k8s.list_enclaves():
-    PER_ENCLAVE_ITEMS[enclave] = []
+from legion.liara.server import liara
 
 
 class EnclavePlugin(Plugin):
@@ -34,19 +30,12 @@ class EnclavePlugin(Plugin):
 
     def __init__(self, plugin_name: str, url_prefix: str):
         super(EnclavePlugin, self).__init__(plugin_name, url_prefix=url_prefix)
+        self.add_enclave_menu_item()
 
-    def create_menu_item(self):
-        """
-        Create submenu
-
-        :return: :py:class:`flask.Markup` -- submenu
-        """
-        items = []
-        for name in self.list_enclaves():
-            item = self.create_link(label=name, href='{}/{}'.format(self.url_prefix, name))
-            items.append(item)
-        menu_item = render_template('menu.html', label=self.plugin_name, items=items)
-        return Markup(menu_item)
+    def add_enclave_menu_item(self):
+        for enclave_name in self.list_enclaves():
+            item = self.create_link(label=self.plugin_name, href='{}/{}'.format(self.url_prefix, enclave_name))
+            liara.add_enclave_menu_item(enclave_name, Markup(item))
 
     @staticmethod
     def list_enclaves():
