@@ -74,8 +74,8 @@ metadata:
   name: "{{ .Release.Name }}-graphite"
   labels:
     component: "{{ .Release.Name }}-graphite"
-    legion/system: "yes"
-    legion/component: "graphite"
+    legion.system: "yes"
+    legion.component: "graphite"
 spec:
   selector:
     component: "{{ .Release.Name }}-graphite"

@@ -16,4 +16,3 @@
 """
 hello plugin
 """
-import legion.liara.plugins.hello.view

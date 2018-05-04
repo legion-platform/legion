@@ -25,7 +25,7 @@ import os
 import argparse
 import logging
 
-from legion.liara.server import serve
+from legion.liara.server import liara
 import legion.utils
 
 ROOT_LOGGER = logging.getLogger()
@@ -57,4 +57,4 @@ if __name__ == '__main__':
 
     ROOT_LOGGER.setLevel(log_level)
 
-    serve(args)
+    liara.start(args)

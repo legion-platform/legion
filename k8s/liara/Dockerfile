@@ -13,35 +13,16 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-"""
-wiki plugin package
-"""
-from flask import render_template
+FROM legion/base-python-image
 
-from legion.liara.plugin import Plugin
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
 
+RUN pip install $pip_extra_index_params legion$pip_legion_version_string
 
-class WikiView(Plugin):
-    """
-    wiki plugin
-    """
+ENV TINI_VERSION v0.16.1
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
 
-    def __init__(self):
-        super(WikiView, self).__init__('wiki', url_prefix='/wiki')
-
-
-WIKI_PLUGIN = WikiView()
-WIKI_PLUGIN.add_menu_item('wiki', '/wiki', 2)
-
-
-@WIKI_PLUGIN.blueprint.route('/', methods=['GET'])
-def wiki():
-    """
-    Render page
-
-    :return: None
-    """
-    return render_template('wiki.html')
-
-
-WIKI_PLUGIN.register_plugin()
+CMD ["/usr/local/bin/liara"]

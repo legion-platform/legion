@@ -1,0 +1,114 @@
+{{- if .Values.liara.enabled }}
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-liara"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-liara"
+spec:
+  replicas: {{ .Values.liara.replicas }}
+  selector:
+    component: "{{ .Release.Name }}-liara"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-liara"
+    spec:
+      serviceAccountName: liara
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      - name: cluster-secrets
+        secret:
+          secretName: "{{ .Release.Name }}-cluster-secrets"
+      - name: cluster-state
+        configMap:
+          name: "{{ .Release.Name }}-cluster-state"
+      containers:
+      - name: liara
+        image: "{{ .Values.liara.image.repository }}:{{ .Values.liara.image.tag }}"
+        imagePullPolicy: "{{ .Values.liara.image.pullPolicy }}"
+        env:
+        - name: DEPLOYMENT
+          value: "{{ .Release.Name }}"
+        - name: NAMESPACE
+          value: "{{ .Release.Namespace }}"
+        - name: LEGION_API_ADDR 
+          value: "0.0.0.0"
+        - name: LEGION_API_PORT
+          value: "80"
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket 
+        - mountPath: /opt/legion/secrets
+          name: cluster-secrets
+          readOnly: true
+        - mountPath: /opt/legion/state
+          name: cluster-state
+          readOnly: true
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-liara"
+  labels:
+    component: "{{ .Release.Name }}-liara"
+    legion.component: "liara"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-liara"
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+---
+{{- if .Values.liara.ingress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.liara.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-liara"
+  name: "{{ .Release.Name }}-liara"
+spec:
+  rules:
+    - host: "{{ .Values.liara.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-liara"
+              servicePort: 80
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.liara.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-liara"
+              servicePort: 80
+    {{- end }}
+  {{- if .Values.liara.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.liara.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+    {{- if .Values.liara.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.liara.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

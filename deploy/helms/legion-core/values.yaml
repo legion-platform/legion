@@ -113,3 +113,22 @@ grafana:
 
 graphite:
   enabled: true
+
+liara:
+  enabled: true
+  replicas: 1
+  image:
+    repository: "legion/liara"
+    tag: "latest"
+    pullPolicy: "Always"
+
+  rbac: true
+
+  ingress:
+    enabled: true
+    annotations: {}
+    domain:
+      partial: liara
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
