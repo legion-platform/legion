@@ -1,6 +1,6 @@
 {{ if .Values.jenkins.enabled -}}
 {{ if .Values.jenkins.rbac -}}
-kind: Role
+kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   labels:
@@ -23,7 +23,7 @@ rules:
   resources: ["secrets"]
   verbs: ["get"]
 ---
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   labels:
@@ -37,7 +37,7 @@ subjects:
   namespace: {{ .Release.Namespace }}
   name: jenkins
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: jenkins
   apiGroup: rbac.authorization.k8s.io
 ---

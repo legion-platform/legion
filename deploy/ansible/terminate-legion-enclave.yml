@@ -22,15 +22,12 @@
     shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
   
   - name: Remove legion chart
-<<<<<<< d3a19b116c857e3e8f0a97edaa36843b46afbe31
     shell: helm --kube-context {{ cluster_name }} delete --purge legion-{{ enclave_name }}
     ignore_errors: true
-=======
-    shell: helm delete --purge legion-{{ enclave_name }}
 
   - name: Remove airflow chart
-    shell: helm delete --purge airflow-{{ enclave_name }}
->>>>>>> [#29] Create combined role for enclave with legion and airflow charts
+    shell: helm --kube-context {{ cluster_name }} delete --purge airflow-{{ enclave_name }}
+    ignore_errors: true
   
   - name: "Remove {{ enclave_name }} namespace"
     shell: "kubectl --context {{ cluster_name }} delete namespace {{ enclave_name }} --ignore-not-found=true --grace-period=10"

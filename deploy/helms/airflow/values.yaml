@@ -1,4 +1,5 @@
 image: "mumoshu/kube-airflow:1.8.0.0-1.6.1"
+domainDelimiter: "-"
 
 secrets:
   postgres:

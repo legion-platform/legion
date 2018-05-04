@@ -60,7 +60,7 @@ spec:
         - name: connections-config
           mountPath: /opt/secrets
         - name: dag-volume
-          mountPath: /home/airflow/dags
+          mountPath: "{{ .Values.storage.airflow_dags_directory }}"
         - name: airflow-config-dir
           mountPath: /home/airflow/config
         ports:

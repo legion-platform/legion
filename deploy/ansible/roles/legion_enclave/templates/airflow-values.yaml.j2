@@ -1,14 +1,15 @@
-rootDomain: {{ base_domain }}
 namespace: default
+rootDomain: {{ root_domain }}
 localDomain: "cluster.local"
 
 image: "{{ nexus_docker_repo }}/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
 
 secrets:
   postgres:
-    user: {{ aws.rds.username }}
-    password: {{ aws.rds.password }}
+    user: {{ airflow_db_enclave_user }}
+    password: {{ airflow_db_enclave_pass.stdout }}
     db: {{ aws.rds.database_name }}
+    schema: {{ airflow_db_schema }}
 
   rabbitmq:
     user: airflow
@@ -43,9 +44,12 @@ smtp:
 
 storage:
   use_specified_pvc: true
-  pvc_name: "legion-airflow-shared" # from shared_k8s_resources/templates
+  dags_volume_pvc: "{{ airflow_dags_pvc }}"
+  airflow_dags_directory: "{{ airflow_dags_dir }}"
+  pvc_name: "{{ airflow_dags_pvc }}" 
 
 ingress:
   enabled: true
+  url_suffix: {{ enclave }}
   tls:
     enabled: true

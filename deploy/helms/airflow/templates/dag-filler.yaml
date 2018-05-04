@@ -13,10 +13,10 @@ spec:
       containers:
       - name: alpine
         image: alpine:3.5
-        command: ["cp",  "-R", "/mnt/dags/.", "/home/airflow/dags/"]
+        command: ["cp",  "-R", "/mnt/dags/.", "{{ .Values.storage.airflow_dags_directory }}"]
         volumeMounts:
         - name: dag-volume
-          mountPath: /home/airflow/dags
+          mountPath: "{{ .Values.storage.airflow_dags_directory }}"
         - name: airflow-dags
           mountPath: /mnt/dags
       restartPolicy: Never

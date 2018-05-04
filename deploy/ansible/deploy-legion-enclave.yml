@@ -26,6 +26,5 @@
     include_role:
       name: legion_enclave
     vars:
-      enclaves:
-        - "{{ enclave_name }}"
+      enclave: "{{ enclave_name }}"
 

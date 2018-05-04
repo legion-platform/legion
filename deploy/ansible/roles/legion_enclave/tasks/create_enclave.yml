@@ -8,15 +8,96 @@
   shell: "kubectl --kube-context {{ cluster_name }} get namespace {{ enclave }}"
   register: namespace_check
   until: namespace_check.stderr.find(' not found') != -1
-  retries: 5
+  retries: 10
   delay: 10
   ignore_errors: true
 
 - name: WORKAROUND delete pods in phase terminating
   shell: kubectl --kube-context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
+- name: "Confirm that {{ enclave }} namespace has been removed"
+  shell: "kubectl --kube-context {{ cluster_name }} get namespace {{ enclave }}"
+  register: namespace_check
+  until: namespace_check.stderr.find(' not found') != -1
+  retries: 10
+  delay: 10
+  ignore_errors: true
+
 - name: "Create {{ enclave }} namespace"
   shell: "kubectl --kube-context {{ cluster_name }} create namespace {{ enclave }}"
 
 - name: Copy TLS secret
   shell: "kubectl --kube-context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
+
+# Create Airflow RDS resources
+- name: Install ansible dependencies
+  apt: name="{{ item }}"
+  with_items:
+    - python-psycopg2
+    - postgresql-client
+  become: yes
+
+- name: Get Airflow Postgres RDS endpoint
+  rds:
+    command: facts
+    region: "{{ aws_region }}"
+    instance_name: "{{ env_name }}-airflow-rds"
+  register: airflow_rds_instance_facts
+
+- name: "Create Postgres schema for {{ enclave }} enclave"
+  postgresql_schema: 
+    database: "{{ aws.rds.database_name }}"
+    login_host: "{{ airflow_rds_instance_facts.instance.endpoint }}"
+    login_password: "{{ aws.rds.password }}"
+    login_user: "{{ aws.rds.username }}"
+    state: present
+    name: "{{ airflow_db_schema }}"
+
+- name: "Generate {{ enclave }} enclave Postgres user password"
+  shell: "tr -d -c 'a-zA-Z0-9' < /dev/urandom | head -c 20"
+  register: airflow_db_enclave_pass
+
+- name: "Create Postgres user for {{ enclave }} enclave"
+  postgresql_user: 
+    db: "{{ aws.rds.database_name }}"
+    login_host: "{{ airflow_rds_instance_facts.instance.endpoint }}"
+    login_password: "{{ aws.rds.password }}"
+    login_user: "{{ aws.rds.username }}"
+    state: present
+    name: "{{ airflow_db_enclave_user }}"
+    password: "{{ airflow_db_enclave_pass.stdout }}"
+
+- name: "Set Postgres user privileges "
+  postgresql_privs: 
+    db: "{{ aws.rds.database_name }}"
+    login_host: "{{ airflow_rds_instance_facts.instance.endpoint }}"
+    login_password: "{{ aws.rds.password }}"
+    login_user: "{{ aws.rds.username }}"
+    role: "{{ airflow_db_enclave_user }}"
+    privs: ALL
+    type: schema
+    objs: "{{ airflow_db_schema }}"
+    state: present
+
+- name: Create alter role query
+  template:
+    src: alter_role.sql.j2
+    dest: /tmp/alter_role.sql
+    mode: 0644
+
+- name: "Set search_path (Schema) for Postgres user"
+  shell: PGPASSWORD="{{ aws.rds.password }}" psql -h "{{ airflow_rds_instance_facts.instance.endpoint }}" -U"{{ aws.rds.username }}" < /tmp/alter_role.sql
+
+# Create NFS storage for Airflow
+- name: Create PVC configuration
+  template:
+    src: airflow-pvc.yaml.j2
+    dest: /tmp/airflow-pvc.yaml
+    mode: 0644
+
+- name: Remove old PVC
+  shell: 'kubectl --kube-context {{ cluster_name }} delete --ignore-not-found=true --namespace {{ enclave }} -f /tmp/airflow-pvc.yaml'
+  ignore_errors: yes
+
+- name: Apply new PVC
+  shell: 'kubectl --kube-context {{ cluster_name }} apply --namespace {{ enclave }} -f /tmp/airflow-pvc.yaml'

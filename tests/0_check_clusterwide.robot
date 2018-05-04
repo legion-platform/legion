@@ -38,6 +38,7 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
 Check Nexus availability
     [Documentation]  Check Nexus UI availability
     [Tags]  nexus  ui
+    Sleep  60
     Open Nexus                              /
     Wait Nexus componens in menu
 

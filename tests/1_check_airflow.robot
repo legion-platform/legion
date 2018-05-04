@@ -9,8 +9,10 @@ Library             legion_test.robot.Utils
 Connect to Airflow and check it
     [Documentation]  Connect to Airflow and check status
     [Tags]  airflow  airflow-api
-    Connect to Airflow endpoint
-    ${dags} =                   Find Airflow DAGs
-    Should not be empty         ${dags}
-    ${failed_dags} =            Get failed Airflow DAGs
-    should be empty             ${failed_dags}
+    Sleep                120s
+    :FOR    ${enclave}    IN    @{ENCLAVES}
+    \  Connect to enclave Airflow     ${enclave}
+        ${dags} =                   Find Airflow DAGs
+        Should not be empty         ${dags}
+        ${failed_dags} =            Get failed Airflow DAGs
+        should be empty             ${failed_dags}

@@ -72,6 +72,8 @@ examples_to_test:
 enclaves:
   - company-a
 storageclass: efs
+airflow_dags_dir: '/airflow-dags'
+airflow_dags_pvc: legion-airflow-dags
 airflow_s3_log_url: 's3://epm-legion-data-test/airflow-logs/'
 airflow_s3_url: 's3://epm-legion-data-test/'
 airflow_expected_output: 'expected-data/'
