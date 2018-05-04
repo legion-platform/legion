@@ -112,8 +112,7 @@ optional arguments:
 
 ### legion pyserve
 ```bash
-usage: legion pyserve [-h] [--consul-addr CONSUL_ADDR]
-                      [--consul-port CONSUL_PORT] [--legion-addr LEGION_ADDR]
+usage: legion pyserve [-h] [--legion-addr LEGION_ADDR]
                       [--legion-port LEGION_PORT]
                       model_file model_id
 
@@ -125,10 +124,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --consul-addr CONSUL_ADDR
-                        Consul Agent IP address
-  --consul-port CONSUL_PORT
-                        Consul Agent port
   --legion-addr LEGION_ADDR
   --legion-port LEGION_PORT
 
@@ -136,19 +131,13 @@ optional arguments:
 
 ### legion pyserve-dummy
 ```bash
-usage: legion pyserve-dummy [-h] [--consul-addr CONSUL_ADDR]
-                            [--consul-port CONSUL_PORT]
-                            [--legion-addr LEGION_ADDR]
+usage: legion pyserve-dummy [-h] [--legion-addr LEGION_ADDR]
                             [--legion-port LEGION_PORT]
 
 serve a dummy python model
 
 optional arguments:
   -h, --help            show this help message and exit
-  --consul-addr CONSUL_ADDR
-                        Consul Agent IP address
-  --consul-port CONSUL_PORT
-                        Consul Agent port
   --legion-addr LEGION_ADDR
   --legion-port LEGION_PORT
 

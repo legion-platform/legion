@@ -18,12 +18,6 @@ secrets:
     cookieSecret: ""
     secretToken: ""
 
-consul:
-  enabled: false
-
-  Replicas: 3
-  antiAffinity: soft
-
 
 edi:
   enabled: true
@@ -54,7 +48,6 @@ edge:
     pullPolicy: "Always"
 
   rbac: true
-  # consul: "special-consul-address:8500"
 
   ingress:
     enabled: true

@@ -147,7 +147,7 @@ def register_dashboard(application):
 
 def init_application(args=None):
     """
-    Initialize configured Flask application instance, register application on consul
+    Initialize configured Flask application instance
     Overall configuration priority: config_default.py, env::FLASK_APP_SETTINGS_FILES file,
     ENV parameters, CLI parameters
 

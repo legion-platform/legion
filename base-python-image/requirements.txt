@@ -12,7 +12,6 @@ jupyter==1.0.0
 urllib3==1.22
 sklearn==0.0
 pydevd==1.1.1
-python-consul==0.7.2
 matplotlib==2.2.2
 scipy==1.0.0
 Pillow==5.0.0
