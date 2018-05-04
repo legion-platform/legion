@@ -43,25 +43,10 @@ class Plugin:
         self.blueprint = Blueprint(plugin_name, __name__,
                                    template_folder=templates, static_folder=static, url_prefix=url_prefix)
 
-        self.add_menu_item()
-
-    def add_menu_item(self):
-        """
-        Add menu item to main menu
-
-        :return: None
-        """
-        item = self.create_menu_item()
+    @staticmethod
+    def add_menu_item(item: Markup):
         if item is not None:
             liara.add_menu_item(item)
-
-    def create_menu_item(self):
-        """
-        Create menu item(link)
-
-        :return: :py:class:`flask.Markup` -- menu item
-        """
-        return self.create_link(label=self.plugin_name, href=self.url_prefix)
 
     @staticmethod
     def create_link(label: str, href: str):

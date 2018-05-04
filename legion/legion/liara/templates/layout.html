@@ -7,9 +7,24 @@
   <body>
     <div>
       <div id="main_menu">
-        {% with label=main_menu_label, items=main_menu_items %}
-          {% include "menu.html" %}
-        {% endwith %}
+        <h2>Liara</h2>
+
+        <h4>Cluster-wide</h4>
+        <ul>
+          {% for main_item in main_menu_items %}
+            <li>{{ main_item }}</li>
+          {% endfor %}
+        </ul>
+
+        {% for enclave_name in enclaves_menu_items.keys() %}
+        <h4>{{ enclave_name }}</h4>
+          <ul>
+            {% for item in enclaves_menu_items[enclave_name] %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
+
       </div>
       <div id="content">
         {% block content %}

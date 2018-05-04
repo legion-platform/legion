@@ -28,6 +28,7 @@ class HomepageView(Plugin):
 
     def __init__(self):
         super(HomepageView, self).__init__('homepage', url_prefix='/')
+        self.add_menu_item(self.create_link(label='homepage', href='/'))
 
 
 HOMEPAGE_PLUGIN = HomepageView()

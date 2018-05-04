@@ -16,7 +16,7 @@
 """
 hello plugin package
 """
-from flask import Markup, render_template
+from flask import render_template
 
 from legion.liara.plugins.enclave_plugin import EnclavePlugin
 
