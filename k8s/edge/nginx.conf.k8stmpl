@@ -64,7 +64,7 @@ http{
 
     # Models API
     {% for service in services %}{% if "com.epam.legion.model.id" in service.metadata.labels %}
-    location /api/model/{{ service.metadata.name }} {
+    location /api/model/{{ service.metadata.labels["com.epam.legion.model.id"] }} {
         proxy_pass http://{{ service.metadata.name }}:5000;
 
         expires -1;
