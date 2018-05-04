@@ -17,14 +17,12 @@ Installation tested on Ubuntu 16.04 and Windows Subsystem for Linux (WSL).
 * Add next lines to hosts file ( `/etc/hosts` )
 ```text
 127.0.0.1 parallels
-127.0.0.1 consul
 127.0.0.1 jupyter
 127.0.0.1 legion
 127.0.0.1 grafana
 127.0.0.1 jenkins
 127.0.0.1 graphite
 127.0.0.1 edge
-127.0.0.1 consul
 127.0.0.1 logstash
 127.0.0.1 kibana
 127.0.0.1 elasticsearch

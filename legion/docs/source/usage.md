@@ -6,7 +6,6 @@ legion contains of many docker containers, including next:
 * [grafana](grafana_and_graphite.md) - with GUI for model timings
 * [jenkins](jenkins.md) - for running model tests
 * [edge](edge.md) - with Nginx server for handling all requests
-* [consul](consul.md) - for controlling on configuration
 
 
 ## How to run
