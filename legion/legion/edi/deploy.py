@@ -224,6 +224,9 @@ def undeploy_kubernetes(args):
         if 'Cannot find deployment' in str(exception) and args.ignore_not_found:
             print('Cannot find deployment - ignoring')
             return
+        elif 'Cannot find service' in str(exception) and args.ignore_not_found:
+            print('Cannot find service - ignoring')
+            return
         else:
             raise exception
 
