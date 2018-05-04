@@ -23,4 +23,3 @@ MODEL_ID = "dummy-model"
 LEGION_ADDR = "0.0.0.0"
 LEGION_PORT = 5000
 IP_AUTODISCOVER = True
-
