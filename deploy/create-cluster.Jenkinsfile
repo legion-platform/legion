@@ -2,6 +2,8 @@ node {
     try{
         stage('Checkout GIT'){
             checkout scm
+
+            currentBuild.description = "${params.Profile} ${params.GitBranch}"
         }
         
         stage('Install tools package'){

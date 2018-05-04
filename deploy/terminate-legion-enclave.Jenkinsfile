@@ -5,6 +5,8 @@ node {
         stage('Checkout GIT'){
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
+
+            currentBuild.description = "${params.EnclaveName} ${params.Profile} ${params.GitBranch}"
         }
  
         stage('Terminate Legion Enclave') {

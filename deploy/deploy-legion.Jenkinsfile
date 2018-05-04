@@ -5,6 +5,8 @@ node {
         stage('Checkout GIT'){
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
+
+            currentBuild.description = "${params.Profile} ${params.GitBranch}"
         }
         
         stage('Install tools package'){
