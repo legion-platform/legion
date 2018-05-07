@@ -15,7 +15,7 @@ Running, waiting and checks jobs in Jenkins
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
-    [Tags] jenkins model
+    [Tags]  jenkins model
     Connect to Jenkins endpoint
     Run Jenkins job                                         PERF TEST Vertical-Scaling
     Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
