@@ -29,7 +29,6 @@ jenkins:
 
   persistence:
     storageClass: ""
-    accessMode: ReadWriteOnce
     size: 20Gi
 
   airflow:

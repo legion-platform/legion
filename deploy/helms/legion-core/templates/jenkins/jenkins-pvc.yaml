@@ -10,7 +10,7 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   accessModes:
-    - {{ .Values.jenkins.persistence.accessMode | quote }}
+    - "ReadWriteOnce"
   resources:
     requests:
       storage: {{ .Values.jenkins.persistence.size | quote }}
