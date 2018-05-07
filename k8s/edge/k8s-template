@@ -24,7 +24,6 @@ import sys
 import os
 import argparse
 import logging
-import time
 from jinja2 import Environment, FileSystemLoader
 from kubernetes import client, config, watch
 import urllib3
@@ -82,15 +81,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='K8S Template Renderer')
     parser.add_argument('--verbose', "-v", help='verbose log output',
                         action='store_true')
-
     parser.add_argument('--template', '-t', type=str, help='Template file path', required=True)
     parser.add_argument('--output', '-o', type=str, help='Output file path', required=True)
     parser.add_argument('--command', '-c', type=str, default='',
-                        help='Command to reload configuration', required=False)
+                        help='Command to apply generated file')
     parser.add_argument('--once', '-n', action='store_true',
-                        help='Render template Once', required=False)
-    parser.add_argument('--required-label', '-p', help='Pause length, in seconds', type=str,
-                        default='', required=False)
+                        help='Render template Once')
+    parser.add_argument('--required-label', '-l', help='A label of services, which events require file generating',
+                        type=str, default='')
 
     # --------- END OF SECTIONS -----------
     args = parser.parse_args(sys.argv[1:])
