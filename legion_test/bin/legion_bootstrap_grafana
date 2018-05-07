@@ -108,7 +108,7 @@ def work(base, graphite_ds_url, user, password, args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Grafana Bootstraper')
+    parser = argparse.ArgumentParser(description='Grafana Bootstraper')
     parser.add_argument('base_url', type=str, help='Base server url')
     parser.add_argument('graphite_ds_url', type=str, help='Graphite Data Source url')
     parser.add_argument('--user', type=str, help='Server user', default='admin')

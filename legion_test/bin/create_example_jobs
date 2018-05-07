@@ -217,7 +217,7 @@ def work(options):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Jenkins job creator')
+    parser = argparse.ArgumentParser(description='Jenkins job creator')
     parser.add_argument('jenkins_url', type=str, help='Jenkins server url')
     parser.add_argument('base_directory', type=str, help='Base find directory')
     parser.add_argument('git_directory', type=str, help='Git directory')

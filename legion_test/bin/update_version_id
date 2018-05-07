@@ -119,7 +119,7 @@ def work(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Version file updater (adds time, build id, commit id to version)')
+    parser = argparse.ArgumentParser(description='Version file updater (adds time, build id, commit id to version)')
     parser.add_argument('version_file', type=str, help='Path to version file')
     parser.add_argument('--build-id', type=int, help='Override build id. Default from env.BUILD_NUMBER')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')

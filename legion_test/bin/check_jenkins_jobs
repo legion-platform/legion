@@ -157,7 +157,7 @@ def work(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Jenkins job checker')
+    parser = argparse.ArgumentParser(description='Jenkins job checker')
     parser.add_argument('--jenkins-url', type=str, default='http://parallels/jenkins')
     parser.add_argument('--jenkins-user', type=str, default='admin')
     parser.add_argument('--jenkins-password', type=str, default='admin')
