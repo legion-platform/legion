@@ -60,6 +60,7 @@ node {
             Globals.baseVersion = version[1]
             Globals.localVersion = version[2]
 
+            currentBuild.description = "${Globals.baseVersion} ${Globals.localVersion} ${params.GitBranch}"
             print("Base version " + Globals.baseVersion + " local version " + Globals.localVersion)
 
             print('Building shared artifact')
