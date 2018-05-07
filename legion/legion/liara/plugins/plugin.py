@@ -21,7 +21,7 @@ import os
 
 from flask import Blueprint, Markup, current_app
 
-from legion.liara.server import liara
+from legion.liara.server import LIARA
 
 
 class Plugin:
@@ -45,16 +45,25 @@ class Plugin:
 
     @staticmethod
     def add_menu_item(item: Markup):
+        """
+        Add item to main menu
+
+        :param menu_item: menu item
+        :type menu_item: :py:class:`flask.Markup`
+        :return: None
+        """
         if item is not None:
-            liara.add_menu_item(item)
+            LIARA.add_menu_item(item)
 
     @staticmethod
     def create_link(label: str, href: str):
         """
         Create link(html tag <a>)
 
-        :param label: str -- label
-        :param href: str -- href
+        :param label: label(text)
+        :type label: str
+        :param href: hyper-reference
+        :type href: str
         :return: :py:class:`flask.Markup` -- link
         """
         link = '<a href="{}">{}</a>'.format(href, label)
