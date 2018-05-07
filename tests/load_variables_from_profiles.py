@@ -34,7 +34,7 @@ def get_variables(arg):
     """
     profile = os.getenv(PROFILE_ENVIRON_KEY)
     if not profile:
-        raise Exception('Cannot get profile - {} ENV variable is not set'.format(PROFILE_ENVIRON_KEY))
+        raise Exception('Cannot get profile - {} env variable is not set'.format(PROFILE_ENVIRON_KEY))
 
     if not arg:
         raise Exception('Cannot get profile - script should be run with one argument that '

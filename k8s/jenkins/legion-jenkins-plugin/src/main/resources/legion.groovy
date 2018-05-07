@@ -81,8 +81,18 @@ def pod(Map podParams=null, Closure body) {
     envVars << envVar(key: 'CONSUL_ADDR', value: "${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-consul.${params.Enclave}")
 
     label = "jenkins-build-${UUID.randomUUID().toString()}"
+
+    def tolerations = """
+spec:
+  tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "jenkins-slave"
+    effect: "NoSchedule"
+"""
+
     podTemplate(
-            label: label,
+            label: label, yaml: tolerations,
             containers: [
                     containerTemplate(
                             name: 'model',

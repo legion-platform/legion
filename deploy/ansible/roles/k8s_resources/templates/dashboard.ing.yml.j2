@@ -2,7 +2,9 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   annotations:
+{% if dashboard.insecure != true %}
     nginx.ingress.kubernetes.io/secure-backends: "true"
+{% endif %}
   labels:
     k8s-app: kubernetes-dashboard
   name: kubernetes-dashboard
@@ -14,7 +16,7 @@ spec:
       paths:
       - backend:
           serviceName: kubernetes-dashboard
-          servicePort: 443
+          servicePort: {{ (dashboard.insecure == true) | ternary(80, 443) }}
   tls:
   - hosts:
     - dashboard.{{ cluster_name }}

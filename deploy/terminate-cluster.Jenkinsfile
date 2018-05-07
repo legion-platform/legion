@@ -3,6 +3,8 @@ node {
         stage('Checkout GIT'){
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
+
+            currentBuild.description = "${params.Profile} ${params.GitBranch}"
         }
 
         stage('Terminate Cluster') {
@@ -30,29 +32,43 @@ node {
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {
-  // build status of null means successful
-  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+    // build status of null means successful
+    buildStatus =  buildStatus ?: 'SUCCESSFUL'
 
-  // Default values
-  def colorName = 'RED'
-  def colorCode = '#FF0000'
-  def subject = "Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}*"
-  def summary = "@channel ${subject} \n<${env.BUILD_URL}|Open>"
+    def previousBuild = currentBuild.getPreviousBuild()
+    def previousBuildResult = previousBuild != null ? previousBuild.result : null
 
-  // Override default values based on build status
-  if (buildStatus == 'STARTED') {
-    color = 'YELLOW'
-    colorCode = '#FFFF00'
-  } else if (buildStatus == 'SUCCESSFUL') {
-    color = 'GREEN'
-    colorCode = '#00FF00'
-  } else {
-    color = 'RED'
-    colorCode = '#FF0000'
-  }
+    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
+    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
 
-  // Send notifications
-  if (params.SLACK_NOTIFICATION_ENABLED){
+    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
+
+    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
+
+    if (!masterOrDevelopBuild)
+        return
+
+    // Skip green -> green
+    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
+        return
+
+    // Default values
+    def colorCode = '#FF0000'
+    def summary = """\
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
+    branch *${params.GitBranch}*
+    profile *<https://${params.Profile}|${params.Profile}>*
+    Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
+    """.stripIndent()
+
+    // Override default values based on build status
+    if (buildStatus == 'STARTED') {
+        colorCode = '#FFFF00'
+    } else if (buildStatus == 'SUCCESSFUL') {
+        colorCode = '#00FF00'
+    } else {
+        colorCode = '#FF0000'
+    }
+
     slackSend (color: colorCode, message: summary)
-  }
 }
