@@ -69,34 +69,36 @@ node {
 
         stage('Run robot tests'){
             if (params.UseRegressionTests){
-                sh '''
-                cd legion_test
-                ../.venv/bin/pip install -r requirements/base.txt
-                ../.venv/bin/pip install -r requirements/test.txt
-                ../.venv/bin/python setup.py develop
+                withAWS(credentials: 'kops') {
+                    sh '''
+                    cd legion_test
+                    ../.venv/bin/pip install -r requirements/base.txt
+                    ../.venv/bin/pip install -r requirements/test.txt
+                    ../.venv/bin/python setup.py develop
 
-                cd ../tests
-                ../.venv/bin/pip install yq
+                    cd ../tests
+                    ../.venv/bin/pip install yq
 
-                PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
-                CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
-                CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
-                echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+                    PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
+                    CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
+                    CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+                    echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
-                kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+                    kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
 
-                DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
-                '''
-                step([
-                    $class : 'RobotPublisher',
-                    outputPath : 'tests/',
-                    outputFileName : "*.xml",
-                    disableArchiveOutput : false,
-                    passThreshold : 100,
-                    unstableThreshold: 95.0,
-                    onlyCritical : true,
-                    otherFiles : "*.png",
-                ])
+                    DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
+                    '''
+                    step([
+                        $class : 'RobotPublisher',
+                        outputPath : 'tests/',
+                        outputFileName : "*.xml",
+                        disableArchiveOutput : false,
+                        passThreshold : 100,
+                        unstableThreshold: 95.0,
+                        onlyCritical : true,
+                        otherFiles : "*.png",
+                    ])
+                }
             }
             else {
                 println('Skipped due to UseRegressionTests property')
