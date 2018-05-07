@@ -41,7 +41,7 @@
 
     <name>Legion Jenkins Plugin</name>
     <description>Legion model test dashboard</description>
-    <url>https://github.com/akharlamov/drun-root/tree/master/jenkins</url>
+    <url>https://github.com/epam/legion/tree/master/k8s/jenkins</url>
 
     <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
 

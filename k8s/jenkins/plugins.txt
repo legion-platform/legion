@@ -112,7 +112,6 @@ workflow-scm-step:2.6
 workflow-step-api:2.13
 workflow-support:2.15
 ws-cleanup:0.34
-legion-jenkins-plugin:experimental
 permissive-script-security:0.3
 kubernetes:1.6.0
 kubernetes-pipeline-steps:1.5

@@ -22,28 +22,6 @@ node {
     	    ../.venv/bin/pip3 install -r requirements/test.txt
     	    '''
         }
-        stage('Build Jenkins plugin'){
-            if (params.BuildNewJenkinsPlugin){
-                sh 'mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean install'
-                archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-
-                withCredentials([[
-                     $class: 'UsernamePasswordMultiBinding',
-                     credentialsId: 'nexus-local-repository',
-                     usernameVariable: 'USERNAME',
-                     passwordVariable: 'PASSWORD']]) {
-                    sh """
-                    curl -v -u $USERNAME:$PASSWORD \
-                    --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                    ${params.JenkinsPluginsRepositoryPath}
-                    """
-                }
-
-            }
-            else {
-                println('Skipped due to BuildNewJenkinsPlugin property')
-            }
-        }
         stage('Build Python packages') {
             sh '''
 			cd legion_test
@@ -129,6 +107,34 @@ node {
             archiveArtifacts 'legion/pylint.log'
             warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
         }
+        stage('Build Jenkins plugin'){
+            sh """
+            mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
+            mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.baseVersion}-${Globals.localVersion}
+            mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
+            """
+            archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
+
+            withCredentials([[
+                 $class: 'UsernamePasswordMultiBinding',
+                 credentialsId: 'nexus-local-repository',
+                 usernameVariable: 'USERNAME',
+                 passwordVariable: 'PASSWORD']]) {
+                sh """
+                curl -v -u $USERNAME:$PASSWORD \
+                --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}-${Globals.localVersion}/legion-jenkins-plugin.hpi
+
+                curl -v -u $USERNAME:$PASSWORD \
+                --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}/legion-jenkins-plugin.hpi
+
+                curl -v -u $USERNAME:$PASSWORD \
+                --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                ${params.JenkinsPluginsRepositoryStore}/latest/legion-jenkins-plugin.hpi
+                """
+            }
+        }
         stage('Build Docker images'){
 
             dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
@@ -164,7 +170,7 @@ node {
 
             sh """
     	    cd k8s/jenkins
-    	    docker build $dockerCacheArg --no-cache --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
+    	    docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
     	    """
 
             sh """
