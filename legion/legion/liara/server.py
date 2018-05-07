@@ -59,10 +59,26 @@ class Liara:
         return app
 
     def add_menu_item(self, menu_item: Markup):
+        """
+        Add item to main menu
+
+        :param menu_item: menu item
+        :type menu_item: :py:class:`flask.Markup`
+        :return: None
+        """
         self.main_menu_items.append(menu_item)
 
     def add_enclave_menu_item(self, enclave_name: str, menu_item: Markup):
+        """
+        Add item to enclave menu
+
+        :param enclave_name: enclave name
+        :type enclave_name: str
+        :param menu_item: menu item
+        :type menu_item: :py:class:`flask.Markup`
+        :return: None
+        """
         self.enclaves_menu_items[enclave_name].append(menu_item)
 
 
-liara = Liara()
+LIARA = Liara()

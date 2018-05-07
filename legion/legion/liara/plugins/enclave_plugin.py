@@ -20,7 +20,7 @@ from flask import Markup
 
 from legion.containers import k8s
 from legion.liara.plugins.plugin import Plugin
-from legion.liara.server import liara
+from legion.liara.server import LIARA
 
 
 class EnclavePlugin(Plugin):
@@ -33,9 +33,14 @@ class EnclavePlugin(Plugin):
         self.add_enclave_menu_item()
 
     def add_enclave_menu_item(self):
+        """
+        Add item to enclave menu
+
+        :return: None
+        """
         for enclave_name in self.list_enclaves():
             item = self.create_link(label=self.plugin_name, href='{}/{}'.format(self.url_prefix, enclave_name))
-            liara.add_enclave_menu_item(enclave_name, Markup(item))
+            LIARA.add_enclave_menu_item(enclave_name, Markup(item))
 
     @staticmethod
     def list_enclaves():
