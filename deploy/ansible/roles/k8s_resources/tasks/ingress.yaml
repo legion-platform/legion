@@ -18,20 +18,20 @@
 
 - name: Deploy ingress and the default backend
   shell: |
-    kubectl --cluster {{ cluster_name }} apply -f /tmp/ingress-k8s.yml
-    kubectl --cluster {{ cluster_name }} apply -f /tmp/ingress-rbac.yml
+    kubectl --context {{ cluster_name }} apply -f /tmp/ingress-k8s.yml
+    kubectl --context {{ cluster_name }} apply -f /tmp/ingress-rbac.yml
 
 - name: Patch Ingress controller
   shell: |
-    kubectl --cluster {{ cluster_name }} patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
+    kubectl --context {{ cluster_name }} patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
         --patch="$(curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/publish-service-patch.yaml)"
 
 - name: Deploy aws ingress
   shell: |
-    kubectl --cluster {{ cluster_name }} apply -f /tmp/ingress-aws.yml
+    kubectl --context {{ cluster_name }} apply -f /tmp/ingress-aws.yml
 
 - name: Get Ingress ELB endpoint
-  shell: kubectl --cluster {{ cluster_name }} describe services ingress-nginx --namespace ingress-nginx |grep .elb.amazonaws.com| awk '{ print $3 }'
+  shell: kubectl --context {{ cluster_name }} describe services ingress-nginx --namespace ingress-nginx |grep .elb.amazonaws.com| awk '{ print $3 }'
   register: ingress_elb_endpoint
   until: ingress_elb_endpoint.stdout.find(".elb.amazonaws.com") != -1
   retries: 6

@@ -15,7 +15,7 @@
   when: airflow_deployed
 
 - name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --cluster {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --cluster {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+  shell: kubectl --context {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
 - name: Remove legion core chart
   shell: payloads/helm_delete_by_chart_name airflow

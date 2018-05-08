@@ -54,9 +54,9 @@
 
 - name: Install helm's tiller and update helm repos
   shell: |
-    kubectl --cluster {{ cluster_name }} create serviceaccount --namespace kube-system tiller
+    kubectl --context {{ cluster_name }} create serviceaccount --namespace kube-system tiller
     sleep 1
-    kubectl --cluster {{ cluster_name }} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+    kubectl --context {{ cluster_name }} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
     sleep 1
     helm init --service-account tiller
     helm repo update

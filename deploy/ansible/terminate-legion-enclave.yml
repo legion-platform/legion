@@ -26,10 +26,10 @@
     ignore_errors: true
   
   - name: "Remove {{ enclave_name }} namespace"
-    shell: "kubectl --cluster {{ cluster_name }} delete namespace {{ enclave_name }} --ignore-not-found=true --grace-period=10"
+    shell: "kubectl --context {{ cluster_name }} delete namespace {{ enclave_name }} --ignore-not-found=true --grace-period=10"
   
   - name: "Check that {{ enclave_name }} namespace has been removed"
-    shell: "kubectl --cluster {{ cluster_name }} get namespace {{ enclave_name }}"
+    shell: "kubectl --context {{ cluster_name }} get namespace {{ enclave_name }}"
     register: namespace_check
     until: namespace_check.stderr.find(' not found') != -1
     retries: 5
@@ -37,4 +37,4 @@
     ignore_errors: true
   
   - name: WORKAROUND delete pods in phase terminating
-    shell: kubectl --cluster {{ cluster_name }} --namespace {{ enclave_name }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+    shell: kubectl --context {{ cluster_name }} --namespace {{ enclave_name }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true

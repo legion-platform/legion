@@ -15,8 +15,8 @@
   command: "kubectl apply -f /tmp/provisioner.yaml.j2"
 
 - name: Remove old PVC
-  shell: 'kubectl --cluster {{ cluster_name }} delete --ignore-not-found=true -f /tmp/shared-pvc.yaml'
+  shell: 'kubectl --context {{ cluster_name }} delete --ignore-not-found=true -f /tmp/shared-pvc.yaml'
   ignore_errors: yes
 
 - name: Apply new PVC
-  shell: 'kubectl --cluster {{ cluster_name }} apply -f /tmp/shared-pvc.yaml'
+  shell: 'kubectl --context {{ cluster_name }} apply -f /tmp/shared-pvc.yaml'
