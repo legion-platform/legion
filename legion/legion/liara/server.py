@@ -50,6 +50,7 @@ class Liara:
                                              enclaves_menu_items=self.enclaves_menu_items)
         legion.http.configure_application(app, args)
         app.config['CLUSTER_SECRETS'] = k8s.load_secrets(app.config['CLUSTER_SECRETS_PATH'])
+        app.config['CLUSTER_STATE'] = k8s.load_config(app.config['CLUSTER_CONFIG_PATH'])
         with app.app_context():
             plugins.load()
         app.run(host=app.config['LEGION_API_ADDR'],

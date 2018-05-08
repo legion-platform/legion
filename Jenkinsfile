@@ -180,7 +180,7 @@ node {
 
     	    sh """
     	    cd k8s/liara
-    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${baseVersion}+${localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-liara .
+    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-liara .
     	    """
 
             sh """

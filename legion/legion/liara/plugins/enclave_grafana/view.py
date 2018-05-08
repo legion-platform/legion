@@ -29,6 +29,10 @@ class GrafanaView(EnclavePlugin):
     grafanas = {}
 
     def __init__(self):
+        """
+        Construct 'grafana per enclave' plugin(page)
+
+        """
         super(GrafanaView, self).__init__(plugin_name='enclave-grafana', url_prefix='/enclave-grafana')
         for enclave in self.list_enclaves():
             grafana_service = self.list_enclave_services(enclave).get('services').get('grafana')

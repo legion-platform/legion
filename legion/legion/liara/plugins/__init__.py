@@ -27,4 +27,4 @@ def load():
     """
     importlib.import_module('legion.liara.plugins.homepage.view')
     importlib.import_module('legion.liara.plugins.hello.view')
-    importlib.import_module('legion.liara.plugins.enclave-grafana.view')
+    importlib.import_module('legion.liara.plugins.enclave_grafana.view')

@@ -27,13 +27,17 @@ class HomepageView(Plugin):
     """
 
     def __init__(self):
+        """
+        Construct 'home page' plugin(page)
+
+        """
         super(HomepageView, self).__init__('homepage', url_prefix='/')
         self.add_menu_item(self.create_link(label='homepage', href='/'))
 
 
 HOMEPAGE_PLUGIN = HomepageView()
 HOMEPAGE_PLUGIN.blueprint.static_url_path = 'homepage'
-DASHBOARD_URL = 'http://' + current_app.config['CLUSTER_SECRETS']['dashboard.public']
+DASHBOARD_URL = 'http://' + current_app.config['CLUSTER_STATE']['dashboard']['public']
 
 
 @HOMEPAGE_PLUGIN.blueprint.route('/', methods=['GET'])

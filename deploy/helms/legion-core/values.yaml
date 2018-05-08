@@ -118,7 +118,7 @@ liara:
   enabled: true
   replicas: 1
   image:
-    repository: "legion/liara"
+    repository: "legion/k8s-liara"
     tag: "latest"
     pullPolicy: "Always"
 

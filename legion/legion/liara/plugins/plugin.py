@@ -33,7 +33,20 @@ class Plugin:
     url_prefix = None
     blueprint = None
 
-    def __init__(self, plugin_name, template_folder='templates', static_folder='static', url_prefix='/'):
+    def __init__(self, plugin_name: str,
+                 template_folder: str = 'templates', static_folder: str = 'static', url_prefix: str = '/'):
+        """
+        Construct liara plugin
+
+        :param plugin_name: plugin name
+        :type plugin_name: str
+        :param template_folder: folder for pages templates
+        :type template_folder: str
+        :param static_folder: folder for static content
+        :type static_folder: str
+        :param url_prefix: plugin url prefix
+        :type url_prefix: str
+        """
         self.plugin_name = plugin_name
         self.url_prefix = url_prefix
 

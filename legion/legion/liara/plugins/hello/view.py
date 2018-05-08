@@ -27,6 +27,10 @@ class HelloView(EnclavePlugin):
     """
 
     def __init__(self):
+        """
+        Construct per enclave 'hello' plugin(page)
+
+        """
         super(HelloView, self).__init__(plugin_name='hello', url_prefix='/hello')
 
 
