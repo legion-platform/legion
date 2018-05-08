@@ -40,13 +40,13 @@ private_network: '172.31'
 cluster_zones:
   - zone_name: us-east-2a
     kops_cidr: "{{ private_network }}.118.0/24"
-    kops_utility_cidr: "{{ private_network }}.113.0/24"
+    kops_utility_cidr: "{{ private_network }}.119.0/24"
   - zone_name: us-east-2b
     kops_cidr: "{{ private_network }}.120.0/24"
-    kops_utility_cidr: "{{ private_network }}.115.0/24"
+    kops_utility_cidr: "{{ private_network }}.121.0/24"
   - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.122.0/24"
-    kops_utility_cidr: "{{ private_network }}.117.0/24"
+    kops_utility_cidr: "{{ private_network }}.123.0/24"
 
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
