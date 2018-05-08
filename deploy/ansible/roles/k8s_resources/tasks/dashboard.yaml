@@ -30,7 +30,7 @@
   when: dashboard.insecure == true
 
 - name: Extend permissions t ocluster-admin for kubernetes-dashboard service account
-  command: kubectl create clusterrolebinding dashboard-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+  command: kubectl create clusterrolebinding dashboard-cluster-rule --clusterrole=view --serviceaccount=kube-system:kubernetes-dashboard
   when: dashboard.insecure == true
 
 - name: Create kubernetes-dashboard ingress configuration
