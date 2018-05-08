@@ -5,7 +5,7 @@ Legion project contains several Command Line utilities:
 * **check_jenkins_jobs** is used for triggering Jenkins jobs remotely.
 
 ```bash
-usage: Jenkins job checker [-h] [--jenkins-url JENKINS_URL]
+usage: check_jenkins_jobs [-h] [--jenkins-url JENKINS_URL]
                            [--jenkins-user JENKINS_USER]
                            [--jenkins-password JENKINS_PASSWORD]
                            [--jenkins-run-job JENKINS_RUN_JOB]
@@ -49,7 +49,7 @@ optional arguments:
                         Parameters for passing to Jenkins run command
 ```
 
-* **copyright_scanner**
+* **copyright_scanner** scans files in a path for copyrights and prints them out.
 
 ```bash
 usage: copyright_scanner [-h] path
@@ -77,10 +77,9 @@ usage: create_example_jobs [-h] [--git-root-key GIT_ROOT_KEY]
                            [--plain-tasks]
                            jenkins_url base_directory git_directory git_url
                            git_branch
-Jenkins job creator: error: the following arguments are required: jenkins_url, base_directory, git_directory, git_url, git_branch
 ```
 
-* **legion_bootstrap_grafana** is used in Grafana Docker image to link Grafana to Graphite storage.
+* **legion_bootstrap_grafana** is used in Grafana Docker image, links Grafana to Graphite storage, creates a Grafana dashboard and other setup.
 
 ```bash
 usage: legion_bootstrap_grafana [-h] [--user USER] [--password PASSWORD]
@@ -100,7 +99,7 @@ optional arguments:
   --socket-reconnect-sleep SOCKET_RECONNECT_SLEEP
 ```
 
-* **update_version_id** is used for Legion verision ID generation.
+* **update_version_id** generates Legion version ID based on time, build ID, commit ID.
 
 ```bash
 usage: update_version_id [-h] [--build-id BUILD_ID] [--use-full-commit-id]

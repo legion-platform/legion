@@ -5,7 +5,7 @@ Legion is a command line interface for manipulating with models.
 ## Usage
 ```bash
 usage: legionctl [-h] [--verbose]
-              {build,deploy-local,undeploy-local,inspect-local,deploy,inspect,scale,undeploy,pyserve} ...
+              {build,deploy,inspect,scale,undeploy,pyserve} ...
 
 legion Command-Line Interface
 
@@ -87,36 +87,6 @@ optional arguments:
 
 ```
 
-### legionctl deploy-local
-```bash
-usage: legionctl deploy-local [-h] [--model-id MODEL_ID]
-                              [--docker-image DOCKER_IMAGE]
-                              [--docker-network DOCKER_NETWORK]
-                              [--grafana-server GRAFANA_SERVER]
-                              [--grafana-user GRAFANA_USER]
-                              [--grafana-password GRAFANA_PASSWORD]
-                              [--expose-model-port EXPOSE_MODEL_PORT]
-
-deploys a model into a new container (local docker)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --model-id MODEL_ID   model id
-  --docker-image DOCKER_IMAGE
-                        docker sha256 image
-  --docker-network DOCKER_NETWORK
-                        docker network
-  --grafana-server GRAFANA_SERVER
-                        Grafana server
-  --grafana-user GRAFANA_USER
-                        Grafana user
-  --grafana-password GRAFANA_PASSWORD
-                        Grafana password
-  --expose-model-port EXPOSE_MODEL_PORT
-                        Expose model at specific port
-
-```
-
 ### legionctl undeploy
 ```bash
 usage: legionctl deploy-local [-h] [--model-id MODEL_ID]
@@ -144,32 +114,6 @@ optional arguments:
                         Grafana password
   --expose-model-port EXPOSE_MODEL_PORT
                         Expose model at specific port
-
-```
-
-### legionctl undeploy-local
-```bash
-usage: legionctl undeploy-local [-h] [--docker-network DOCKER_NETWORK]
-                                [--grafana-server GRAFANA_SERVER]
-                                [--grafana-user GRAFANA_USER]
-                                [--grafana-password GRAFANA_PASSWORD]
-                                model_id
-
-kills all containers service the model (local docker)
-
-positional arguments:
-  model_id              identifier of the model
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --docker-network DOCKER_NETWORK
-                        docker network
-  --grafana-server GRAFANA_SERVER
-                        Grafana server
-  --grafana-user GRAFANA_USER
-                        Grafana user
-  --grafana-password GRAFANA_PASSWORD
-                        Grafana password
 
 ```
 
