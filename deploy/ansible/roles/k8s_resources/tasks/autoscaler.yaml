@@ -12,4 +12,4 @@
   become: false
 
 - name: Launch Cluster Autoscaler
-  command: "kubectl apply -f /tmp/autoscaler.yaml"
+  command: "kubectl --cluster {{ cluster_name }} apply -f /tmp/autoscaler.yaml"

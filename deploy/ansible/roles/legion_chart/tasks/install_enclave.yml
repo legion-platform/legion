@@ -5,10 +5,10 @@
   ignore_errors: true
 
 - name: "Remove {{ enclave }} namespace"
-  shell: "kubectl delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
+  shell: "kubectl --cluster {{ cluster_name }} delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
 
 - name: "Check that {{ enclave }} namespace has been removed"
-  shell: "kubectl get namespace {{ enclave }}"
+  shell: "kubectl --cluster {{ cluster_name }} get namespace {{ enclave }}"
   register: namespace_check
   until: namespace_check.stderr.find(' not found') != -1
   retries: 5
@@ -16,13 +16,13 @@
   ignore_errors: true
 
 - name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+  shell: kubectl --cluster {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
 - name: "Create {{ enclave }} namespace"
-  shell: "kubectl create namespace {{ enclave }}"
+  shell: "kubectl --cluster {{ cluster_name }} create namespace {{ enclave }}"
 
 - name: Copy TLS secret
-  shell: "kubectl get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
+  shell: "kubectl --cluster {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
 
 - name: Update dependencies of legion chart
   shell: helm dependency update
