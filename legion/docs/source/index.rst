@@ -9,18 +9,18 @@ Welcome to legion's documentation!
    usage
    system_architecture
    model_rest_api
+   command_utils
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Architecture:
 
-   jupyter
-   legion
+   legionctl
    grafana_and_graphite
    jenkins
    edge
-   consul
+   edi
 
 .. toctree::
    :maxdepth: 4
