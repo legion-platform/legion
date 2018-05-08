@@ -38,7 +38,7 @@
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping
-  shell: helm install legion-core --name legion-core --debug --dry-run -f  ~/legion-core-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --debug --dry-run -f  ~/legion-core-values.yaml
   register: helm_core_install_output
   args:
     chdir: ../helms
@@ -49,7 +49,7 @@
     dest: ./helm.core.debug
 
 - name: Install legion core chart
-  shell: helm install legion-core --name legion-core --wait --timeout 600 -f  ~/legion-core-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --wait --timeout 600 -f  ~/legion-core-values.yaml
   args:
     chdir: ../helms
 
@@ -57,7 +57,7 @@
   shell: payloads/examine_helm_deployed legion-core
 
 - name: Dump current HELM status
-  shell: helm status legion-core
+  shell: helm --kube-context {{ cluster_name }} status legion-core
   register: helm_core_status_output
 
 - name: Save HELM status localy

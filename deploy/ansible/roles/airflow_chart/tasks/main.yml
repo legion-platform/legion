@@ -4,14 +4,14 @@
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
 - name: Get airflow chart status
-  shell: helm ls --all airflow
+  shell: helm --kube-context {{ cluster_name }} ls --all airflow
   register: airflow_deployment_status
 
 - set_fact:
     airflow_deployed: "{{ airflow_deployment_status.stdout_lines|length > 1 }}"
 
 - name: Remove airflow chart
-  shell: helm delete --purge airflow
+  shell: helm --kube-context {{ cluster_name }} delete --purge airflow
   when: airflow_deployed
 
 - name: WORKAROUND delete pods in phase terminating
@@ -46,7 +46,7 @@
     secret_flask: "{{ flask_key_output.stdout }}"
 
 - name: Pre run with dumping
-  shell: helm install airflow --name airflow --debug --dry-run -f  ~/airflow-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow --debug --dry-run -f  ~/airflow-values.yaml
   register: helm_airflow_install_output
   args:
     chdir: ../helms
@@ -57,12 +57,12 @@
     dest: ./helm.airflow.debug
 
 - name: Install airflow chart
-  shell: helm install airflow --name airflow --wait --timeout 600 -f  ~/airflow-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow --wait --timeout 600 -f  ~/airflow-values.yaml
   args:
     chdir: ../helms
 
 - name: Dump current HELM status
-  shell: helm status airflow
+  shell: helm --kube-context {{ cluster_name }} status airflow
   register: helm_airflow_status_output
 
 - name: Save HELM status localy
