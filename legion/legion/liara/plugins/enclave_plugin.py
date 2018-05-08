@@ -29,6 +29,14 @@ class EnclavePlugin(Plugin):
     """
 
     def __init__(self, plugin_name: str, url_prefix: str):
+        """
+        Construct enclaves specific liara plugin
+
+        :param plugin_name: plugin name
+        :type plugin_name: str
+        :param url_prefix: plugin url prefix
+        :type url_prefix: str
+        """
         super(EnclavePlugin, self).__init__(plugin_name, url_prefix=url_prefix)
         self.add_enclave_menu_item()
 
