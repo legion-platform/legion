@@ -30,13 +30,13 @@ Parameters can be sent with GET or POST HTTP methodsю
 #### Sending parameters via GET method
 ```
 GET /api/model/income/invoke?age=12 HTTP/1.1
-Host: edge-company-a.host
+Host: edge-company-a.legion-dev.epm.kharlamov
 ```
 
 #### Sending parameters via POST method
 ```
 POST /api/model/income/invoke HTTP/1.1
-Host: edge-company-a.host
+Host: edge-company-a.legion-dev.epm.kharlamov
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
@@ -51,5 +51,5 @@ Files can be used as input parameters for a model invocation.
 
 For example, **nine.png** file can be passed as a parameter to an **image_recognize** model in **company-a** using **curl** utilit:
 ```
-curl -F "image=@examples/sklearn_demos/nine.png;filename=image"  http://edge-company-a.host/api/model/image_recognize/invoke
+curl -F "image=@examples/sklearn_demos/nine.png;filename=image"  http://edge-company-a.legion-dev.epm.kharlamov/api/model/image_recognize/invoke
 ```
