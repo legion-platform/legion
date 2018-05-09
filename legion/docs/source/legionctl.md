@@ -5,12 +5,12 @@ Legion is a command line interface for manipulating with models.
 ## Usage
 ```bash
 usage: legionctl [-h] [--verbose]
-              {build,deploy,inspect,scale,undeploy,pyserve} ...
+              {build,deploy,inspect,scale,undeploy} ...
 
 legion Command-Line Interface
 
 positional arguments:
-  {build,deploy-local,undeploy-local,inspect-local,deploy,inspect,scale,undeploy,pyserve}
+  {build,deploy,inspect,scale,undeploy}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -134,33 +134,5 @@ optional arguments:
   --filter FILTER       Model ID filter
   --format {colorized,column}
                         output format
-
-```
-
-### legion pyserve
-```bash
-usage: legionctl pyserve [-h] [--model_file MODEL_FILE] [--model-id MODEL_ID]
-                         [--consul-addr CONSUL_ADDR]
-                         [--consul-port CONSUL_PORT]
-                         [--legion-addr LEGION_ADDR]
-                         [--legion-port LEGION_PORT] [--debug DEBUG]
-                         [--register-on-consul REGISTER_ON_CONSUL]
-                         [--legion-autodiscover LEGION_AUTODISCOVER]
-
-serve a python model
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --model_file MODEL_FILE
-  --model-id MODEL_ID
-  --consul-addr CONSUL_ADDR
-                        Consul Agent IP address
-  --consul-port CONSUL_PORT
-                        Consul Agent port
-  --legion-addr LEGION_ADDR
-  --legion-port LEGION_PORT
-  --debug DEBUG
-  --register-on-consul REGISTER_ON_CONSUL
-  --legion-autodiscover LEGION_AUTODISCOVER
 
 ```
