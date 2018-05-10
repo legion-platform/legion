@@ -1,7 +1,7 @@
 - name: Remove old TLS secret from namespaces
-  shell: "kubectl delete secret {{ ler53_cert_common_name }}-tls --namespace {{ item }} --ignore-not-found=true"
+  shell: "kubectl --context {{ cluster_name }} delete secret {{ ler53_cert_common_name }}-tls --namespace {{ item }} --ignore-not-found=true"
   with_items: "{{ tls_certificates_target_namespaces }}"
 
 - name: Add TLS secret to namespaces
-  shell: "kubectl create secret tls {{ ler53_cert_common_name }}-tls --namespace {{ item }} --key {{ ler53_cert_dir }}/{{ ler53_key_file_name }} --cert {{ ler53_cert_dir }}/{{ ler53_fullchain_file_name }}"
+  shell: "kubectl --context {{ cluster_name }} create secret tls {{ ler53_cert_common_name }}-tls --namespace {{ item }} --key {{ ler53_cert_dir }}/{{ ler53_key_file_name }} --cert {{ ler53_cert_dir }}/{{ ler53_fullchain_file_name }}"
   with_items: "{{ tls_certificates_target_namespaces }}"

@@ -15,19 +15,19 @@
     group: "{{ deploys_key_group }}"
 
 - name: WORKAROUND delete pods in phase terminating
-  shell: kubectl delete --grace-period=0 --force po $(kubectl get po -o wide | grep Terminating | awk '{ print $1 }') || true
+  shell: kubectl --context {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
 - name: Remove old GIT secret
-  shell: kubectl delete secret legion-git-deploy  --ignore-not-found=true
+  shell: kubectl --context {{ cluster_name }} delete secret legion-git-deploy  --ignore-not-found=true
 
 - name: Create GIT secret
-  shell: kubectl create secret generic legion-git-deploy --from-file=id_rsa=git.deploy
+  shell: kubectl --context {{ cluster_name }} create secret generic legion-git-deploy --from-file=id_rsa=git.deploy
 
 - name: Remove old AWS S3 credentials secret
-  shell: kubectl delete secret legion-aws-s3-credentials --ignore-not-found=true
+  shell: kubectl --context {{ cluster_name }} delete secret legion-aws-s3-credentials --ignore-not-found=true
 
 - name: Create AWS S3 credentials secret
-  command: "kubectl create secret generic legion-aws-s3-credentials --from-literal=AWS_ACCESS_KEY_ID={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_access_key_id')).0 }} --from-literal=AWS_SECRET_ACCESS_KEY={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_secret_access_key')).0 }}"
+  command: "kubectl --context {{ cluster_name }} create secret generic legion-aws-s3-credentials --from-literal=AWS_ACCESS_KEY_ID={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_access_key_id')).0 }} --from-literal=AWS_SECRET_ACCESS_KEY={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_secret_access_key')).0 }}"
 
 - name: Create legion configuration (values) file
   template:
@@ -38,7 +38,7 @@
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping
-  shell: helm install legion-core --name legion-core --debug --dry-run -f  ~/legion-core-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --debug --dry-run -f  ~/legion-core-values.yaml
   register: helm_core_install_output
   args:
     chdir: ../helms
@@ -49,7 +49,7 @@
     dest: ./helm.core.debug
 
 - name: Install legion core chart
-  shell: helm install legion-core --name legion-core --wait --timeout 600 -f  ~/legion-core-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --wait --timeout 600 -f  ~/legion-core-values.yaml
   args:
     chdir: ../helms
 
@@ -57,7 +57,7 @@
   shell: payloads/examine_helm_deployed legion-core
 
 - name: Dump current HELM status
-  shell: helm status legion-core
+  shell: helm --kube-context {{ cluster_name }} status legion-core
   register: helm_core_status_output
 
 - name: Save HELM status localy
