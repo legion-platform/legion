@@ -1,14 +1,14 @@
 ---
 
 - name: Remove legion chart
-  shell: helm delete --purge legion-{{ enclave }}
+  shell: helm --kube-context {{ cluster_name }} delete --purge legion-{{ enclave }}
   ignore_errors: true
 
 - name: "Remove {{ enclave }} namespace"
-  shell: "kubectl delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
+  shell: "kubectl --context {{ cluster_name }} delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
 
 - name: "Check that {{ enclave }} namespace has been removed"
-  shell: "kubectl get namespace {{ enclave }}"
+  shell: "kubectl --context {{ cluster_name }} get namespace {{ enclave }}"
   register: namespace_check
   until: namespace_check.stderr.find(' not found') != -1
   retries: 5
@@ -16,16 +16,16 @@
   ignore_errors: true
 
 - name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+  shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
 - name: "Create {{ enclave }} namespace"
-  shell: "kubectl create namespace {{ enclave }}"
+  shell: "kubectl --context {{ cluster_name }} create namespace {{ enclave }}"
 
 - name: Copy TLS secret
-  shell: "kubectl get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
+  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl --context {{ cluster_name }} create -f  -"
 
 - name: Update dependencies of legion chart
-  shell: helm dependency update
+  shell: helm --kube-context {{ cluster_name }} dependency update
   args:
     chdir: ../helms/legion
 
@@ -43,7 +43,7 @@
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping
-  shell: "helm install legion --name legion-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/legion-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/legion-values.yaml"
   register: helm_legion_install_output
   args:
     chdir: ../helms
@@ -54,7 +54,7 @@
     dest: ./helm.legion_{{ enclave }}.debug
 
 - name: Install legion chart
-  shell: "helm install legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/legion-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/legion-values.yaml"
   args:
     chdir: ../helms
 
@@ -62,7 +62,7 @@
   shell: "payloads/examine_helm_deployed legion-{{ enclave }}"
 
 - name: Dump current HELM status
-  shell: "helm status legion-{{ enclave }}"
+  shell: "helm --kube-context {{ cluster_name }} status legion-{{ enclave }}"
   register: helm_legion_status_output
 
 - name: Save HELM status localy
