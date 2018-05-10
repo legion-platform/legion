@@ -32,12 +32,10 @@ class HomepageView(Plugin):
 
         """
         super(HomepageView, self).__init__('homepage', url_prefix='/')
-        self.add_menu_item(self.create_link(label='homepage', href='/'))
 
 
 HOMEPAGE_PLUGIN = HomepageView()
 HOMEPAGE_PLUGIN.blueprint.static_url_path = 'homepage'
-DASHBOARD_URL = 'http://' + current_app.config['CLUSTER_STATE']['dashboard']['public']
 
 
 @HOMEPAGE_PLUGIN.blueprint.route('/', methods=['GET'])
@@ -47,7 +45,5 @@ def homepage():
 
     :return: None
     """
-    return render_template('homepage.html', dashboard_url=DASHBOARD_URL)
-
-
-HOMEPAGE_PLUGIN.register_plugin()
+    dashboard_url = 'https://' + current_app.config['CLUSTER_STATE']['dashboard']['public']
+    return render_template('homepage.html', dashboard_url=dashboard_url)

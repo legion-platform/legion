@@ -16,15 +16,15 @@
 """
 liara plugins package
 """
-import importlib
+from legion.liara.plugins.homepage.view import HOMEPAGE_PLUGIN
+from legion.liara.plugins.hello.view import HELLO_PLUGIN
+from legion.liara.plugins.enclave_grafana.view import ENCLAVE_GRAFANA_PLUGIN
 
 
-def load():
+def get_plugins():
     """
-    Load plugins listed below
+    Return array of plugins
 
-    :return: None
+    :return list[Plugin] -- List of plugins
     """
-    importlib.import_module('legion.liara.plugins.homepage.view')
-    importlib.import_module('legion.liara.plugins.hello.view')
-    importlib.import_module('legion.liara.plugins.enclave_grafana.view')
+    return [HOMEPAGE_PLUGIN, HELLO_PLUGIN, ENCLAVE_GRAFANA_PLUGIN]

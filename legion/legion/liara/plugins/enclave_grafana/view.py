@@ -34,9 +34,6 @@ class GrafanaView(EnclavePlugin):
 
         """
         super(GrafanaView, self).__init__(plugin_name='enclave-grafana', url_prefix='/enclave-grafana')
-        for enclave in self.list_enclaves():
-            grafana_service = self.list_enclave_services(enclave).get('services').get('grafana')
-            self.grafanas[enclave] = grafana_service.get('public')
 
 
 ENCLAVE_GRAFANA_PLUGIN = GrafanaView()
@@ -49,8 +46,6 @@ def grafana(enclave):
 
     :return: None
     """
-    url = 'http://' + ENCLAVE_GRAFANA_PLUGIN.grafanas.get(enclave)
+    grafana_service = ENCLAVE_GRAFANA_PLUGIN.list_enclave_services(enclave).get('services').get('grafana')
+    url = 'https://' + grafana_service.get('public')
     return render_template('enclave-grafana.html', grafana_url=url)
-
-
-ENCLAVE_GRAFANA_PLUGIN.register_plugin()

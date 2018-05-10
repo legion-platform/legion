@@ -45,6 +45,3 @@ def hello(enclave):
     :return: None
     """
     return render_template('hello.html', enclave=enclave)
-
-
-HELLO_PLUGIN.register_plugin()
