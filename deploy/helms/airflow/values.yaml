@@ -58,7 +58,8 @@ webserver:
 
   expose_config: true
 
-  authenticate: false
+  authenticate: true
+  auth_backend: airflow.contrib.auth.backends.password_auth
 
   filter_by_owner: false
 

@@ -88,6 +88,7 @@ RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME}
 RUN chmod a+x /home/airflow/init.sh
 
 COPY create_secrets.py /home/airflow/create_secrets.py
+COPY admin.user.py     /home/airflow/admin.user.py
 
 EXPOSE 8080
 

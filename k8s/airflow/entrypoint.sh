@@ -50,6 +50,7 @@ if [ "$2" = "webserver" ] || [ "$2" = "worker" ] || [ "$2" = "scheduler" ]; then
     $CMD initdb
 
     python3 create_secrets.py
+    python3 admin.user.py
   fi
   sleep 5
 fi
