@@ -19,9 +19,7 @@ liara plugin module
 import sys
 import os
 
-from flask import Blueprint, Markup, current_app
-
-from legion.liara.server import LIARA
+from flask import Flask, Blueprint, Markup
 
 
 class Plugin:
@@ -36,7 +34,7 @@ class Plugin:
     def __init__(self, plugin_name: str,
                  template_folder: str = 'templates', static_folder: str = 'static', url_prefix: str = '/'):
         """
-        Construct liara plugin
+        Construct plugin
 
         :param plugin_name: plugin name
         :type plugin_name: str
@@ -56,17 +54,22 @@ class Plugin:
         self.blueprint = Blueprint(plugin_name, __name__,
                                    template_folder=templates, static_folder=static, url_prefix=url_prefix)
 
-    @staticmethod
-    def add_menu_item(item: Markup):
+    def get_menu_item(self):
         """
-        Add item to main menu
+        Return plugin menu item
 
-        :param menu_item: menu item
-        :type menu_item: :py:class:`flask.Markup`
+        :return: :py:class:`flask.Markup`
+        """
+        return self.create_link(self.plugin_name, self.url_prefix)
+
+    def register_plugin(self, current_app: Flask):
+        """
+        Register plugin
+
         :return: None
         """
-        if item is not None:
-            LIARA.add_menu_item(item)
+        self.blueprint.context_processor(current_app.context_processor)
+        current_app.register_blueprint(self.blueprint)
 
     @staticmethod
     def create_link(label: str, href: str):
@@ -81,12 +84,3 @@ class Plugin:
         """
         link = '<a href="{}">{}</a>'.format(href, label)
         return Markup(link)
-
-    def register_plugin(self):
-        """
-        Register liara plugin
-
-        :return: None
-        """
-        self.blueprint.context_processor(current_app.context_processor)
-        current_app.register_blueprint(self.blueprint)

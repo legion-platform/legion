@@ -16,11 +16,8 @@
 """
 liara enclave plugin module
 """
-from flask import Markup
-
 from legion.containers import k8s
 from legion.liara.plugins.plugin import Plugin
-from legion.liara.server import LIARA
 
 
 class EnclavePlugin(Plugin):
@@ -30,7 +27,7 @@ class EnclavePlugin(Plugin):
 
     def __init__(self, plugin_name: str, url_prefix: str):
         """
-        Construct enclaves specific liara plugin
+        Construct enclaves specific plugin
 
         :param plugin_name: plugin name
         :type plugin_name: str
@@ -38,26 +35,14 @@ class EnclavePlugin(Plugin):
         :type url_prefix: str
         """
         super(EnclavePlugin, self).__init__(plugin_name, url_prefix=url_prefix)
-        self.add_enclave_menu_item()
 
-    def add_enclave_menu_item(self):
+    def get_menu_item(self, enclave_name: str):
         """
-        Add item to enclave menu
+        Return enclave menu item
 
-        :return: None
+        :return: :py:class:`flask.Markup`
         """
-        for enclave_name in self.list_enclaves():
-            item = self.create_link(label=self.plugin_name, href='{}/{}'.format(self.url_prefix, enclave_name))
-            LIARA.add_enclave_menu_item(enclave_name, Markup(item))
-
-    @staticmethod
-    def list_enclaves():
-        """
-        List enclaves names
-
-        :return: list of enclaves names
-        """
-        return k8s.list_enclaves()
+        return self.create_link(label=self.plugin_name, href='{}/{}'.format(self.url_prefix, enclave_name))
 
     @staticmethod
     def list_enclave_services(enclave: str):
