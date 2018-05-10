@@ -1,0 +1,14 @@
+kind: NetworkPolicy
+apiVersion: extensions/v1beta1
+metadata:
+  name: enclave
+spec:
+  podSelector: {}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          legion-component: core
+    - namespaceSelector:
+        matchLabels:
+          enclave: {{ .Values.enclaveName }}

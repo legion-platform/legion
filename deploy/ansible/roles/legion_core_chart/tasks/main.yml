@@ -56,6 +56,9 @@
 - name: Run HELM status checker
   shell: payloads/examine_helm_deployed legion-core
 
+- name: Label default namespace with legion-component=core
+  shell: kubectl label ns default legion-component=core --overwrite
+
 - name: Dump current HELM status
   shell: helm status legion-core
   register: helm_core_status_output
