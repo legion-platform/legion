@@ -1,1 +1,6 @@
-#!/bin/bashpycodestyle legionpycodestyle testspydocstyle legionpylint legion
+#!/bin/bash
+
+pycodestyle legion
+pycodestyle tests
+pydocstyle legion
+pylint legion
