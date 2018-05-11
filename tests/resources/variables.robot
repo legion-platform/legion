@@ -1,3 +1,3 @@
 *** Variables ***
-@{SUBDOMAINS}                       jenkins  nexus
+@{SUBDOMAINS}                       jenkins  nexus  liara
 @{ENCLAVE_SUBDOMAINS}               edi  edge
