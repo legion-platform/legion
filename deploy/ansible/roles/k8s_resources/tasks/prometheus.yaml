@@ -2,7 +2,7 @@
 - name: Create Prometheus configuration (values) file
   template:
     src: prometheus.yml.j2
-    dest: /tmp/prometheus.yml
+    dest: "{{ tmp_dir }}/prometheus.{{ cluster_name }}.yml"
     mode: 0644
 
 - name: Add prometheus helm repo
@@ -13,5 +13,5 @@
   ignore_errors: true
 
 - name: Install Prometheus
-  command: "helm --kube-context {{ cluster_name }} install --version {{ kube_prometheus }} coreos/kube-prometheus --name kube-prometheus --namespace kube-system -f /tmp/prometheus.yml"
+  command: "helm --kube-context {{ cluster_name }} install --version {{ kube_prometheus }} coreos/kube-prometheus --name kube-prometheus --namespace kube-system -f {{ tmp_dir }}/prometheus.{{ cluster_name }}.yml"
   ignore_errors: true

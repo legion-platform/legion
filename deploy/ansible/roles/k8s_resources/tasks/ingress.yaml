@@ -9,7 +9,7 @@
 - name: Create Ingress configuration
   template:
     src: "{{ item }}.yml.j2"
-    dest: "/tmp/{{ item }}.yml"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}.yml"
     mode: 0644
   with_items:
     - ingress-k8s
@@ -18,8 +18,8 @@
 
 - name: Deploy ingress and the default backend
   shell: |
-    kubectl --context {{ cluster_name }} apply -f /tmp/ingress-k8s.yml
-    kubectl --context {{ cluster_name }} apply -f /tmp/ingress-rbac.yml
+    kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/ingress-k8s.{{ cluster_name }}.yml
+    kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/ingress-rbac.{{ cluster_name }}.yml
 
 - name: Patch Ingress controller
   shell: |
@@ -28,7 +28,7 @@
 
 - name: Deploy aws ingress
   shell: |
-    kubectl --context {{ cluster_name }} apply -f /tmp/ingress-aws.yml
+    kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/ingress-aws.{{ cluster_name }}.yml
 
 - name: Get Ingress ELB endpoint
   shell: kubectl --context {{ cluster_name }} describe services ingress-nginx --namespace ingress-nginx |grep .elb.amazonaws.com| awk '{ print $3 }'

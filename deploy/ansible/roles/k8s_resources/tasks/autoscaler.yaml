@@ -7,9 +7,9 @@
 - name: Add Cluster Autoscaler deployment configuration
   template:
     src: autoscaler.yaml.j2
-    dest: /tmp/autoscaler.yaml
+    dest: "{{ tmp_dir }}/autoscaler.{{ cluster_name }}.yaml"
     mode: 0644
   become: false
 
 - name: Launch Cluster Autoscaler
-  command: "kubectl --context {{ cluster_name }} apply -f /tmp/autoscaler.yaml"
+  command: "kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/autoscaler.{{ cluster_name }}.yaml"
