@@ -1,12 +1,12 @@
 ---
 - name: Add helm repositories
-  shell: helm repo add {{ item }}
+  shell: helm --kube-context {{ cluster_name }} repo add {{ item }}
   with_items:
     - jupyterhub https://jupyterhub.github.io/helm-chart/
     - default http://storage.googleapis.com/kubernetes-charts/
 
 - name: Update helm repositories
-  shell: helm repo update
+  shell: helm --kube-context {{ cluster_name }} repo update
 
 - name: Chmod HELM tools
   file:
