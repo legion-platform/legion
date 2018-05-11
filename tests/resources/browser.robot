@@ -28,3 +28,8 @@ Get Nexus components table
     :FOR    ${elem}    IN    @{components}
     \   Append To List                      ${componentNames}           ${elem.text}
     Return From Keyword  ${componentNames}
+
+Open Liara
+    [Arguments]                             ${suburl}
+    Open Browser                            ${HOST_PROTOCOL}://liara.${HOST_BASE_DOMAIN}${suburl}                           ${BROWSER}
+    Set Selenium Timeout                    ${SELENIUM_TIMEOUT}
