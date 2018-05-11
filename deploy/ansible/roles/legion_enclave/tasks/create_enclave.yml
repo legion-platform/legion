@@ -2,10 +2,10 @@
 
 # Create kubernetes namespace for enclave
 - name: "Remove {{ enclave }} namespace"
-  shell: "kubectl --kube-context {{ cluster_name }} delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
+  shell: "kubectl --context {{ cluster_name }} delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
 
 - name: "Check that {{ enclave }} namespace has been removed"
-  shell: "kubectl --kube-context {{ cluster_name }} get namespace {{ enclave }}"
+  shell: "kubectl --context {{ cluster_name }} get namespace {{ enclave }}"
   register: namespace_check
   until: namespace_check.stderr.find(' not found') != -1
   retries: 10
@@ -13,10 +13,10 @@
   ignore_errors: true
 
 - name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --kube-context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+  shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
 - name: "Confirm that {{ enclave }} namespace has been removed"
-  shell: "kubectl --kube-context {{ cluster_name }} get namespace {{ enclave }}"
+  shell: "kubectl --context {{ cluster_name }} get namespace {{ enclave }}"
   register: namespace_check
   until: namespace_check.stderr.find(' not found') != -1
   retries: 10
@@ -24,10 +24,13 @@
   ignore_errors: true
 
 - name: "Create {{ enclave }} namespace"
-  shell: "kubectl --kube-context {{ cluster_name }} create namespace {{ enclave }}"
+  shell: "kubectl --context {{ cluster_name }} create namespace {{ enclave }}"
+
+- name: "Label {{ enclave }} namespace"
+  shell: kubectl label ns {{ enclave }} enclave={{ enclave }} --overwrite
 
 - name: Copy TLS secret
-  shell: "kubectl --kube-context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
+  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
 
 # Create Airflow RDS resources
 - name: Install ansible dependencies
@@ -82,22 +85,22 @@
 - name: Create alter role query
   template:
     src: alter_role.sql.j2
-    dest: /tmp/alter_role.sql
+    dest: /{{ tmp_dir }}/alter_role.sql
     mode: 0644
 
 - name: "Set search_path (Schema) for Postgres user"
-  shell: PGPASSWORD="{{ aws.rds.password }}" psql -h "{{ airflow_rds_instance_facts.instance.endpoint }}" -U"{{ aws.rds.username }}" < /tmp/alter_role.sql
+  shell: PGPASSWORD="{{ aws.rds.password }}" psql -h "{{ airflow_rds_instance_facts.instance.endpoint }}" -U"{{ aws.rds.username }}" < /{{ tmp_dir }}/alter_role.sql
 
 # Create NFS storage for Airflow
 - name: Create PVC configuration
   template:
     src: airflow-pvc.yaml.j2
-    dest: /tmp/airflow-pvc.yaml
+    dest: /{{ tmp_dir }}/airflow-pvc.yaml
     mode: 0644
 
 - name: Remove old PVC
-  shell: 'kubectl --kube-context {{ cluster_name }} delete --ignore-not-found=true --namespace {{ enclave }} -f /tmp/airflow-pvc.yaml'
+  shell: 'kubectl --context {{ cluster_name }} delete --ignore-not-found=true --namespace {{ enclave }} -f /{{ tmp_dir }}/airflow-pvc.yaml'
   ignore_errors: yes
 
 - name: Apply new PVC
-  shell: 'kubectl --kube-context {{ cluster_name }} apply --namespace {{ enclave }} -f /tmp/airflow-pvc.yaml'
+  shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f /{{ tmp_dir }}/airflow-pvc.yaml'

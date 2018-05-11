@@ -6,15 +6,15 @@
   register: airflow_deployment_status
 
 - set_fact:
-    "{{ cluster_name }}_airflow_deployed": "{{ airflow_deployment_status.stdout_lines|length > 1 }}"
+    airflow_deployed: "{{ airflow_deployment_status.stdout_lines|length > 1 }}"
 
 - name: Remove airflow chart
   shell: helm --kube-context {{ cluster_name }} delete --purge airflow-{{ enclave }}
-  when: "{{ cluster_name }}_airflow_deployed"
+  when: airflow_deployed
 
 - name: WORKAROUND delete pods in phase terminating
   shell: kubectl --context {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
-  when: "{{ cluster_name }}_airflow_deployed"
+  when: airflow_deployed
 
 - name: Generate fernet key
   command: python -c 'from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)'

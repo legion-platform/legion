@@ -4,5 +4,5 @@
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
 - include: create_enclave.yml
-- include: install_legione.yml
+- include: install_legion.yml
 - include: install_airflow.yml

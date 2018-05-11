@@ -1,11 +1,19 @@
 ---
 
-- name: Configure kubectl using kops
-  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+- name: Get legion-core chart status
+  shell: helm --kube-context {{ cluster_name }} ls --all legion-core
+  register: legion_core_deployment_status
 
-- name: Remove legion core chart
-  shell: payloads/helm_delete_by_chart_name legion-core
-  ignore_errors: true
+- set_fact:
+    airflow_deployed: "{{ legion_core_deployment_status.stdout_lines|length > 1 }}"
+
+- name: Remove legion-core chart
+  shell: helm --kube-context {{ cluster_name }} delete --purge legion-core
+  when: airflow_deployed
+
+- name: WORKAROUND delete pods in phase terminating
+  shell: kubectl --context {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+  when: airflow_deployed
 
 - name: Copy git deploy key to host
   copy:
@@ -13,9 +21,6 @@
     dest: git.deploy
     owner: "{{ deploy_key_owner }}"
     group: "{{ deploys_key_group }}"
-
-- name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --context {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
 - name: Remove old GIT secret
   shell: kubectl --context {{ cluster_name }} delete secret legion-git-deploy  --ignore-not-found=true

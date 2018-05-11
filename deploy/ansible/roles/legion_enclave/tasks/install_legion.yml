@@ -15,15 +15,6 @@
   shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
   when: "legion_deployed"
 
-- name: "Create {{ enclave }} namespace"
-  shell: "kubectl --context {{ cluster_name }} create namespace {{ enclave }}"
-
-- name: "Label {{ enclave }} namespace"
-  shell: kubectl label ns {{ enclave }} enclave={{ enclave }} --overwrite
-
-- name: Copy TLS secret
-  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl --context {{ cluster_name }} create -f  -"
-
 - name: Update dependencies of legion chart
   shell: helm --kube-context {{ cluster_name }} dependency update
   args:
