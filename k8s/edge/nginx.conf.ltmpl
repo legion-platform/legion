@@ -1,0 +1,84 @@
+#
+#    Copyright 2017 EPAM Systems
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+{{ load_module('legion.containers.explorer.render', 1) }}
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+
+http{
+
+  include       mime.types;
+  default_type  application/octet-stream;
+  sendfile        on;
+  keepalive_timeout  65;
+  autoindex on;
+
+  resolver 127.0.0.1:53 ipv6=off;
+
+  lua_package_path "/usr/local/share/lua/5.3/?.lua";
+
+  init_by_lua_block {
+    local os = require("os")
+    function get_config(name, default)
+        local value = os.getenv(name)
+        if value ~= Nil then
+            return value
+        else
+            return default
+        end
+    end
+
+    local host = get_config("STATSD_HOST", "graphite")
+    local port = get_config("STATSD_PORT", "8125")
+    local namespace = get_config("STATSD_NAMESPACE", "legion.model")
+
+    local statistics_sender = require "statistics_sender"
+    statistics_sender.init(host, port, namespace)
+  }
+
+  server {
+    listen 80;
+    server_name edge;
+    client_max_body_size 0; # disable any limits to avoid HTTP 413 for large image uploads
+
+    chunked_transfer_encoding on;
+
+    # Root location
+    location / {
+      root /static;
+    }
+
+    # Models API
+    {% for enclave in enclaves %}{% for model_name, service in enclave.models.items() %}
+    location /api/model/{{ model_name }} {
+        proxy_pass http://{{ service.metadata.name }}:5000;
+
+        expires -1;
+        add_header Cache-Control no-cache;
+
+        add_header 'Access-Control-Allow-Origin' '*';
+
+        log_by_lua_block {
+            local statistics_sender = require "statistics_sender"
+            local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)
+            statistics_sender.send_request_statistics("{{ service.metadata.name }}", latency)
+        }
+    }
+    {% endfor %}{% endfor %}
+  }
+}
