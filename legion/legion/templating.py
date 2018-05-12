@@ -28,7 +28,7 @@ class TemplateSystem:
     """
     Extensible template system
     """
-    def __init__(self, template_file, output_file):
+    def __init__(self, template_file, output_file, bash_command):
         """
         Initialize template system
 
@@ -36,9 +36,12 @@ class TemplateSystem:
         :type template_file: str
         :param output_file: target file
         :type output_file: str
+        :param bash_command: (Optional) bash command to execute on file render
+        :type bash_command: str
         """
         self._template_file = template_file
         self._output_file = output_file
+        self._bash_command = bash_command
 
         self._j2 = Environment(
             loader=FileSystemLoader(os.getcwd())
@@ -86,9 +89,7 @@ class TemplateSystem:
 
     def render(self, **items):
         """
-        Render action
-
-        # TODO: Add signal sending
+        Render template and execute bash commend, if specified
 
         :param items: values to update context
         :type items: dict[str, Any]
@@ -97,6 +98,8 @@ class TemplateSystem:
         self._context.update(items)
         with open(self._output_file, 'w') as file_stream:
             file_stream.write(self._template.render(self._context))
+            if self._bash_command:
+                os.system(self._bash_command)
 
     def render_loop(self):
         """

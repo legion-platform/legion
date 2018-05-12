@@ -23,8 +23,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='K8S Template Renderer')
     parser.add_argument('--template', '-t', type=str, help='Template file path', required=True)
     parser.add_argument('--output', '-o', type=str, help='Output file path', required=True)
+    parser.add_argument('--command', '-c', type=str, help='Bash command to execute on render', required=False)
 
     args = parser.parse_args()
 
-    template_system = TemplateSystem(args.template, args.output)
+    template_system = TemplateSystem(args.template, args.output, args.command)
     template_system.render_loop()
