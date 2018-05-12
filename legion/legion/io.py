@@ -20,7 +20,7 @@ legion model export / load
 import datetime
 import getpass
 import json
-import os
+import os, os.path
 import sys
 import tempfile
 import zipfile
@@ -36,6 +36,8 @@ from legion.model.types import ColumnInformation
 from legion.model.types import deduct_types_on_pandas_df
 from legion.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 from pandas import DataFrame
+import asyncio
+import yaml
 
 
 def _get_column_types(param_types):
@@ -515,3 +517,46 @@ def export_untyped(apply_func,
     :return: :py:class:`legion.model.ScipyModel` -- model instance
     """
     return _export(filename, apply_func, prepare_func, None, version, False)
+
+
+async def render(template_system, filepath, is_yaml_file=False, *args, **kwargs):
+    """
+     On file change updates template context with a file content (as "file" variable name)
+     and renders it.
+
+     Example #1 (Yaml file) :
+        {{ load_module('legion.io.render', filepath='config.yml', is_yaml_file=True) }}
+        <b>Hosts values:</b>
+        <ul>
+        {% for item in file:  %}
+        <li>{{ item.hosts }}</li>
+        {% endfor %}
+        </ul>
+
+    Example #2 (Txt file) :
+        {{ load_module('legion.io.render', filepath='config.txt') }}
+        <h1>Config file Context:</h1>
+        <pre>{{ file }}</pre>
+
+    :param template_system: Object, that contains 'render' callback function
+    :param filepath: Path to a File
+    :type filepath: str
+    :param is_yaml_file: Indicates if file is in yaml format and it should be parsed
+    :type is_yaml_file: bool
+    :param args: extra arguments
+    :param kwargs: extra kwargs
+    :return: None
+    """
+
+    file_mdate = None
+
+    while True:
+        if os.path.exists(filepath) and os.path.isfile(filepath) and \
+                file_mdate != os.path.getmtime(filepath):
+            file_mdate = os.path.getmtime(filepath)
+            with open(filepath) as f:
+                if is_yaml_file:
+                    template_system.render(file=yaml.load(f))
+                else:
+                    template_system.render(file=f.read())
+        await asyncio.sleep(2)
