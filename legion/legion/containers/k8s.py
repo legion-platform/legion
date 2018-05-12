@@ -177,6 +177,62 @@ def find_all_models_deployments(namespace='default'):
     return model_deployments
 
 
+def find_all_services(namespace='', component=''):
+    """
+    Find all services details
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :type component: filter by specified component value, or none for all
+    :return: list[V1Service]
+    """
+    client = build_client()
+
+    core_api = kubernetes.client.CoreV1Api(client)
+    if namespace:
+        all_services = core_api.list_namespaced_service(namespace)
+    else:
+        all_services = core_api.list_service_for_all_namespaces()
+
+    type_label_name = 'legion.component'
+    if component:
+        all_services = [
+            service
+            for service in all_services.items
+            if service.metadata.labels.get(type_label_name) == component
+        ]
+    else:
+        all_services = all_services.items
+
+    return all_services
+
+
+def watch_all_services(namespace=''):
+    """
+    Generator which returns events for services updates
+    :param namespace: (optional) Namespace name to follow by
+    :return: A tuple (event type [ADDED, DELETED, MODIFIED], service object)
+    :rtype: (str, V1Service)
+    """
+    client = build_client()
+
+    core_api = kubernetes.client.CoreV1Api(client)
+
+    while True:
+        try:
+            w = kubernetes.watch.Watch()
+            if namespace:
+                stream = w.stream(core_api.list_namespaced_service, namespace, _request_timeout=60)
+            else:
+                stream = w.stream(core_api.list_service_for_all_namespaces, _request_timeout=60)
+            for event in stream:
+                service = event['object']
+                event_type = event['type']
+                yield (event_type, service)
+        except urllib3.exceptions.ReadTimeoutError:
+            # Caught ReadTimeoutError
+            continue
+
+
 def scale_deployment(deployment, new_scale, namespace='default'):
     """
     Scale existed deployment
