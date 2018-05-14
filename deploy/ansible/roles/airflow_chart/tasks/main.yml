@@ -6,6 +6,7 @@
 - name: Get airflow chart status
   shell: helm --kube-context {{ cluster_name }} ls --all airflow
   register: airflow_deployment_status
+  ignore_errors: true
 
 - set_fact:
     airflow_deployed: "{{ airflow_deployment_status.stdout_lines|length > 1 }}"
