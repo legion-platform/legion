@@ -178,7 +178,7 @@ def watch_enclaves_update(enclave_name='', watch_for_models=False, watch_for_enc
                 yield ('MODIFIED', enclaves[namespace])
 
 
-async def render(template_system, *args, **kwargs):
+async def render_on_enclave_change(template_system):
     """
     Update template context and renders it.
 
