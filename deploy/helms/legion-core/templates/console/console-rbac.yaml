@@ -1,0 +1,31 @@
+{{ if .Values.console.enabled -}}
+{{ if .Values.console.rbac -}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: console
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["namespaces", "services"]
+  verbs: ["get", "watch", "list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: console
+subjects:
+- kind: ServiceAccount
+  namespace: {{ .Release.Namespace }}
+  name: console
+roleRef:
+  kind: ClusterRole
+  name: console
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: console
+{{- end }}
+{{- end }}
+

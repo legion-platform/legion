@@ -18,8 +18,14 @@
 - name: WORKAROUND delete pods in phase terminating
   shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
+- name: Create namespace configurate file
+  template:
+    src: namespace.yaml.j2
+    dest: ~/namespace.{{ enclave }}.yaml
+    mode: 0644
+
 - name: "Create {{ enclave }} namespace"
-  shell: "kubectl --context {{ cluster_name }} create namespace {{ enclave }}"
+  shell: "kubectl --context {{ cluster_name }} apply -f ~/namespace.{{ enclave }}.yaml"
 
 - name: "Label {{ enclave }} namespace"
   shell: kubectl label ns {{ enclave }} enclave={{ enclave }} --overwrite

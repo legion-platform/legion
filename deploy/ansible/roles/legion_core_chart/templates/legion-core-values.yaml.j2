@@ -35,6 +35,12 @@ jenkins:
 
     dags_volume_pvc: 'legion-airflow-shared' # from shared_k8s_resources/templates
 
+console:
+  enabled: true
+  image:
+    repository: "{{ nexus_docker_repo }}/legion/k8s-console"
+    tag: "{{ base_version }}-{{ local_version }}"
+
 graphite:
   enabled: true
   image:

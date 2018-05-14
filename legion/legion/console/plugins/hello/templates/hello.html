@@ -1,0 +1,5 @@
+{% extends "layout.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('hello.static', filename='css/hello.css') }}">
+<div id="message">Hello {{enclave}}!</div>
+{% endblock %}

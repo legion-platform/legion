@@ -1,0 +1,16 @@
+body {
+    margin: 0px;
+    padding: 0px;
+}
+
+#main_menu {
+    width: 200px;
+    height: 100vh;
+    float: left;
+}
+
+#content {
+    width: auto;
+    height: 100vh;
+    margin-left: 200px;
+}

@@ -1,0 +1,108 @@
+{{- if .Values.console.enabled }}
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-console"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-console"
+spec:
+  replicas: {{ .Values.console.replicas }}
+  selector:
+    component: "{{ .Release.Name }}-console"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-console"
+    spec:
+      serviceAccountName: console
+      volumes:
+      - name: cluster-state
+        configMap:
+          name: "{{ .Release.Name }}-cluster-state"
+      containers:
+      - name: console
+        image: "{{ .Values.console.image.repository }}:{{ .Values.console.image.tag }}"
+        imagePullPolicy: "{{ .Values.console.image.pullPolicy }}"
+        env:
+        - name: DEPLOYMENT
+          value: "{{ .Release.Name }}"
+        - name: NAMESPACE
+          value: "{{ .Release.Namespace }}"
+        - name: LEGION_API_ADDR 
+          value: "0.0.0.0"
+        - name: LEGION_API_PORT
+          value: "80"
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket 
+        - mountPath: /opt/legion/secrets
+          name: cluster-secrets
+          readOnly: true
+        - mountPath: /opt/legion/state
+          name: cluster-state
+          readOnly: true
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-console"
+  labels:
+    component: "{{ .Release.Name }}-console"
+    legion.component: "console"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-console"
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+---
+{{- if .Values.console.ingress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.console.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-console"
+  name: "{{ .Release.Name }}-console"
+spec:
+  rules:
+    - host: "{{ .Values.console.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-console"
+              servicePort: 80
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.console.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-console"
+              servicePort: 80
+    {{- end }}
+  {{- if .Values.console.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.console.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+    {{- if .Values.console.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.console.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
