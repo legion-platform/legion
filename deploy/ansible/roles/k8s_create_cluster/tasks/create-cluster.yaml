@@ -6,11 +6,11 @@
 - name: Create kops configuration
   template:
     src: kops.yaml.j2
-    dest: /tmp/kops.yaml
+    dest: "{{ tmp_dir }}/kops.{{ cluster_name }}.yaml"
     mode: 0644
 
 - name: Configure the cluster
-  shell: "kops create -f /tmp/kops.yaml --state {{ state_store }}"
+  shell: "kops create -f {{ tmp_dir }}/kops.{{ cluster_name }}.yaml --state {{ state_store }}"
 
 - name: Configure ssh key
   shell: "kops create secret --name {{ cluster_name }} sshpublickey admin -i  {{ ssh_public_key }} --state {{ state_store }}"

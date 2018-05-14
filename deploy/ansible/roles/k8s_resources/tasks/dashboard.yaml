@@ -36,8 +36,8 @@
 - name: Create kubernetes-dashboard ingress configuration
   template:
     src: "dashboard.ing.yml.j2"
-    dest: "/tmp/dashboard.ing.yml"
+    dest: "{{ tmp_dir }}/{{ cluster_name }}.dashboard.ing.yml"
     mode: 0644
 
 - name: Apply kubernetes-dashboard ingress configuration
-  command: kubectl --context {{ cluster_name }} apply -f /tmp/dashboard.ing.yml
+  command: kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/{{ cluster_name }}.dashboard.ing.yml
