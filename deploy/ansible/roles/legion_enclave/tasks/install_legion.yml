@@ -1,31 +1,19 @@
 ---
 
+- name: Get legion chart status
+  shell: helm --kube-context {{ cluster_name }} ls --all legion-{{ enclave }}
+  register: legion_deployment_status
+
+- set_fact:
+    "legion_deployed": "{{ legion_deployment_status.stdout_lines|length > 1 }}"
+
 - name: Remove legion chart
   shell: helm --kube-context {{ cluster_name }} delete --purge legion-{{ enclave }}
-  ignore_errors: true
-
-- name: "Remove {{ enclave }} namespace"
-  shell: "kubectl --context {{ cluster_name }} delete namespace {{ enclave }} --ignore-not-found=true --grace-period=10"
-
-- name: "Check that {{ enclave }} namespace has been removed"
-  shell: "kubectl --context {{ cluster_name }} get namespace {{ enclave }}"
-  register: namespace_check
-  until: namespace_check.stderr.find(' not found') != -1
-  retries: 5
-  delay: 10
-  ignore_errors: true
+  when: "legion_deployed"
 
 - name: WORKAROUND delete pods in phase terminating
   shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
-
-- name: "Create {{ enclave }} namespace"
-  shell: "kubectl --context {{ cluster_name }} create namespace {{ enclave }}"
-
-- name: "Label {{ enclave }} namespace"
-  shell: kubectl label ns {{ enclave }} enclave={{ enclave }} --overwrite
-
-- name: Copy TLS secret
-  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl --context {{ cluster_name }} create -f  -"
+  when: "legion_deployed"
 
 - name: Update dependencies of legion chart
   shell: helm --kube-context {{ cluster_name }} dependency update

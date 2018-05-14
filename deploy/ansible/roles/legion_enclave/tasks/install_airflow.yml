@@ -1,25 +1,20 @@
+
 ---
 
-- name: Configure kubectl using kops
-  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
-
 - name: Get airflow chart status
-  shell: helm --kube-context {{ cluster_name }} ls --all airflow
+  shell: helm --kube-context {{ cluster_name }} ls --all airflow-{{ enclave }}
   register: airflow_deployment_status
 
 - set_fact:
     airflow_deployed: "{{ airflow_deployment_status.stdout_lines|length > 1 }}"
 
 - name: Remove airflow chart
-  shell: helm --kube-context {{ cluster_name }} delete --purge airflow
+  shell: helm --kube-context {{ cluster_name }} delete --purge airflow-{{ enclave }}
   when: airflow_deployed
 
 - name: WORKAROUND delete pods in phase terminating
   shell: kubectl --context {{ cluster_name }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
-
-- name: Remove legion core chart
-  shell: payloads/helm_delete_by_chart_name airflow
-  ignore_errors: true
+  when: airflow_deployed
 
 - name: Generate fernet key
   command: python -c 'from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)'
@@ -46,7 +41,7 @@
     secret_flask: "{{ flask_key_output.stdout }}"
 
 - name: Pre run with dumping
-  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow --debug --dry-run -f  ~/airflow-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/airflow-values.yaml
   register: helm_airflow_install_output
   args:
     chdir: ../helms
@@ -57,12 +52,12 @@
     dest: ./helm.airflow.debug
 
 - name: Install airflow chart
-  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow --wait --timeout 600 -f  ~/airflow-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/airflow-values.yaml
   args:
     chdir: ../helms
 
 - name: Dump current HELM status
-  shell: helm --kube-context {{ cluster_name }} status airflow
+  shell: helm --kube-context {{ cluster_name }} status airflow-{{ enclave }}
   register: helm_airflow_status_output
 
 - name: Save HELM status localy

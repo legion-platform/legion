@@ -1,7 +1,0 @@
----
-- name: Save info to local file
-  local_action:
-    module: template
-    src: output.groovy.j2
-    dest: ./output.ini
-    mode: 0644

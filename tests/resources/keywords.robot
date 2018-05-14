@@ -18,11 +18,13 @@ Connect to enclave Grafana
 Connect to Jenkins endpoint
     Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}                                 ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
 
-Connect to Airflow endpoint
-    Connect to Airflow    ${HOST_PROTOCOL}://airflow.${HOST_BASE_DOMAIN}
+Connect to enclave Airflow
+    [Arguments]           ${enclave}
+    Connect to Airflow    ${HOST_PROTOCOL}://airflow-${enclave}.${HOST_BASE_DOMAIN}
 
-Connect to Flower endpoint
-    Connect to Flower    ${HOST_PROTOCOL}://flower.${HOST_BASE_DOMAIN}
+Connect to enclave Flower
+    [Arguments]           ${enclave}
+    Connect to Flower    ${HOST_PROTOCOL}://flower-${enclave}.${HOST_BASE_DOMAIN}
 
 
 Run EDI inspect

@@ -14,7 +14,6 @@
     mode: a+rx
   with_items:
     - examine_helm_deployed
-    - helm_delete_by_chart_name
 
 - name: Download jq
   get_url:

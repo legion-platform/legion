@@ -36,7 +36,7 @@ spec:
           mountPath: /home/airflow/airflow.cfg
           subPath: airflow.cfg
         - name: dag-volume
-          mountPath: /home/airflow/dags
+          mountPath: "{{ .Values.storage.airflow_dags_directory }}"
         - name: airflow-config-dir
           mountPath: /home/airflow/config
         args: ["airflow", "scheduler"]

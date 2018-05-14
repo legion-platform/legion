@@ -1,9 +1,9 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: "legion-airflow-shared"
+  name: "{{ airflow_dags_pvc }}"
   labels:
-    app: "legion-airflow-shared"
+    app: "legion-airflow-{{ enclave }}"
 spec:
   accessModes:
     - "ReadWriteMany"

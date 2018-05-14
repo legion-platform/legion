@@ -11,4 +11,7 @@ spec:
           legion-component: core
     - namespaceSelector:
         matchLabels:
+          k8s-component: ingress
+    - namespaceSelector:
+        matchLabels:
           enclave: {{ .Values.enclaveName }}

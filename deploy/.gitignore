@@ -1,6 +1,8 @@
 log.*
 *.log
 *.retry
+*.status
+*.debug
 hosts
 
 # Compiled files

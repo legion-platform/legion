@@ -18,15 +18,13 @@
     - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
 
   tasks:
-
   - name: Install charts common dependencies
     include_role:
       name: charts_common
 
   - name: "Deploy Legion enclave"
     include_role:
-      name: legion_chart
+      name: legion_enclave
     vars:
-      enclaves:
-        - "{{ enclave_name }}"
+      enclave: "{{ enclave_name }}"
 

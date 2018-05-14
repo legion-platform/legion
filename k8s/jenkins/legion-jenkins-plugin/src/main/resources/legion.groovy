@@ -70,11 +70,11 @@ def pod(Map podParams=null, Closure body) {
             "EDI_USER", "EDI_PASSOWRD", "EDI_TOKEN",
             "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
             "MODEL_IMAGES_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
-            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_PORT"
+            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "CONSUL_PORT",
+            "AIRFLOW_S3_URL", "AIRFLOW_REST_API", "AIRFLOW_DAGS_DIRECTORY", "DAGS_VOLUME_PVC"
     ]
 
     envVars = envToPass.collect({ name -> envVar(key: name, value: System.getenv(name)) })
-
     envVars << envVar(key: 'ENCLAVE_DEPLOYMENT_PREFIX', value: "${env.ENCLAVE_DEPLOYMENT_PREFIX}")
     envVars << envVar(key: 'MODEL_SERVER_URL', value: "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edge.${params.Enclave}")
     envVars << envVar(key: 'EDI_URL', value: "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edi.${params.Enclave}")
@@ -93,6 +93,7 @@ spec:
 
     podTemplate(
             label: label, yaml: tolerations,
+            namespace: "${params.Enclave}",
             containers: [
                     containerTemplate(
                             name: 'model',
@@ -104,7 +105,9 @@ spec:
                             envVars: envVars),
             ],
             volumes: [
-                    hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')
+                    hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'),
+                    persistentVolumeClaim(claimName: env.DAGS_VOLUME_PVC, mountPath: env.AIRFLOW_DAGS_DIRECTORY)
+
             ]) {
         node(label){
             container('model', body)

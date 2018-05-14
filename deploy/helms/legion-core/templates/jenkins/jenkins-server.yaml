@@ -13,7 +13,7 @@ data:
         null, // templates
         null, // server url
         '{{ .Release.Namespace }}', // namespace
-        'http://{{ .Release.Name }}-jenkins/', // jenkins-url
+        'http://{{ .Release.Name }}-jenkins.{{ .Release.Namespace }}/', // jenkins-url
         '40', // container capacity
         0, // connect timeout
         0, // read timeout
@@ -99,8 +99,10 @@ spec:
         - name: CONSUL_PORT
           value: "8500"
         {{- if .Values.jenkins.airflow.enabled }}
+        - name: DAGS_VOLUME_PVC
+          value: {{ .Values.jenkins.dags_volume_pvc }}
         - name: AIRFLOW_DAGS_DIRECTORY
-          value: /airflow-dags
+          value: {{ .Values.jenkins.airflow_dags_directory }}
         - name: AIRFLOW_REST_API
           value: "{{ .Values.jenkins.airflow.rest_url }}"
         - name: AIRFLOW_EXPECTED_OUTPUT
@@ -126,10 +128,6 @@ spec:
           name: git-secret
           readOnly: true
         {{- end }}
-        {{- if .Values.jenkins.airflow.enabled }}
-        - mountPath: /airflow-dags
-          name: airflow-dags
-        {{- end }}
       volumes:
       - name: jenkins-home
         persistentVolumeClaim:
@@ -141,11 +139,6 @@ spec:
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
-      {{- end }}
-      {{- if .Values.jenkins.airflow.enabled }}
-      - name: airflow-dags
-        persistentVolumeClaim:
-          claimName: "{{ .Values.jenkins.airflow.dags_volume_pvc }}"
       {{- end }}
 ---
 apiVersion: v1
