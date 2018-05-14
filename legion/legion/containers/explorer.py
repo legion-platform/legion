@@ -21,12 +21,12 @@ from legion.external.edi import EdiClient
 import asyncio, os
 
 MODEL_ID_SERVICE_LABEL = legion.containers.headers.DOMAIN_MODEL_ID
-LEGION_COMPONENT_LABELS = ['legion/component', 'legion.component']
+LEGION_COMPONENT_LABELS = 'legion/component', 'legion.component'
 
 
 class Enclave:
     """
-    Contains overal information about enclave, its services and models
+    Contains overall information about enclave, its services and models
     """
     def __init__(self, name, models, edi_service, edge_service, grafana_service, graphite_service):
         self._name = name
@@ -38,6 +38,10 @@ class Enclave:
 
     @property
     def name(self):
+        """
+        Returns enclave name, usually it equals to K8s namespace name
+        :return: Enclave name
+        """
         return self._name
 
     @property
@@ -75,7 +79,7 @@ def find_enclaves(namespace=''):
     enclaves_services = {}
     enclaves_models_services = {}
 
-    list_edi_services = legion.containers.k8s.find_all_services(namespace=namespace, component='edi')
+    list_edi_services = legion.containers.k8s.find_all_services(namespace=namespace)
     for service in list_edi_services:
         namespace = service.metadata.namespace
         component_name = next((service.metadata.labels.get(legion_label) for legion_label in LEGION_COMPONENT_LABELS
@@ -92,9 +96,10 @@ def find_enclaves(namespace=''):
 
     enclaves = []
     for enclave_name, services in enclaves_services.items():
-        enclaves += [Enclave(enclave_name, enclaves_models_services.get(enclave_name, None),
-                            services.get('edi', None), services.get('edge', None),
-                            services.get('grafana', None), services.get('graphite', None))]
+        if 'edi' not in services: # if namspace doesn't have Edi server, it's not an enclave
+            enclaves += [Enclave(enclave_name, enclaves_models_services.get(enclave_name, None),
+                                services.get('edi', None), services.get('edge', None),
+                                services.get('grafana', None), services.get('graphite', None))]
 
     return enclaves
 
@@ -146,5 +151,5 @@ async def render(template_system, *args, **kwargs):
     if not namespace:
         raise ValueError("NAMESPACE wasn't found in env var.")
     while True:
-        template_system.render(enclaves=find_enclaves())
-        await asyncio.sleep(10)
+        for event_type, enclave in watch_enclaves_update(namespace, watch_for_models=True):
+            template_system.render(enclave=enclave)
