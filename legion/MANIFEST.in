@@ -2,7 +2,7 @@ graft legion/const
 graft legion/containers
 graft legion/edi
 graft legion/external
-graft legion/liara
+graft legion/console
 graft legion/http
 graft legion/model
 graft legion/serving

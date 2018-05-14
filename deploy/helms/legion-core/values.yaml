@@ -114,11 +114,11 @@ grafana:
 graphite:
   enabled: true
 
-liara:
+console:
   enabled: true
   replicas: 1
   image:
-    repository: "legion/k8s-liara"
+    repository: "legion/k8s-console"
     tag: "latest"
     pullPolicy: "Always"
 
@@ -128,7 +128,7 @@ liara:
     enabled: true
     annotations: {}
     domain:
-      partial: liara
+      partial: console
     tls:
       enabled: true
       autoSecretNameDeduction: true

@@ -126,7 +126,7 @@ def load_secrets(path_to_secrets):
     return secrets
 
 
-def list_enclaves():
+def list_enclave_ids():
     """
     List enclaves names
 

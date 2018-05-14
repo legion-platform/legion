@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -25,4 +25,4 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 ENTRYPOINT ["/tini", "--"]
 
-CMD ["/usr/local/bin/liara"]
+CMD ["/usr/local/bin/console"]

@@ -29,7 +29,7 @@ Get Nexus components table
     \   Append To List                      ${componentNames}           ${elem.text}
     Return From Keyword  ${componentNames}
 
-Open Liara
+Open Console
     [Arguments]                             ${suburl}
-    Open Browser                            ${HOST_PROTOCOL}://liara.${HOST_BASE_DOMAIN}${suburl}                           ${BROWSER}
+    Open Browser                            ${HOST_PROTOCOL}://console.${HOST_BASE_DOMAIN}${suburl}                           ${BROWSER}
     Set Selenium Timeout                    ${SELENIUM_TIMEOUT}
