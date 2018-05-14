@@ -564,4 +564,3 @@ async def render_on_file_change(template_system, filepath, is_yaml_file=False, v
                 template_system.render(**{var_name: yaml.load(f)})
             else:
                 template_system.render(**{var_name: f.read()})
-    watcher.close()

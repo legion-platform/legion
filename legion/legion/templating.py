@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ Template system that uses courutines
 """
 import asyncio
 import os
+import os.path
 import importlib
 
 from jinja2 import Environment, FileSystemLoader
@@ -53,10 +54,6 @@ class TemplateSystem:
         self._pid = pid
         self._pid_file = pid_file
 
-        if signal and type(signal) != int:
-            raise ValueError('Signal value should be an integer')
-        if pid and type(pid) != int:
-            raise ValueError('PID value should be an integer')
         if signal and not pid and not pid_file:
             raise ValueError('PID or PID file parameters is required, if signal is specified')
 
@@ -119,7 +116,7 @@ class TemplateSystem:
                 os.system(self._bash_command)
             if self._signal and self._pid:
                 os.kill(self._pid, self._signal)
-            if self._signal and self._pid_file:
+            if self._signal and self._pid_file and os.path.exists(self._pid_file):
                 with open(self._pid_file) as pf:
                     os.kill(pf.read(), self._signal)
 

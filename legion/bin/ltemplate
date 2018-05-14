@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ from legion.templating import TemplateSystem
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='K8S Template Renderer')
-    parser.add_argument('--template', '-t', type=str, help='Template file path', required=True)
-    parser.add_argument('--output', '-o', type=str, help='Output file path', required=True)
+    parser = argparse.ArgumentParser(description='Template Renderer')
+    parser.add_argument('-template', '-t', type=str, help='Template file path', required=True)
+    parser.add_argument('-output', '-o', type=str, help='Output file path', required=True)
     parser.add_argument('--command', '-c', type=str, help='Bash command to execute on render')
     parser.add_argument('--signal', '-s', type=int, help='Signal number to send to a PID on render')
     parser.add_argument('--pid', '-p', type=int, help='PID of a process to signal number on render')
