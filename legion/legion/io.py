@@ -36,7 +36,7 @@ from legion.model.types import ColumnInformation
 from legion.model.types import deduct_types_on_pandas_df
 from legion.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 from pandas import DataFrame
-import asyncio
+import asyncio, aionotify
 import yaml
 
 
@@ -519,16 +519,16 @@ def export_untyped(apply_func,
     return _export(filename, apply_func, prepare_func, None, version, False)
 
 
-async def render(template_system, filepath, is_yaml_file=False, *args, **kwargs):
+async def render(template_system, filepath, is_yaml_file=False, var_name='file', *args, **kwargs):
     """
-     On file change updates template context with a file content (as "file" variable name)
+     On file change updates template context with a file content
      and renders it.
 
      Example #1 (Yaml file) :
-        {{ load_module('legion.io.render', filepath='config.yml', is_yaml_file=True) }}
+        {{ load_module('legion.io.render', filepath='config.yml', is_yaml_file=True, var_name='conf') }}
         <b>Hosts values:</b>
         <ul>
-        {% for item in file:  %}
+        {% for item in conf:  %}
         <li>{{ item.hosts }}</li>
         {% endfor %}
         </ul>
@@ -548,15 +548,15 @@ async def render(template_system, filepath, is_yaml_file=False, *args, **kwargs)
     :return: None
     """
 
-    file_mdate = None
+    watcher = aionotify.Watcher()
+    watcher.watch(path=filepath, flags=aionotify.Flags.MODIFY)
+    await watcher.setup(template_system._loop)
 
     while True:
-        if os.path.exists(filepath) and os.path.isfile(filepath) and \
-                file_mdate != os.path.getmtime(filepath):
-            file_mdate = os.path.getmtime(filepath)
-            with open(filepath) as f:
-                if is_yaml_file:
-                    template_system.render(file=yaml.load(f))
-                else:
-                    template_system.render(file=f.read())
-        await asyncio.sleep(2)
+        event = await watcher.get_event()
+        with open(filepath) as f:
+            if is_yaml_file:
+                template_system.render({var_name: yaml.load(f)})
+            else:
+                template_system.render({var_name: f.read()})
+    watcher.close()

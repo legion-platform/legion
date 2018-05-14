@@ -28,7 +28,7 @@ class TemplateSystem:
     """
     Extensible template system
     """
-    def __init__(self, template_file, output_file, bash_command):
+    def __init__(self, template_file, output_file, bash_command=None, signal=None, pid=None, pid_file=None):
         """
         Initialize template system
 
@@ -38,10 +38,26 @@ class TemplateSystem:
         :type output_file: str
         :param bash_command: (Optional) bash command to execute on file render
         :type bash_command: str
+        :param signal: (Optional) signal id, that is sent to a process on render
+        :type signal: int
+        :param pid: (Optional) process id, that receives signal on render
+        :type pid: int
+        :param pid_file: (Optional) process id file, that receives signal on render
+        :type pid_file: str
         """
         self._template_file = template_file
         self._output_file = output_file
         self._bash_command = bash_command
+        self._signal = signal
+        self._pid = pid
+        self._pid_file = pid_file
+
+        if signal and type(signal) != int:
+            raise ValueError('Signal value should be an integer')
+        if pid and type(pid) != int:
+            raise ValueError('PID value should be an integer')
+        if signal and not pid and not pid_file:
+            raise ValueError('PID or PID file parameters is required, if signal is specified')
 
         self._j2 = Environment(
             loader=FileSystemLoader(os.getcwd())
@@ -100,6 +116,11 @@ class TemplateSystem:
             file_stream.write(self._template.render(self._context))
             if self._bash_command:
                 os.system(self._bash_command)
+            if self._signal and self._pid:
+                os.kill(self._pid, self._signal)
+            if self._signal and self._pid_file:
+                with open(self._pid_file) as pf:
+                    os.kill(pf.read(), self._signal)
 
     def render_loop(self):
         """
