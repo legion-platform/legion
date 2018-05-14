@@ -29,6 +29,11 @@
   command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(60))[:32])'
   register: flask_key_output
 
+- name: Install ansible dependencies
+  package:
+    name: python-passlib
+    state: present
+
 - name: Generate htpasswd file for ingress
   htpasswd:
     path: /tmp/{{ cluster_name }}.airflow.htpasswd
