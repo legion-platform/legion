@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-{{ load_module('legion.containers.explorer.render') }}
+{{ load_module('legion.containers.explorer.render_on_enclave_change') }}
 worker_processes  1;
 
 events {
