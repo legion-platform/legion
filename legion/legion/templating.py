@@ -58,7 +58,7 @@ class TemplateSystem:
             raise ValueError('PID or PID file parameters is required, if signal is specified')
 
         self._j2 = Environment(
-            loader=FileSystemLoader(os.getcwd())
+            loader=FileSystemLoader([os.getcwd(), '/'])
         )
         self._template = self._j2.get_template(template_file)
 
