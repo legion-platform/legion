@@ -58,7 +58,7 @@ webserver:
 
   expose_config: true
 
-  authenticate: true
+  authenticate: false
   auth_backend: airflow.contrib.auth.backends.password_auth
 
   filter_by_owner: false
@@ -116,6 +116,13 @@ storage:
 ingress:
   enabled: true
   flowerEnabled: true
+  authentication:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/auth-realm: Authentication Required - Airflow
+      nginx.ingress.kubernetes.io/auth-secret: airflow-basic-auth
+      nginx.ingress.kubernetes.io/auth-type: basic
+    htpasswd: 'admin:$apr1$yITUIAKS$.W5mGTEJQ0.u3/syR6J.40'
   annotations: {}
   domain:
     partial: airflow
