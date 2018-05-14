@@ -20,7 +20,8 @@ legion model export / load
 import datetime
 import getpass
 import json
-import os, os.path
+import os
+import os.path
 import sys
 import tempfile
 import zipfile
@@ -36,7 +37,7 @@ from legion.model.types import ColumnInformation
 from legion.model.types import deduct_types_on_pandas_df
 from legion.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 from pandas import DataFrame
-import asyncio, aionotify
+import aionotify
 import yaml
 
 
@@ -547,7 +548,6 @@ async def render(template_system, filepath, is_yaml_file=False, var_name='file',
     :param kwargs: extra kwargs
     :return: None
     """
-
     watcher = aionotify.Watcher()
     watcher.watch(path=filepath, flags=aionotify.Flags.MODIFY)
     await watcher.setup(template_system._loop)

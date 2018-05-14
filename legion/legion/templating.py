@@ -28,6 +28,7 @@ class TemplateSystem:
     """
     Extensible template system
     """
+
     def __init__(self, template_file, output_file, bash_command=None, signal=None, pid=None, pid_file=None):
         """
         Initialize template system
@@ -73,11 +74,11 @@ class TemplateSystem:
 
     def load_module(self, name, *args, **kwargs):
         """
-
+        Load module
         Example: {{ load_module('loadable_module', 1) }}
         and module should be
             async def temp(template_system, *args, **kwargs):
-                print('I\'m is template extension')
+                print("I'm in template extension")
                 for i in range(2):
                     template_system.render(a=i)
                     await asyncio.sleep(1)
@@ -130,4 +131,3 @@ class TemplateSystem:
         """
         self.render()
         self._loop.run_until_complete(asyncio.wait(self._coroutines))
-
