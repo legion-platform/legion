@@ -35,7 +35,7 @@ airflow_rds_size: "50"
 cluster_name: legion-demo.epm.kharlamov.biz
 state_store: s3://legion-cluster
 aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
-kubernetes_version: 1.8.7
+kubernetes_version: 1.9.3
 private_network: '172.31'
 cluster_zones:
   - zone_name: us-east-2a

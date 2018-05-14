@@ -57,7 +57,8 @@ RUN pip3 install --upgrade pip==9.0.3 \
  && pip3 install pyasn1 \
  && pip3 install psycopg2-binary \
  && pip3 install redis \
- && pip3 install hiredis
+ && pip3 install hiredis \
+ && pip3 install 'sqlalchemy<1.2'
 
 RUN apt-get install -y git && \
     cd  /home/airflow && \
@@ -87,6 +88,7 @@ RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME}
 RUN chmod a+x /home/airflow/init.sh
 
 COPY create_secrets.py /home/airflow/create_secrets.py
+COPY admin.user.py     /home/airflow/admin.user.py
 
 EXPOSE 8080
 

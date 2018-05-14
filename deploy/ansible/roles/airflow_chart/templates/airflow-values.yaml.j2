@@ -47,5 +47,13 @@ storage:
 
 ingress:
   enabled: true
+  authentication:
+{% if airflow.ingress.authentication.enabled == true %}
+    enabled: true
+    htpasswd: {{ airflow_ingress_htpasswd.stdout }}
+{% else %}
+    enabled: false
+{% endif %}
+
   tls:
     enabled: true

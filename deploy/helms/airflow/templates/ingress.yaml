@@ -6,6 +6,11 @@ metadata:
   {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
+  {{- if .Values.ingress.authentication.enabled }}
+    {{- range $key, $value := .Values.ingress.authentication.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
   labels:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
@@ -59,4 +64,15 @@ spec:
     secretName: {{ .Values.tls.secretName  }}
     {{- end }}
   {{- end }}
+{{- end }}
+
+{{- if .Values.ingress.authentication.enabled }}
+---
+apiVersion: v1
+kind: Secret
+data:
+  auth: "{{ .Values.ingress.authentication.htpasswd | b64enc }}"
+metadata:
+  name: {{ index .Values.ingress.authentication.annotations "nginx.ingress.kubernetes.io/auth-secret" }}
+type: Opaque
 {{- end }}
