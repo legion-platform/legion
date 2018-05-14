@@ -34,6 +34,7 @@
   package:
     name: python-passlib
     state: present
+  become: yes
 
 - name: Generate htpasswd file for ingress
   htpasswd:
