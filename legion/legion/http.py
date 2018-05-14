@@ -275,6 +275,9 @@ def configure_application(application, args):
     :type args: :py:class:`argparse.Namespace` or None
     :return: None
     """
+    # 5th priority: default config from legion/config.py
+    # todo
+
     # 4th priority: config from file with defaults values
     application.config.from_pyfile('config_default.py')
 

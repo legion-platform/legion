@@ -29,7 +29,7 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
     Replica set is running                   ${DEPLOYMENT}-core-nexus
     Replication controller is running        ${DEPLOYMENT}-core-jenkins
     Replication controller is running        ${DEPLOYMENT}-core-graphite
-    Replication controller is running        ${DEPLOYMENT}-core-liara
+    Replication controller is running        ${DEPLOYMENT}-core-console
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Replication controller is running        ${DEPLOYMENT}-${enclave}-edge          ${enclave}
     \  Replication controller is running        ${DEPLOYMENT}-${enclave}-edi           ${enclave}
@@ -50,10 +50,10 @@ Check Nexus Components available
 #    List Should Contain Value               ${componentNames}           docker-hosted
 #    List Should Contain Value               ${componentNames}           raw
 
-Check Liara availability
-    [Documentation]  Check Liara UI availability
+Check Console availability
+    [Documentation]  Check Console UI availability
     [Tags]  ui
-    Open Liara                              /
+    Open Console                              /
 
 Check enclave EDI availability
     [Documentation]  Try to connect to EDI in each enclave
