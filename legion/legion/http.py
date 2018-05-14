@@ -263,6 +263,20 @@ def apply_env_args(application):
     apply_env_argument(application, legion.config.CLUSTER_SECRETS_PATH[0])
 
 
+def apply_default_config(application):
+    """
+    Initialize Flask application by default config from legion/config.py
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return: None
+    """
+    configs = [i for i in vars(legion.config).keys() if not i.startswith('__')]
+    for c in configs:
+        conf = getattr(legion.config, c)
+        application.config[conf[0]] = conf[1]
+
+
 def configure_application(application, args):
     """
     Initialize configured Flask application instance
@@ -275,8 +289,12 @@ def configure_application(application, args):
     :type args: :py:class:`argparse.Namespace` or None
     :return: None
     """
+    # 5th priority: default config
+    apply_default_config(application)
+
     # 4th priority: config from file with defaults values
-    application.config.from_pyfile('config_default.py')
+    if os.path.exists(os.path.join(application.config.root_path, 'config_default.py')):
+        application.config.from_pyfile('config_default.py')
 
     # 3rd priority: config from file (path to file from ENV)
     application.config.from_envvar(legion.config.FLASK_APP_SETTINGS_FILES[0], True)

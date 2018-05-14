@@ -176,7 +176,7 @@ metadata:
   name: "{{ .Release.Name }}-jenkins"
 spec:
   rules:
-    - host: "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rooteDomain }}"
+    - host: "{{ .Values.jenkins.ingress.domain.partial }}.{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:

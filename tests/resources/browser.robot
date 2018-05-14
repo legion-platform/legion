@@ -29,7 +29,9 @@ Get Nexus components table
     \   Append To List                      ${componentNames}           ${elem.text}
     Return From Keyword  ${componentNames}
 
-Open Liara
+Open Console home page
     [Arguments]                             ${suburl}
-    Open Browser                            ${HOST_PROTOCOL}://liara.${HOST_BASE_DOMAIN}${suburl}                           ${BROWSER}
+    Open Browser                            ${HOST_PROTOCOL}://console.${HOST_BASE_DOMAIN}${suburl}                           ${BROWSER}
     Set Selenium Timeout                    ${SELENIUM_TIMEOUT}
+    Select Frame                            xpath=//iframe[contains(@id,'dashboard')]
+    Click Element                           xpath=//a[@Class='kd-toolbar-logo-link']

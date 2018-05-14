@@ -34,12 +34,11 @@ jenkins:
     rest_url: 'http://airflow-web:8080/admin/rest_api'
     s3_url: '{{ airflow_s3_url }}'
     expected_output: '{{ airflow_expected_output }}'
-	dags_volume_pvc: 'legion-airflow-shared' # from shared_k8s_resources/templates
 
-liara:
+console:
   enabled: true
   image:
-    repository: "{{ nexus_docker_repo }}/legion/k8s-liara"
+    repository: "{{ nexus_docker_repo }}/legion/k8s-console"
     tag: "{{ base_version }}-{{ local_version }}"
 
 graphite:

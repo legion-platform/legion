@@ -126,48 +126,6 @@ def load_secrets(path_to_secrets):
     return secrets
 
 
-def list_enclaves():
-    """
-    List enclaves names
-
-    :return: sorted list of enclaves names
-    """
-    # legion.component: "enclave"
-    enclaves = []
-    api = kubernetes.client.CoreV1Api(build_client())
-    for namespace in api.list_namespace().items:
-        labels = namespace.metadata.labels
-        if labels is not None and labels.get(COMPONENT_KEY) == COMPONENT_ENCLAVE:
-            enclaves.append(namespace.metadata.name)
-    enclaves.sort()
-    return enclaves
-
-
-def list_enclave_resources(enclave: str):
-    """
-    List enclave resources(services and models)
-
-    :param enclave: enclave name
-    :type enclave: str
-    :return: {'services': services list, 'models': models list}
-    """
-    api = kubernetes.client.CoreV1Api(build_client())
-
-    edi = None
-    for service in api.list_namespaced_service(namespace=enclave).items:
-        labels = service.metadata.labels
-        if labels is not None and labels.get(COMPONENT_KEY) == COMPONENT_EDI:
-            edi = service
-            break
-    if edi is None:
-        raise Exception('EDI not found for {} enclave'.format(enclave))
-
-    edi_client = EdiClient('http://{}.{}'.format(edi.metadata.name, edi.metadata.namespace))
-    services = edi_client.info()
-    models = edi_client.inspect()
-    return {'services': services, 'models': models}
-
-
 def find_model_deployment(model_id, namespace='default'):
     """
     Find model deployment by model id
