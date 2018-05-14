@@ -7,7 +7,6 @@ route53_zone: epm.kharlamov.biz
 
 
 # System vars
-
 tmp_dir: /tmp/
 
 # AWS 

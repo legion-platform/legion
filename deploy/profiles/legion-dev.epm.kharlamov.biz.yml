@@ -5,6 +5,9 @@ env_name: legion-dev
 base_domain: legion-dev.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
+# System vars
+tmp_dir: /tmp/
+
 # AWS 
 aws_region: us-east-2
 node_autoscaler_min: 3
