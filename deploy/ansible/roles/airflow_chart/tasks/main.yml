@@ -29,6 +29,18 @@
   command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(60))[:32])'
   register: flask_key_output
 
+- name: Generate htpasswd file for ingress
+  htpasswd:
+    path: /tmp/{{ cluster_name }}.airflow.htpasswd
+    name: "{{ airflow.ingress.authentication.username }}"
+    password: "{{ airflow.ingress.authentication.password }}"
+  when: airflow.ingress.authentication.enabled == true
+
+- name: Register airflow htpasswd file
+  command: cat /tmp/{{ cluster_name }}.airflow.htpasswd
+  register: airflow_ingress_htpasswd
+  when: airflow.ingress.authentication.enabled == true
+
 - name: Get Airflow Postgres RDS endpoint
   rds:
     command: facts
