@@ -520,7 +520,7 @@ def export_untyped(apply_func,
     return _export(filename, apply_func, prepare_func, None, version, False)
 
 
-async def render(template_system, filepath, is_yaml_file=False, var_name='file', *args, **kwargs):
+async def render_on_file_change(template_system, filepath, is_yaml_file=False, var_name='file'):
     """
      On file change updates template context with a file content
      and renders it.
@@ -551,12 +551,17 @@ async def render(template_system, filepath, is_yaml_file=False, var_name='file',
     watcher = aionotify.Watcher()
     watcher.watch(path=filepath, flags=aionotify.Flags.MODIFY)
     await watcher.setup(template_system._loop)
+    with open(filepath) as f:
+        if is_yaml_file:
+            template_system.render(**{var_name: yaml.load(f)})
+        else:
+            template_system.render(**{var_name: f.read()})
 
     while True:
         event = await watcher.get_event()
         with open(filepath) as f:
             if is_yaml_file:
-                template_system.render({var_name: yaml.load(f)})
+                template_system.render(**{var_name: yaml.load(f)})
             else:
-                template_system.render({var_name: f.read()})
+                template_system.render(**{var_name: f.read()})
     watcher.close()
