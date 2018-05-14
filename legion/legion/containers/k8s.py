@@ -208,7 +208,7 @@ def find_all_services(namespace='', component=''):
 
 def watch_all_services(namespace=''):
     """
-    Generator which returns events for services updates
+    Generate which returns events for services updates
     :param namespace: (optional) Namespace name to follow by
     :return: A tuple (event type [ADDED, DELETED, MODIFIED], service object)
     :rtype: (str, V1Service)
