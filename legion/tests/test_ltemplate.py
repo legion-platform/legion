@@ -71,7 +71,8 @@ class TestTemplateSystem(unittest2.TestCase):
         with TemplateRenderThread(self.template_path, self.output_path):
             time.sleep(self.SLEEP_INTERVAL_IN_SEC)
             with open(self.output_path) as out_file:  # check if output file has empty value
-                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '', 'Output file should contain empty data variable')
+                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '',
+                                 'Output file should contain empty data variable')
 
             with open(self.input_path, 'w') as data_file:  # write random string to the data file
                 data_file.write(self.random_data)
@@ -88,7 +89,8 @@ class TestTemplateSystem(unittest2.TestCase):
         with TemplateRenderThread(self.template_yaml_path, self.output_yaml_path):
             time.sleep(self.SLEEP_INTERVAL_IN_SEC)
             with open(self.output_yaml_path) as out_file:  # check if output file has empty value
-                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '', 'Output file should contain empty data variable')
+                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '',
+                                 'Output file should contain empty data variable')
 
             with open(self.input_yaml_path, 'w') as data_file:  # write random yaml to the data file
                 data_file.write(yaml.dump({'item': self.random_data}))
