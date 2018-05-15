@@ -19,8 +19,8 @@
   shell: "kops update cluster {{ cluster_name }} --yes --state {{ state_store }}"
 
 - name: Verify that all Kubernetes nodes are ready
-  shell: kubectl --context {{ cluster_name }} get nodes
+  shell: kubectl --context {{ cluster_name }} get nodes | grep master | wc -l
   register: cmd_result
-  until: cmd_result.rc == 0
+  until: cmd_result.stdout == "{{ cluster_zones|length }}"
   retries: 20
   delay: 60
