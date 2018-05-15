@@ -64,7 +64,7 @@ http{
     }
 
     # Models API
-    {% for model_name, service in enclave.models.items() %}
+    {% if enclave is defined %}{% for model_name, service in enclave.models.items() %}
     location /api/model/{{ model_name }} {
         proxy_pass http://{{ service.metadata.name }}:5000;
 
@@ -79,6 +79,6 @@ http{
             statistics_sender.send_request_statistics("{{ service.metadata.name }}", latency)
         }
     }
-    {% endfor %}
+    {% endfor %}{% endif %}
   }
 }

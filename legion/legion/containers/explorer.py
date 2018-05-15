@@ -16,6 +16,8 @@
 """
 legion explorer functions, returns legion models, services details
 """
+from unicodedata import name
+
 import legion.containers.k8s
 from legion.external.edi import EdiClient
 import asyncio
@@ -23,6 +25,11 @@ import os
 
 MODEL_ID_SERVICE_LABEL = legion.containers.headers.DOMAIN_MODEL_ID
 LEGION_COMPONENT_LABELS = 'legion/component', 'legion.component'
+INGRESS_COMPONENT_LABEL = 'component'
+NON_ENCLAVE_NAMESPACES = 'default', 'kube-system'
+
+INGRESS_DASHBOARD_NAME = 'kubernetes-dashboard'
+INGRESS_GRAFANA_NAME = 'legion-core-grafana'
 
 
 class Enclave:
@@ -30,18 +37,22 @@ class Enclave:
     Contains overall information about enclave, its services and models
     """
 
-    def __init__(self, name, models, edi_service, edge_service, grafana_service, graphite_service):
+    def __init__(self, name, models, grafana_hostname, edi_service, edge_service,
+                 grafana_service, graphite_service):
         """
         Create an Enclave instance
         :param name: enclave name
         :param models: dict of models
+        :param grafana_hostname: public grafana hostname
         :param edi_service: EDI V1Service object
         :param edge_service: Edge V1Service object
         :param grafana_service: Grafana V1Service object
         :param graphite_service: Graphite V1Service object
+        :param
         """
         self._name = name
         self._models = models or {}
+        self._grafana_hostname = grafana_hostname
         self._edi_service = edi_service
         self._edge_service = edge_service
         self._grafana_service = grafana_service
@@ -83,6 +94,15 @@ class Enclave:
         return self._grafana_service
 
     @property
+    def grafana_hostname(self):
+        """
+        Return public hostname of Grafana service.
+        :rtype str
+        :return: public hostname of Grafana service
+        """
+        return self._grafana_hostname
+
+    @property
     def graphite_service(self):
         """
         Return Graphite service object.
@@ -111,6 +131,42 @@ class Enclave:
             return legion.external.edi.EdiClient('http://%s.%s' % (self.edi_service, self._name))
 
 
+def find_public_hosts():
+    """
+    Get a dictionary of public host names.
+    :return: a dictionary of public host names per service name
+    :rtype: dict(str, str)
+    """
+    ingresses = {}
+    # load data for all ingresses: enclaves and system
+    list_ingresses = legion.containers.k8s.find_all_ingresses()
+    for ingress in list_ingresses:
+        ingress_namespace = ingress.metadata.namespace
+        if ingress_namespace in NON_ENCLAVE_NAMESPACES:
+            # get 'public' hostnames
+            if ingress.spec.rules and len(ingress.spec.rules) > 0:
+                ingresses[ingress.metadata.name] = ingress.spec.rules[0].host
+    return ingresses
+
+
+def get_public_dashboard_hostname():
+    """
+    Get public hostname of a Kubernetes dashboard
+    :return: hostname of a Kubernetes dashboard
+    :rtype: str
+    """
+    return find_public_hosts().get(INGRESS_DASHBOARD_NAME, None)
+
+
+def get_public_grafana_hostname():
+    """
+    Get public hostname of a Grafana Web UI
+    :return: hostname of a Grafana Web UI
+    :rtype: str
+    """
+    return find_public_hosts().get(INGRESS_DASHBOARD_NAME, None)
+
+
 def find_enclaves(namespace=''):
     """
     Get a list of enclaves
@@ -119,26 +175,42 @@ def find_enclaves(namespace=''):
     """
     enclaves_services = {}
     enclaves_models_services = {}
+    enclaves_ingresses = {}
 
-    list_edi_services = legion.containers.k8s.find_all_services(namespace=namespace)
-    for service in list_edi_services:
-        namespace = service.metadata.namespace
+    list_services = legion.containers.k8s.find_all_services(namespace=namespace)
+    for service in list_services:
+        service_namespace = service.metadata.namespace
         component_name = next((service.metadata.labels.get(legion_label) for legion_label in LEGION_COMPONENT_LABELS
                                if legion_label in service.metadata.labels), None)
         if component_name is not None:  # found a legion component
-            if namespace not in enclaves_services:
-                enclaves_services[namespace] = {}
-                enclaves_services[namespace][component_name] = service.metadata.name
+            if service_namespace not in enclaves_services:
+                enclaves_services[service_namespace] = {}
+                enclaves_services[service_namespace][component_name] = service.metadata.name
         elif MODEL_ID_SERVICE_LABEL in service.metadata.labels:  # found a model service
-            if namespace not in enclaves_models_services:
-                enclaves_models_services[namespace] = {}
+            if service_namespace not in enclaves_models_services:
+                enclaves_models_services[service_namespace] = {}
             model_id = service.metadata.labels.get(MODEL_ID_SERVICE_LABEL)
-            enclaves_models_services[namespace][model_id] = service
+            enclaves_models_services[service_namespace][model_id] = service
+
+    # load data for all ingresses: enclaves and system
+    list_ingresses = legion.containers.k8s.find_all_ingresses(namespace=namespace)
+    for ingress in list_ingresses:
+        ingress_namespace = ingress.metadata.namespace
+        if INGRESS_COMPONENT_LABEL in ingress.metadata.labels:
+            if ingress_namespace not in enclaves_ingresses:
+                enclaves_ingresses[ingress_namespace] = {}
+            # get a component name and it's 'public' hostname
+            component_name = ingress.metadata.labels[INGRESS_COMPONENT_LABEL]
+            if ingress_namespace in component_name:
+                component_name = component_name.split(ingress_namespace+'-')[-1]
+            if ingress.spec.rules and len(ingress.spec.rules) > 0:
+                enclaves_ingresses[ingress_namespace][component_name] = ingress.spec.rules[0].host
 
     enclaves = []
     for enclave_name, services in enclaves_services.items():
-        if 'edi' not in services:  # if namspace doesn't have Edi server, it's not an enclave
+        if 'edi' in services:  # if namespace doesn't have Edi server, it's not an enclave
             enclaves += [Enclave(enclave_name, enclaves_models_services.get(enclave_name, None),
+                                 enclaves_ingresses.get(enclave_name, {}).get('grafana', None),
                                  services.get('edi', None), services.get('edge', None),
                                  services.get('grafana', None), services.get('graphite', None))]
 

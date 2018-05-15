@@ -233,6 +233,25 @@ def watch_all_services(namespace=''):
             continue
 
 
+def find_all_ingresses(namespace=''):
+    """
+    Find all ingress details
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :type component: filter by specified component value, or none for all
+    :return: list[V1beta1Ingress]
+    """
+    client = build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    if namespace:
+        all_ingresses = extension_api.list_namespaced_ingress(namespace)
+    else:
+        all_ingresses = extension_api.list_ingress_for_all_namespaces()
+
+    return all_ingresses.items
+
+
 def scale_deployment(deployment, new_scale, namespace='default'):
     """
     Scale existed deployment
