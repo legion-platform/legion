@@ -6,6 +6,17 @@
 
 # Deploy ingress and default backend
 
+- name: Gather kubernetes nodes security groups
+  ec2_group_facts:
+    region: "{{ aws_region }}"
+    filters:
+      "tag:Name": "nodes.{{ cluster_name }}"
+  register: nodes_sg_facts
+
+- name: Combine security groups
+  set_fact:
+    ingress_sgs: "{{ external_access_sgs }} + {{ nodes_sg_facts.security_groups|map(attribute='group_id')|list }}"
+
 - name: Create Ingress configuration
   template:
     src: "{{ item }}.yml.j2"
