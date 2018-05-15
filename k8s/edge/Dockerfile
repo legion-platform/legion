@@ -38,13 +38,17 @@ RUN set -x \
   && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
   && apk del .install-deps
 
+# Install Legion
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
+
+RUN pip install $pip_extra_index_params legion$pip_legion_version_string
+
 # Staff
 COPY start.sh /start.sh
 COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 COPY static /static
-COPY nginx.conf.k8stmpl /nginx.conf.k8stmpl
-COPY k8s-template /k8s-template
-RUN chmod a+rwx /k8s-template
+COPY nginx.conf.ltmpl /nginx.conf.ltmpl
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]

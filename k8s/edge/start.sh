@@ -17,4 +17,4 @@
 
 /usr/local/openresty/bin/openresty
 
-/k8s-template --template="/nginx.conf.k8stmpl" --output="/usr/local/openresty/nginx/conf/nginx.conf" --command="/usr/local/openresty/bin/openresty -s reload" --required-label "com.epam.legion.model.id"
+ltemplate "/nginx.conf.ltmpl" "/usr/local/openresty/nginx/conf/nginx.conf" --command="/usr/local/openresty/bin/openresty -s reload"
