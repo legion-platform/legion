@@ -20,7 +20,7 @@ Legion Templating System
 import unittest2
 import tempfile
 import os
-import _thread
+from threading import Thread
 import time
 import asyncio
 from legion.templating import TemplateSystem
@@ -64,54 +64,77 @@ class TestTemplateSystem(unittest2.TestCase):
             template.write(self.LOAD_YAML_MODULE_LINE % self.input_yaml_path)
             template.write(self.TEMPLATE_LINE % self.TEMPLATE_PRINT_YAML_VARIABLE)
 
-    def _template_render_loop(self):
-        """
-        Start a thread with a render loop for file watch test
-        """
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        ts = TemplateSystem(self.template_path, self.output_path)
-        ts.render_loop()
-
     def test_file_watch(self):
         """
         Test a file watch module
         """
-        th = _thread.start_new_thread(self._template_render_loop, ())  # start a thread
-        time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-        with open(self.output_path) as out_file:  # check if output file has empty value
-            self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '', 'Output file should contain empty data variable')
+        with TemplateRenderThread(self.template_path, self.output_path):
+            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
+            with open(self.output_path) as out_file:  # check if output file has empty value
+                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '', 'Output file should contain empty data variable')
 
-        with open(self.input_path, 'w') as data_file:  # write random string to the data file
-            data_file.write(self.random_data)
+            with open(self.input_path, 'w') as data_file:  # write random string to the data file
+                data_file.write(self.random_data)
 
-        time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-        with open(self.output_path) as out_file:  # check if output file has random value
-            self.assertEqual(out_file.read(), self.TEMPLATE_LINE % self.random_data,
-                             'Output file should contain same data[item] variable')
-
-    def _yaml_template_render_loop(self):
-        """
-        Start a thread with a render loop for yaml file watch test
-        """
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        ts = TemplateSystem(self.template_yaml_path, self.output_yaml_path)
-        ts.render_loop()
+            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
+            with open(self.output_path) as out_file:  # check if output file has random value
+                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % self.random_data,
+                                 'Output file should contain same data[item] variable')
 
     def test_yaml_file_watch(self):
         """
         Test a yaml file watch module
         """
-        th = _thread.start_new_thread(self._yaml_template_render_loop, ())  # start a thread
-        time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-        with open(self.output_yaml_path) as out_file:  # check if output file has empty value
-            self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '', 'Output file should contain empty data variable')
+        with TemplateRenderThread(self.template_yaml_path, self.output_yaml_path):
+            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
+            with open(self.output_yaml_path) as out_file:  # check if output file has empty value
+                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % '', 'Output file should contain empty data variable')
 
-        with open(self.input_yaml_path, 'w') as data_file:  # write random yaml to the data file
-            data_file.write(yaml.dump({'item': self.random_data}))
+            with open(self.input_yaml_path, 'w') as data_file:  # write random yaml to the data file
+                data_file.write(yaml.dump({'item': self.random_data}))
 
-        time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-        with open(self.output_yaml_path) as out_file:  # check if output file has random value from yaml
-            self.assertEqual(out_file.read(), self.TEMPLATE_LINE % self.random_data,
-                             'Output file should contain same data variable')
+            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
+            with open(self.output_yaml_path) as out_file:  # check if output file has random value from yaml
+                self.assertEqual(out_file.read(), self.TEMPLATE_LINE % self.random_data,
+                                 'Output file should contain same data variable')
+
+
+class TemplateRenderThread(Thread):
+    """
+    A thread with a render loop for file watch test.
+    """
+    def __init__(self, template_path, output_path):
+        """
+        Init a Thread object.
+        :param template_path: a path to a template file
+        :rtype template_path: str
+        :param output_path: a path to an output file
+        :rtype output_path: str
+        """
+        Thread.__init__(self)
+        self.name = 'template_render_loop'
+        self.daemon = True
+        self.template_path = template_path
+        self.output_path = output_path
+
+    def run(self):
+        """
+        Run a render loop for file watch test.
+        """
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        template_system = TemplateSystem(self.template_path, self.output_path)
+        template_system.render_loop()
+
+    def __enter__(self):
+        """
+        A function of Context manager, which starts a thread with a render loop.
+        """
+        self.start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        A function of Context manager, which stops an event loop of a thread.
+        """
+        asyncio.get_event_loop().stop()
+        self.join(3)
