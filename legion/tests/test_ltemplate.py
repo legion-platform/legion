@@ -135,6 +135,6 @@ class TemplateRenderThread(Thread):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         A function of Context manager, which stops an event loop of a thread.
+        Due to thread is daemon, it is terminated when non-daemon threads is terminated.
         """
-        asyncio.get_event_loop().stop()
-        self.join(3)
+        pass
