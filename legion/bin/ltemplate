@@ -21,12 +21,12 @@ from legion.templating import TemplateSystem
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Template Renderer')
-    parser.add_argument('-template', '-t', type=str, help='Template file path', required=True)
-    parser.add_argument('-output', '-o', type=str, help='Output file path', required=True)
+    parser.add_argument('template', type=str, help='Template file path')
+    parser.add_argument('output', type=str, help='Output file path')
     parser.add_argument('--command', '-c', type=str, help='Bash command to execute on render')
     parser.add_argument('--signal', '-s', type=int, help='Signal number to send to a PID on render')
     parser.add_argument('--pid', '-p', type=int, help='PID of a process to signal number on render')
-    parser.add_argument('--pid_file', '-f', type=str, help='PID file of a process to signal number on render')
+    parser.add_argument('--pid-file', '-f', type=str, help='PID file of a process to signal number on render')
 
     args = parser.parse_args()
 
