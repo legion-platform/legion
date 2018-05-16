@@ -17,7 +17,6 @@
     - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
 
   roles:
-    - helm
     - charts_common
     - legion_core_chart
 
