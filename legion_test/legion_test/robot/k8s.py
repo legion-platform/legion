@@ -34,10 +34,10 @@ class K8s:
         """
         Init client
         """
+        self._context = None
         self._information = None
 
-    @staticmethod
-    def build_client():
+    def build_client(self):
         """
         Configure and returns kubernetes client
 
@@ -46,12 +46,22 @@ class K8s:
         try:
             kubernetes.config.load_incluster_config()
         except kubernetes.config.config_exception.ConfigException:
-            kubernetes.config.load_kube_config()
+            kubernetes.config.load_kube_config(context=self._context)
 
         # Disable SSL warning for self-signed certificates
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         return kubernetes.client.ApiClient()
+
+    def choose_cluster_context(self, context=None):
+        """
+        Choose K8S connection context
+
+        :param context: name of context
+        :type context: str
+        :return: None
+        """
+        self._context = context
 
     def service_is_running(self, service_name, namespace=None):
         """

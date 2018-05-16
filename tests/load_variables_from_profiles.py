@@ -59,6 +59,8 @@ def get_variables(arg):
 
         'JENKINS_JOBS': data['examples_to_test'],
         'ENCLAVES': data.get('enclaves', []),
+
+        'CLUSTER_NAME': data['cluster_name']
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'

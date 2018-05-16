@@ -7,6 +7,7 @@ Variables           load_variables_from_profiles.py   ../deploy/profiles/
 Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
+Test Setup          Choose cluster context            ${CLUSTER_NAME}
 Test Teardown       Close All Browsers
 
 *** Test Cases ***
