@@ -29,8 +29,11 @@ RUN set -ex \
 
 # Python3
 RUN apk update \
-  && apk add python3 python3-dev bash \
-  && python3 -m pip install argparse jinja2 kubernetes urllib3
+  && apk add python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
+  && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0
+
+RUN python3 -m pip install --upgrade pip==9.0.3
+RUN python3 -m pip install "Pillow==5.0.0"
 
 # LUA
 RUN set -x \
@@ -42,7 +45,7 @@ RUN set -x \
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
-RUN pip install $pip_extra_index_params legion$pip_legion_version_string
+RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
 
 # Staff
 COPY start.sh /start.sh
