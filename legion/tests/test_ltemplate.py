@@ -118,13 +118,14 @@ class TemplateRenderThread(Thread):
         self.daemon = True
         self.template_path = template_path
         self.output_path = output_path
+        self.event_loop = None
 
     def run(self):
         """
         Run a render loop for file watch test.
         """
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        self.event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.event_loop)
         template_system = TemplateSystem(self.template_path, self.output_path)
         template_system.render_loop()
 
@@ -137,6 +138,5 @@ class TemplateRenderThread(Thread):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         A function of Context manager, which stops an event loop of a thread.
-        Due to thread is daemon, it is terminated when non-daemon threads is terminated.
         """
-        pass
+        self.event_loop.stop()
