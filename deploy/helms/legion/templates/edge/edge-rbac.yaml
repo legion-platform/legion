@@ -9,10 +9,10 @@ rules:
   resources: ["pods", "deployments", "replicasets", "services"]
   verbs: ["get", "watch", "list"]
 - apiGroups: ["extensions"]
-  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services"]
+  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services", "ingresses"]
   verbs:  ["get", "watch", "list"]
 - apiGroups: ["apps"]
-  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services"]
+  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services", "ingresses"]
   verbs:  ["get", "watch", "list"]
 ---
 kind: RoleBinding
