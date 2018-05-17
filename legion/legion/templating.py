@@ -119,7 +119,10 @@ class TemplateSystem:
                 os.kill(self._pid, self._signal)
             if self._signal and self._pid_file and os.path.exists(self._pid_file):
                 with open(self._pid_file) as pf:
-                    os.kill(pf.read(), self._signal)
+                    pid = pf.read().strip()
+                    if not pid.isdigit():
+                        raise ValueError('PID "{}" is not an integer'.format(pid))
+                    os.kill(int(pid), self._signal)
 
     def render_loop(self):
         """
