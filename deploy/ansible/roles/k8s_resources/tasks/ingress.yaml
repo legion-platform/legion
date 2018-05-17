@@ -30,7 +30,7 @@
   shell: |
     kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/ingress-aws.{{ cluster_name }}.yml
 
-- name: "Set namespace lable"
+- name: "Set namespace label"
   shell: kubectl --context {{ cluster_name }} label ns ingress-nginx k8s-component=ingress --overwrite
 
 - name: Get Ingress ELB endpoint
