@@ -262,6 +262,9 @@ async def render_on_enclave_change(template_system):
     namespace = os.environ.get('NAMESPACE', '')
     if not namespace:
         raise ValueError("NAMESPACE wasn't found in env var.")
+    enclaves = find_enclaves(namespace)
+    if enclaves and len(enclaves) == 1:
+        template_system.render(enclave=enclaves[0])
     while True:
         for event_type, enclave in watch_enclaves_update(namespace, watch_for_models=True):
             template_system.render(enclave=enclave)
