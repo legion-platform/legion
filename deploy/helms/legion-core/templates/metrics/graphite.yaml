@@ -67,6 +67,17 @@ spec:
         - containerPort: 8125
           name: statsd
           protocol: UDP
+        livenessProbe:
+          initialDelaySeconds: 100
+          timeoutSeconds: 10
+          httpGet:
+            path: /
+            port: 80
+        livenessProbe:
+          initialDelaySeconds: 100
+          timeoutSeconds: 10
+          tcpSocket:
+            port: 2003
 ---
 apiVersion: v1
 kind: Service

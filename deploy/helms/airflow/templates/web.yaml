@@ -71,7 +71,13 @@ spec:
           httpGet:
             path: /
             port: 8080
-          initialDelaySeconds: 240
+          initialDelaySeconds: 300
+          periodSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 300
           periodSeconds: 3
       volumes:
       - name: airflow-config-dir
