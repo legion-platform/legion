@@ -21,6 +21,7 @@ import asyncio
 import os
 import os.path
 import importlib
+from asyncio.tasks import Task
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -127,4 +128,8 @@ class TemplateSystem:
         :return: None
         """
         self.render()
-        self._loop.run_until_complete(asyncio.wait(self._coroutines))
+        result = self._loop.run_until_complete(asyncio.wait(self._coroutines))
+        if result is not None and type(result) == tuple and len(result) > 0 and type(result[0]) == set:
+            task = result[0].pop()
+            if type(task) == Task and task.exception() is not None:
+                raise task.exception()
