@@ -5,6 +5,7 @@ Variables           load_variables_from_profiles.py   ../deploy/profiles/
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Flower
 Library             legion_test.robot.Utils
+Test Setup          Choose cluster context            ${CLUSTER_NAME}
 
 *** Test Cases ***
 Check if flower available

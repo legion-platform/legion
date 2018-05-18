@@ -2,7 +2,6 @@
 Documentation       Legion stack operational check
 Resource            resources/keywords.robot
 Variables           load_variables_from_profiles.py   ../deploy/profiles/
-Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
 
 *** Test Cases ***
