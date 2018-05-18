@@ -12,6 +12,7 @@ metadata:
     # Increase the ELB idle timeout to avoid issues with WebSockets or Server-Sent Events.
     service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '3600'
     service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "{{ external_access_sgs|join(',') }}"
+
 spec:
   type: LoadBalancer
   selector:
