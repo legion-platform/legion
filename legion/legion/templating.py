@@ -23,7 +23,7 @@ import os.path
 import importlib
 from asyncio.tasks import Task
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Undefined, Template
 
 
 class TemplateSystem:
@@ -59,7 +59,8 @@ class TemplateSystem:
             raise ValueError('PID or PID file parameters is required, if signal is specified')
 
         self._j2 = Environment(
-            loader=FileSystemLoader([os.getcwd(), '/'])
+            loader=FileSystemLoader([os.getcwd(), '/']),
+            undefined=SilentUndefined
         )
         self._template = self._j2.get_template(template_file)
 
@@ -136,3 +137,34 @@ class TemplateSystem:
             task = result[0].pop()
             if type(task) == Task and task.exception() is not None:
                 raise task.exception()
+
+
+class SilentUndefined(Undefined):
+    """
+    SilentUndefined class is a replacement for original Undefined class in Jinja2,
+    which is used to raise an Error if undefined variable is met in template.
+    Now it doesn't raise an error, just writes empty string.
+    """
+
+    def _fail_with_undefined_error(self, *args, **kwargs):
+        """
+        Return an empty string instead of raise an Error.
+        It's a replacement for an original _fail_with_undefined_error
+        function, which is used to raise an Error.
+        """
+        class EmptyString(str):
+            """
+            A simple empty string wrapper.
+            """
+
+            def __call__(self, *args, **kwargs):
+                return ''
+
+        return EmptyString()
+
+    __add__ = __radd__ = __mul__ = __rmul__ = __div__ = __rdiv__ = \
+        __truediv__ = __rtruediv__ = __floordiv__ = __rfloordiv__ = \
+        __mod__ = __rmod__ = __pos__ = __neg__ = __call__ = \
+        __getitem__ = __lt__ = __le__ = __gt__ = __ge__ = __int__ = \
+        __float__ = __complex__ = __pow__ = __rpow__ = \
+        _fail_with_undefined_error

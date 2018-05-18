@@ -39,7 +39,7 @@ class TestTemplateSystem(unittest2.TestCase):
 
     LOAD_YAML_MODULE_LINE = "{{ load_module('legion.io.render_on_file_change', filepath='%s', " \
                             "var_name='data', is_yaml_file=True) }}"
-    TEMPLATE_PRINT_YAML_VARIABLE = '{% if data is defined %}{{ data["item"] }}{% endif %}'
+    TEMPLATE_PRINT_YAML_VARIABLE = '{{ data["item"] }}'
 
     SLEEP_INTERVAL_IN_SEC = 3
 
