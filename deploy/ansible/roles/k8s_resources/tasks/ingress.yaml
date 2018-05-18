@@ -21,10 +21,10 @@
     kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/ingress-k8s.{{ cluster_name }}.yml
     kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/ingress-rbac.{{ cluster_name }}.yml
 
-- name: Patch Ingress controller
-  shell: |
-    kubectl --context {{ cluster_name }} patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
-        --patch="$(curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/publish-service-patch.yaml)"
+#- name: Patch Ingress controller
+#  shell: |
+#    kubectl --context {{ cluster_name }} patch deployment -n ingress-nginx nginx-ingress-controller --type='json' \
+#        --patch="$(curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/publish-service-patch.yaml)"
 
 - name: Deploy aws ingress
   shell: |
