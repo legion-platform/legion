@@ -55,12 +55,6 @@ spec:
             port: 80
           initialDelaySeconds: 120
           periodSeconds: 3
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 120
-          periodSeconds: 3
       volumes:
         - name: nfs
           persistentVolumeClaim:
