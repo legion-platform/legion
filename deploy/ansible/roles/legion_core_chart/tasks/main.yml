@@ -18,7 +18,7 @@
 - name: Copy git deploy key to host
   copy:
     src: "{{ git_key }}"
-    dest: git.deploy
+    dest: "{{ tmp_dir }}/git.{{ cluster_name }}.deploy"
     owner: "{{ deploy_key_owner }}"
     group: "{{ deploys_key_group }}"
 
@@ -26,7 +26,7 @@
   shell: kubectl --context {{ cluster_name }} delete secret legion-git-deploy  --ignore-not-found=true
 
 - name: Create GIT secret
-  shell: kubectl --context {{ cluster_name }} create secret generic legion-git-deploy --from-file=id_rsa=git.deploy
+  shell: kubectl --context {{ cluster_name }} create secret generic legion-git-deploy --from-file=id_rsa={{ tmp_dir }}/git.{{ cluster_name }}.deploy
 
 - name: Remove old AWS S3 credentials secret
   shell: kubectl --context {{ cluster_name }} delete secret legion-aws-s3-credentials --ignore-not-found=true
@@ -37,13 +37,13 @@
 - name: Create legion configuration (values) file
   template:
     src: legion-core-values.yaml.j2
-    dest: ~/legion-core-values.yaml
+    dest: "{{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml"
     mode: 0644
   vars:
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping
-  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --debug --dry-run -f  ~/legion-core-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --debug --dry-run -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
   register: helm_core_install_output
   args:
     chdir: ../helms
@@ -51,10 +51,10 @@
 - name: Save pre run result
   copy:
     content: "{{ helm_core_install_output.stdout }}"
-    dest: ./helm.core.debug
+    dest: "{{ tmp_dir }}/helm.core.{{ cluster_name }}.debug"
 
 - name: Install legion core chart
-  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --wait --timeout 600 -f  ~/legion-core-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --wait --timeout 600 -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
   args:
     chdir: ../helms
 
@@ -62,7 +62,7 @@
   shell: payloads/examine_helm_deployed legion-core
 
 - name: Label default namespace with legion-component=core
-  shell: kubectl label ns default legion-component=core --overwrite
+  shell: kubectl --context {{ cluster_name }} label ns default legion-component=core --overwrite
 
 - name: Dump current HELM status
   shell: helm --kube-context {{ cluster_name }} status legion-core
@@ -72,4 +72,4 @@
   local_action:
     module: copy
     content: "{{ helm_core_status_output.stdout }}"
-    dest: ./helm.core.status
+    dest: "{{ tmp_dir }}/helm.core.{{ cluster_name }}.status"
