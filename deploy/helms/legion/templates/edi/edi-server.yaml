@@ -59,7 +59,9 @@ spec:
             path: /
             port: 80
           initialDelaySeconds: 120
-          periodSeconds: 3
+          timeoutSeconds: 8
+          failureThreshold: 5
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
