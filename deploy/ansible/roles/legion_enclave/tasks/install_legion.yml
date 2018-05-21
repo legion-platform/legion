@@ -49,9 +49,6 @@
   args:
     chdir: ../helms
 
-- name: Run HELM status checker
-  shell: "payloads/examine_helm_deployed legion-{{ enclave }}"
-
 - name: Dump current HELM status
   shell: "helm --kube-context {{ cluster_name }} status legion-{{ enclave }}"
   register: helm_legion_status_output
