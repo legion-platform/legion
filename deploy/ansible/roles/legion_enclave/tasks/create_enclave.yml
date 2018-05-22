@@ -85,22 +85,22 @@
 - name: Create alter role query
   template:
     src: alter_role.sql.j2
-    dest: /{{ tmp_dir }}/alter_role.sql
+    dest: "{{ tmp_dir }}/alter_role.{{ cluster_name }}.sql"
     mode: 0644
 
 - name: "Set search_path (Schema) for Postgres user"
-  shell: PGPASSWORD="{{ aws.rds.password }}" psql -h "{{ airflow_rds_instance_facts.instance.endpoint }}" -U"{{ aws.rds.username }}" < /{{ tmp_dir }}/alter_role.sql
+  shell: PGPASSWORD="{{ aws.rds.password }}" psql -h "{{ airflow_rds_instance_facts.instance.endpoint }}" -U"{{ aws.rds.username }}" < {{ tmp_dir }}/alter_role.{{ cluster_name }}.sql
 
 # Create NFS storage for Airflow
 - name: Create PVC configuration
   template:
     src: airflow-pvc.yaml.j2
-    dest: /{{ tmp_dir }}/airflow-pvc.yaml
+    dest: "{{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml"
     mode: 0644
 
 - name: Remove old PVC
-  shell: 'kubectl --context {{ cluster_name }} delete --ignore-not-found=true --namespace {{ enclave }} -f /{{ tmp_dir }}/airflow-pvc.yaml'
+  shell: 'kubectl --context {{ cluster_name }} delete --ignore-not-found=true --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
   ignore_errors: yes
 
 - name: Apply new PVC
-  shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f /{{ tmp_dir }}/airflow-pvc.yaml'
+  shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'

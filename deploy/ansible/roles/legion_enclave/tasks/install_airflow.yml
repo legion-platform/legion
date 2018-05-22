@@ -34,14 +34,14 @@
 - name: Create airflow configuration (values) file
   template:
     src: airflow-values.yaml.j2
-    dest: ~/airflow-values.yaml
+    dest: "{{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml"
     mode: 0644
   vars:
     secret_fernet_key: "{{ fernet_key_output.stdout }}"
     secret_flask: "{{ flask_key_output.stdout }}"
 
 - name: Pre run with dumping
-  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/airflow-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
   register: helm_airflow_install_output
   args:
     chdir: ../helms
@@ -49,10 +49,10 @@
 - name: Save pre run result
   copy:
     content: "{{ helm_airflow_install_output.stdout }}"
-    dest: ./helm.airflow.debug
+    dest: "{{ tmp_dir }}/helm.airflow.{{ cluster_name }}.debug"
 
 - name: Install airflow chart
-  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/airflow-values.yaml
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
   args:
     chdir: ../helms
 
@@ -64,4 +64,4 @@
   local_action:
     module: copy
     content: "{{ helm_airflow_status_output.stdout }}"
-    dest: ./helm.airflow.status
+    dest: "{{ tmp_dir }}/helm.airflow.{{ cluster_name }}.status"

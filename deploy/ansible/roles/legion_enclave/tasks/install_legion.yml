@@ -27,14 +27,14 @@
 - name: Create legion configuration (values) file
   template:
     src: legion-values.yaml.j2
-    dest: ~/legion-values.yaml
+    dest: "{{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
     mode: 0644
   vars:
     jupyter_hub_proxy_secret: "{{ jupyter_hub_proxy_secret_output.stdout }}"
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping
-  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/legion-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   register: helm_legion_install_output
   args:
     chdir: ../helms
@@ -42,10 +42,10 @@
 - name: Save pre run result
   copy:
     content: "{{ helm_legion_install_output.stdout }}"
-    dest: ./helm.legion_{{ enclave }}.debug
+    dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.debug"
 
 - name: Install legion chart
-  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/legion-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   args:
     chdir: ../helms
 
@@ -59,4 +59,6 @@
 - name: Save HELM status localy
   copy:
     content: "{{ helm_legion_status_output.stdout }}"
-    dest: "./helm.legion_{{ enclave }}.status"
+    dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.status"
+
+
