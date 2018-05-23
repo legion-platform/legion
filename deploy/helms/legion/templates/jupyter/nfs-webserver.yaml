@@ -49,6 +49,12 @@ spec:
             mountPath: "/usr/share/nginx/html"
           - name: config-volume
             mountPath: "/etc/nginx/conf.d/"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 120
+          periodSeconds: 3
       volumes:
         - name: nfs
           persistentVolumeClaim:

@@ -128,6 +128,12 @@ spec:
           name: git-secret
           readOnly: true
         {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 50000
+          initialDelaySeconds: 120
+          timeoutSeconds: 5
       volumes:
       - name: jenkins-home
         persistentVolumeClaim:

@@ -8,13 +8,6 @@
 - name: Update helm repositories
   shell: helm --kube-context {{ cluster_name }} repo update
 
-- name: Chmod HELM tools
-  file:
-    path: payloads/{{ item }}
-    mode: a+rx
-  with_items:
-    - examine_helm_deployed
-
 - name: Download jq
   get_url:
     url: "{{ jq_download_url }}"

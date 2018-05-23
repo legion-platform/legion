@@ -67,8 +67,10 @@ spec:
           httpGet:
             path: /
             port: 5555
-          initialDelaySeconds: 10
-          periodSeconds: 3
+          initialDelaySeconds: 30
+          timeoutSeconds: 8
+          failureThreshold: 3
+          periodSeconds: 8
       volumes:
       - name: airflow-config-dir
         configMap:
