@@ -66,24 +66,3 @@ spec:
               name: http
           securityContext:
             privileged: true
-
----
-# TODO - remove this section, just for tests
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: nginx-deployment
-spec:
-  replicas: 3
-  template:
-    metadata:
-      annotations:
-        iam.amazonaws.com/role: "{{ cluster_name }}-airflow-s3-access-role"
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.9.1
-        ports:
-        - containerPort: 80

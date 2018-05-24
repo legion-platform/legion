@@ -3,14 +3,11 @@
 - name: Remove AssumeRole global cluster policy
   iam_policy:
     iam_type: role
-    iam_name: "{{ item }}.{{ cluster_name }}"
+    iam_name: "nodes.{{ cluster_name }}"
     policy_name: "{{ cluster_name }}-legion-k8s-assume-role"
     state: absent
-  with_items:
-    - nodes
-    - masters
 
-- name: Remove Trust policy AccumeRole
+- name: Remove AccumeRole Trust policy
   iam_managed_policy:
     policy_name: "{{ cluster_name }}-legion-k8s-assume-role"
     state: absent
@@ -39,7 +36,3 @@
 
 - name: Remove kube2iam service account
   shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
-
-#TODO remove this
-- name: Remove awscli service account
-  shell: kubectl --context {{ cluster_name }} delete deployment -n kube-system nginx --ignore-not-found=true

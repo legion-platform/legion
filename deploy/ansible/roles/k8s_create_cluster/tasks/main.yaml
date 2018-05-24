@@ -1,13 +1,10 @@
 ---
 # Install kops
-#- include: install-kops.yaml
-#
-## Install kubectl
-#- include: install-kubectl.yaml
-#
-## Create cluster with kops if needed
-#- include: create-cluster.yaml
-#  when: skip_kops.find('false') != -1
+- include: install-kops.yaml
 
-# Update IAM Roles
-- include: iam-roles.yaml
+# Install kubectl
+- include: install-kubectl.yaml
+
+# Create cluster with kops if needed
+- include: create-cluster.yaml
+  when: skip_kops.find('false') != -1

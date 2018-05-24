@@ -1,0 +1,21 @@
+---
+
+- name: Generate policy documents
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}.yaml"
+  with_items:
+    - kube2iam_iam_policy
+
+- name: Attach AssumeRole policy to cluster nodes
+  iam_policy:
+    iam_type: role
+    iam_name: "nodes.{{ cluster_name }}"
+    policy_name: "{{ cluster_name }}-legion-k8s-assume-role"
+    policy_document: "{{ tmp_dir }}/kube2iam_iam_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Create kubernetes kube2iam configuration template
+  template:
+    src: "kube2iam.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ cluster_name }}.kube2iam.yml"

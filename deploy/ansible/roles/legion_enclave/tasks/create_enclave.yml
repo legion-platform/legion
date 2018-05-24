@@ -103,18 +103,41 @@
   ignore_errors: yes
 
 - name: Apply new PVC
-<<<<<<< 37482a779eef37a896a732784a75ab4a222cb843
   shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
-=======
-  shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f /{{ tmp_dir }}/airflow-pvc.yaml'
+
+# Create S3 resources
+- name: Create s3 storage for airflow
+  aws_s3:
+    bucket: {{ airflow_s3_bucket_name }}
+    object: "/{{ enclave }}"
+    mode: create
 
 # Create IAM roles
+- name: Generate policy documents
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}.yaml"
+  with_items:
+    - trust_policy
 
 - name: Generate policy documents
   template:
     src: "{{ item }}.yaml.j2"
-    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}-{{ enclave }}.yaml"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ enclave }}.{{ cluster_name }}.yaml"
   with_items:
-    - trust_policy
     - airflow_s3_access_policy
->>>>>>> [#131] Setup S3 access IAM roles for airflow
+
+- name: Create Airflow S3 access role
+  iam:
+    iam_type: role
+    name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-role"
+    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Attach Airflow S3 accesse policy to the role
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
+    policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
+    state: present

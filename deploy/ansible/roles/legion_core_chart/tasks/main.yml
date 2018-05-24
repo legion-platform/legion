@@ -1,5 +1,30 @@
 ---
 
+# Create Jenkins IAM role for airflow s3 access
+- name: Generate policy documents
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}.yaml"
+  with_items:
+    - trust_policy
+    - airflow_s3_access_policy
+
+- name: Create Airflow S3 access role
+  iam:
+    iam_type: role
+    name: "{{ cluster_name }}-jenkins-airflow-s3-access-role"
+    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Attach Airflow S3 accesse policy to the role
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-jenkins-airflow-s3-access-role"
+    policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
+    policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ cluster_name }}.yaml"
+    state: present
+
+# Install Legion core chart
 - name: Get legion-core chart status
   shell: helm --kube-context {{ cluster_name }} ls --all legion-core
   register: legion_core_deployment_status
