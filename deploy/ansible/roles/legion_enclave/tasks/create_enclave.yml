@@ -106,21 +106,21 @@
   shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
 
 # Create S3 resources
-- name: Create s3 storage for airflow
+- name: Create S3 storage for Airflow
   aws_s3:
     bucket: {{ airflow_s3_bucket_name }}
     object: "/{{ enclave }}"
     mode: create
 
 # Create IAM roles
-- name: Generate policy documents
+- name: Generate Trust policy documents
   template:
     src: "{{ item }}.yaml.j2"
     dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}.yaml"
   with_items:
     - trust_policy
 
-- name: Generate policy documents
+- name: Generate S3 access policy documents
   template:
     src: "{{ item }}.yaml.j2"
     dest: "{{ tmp_dir }}/{{ item }}.{{ enclave }}.{{ cluster_name }}.yaml"

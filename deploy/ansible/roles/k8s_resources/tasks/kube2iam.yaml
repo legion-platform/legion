@@ -19,3 +19,7 @@
   template:
     src: "kube2iam.yaml.j2"
     dest: "{{ tmp_dir }}/{{ cluster_name }}.kube2iam.yml"
+
+- name: Create kube2iam kubernetes resource
+  command:
+    kubectl --context {{ cluster_name }} -n kube-system apply -f {{ tmp_dir }}/{{ cluster_name }}.kube2iam.yml
