@@ -4,6 +4,6 @@
 - name: Configure kubectl using kops
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
-- include: aws-resources.yaml
+#- include: aws-resources.yaml
 - include: iam-policies.yaml
-- include: kops-cluster.yaml
+#- include: kops-cluster.yaml

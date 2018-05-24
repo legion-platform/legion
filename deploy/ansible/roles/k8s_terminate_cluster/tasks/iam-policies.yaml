@@ -10,22 +10,36 @@
     - nodes
     - masters
 
-- name: Remove Airflow S3 accesse policy to the role
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}_airflow_s3_access_role"
-    policy_name: "{{ cluster_name }}-k8s-assume-role"
+- name: Remove Trust policy AccumeRole
+  iam_managed_policy:
+    policy_name: "{{ cluster_name }}-legion-k8s-assume-role"
     state: absent
 
-- name: Remove Airflow S3 accesse policy to the role
+########
+- name: Detach Airflow S3 access policy
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}_airflow_s3_access_role"
+    iam_name: "{{ cluster_name }}-airflow-s3-access-role"
     policy_name: "{{ cluster_name }}-airflow-s3-access-policy"
     state: absent
 
+## ???
+- name: Remove Airflow S3 accesse policy
+  iam_managed_policy:
+    policy_name: "{{ cluster_name }}-airflow-s3-access-policy"
+    state: absent
+
+- name: Remove Airflow s3 access role
+  iam_role:
+    name: "{{ cluster_name }}-airflow-s3-access-role"
+    state: absent
+
 - name: Remove kube2iam daemonset
-  shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam
+  shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true
 
 - name: Remove kube2iam service account
-  shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam
+  shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
+
+#TODO remove this
+- name: Remove awscli service account
+  shell: kubectl --context {{ cluster_name }} delete deployment -n kube-system nginx --ignore-not-found=true

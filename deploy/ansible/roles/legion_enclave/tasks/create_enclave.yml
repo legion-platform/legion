@@ -103,4 +103,18 @@
   ignore_errors: yes
 
 - name: Apply new PVC
+<<<<<<< 37482a779eef37a896a732784a75ab4a222cb843
   shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
+=======
+  shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f /{{ tmp_dir }}/airflow-pvc.yaml'
+
+# Create IAM roles
+
+- name: Generate policy documents
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}-{{ enclave }}.yaml"
+  with_items:
+    - trust_policy
+    - airflow_s3_access_policy
+>>>>>>> [#131] Setup S3 access IAM roles for airflow
