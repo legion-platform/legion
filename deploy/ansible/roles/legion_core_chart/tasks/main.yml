@@ -12,14 +12,14 @@
 - name: Create Airflow S3 access role
   iam:
     iam_type: role
-    name: "{{ cluster_name }}-jenkins-airflow-s3-access-role"
+    name: "{{ cluster_name }}-jenkins-role"
     trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
     state: present
 
 - name: Attach Airflow S3 accesse policy to the role
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}-jenkins-airflow-s3-access-role"
+    iam_name: "{{ cluster_name }}-jenkins-role"
     policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
     policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ cluster_name }}.yaml"
     state: present
@@ -53,11 +53,11 @@
 - name: Create GIT secret
   shell: kubectl --context {{ cluster_name }} create secret generic legion-git-deploy --from-file=id_rsa={{ tmp_dir }}/git.{{ cluster_name }}.deploy
 
-- name: Remove old AWS S3 credentials secret
-  shell: kubectl --context {{ cluster_name }} delete secret legion-aws-s3-credentials --ignore-not-found=true
-
-- name: Create AWS S3 credentials secret
-  command: "kubectl --context {{ cluster_name }} create secret generic legion-aws-s3-credentials --from-literal=AWS_ACCESS_KEY_ID={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_access_key_id')).0 }} --from-literal=AWS_SECRET_ACCESS_KEY={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_secret_access_key')).0 }}"
+#- name: Remove old AWS S3 credentials secret
+#  shell: kubectl --context {{ cluster_name }} delete secret legion-aws-s3-credentials --ignore-not-found=true
+#
+#- name: Create AWS S3 credentials secret
+#  command: "kubectl --context {{ cluster_name }} create secret generic legion-aws-s3-credentials --from-literal=AWS_ACCESS_KEY_ID={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_access_key_id')).0 }} --from-literal=AWS_SECRET_ACCESS_KEY={{ (airflow|json_query('connections[?connection_id==`s3_conn`].extra.aws_secret_access_key')).0 }}"
 
 - name: Create legion configuration (values) file
   template:

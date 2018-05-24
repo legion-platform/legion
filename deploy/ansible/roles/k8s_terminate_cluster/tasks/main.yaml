@@ -5,5 +5,5 @@
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
 - include: aws-resources.yaml
-- include: iam-policies.yaml
+- include: kube2iam.yaml
 - include: kops-cluster.yaml

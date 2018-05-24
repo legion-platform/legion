@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       annotations:
-        iam.amazonaws.com/role: "{{ cluster_name }}-{{ ebclave }}-airflow-s3-access-role"
+        iam.amazonaws.com/role: "{{ cluster_name }}-{{ enclave }}-airflow-role"
       labels:
         app: "{{ .Release.Name }}-airflow-scheduler"
     spec:
