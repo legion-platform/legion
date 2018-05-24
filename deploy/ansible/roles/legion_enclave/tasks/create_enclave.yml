@@ -108,7 +108,7 @@
 # Create S3 resources
 - name: Create S3 storage for Airflow
   aws_s3:
-    bucket: {{ airflow_s3_bucket_name }}
+    bucket: "{{ airflow_s3_bucket_name }}"
     object: "/{{ enclave }}"
     mode: create
 

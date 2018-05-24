@@ -28,6 +28,10 @@ encrypt_s3_logs = {{ .Values.core.encrypt_s3_logs }}
 # deprecated option for remote log storage, use remote_base_log_folder instead!
 # s3_log_folder =
 
+# S3 connection parameters
+aws_account_id = {{ .Values.awsAccountId }}
+aws_iam_role = {{ .Values.awsIamRole }}
+
 # The executor class that airflow should use. Choices include
 # SequentialExecutor, LocalExecutor, CeleryExecutor
 executor = {{ .Values.core.executor }}

@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       annotations:
-        iam.amazonaws.com/role: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
         app: "{{ .Release.Name }}-airflow-worker"
     spec:

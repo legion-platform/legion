@@ -25,6 +25,22 @@
     name: "{{ cluster_name }}-jenkins-role"
     state: absent
 
+- name: Remove enclave Airflow S3 access policy
+  iam_managed_policy:
+    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove enclave Airflow IAM role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
 - name: Remove kube2iam daemonset
   shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true
 
