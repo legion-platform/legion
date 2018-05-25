@@ -1,23 +1,10 @@
 ---
 
-- name: Remove AssumeRole Trust policy
-  iam_managed_policy:
-    policy_name: "{{ cluster_name }}-legion-k8s-assume-role"
-    state: absent
-
-- name: Remove Airflow S3 access policy
-  iam_managed_policy:
-    policy_name: "{{ cluster_name }}-airflow-s3-access-policy"
-    state: absent
-
-- name: Remove jenkins Airflow S3 access policy
-  iam_managed_policy:
+- name: Remove Jenkins airflow S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-jenkins-role"
     policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
-    state: absent
-
-- name: Remove Airflow IAM role
-  iam_role:
-    name: "{{ cluster_name }}-airflow-role"
     state: absent
 
 - name: Remove Jenkins IAM role
@@ -25,8 +12,10 @@
     name: "{{ cluster_name }}-jenkins-role"
     state: absent
 
-- name: Remove enclave Airflow S3 access policy
-  iam_managed_policy:
+- name: Remove Airflow S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
     policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
     state: absent
   with_items: "{{ enclaves }}"
