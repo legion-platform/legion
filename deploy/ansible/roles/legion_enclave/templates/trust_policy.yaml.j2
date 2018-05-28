@@ -13,9 +13,7 @@
       "Sid": "",
       "Effect": "Allow",
       "Principal": {
-        "AWS": [
-            "arn:aws:iam::{{ aws.account_id }}:role/nodes.{{ cluster_name }}"
-        ]
+        "AWS": "arn:aws:iam::{{ aws.account_id }}:role/nodes.{{ cluster_name }}"
       },
       "Action": "sts:AssumeRole"
     }
