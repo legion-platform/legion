@@ -90,7 +90,6 @@ class ModelServeTestBuild:
             print('Creating pyserve')
             additional_environment = {
                 legion.config.REGISTER_ON_GRAFANA[0]: 'false',
-                legion.config.REGISTER_ON_CONSUL[0]: 'false',
                 legion.config.MODEL_ID[0]: self._model_id,
                 legion.config.MODEL_FILE[0]: self._model_path
             }
@@ -180,7 +179,6 @@ class ModelTestDeployment:
             print('Deploying model {} v {}'.format(self._model_id, self._model_version))
             additional_environment = {
                 legion.config.REGISTER_ON_GRAFANA[0]: 'false',
-                legion.config.REGISTER_ON_CONSUL[0]: 'false',
             }
             with patch_environ(additional_environment):
                 args = Namespace(

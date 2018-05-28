@@ -37,7 +37,8 @@ class TestK8S(unittest2.TestCase):
 
     def test_cluster_config_loading(self):
         config = legion.containers.k8s.load_config(self.state)
-        valid = {'grafana': {'port': 123, 'domain': 'legion-grafana.default.svc.cluster.local'}}
+        valid = {'grafana': {'port': 123, 'domain': 'legion-grafana.default.svc.cluster.local'},
+                 'namespace': 'default'}
         self.assertIsInstance(config, dict)
         self.assertDictEqual(config, valid)
 

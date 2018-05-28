@@ -191,17 +191,11 @@ if __name__ == '__main__':
                                 type=str)
     pyserve_parser.add_argument('--model-id',
                                 type=str)
-    pyserve_parser.add_argument('--consul-addr',
-                                type=str, help='Consul Agent IP address')
-    pyserve_parser.add_argument('--consul-port',
-                                type=int, help='Consul Agent port')
     pyserve_parser.add_argument('--legion-addr',
                                 type=str)
     pyserve_parser.add_argument('--legion-port',
                                 type=int)
     pyserve_parser.add_argument('--debug',
-                                type=legion.utils.string_to_bool)
-    pyserve_parser.add_argument('--register-on-consul',
                                 type=legion.utils.string_to_bool)
     pyserve_parser.add_argument('--legion-autodiscover',
                                 type=legion.utils.string_to_bool)

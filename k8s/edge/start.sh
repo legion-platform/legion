@@ -17,4 +17,4 @@
 
 /usr/local/openresty/bin/openresty
 
-consul-template -template="/nginx.conf.ctmpl:/usr/local/openresty/nginx/conf/nginx.conf:/usr/local/openresty/bin/openresty -s reload"
+ltemplate "/nginx.conf.ltmpl" "/usr/local/openresty/nginx/conf/nginx.conf" --signal=1 --pid-file="/usr/local/openresty/nginx/logs/nginx.pid" --command="echo Reloading Nginx"

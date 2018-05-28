@@ -165,7 +165,7 @@ node {
             sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
 
     	    cd k8s/edge
-    	    docker build $dockerCacheArg -t legion/k8s-edge .
+    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-edge .
     	    """
 
             sh """

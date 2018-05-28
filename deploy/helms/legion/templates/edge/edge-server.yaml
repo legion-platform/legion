@@ -17,6 +17,7 @@ spec:
       labels:
         component: "{{ .Release.Name }}-edge"
     spec:
+      serviceAccountName: edge
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
@@ -25,13 +26,9 @@ spec:
         - name: STATSD_HOST
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
-          value: "8125" 
-        - name: CONSUL_HTTP_ADDR
-        {{- if .Values.edge.consul }}
-          value: "{{ .Values.edge.consul }}"
-        {{- else }}
-          value: "{{ .Release.Name }}-consul.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8500"
-        {{- end}}
+          value: "8125"
+        - name: NAMESPACE
+          value: "{{ .Release.Namespace }}"
         ports:
         - containerPort: 80
           name: http

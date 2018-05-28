@@ -243,15 +243,11 @@ def apply_env_args(application):
     apply_env_argument(application, legion.config.MODEL_ID[0])
     apply_env_argument(application, legion.config.MODEL_FILE[0])
 
-    apply_env_argument(application, legion.config.CONSUL_ADDR[0])
-    apply_env_argument(application, legion.config.CONSUL_PORT[0], cast=int)
-
     apply_env_argument(application, legion.config.LEGION_ADDR[0])
     apply_env_argument(application, legion.config.LEGION_PORT[0], cast=int)
     apply_env_argument(application, legion.config.IP_AUTODISCOVER[0], legion.utils.string_to_bool)
 
     apply_env_argument(application, legion.config.DEBUG[0], legion.utils.string_to_bool)
-    apply_env_argument(application, legion.config.REGISTER_ON_CONSUL[0], legion.utils.string_to_bool)
 
     apply_env_argument(application, legion.config.DEPLOYMENT[0])
     apply_env_argument(application, legion.config.NAMESPACE[0])
