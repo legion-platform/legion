@@ -145,11 +145,6 @@ node {
 			"""
 
             sh """
-    	    cd k8s/jupyterhub
-    	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/jupyterhub .
-    	    """
-
-            sh """
     	    cd k8s/grafana
     	    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-grafana .
     	    """
@@ -185,7 +180,7 @@ node {
         }
         stage('Publish Docker images'){
             if (params.PushDockerImages){
-                def images = ["legion/base-python-image", "legion/jupyterhub", "legion/k8s-edge", "legion/k8s-jenkins", "legion/k8s-grafana", "legion/k8s-edi", "legion/k8s-airflow"]
+                def images = ["legion/base-python-image", "legion/k8s-edge", "legion/k8s-jenkins", "legion/k8s-grafana", "legion/k8s-edi", "legion/k8s-airflow"]
 
                 images.each {
                     sh """

@@ -10,13 +10,6 @@ IPs:
   - 10.0.0.29
   - 35.170.177.113
 
-secrets:
-  ldap:
-    admin: "jonny"
-
-  jupyterHub:
-    cookieSecret: ""
-    secretToken: ""
 
 consul:
   enabled: true
@@ -117,84 +110,6 @@ grafana:
     tls:
       enabled: true
       autoSecretNameDeduction: true
-
-
-ldap:
-  # LDAP Configuration
-  server:
-    # LDAP Server
-    enabled: false
-    organisation: "DRun"
-    domain: "legion"
-
-    ports:
-      plain: 389
-      ssl: 636
-
-    image:
-      repository: "osixia/openldap"
-      tag: "1.1.10"
-      pullPolicy: "Always"
-
-    storage:
-      accessMode: "ReadWriteOnce"
-      size: "100m"
-
-
-  gui:
-    # LDAP GUI
-    enabled: false
-    replicas: 1
-    # endpoint: "localhost"
-
-    port: 80
-
-    image:
-      repository: "osixia/phpldapadmin"
-      tag: "0.7.1"
-      pullPolicy: "Always"
-
-    ingress:
-      enabled: true
-      annotations: {}
-      domain:
-        partial: ldap
-      tls:
-        enabled: true
-        autoSecretNameDeduction: true
-
-jupyterhub:
-  # Jupyter hub configuration
-  enabled: false
-
-  proxy:
-    secretToken: "1679182b276937843dbc0fe8a5a48b66a8dbf94f2e5bb67b27c8067253effeb7"
-    service:
-      type: ClusterIP 
-  
-  nfs:
-    enabled: false
-    port: 80
-
-    persistence:
-      enabled: true
-      storageClass: ""
-      accessMode: ReadWriteOnce
-      # existingClaim: ""
-      size: 20Gi
-
-    ingress:
-      enabled: true
-      annotations: {}
-      domain:
-        partial: nfs 
-      tls:
-        enabled: false
-
-  ingress:
-    enabled: true
-    hosts:
-    - jupyter.k8s-test.epm.kharlamov.biz
 
 nexus:
   # Nexus repository configuration
