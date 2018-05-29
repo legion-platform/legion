@@ -8,7 +8,7 @@ Library             legion_test.robot.Utils
 Connect to Airflow and check it
     [Documentation]  Connect to Airflow and check status
     [Tags]  airflow  airflow-api
-    Sleep                120s
+    Sleep                180s
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Airflow     ${enclave}
         ${dags} =                   Find Airflow DAGs
