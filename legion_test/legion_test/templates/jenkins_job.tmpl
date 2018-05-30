@@ -45,6 +45,7 @@
       <configVersion>2</configVersion>
       <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
+          <refspec>+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*</refspec>
           <url>${GitRepository}</url>
           {% if GIT_ROOT_KEY %}
           <credentialsId>{{GIT_ROOT_KEY}}</credentialsId>

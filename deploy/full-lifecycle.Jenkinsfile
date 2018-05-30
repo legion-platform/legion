@@ -115,8 +115,4 @@ node {
         throw e
     }
 
-    finally {
-        // Success or failure, always send notifications
-        currentBuild.result = "FAILED"
-    }
 }
