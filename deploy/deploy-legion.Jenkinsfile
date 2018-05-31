@@ -12,7 +12,7 @@ node {
         stage('Install tools package'){
                 sh '''
                 sudo rm -rf .venv
-                virtualenv .venv
+                virtualenv .venv -p $(which python3)
     
                 cd legion_test
                 ../.venv/bin/python3 setup.py develop
