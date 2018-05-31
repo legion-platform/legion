@@ -53,6 +53,8 @@ core:
 webserver:
   web_server_worker_timeout: 120
 
+  worker_refresh_interval: 30
+
   workers: 4
 
   worker_class: sync
