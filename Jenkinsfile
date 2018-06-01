@@ -182,7 +182,7 @@ node {
 
             stage('Publish Docker images'){
             if (params.PushDockerImages){
-                def images = ["legion/base-python-image", "legion/k8s-edge", "legion/k8s-jenkins", "legion/k8s-grafana", "legion/k8s-edi", "legion/k8s-airflow"]
+                def images = ["legion/base-python-image", "legion/jupyterhub", "legion/k8s-edge", "legion/k8s-jenkins", "legion/k8s-grafana", "legion/k8s-edi", "legion/k8s-airflow"]
 
                 images.each {
                     sh """
