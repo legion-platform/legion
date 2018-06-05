@@ -66,8 +66,9 @@
     content: "{{ helm_airflow_status_output.stdout }}"
     dest: "{{ tmp_dir }}/helm.airflow.{{ cluster_name }}.status"
 
-- name: "Make sure Airflow started successfuly"
+- name: "Make sure Airflow started successfully"
   shell: "curl -LsI https://airflow-{{ enclave }}.{{ cluster_name }}/admin/rest_api/api?api=version"
+  register: airflow_check
+  until: airflow_check.stdout.find('200') != -1
   retries: 60
   delay: 10
-  ignore_errors: true
