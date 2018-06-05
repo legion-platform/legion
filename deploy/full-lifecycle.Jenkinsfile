@@ -7,7 +7,7 @@ node {
             result = build job: params.BuildLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     booleanParam(name: 'PushDockerImages', value: true),
-                    booleanParam(name: 'EnableDockerCache', value: false),
+                    booleanParam(name: 'EnableDockerCache', value: true),
                     string(name: 'PyPiRepository', value: params.PyPiRepository),
                     string(name: 'PyPiDistributionTargetName', value: params.PyPiDistributionTargetName),
                     string(name: 'DockerRegistry', value: params.DockerRegistry),
