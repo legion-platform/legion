@@ -12,6 +12,14 @@ spec:
     rbac: {}
   kubeAPIServer:
     authorizationRbacSuperUser: admin
+{% if dex.enabled == true %}
+    oidcClientID: {{ dex.client_id }}
+    oidcGroupsClaim: groups
+    oidcIssuerURL: {{ dex.url }}
+    oidcUsernameClaim: email
+    runtimeConfig:
+      rbac.authorization.k8s.io/v1alpha1: "true"
+{% endif %}
   channel: stable
   cloudProvider: aws
   configBase: {{ state_store }}/{{ cluster_name }}
