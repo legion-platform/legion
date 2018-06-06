@@ -4,6 +4,17 @@ class Globals {
     static String localVersion = null
 }
 
+def UploadDockerImage(imageName) {
+    sh """
+    docker tag ${imageName} ${params.DockerRegistry}/${imageName}:latest
+    docker tag ${imageName} ${params.DockerRegistry}/${imageName}e:${Globals.baseVersion}
+    docker tag ${imageName} ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}-${Globals.localVersion}
+    docker push ${params.DockerRegistry}/${imageName}:latest
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}-${Globals.localVersion}
+    """
+}
+
 node {
     try {
         timestamps {
@@ -143,14 +154,7 @@ node {
                 cd base-python-image
                 docker build $dockerCacheArg -t legion/base-python-image .
                 """
-                sh """
-                docker tag legion/base-python-image ${params.DockerRegistry}/legion/base-python-image:latest
-                docker tag legion/base-python-image ${params.DockerRegistry}/legion/base-python-image:${Globals.baseVersion}
-                docker tag legion/base-python-image ${params.DockerRegistry}/legion/base-python-image:${Globals.baseVersion}-${Globals.localVersion}
-                docker push ${params.DockerRegistry}/legion/base-python-image:latest
-                docker push ${params.DockerRegistry}/legion/base-python-image:${Globals.baseVersion}
-                docker push ${params.DockerRegistry}/legion/base-python-image:${Globals.baseVersion}-${Globals.localVersion}
-                """
+                UploadDockerImage('legion/base-python-image')
             }
 
             parallel (
@@ -159,14 +163,7 @@ node {
                     cd k8s/grafana
                     docker build $dockerCacheArg --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-grafana .
                     """
-                    sh """
-                    docker tag legion/k8s-grafana ${params.DockerRegistry}/legion/k8s-grafana:latest
-                    docker tag legion/k8s-grafana ${params.DockerRegistry}/legion/k8s-grafana:${Globals.baseVersion}
-                    docker tag legion/k8s-grafana ${params.DockerRegistry}/legion/k8s-grafana:${Globals.baseVersion}-${Globals.localVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-grafana:latest
-                    docker push ${params.DockerRegistry}/legion/k8s-grafana:${Globals.baseVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-grafana:${Globals.baseVersion}-${Globals.localVersion}
-                    """
+                    UploadDockerImage('legion/k8s-grafana')
                 }, 'Build Edge Docker image': {
                     sh """
                     rm -rf k8s/edge/static/docs
@@ -178,53 +175,25 @@ node {
                     cd k8s/edge
                     docker build $dockerCacheArg -t legion/k8s-edge .
                     """
-                    sh """
-                    docker tag legion/k8s-edge ${params.DockerRegistry}/legion/k8s-edge:latest
-                    docker tag legion/k8s-edge ${params.DockerRegistry}/legion/k8s-edge:${Globals.baseVersion}
-                    docker tag legion/k8s-edge ${params.DockerRegistry}/legion/k8s-edge:${Globals.baseVersion}-${Globals.localVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-edge:latest
-                    docker push ${params.DockerRegistry}/legion/k8s-edge:${Globals.baseVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-edge:${Globals.baseVersion}-${Globals.localVersion}
-                    """
+                    UploadDockerImage('legion/k8s-edge')
                 }, 'Build Jenkins Docker image': {
                     sh """
                     cd k8s/jenkins
                     docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
                     """
-                    sh """
-                    docker tag legion/k8s-jenkins ${params.DockerRegistry}/legion/k8s-jenkins:latest
-                    docker tag legion/k8s-jenkins ${params.DockerRegistry}/legion/k8s-jenkins:${Globals.baseVersion}
-                    docker tag legion/k8s-jenkins ${params.DockerRegistry}/legion/k8s-jenkins:${Globals.baseVersion}-${Globals.localVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-jenkins:latest
-                    docker push ${params.DockerRegistry}/legion/k8s-jenkins:${Globals.baseVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-jenkins:${Globals.baseVersion}-${Globals.localVersion}
-                    """
+                    UploadDockerImage('legion/k8s-jenkins')
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi .
                     """
-                    sh """
-                    docker tag legion/k8s-edi ${params.DockerRegistry}/legion/k8s-edi:latest
-                    docker tag legion/k8s-edi ${params.DockerRegistry}/legion/k8s-edi:${Globals.baseVersion}
-                    docker tag legion/k8s-edi ${params.DockerRegistry}/legion/k8s-edi:${Globals.baseVersion}-${Globals.localVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-edi:latest
-                    docker push ${params.DockerRegistry}/legion/k8s-edi:${Globals.baseVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-edi:${Globals.baseVersion}-${Globals.localVersion}
-                    """
+                    UploadDockerImage('legion/k8s-edi')
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
                     docker build $dockerCacheArg -t legion/k8s-airflow .
                     """
-                    sh """
-                    docker tag legion/k8s-airflow ${params.DockerRegistry}/legion/k8s-airflow:latest
-                    docker tag legion/k8s-airflow ${params.DockerRegistry}/legion/k8s-airflow:${Globals.baseVersion}
-                    docker tag legion/k8s-airflow ${params.DockerRegistry}/legion/k8s-airflow:${Globals.baseVersion}-${Globals.localVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-airflow:latest
-                    docker push ${params.DockerRegistry}/legion/k8s-airflow:${Globals.baseVersion}
-                    docker push ${params.DockerRegistry}/legion/k8s-airflow:${Globals.baseVersion}-${Globals.localVersion}
-                    """
+                    UploadDockerImage('legion/k8s-airflow')
                 }, 'Run Python tests': {
                     sh """
                     cd legion
