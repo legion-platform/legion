@@ -83,3 +83,10 @@ airflow_pvc: 200m
 dashboard:
   version: "1.8.3"
   insecure: true
+
+# Dex
+dex:
+  enabled: false
+#  url: https://dex.domain.com
+#  client_id: cluster_name
+#  client_secret: secretP4ras3
