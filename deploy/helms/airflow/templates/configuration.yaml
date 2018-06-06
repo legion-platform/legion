@@ -98,6 +98,9 @@ web_server_port = 8080
 # The time the gunicorn webserver waits before timing out on a worker
 web_server_worker_timeout = {{ .Values.webserver.web_server_worker_timeout }}
 
+# Number of seconds to wait before refreshing a batch of workers.
+worker_refresh_interval = {{ .Values.webserver.worker_refresh_interval }}
+
 # Secret key used to run your flask app
 secret_key = {{ .Values.secrets.flask }}
 
