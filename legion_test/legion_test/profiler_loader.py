@@ -24,21 +24,21 @@ import yaml
 PROFILE_ENVIRON_KEY = 'PROFILE'
 
 
-def get_variables(arg):
+def get_variables(arg=None):
     """
     Gather and return all variables to robot
 
     :param arg: path to directory with profiles
-    :type args: str
+    :type args: str or None
     :return: dict[str, Any] -- values for robot
     """
+    # Build default path to profiles directory
+    if not arg:
+        arg = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'deploy', 'profiles'))
+
     profile = os.getenv(PROFILE_ENVIRON_KEY)
     if not profile:
         raise Exception('Cannot get profile - {} env variable is not set'.format(PROFILE_ENVIRON_KEY))
-
-    if not arg:
-        raise Exception('Cannot get profile - script should be run with one argument that '
-                        'provides path to profiles dir. Current argument: {}'.format(arg))
 
     profile = os.path.join(arg, '{}.yml'.format(profile))
     if not os.path.exists(profile):
@@ -58,9 +58,11 @@ def get_variables(arg):
         'SERVICE_PASSWORD': data['service_account']['password'],
 
         'JENKINS_JOBS': data['examples_to_test'],
+        'MODEL_ID': data['model_id_to_test'],
         'ENCLAVES': data.get('enclaves', []),
 
-        'CLUSTER_NAME': data['cluster_name']
+        'CLUSTER_NAME': data['cluster_name'],
+        'NEXUS_DOCKER_REPO': data['nexus_docker_repo']
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'

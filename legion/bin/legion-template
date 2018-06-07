@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+#
+#    Copyright 2018 EPAM Systems
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+import argparse
+import logging
+
+from legion.template import LegionTemplate
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Legion Template Engine is a command line interface '
+                                                 'for rendering Jinja2 templates based on File content '
+                                                 'or Enclaves details. \n'
+                                                 'It watches for any changes in sources and regenerates output.',
+                                     epilog='Copyright 2018 EPAM Systems',
+                                     formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('template', type=str, help='Template file path')
+    parser.add_argument('output', type=str, help='Output file path')
+    parser.add_argument('--command', '-c', type=str, help='Bash command to execute on render')
+    parser.add_argument('--signal', '-s', type=int, help='Signal number to send to a PID on render')
+    parser.add_argument('--pid', '-p', type=int, help='PID of a process to signal number on render')
+    parser.add_argument('--pid-file', '-f', type=str, help='PID file of a process to signal number on render')
+    parser.add_argument('--verbose',
+                        help='verbose log output',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    template_system = LegionTemplate(args.template, args.output, bash_command=args.command,
+                                     pid=args.pid, pid_file=args.pid_file, signal=args.signal)
+    template_system.render_loop()

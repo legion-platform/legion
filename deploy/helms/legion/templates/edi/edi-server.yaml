@@ -52,7 +52,7 @@ spec:
           readOnly: true
         ports:
         - containerPort: 80
-          name: http
+          name: api
           protocol: TCP
         livenessProbe:
           httpGet:
@@ -69,12 +69,13 @@ metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
     component: "{{ .Release.Name }}-edi"
+    legion.system: "yes"
     legion.component: "edi"
 spec:
   selector:
     component: "{{ .Release.Name }}-edi"
   ports:
-  - name: http
+  - name: api
     port: 80
     protocol: TCP
 ---
@@ -91,6 +92,8 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-edi"
+    legion.system: "yes"
+    legion.component: "edi"
   name: "{{ .Release.Name }}-edi"
 spec:
   rules:

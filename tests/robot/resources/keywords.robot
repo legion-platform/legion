@@ -31,7 +31,37 @@ Run EDI inspect
     [Arguments]           ${enclave}
     ${edi_state}=   Run   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
     Log                   EDI returns ${edi_state}
-    [Return]        ${edi_state}
+    [Return]              ${edi_state}
+
+Run EDI inspect with parse
+    [Arguments]           ${enclave}
+    ${edi_state} =        Run EDI inspect                                ${enclave}
+    ${parsed} =           Parse edi inspect columns info                 ${edi_state}
+    [Return]              ${parsed}
+
+Run EDI deploy
+    [Arguments]           ${enclave}    ${image}
+    ${edi_state} =  Run   legionctl deploy ${image} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+    Log                   EDI returns ${edi_state}
+    [Return]              ${edi_state}
+
+Run EDI undeploy with version
+    [Arguments]           ${enclave}    ${model_id}  ${model_version}
+    ${edi_state} =  Run   legionctl undeploy ${model_id} --model-version ${model_version} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+    Log                   EDI returns ${edi_state}
+    [Return]              ${edi_state}
+
+Run EDI undeploy without version
+    [Arguments]           ${enclave}    ${model_id}
+    ${edi_state} =  Run   legionctl undeploy ${model_id} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+    Log                   EDI returns ${edi_state}
+    [Return]              ${edi_state}
+
+Run EDI scale
+    [Arguments]           ${enclave}    ${model_id}     ${new_scale}
+    ${edi_state} =  Run   legionctl scale ${model_id} ${new_scale} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+    Log                   EDI returns ${edi_state}
+    [Return]              ${edi_state}
 
 Test model pipeline
     [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
@@ -43,6 +73,7 @@ Test model pipeline
     Log                  Model meta is ${model_meta}
     ${model_path} =      Get From Dictionary                ${model_meta}                 modelPath
     ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
+    ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
     ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
     ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
     Log                  External model URL is ${model_url}
@@ -50,7 +81,7 @@ Test model pipeline
     Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}
     Sleep                15s
-    Metric should be presented                              ${model_id}
+    Metric should be presented                              ${model_id}                   ${model_version}
     ${edi_state}=        Run      legionctl inspect --filter ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
     Log                  State of ${model_id} is ${edi_state}
 

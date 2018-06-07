@@ -55,8 +55,9 @@ metadata:
   name: "{{ .Release.Name }}-grafana"
   labels:
     component: "{{ .Release.Name }}-grafana"
-    legion/system: "yes"
-    legion/component: "grafana"
+    legion.system: "yes"
+    legion.component: "grafana"
+    legion.port: "80"
 spec:
   selector:
     component: "{{ .Release.Name }}-grafana"
@@ -79,6 +80,8 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-grafana"
+    legion.system: "yes"
+    legion.component: "grafana"
   name: "{{ .Release.Name }}-grafana"
 spec:
   rules:

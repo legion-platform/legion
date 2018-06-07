@@ -18,11 +18,14 @@ Flask package
 """
 import functools
 import os
+import logging
 
 import legion.config
 import legion.utils
 
 import flask
+
+LOGGER = logging.getLogger(__name__)
 
 
 def parse_multi_dict(multi_dict, map=None):
@@ -103,9 +106,14 @@ def provide_json_response(method):
         except legion.utils.EdiHTTPException as edi_http_exception:
             response = {'error': True, 'message': edi_http_exception.message}
             code = edi_http_exception.http_code
+            LOGGER.exception('Internal error during processing request for {}: {}'
+                             .format(method.__name__, edi_http_exception),
+                             exc_info=edi_http_exception)
         except Exception as exception:
             response = {'error': True, 'message': str(exception)}
             code = 500
+            LOGGER.exception('Exception during processing request for {}: {}'.format(method.__name__, exception),
+                             exc_info=exception)
 
         response = prepare_response(response)
         return flask.make_response(response, code)
@@ -243,17 +251,13 @@ def apply_env_args(application):
     apply_env_argument(application, legion.config.MODEL_ID[0])
     apply_env_argument(application, legion.config.MODEL_FILE[0])
 
-    apply_env_argument(application, legion.config.CONSUL_ADDR[0])
-    apply_env_argument(application, legion.config.CONSUL_PORT[0], cast=int)
-
     apply_env_argument(application, legion.config.LEGION_ADDR[0])
     apply_env_argument(application, legion.config.LEGION_PORT[0], cast=int)
-    apply_env_argument(application, legion.config.IP_AUTODISCOVER[0], legion.utils.string_to_bool)
 
     apply_env_argument(application, legion.config.DEBUG[0], legion.utils.string_to_bool)
-    apply_env_argument(application, legion.config.REGISTER_ON_CONSUL[0], legion.utils.string_to_bool)
 
-    apply_env_argument(application, legion.config.DEPLOYMENT[0])
+    apply_env_argument(application, legion.config.REGISTER_ON_GRAFANA[0], legion.utils.string_to_bool)
+
     apply_env_argument(application, legion.config.NAMESPACE[0])
 
     apply_env_argument(application, legion.config.LEGION_API_ADDR[0])

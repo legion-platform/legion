@@ -20,10 +20,11 @@ Flask app
 import logging
 
 import legion.config
-import legion.containers.k8s
+import legion.k8s
 import legion.external.grafana
 import legion.http
 import legion.io
+import legion.model
 from flask import Flask, Blueprint
 from flask import current_app as app
 
@@ -95,9 +96,9 @@ def root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, count=int, k8s_image=str)
+@legion.http.populate_fields(image=str, count=int)
 @legion.http.requested_fields('image')
-def deploy(image, count=1, k8s_image=None):
+def deploy(image, count=1):
     """
     Deploy API endpoint
 
@@ -105,45 +106,55 @@ def deploy(image, count=1, k8s_image=None):
     :type image: str
     :param count: count of pods to create
     :type count: int
-    :param k8s_image: Docker image for kubernetes deployment
-    :type k8s_image: str or None
     :return: bool -- True
     """
-    register_on_grafana = app.config['REGISTER_ON_GRAFANA']
-    legion.containers.k8s.deploy(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                 image, k8s_image, count,
-                                 register_on_grafana)
+    LOGGER.info('Command: deploy image {} with {} replicas'.format(image, count))
+    model_service = app.config['ENCLAVE'].deploy_model(image, count)
+
+    if app.config['REGISTER_ON_GRAFANA']:
+        if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
+            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
     return True
 
 
 @blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model=str, grace_period=int)
+@legion.http.populate_fields(model=str, version=str, grace_period=int)
 @legion.http.requested_fields('model')
-def undeploy(model, grace_period=0):
+def undeploy(model, version=None, grace_period=0):
     """
     Undeploy API endpoint
 
     :param model: model id
     :type model: str
+    :param version: (Optional) specific model version
+    :type version: str or None
     :param grace_period: grace period for removing
     :type grace_period: int
     :return: bool -- True
     """
-    register_on_grafana = app.config['REGISTER_ON_GRAFANA']
-    legion.containers.k8s.undeploy(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                   model, grace_period,
-                                   register_on_grafana)
+    # TODO: Add tests for multiple versions (parallel models)
+    LOGGER.info('Command: undeploy model with id={}, version={} with grace period {}s'
+                .format(model, version, grace_period))
+    model_services = app.config['ENCLAVE'].get_models_strict(model, version)
+
+    for model_service in model_services:
+        if app.config['REGISTER_ON_GRAFANA']:
+            if app.config['GRAFANA_CLIENT'].is_dashboard_exists(model, model_service.version):
+                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model, model_service.version)
+
+        model_service.delete(grace_period)
+
     return True
 
 
 @blueprint.route(build_blueprint_url(EDI_SCALE), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model=str, count=int)
-@legion.http.requested_fields('model')
-def scale(model, count):
+@legion.http.populate_fields(model=str, count=int, version=str)
+@legion.http.requested_fields('model', 'count')
+def scale(model, count, version=None):
     """
     Scale API endpoint
 
@@ -151,10 +162,16 @@ def scale(model, count):
     :type model: str
     :param count: count of pods to create
     :type count: int
+    :param version: (Optional) specific model version
+    :type version: str or None
     :return: bool -- True
     """
-    legion.containers.k8s.scale(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'],
-                                model, count)
+    LOGGER.info('Command: scale model with id={}, version={} to {} replicas'.format(model, version, count))
+    model_services = app.config['ENCLAVE'].get_models_strict(model, version)
+
+    for model_service in model_services:
+        model_service.scale = count
+
     return True
 
 
@@ -167,9 +184,42 @@ def inspect():
 
     :return: dict -- state of cluster models
     """
-    model_deployments = legion.containers.k8s.inspect(app.config['CLUSTER_STATE'], app.config['CLUSTER_SECRETS'])
-    # TODO: Change transform to dict algorithm
-    return [{f: getattr(x, f) for f in x._fields} for x in model_deployments]
+    LOGGER.info('Command: inspect')
+    model_deployments = []
+    for model_service in app.config['ENCLAVE'].models.values():
+        model_api_info = {}
+
+        model_client = legion.model.ModelClient(
+            model_id=model_service.id,
+            host=model_service.url,
+            timeout=3
+        )
+        LOGGER.info('Building model client: {!r}'.format(model_client))
+
+        try:
+            model_api_info['result'] = model_client.info()
+            model_api_ok = True
+        except Exception as model_api_exception:
+            LOGGER.error('Cannot connect to model <{}> endpoint to get info: {}'.format(model_service,
+                                                                                        model_api_exception))
+            model_api_info['exception'] = str(model_api_exception)
+            model_api_ok = False
+
+        model_deployments.append(
+            legion.k8s.ModelDeploymentDescription(
+                status=model_service.status,
+                model=model_service.id,
+                version=model_service.version,
+                image=model_service.image,
+                scale=model_service.desired_scale,
+                ready_replicas=model_service.scale,
+                namespace=model_service.namespace,
+                model_api_ok=model_api_ok,
+                model_api_info=model_api_info,
+            )
+        )
+
+    return [x._asdict() for x in model_deployments]
 
 
 @blueprint.route(build_blueprint_url(EDI_INFO), methods=['GET'])
@@ -199,15 +249,25 @@ def create_application():
 
 def load_cluster_config(application):
     """
-    Load cluster configuration into Flask
+    Load cluster configuration into Flask config
 
     :param application: Flask app instance
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    application.config['CLUSTER_SECRETS'] = legion.containers.k8s.load_secrets(
+    if not application.config['NAMESPACE']:
+        application.config['NAMESPACE'] = legion.k8s.get_current_namespace()
+
+    application.config['ENCLAVE'] = legion.k8s.Enclave(application.config['NAMESPACE'])
+
+    application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(
         application.config['CLUSTER_SECRETS_PATH'])
-    application.config['CLUSTER_STATE'] = legion.containers.k8s.load_config(application.config['CLUSTER_CONFIG_PATH'])
+    application.config['CLUSTER_STATE'] = legion.k8s.load_config(application.config['CLUSTER_CONFIG_PATH'])
+
+    grafana_client = legion.external.grafana.GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
+                                                           application.config['CLUSTER_SECRETS']['grafana.user'],
+                                                           application.config['CLUSTER_SECRETS']['grafana.password'])
+    application.config['GRAFANA_CLIENT'] = grafana_client
 
 
 def init_application(args=None):
@@ -238,9 +298,12 @@ def serve(args):
     logging.info('Legion api server initializing')
     application = init_application(args)
 
-    application.run(host=application.config['LEGION_API_ADDR'],
-                    port=application.config['LEGION_API_PORT'],
-                    debug=application.config['DEBUG'],
-                    use_reloader=False)
+    try:
+        application.run(host=application.config['LEGION_API_ADDR'],
+                        port=application.config['LEGION_API_PORT'],
+                        debug=application.config['DEBUG'],
+                        use_reloader=False)
 
-    return application
+        return application
+    except Exception as run_exception:
+        LOGGER.exception('EDI server exited with exception', exc_info=run_exception)

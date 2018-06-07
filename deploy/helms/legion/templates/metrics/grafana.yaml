@@ -46,7 +46,7 @@ spec:
           timeoutSeconds: 1
         ports:
         - containerPort: 3000
-          name: http
+          name: api
           protocol: TCP
 ---
 apiVersion: v1
@@ -55,13 +55,14 @@ metadata:
   name: "{{ .Release.Name }}-grafana"
   labels:
     component: "{{ .Release.Name }}-grafana"
-    legion/system: "yes"
-    legion/component: "grafana"
+    legion.system: "yes"
+    legion.component: "grafana"
+    legion.port: "80"
 spec:
   selector:
     component: "{{ .Release.Name }}-grafana"
   ports:
-  - name: http
+  - name: api
     port: 80
     targetPort: 3000
     protocol: TCP
@@ -79,6 +80,8 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-grafana"
+    legion.system: "yes"
+    legion.component: "grafana"
   name: "{{ .Release.Name }}-grafana"
 spec:
   rules:

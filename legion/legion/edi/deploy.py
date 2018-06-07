@@ -27,7 +27,7 @@ import docker.errors
 import legion.config
 import legion.containers.docker
 import legion.containers.headers
-import legion.containers.k8s
+import legion.k8s
 import legion.external.edi
 import legion.external.grafana
 import legion.io
@@ -219,10 +219,10 @@ def undeploy_kubernetes(args):
     """
     edi_client = legion.external.edi.build_client(args)
     try:
-        edi_client.undeploy(args.model_id, args.grace_period)
+        edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
     except Exception as exception:
-        if 'Cannot find deployment' in str(exception) and args.ignore_not_found:
-            print('Cannot find deployment - ignoring')
+        if 'No one model can be found' in str(exception) and args.ignore_not_found:
+            print('Cannot find any deployment - ignoring')
             return
         else:
             raise exception
@@ -245,7 +245,7 @@ def scale_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    edi_client.scale(args.model_id, args.scale)
+    edi_client.scale(args.model_id, args.scale, args.model_version)
 
 
 def deploy_kubernetes(args):
@@ -343,29 +343,14 @@ def deploy_model(args):
         exposing_port = args.expose_model_port
         ports['%d/tcp' % os.getenv(*legion.config.LEGION_PORT)] = exposing_port
 
-    environment = {}
-    envs_to_copy_in_new_container = (
-        legion.config.REGISTER_ON_CONSUL[0],
-    )
-
-    for env in envs_to_copy_in_new_container:
-        if env in os.environ:
-            environment[env] = os.environ.get(env)
-
     LOGGER.info('Starting container with image #%s for model %s', image.short_id, model_id)
     container = client.containers.run(image,
                                       network=network_id,
                                       stdout=True,
                                       stderr=True,
                                       detach=True,
-                                      environment=environment,
                                       ports=ports,
                                       labels=container_labels)
-
-    if legion.utils.string_to_bool(os.getenv(*legion.config.REGISTER_ON_GRAFANA)):
-        LOGGER.info('Creating Grafana dashboard for model %s' % (model_id,))
-        grafana_client = legion.external.grafana.build_client(args)
-        grafana_client.create_dashboard_for_model_by_labels(container_labels)
 
     print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
     return container

@@ -21,6 +21,7 @@ import datetime
 import getpass
 import json
 import os
+import os.path
 import sys
 import tempfile
 import zipfile

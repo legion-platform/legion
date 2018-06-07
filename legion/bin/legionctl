@@ -153,9 +153,11 @@ if __name__ == '__main__':
     scale_k8s_parser = subparsers.add_parser('scale',
                                              description='change count of model pods')
     scale_k8s_parser.add_argument('model_id',
-                                  type=str, help='docker image')
+                                  type=str, help='model ID')
     scale_k8s_parser.add_argument('scale',
                                   type=int, help='new count of replicas')
+    scale_k8s_parser.add_argument('--model-version',
+                                  type=str, help='model version')
     scale_k8s_parser.add_argument('--edi',
                                   type=str, help='EDI server host')
     scale_k8s_parser.add_argument('--user',
@@ -169,7 +171,9 @@ if __name__ == '__main__':
     undeploy_k8s_parser = subparsers.add_parser('undeploy',
                                                 description='undeploy model deployment')
     undeploy_k8s_parser.add_argument('model_id',
-                                     type=str, help='docker image')
+                                     type=str, help='model ID')
+    undeploy_k8s_parser.add_argument('--model-version',
+                                     type=str, help='model version')
     undeploy_k8s_parser.add_argument('--grace-period',
                                      default=0,
                                      type=int, help='removal grace period')
@@ -191,19 +195,11 @@ if __name__ == '__main__':
                                 type=str)
     pyserve_parser.add_argument('--model-id',
                                 type=str)
-    pyserve_parser.add_argument('--consul-addr',
-                                type=str, help='Consul Agent IP address')
-    pyserve_parser.add_argument('--consul-port',
-                                type=int, help='Consul Agent port')
     pyserve_parser.add_argument('--legion-addr',
                                 type=str)
     pyserve_parser.add_argument('--legion-port',
                                 type=int)
     pyserve_parser.add_argument('--debug',
-                                type=legion.utils.string_to_bool)
-    pyserve_parser.add_argument('--register-on-consul',
-                                type=legion.utils.string_to_bool)
-    pyserve_parser.add_argument('--legion-autodiscover',
                                 type=legion.utils.string_to_bool)
     pyserve_parser.set_defaults(func=serve_model)
 

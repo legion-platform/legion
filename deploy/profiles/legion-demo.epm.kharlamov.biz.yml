@@ -68,8 +68,8 @@ service_account:
   password: admin
 examples_to_test:
   - Test-Summation
-  - Sklearn-Income
   - Digit-Recognition
+model_id_to_test: income
 enclaves:
   - company-a
   - company-b

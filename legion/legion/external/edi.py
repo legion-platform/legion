@@ -21,7 +21,7 @@ import json
 import logging
 import os
 
-import legion.containers.k8s
+import legion.k8s
 import legion.edi.server
 import legion.config
 import requests
@@ -107,7 +107,7 @@ class EdiClient:
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
         """
         answer = self._query(legion.edi.server.EDI_INSPECT)
-        return [legion.containers.k8s.ModelDeploymentDescription(**x) for x in answer]
+        return [legion.k8s.ModelDeploymentDescription(**x) for x in answer]
 
     def info(self):
         """
@@ -139,7 +139,7 @@ class EdiClient:
 
         return self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']
 
-    def undeploy(self, model, grace_period=0):
+    def undeploy(self, model, grace_period=0, version=None):
         """
         Undeploy API endpoint
 
@@ -147,17 +147,23 @@ class EdiClient:
         :type model: str
         :param grace_period: grace period for removing
         :type grace_period: int
+        :param version: (Optional) model version
+        :type version: str
         :return: bool -- True
         """
         payload = {
             'model': model
         }
+
         if grace_period:
             payload['grace_period'] = grace_period
 
+        if version:
+            payload['version'] = version
+
         return self._query(legion.edi.server.EDI_UNDEPLOY, action='POST', payload=payload)['status']
 
-    def scale(self, model, count):
+    def scale(self, model, count, version=None):
         """
         Scale model
 
@@ -165,12 +171,17 @@ class EdiClient:
         :type model: str
         :param count: count of pods to create
         :type count: int
+        :param version: (Optional) model version
+        :type version: str
         :return: bool -- True
         """
         payload = {
             'model': model,
             'count': count
         }
+        if version:
+            payload['version'] = version
+
         return self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload)['status']
 
 

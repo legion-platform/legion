@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM openresty/openresty:alpine
+FROM openresty/openresty:1.13.6.2-alpine
 
 # Dumb-init
 ENV DUMB_INIT_VERSION 1.2.0
@@ -27,13 +27,14 @@ RUN set -ex \
   && chmod +x /usr/bin/dumb-init \
   && apk del .install-deps
 
-# Consul templates
-ENV CTMPL_VERSION 0.19.3
-RUN set -x \
-  && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl \
-  && wget https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_linux_amd64.zip \
-  && unzip -d /bin consul-template_${CTMPL_VERSION}_linux_amd64.zip \
-  && apk del .install-deps
+# Python3
+RUN apk update \
+  && apk add python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
+  && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0
+
+RUN python3 -m pip install --upgrade pip==9.0.3
+RUN python3 -m pip install "Pillow==5.0.0"
+RUN python3 -m pip install "numpy==1.14.3"
 
 # LUA
 RUN set -x \
@@ -41,12 +42,17 @@ RUN set -x \
   && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
   && apk del .install-deps
 
+# Install Legion
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
+
+RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
+
 # Staff
 COPY start.sh /start.sh
 COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 COPY static /static
-COPY nginx.conf.ctmpl /nginx.conf.ctmpl
+COPY nginx.conf.ltmpl /nginx.conf.ltmpl
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]
-

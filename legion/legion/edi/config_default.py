@@ -21,8 +21,7 @@ Default config for legion
 LEGION_API_ADDR = '0.0.0.0'
 LEGION_API_PORT = 5001
 
-DEPLOYMENT = 'legion'
-NAMESPACE = 'default'
+NAMESPACE = ''
 
 DEBUG = False
 

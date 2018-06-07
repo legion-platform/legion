@@ -156,7 +156,6 @@ node {
                 """
                 UploadDockerImage('legion/base-python-image')
             }
-
             parallel (
                 'Build Grafana Docker image': {
                     sh """
@@ -182,6 +181,12 @@ node {
                     docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
                     """
                     UploadDockerImage('legion/k8s-jenkins')
+                }, 'Build Bare model': {
+                    sh """
+                    cd k8s/test-bare-model-api
+                    docker build $dockerCacheArg -t legion/test-bare-model-api .
+                    """
+                    UploadDockerImage('legion/test-bare-model-api')
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi

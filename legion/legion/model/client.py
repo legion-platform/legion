@@ -48,7 +48,7 @@ class ModelClient:
     Model HTTP client
     """
 
-    def __init__(self, model_id, host=None, http_client=None, use_relative_url=False):
+    def __init__(self, model_id, host=None, http_client=None, use_relative_url=False, timeout=None):
         """
         Build client
 
@@ -60,6 +60,8 @@ class ModelClient:
         :type http_client: python class that implements requests-like post & get methods
         :param use_relative_url: use non-full get/post requests (useful for locust)
         :type use_relative_url: bool
+        :param timeout: timeout for connections
+        :type timeout: int
         """
         self._model_id = normalize_name(model_id)
 
@@ -73,10 +75,25 @@ class ModelClient:
         else:
             self._http_client = requests
 
-        if use_relative_url:
+        self._use_relative_url = use_relative_url
+        if self._use_relative_url:
             self._host = ''
         else:
             self._host = self._host.rstrip('/')
+
+        self._timeout = timeout
+
+    def __repr__(self):
+        """
+        Get string representation of model client
+
+        :return: str -- model client information
+        """
+        return '{}({!r}, {!r}, {!r}, {!r}, {!r})'.format(self.__class__.__name__,
+                                                         self._model_id, self._host,
+                                                         self._http_client, self._use_relative_url, self._timeout)
+
+    __str__ = __repr__
 
     @property
     def api_url(self):
@@ -143,7 +160,9 @@ class ModelClient:
             else:
                 post_fields_list.append((k, v))
 
-        response = self._http_client.post(self.invoke_url, data=post_fields_list, files=post_files)
+        response = self._http_client.post(self.invoke_url,
+                                          data=post_fields_list, files=post_files,
+                                          timeout=self._timeout)
 
         return self._parse_response(response)
 
@@ -153,6 +172,7 @@ class ModelClient:
 
         :return: dict -- parsed model info
         """
-        response = self._http_client.get(self.info_url)
+        response = self._http_client.get(self.info_url,
+                                         timeout=self._timeout)
 
         return self._parse_response(response)

@@ -5,3 +5,5 @@ robotframework-seleniumlibrary==3.1.1
 requests==2.9.1
 PyYAML==3.12
 kubernetes==5.0.0
+aionotify==0.2.0
+pyopenssl==18.0.0

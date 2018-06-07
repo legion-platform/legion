@@ -17,6 +17,7 @@ spec:
       labels:
         component: "{{ .Release.Name }}-edge"
     spec:
+      serviceAccountName: edge
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
@@ -25,16 +26,10 @@ spec:
         - name: STATSD_HOST
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
-          value: "8125" 
-        - name: CONSUL_HTTP_ADDR
-        {{- if .Values.edge.consul }}
-          value: "{{ .Values.edge.consul }}"
-        {{- else }}
-          value: "{{ .Release.Name }}-consul.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8500"
-        {{- end}}
+          value: "8125"
         ports:
         - containerPort: 80
-          name: http
+          name: api
           protocol: TCP
         livenessProbe:
           httpGet:
@@ -67,11 +62,13 @@ metadata:
   name: "{{ .Release.Name }}-edge"
   labels:
     component: "{{ .Release.Name }}-edge"
+    legion.system: "yes"
+    legion.component: "edge"
 spec:
   selector:
     component: "{{ .Release.Name }}-edge"
   ports:
-  - name: http
+  - name: api
     port: 80
     protocol: TCP
 ---
@@ -88,6 +85,8 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-edge"
+    legion.system: "yes"
+    legion.component: "edge"
   name: "{{ .Release.Name }}-edge"
 spec:
   rules:

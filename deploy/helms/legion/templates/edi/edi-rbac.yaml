@@ -6,10 +6,10 @@ metadata:
   name: edi
 rules:
 - apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "deployments", "replicasets", "services"]
+  resources: ["pods", "deployments", "replicasets", "services", "ingresses"]
   verbs: ["get", "watch", "list", "create", "delete"]
 - apiGroups: ["extensions"]
-  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services"]
+  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services", "ingresses"]
   verbs:  ["get", "watch", "list", "create", "delete", "deletecollection", "patch", "update"]
 - apiGroups: ["apps"]
   resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services"]
