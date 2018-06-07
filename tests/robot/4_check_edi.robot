@@ -21,7 +21,7 @@ Check EDI deploy and undeploy procedure
     [Documentation]  Try to deploy and undeploy dummy model trough EDI console
     [Tags]  edi  cli  enclave
     Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            5
+    Sleep            15
 
     ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
@@ -45,7 +45,7 @@ Check EDI scale procedure
     [Documentation]  Try to deploy, scale and undeploy dummy model trough EDI console
     [Tags]  edi  cli  enclave
     Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            5
+    Sleep            15
 
     ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
