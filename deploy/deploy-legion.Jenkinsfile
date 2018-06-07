@@ -75,6 +75,12 @@ node {
             if (params.UseRegressionTests){
                 withAWS(credentials: 'kops') {
                     sh '''
+                    cd legion
+                    ../.venv/bin/pip install -r requirements/base.txt
+                    ../.venv/bin/pip install -r requirements/test.txt
+                    ../.venv/bin/python setup.py develop
+                    cd ..
+                    
                     cd legion_test
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
