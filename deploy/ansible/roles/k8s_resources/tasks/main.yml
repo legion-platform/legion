@@ -5,6 +5,7 @@
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
 - include: ingress.yaml
+- include: oauth2-proxy.yaml
 - include: dashboard.yaml
 - include: autoscaler.yaml
 - include: prometheus.yaml

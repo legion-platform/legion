@@ -1,0 +1,11 @@
+---
+- name: Create Dex oauth2-proxy configuration (values) file
+  template:
+    src: oauth2-proxy.yml.j2
+    dest: "{{ tmp_dir }}/oauth2-proxy.{{ cluster_name }}.yml"
+    mode: 0644
+  when: dex.enabled
+
+- name: Install Dex oauth2-proxy
+  command: "helm --kube-context {{ cluster_name }} install oauth2-proxy --name dex-auth --namespace kube-system -f {{ tmp_dir }}/oauth2-proxy.{{ cluster_name }}.yml"
+  when: dex.enabled

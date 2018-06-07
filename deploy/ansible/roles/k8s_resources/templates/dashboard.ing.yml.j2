@@ -4,6 +4,7 @@ metadata:
   annotations:
 {% if dashboard.insecure != true %}
     nginx.ingress.kubernetes.io/secure-backends: "true"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "true"
 {% endif %}
   labels:
     k8s-app: kubernetes-dashboard
