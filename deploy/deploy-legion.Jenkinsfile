@@ -96,7 +96,8 @@ node {
                     echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
                     kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-                    DISPLAY=:99 PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+                    PATH=../../.venv/bin:$PATH DISPLAY=:99 \
+                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
                      ../../.venv/bin/python3 -m robot.run *.robot || true
 
                     echo "Starting python tests"
