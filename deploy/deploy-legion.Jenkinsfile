@@ -80,7 +80,7 @@ node {
                     ../.venv/bin/pip install -r requirements/test.txt
                     ../.venv/bin/python setup.py develop
                     cd ..
-                    
+
                     cd legion_test
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
@@ -104,7 +104,7 @@ node {
 
                     kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
                     PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-                    ../../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html || true
+                    ../../.venv/bin/nosetests --with-xunit || true
                     '''
                     step([
                         $class : 'RobotPublisher',
