@@ -1,4 +1,10 @@
 ---
+
+- name: Remove dex oauth2-proxy
+  command: "helm --kube-context {{ cluster_name }} del --purge dex-auth"
+  ignore_errors: true
+  when: dex.enabled
+
 - name: Create Dex oauth2-proxy configuration (values) file
   template:
     src: oauth2-proxy.yml.j2
