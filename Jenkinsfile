@@ -61,6 +61,19 @@ node {
     		cd -
     		"""
 
+            print('Build and distributing etl')
+            sh """
+              cp legion/legion/version.py etl/etl/version.py
+              cd etl
+              ../.venv/bin/pip install -r requirements/base.txt
+              ../.venv/bin/pip install -r requirements/test.txt
+              ../.venv/bin/python3 setup.py sdist
+              ../.venv/bin/python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+              ../.venv/bin/python3 setup.py bdist_wheel
+              ../.venv/bin/python3 setup.py develop
+              cd -
+            """
+
             print('Build and distributing legion')
             sh """
     		cd legion
@@ -102,6 +115,17 @@ node {
     		../.venv/bin/pylint tests >> pylint.log || exit 0
     		cd ..
     		'''
+            sh '''
+              cd etl
+              ../.venv/bin/pycodestyle slack
+              ../.venv/bin/pycodestyle tests
+              ../.venv/bin/pydocstyle slack
+
+              export TERM="linux"
+              ../.venv/bin/pylint slack >> pylint.log || exit 0
+              ../.venv/bin/pylint tests >> pylint.log || exit 0
+              cd ..
+            '''
 
             archiveArtifacts 'legion/pylint.log'
             warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
@@ -174,7 +198,7 @@ node {
 
             sh """
     	    cd k8s/airflow
-    	    docker build $dockerCacheArg -t legion/k8s-airflow .
+          docker build $dockerCacheArg -t legion/k8s-airflow --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" .
     	    """
         }
         stage('Publish Docker images'){

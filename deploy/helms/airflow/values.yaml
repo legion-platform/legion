@@ -76,6 +76,11 @@ smtp:
   smtp_password: airflow
   smtp_mail_from: airflow@airflow.local
 
+slack:
+  username: airflow
+  channel: airflow
+  token: airflow
+
 celery:
   celery_app_name: airflow.executors.celery_executor
   celeryd_concurrency: 16
