@@ -25,7 +25,7 @@ import time
 
 import asyncio
 
-from legion.template import LegionTemplate
+from legion.template import LegionTemplateEngine
 
 TEST_FILES_LOCATION = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -39,7 +39,7 @@ def _setup_template_value(value_file_name, source_file_name):
     shutil.copyfile(source, target)
 
 
-class TestLegionTemplate(unittest2.TestCase):
+class TestLegionTemplateEngine(unittest2.TestCase):
     """
     Unit tests for template system
     """
@@ -137,7 +137,7 @@ class TemplateRenderThread(Thread):
         try:
             self.event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.event_loop)
-            template_system = LegionTemplate(self.template_path, self.output_path)
+            template_system = LegionTemplateEngine(self.template_path, self.output_path)
             template_system.render_loop()
         except Exception as exception:
             self.raised_exception = exception

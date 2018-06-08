@@ -40,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Enclave:
-    """
+    """l
     Contains overall information about enclave, its services and models
     """
 
@@ -234,8 +234,9 @@ class Enclave:
         k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
         if self.get_models(model_id, model_version):
-            raise Exception('Cannot deploy second model with id={} and version={}'.format(model_id, model_version))
+            raise Exception('Duplicating model id and version (id={}, version={})'.format(model_id, model_version))
 
+        # REFACTOR, maybe we should remove that
         container_env_variables = {
             legion.config.STATSD_HOST[0]: self.graphite_service.internal_domain,
             legion.config.STATSD_PORT[0]: str(self.graphite_service.internal_port)
@@ -251,13 +252,13 @@ class Enclave:
             ],
             ports=[kubernetes.client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
 
-        template = kubernetes.client.V1PodTemplateSpec(
+        pod_template = kubernetes.client.V1PodTemplateSpec(
             metadata=kubernetes.client.V1ObjectMeta(labels=compatible_labels),
             spec=kubernetes.client.V1PodSpec(containers=[container]))
 
         deployment_spec = kubernetes.client.ExtensionsV1beta1DeploymentSpec(
             replicas=count,
-            template=template)
+            template=pod_template)
 
         deployment = kubernetes.client.ExtensionsV1beta1Deployment(
             api_version="extensions/v1beta1",
@@ -273,8 +274,6 @@ class Enclave:
             namespace=self.namespace)
 
         # Creating a service
-        core_v1api = kubernetes.client.CoreV1Api(client)
-
         service_selector = {k: v for k, v in compatible_labels.items()
                             if k in [legion.containers.headers.DOMAIN_MODEL_ID,
                                      legion.containers.headers.DOMAIN_MODEL_VERSION]}
@@ -288,6 +287,8 @@ class Enclave:
             kind='Service',
             metadata=kubernetes.client.V1ObjectMeta(name=k8s_name, labels=compatible_labels),
             spec=service_spec)
+
+        core_v1api = kubernetes.client.CoreV1Api(client)
 
         LOGGER.info('Creating service {} in namespace {}'.format(k8s_name, self.namespace))
         core_v1api.create_namespaced_service(

@@ -30,12 +30,12 @@ from jinja2 import Environment, FileSystemLoader, Undefined
 LOGGER = logging.getLogger(__name__)
 
 
-class LegionTemplate:
+class LegionTemplateEngine:
     """
     Extensible template system
     """
 
-    def __init__(self, template_file, output_file, bash_command=None, signal=None, pid=None, pid_file=None):
+    def __init__(self, template_file, output_file, command=None, signal=None, pid=None, pid_file=None):
         """
         Initialize template system
 
@@ -43,8 +43,8 @@ class LegionTemplate:
         :type template_file: str
         :param output_file: target file
         :type output_file: str
-        :param bash_command: (Optional) bash command to execute on file render
-        :type bash_command: str
+        :param command: (Optional) bash command to execute on file render
+        :type command: str
         :param signal: (Optional) signal id, that is sent to a process on render
         :type signal: int
         :param pid: (Optional) process id, that receives signal on render
@@ -52,11 +52,11 @@ class LegionTemplate:
         :param pid_file: (Optional) process id file, that receives signal on render
         :type pid_file: str
         """
-        LOGGER.debug('Creating LegionTemplate instance for source={}, destination={}'
+        LOGGER.debug('Creating LegionTemplateEngine instance for source={}, destination={}'
                      .format(template_file, output_file))
         self._template_file = template_file
         self._output_file = output_file
-        self._bash_command = bash_command
+        self._command = command
         self._signal = signal
         self._pid = pid
         self._pid_file = pid_file
@@ -149,8 +149,8 @@ class LegionTemplate:
             file_stream.write(content)
 
         # Notify targets
-        if self._bash_command:
-            os.system(self._bash_command)
+        if self._command:
+            os.system(self._command)
         if self._signal and self._pid:
             os.kill(self._pid, self._signal)
         if self._signal and self._pid_file and os.path.exists(self._pid_file):

@@ -16,8 +16,12 @@
 """
 Enclave models Notifier module for Legion Template
 """
+import logging
+
 from legion.k8s import Enclave
 from legion.k8s.utils import get_current_namespace
+
+LOGGER = logging.getLogger(__name__)
 
 
 async def enclave_models_monitor(template_system):
@@ -27,7 +31,12 @@ async def enclave_models_monitor(template_system):
     :param template_system: Object, that contains 'render' callback function
     :return: None
     """
-    enclave = Enclave(get_current_namespace())
+    namespace = get_current_namespace()
+    LOGGER.info('Starting models monitor in namespace {}'.format(namespace))
+
+    enclave = Enclave(namespace)
+    LOGGER.info('Loaded enclave {}'.format(enclave))
 
     for new_state in enclave.watch_model_service_endpoints_state():
+        LOGGER.info('Got updated model state')
         template_system.render(models=new_state)

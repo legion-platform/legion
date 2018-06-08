@@ -15,31 +15,24 @@
 #
 FROM openresty/openresty:1.13.6.2-alpine
 
-# Dumb-init
 ENV DUMB_INIT_VERSION 1.2.0
+
+# Dumb-init, python3, lua
 RUN set -ex \
   && apk add --no-cache --virtual .install-deps openssl \
+       python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
+       ca-certificates gnupg openssl git curl luarocks5.3 \
+       luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64" \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/sha256sums" \
   && grep "dumb-init_${DUMB_INIT_VERSION}_amd64$" sha256sums | sha256sum -c \
   && rm sha256sums \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
   && chmod +x /usr/bin/dumb-init \
-  && apk del .install-deps
-
-# Python3
-RUN apk update \
-  && apk add python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
-  && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0
-
-RUN python3 -m pip install --upgrade pip==9.0.3
-RUN python3 -m pip install "Pillow==5.0.0"
-RUN python3 -m pip install "numpy==1.14.3"
-
-# LUA
-RUN set -x \
-  && apk add --no-cache --virtual .install-deps ca-certificates gnupg openssl git curl luarocks5.3 \
-  && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
+  && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0 \
+  && python3 -m pip install --upgrade pip==9.0.3 \
+  && python3 -m pip install "Pillow==5.0.0" \
+  && python3 -m pip install "numpy==1.14.3" \
   && apk del .install-deps
 
 # Install Legion
