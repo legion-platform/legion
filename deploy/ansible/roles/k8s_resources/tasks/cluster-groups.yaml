@@ -2,8 +2,7 @@
 
 - name: Set cluster-admin groups
   command: "kubectl --context {{ cluster_name }} set subject clusterrolebinding cluster-admin --group={{ item }}"
-  with_items:
-  - dex.groups.cluster-admin
+  with_items: dex.groups.cluster-admin
   when: dex.enabled
 
 - name: Create view clusterrolebinding
@@ -12,6 +11,5 @@
 
 - name: Set view groups
   command: "kubectl --context {{ cluster_name }} set subject clusterrolebinding view --group={{ item }}"
-  with_items:
-  - dex.groups.view
+  with_items: dex.groups.view
   when: dex.enabled
