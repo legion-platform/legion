@@ -20,9 +20,9 @@ ENV DUMB_INIT_VERSION 1.2.0
 # Dumb-init, python3, lua
 RUN set -ex \
   && apk add --no-cache --virtual .install-deps openssl \
-       python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
+       python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
        ca-certificates gnupg openssl git curl luarocks5.3 \
-       luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
+  && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64" \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/sha256sums" \
   && grep "dumb-init_${DUMB_INIT_VERSION}_amd64$" sha256sums | sha256sum -c \
@@ -32,8 +32,7 @@ RUN set -ex \
   && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0 \
   && python3 -m pip install --upgrade pip==9.0.3 \
   && python3 -m pip install "Pillow==5.0.0" \
-  && python3 -m pip install "numpy==1.14.3" \
-  && apk del .install-deps
+  && python3 -m pip install "numpy==1.14.3"
 
 # Install Legion
 ARG pip_extra_index_params=""

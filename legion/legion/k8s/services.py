@@ -67,7 +67,7 @@ class Service:
 
         self._port = api_ports[0]
 
-        self._data_loaded = False
+        self._ingress_data_loaded = False
 
         self._public_url = None
 
@@ -92,29 +92,29 @@ class Service:
         return k8s_service.metadata.labels and all(header in k8s_service.metadata.labels
                                                    for header in [LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL])
 
-    def _load_data(self):
+    def _load_ingress_data(self):
         """
-        Load all required data (lazy loading)
+        Load ingress data (lazy loading)
 
         :return: None
         """
-        if self._data_loaded:
+        if self._ingress_data_loaded:
             return
 
         self._ingress = legion.k8s.utils.get_ingress(self._k8s_service.metadata.namespace, self.name)
         if self._ingress:
             self._public_url = legion.k8s.utils.get_ingress_url(self._ingress)
 
-        self._data_loaded = True
+        self._ingress_data_loaded = True
 
-    def reload_cache(self):
+    def reload_ingress_cache(self):
         """
-        Reload all cached data
+        Reload all cached data about ingress
 
         :return: None
         """
-        self._data_loaded = False
-        self._load_data()
+        self._ingress_data_loaded = False
+        self._load_ingress_data()
 
     @property
     def name(self):
@@ -133,7 +133,7 @@ class Service:
 
         :return: str or None -- public URL of service if service linked to ingress
         """
-        self._load_data()
+        self._load_ingress_data()
         return self._public_url
 
     @property
@@ -209,6 +209,7 @@ class ModelService(Service):
         self._model_version = k8s_service.metadata.labels.get(DOMAIN_MODEL_VERSION)
 
         self._deployment = None
+        self._deployment_data_loaded = False
 
     @staticmethod
     def is_model_service(k8s_service):
@@ -256,16 +257,16 @@ class ModelService(Service):
 
         :return: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
         """
-        self._load_data()
+        self._load_deployment_data()
         return self._deployment
 
-    def _load_data(self):
+    def _load_deployment_data(self):
         """
-        Load all required data (lazy loading)
+        Load deployment data (lazy loading)
 
         :return: None
         """
-        if self._data_loaded:
+        if self._deployment_data_loaded:
             return
 
         client = legion.k8s.utils.build_client()
@@ -278,7 +279,16 @@ class ModelService(Service):
 
         self._deployment = model_deployments[0] if model_deployments else None
 
-        super()._load_data()
+        self._deployment_data_loaded = True
+
+    def reload_cache(self):
+        """
+        Reload all cached data about ingress
+
+        :return: None
+        """
+        self._deployment_data_loaded = False
+        self._load_deployment_data()
 
     @property
     def scale(self):
@@ -287,7 +297,7 @@ class ModelService(Service):
 
         :return: int -- current model scale
         """
-        self._load_data()
+        self._load_deployment_data()
         return self.deployment.status.available_replicas if self.deployment.status.available_replicas else 0
 
     @scale.setter
@@ -299,7 +309,7 @@ class ModelService(Service):
         :type new_scale: int
         :return: None
         """
-        self._load_data()
+        self._load_deployment_data()
         client = legion.k8s.utils.build_client()
 
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
@@ -350,7 +360,7 @@ class ModelService(Service):
 
         :return: int -- desired model scale
         """
-        self._load_data()
+        self._load_deployment_data()
         return self.deployment.status.replicas if self.deployment.status.replicas else 0
 
     @property
@@ -360,7 +370,7 @@ class ModelService(Service):
 
         :return: str -- model status
         """
-        self._load_data()
+        self._load_deployment_data()
         status = STATUS_OK
 
         if self.scale == 0:
@@ -377,7 +387,7 @@ class ModelService(Service):
 
         :return: str -- model image
         """
-        self._load_data()
+        self._load_deployment_data()
         return self.deployment.spec.template.spec.containers[0].image
 
     @property

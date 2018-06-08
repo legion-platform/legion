@@ -17,7 +17,7 @@ spec:
       labels:
         component: "{{ .Release.Name }}-edge"
     spec:
-      serviceAccountName: edge
+      serviceAccountName: "{{ .Release.Name }}-edge"
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"

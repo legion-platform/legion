@@ -53,5 +53,5 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     template_system = LegionTemplateEngine(args.template, args.output, command=args.command,
-                                           pid=args.pid, pid_file=args.pid_file, signal=args.signal)
+                                           pid=args.pid, pid_file=args.pid_file, signal=target_signal)
     template_system.render_loop()

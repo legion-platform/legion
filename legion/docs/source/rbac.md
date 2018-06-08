@@ -14,7 +14,7 @@ Legion package can be used for introspection and modification of Legion state in
 * `CoreV1Api.create_namespaced_service`
 
 #### Inspecting 
-This function uses for getting models and services in enclave
+This function is used to getting models and services in enclave
 * `CoreV1Api.list_namespaced_service`
 
 #### Watching models
@@ -25,7 +25,7 @@ This function uses for getting models and services in enclave
 
 ### Service
 #### Listing
-This functional implemented in Enclave Inspecting
+This functionality implemented in Enclave Inspecting
 * `CoreV1Api.list_namespaced_service`
 
 #### Accessing public URL 

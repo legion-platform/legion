@@ -17,7 +17,7 @@ spec:
       labels:
         component: "{{ .Release.Name }}-edi"
     spec:
-      serviceAccountName: edi
+      serviceAccountName: "{{ .Release.Name }}-edi"
       volumes:
       - name: docker-socket
         hostPath:

@@ -2,33 +2,27 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: edge
+  name: "{{ .Release.Name }}-edge"
 rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "deployments", "replicasets", "services"]
-  verbs: ["get", "watch", "list"]
-- apiGroups: ["extensions"]
-  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services", "ingresses"]
-  verbs:  ["get", "watch", "list"]
-- apiGroups: ["apps"]
-  resources: ["deployments", "deployments/rollback", "deployments/scale", "replicasets", "statefulsets", "services", "ingresses"]
-  verbs:  ["get", "watch", "list"]
+- apiGroups: [""] # core API group
+  resources: ["services"]
+  verbs: ["watch", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: edge
+  name: "{{ .Release.Name }}-edge"
 subjects:
 - kind: ServiceAccount
   namespace: {{ .Release.Namespace }}
-  name: edge
+  name: "{{ .Release.Name }}-edge"
 roleRef:
   kind: Role
-  name: edge
+  name: "{{ .Release.Name }}-edge"
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: edge
+  name: "{{ .Release.Name }}-edge"
 {{- end }}
