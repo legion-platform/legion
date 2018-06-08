@@ -7,6 +7,7 @@
 
 - name: Create view clusterrolebinding
   command: "kubectl --context {{ cluster_name }} create clusterrolebinding view --clusterrole view"
+  ignore_errors: true
   when: dex.enabled
 
 - name: Set view groups
