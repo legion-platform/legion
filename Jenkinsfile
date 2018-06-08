@@ -91,6 +91,7 @@ node {
                     sh """
                     cp legion/legion/version.py legion_airflow/legion_airflow/version.py
                     cd legion_airflow
+
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
                     ../.venv/bin/python3 setup.py sdist
@@ -109,6 +110,14 @@ node {
                     export TERM="linux"
                     rm -f pylint.log
                     ../.venv/bin/pylint legion >> pylint.log || exit 0
+                    ../.venv/bin/pylint tests >> pylint.log || exit 0
+                    cd ..
+
+                    cd etl
+                    ../.venv/bin/pycodestyle etl
+                    ../.venv/bin/pycodestyle tests
+                    ../.venv/bin/pydocstyle etl
+                    ../.venv/bin/pylint etl >> pylint.log || exit 0
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
@@ -136,7 +145,7 @@ node {
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
                     """
                     archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-    
+
                     withCredentials([[
                          $class: 'UsernamePasswordMultiBinding',
                          credentialsId: 'nexus-local-repository',
@@ -146,11 +155,11 @@ node {
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}-${Globals.localVersion}/legion-jenkins-plugin.hpi
-        
+
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}/legion-jenkins-plugin.hpi
-        
+
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/latest/legion-jenkins-plugin.hpi
@@ -234,7 +243,7 @@ node {
                     ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html
                     """
                     junit 'legion/nosetests.xml'
-    
+
                     sh """
                     cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')-cover/\"
                     """
