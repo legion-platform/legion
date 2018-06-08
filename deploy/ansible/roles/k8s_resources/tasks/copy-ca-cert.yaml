@@ -1,0 +1,28 @@
+---
+
+- name: Kops bucket name
+  set_fact: state_store_name="{{ state_store.split('s3://').1 }}"
+  when: dex.enabled
+
+- name: List cluster ca certificate
+  s3:
+    bucket: "{{ state_store_name }}"
+    mode: list
+    prefix: "{{ cluster_name }}/pki/issued/ca/"
+  register: ca_list
+  when: dex.enabled
+
+- name: Create ca cert directory
+  file:
+    path: "{{ dex.ca_store }}"
+    state: directory
+  when: dex.enabled
+
+- name: Get cluster CA certificate
+  s3:
+    mode: get
+    bucket: "{{ state_store_name }}"
+    object: "{{ ca_list.s3_keys.0 }}"
+    dest: "{{ dex.ca_store }}/{{ cluster_name }}.ca.crt"
+  when: dex.enabled
+
