@@ -18,6 +18,9 @@ FROM ubuntu:16.04
 
 ENV AIRFLOW_HOME /home/airflow
 
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
+
 RUN apt-get update && apt-get install -y \
  wget \
  default-jdk \
@@ -77,14 +80,15 @@ RUN rm -rf \
     /usr/share/doc \
     /usr/share/doc-base
 
+
 COPY entrypoint.sh /home/airflow/init.sh
 
 COPY requirements.txt /home/airflow/requirements.txt
-RUN pip install -r /home/airflow/requirements.txt
+RUN pip install -r /home/airflow/requirements.txt && \
+    pip install $pip_extra_index_params etl$pip_legion_version_string
 
-RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME}
-
-RUN chmod a+x /home/airflow/init.sh
+RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME} && \
+    chmod a+x /home/airflow/init.sh
 
 COPY create_secrets.py /home/airflow/create_secrets.py
 
