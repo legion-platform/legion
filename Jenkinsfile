@@ -101,7 +101,7 @@ node {
                     cd ../../
                     '''
 
-                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(python3 -c 'import legion; print(legion.__version__);')/\""
+                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')/\""
                 }, 'Run Python code analyzers': {
                     sh '''
                     cd legion
