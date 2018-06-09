@@ -32,6 +32,7 @@ from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
 from legion.k8s.definitions import \
     LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI, \
     LEGION_COMPONENT_NAME_GRAFANA, LEGION_COMPONENT_NAME_GRAPHITE
+import legion.k8s.watch
 import legion.k8s.utils
 import legion.k8s.services
 import legion.utils
@@ -98,10 +99,10 @@ class Enclave:
 
         self._data_loaded = True
 
-        self._edi_service = legion.k8s.utils.get_service(self.name, LEGION_COMPONENT_NAME_EDI)
-        self._api_service = legion.k8s.utils.get_service(self.name, LEGION_COMPONENT_NAME_API)
-        self._grafana_service = legion.k8s.utils.get_service(self.name, LEGION_COMPONENT_NAME_GRAFANA)
-        self._graphite_service = legion.k8s.utils.get_service(self.name, LEGION_COMPONENT_NAME_GRAPHITE)
+        self._edi_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_EDI)
+        self._api_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_API)
+        self._grafana_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_GRAFANA)
+        self._graphite_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_GRAPHITE)
 
     @property
     def name(self):
@@ -169,7 +170,7 @@ class Enclave:
         :return: dict[:py:class:`legion.k8s.ModelIdVersion`, :py:class:`legion.k8s.ModelService`] -- deployed models
         """
         models = {}
-        for service in legion.k8s.utils.find_all_services(namespace=self.name):
+        for service in legion.k8s.services.find_all_services(namespace=self.name):
             if legion.k8s.services.ModelService.is_model_service(service):
                 model_service = legion.k8s.services.ModelService(service)
                 models[model_service.id_and_version] = model_service
@@ -369,7 +370,7 @@ class Enclave:
 
         core_api = kubernetes.client.CoreV1Api(client)
 
-        with legion.k8s.utils.ResourceWatch(core_api.list_namespaced_service,
+        with legion.k8s.watch.ResourceWatch(core_api.list_namespaced_service,
                                             namespace=self.namespace,
                                             filter_callable=legion.k8s.services.Service.is_legion_service,
                                             object_constructor=legion.k8s.services.Service) as watch:
@@ -388,7 +389,7 @@ class Enclave:
 
         core_api = kubernetes.client.CoreV1Api(client)
 
-        with legion.k8s.utils.ResourceWatch(core_api.list_namespace,
+        with legion.k8s.watch.ResourceWatch(core_api.list_namespace,
                                             filter_callable=Enclave.is_enclave,
                                             object_constructor=Enclave.build_from_namespace_object) as watch:
             for (event_type, event_object) in watch.stream:
@@ -409,3 +410,22 @@ class Enclave:
                                                  grace_period_seconds=grace_period_seconds)
 
         core_api.delete_namespace(self.name, body)
+
+
+def find_enclaves():
+    """
+    Get a list of enclaves
+
+    :return list[Enclave] -- list of found enclaves
+    """
+    client = legion.k8s.utils.build_client()
+
+    core_api = kubernetes.client.CoreV1Api(client)
+    all_namespaces = core_api.list_namespace()
+
+    enclaves = []
+    for namespace in all_namespaces.items:
+        if namespace.metadata.labels and ENCLAVE_NAMESPACE_LABEL in namespace.metadata.labels:
+            enclaves.append(legion.k8s.enclave.Enclave(namespace.metadata.name))
+
+    return enclaves

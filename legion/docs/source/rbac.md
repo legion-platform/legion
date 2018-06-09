@@ -44,25 +44,6 @@ This function will be called on access deployment, scale, desired scale, status,
 * `CoreV1Api.delete_namespaced_service`
 
 ## Usage by modules
-### Utils
-##### legion.k8s.utils.find_model_deployment
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
-	
-##### legion.k8s.utils.find_all_models_deployments
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
-* `ExtensionsV1beta1Api.list_deployment_for_all_namespaces`
-	
-##### legion.k8s.utils.find_all_services
-* `CoreV1Api.list_namespaced_service`
-* `CoreV1Api.list_service_for_all_namespaces`
-	
-##### legion.k8s.utils.find_all_ingresses
-* `ExtensionsV1beta1Api.list_namespaced_ingress`
-* `ExtensionsV1beta1Api.list_ingress_for_all_namespaces`
-	
-##### legion.k8s.utils.find_enclaves
-* `CoreV1Api.list_namespace`
-
 ### Enclaves	
 ##### legion.k8s.enclave.Enclave.deploy_model
 * `ExtensionsV1beta1Api.create_namespaced_deployment`
@@ -76,6 +57,9 @@ This function will be called on access deployment, scale, desired scale, status,
 	
 ##### legion.k8s.enclave.Enclave.delete
 * `CoreV1Api.delete_namespace`
+	
+##### legion.k8s.enclave.find_enclaves
+* `CoreV1Api.list_namespace`
 
 ### Services	
 ##### legion.k8s.services.ModelService._load_data
@@ -87,3 +71,18 @@ This function will be called on access deployment, scale, desired scale, status,
 ##### legion.k8s.services.ModelService.delete
 * `AppsV1beta1Api.delete_namespaced_deployment`
 * `CoreV1Api.delete_namespaced_service`
+
+##### legion.k8s.services.find_model_deployment
+* `ExtensionsV1beta1Api.list_namespaced_deployment`
+	
+##### legion.k8s.services.find_all_models_deployments
+* `ExtensionsV1beta1Api.list_namespaced_deployment`
+* `ExtensionsV1beta1Api.list_deployment_for_all_namespaces`
+	
+##### legion.k8s.services.find_all_services
+* `CoreV1Api.list_namespaced_service`
+* `CoreV1Api.list_service_for_all_namespaces`
+	
+##### legion.k8s.services.find_all_ingresses
+* `ExtensionsV1beta1Api.list_namespaced_ingress`
+* `ExtensionsV1beta1Api.list_ingress_for_all_namespaces`

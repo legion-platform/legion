@@ -26,10 +26,12 @@ import kubernetes.config.config_exception
 import legion.model
 from legion.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
 import legion.k8s.enclave
+import legion.containers.headers
 from legion.k8s.definitions import ModelIdVersion
 from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
 from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
 import legion.k8s.utils
+from legion.utils import normalize_name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -101,9 +103,9 @@ class Service:
         if self._ingress_data_loaded:
             return
 
-        self._ingress = legion.k8s.utils.get_ingress(self._k8s_service.metadata.namespace, self.name)
+        self._ingress = get_ingress(self._k8s_service.metadata.namespace, self.name)
         if self._ingress:
-            self._public_url = legion.k8s.utils.get_ingress_url(self._ingress)
+            self._public_url = get_ingress_url(self._ingress)
 
         self._ingress_data_loaded = True
 
@@ -482,3 +484,165 @@ class ModelServiceEndpoint:
         :return: bool -- is items equal
         """
         return self.url == other.url
+
+
+def find_model_deployment(model_id, namespace='default'):
+    """
+    Find model deployment by model id
+
+    :param model_id: model id
+    :type model_id: str
+    :param namespace: namespace
+    :type namespace: str
+    :return: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
+    """
+    client = legion.k8s.utils.build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    all_deployments = extension_api.list_namespaced_deployment(namespace)
+
+    type_label_name = normalize_name(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_value = 'model'
+
+    model_id_name = normalize_name(legion.containers.headers.DOMAIN_MODEL_ID)
+    model_id_value = normalize_name(model_id)
+
+    for deployment in all_deployments.items:
+        if deployment.metadata.labels.get(type_label_name) == type_label_value \
+                and deployment.metadata.labels.get(model_id_name) == model_id_value:
+            return deployment
+
+    return None
+
+
+def find_all_models_deployments(namespace='default'):
+    """
+    Find all models deployments
+
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :return: list[:py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`]
+    """
+    client = legion.k8s.utils.build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    if namespace:
+        all_deployments = extension_api.list_namespaced_deployment(namespace)
+    else:
+        all_deployments = extension_api.list_deployment_for_all_namespaces()
+
+    type_label_name = normalize_name(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
+    type_label_value = 'model'
+
+    model_deployments = [
+        deployment
+        for deployment in all_deployments.items
+        if deployment.metadata.labels.get(type_label_name) == type_label_value
+    ]
+
+    return model_deployments
+
+
+def find_all_services(namespace='', component=''):
+    """
+    Find all services details by criteria
+
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :param component: filter by specified component value, or none for all
+    :type component: str
+    :return: list[V1Service]
+    """
+    client = legion.k8s.utils.build_client()
+
+    core_api = kubernetes.client.CoreV1Api(client)
+    if namespace:
+        all_services = core_api.list_namespaced_service(namespace)
+    else:
+        all_services = core_api.list_service_for_all_namespaces()
+
+    if component:
+        all_services = [
+            service
+            for service in all_services.items
+            if service.metadata.labels.get(LEGION_COMPONENT_LABEL) == component
+        ]
+    else:
+        all_services = all_services.items
+
+    return all_services
+
+
+def get_service(namespace='', component=''):
+    """
+    Get a service details by criteria
+
+    :param namespace: namespace
+    :type namespace: str or none
+    :param component: filter by specified component value, or none for all
+    :type component: str
+    :return: V1Service or None
+    """
+    result = find_all_services(namespace, component)
+    return legion.k8s.services.Service(result[0]) if result else None
+
+
+def find_all_ingresses(namespace='', component=''):
+    """
+    Find all ingresses details by criteria
+
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :type component: filter by specified component value, or none for all
+    :return: list[V1beta1Ingress]
+    """
+    client = legion.k8s.utils.build_client()
+
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    if namespace:
+        all_ingresses = extension_api.list_namespaced_ingress(namespace)
+    else:
+        all_ingresses = extension_api.list_ingress_for_all_namespaces()
+
+    if component:
+        all_ingresses = [
+            ingress
+            for ingress in all_ingresses.items
+            if ingress.metadata.labels.get(LEGION_COMPONENT_LABEL) == component
+        ]
+    else:
+        all_ingresses = all_ingresses.items
+
+    return all_ingresses
+
+
+def get_ingress(namespace='', component=''):
+    """
+    Get ingress details by criteria
+
+    :param namespace: namespace
+    :type namespace: str or none for all
+    :type component: filter by specified component value, or none for all
+    :return: V1beta1Ingress -- Ingress object or None
+    """
+    ingresses = find_all_ingresses(namespace, component)
+    return ingresses[0] if ingresses else None
+
+
+def get_ingress_url(ingress):
+    """
+    Get URL of ingress object
+
+    :param ingress: ingress object
+    :type ingress: V1beta1Ingress
+    :return: str or None -- URL from tls section,
+    """
+    spec = ingress.spec
+
+    host = spec.rules[0].host if spec.rules else None
+    if not host:
+        return None
+
+    protocol = 'https' if spec.tls and any(host in tls.hosts for tls in spec.tls) else 'http'
+
+    return '{}://{}'.format(protocol, host)
