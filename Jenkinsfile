@@ -117,12 +117,12 @@ node {
     		'''
             sh '''
               cd etl
-              ../.venv/bin/pycodestyle slack
+              ../.venv/bin/pycodestyle etl
               ../.venv/bin/pycodestyle tests
-              ../.venv/bin/pydocstyle slack
+              ../.venv/bin/pydocstyle etl
 
               export TERM="linux"
-              ../.venv/bin/pylint slack >> pylint.log || exit 0
+              ../.venv/bin/pylint etl >> pylint.log || exit 0
               ../.venv/bin/pylint tests >> pylint.log || exit 0
               cd ..
             '''
