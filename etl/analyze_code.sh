@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pycodestyle slack
+pycodestyle etl
 pycodestyle tests
-pydocstyle slack
-pylint slack
+pydocstyle etl
+pylint etl
