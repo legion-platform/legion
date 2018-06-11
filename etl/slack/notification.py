@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 Notifications to slack.
 """
 
+import re
 from airflow import configuration
 from slackclient import SlackClient
 
@@ -37,7 +38,8 @@ def send_notification(receiver, subject, html_content):
     channel = configuration.conf.get('slack', 'CHANNEL')
     username = configuration.conf.get('slack', 'USERNAME')
 
-    send_notification_to_channel(html_content, channel, token, username)
+    send_notification_to_channel(remove_tags(html_content),
+                                 channel, token, username)
 
 
 def send_notification_to_channel(message, channel, token, username):
@@ -54,3 +56,14 @@ def send_notification_to_channel(message, channel, token, username):
     slack_client.api_call('chat.postMessage', channel=channel,
                           text=message, username=username,
                           icon_emoji=':robot_face:')
+
+
+def remove_tags(text):
+    """
+    Remove HTML tags from the text.
+
+    :param text: text with html tags to be removed
+    :return: text without html text
+    """
+    html_regexp = '<[^>]+>'
+    return re.sub(html_regexp, '', text)
