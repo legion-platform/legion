@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-""" Authentication backend for Dex used in Apache Airflow. """
+"""Authentication backend for Dex used in Apache Airflow."""
 
 from __future__ import unicode_literals
 
@@ -23,28 +23,29 @@ import flask_login
 from flask_login import (current_user,
                          logout_user,
                          login_required,
-                        login_user)
+                         login_user)
 from flask import flash
 
 from flask import url_for, redirect
 
-from airflow import settings
-from airflow import models
+from airflow import settings, models
 from airflow.utils.log.logging_mixin import LoggingMixin
-from werkzeug.http import wsgi_to_bytes
-import jwt
-from werkzeug.wrappers import Response
 from airflow import configuration as conf
 
-login_manager = flask_login.LoginManager()
-login_manager.login_view = 'airflow.login'  # Calls login() below
-login_manager.login_message = None
+from werkzeug.http import wsgi_to_bytes
+from werkzeug.wrappers import Response
 
-log = LoggingMixin().log
+import jwt
+
+LOGIN_MANAGER = flask_login.LoginManager()
+LOGIN_MANAGER.login_view = 'airflow.login'  # Calls login() below
+LOGIN_MANAGER.login_message = None
+
+LOG = LoggingMixin().log
 PY3 = version_info[0] == 3
 
-admin_group = conf.get('webserver', 'dex_group_admin')
-profiler_group = conf.get('webserver', 'dex_group_profiler')
+ADMIN_GROUP = conf.get('webserver', 'dex_group_admin')
+PROFILER_GROUP = conf.get('webserver', 'dex_group_profiler')
 
 
 class AuthenticationError(Exception):
@@ -74,18 +75,17 @@ class DexUser(object):
 
     @staticmethod
     def is_active():
-        """Indicate if user is active. Required by flask_login. """
-
+        """Indicate if user is active. Required by flask_login."""
         return True
 
     @staticmethod
     def is_authenticated():
-        """Indicate if user is authenticated. Required by flask_login. """
+        """Indicate if user is authenticated. Required by flask_login."""
         return True
 
     @staticmethod
     def is_anonymous():
-        """Indicate if user is anonymous. Required by flask_login. """
+        """Indicate if user is anonymous. Required by flask_login."""
         return False
 
     @staticmethod
@@ -94,20 +94,20 @@ class DexUser(object):
         return True
 
     def get_id(self):
-        """Returns the current user id as required by flask_login"""
+        """Return the current user id as required by flask_login"""
         return self.email
 
 
-@login_manager.user_loader
+@LOGIN_MANAGER.user_loader
 def load_user(user_id):
     """Reload a user from the session. The function you set should
     take a user ID (a ``unicode``) and return a
     user object, or ``None`` if the user does not exist.
     :param user_id: User ID
     :return user object, or ``None`` if the user does not exist
-    :rtype DexUser"""
-
-    log.debug("Loading user %s", user_id)
+    :rtype DexUser
+    """
+    LOG.debug("Loading user %s", user_id)
     if not user_id or user_id == 'None':
         return None
 
@@ -122,14 +122,12 @@ def load_user(user_id):
 
 
 def login(self, request):
-    """
-    Login a user. A function is executed on a new user session.
+    """Login a user. A function is executed on a new user session.
     Analyze request, parse JWT and create a new user object.
     :param self: required parameter for flask_login
     :param request: a request object
     :type request: Request
     """
-
     if current_user.is_authenticated():
         flash("You are already logged in")
         return redirect(url_for('admin.index'))
@@ -148,10 +146,10 @@ def login(self, request):
     email = jwt_obj.get('email')
     groups = jwt_obj.get('groups')
 
-    if admin_group or profiler_group:
-        if admin_group in groups:
+    if ADMIN_GROUP or PROFILER_GROUP:
+        if ADMIN_GROUP in groups:
             is_superuser = True
-        elif profiler_group in groups:
+        elif PROFILER_GROUP in groups:
             is_superuser = False
         else:
             session.close()
@@ -175,7 +173,6 @@ def login(self, request):
     flask_login.login_user(DexUser(email, name))
     session.commit()
     session.close()
-
     return redirect(request.args.get("next") or url_for("admin.index"))
 
 
@@ -188,7 +185,7 @@ def parse_jwt_header(value):
     :return: parsed JWT token as a dict object or `None`.
     """
     if not value:
-        return
+        return None
     value = wsgi_to_bytes(value)
     try:
         auth_type, auth_info = value.split(None, 1)
