@@ -1,0 +1,125 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#
+import requests
+import datetime
+import sys
+import argparse
+import re
+import logging
+import pprint
+from datetime import timedelta
+from typing import NamedTuple
+
+
+Options = NamedTuple('Options', [
+    ('nexus_url', str),
+    ('user', str),
+    ('password', str),
+    ('dry_run', bool),
+    ('remaining_days', int),
+    ('build_name', str)
+])
+
+
+def get_builds(repository, options):
+    # Get list of builds matching search filters
+    api_url = '{}/service/siesta/rest/beta'.format(options.nexus_url)
+    search_url = "{}/search".format(api_url)
+    search_filters = {"repository": repository}
+    if options.build_name:
+        search_filters["name"] = options.build_name
+
+    builds = []
+    try:
+        log.info('Fetching Nexus artifacts')
+        r = requests.get(search_url, params=search_filters, auth=(options.user, options.password)).json()
+        builds.extend(r.get("items"))
+    except requests.exceptions.RequestException as e:
+        print('Error fetching Nexus artifacts: {}'.format(e))
+        sys.exit(1)
+
+    while r.get('continuationToken') is not None:
+        search_filters["continuationToken"] = r.get('continuationToken')
+        r = requests.get(search_url, params=search_filters, auth=(options.user, options.password)).json()
+        builds.extend(r.get("items"))
+
+    return builds
+
+
+def filter_builds_by_date(builds, remaining_days):
+    # Filter artifacts by date specified in artifact version string
+    remaining_date = datetime.datetime.now() - timedelta(remaining_days)
+    builds_to_del = []
+    for build in builds:
+        try:
+            build_date = re.search('\d{12}', build.get("version")).group()
+            if datetime.datetime.strptime(build_date, '%y%m%d%H%M%S') < remaining_date:
+                builds_to_del.append(build)
+        except Exception as e:
+            pass
+
+    return builds_to_del
+
+
+def delete_builds(builds, dry_run):
+    # Delete artifacts from Nexus repo
+    log.info("List of artifacts to delete: {}".format(
+        [("{}-{}".format(build.get("name"), build.get("version"))) for build in builds]))
+    if dry_run:
+        log.info("Dry run mode selected, no actions to be performed.")
+    else:
+        for build in builds:
+            try:
+                
+                log.info("{}-{}: Deleted".format(build.get("name"), build.get("version")))
+            except Exception as e:
+                print(e)
+
+
+def work(options):
+    # Do the job
+    for repo in nexus_legion_repos:
+        log.info('Cleaninig up {} Nexus repository'.format(repo))
+        builds_to_del = filter_builds_by_date(get_builds(repo, options), options.remaining_days)
+        if builds_to_del:
+            delete_builds(builds_to_del, options.dry_run)
+        else:
+            log.warn('No builds to delete in {} repository'.format(repo))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Script for Legion artifacts cleanup at Nexus repository')
+    parser.add_argument('nexus_url', type=str, help='Nexus repo url')
+    parser.add_argument('--user', '-u', type=str, default='admin', help='Nexus admin user')
+    parser.add_argument('--password', '-p', type=str, default='admin123', help='Nexus admin password')
+    parser.add_argument('--remaining-days', type=int, help='Number of days to remain builds')
+    parser.add_argument('--build-name', '-n', type=str, help='Build name to delete')
+    parser.add_argument('--dry-run', '-d', action="store_true", help='Do not perform any actions')
+    parser.add_argument('--verbose', '-v', action='store_true', help='verbose log output')
+
+    args = parser.parse_args()
+    arguments = Options(
+        nexus_url=args.nexus_url,
+        user=args.user,
+        password=args.password,
+        dry_run=args.dry_run,
+        remaining_days=args.remaining_days,
+        build_name=args.build_name,
+    )
+
+    nexus_legion_repos = [
+        'main-docker',
+        'jenkins_plugins',
+        'pypi-hosted']
+
+    log = logging.getLogger(__name__)
+    if args.verbose:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.ERROR
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+    # DEBUG
+    pp = pprint.PrettyPrinter(indent=4)
+
+    work(arguments)
