@@ -36,6 +36,9 @@ core:
 webserver:
   worker_refresh_interval: 10
   email_backend: {{ airflow.webserver.email_backend | default('airflow.utils.email.send_email_smtp') }}
+  authenticate: {{ airflow_auth.enabled }}
+  dex_group_admin: {{ airflow_auth.dex_group_admin }}
+  dex_group_profiler: {{ airflow_auth.dex_group_profiler }}
 
 smtp:
   smtp_host: {{ airflow.email.smtp_host }}
