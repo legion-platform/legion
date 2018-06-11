@@ -7,8 +7,6 @@ import sys
 import argparse
 import re
 import logging
-import pprint
-from datetime import timedelta
 from typing import NamedTuple
 
 
@@ -22,18 +20,31 @@ Options = NamedTuple('Options', [
 ])
 
 
-def get_builds(repository, options):
-    # Get list of builds matching search filters
-    api_url = '{}/service/siesta/rest/beta'.format(options.nexus_url)
+def get_builds(api_url, repository, user, password, build_name):
+    """
+    Get list of Legion artifacts at Nexus repo matching search filters
+
+    :param api_url: Nexus API URL
+    :type api_url: str
+    :param repository: Nexus repository name
+    :type repository: str
+    :param user: Nexus admin user
+    :type user: str
+    :param password: Nexus admin user password
+    :type password: str
+    :param build_name: Nexus component name, none for any
+    :return: list[dict, dict] List of Nexus components
+    """
+
     search_url = "{}/search".format(api_url)
     search_filters = {"repository": repository}
-    if options.build_name:
-        search_filters["name"] = options.build_name
+    if build_name:
+        search_filters["name"] = build_name
 
     builds = []
     try:
         log.info('Fetching Nexus artifacts')
-        r = requests.get(search_url, params=search_filters, auth=(options.user, options.password)).json()
+        r = requests.get(search_url, params=search_filters, auth=(user, password)).json()
         builds.extend(r.get("items"))
     except requests.exceptions.RequestException as e:
         print('Error fetching Nexus artifacts: {}'.format(e))
@@ -41,15 +52,23 @@ def get_builds(repository, options):
 
     while r.get('continuationToken') is not None:
         search_filters["continuationToken"] = r.get('continuationToken')
-        r = requests.get(search_url, params=search_filters, auth=(options.user, options.password)).json()
+        r = requests.get(search_url, params=search_filters, auth=(user, password)).json()
         builds.extend(r.get("items"))
 
     return builds
 
 
 def filter_builds_by_date(builds, remaining_days):
-    # Filter artifacts by date specified in artifact version string
-    remaining_date = datetime.datetime.now() - timedelta(remaining_days)
+    """
+    Filter builds based on date in version string
+
+    :param builds: Linst of Nexus components
+    :type builds: list
+    :param remaining_days: Number of days to leave the builds
+    :type remaining_days: int
+    :return: list[dict, dict] List of Nexus components older than remainin_days
+    """
+    remaining_date = datetime.datetime.now() - datetime.timedelta(remaining_days)
     builds_to_del = []
     for build in builds:
         try:
@@ -62,8 +81,22 @@ def filter_builds_by_date(builds, remaining_days):
     return builds_to_del
 
 
-def delete_builds(builds, dry_run):
-    # Delete artifacts from Nexus repo
+def delete_builds(api_url, user, password, builds, dry_run):
+    """
+    Delete artifacts from Nexus repository
+
+    :param api_url: Nexus API URL
+    :type api_url: str
+    :param user: Nexus admin user
+    :type user: str
+    :param password: Nexus admin user password
+    :type password: str
+    :param builds: List of Nexus components
+    :type builds: list
+    :param dry_run: Dry run mode selector, no delete actions to be performed if True
+    :param dry_run: bool
+    :return: None
+    """
     log.info("List of artifacts to delete: {}".format(
         [("{}-{}".format(build.get("name"), build.get("version"))) for build in builds]))
     if dry_run:
@@ -71,19 +104,38 @@ def delete_builds(builds, dry_run):
     else:
         for build in builds:
             try:
-                
-                log.info("{}-{}: Deleted".format(build.get("name"), build.get("version")))
+                delete_url = "{}/components/{}".format(api_url, build.get("id"))
+                requests.delete(delete_url, auth=(user, password))
+                log.info("{}-{}-{}: Deleted".format(
+                    build.get("name"),
+                    build.get("version"),
+                    build.get("id")))
             except Exception as e:
                 print(e)
 
 
 def work(options):
-    # Do the job
+    """
+    Get Legion artifacts matching build_name (if specified) from Nexus repository
+    and delete those who older than remaining_days
+
+    :param options: options
+    :type options: :py:class:`Options`
+    :return: None
+    """
+
+    api_url = '{}/service/siesta/rest/beta'.format(options.nexus_url)
+
     for repo in nexus_legion_repos:
         log.info('Cleaninig up {} Nexus repository'.format(repo))
-        builds_to_del = filter_builds_by_date(get_builds(repo, options), options.remaining_days)
+        builds_to_del = filter_builds_by_date(get_builds(
+            api_url,
+            repo,
+            options.user,
+            options.password,
+            options.build_name), options.remaining_days)
         if builds_to_del:
-            delete_builds(builds_to_del, options.dry_run)
+            delete_builds(api_url, options.user, options.password, builds_to_del, options.dry_run)
         else:
             log.warn('No builds to delete in {} repository'.format(repo))
 
@@ -119,7 +171,5 @@ if __name__ == '__main__':
     else:
         log_level = logging.ERROR
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
-    # DEBUG
-    pp = pprint.PrettyPrinter(indent=4)
 
     work(arguments)
