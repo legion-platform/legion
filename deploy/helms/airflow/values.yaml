@@ -61,11 +61,19 @@ webserver:
 
   expose_config: true
 
-  authenticate: false
+  authenticate: true
 
   filter_by_owner: false
 
   email_backend: airflow.utils.email.send_email_smtp
+
+  authenticate: false
+
+  auth_backend: auth.dex_auth
+
+  dex_group_admin: ~
+
+  dex_group_profiler: ~
 
 smtp:
   smtp_host: localhost
