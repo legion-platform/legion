@@ -44,8 +44,13 @@ login_manager.login_message = None
 LOG = LoggingMixin().log
 PY3 = version_info[0] == 3
 
-ADMIN_GROUP = conf.get('webserver', 'dex_group_admin')
-PROFILER_GROUP = conf.get('webserver', 'dex_group_profiler')
+admin_group = None
+if conf.has_option('webserver', 'dex_group_admin'):
+    admin_group = conf.get('webserver', 'dex_group_admin')
+
+profiler_group = None
+if conf.has_option('webserver', 'dex_group_profiler'):
+    profiler_group = conf.get('webserver', 'dex_group_profiler')
 
 
 class AuthenticationError(Exception):
@@ -57,13 +62,18 @@ class AuthenticationError(Exception):
 class DexUser(object):
     """Dex user details."""
 
-    def __init__(self, email, name):
+    def __init__(self, email: str, name: str,
+                 is_superuser: bool=False, is_data_profiler: bool=False):
         """Init DexUser instance.
         :param email: User email
         :param name: User full name
+        :param is_superuser: If user has Superuser role
+        :param is_data_profiler: If user has Data Profiler role
         """
         self._email = email
         self._name = name
+        self._is_superuser = is_superuser
+        self._is_data_profiler = is_data_profiler
 
     def name(self):
         """User full name"""
@@ -88,14 +98,17 @@ class DexUser(object):
         """Indicate if user is anonymous. Required by flask_login."""
         return False
 
-    @staticmethod
-    def is_superuser():
-        """Indicate if user is superuser."""
-        return True
+    def is_superuser(self):
+        """Access all the things."""
+        return self._is_superuser
+
+    def data_profiling(self):
+        """Provide access to data profiling tools."""
+        return self._is_data_profiler
 
     def get_id(self):
         """Return the current user id as required by flask_login"""
-        return self.email
+        return self._email
 
 
 @login_manager.user_loader
@@ -118,7 +131,7 @@ def load_user(user_id):
     session.commit()
     session.close()
     if user:
-        return DexUser(user.email, user.name)
+        return DexUser(user.email, user.username)
 
 
 def login(self, request):
@@ -146,16 +159,14 @@ def login(self, request):
     email = jwt_obj.get('email')
     groups = jwt_obj.get('groups')
 
-    if ADMIN_GROUP or PROFILER_GROUP:
-        if ADMIN_GROUP in groups:
+    is_superuser = False
+    is_data_profiler = False
+
+    if admin_group or profiler_group:
+        if admin_group in groups:
             is_superuser = True
-        elif PROFILER_GROUP in groups:
-            is_superuser = False
-        else:
-            session.close()
-            response = Response(
-                "Any required group name wasn't found in JWT header.", mimetype='text/plain')
-            return response
+        elif profiler_group in groups:
+            is_data_profiler = True
     else:
         is_superuser = True
 
@@ -170,7 +181,7 @@ def login(self, request):
 
     session.merge(user)
     session.commit()
-    flask_login.login_user(DexUser(email, name))
+    flask_login.login_user(DexUser(email, name, is_superuser, is_data_profiler))
     session.commit()
     session.close()
     return redirect(request.args.get("next") or url_for("admin.index"))
