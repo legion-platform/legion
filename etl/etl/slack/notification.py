@@ -24,7 +24,7 @@ from airflow.exceptions import AirflowConfigException
 from airflow.utils.log.logging_mixin import LoggingMixin
 
 
-def send_notification(receiver, subject, html_content):
+def send_notification(receiver, subject, html_content, **kwargs):
     """
     Send Slack notification using configuration from config file.
 
@@ -35,6 +35,7 @@ def send_notification(receiver, subject, html_content):
     """
     _ = receiver
     _ = subject
+    _ = kwargs
 
     log = LoggingMixin().log
 
