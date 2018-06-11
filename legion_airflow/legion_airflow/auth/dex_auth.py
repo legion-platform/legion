@@ -37,9 +37,9 @@ from werkzeug.wrappers import Response
 
 import jwt
 
-LOGIN_MANAGER = flask_login.LoginManager()
-LOGIN_MANAGER.login_view = 'airflow.login'  # Calls login() below
-LOGIN_MANAGER.login_message = None
+login_manager = flask_login.LoginManager()
+login_manager.login_view = 'airflow.login'  # Calls login() below
+login_manager.login_message = None
 
 LOG = LoggingMixin().log
 PY3 = version_info[0] == 3
@@ -98,7 +98,7 @@ class DexUser(object):
         return self.email
 
 
-@LOGIN_MANAGER.user_loader
+@login_manager.user_loader
 def load_user(user_id):
     """Reload a user from the session. The function you set should
     take a user ID (a ``unicode``) and return a

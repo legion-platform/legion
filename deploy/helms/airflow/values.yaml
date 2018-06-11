@@ -69,7 +69,7 @@ webserver:
 
   authenticate: false
 
-  auth_backend: auth.dex_auth
+  auth_backend: etl.auth.dex_auth
 
   dex_group_admin: ~
 
