@@ -77,9 +77,9 @@ smtp:
   smtp_mail_from: airflow@airflow.local
 
 slack:
-  username: airflow
-  channel: airflow
-  token: airflow
+  username: ~
+  channel: ~
+  token: ~
 
 celery:
   celery_app_name: airflow.executors.celery_executor

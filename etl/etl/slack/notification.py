@@ -18,8 +18,10 @@ Notifications to slack.
 """
 
 import re
-from airflow import configuration
 from slackclient import SlackClient
+from airflow import configuration
+from airflow.exceptions import AirflowConfigException
+from airflow.utils.log.logging_mixin import LoggingMixin
 
 
 def send_notification(receiver, subject, html_content):
@@ -34,9 +36,18 @@ def send_notification(receiver, subject, html_content):
     _ = receiver
     _ = subject
 
-    token = configuration.conf.get('slack', 'TOKEN')
-    channel = configuration.conf.get('slack', 'CHANNEL')
-    username = configuration.conf.get('slack', 'USERNAME')
+    log = LoggingMixin().log
+
+    try:
+        token = configuration.conf.get('slack', 'TOKEN')
+        channel = configuration.conf.get('slack', 'CHANNEL')
+        username = configuration.conf.get('slack', 'USERNAME')
+        for value in (token, channel, username):
+            if not value:
+                raise AirflowConfigException("error: empty value")
+    except AirflowConfigException:
+        log.info("No token/channel/username found for slack.")
+        return
 
     send_notification_to_channel(remove_tags(html_content),
                                  channel, token, username)
