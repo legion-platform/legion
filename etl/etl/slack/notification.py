@@ -50,7 +50,7 @@ def send_notification(receiver, subject, html_content, **kwargs):
         log.info("No token/channel/username found for slack.")
         return
 
-    send_notification_to_channel(remove_tags(html_content),
+    send_notification_to_channel(format_message(html_content),
                                  channel, token, username)
 
 
@@ -68,6 +68,20 @@ def send_notification_to_channel(message, channel, token, username):
     slack_client.api_call('chat.postMessage', channel=channel,
                           text=message, username=username,
                           icon_emoji=':robot_face:')
+
+
+def format_message(text):
+    """
+    Format html message to adopt it for Slack.
+
+    :param: text: html formatted text
+    :return: slack formatted text
+    """
+    text_without_br = re.sub('<br>', '\n', text)
+    text_with_fixed_links = re.sub(r"<a href='([^']+)'>([^>]+)</a>",
+                                   r"<\1|\2>", text_without_br)
+
+    return text_with_fixed_links
 
 
 def remove_tags(text):
