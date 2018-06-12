@@ -45,17 +45,17 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     '''
-
+        
                     def version = sh returnStdout: true, script: '.venv/bin/update_version_id --extended-output legion/legion/version.py'
                     print("Detected legion version:\n" + version)
-
+        
                     version = version.split("\n")
                     Globals.baseVersion = version[1]
                     Globals.localVersion = version[2]
-
+        
                     currentBuild.description = "${Globals.baseVersion} ${Globals.localVersion} ${params.GitBranch}"
                     print("Base version " + Globals.baseVersion + " local version " + Globals.localVersion)
-
+        
                     print('Building shared artifact')
                     envFile = 'file.env'
                     sh """
@@ -65,7 +65,7 @@ node {
                     echo "LOCAL_VERSION=${Globals.localVersion}" >> $envFile
                     """
                     archiveArtifacts envFile
-
+        
                     print('Build and distributing legion_test')
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
@@ -76,7 +76,7 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     """
-
+        
                     print('Build and distributing legion')
                     sh """
                     cd legion
@@ -99,7 +99,7 @@ node {
                     ../.venv/bin/python3 setup.py bdist_wheel
                     ../.venv/bin/python3 setup.py develop
                     cd -
-                    """
+                    """   
                 }, 'Build docs': {
                     fullBuildNumber = env.BUILD_NUMBER
                     fullBuildNumber.padLeft(4, '0')
@@ -122,22 +122,23 @@ node {
                     ../.venv/bin/pycodestyle legion
                     ../.venv/bin/pycodestyle tests
                     ../.venv/bin/pydocstyle legion
-
+    
                     export TERM="linux"
                     rm -f pylint.log
                     ../.venv/bin/pylint legion >> pylint.log || exit 0
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
-
+                    
                     cd etl
                     ../.venv/bin/pycodestyle etl
                     ../.venv/bin/pycodestyle tests
                     ../.venv/bin/pydocstyle etl
+
                     ../.venv/bin/pylint etl >> pylint.log || exit 0
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
-
+    
                     archiveArtifacts 'legion/pylint.log'
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
 
@@ -161,7 +162,7 @@ node {
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
                     """
                     archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-
+    
                     withCredentials([[
                          $class: 'UsernamePasswordMultiBinding',
                          credentialsId: 'nexus-local-repository',
@@ -171,11 +172,11 @@ node {
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}-${Globals.localVersion}/legion-jenkins-plugin.hpi
-
+        
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}/legion-jenkins-plugin.hpi
-
+        
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/latest/legion-jenkins-plugin.hpi
@@ -242,7 +243,7 @@ node {
                     ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html
                     """
                     junit 'legion/nosetests.xml'
-
+    
                     sh """
                     cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')-cover/\"
                     """
