@@ -131,7 +131,7 @@ def load_user(user_id):
     session.commit()
     session.close()
     if user:
-        return DexUser(user.email, user.username)
+        return DexUser(user.email, user.username, user.superuser, True)
 
 
 def login(self, request):
@@ -147,12 +147,11 @@ def login(self, request):
 
     auth_header = request.headers.get('Authorization')
     jwt_obj = parse_jwt_header(auth_header)
-    session = settings.Session()
 
     if not jwt_obj:
-        session.close()
         response = Response(
-            'JWT header is invalid or absent.', mimetype='text/plain')
+            'JWT header is invalid or absent.', mimetype='text/plain',
+            status=401)
         return response
 
     name = jwt_obj.get('name')
@@ -167,9 +166,16 @@ def login(self, request):
             is_superuser = True
         elif profiler_group in groups:
             is_data_profiler = True
+        else:
+            response = Response(
+                "Access denied for user '{}'" % email,
+                mimetype='text/plain', status=401)
+            return response
     else:
         is_superuser = True
+        is_data_profiler = True
 
+    session = settings.Session()
     user = session.query(models.User).filter(
         models.User.email == email).first()
 
@@ -178,6 +184,8 @@ def login(self, request):
             username=name,
             email=email,
             superuser=is_superuser)
+    else:
+        user.superuser = is_superuser
 
     session.merge(user)
     session.commit()
