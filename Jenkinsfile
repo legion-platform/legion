@@ -18,6 +18,7 @@ def UploadDockerImage(imageName) {
 node {
     try {
         timestamps {
+
             stage('Checkout GIT'){
                 checkout scm
                 Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
@@ -27,8 +28,7 @@ node {
             stage('Install build dependencies'){
                 sh '''
                 sudo rm -rf .venv
-                virtualenv .venv
-    
+                virtualenv .venv -p $(which python3)
                 sudo chmod a+r -R .
                 cd legion
                 ../.venv/bin/pip3 install -r requirements/base.txt
