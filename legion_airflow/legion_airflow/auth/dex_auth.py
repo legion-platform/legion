@@ -44,94 +44,97 @@ login_manager.login_message = None
 LOG = LoggingMixin().log
 PY3 = version_info[0] == 3
 
-admin_group = None
-if conf.has_option('webserver', 'dex_group_admin'):
-    admin_group = conf.get('webserver', 'dex_group_admin')
-
-profiler_group = None
-if conf.has_option('webserver', 'dex_group_profiler'):
-    profiler_group = conf.get('webserver', 'dex_group_profiler')
-
-
-class AuthenticationError(Exception):
-    """Authentication error is raised on authentication failure."""
-
-    pass
-
 
 class DexUser(object):
     """Dex user details."""
 
-    def __init__(self, email: str, name: str,
-                 is_superuser: bool=False, is_data_profiler: bool=False):
+    def __init__(self, username: str, email: str, is_superuser: bool = False,
+                 is_data_profiler: bool = False):
         """Init DexUser instance.
-        :param email: User email
-        :param name: User full name
-        :param is_superuser: If user has Superuser role
-        :param is_data_profiler: If user has Data Profiler role
+        :param user: User model
         """
+        self._username = username
         self._email = email
-        self._name = name
         self._is_superuser = is_superuser
         self._is_data_profiler = is_data_profiler
 
     def name(self):
         """User full name"""
-        return self._name
+        return self._username
 
     def email(self):
         """User email"""
         return self._email
 
-    @staticmethod
-    def is_active():
-        """Indicate if user is active. Required by flask_login."""
-        return True
-
-    @staticmethod
-    def is_authenticated():
-        """Indicate if user is authenticated. Required by flask_login."""
-        return True
-
-    @staticmethod
-    def is_anonymous():
-        """Indicate if user is anonymous. Required by flask_login."""
-        return False
-
-    def is_superuser(self):
-        """Access all the things."""
-        return self._is_superuser
-
-    def data_profiling(self):
-        """Provide access to data profiling tools."""
-        return self._is_data_profiler
-
     def get_id(self):
         """Return the current user id as required by flask_login"""
         return self._email
 
+    @staticmethod
+    def is_active():
+        """Check if user is active. Required by flask_login."""
+        return True
 
-@login_manager.user_loader
-def load_user(user_id):
-    """Reload a user from the session. The function you set should
-    take a user ID (a ``unicode``) and return a
-    user object, or ``None`` if the user does not exist.
-    :param user_id: User ID
-    :return user object, or ``None`` if the user does not exist
+    @staticmethod
+    def is_authenticated():
+        """Check if user is authenticated. Required by flask_login"""
+        return True
+
+    @staticmethod
+    def is_anonymous():
+        """Check if user is anonymous. Required by flask_login"""
+        return False
+
+    def data_profiling(self):
+        """Check if user has access to data profiling tools"""
+        return self._is_data_profiler
+
+    def is_superuser(self):
+        """Check if user has access to all the things"""
+        return self._is_superuser
+
+
+@login_manager.header_loader
+def load_user_from_header(auth_header):
+    """Reload a user data from the header.
+    :param auth_header: Authorization header
+    :return user object, or ``None`` if header is invalid
     :rtype DexUser
     """
-    LOG.debug("Loading user %s", user_id)
-    if not user_id or user_id == 'None':
+    jwt_obj = parse_jwt_header(auth_header)
+
+    if not jwt_obj:
         return None
 
-    session = settings.Session()
-    user = session.query(models.User).\
-        filter(models.User.email == user_id).first()
-    session.expunge_all()
-    session.commit()
-    session.close()
-    if user:
-        return DexUser(user.email, user.username, user.superuser, True)
+    name = jwt_obj.get('name')
+    email = jwt_obj.get('email')
+    groups = jwt_obj.get('groups')
+
+    admin_group = None
+    if conf.has_option('webserver', 'dex_group_admin'):
+        admin_group = conf.get('webserver', 'dex_group_admin')
+
+    profiler_group = None
+    if conf.has_option('webserver', 'dex_group_profiler'):
+        profiler_group = conf.get('webserver', 'dex_group_profiler')
+
+    print('admin_group={}, profiler_group={}'.format(admin_group, profiler_group))
+
+    is_superuser = False
+    is_data_profiler = False
+
+    if admin_group or profiler_group:
+        if admin_group and admin_group in groups:
+            is_superuser = True
+        elif profiler_group and profiler_group in groups:
+            is_data_profiler = True
+        else:
+            return None
+    else:
+        is_superuser = True
+        is_data_profiler = True
+
+    return DexUser(name, email, is_superuser, is_data_profiler)
 
 
 def login(self, request):
@@ -150,48 +153,39 @@ def login(self, request):
 
     if not jwt_obj:
         response = Response(
-            'JWT header is invalid or absent.', mimetype='text/plain',
-            status=401)
+            'JWT header is invalid or absent.', mimetype='text/plain')
         return response
 
     name = jwt_obj.get('name')
     email = jwt_obj.get('email')
     groups = jwt_obj.get('groups')
 
+    admin_group = None
+    if conf.has_option('webserver', 'dex_group_admin'):
+        admin_group = conf.get('webserver', 'dex_group_admin')
+
+    profiler_group = None
+    if conf.has_option('webserver', 'dex_group_profiler'):
+        profiler_group = conf.get('webserver', 'dex_group_profiler')
+
     is_superuser = False
     is_data_profiler = False
 
     if admin_group or profiler_group:
-        if admin_group in groups:
+        if admin_group and admin_group in groups:
             is_superuser = True
-        elif profiler_group in groups:
+        elif profiler_group and profiler_group in groups:
             is_data_profiler = True
         else:
             response = Response(
-                "Access denied for user '{}'" % email,
-                mimetype='text/plain', status=401)
+                "Access denied for user '{}'".format(email),
+                mimetype='text/plain')
             return response
     else:
         is_superuser = True
         is_data_profiler = True
 
-    session = settings.Session()
-    user = session.query(models.User).filter(
-        models.User.email == email).first()
-
-    if not user:
-        user = models.User(
-            username=name,
-            email=email,
-            superuser=is_superuser)
-    else:
-        user.superuser = is_superuser
-
-    session.merge(user)
-    session.commit()
-    flask_login.login_user(DexUser(email, name, is_superuser, is_data_profiler))
-    session.commit()
-    session.close()
+    flask_login.login_user(DexUser(name, email, is_superuser, is_data_profiler))
     return redirect(request.args.get("next") or url_for("admin.index"))
 
 
