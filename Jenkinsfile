@@ -45,17 +45,17 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     '''
-
+        
                     def version = sh returnStdout: true, script: '.venv/bin/update_version_id --extended-output legion/legion/version.py'
                     print("Detected legion version:\n" + version)
-
+        
                     version = version.split("\n")
                     Globals.baseVersion = version[1]
                     Globals.localVersion = version[2]
-
+        
                     currentBuild.description = "${Globals.baseVersion} ${Globals.localVersion} ${params.GitBranch}"
                     print("Base version " + Globals.baseVersion + " local version " + Globals.localVersion)
-
+        
                     print('Building shared artifact')
                     envFile = 'file.env'
                     sh """
@@ -65,7 +65,7 @@ node {
                     echo "LOCAL_VERSION=${Globals.localVersion}" >> $envFile
                     """
                     archiveArtifacts envFile
-
+        
                     print('Build and distributing legion_test')
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
@@ -76,7 +76,7 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     """
-
+        
                     print('Build and distributing legion')
                     sh """
                     cd legion
@@ -98,21 +98,37 @@ node {
                     ../.venv/bin/python3 setup.py bdist_wheel
                     ../.venv/bin/python3 setup.py develop
                     cd -
-                    """
+                    """   
+                }, 'Build docs': {
+                    fullBuildNumber = env.BUILD_NUMBER
+                    fullBuildNumber.padLeft(4, '0')
+
+                    sh '''
+                    cd legion
+                    LEGION_VERSION="\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')"
+                    cd docs
+                    sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
+                    sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
+                    make html
+                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
+                    cd ../../
+                    '''
+
+                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')/\""
                 }, 'Run Python code analyzers': {
                     sh '''
                     cd legion
                     ../.venv/bin/pycodestyle legion
                     ../.venv/bin/pycodestyle tests
                     ../.venv/bin/pydocstyle legion
-
+    
                     export TERM="linux"
                     rm -f pylint.log
                     ../.venv/bin/pylint legion >> pylint.log || exit 0
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
-
+    
                     archiveArtifacts 'legion/pylint.log'
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
 
