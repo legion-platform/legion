@@ -131,8 +131,48 @@ class Airflow:
             GET /api?api=list_dags&subdir=value&report
             :param subdir: (Optional) File location or directory from which to look for the dag
             :param report: (Optional) Boolean, Show DagBag loading report"""
-        return self._find_lines_in_stdout(self._get('api?api=list_dags'
-                                                    , params={'subdir': subdir, 'report': report}))[3:]
+        return self._find_lines_in_stdout(self._get('api?api=list_dags',
+                                                    params={'subdir': subdir, 'report': report}))[3:]
+
+    def find_airflow_tasks(self, dag_id, tree=None, subdir=None):
+        """ List the tasks within a DAG
+            GET /api?api=list_tasks&dag_id=value&tree&subdir=value
+
+            :param dag_id: The id of the dag
+            :param tree: (Optional) Boolean, Tree view
+            :param subdir: (Optional) File location or directory from which to look for the dag"""
+
+        return self._find_lines_in_stdout(self._get('api?api=list_tasks',
+                                                    params={'dag_id': dag_id, 'tree': tree, 'subdir': subdir}))
+
+    def trigger_airflow_task(self, dag_id, task_id, execution_date, subdir=None, dry_run=None, task_params=None):
+        """ Test a task instance. This will run a task without checking for dependencies or recording
+                it's state in the database.
+                GET /api?api=test&dag_id=value&task_id=value&execution_date=value&subdir=value&dry_run&task_params=value
+
+            :param dag_id: The id of the dag
+            :param task_id: The id of the task
+            :param execution_date: The execution date of the DAG (Example: 2017-01-02T03:04:05)
+            :param subdir: (Optional) File location or directory from which to look for the dag
+            :param dry_run: (Optional) Perform a dry run
+            :param task_params: (Optional) Sends a JSON params dict to the task
+            """
+        return self._get('api?api=test',
+                         params={'dag_id': dag_id, 'task_id': task_id, 'execution_date': execution_date,
+                                 'subdir': subdir, 'dry_run': dry_run, 'task_params': task_params})
+
+    def trigger_airflow_dag(self, dag_id, subdir=None, run_id=None, conf=None, exec_date=None):
+        """ Trigger a DAG run
+            GET /api?api=trigger_dag&dag_id=value&subdir=value&run_id=value&conf=value&exec_date=value
+
+            :param dag_id: The id of the dag
+            :param subdir: (Optional) File location or directory from which to look for the dag
+            :param run_id: (Optional) Helps to identify this run
+            :param conf: (Optional) JSON string that gets pickled into the DagRun's conf attribute
+            :param exec_date: (Optional) The execution date of the DAG
+            """
+        return self._get('api?api=trigger_dag', params={'dag_id': dag_id, 'subdir': subdir, 'run_id': run_id,
+                                                        'conf': conf, 'exec_date': exec_date})
 
     def get_failed_airflow_dags(self):
         """
@@ -140,7 +180,7 @@ class Airflow:
         :rtype list[str]
         :return: A list of failed dags names
         """
-        data = self._get('airflow/task_stats', use_rest_api_root = False)
+        data = self._get('airflow/task_stats', use_rest_api_root=False)
         failed_dags = []
         for dag_id, dag_runs in data.items():
             for dag_run in dag_runs:

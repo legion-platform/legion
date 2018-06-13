@@ -11,6 +11,10 @@ Connect to Airflow and check it
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Airflow     ${enclave}
         ${dags} =                   Find Airflow DAGs
+        :FOR    ${dag}   IN   @{dags}
+        \   ${tasks} =              Find Airflow Tasks  ${dag}
+            :FOR    ${task}     IN      @{tasks}
+            \   Trigger Airflow task    ${dag}  ${task}  "2018-06-01 00:00:00"
         Should not be empty         ${dags}
         ${failed_dags} =            Get failed Airflow DAGs
         should be empty             ${failed_dags}
