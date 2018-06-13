@@ -18,23 +18,10 @@ Unit test for slack package.
 """
 
 import unittest
-from etl.etl.slack import notification
+from etl.slack import notification
 
 
 class TestNotification(unittest.TestCase):
-
-    def test_remove_tags(self):
-        cases = [
-            {
-                "html": "<h1> Hello </h1>",
-                "plain_text": " Hello "
-            }, {
-                "html": "if i<1 and i>0:",
-                "plain_text": "if i0:"
-            }
-        ]
-        for case in cases:
-            self.assertEqual(notification.remove_tags(case["html"]), case["plain_text"])
 
     def test_format_message(self):
         cases = [

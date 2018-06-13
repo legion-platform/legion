@@ -82,4 +82,3 @@ def format_message(text):
                                    r"<\1|\2>", text_without_br)
 
     return text_with_fixed_links
-
