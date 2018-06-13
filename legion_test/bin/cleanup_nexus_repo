@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 import requests
 import datetime
-import sys
 import argparse
 import re
 import logging
@@ -30,11 +29,15 @@ Options = NamedTuple('Options', [
     ('password', str),
     ('dry_run', bool),
     ('remaining_days', int),
+    ('repositories', list),
     ('build_name', str)
 ])
 
+NEXUS_SEARCH_URL = '{host}/service/siesta/rest/beta/search'
+NEXUS_DELETE_URL = '{host}/service/siesta/rest/beta/components/{resource}'
 
-def get_builds(api_url, repository, user, password, build_name):
+
+def get_builds(nexus_url, repository, user, password, build_name):
     """
     Get list of Legion artifacts at Nexus repo matching search filters
 
@@ -50,7 +53,6 @@ def get_builds(api_url, repository, user, password, build_name):
     :return: list[dict, dict] List of Nexus components
     """
 
-    search_url = "{}/search".format(api_url)
     search_filters = {"repository": repository}
     if build_name:
         search_filters["name"] = build_name
@@ -58,16 +60,19 @@ def get_builds(api_url, repository, user, password, build_name):
     builds = []
     try:
         log.info('Fetching Nexus artifacts')
-        r = requests.get(search_url, params=search_filters, auth=(user, password)).json()
+        r = requests.get(NEXUS_SEARCH_URL.format(host=nexus_url), params=search_filters, auth=(user, password)).json()
         builds.extend(r.get("items"))
-    except requests.exceptions.RequestException as e:
-        print('Error fetching Nexus artifacts: {}'.format(e))
-        sys.exit(1)
 
-    while r.get('continuationToken') is not None:
-        search_filters["continuationToken"] = r.get('continuationToken')
-        r = requests.get(search_url, params=search_filters, auth=(user, password)).json()
-        builds.extend(r.get("items"))
+        while r.get('continuationToken') is not None:
+            search_filters["continuationToken"] = r.get('continuationToken')
+            r = requests.get(
+                NEXUS_SEARCH_URL.format(host=nexus_url),
+                params=search_filters,
+                auth=(user, password)).json()
+            builds.extend(r.get("items"))
+
+    except requests.exceptions.RequestException as e:
+        log.error('Error fetching Nexus artifacts: {}'.format(e))
 
     return builds
 
@@ -95,7 +100,7 @@ def filter_builds_by_date(builds, remaining_days):
     return builds_to_del
 
 
-def delete_builds(api_url, user, password, builds, dry_run):
+def delete_builds(nexus_url, user, password, builds, dry_run):
     """
     Delete artifacts from Nexus repository
 
@@ -118,14 +123,16 @@ def delete_builds(api_url, user, password, builds, dry_run):
     else:
         for build in builds:
             try:
-                delete_url = "{}/components/{}".format(api_url, build.get("id"))
-                requests.delete(delete_url, auth=(user, password))
+                requests.delete(NEXUS_DELETE_URL.format(
+                    host=nexus_url,
+                    resource=build.get("id")),
+                    auth=(user, password))
                 log.info("{}-{}-{}: Deleted".format(
                     build.get("name"),
                     build.get("version"),
                     build.get("id")))
             except Exception as e:
-                print(e)
+                log.error(e)
 
 
 def work(options):
@@ -138,20 +145,26 @@ def work(options):
     :return: None
     """
 
-    api_url = '{}/service/siesta/rest/beta'.format(options.nexus_url)
-
-    for repo in nexus_legion_repos:
+    for repo in options.repositories:
         log.info('Cleaninig up {} Nexus repository'.format(repo))
-        builds_to_del = filter_builds_by_date(get_builds(
-            api_url,
-            repo,
-            options.user,
-            options.password,
-            options.build_name), options.remaining_days)
-        if builds_to_del:
-            delete_builds(api_url, options.user, options.password, builds_to_del, options.dry_run)
-        else:
-            log.warn('No builds to delete in {} repository'.format(repo))
+        try:
+            builds_to_del = filter_builds_by_date(get_builds(
+                options.nexus_url,
+                repo,
+                options.user,
+                options.password,
+                options.build_name), options.remaining_days)
+            try:
+                delete_builds(
+                    options.nexus_url,
+                    options.user,
+                    options.password,
+                    builds_to_del,
+                    options.dry_run)
+            except Exception as e:
+                log.error('Can\'t delete artifacts for {} repository: {}'.format(repo, e))
+        except Exception as e:
+            log.error('Error fetching list of buils for {} repository: {} '.format(repo, e))
 
 
 if __name__ == '__main__':
@@ -161,6 +174,8 @@ if __name__ == '__main__':
     parser.add_argument('--password', '-p', type=str, default='admin123', help='Nexus admin password')
     parser.add_argument('--remaining-days', type=int, help='Number of days to remain builds')
     parser.add_argument('--build-name', '-n', type=str, help='Build name to delete')
+    parser.add_argument('--repositories', '-r', type=str, default=['main-docker', 'jenkins_plugins', 'pypi-hosted'],
+                        help='List of repositories to cleanup', )
     parser.add_argument('--dry-run', '-d', action="store_true", help='Do not perform any actions')
     parser.add_argument('--verbose', '-v', action='store_true', help='verbose log output')
 
@@ -172,12 +187,8 @@ if __name__ == '__main__':
         dry_run=args.dry_run,
         remaining_days=args.remaining_days,
         build_name=args.build_name,
+        repositories=args.repositories
     )
-
-    nexus_legion_repos = [
-        'main-docker',
-        'jenkins_plugins',
-        'pypi-hosted']
 
     log = logging.getLogger(__name__)
     if args.verbose:
