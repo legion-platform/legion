@@ -174,8 +174,8 @@ if __name__ == '__main__':
     parser.add_argument('--password', '-p', type=str, default='admin123', help='Nexus admin password')
     parser.add_argument('--remaining-days', type=int, help='Number of days to remain builds')
     parser.add_argument('--build-name', '-n', type=str, help='Build name to delete')
-    parser.add_argument('--repositories', '-r', type=str, default=['main-docker', 'jenkins_plugins', 'pypi-hosted'],
-                        help='List of repositories to cleanup', )
+    parser.add_argument('--repositories', '-r', default=['main-docker', 'jenkins_plugins', 'pypi-hosted'],
+                        help='List of repositories to cleanup', nargs='+')
     parser.add_argument('--dry-run', '-d', action="store_true", help='Do not perform any actions')
     parser.add_argument('--verbose', '-v', action='store_true', help='verbose log output')
 
