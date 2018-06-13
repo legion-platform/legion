@@ -83,13 +83,3 @@ def format_message(text):
 
     return text_with_fixed_links
 
-
-def remove_tags(text):
-    """
-    Remove HTML tags from the text.
-
-    :param text: text with html tags to be removed
-    :return: text without html text
-    """
-    html_regexp = '<[^>]+>'
-    return re.sub(html_regexp, '', text)
