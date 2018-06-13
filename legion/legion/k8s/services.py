@@ -49,22 +49,22 @@ class Service:
         :type k8s_service: V1Service
         """
         if not k8s_service.metadata.labels:
-            raise Exception('Invalid service for introspection: labels missed')
+            raise Exception('Invalid service for introspection: labels are missing')
 
         self._name = k8s_service.metadata.labels.get(LEGION_COMPONENT_LABEL)
 
         if not self._name:
-            raise Exception('Invalid service for introspection: label {} missed'.format(LEGION_COMPONENT_LABEL))
+            raise Exception('Invalid service for introspection: label {} is missing'.format(LEGION_COMPONENT_LABEL))
 
         self._k8s_service = k8s_service
         # Get port
         ports = self.k8s_service.spec.ports
         if not ports:
-            raise Exception('Invalid service for introspection: {} does not contain ports'.format(self._name))
+            raise Exception('Invalid service for introspection: {} has no ports'.format(self._name))
 
         api_ports = [port.port for port in ports if port.name == LEGION_API_SERVICE_PORT]
         if not api_ports:
-            raise Exception('Invalid service for introspection: cannot find port labeled with {} for service {}'
+            raise Exception('Invalid service for introspection: cannot find port {} for service {}'
                             .format(LEGION_API_SERVICE_PORT, self._name))
 
         self._port = api_ports[0]
