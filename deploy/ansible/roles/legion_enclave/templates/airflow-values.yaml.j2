@@ -45,6 +45,11 @@ smtp:
   smtp_password: {{ airflow.email.smtp_password }}
   smtp_mail_from: {{ airflow.email.smtp_mail_from }}
 
+slack:
+  username: {{ airflow.slack.username | default('~') }}
+  channel: {{ airflow.slack.channel | default('~') }}
+  token: {{ airflow.slack.token | default('~') }}
+
 storage:
   use_specified_pvc: true
   dags_volume_pvc: "{{ airflow_dags_pvc }}"
