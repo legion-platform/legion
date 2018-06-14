@@ -178,15 +178,18 @@ def scale(model, count, version=None):
 @blueprint.route(build_blueprint_url(EDI_INSPECT), methods=['GET'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-def inspect():
+@legion.http.populate_fields(model=str, version=str)
+def inspect(model=None, version=None):
     """
     Inspect API endpoint
 
     :return: dict -- state of cluster models
     """
-    LOGGER.info('Command: inspect')
+    LOGGER.info('Command: inspect with model={}, version={}'.format(model, version))
     model_deployments = []
-    for model_service in app.config['ENCLAVE'].models.values():
+    model_services = app.config['ENCLAVE'].get_models_strict(model, version)
+
+    for model_service in model_services:
         model_api_info = {}
 
         model_client = legion.model.ModelClient(

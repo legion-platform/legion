@@ -180,16 +180,16 @@ class Enclave:
         """
         Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
 
-        :param model_id: model id or * for all models
+        :param model_id: model id or */None for all models
         :type model_id: str
-        :param model_version: (Optional) model version or * for all
+        :param model_version: (Optional) model version or */None for all
         :type model_version: str
         :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
         """
         return [
             model_service
             for id_and_version, model_service in self.models.items()
-            if model_id in (id_and_version.id, '*') and model_version in (id_and_version.version, None, '*')
+            if model_id in (id_and_version.id, '*', None) and model_version in (id_and_version.version, None, '*')
         ]
 
     def get_models_strict(self, model_id, model_version=None):

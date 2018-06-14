@@ -99,13 +99,23 @@ class EdiClient:
 
         return answer
 
-    def inspect(self):
+    def inspect(self, model=None, version=None):
         """
         Perform inspect query on EDI server
 
+        :param model: model id
+        :type model: str
+        :param version: (Optional) model version
+        :type version: str
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
         """
-        answer = self._query(legion.edi.server.EDI_INSPECT)
+        payload = {}
+        if model:
+            payload['model'] = model
+        if version:
+            payload['version'] = version
+
+        answer = self._query(legion.edi.server.EDI_INSPECT, payload=payload)
         return [legion.k8s.ModelDeploymentDescription(**x) for x in answer]
 
     def info(self):

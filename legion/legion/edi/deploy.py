@@ -24,7 +24,6 @@ import re
 
 import docker
 import docker.errors
-import legion.exceptions
 import legion.config
 import legion.containers.docker
 import legion.containers.headers
@@ -55,7 +54,7 @@ def build_model(args):
 
     with ExternalFileReader(args.model_file) as external_reader:
         if not os.path.exists(external_reader.path):
-            raise legion.exceptions.CannotFindModelBinary(path=external_reader.path)
+            raise Exception('Cannot find model binary {}'.format(external_reader.path))
 
         with legion.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
             model_id = container.get('model.id', None)
@@ -63,7 +62,7 @@ def build_model(args):
                 model_id = args.model_id
 
         if not model_id:
-            raise legion.exceptions.ModelIdIsMissedInModelBinary()
+            raise Exception('Model ID is missed')
 
         image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
 
@@ -97,7 +96,7 @@ def build_model(args):
 
             registry_delimiter = docker_registry.find('/')
             if registry_delimiter < 0:
-                raise legion.exceptions.InvalidRegistryFormat()
+                raise Exception('Invalid registry format')
 
             registry = docker_registry[:registry_delimiter]
             image_name = docker_registry[registry_delimiter+1:]
@@ -139,7 +138,7 @@ def inspect_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    model_deployments = edi_client.inspect()
+    model_deployments = edi_client.inspect(args.model_id, args.model_version)
 
     data = []
 
@@ -215,15 +214,16 @@ def undeploy_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    # Firstly try to inspect current models
-    try:
-        edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
-    except Exception as exception:
-        if 'No one model can be found' in str(exception) and args.ignore_not_found:
+    model_deployments = edi_client.inspect(args.model_id, args.model_version)
+
+    if not model_deployments:
+        if args.ignore_not_found:
             print('Cannot find any deployment - ignoring')
             return
         else:
-            raise exception
+            raise Exception('Cannot find any deployment')
+
+    edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
 
     while True:
         information = [info for info in edi_client.inspect() if info.model == args.model_id]
@@ -269,7 +269,7 @@ def deploy_kubernetes(args):
             information = [info for info in edi_client.inspect() if info.image == args.image]
 
             if not information:
-                raise legion.exceptions.CannotFindModelDeploymentAfterDeploy(args.image)
+                raise Exception('Cannot find model deployment after deploy for image {}'.format(args.image))
 
             deployment = information[0]
 
@@ -277,6 +277,3 @@ def deploy_kubernetes(args):
                 break
 
             time.sleep(1)
-
-
-
