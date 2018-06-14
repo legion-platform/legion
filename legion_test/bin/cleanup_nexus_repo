@@ -154,15 +154,18 @@ def work(options):
                 options.user,
                 options.password,
                 options.build_name), options.remaining_days)
-            try:
-                delete_builds(
-                    options.nexus_url,
-                    options.user,
-                    options.password,
-                    builds_to_del,
-                    options.dry_run)
-            except Exception as e:
-                log.error('Can\'t delete artifacts for {} repository: {}'.format(repo, e))
+            if builds_to_del:
+                try:
+                    delete_builds(
+                        options.nexus_url,
+                        options.user,
+                        options.password,
+                        builds_to_del,
+                        options.dry_run)
+                except Exception as e:
+                    log.error('Can\'t delete artifacts for {} repository: {}'.format(repo, e))
+            else:
+                log.warning("No artifacts matching the filter found in {} repository".format(repo))
         except Exception as e:
             log.error('Error fetching list of buils for {} repository: {} '.format(repo, e))
 
