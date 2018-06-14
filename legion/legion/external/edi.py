@@ -90,7 +90,7 @@ class EdiClient:
         except ValueError as json_decode_exception:
             raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
-        if answer.get('error', False):
+        if isinstance(answer, dict) and answer.get('error', False):
             exception = answer.get('exception')
             raise Exception('Got error from server: {!r}'.format(exception))
 
