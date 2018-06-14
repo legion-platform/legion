@@ -187,7 +187,7 @@ def inspect(model=None, version=None):
     """
     LOGGER.info('Command: inspect with model={}, version={}'.format(model, version))
     model_deployments = []
-    model_services = app.config['ENCLAVE'].get_models_strict(model, version)
+    model_services = app.config['ENCLAVE'].get_models(model, version)
 
     for model_service in model_services:
         model_api_info = {}
