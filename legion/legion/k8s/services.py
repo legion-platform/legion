@@ -52,6 +52,7 @@ class Service:
             raise Exception('Invalid service for introspection: labels are missing')
 
         self._name = k8s_service.metadata.labels.get(LEGION_COMPONENT_LABEL)
+        LOGGER.debug('Analyzing service {}'.format(self._name))
 
         if not self._name:
             raise Exception('Invalid service for introspection: label {} is missing'.format(LEGION_COMPONENT_LABEL))

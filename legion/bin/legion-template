@@ -48,9 +48,11 @@ if __name__ == '__main__':
     target_signal = signals[args.signal] if args.signal else None
 
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        log_level = logging.DEBUG
     else:
-        logging.basicConfig(level=logging.INFO)
+        log_level = logging.ERROR
+
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
     template_system = LegionTemplateEngine(args.template, args.output, command=args.command,
                                            pid=args.pid, pid_file=args.pid_file, signal=target_signal)

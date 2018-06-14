@@ -80,23 +80,22 @@ class EdiClient:
         try:
             response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
         except requests.exceptions.ConnectionError as exception:
-            raise Exception('Cannot connect to EDI server: %s. Exception: %s' % (self._base, exception))
+            raise Exception('Failed to connect to {}: {}'.format(self._base, exception))
 
-        if response.status_code in (401, 403):
-            raise Exception('Auth failed')
+        LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
+                     .format(response.text, response.status_code, full_url))
+
         try:
             answer = json.loads(response.text)
         except ValueError as json_decode_exception:
-            raise Exception('Cannot parse answer: %s. HTTP CODE: %d. Exception: %s'
-                            % (response.text, response.status_code, json_decode_exception))
+            raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
-        if 'error' in answer and answer['error']:
-            print(repr(answer))
-            raise Exception('Server returns error: %s' % answer.get('message', 'UNKNOWN'))
+        if answer.get('error', False):
+            exception = answer.get('exception')
+            raise Exception('Got error from server: {!r}'.format(exception))
 
         if response.status_code != 200:
-            raise Exception('Wrong HTTP code (%d) for url = %s: %s. %s'
-                            % (response.status_code, full_url, repr(response), response.text))
+            raise Exception('Server returned wrong HTTP code (not 200) without error flag')
 
         return answer
 
@@ -117,16 +116,14 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, count=1, k8s_image=None):
+    def deploy(self, image, count=1):
         """
         Deploy API endpoint
 
-        :param image: Docker image for deploy (for jybernetes deployment and local pull)
+        :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
         :param count: count of pods to create
         :type count: int
-        :param k8s_image: Docker image for kubernetes deployment
-        :type k8s_image: str or None
         :return: bool -- True
         """
         payload = {
@@ -134,8 +131,6 @@ class EdiClient:
         }
         if count:
             payload['count'] = count
-        if k8s_image:
-            payload['k8s_image'] = k8s_image
 
         return self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']
 
@@ -185,13 +180,31 @@ class EdiClient:
         return self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload)['status']
 
 
+def add_edi_arguments(parser):
+    """
+    Add EDI arguments parser
+
+    :param parser:
+    :type parser:
+    :return:
+    """
+    parser.add_argument('--edi',
+                        type=str, help='EDI server host')
+    parser.add_argument('--user',
+                        type=str, help='EDI server user')
+    parser.add_argument('--password',
+                        type=str, help='EDI server password')
+    parser.add_argument('--token',
+                        type=str, help='EDI server token')
+
+
 def build_client(args):
     """
     Build EDI client from from ENV and from command line arguments
 
     :param args: command arguments with .namespace
     :type args: :py:class:`argparse.Namespace`
-    :return:
+    :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
     host = os.environ.get(*legion.config.EDI_URL)
     user = os.environ.get(*legion.config.EDI_USER)

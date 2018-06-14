@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import argparse
 import logging
 
 from legion.serving.pyserve import serve_model
+from legion.external.edi import add_edi_arguments
 from legion.edi.deploy import \
     build_model, \
-    deploy_model, undeploy_model, inspect, \
     deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
     VALID_INSPECT_FORMATS, VALID_SERVING_WORKERS
 import legion.utils
@@ -70,44 +70,6 @@ if __name__ == '__main__':
                               type=str, help='serving worker: %s' % ', '.join(VALID_SERVING_WORKERS))
     build_parser.set_defaults(func=build_model)
 
-    deploy_parser = subparsers.add_parser('deploy-local',
-                                          description='deploys a model into a new container (local docker)')
-    deploy_parser.add_argument('--model-id',
-                               type=str, help='model id')
-    deploy_parser.add_argument('--docker-image',
-                               type=str, help='docker sha256 image')
-    deploy_parser.add_argument('--docker-network',
-                               type=str, help='docker network')
-    deploy_parser.add_argument('--grafana-server',
-                               type=str, help='Grafana server')
-    deploy_parser.add_argument('--grafana-user',
-                               type=str, help='Grafana user')
-    deploy_parser.add_argument('--grafana-password',
-                               type=str, help='Grafana password')
-    deploy_parser.add_argument('--expose-model-port',
-                               type=int, help='Expose model at specific port')
-    deploy_parser.set_defaults(func=deploy_model)
-
-    undeploy_parser = subparsers.add_parser('undeploy-local',
-                                            description='kills all containers service the model (local docker)')
-    undeploy_parser.add_argument('model_id',
-                                 type=str, help='identifier of the model')
-    undeploy_parser.add_argument('--docker-network',
-                                 type=str, help='docker network')
-    undeploy_parser.add_argument('--grafana-server',
-                                 type=str, help='Grafana server')
-    undeploy_parser.add_argument('--grafana-user',
-                                 type=str, help='Grafana user')
-    undeploy_parser.add_argument('--grafana-password',
-                                 type=str, help='Grafana password')
-    undeploy_parser.set_defaults(func=undeploy_model)
-
-    inspect_parser = subparsers.add_parser('inspect-local',
-                                           description='get information about docker network state')
-    inspect_parser.add_argument('--docker-network',
-                                type=str, help='docker network')
-    inspect_parser.set_defaults(func=inspect)
-
     # --------- KUBERNETES SECTION -----------
     deploy_k8s_parser = subparsers.add_parser('deploy',
                                               description='deploys a model into a kubernetes cluster')
@@ -118,36 +80,24 @@ if __name__ == '__main__':
     deploy_k8s_parser.add_argument('--scale',
                                    default=1,
                                    type=int, help='count of instances')
-    deploy_k8s_parser.add_argument('--edi',
-                                   type=str, help='EDI server host')
-    deploy_k8s_parser.add_argument('--user',
-                                   type=str, help='EDI server user')
-    deploy_k8s_parser.add_argument('--password',
-                                   type=str, help='EDI server password')
-    deploy_k8s_parser.add_argument('--token',
-                                   type=str, help='EDI server token')
     deploy_k8s_parser.add_argument('--no-wait',
                                    action='store_true', help='wait until pods will be ready')
     deploy_k8s_parser.add_argument('--wait-timeout',
                                    default=120,
                                    type=int, help='timeout in s. for wait (if no-wait is off). Infinite if 0')
+    add_edi_arguments(deploy_k8s_parser)
     deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
 
     inspect_k8s_parser = subparsers.add_parser('inspect',
                                                description='get information about currently deployed models')
-    inspect_k8s_parser.add_argument('--edi',
-                                    type=str, help='EDI server host')
-    inspect_k8s_parser.add_argument('--user',
-                                    type=str, help='EDI server user')
-    inspect_k8s_parser.add_argument('--password',
-                                    type=str, help='EDI server password')
-    inspect_k8s_parser.add_argument('--token',
-                                    type=str, help='EDI server token')
-    inspect_k8s_parser.add_argument('--filter',
-                                    type=str, help='Model ID filter ')
+    inspect_k8s_parser.add_argument('--model-id',
+                                    type=str, help='model ID')
+    inspect_k8s_parser.add_argument('--model-version',
+                                    type=str, help='model version')
     inspect_k8s_parser.add_argument('--format',
                                     default=VALID_INSPECT_FORMATS[0],
                                     choices=VALID_INSPECT_FORMATS, help='output format')
+    add_edi_arguments(inspect_k8s_parser)
     inspect_k8s_parser.set_defaults(func=inspect_kubernetes)
 
     scale_k8s_parser = subparsers.add_parser('scale',
@@ -158,14 +108,7 @@ if __name__ == '__main__':
                                   type=int, help='new count of replicas')
     scale_k8s_parser.add_argument('--model-version',
                                   type=str, help='model version')
-    scale_k8s_parser.add_argument('--edi',
-                                  type=str, help='EDI server host')
-    scale_k8s_parser.add_argument('--user',
-                                  type=str, help='EDI server user')
-    scale_k8s_parser.add_argument('--password',
-                                  type=str, help='EDI server password')
-    scale_k8s_parser.add_argument('--token',
-                                  type=str, help='EDI server token')
+    add_edi_arguments(scale_k8s_parser)
     scale_k8s_parser.set_defaults(func=scale_kubernetes)
 
     undeploy_k8s_parser = subparsers.add_parser('undeploy',
@@ -177,16 +120,9 @@ if __name__ == '__main__':
     undeploy_k8s_parser.add_argument('--grace-period',
                                      default=0,
                                      type=int, help='removal grace period')
-    undeploy_k8s_parser.add_argument('--edi',
-                                     type=str, help='EDI server host')
-    undeploy_k8s_parser.add_argument('--user',
-                                     type=str, help='EDI server user')
-    undeploy_k8s_parser.add_argument('--password',
-                                     type=str, help='EDI server password')
-    undeploy_k8s_parser.add_argument('--token',
-                                     type=str, help='EDI server token')
     undeploy_k8s_parser.add_argument('--ignore-not-found',
                                      action='store_true', help='ignore if cannot found pod')
+    add_edi_arguments(undeploy_k8s_parser)
     undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
 
     # --------- SERVING SECTION -----------
@@ -213,10 +149,14 @@ if __name__ == '__main__':
     else:
         log_level = logging.ERROR
 
-    ROOT_LOGGER.setLevel(log_level)
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    if 'func' in v:
-        args.func(args)
-    else:
-        parser.print_help()
-        sys.exit(1)
+    try:
+        if 'func' in v:
+            args.func(args)
+        else:
+            parser.print_help()
+            sys.exit(1)
+    except Exception as exception:
+        ROOT_LOGGER.exception(exception)
+        sys.exit(2)

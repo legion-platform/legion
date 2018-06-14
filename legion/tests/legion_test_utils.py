@@ -1,9 +1,13 @@
 from argparse import Namespace
+import logging
 import time
 import tempfile
 import os
 import glob
 from unittest.mock import patch
+
+import docker
+import docker.errors
 
 import legion.config
 import legion.containers.docker
@@ -14,6 +18,81 @@ import legion.model.model_id
 from legion.model import ModelClient
 from legion.utils import remove_directory
 import legion.edi.deploy as deploy
+
+LOGGER = logging.getLogger(__name__)
+
+
+def deploy_model(args):
+    """
+    Deploy model to docker host
+
+    :param args: command arguments with .model_id, .model_file, .docker_network
+    :type args: :py:class:`argparse.Namespace`
+    :return: :py:class:`docker.model.Container` new instance
+    """
+    client = legion.containers.docker.build_docker_client(args)
+    network_id = legion.containers.docker.find_network(client, args)
+
+    if args.model_id and args.docker_image:
+        print('Use only --model-id or --docker-image')
+        exit(1)
+    elif not args.model_id and not args.docker_image:
+        print('Use with --model-id or --docker-image')
+        exit(1)
+
+    current_containers = legion.containers.docker.get_stack_containers_and_images(client, network_id)
+
+    if args.model_id:
+        for image in current_containers['model_images']:
+            model_name = image.labels.get('com.epam.legion.model.id', None)
+            if model_name == args.model_id:
+                image = image
+                model_id = model_name
+                break
+        else:
+            raise Exception('Cannot found image for model_id = %s' % (args.model_id,))
+    elif args.docker_image:
+        try:
+            image = client.images.get(args.docker_image)
+        except docker.errors.ImageNotFound:
+            print('Cannot find %s locally. Pulling' % args.docker_image)
+            image = client.images.pull(args.docker_image)
+
+        model_id = image.labels.get('com.epam.legion.model.id', None)
+        if not model_id:
+            raise Exception('Cannot detect model_id in image')
+    else:
+        raise Exception('Provide model-id or docker-image')
+
+    # Detect current existing containers with models, stop and remove them
+    LOGGER.info('Founding containers with model_id=%s', model_id)
+
+    for container in current_containers['models']:
+        model_name = container.labels.get('com.epam.legion.model.id', None)
+        if model_name == model_id:
+            LOGGER.info('Stopping container #%s', container.short_id)
+            container.stop()
+            LOGGER.info('Removing container #%s', container.short_id)
+            container.remove()
+
+    container_labels = legion.containers.docker.generate_docker_labels_for_container(image)
+
+    ports = {}
+    if args.expose_model_port is not None:
+        exposing_port = args.expose_model_port
+        ports['%d/tcp' % os.getenv(*legion.config.LEGION_PORT)] = exposing_port
+
+    LOGGER.info('Starting container with image #%s for model %s', image.short_id, model_id)
+    container = client.containers.run(image,
+                                      network=network_id,
+                                      stdout=True,
+                                      stderr=True,
+                                      detach=True,
+                                      ports=ports,
+                                      labels=container_labels)
+
+    print('Successfully created docker container %s for model %s' % (container.short_id, model_id))
+    return container
 
 
 def get_latest_distribution():
@@ -190,7 +269,7 @@ class ModelTestDeployment:
                     grafana_password=None,
                     expose_model_port=0
                 )
-                self.container = deploy.deploy_model(args)
+                self.container = deploy_model(args)
                 self.container_id = self.container.id
             print('Model image has been deployed')
 
@@ -247,6 +326,13 @@ class ModelTestDeployment:
             try:
                 print('Finding container')
                 container = self._docker_client.containers.get(self.container.id)
+                try:
+                    logs = self.container.logs().decode('utf-8')
+
+                    print('--- CONTAINER LOGS ---')
+                    print(logs)
+                except Exception as log_get_exception:
+                    print('Cannot get logs of container: {}'.format(log_get_exception))
                 print('Stopping container')
                 container.stop()
                 print('Removing container')

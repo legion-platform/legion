@@ -28,10 +28,8 @@ import logging
 from legion.edi.server import serve
 import legion.utils
 
-ROOT_LOGGER = logging.getLogger()
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='legion Api server')
+    parser = argparse.ArgumentParser(description='Legion API server')
     parser.add_argument('--verbose',
                         help='verbose log output',
                         action='store_true')
@@ -55,6 +53,6 @@ if __name__ == '__main__':
     else:
         log_level = logging.ERROR
 
-    ROOT_LOGGER.setLevel(log_level)
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
     serve(args)
