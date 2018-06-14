@@ -8,7 +8,7 @@
 
 - hosts: localhost
   connection: local
-  gather_facts: False
+  gather_facts: True
   vars_files:
     - "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
 
