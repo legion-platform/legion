@@ -39,6 +39,7 @@ webserver:
   authenticate: {{ airflow_auth.enabled }}
   dex_group_admin: {{ airflow_auth.dex_group_admin }}
   dex_group_profiler: {{ airflow_auth.dex_group_profiler }}
+  auth_backend: {{ airflow_auth.auth_backend }}
 
 smtp:
   smtp_host: {{ airflow.email.smtp_host }}
