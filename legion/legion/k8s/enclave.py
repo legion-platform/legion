@@ -225,7 +225,6 @@ class Enclave:
         :return: :py:class:`legion.k8s.services.ModelService` -- model service
         """
         client = legion.k8s.utils.build_client()
-        
         labels = legion.k8s.utils.get_docker_image_labels(image)
         k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
