@@ -225,13 +225,8 @@ class Enclave:
         :return: :py:class:`legion.k8s.services.ModelService` -- model service
         """
         client = legion.k8s.utils.build_client()
-
-        introspection_image = image
-
-        if os.getenv('EXTERNAL_TEST') and '-local' in introspection_image:
-            introspection_image = introspection_image.replace('-local', '')
-
-        labels = legion.k8s.utils.get_docker_image_labels(introspection_image)
+        
+        labels = legion.k8s.utils.get_docker_image_labels(image)
         k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
         if self.get_models(model_id, model_version):
