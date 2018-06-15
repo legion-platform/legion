@@ -7,14 +7,19 @@ def installTools(){
     '''
 }
 
+def buildDescription(){
+   currentBuild.description = "${params.Profile} ${params.GitBranch}"
+}
+
 def createCluster() {
     dir('deploy/ansible'){
+        sh 'env'
         withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     ansiblePlaybook(
                         playbook: 'create-cluster.yml',
-                        extras: ' --extra-vars "profile=${params.Profile} skip_kops=${params.Skip_kops}"',
+                        extras: ' --extra-vars "profile=${Profile} skip_kops=${Skip_kops}"',
                         colorized: true
                     )
                 }
@@ -29,7 +34,7 @@ def terminateCluster() {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                 ansiblePlaybook(
                     playbook: 'terminate-cluster.yml',
-                    extras: ' --extra-vars "profile=${params.Profile}"',
+                    extras: ' --extra-vars "profile=${Profile}"',
                     colorized: true
                 )
             }
@@ -45,7 +50,7 @@ def deployLegion() {
                     wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                         ansiblePlaybook(
                             playbook: 'deploy-legion.yml',
-                            extras: ' --extra-vars "profile=${params.Profile} base_version=${params.BaseVersion}  local_version=${params.LocalVersion}"',
+                            extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion}"',
                             colorized: true
                         )
                     }
@@ -59,56 +64,66 @@ def deployLegion() {
 }
 
 def createjenkinsJobs() {
-    sh """
-    cd legion_test
-    ../.venv/bin/pip install -r requirements/base.txt
-    ../.venv/bin/pip install -r requirements/test.txt
-    ../.venv/bin/python setup.py develop
-    cd ..
-
-    .venv/bin/create_example_jobs \
-    "https://jenkins.${params.Profile}" \
-    examples \
-    . \
-    "git@github.com:epam/legion.git" \
-    ${targetBranch} \
-    --connection-timeout 600 \
-    --git-root-key "legion-root-key" \
-    --model-host "" \
-    --dynamic-model-prefix "DYNAMIC MODEL"
-    """
-}
-
-def runRobotTests() {
-    withAWS(credentials: 'kops') {
-        sh '''
+    if (params.CreateJenkinsTests){
+        sh """
         cd legion_test
         ../.venv/bin/pip install -r requirements/base.txt
         ../.venv/bin/pip install -r requirements/test.txt
         ../.venv/bin/python setup.py develop
+        cd ..
 
-        cd ../tests
-        ../.venv/bin/pip install yq
+        .venv/bin/create_example_jobs \
+        "https://jenkins.${Profile}" \
+        examples \
+        . \
+        "git@github.com:epam/legion.git" \
+        ${targetBranch} \
+        --connection-timeout 600 \
+        --git-root-key "legion-root-key" \
+        --model-host "" \
+        --dynamic-model-prefix "DYNAMIC MODEL"
+        """
+    }
+    else {
+        println('Skipping Jenkins Jobs creation')
+    }
+}
 
-        PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
-        CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
-        CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
-        echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+def runRobotTests() {
+    if (params.UseRegressionTests){
+        withAWS(credentials: 'kops') {
+            sh '''
+            cd legion_test
+            ../.venv/bin/pip install -r requirements/base.txt
+            ../.venv/bin/pip install -r requirements/test.txt
+            ../.venv/bin/python setup.py develop
 
-        kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            cd ../tests
+            ../.venv/bin/pip install yq
 
-        DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
-        '''
-        step([
-            $class : 'RobotPublisher',
-            outputPath : 'tests/',
-            outputFileName : "*.xml",
-            disableArchiveOutput : false,
-            passThreshold : 100,
-            unstableThreshold: 95.0,
-            onlyCritical : true,
-            otherFiles : "*.png",
-        ])
+            PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
+            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
+            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+
+            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+
+            DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
+            '''
+            step([
+                $class : 'RobotPublisher',
+                outputPath : 'tests/',
+                outputFileName : "*.xml",
+                disableArchiveOutput : false,
+                passThreshold : 100,
+                unstableThreshold: 95.0,
+                onlyCritical : true,
+                otherFiles : "*.png",
+            ])
+        }
+    }
+    else {
+        println('Skipped due to UseRegressionTests property')
     }
 }
 
@@ -119,7 +134,7 @@ def deployLegionEnclave() {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     ansiblePlaybook(
                         playbook: 'deploy-legion-enclave.yml',
-                        extras: ' --extra-vars "profile=${params.Profile} base_version=${params.BaseVersion}  local_version=${params.LocalVersion} enclave_name=${params.EnclaveName}"',
+                        extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion} enclave_name=${EnclaveName}"',
                         colorized: true
                     )
                 }
@@ -142,10 +157,6 @@ def terminateLegionEnclave() {
             }
         }
     }
-}
-
-def buildDescription(){
-	currentBuild.description = "${params.Profile} ${params.GitBranch}"
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {
@@ -173,8 +184,10 @@ def notifyBuild(String buildStatus = 'STARTED') {
     def colorCode = '#FF0000'
     def summary = """\
     @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    branch *${params.GitBranch}*
-    profile *<https://${params.Profile}|${params.Profile}>*
+    branch *${GitBranch}*
+    profile *<https://${Profile}|${Profile}>*
+    skip kops *${Skip_kops}*
+    local version: *${LocalVersion}*
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 
