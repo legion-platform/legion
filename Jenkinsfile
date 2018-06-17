@@ -27,8 +27,8 @@ node {
             stage('Install build dependencies'){
                 sh '''
                 sudo rm -rf .venv
-                virtualenv .venv
-    
+                virtualenv .venv -p $(which python3)
+
                 sudo chmod a+r -R .
                 cd legion
                 ../.venv/bin/pip3 install -r requirements/base.txt
@@ -45,17 +45,17 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     '''
-        
+
                     def version = sh returnStdout: true, script: '.venv/bin/update_version_id --extended-output legion/legion/version.py'
                     print("Detected legion version:\n" + version)
-        
+
                     version = version.split("\n")
                     Globals.baseVersion = version[1]
                     Globals.localVersion = version[2]
-        
+
                     currentBuild.description = "${Globals.baseVersion} ${Globals.localVersion} ${params.GitBranch}"
                     print("Base version " + Globals.baseVersion + " local version " + Globals.localVersion)
-        
+
                     print('Building shared artifact')
                     envFile = 'file.env'
                     sh """
@@ -65,7 +65,7 @@ node {
                     echo "LOCAL_VERSION=${Globals.localVersion}" >> $envFile
                     """
                     archiveArtifacts envFile
-        
+
                     print('Build and distributing legion_test')
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
@@ -76,7 +76,7 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     """
-        
+
                     print('Build and distributing legion')
                     sh """
                     cd legion
@@ -98,7 +98,7 @@ node {
                     ../.venv/bin/python3 setup.py bdist_wheel
                     ../.venv/bin/python3 setup.py develop
                     cd -
-                    """   
+                    """
                 }, 'Build docs': {
                     fullBuildNumber = env.BUILD_NUMBER
                     fullBuildNumber.padLeft(4, '0')
@@ -121,13 +121,18 @@ node {
                     ../.venv/bin/pycodestyle legion
                     ../.venv/bin/pycodestyle tests
                     ../.venv/bin/pydocstyle legion
-    
+
                     export TERM="linux"
                     rm -f pylint.log
                     ../.venv/bin/pylint legion >> pylint.log || exit 0
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
-                    
+                    '''
+
+                    archiveArtifacts 'legion/pylint.log'
+                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                    sh '''
                     cd etl
                     ../.venv/bin/pycodestyle etl
                     ../.venv/bin/pycodestyle tests
@@ -137,9 +142,9 @@ node {
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
-    
-                    archiveArtifacts 'legion/pylint.log'
-                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                    archiveArtifacts 'etl/pylint.log'
+                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'etl/pylint.log']], unHealthy: ''
                 }, 'Build Jenkins plugin': {
                     sh """
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
@@ -213,7 +218,7 @@ node {
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
-                    docker build $dockerCacheArg -t legion/k8s-airflow .
+                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-airflow .
                     """
                     UploadDockerImage('legion/k8s-airflow')
                 }, 'Run Python tests': {
