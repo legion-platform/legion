@@ -14,7 +14,8 @@ Connect to Airflow and check it
         :FOR    ${dag}   IN   @{dags}
         \   ${tasks} =              Find Airflow Tasks  ${dag}
             :FOR    ${task}     IN      @{tasks}
-            \   Trigger Airflow task    ${dag}  ${task}  "2018-06-01 00:00:00"
-        Should not be empty         ${dags}
+            \   ${status} =     Trigger Airflow task    ${dag}  ${task}  2018-06-01 00:00:00
+                should be equal     ${status}   ${None}
+        should not be empty         ${dags}
         ${failed_dags} =            Get failed Airflow DAGs
         should be empty             ${failed_dags}

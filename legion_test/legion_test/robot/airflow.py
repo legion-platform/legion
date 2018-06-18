@@ -157,9 +157,13 @@ class Airflow:
             :param dry_run: (Optional) Perform a dry run
             :param task_params: (Optional) Sends a JSON params dict to the task
             """
-        return self._get('api?api=test',
-                         params={'dag_id': dag_id, 'task_id': task_id, 'execution_date': execution_date,
-                                 'subdir': subdir, 'dry_run': dry_run, 'task_params': task_params})
+        status = self._get('api?api=test',
+                           params={'dag_id': dag_id, 'task_id': task_id, 'execution_date': execution_date,
+                                   'subdir': subdir, 'dry_run': dry_run, 'task_params': task_params})
+        stderr = self._find_lines_in_stderr(status)
+        if stderr:
+            raise Exception("task {t} failed:\n {e}".format(t=task_id, e=stderr))
+        return
 
     def trigger_airflow_dag(self, dag_id, subdir=None, run_id=None, conf=None, exec_date=None):
         """ Trigger a DAG run
@@ -189,13 +193,25 @@ class Airflow:
                     break
         return failed_dags
 
-    @staticmethod
-    def _find_lines_in_stdout(response, first_pattern=SIMPLE_ROW, second_pattern=None):
+    def _find_lines_in_stdout(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
         if type(obj) != str and 'output' in obj:
             obj = obj['output']
         if type(obj) != str and 'stdout' in obj:
             obj = obj['stdout']
+        return self._find_lines(obj, first_pattern, second_pattern)
+
+    def _find_lines_in_stderr(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
+        obj = response
+        if type(obj) != str and 'output' in obj:
+            obj = obj['output']
+        if type(obj) != str and 'stderr' in obj:
+            obj = obj['stderr']
+        return self._find_lines(obj, first_pattern, second_pattern)
+
+    @staticmethod
+    def _find_lines(response, first_pattern=SIMPLE_ROW, second_pattern=None):
+        obj = response
         if type(obj) == str:
             lines = []
             for match in first_pattern.finditer(obj):
@@ -206,5 +222,4 @@ class Airflow:
                     result = second_pattern.search(line)
                     if result is not None:
                         lines.append(result.group(1))
-
         return lines
