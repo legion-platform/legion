@@ -35,7 +35,7 @@
   # Buffering
   <buffer tag,time>
     @type file
-    path /var/log/fluent/s3
+    path {{ cfg.specific[tag].buffer_path }}
     timekey {{ cfg.specific[tag].timekey }}
     timekey_wait {{ cfg.specific[tag].timekey_wait }}
     timekey_use_utc true
@@ -68,7 +68,7 @@
   # Buffering
   <buffer tag,time>
     @type file
-    path /var/log/fluent/s3
+    path {{ cfg.default.buffer_path }}
     timekey {{ cfg.default.timekey }}
     timekey_wait {{ cfg.default.timekey_wait }}
     timekey_use_utc true

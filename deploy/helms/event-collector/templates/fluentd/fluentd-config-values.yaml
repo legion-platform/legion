@@ -17,6 +17,7 @@ data:
 
       timekey: "{{ .Values.s3.buffering.timekey }}"
       timekey_wait: "{{ .Values.s3.buffering.timekey_wait }}"
+      buffer_path: "{{ .Values.s3.buffering.path }}/default"
 
       format_type: "{{ .Values.s3.format }}"
 
@@ -30,5 +31,6 @@ data:
 
         timekey: "{{ .Values.s3.buffering.timekey }}"
         timekey_wait: "{{ .Values.s3.buffering.timekey_wait }}"
+        buffer_path: "{{ .Values.s3.buffering.path }}/tag1"
 
         format_type: "{{ .Values.s3.format }}"
