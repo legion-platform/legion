@@ -1,3 +1,4 @@
+boto3==1.7.17
 python-jenkins==0.4.15
 Jinja2==2.10
 robotframework==3.0.2

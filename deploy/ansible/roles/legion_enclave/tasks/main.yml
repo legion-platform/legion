@@ -6,3 +6,4 @@
 - include: create_enclave.yml
 - include: install_legion.yml
 - include: install_airflow.yml
+- include: install_event-collector.yml

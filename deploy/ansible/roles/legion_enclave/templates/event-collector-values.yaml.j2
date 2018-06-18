@@ -1,0 +1,16 @@
+rootDomain: {{ root_domain }}
+enclaveName: "{{ enclave }}"
+domainDelimiter: "{{ domain_delimiter }}"
+
+replicas: "{{ collector.replicas }}"
+
+image:
+  repository: "{{ nexus_docker_repo }}/"
+  tag: "{{ base_version }}-{{ local_version }}"
+
+s3:
+  key_id: "{{ fluentd.aws.access_key_id }}"
+  secret_key: "{{ fluentd.aws.secret_access_key }}"
+
+  bucket: "{{ collector.bucket }}"
+  region: "{{ collector.region }}"

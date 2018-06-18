@@ -1,0 +1,9 @@
+name: event-collector
+version: 0.0.1
+appVersion: 1.7.1
+description: Legion event collector
+maintainers:
+- name: Alexey Kharlamov
+  email: alexey@kharlamov.biz
+- name: Kirill Makhonin
+  email: kirill@makhonin.biz

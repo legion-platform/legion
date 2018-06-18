@@ -1,0 +1,34 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-fluentd-config-values"
+data:
+  values.yaml: |
+    common:
+      bucket: "{{ .Values.s3.bucket }}"
+      region: "{{ .Values.s3.region }}"
+
+    default:
+      path: "{{ .Values.s3.path }}"
+      time_slice_format: "{{ .Values.s3.time_slice_format }}"
+      time_slice_wait: "{{ .Values.s3.time_slice_wait }}"
+      s3_object_key_format: "%{path}%{time_slice}_%{index}.%{file_extension}"
+      store_as: "{{ .Values.s3.store_as }}"
+
+      timekey: "{{ .Values.s3.buffering.timekey }}"
+      timekey_wait: "{{ .Values.s3.buffering.timekey_wait }}"
+
+      format_type: "{{ .Values.s3.format }}"
+
+    specific:
+      tag1:
+        path: "{{ .Values.s3.path }}-tag1"
+        time_slice_format: "{{ .Values.s3.time_slice_format }}"
+        time_slice_wait: "{{ .Values.s3.time_slice_wait }}"
+        s3_object_key_format: "%{path}%{time_slice}_%{index}.%{file_extension}"
+        store_as: "{{ .Values.s3.store_as }}"
+
+        timekey: "{{ .Values.s3.buffering.timekey }}"
+        timekey_wait: "{{ .Values.s3.buffering.timekey_wait }}"
+
+        format_type: "{{ .Values.s3.format }}"

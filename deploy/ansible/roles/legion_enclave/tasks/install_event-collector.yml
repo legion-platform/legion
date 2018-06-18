@@ -1,0 +1,43 @@
+---
+
+- name: Get  chart status
+  shell: helm --kube-context {{ cluster_name }} ls --all event-collector-{{ enclave }}
+  register: event_collector_deployment_status
+
+- set_fact:
+    event_collector_deployed: "{{ event_collector_deployment_status.stdout_lines|length > 1 }}"
+
+- name: Remove event collector chart
+  shell: helm --kube-context {{ cluster_name }} delete --purge event-collector-{{ enclave }}
+  when: event_collector_deployed
+
+- name: Create event-collector configuration (values) file
+  template:
+    src: event-collector-values.yaml.j2
+    dest: ~/event-collector-values.yaml
+    mode: 0644
+
+- name: Pre run with dumping
+  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/event-collector-values.yaml"
+  register: helm_event_collector_install_output
+  args:
+    chdir: ../helms
+
+- name: Save pre run result
+  copy:
+    content: "{{ helm_event_collector_install_output.stdout }}"
+    dest: ./helm.event-collector_{{ enclave }}.debug
+
+- name: Install event collector chart
+  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/event-collector-values.yaml"
+  args:
+    chdir: ../helms
+
+- name: Dump current HELM status
+  shell: "helm --kube-context {{ cluster_name }} status event-collector-{{ enclave }}"
+  register: helm_event_collector_status_output
+
+- name: Save HELM status localy
+  copy:
+    content: "{{ helm_event_collector_status_output.stdout }}"
+    dest: "./helm.event-collector_{{ enclave }}.status"

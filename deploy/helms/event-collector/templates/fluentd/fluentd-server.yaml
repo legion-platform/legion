@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: "{{ .Release.Name }}-fluentd"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-fluentd"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    component: "{{ .Release.Name }}-fluentd"
+  template:
+    metadata:
+      labels:
+        component: "{{ .Release.Name }}-fluentd"
+    spec:
+      containers:
+      - name: fluentd
+        image: "{{ .Values.image.repository }}{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        ports:
+        - containerPort: 80
+          name: input
+          protocol: TCP
+        volumeMounts:
+        - name: fluentd-config-values
+          mountPath: /opt/config
+        - name: fluentd-aws-credentials
+          mountPath: /opt/secrets
+      volumes:
+      - name: fluentd-config-values
+        configMap:
+          name: "{{ .Release.Name }}-fluentd-config-values"
+      - name: fluentd-aws-credentials
+        secret:
+          secretName: "{{ .Release.Name }}-fluentd-aws-credentials"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-fluentd"
+  labels:
+    component: "{{ .Release.Name }}-fluentd"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-fluentd"
+  ports:
+  - name: input
+    port: 80
+    targetPort: 80
+    protocol: TCP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-fluentd"
+  name: "{{ .Release.Name }}-fluentd"
+spec:
+  rules:
+    - host: "{{ .Values.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-fluentd"
+              servicePort: 80
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+    {{- if .Values.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.ingress.tls.secretName  }}
+    {{- end }}
+  {{- end }}
