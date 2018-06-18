@@ -23,7 +23,7 @@ data:
 
     specific:
       tag1:
-        path: "{{ .Values.s3.path }}-tag1"
+        path: "{{ .Values.s3.path }}"
         time_slice_format: "{{ .Values.s3.time_slice_format }}"
         time_slice_wait: "{{ .Values.s3.time_slice_wait }}"
         s3_object_key_format: "%{path}%{time_slice}_%{index}.%{file_extension}"
