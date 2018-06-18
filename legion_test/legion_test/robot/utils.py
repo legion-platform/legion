@@ -253,3 +253,16 @@ class Utils:
 
         static_user = data['dex']['config']['staticPasswords'][0]
         return {"login": static_user['email'], "password": static_user['password']}
+
+    @staticmethod
+    def wait_up_to_second(second, time_template=None):
+        """
+        Wait up to second then generate time from template
+
+        :param second: target second
+        :type second: int
+        :param time_template: (Optional) time template
+        :type time_template: str
+        :return: None or str -- time from template
+        """
+        return ''
