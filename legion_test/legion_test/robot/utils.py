@@ -165,3 +165,15 @@ class Utils:
             raise error
         else:
             raise Exception('Unexpected case happen!')
+
+    def wait_up_to_second(second, time_template=None):
+        """
+        Wait up to second then generate time from template
+
+        :param second: target second
+        :type second: int
+        :param time_template: (Optional) time template
+        :type time_template: str
+        :return: None or str -- time from template
+        """
+        return ''
