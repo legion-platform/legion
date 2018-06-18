@@ -33,5 +33,6 @@ s3:
   buffering:
     timekey: 1m       # chunks length (window size)
     timekey_wait: 0s  # delay for flush (after end of window)
+    path: /tmp
 
   format: "json"
