@@ -203,17 +203,26 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 
-def normalize_name(name):
+def normalize_name(name, dns_1035=False):
     """
     Normalize name
 
     :param name: name to normalize
     :type name: str
+    :param dns_1035: (Optional) use DNS-1035 format, by default False
+    :type dns_1035: bool
     :return: str -- normalized name
     """
-    for char in ' ', '_', '+':
+    invalid_delimiters = ' ', '_', '+'
+    invalid_chars = '[^a-zA-Z0-9\-\.]'
+    if dns_1035:
+        invalid_chars = '[^a-zA-Z0-9\-]'
+        invalid_delimiters = ' ', '_', '+', '.'
+
+    for char in invalid_delimiters:
         name = name.replace(char, '-')
-    return re.sub('[^a-zA-Z0-9\-\.]', '', name)
+
+    return re.sub(invalid_chars, '', name)
 
 
 def is_local_resource(path):

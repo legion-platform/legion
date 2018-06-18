@@ -17,3 +17,4 @@
 Connections to external APIs
 """
 from .grafana import GrafanaClient
+from .edi import EdiClient

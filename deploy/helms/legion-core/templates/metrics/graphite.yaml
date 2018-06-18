@@ -85,8 +85,9 @@ metadata:
   name: "{{ .Release.Name }}-graphite"
   labels:
     component: "{{ .Release.Name }}-graphite"
-    legion/system: "yes"
-    legion/component: "graphite"
+    legion.system: "yes"
+    legion.component: "graphite"
+    legion.port: "80"
 spec:
   selector:
     component: "{{ .Release.Name }}-graphite"

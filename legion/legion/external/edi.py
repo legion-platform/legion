@@ -21,7 +21,7 @@ import json
 import logging
 import os
 
-import legion.containers.k8s
+import legion.k8s
 import legion.edi.server
 import legion.config
 import requests
@@ -80,34 +80,43 @@ class EdiClient:
         try:
             response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
         except requests.exceptions.ConnectionError as exception:
-            raise Exception('Cannot connect to EDI server: %s. Exception: %s' % (self._base, exception))
+            raise Exception('Failed to connect to {}: {}'.format(self._base, exception))
 
-        if response.status_code in (401, 403):
-            raise Exception('Auth failed')
+        LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
+                     .format(response.text, response.status_code, full_url))
+
         try:
             answer = json.loads(response.text)
         except ValueError as json_decode_exception:
-            raise Exception('Cannot parse answer: %s. HTTP CODE: %d. Exception: %s'
-                            % (response.text, response.status_code, json_decode_exception))
+            raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
-        if 'error' in answer and answer['error']:
-            print(repr(answer))
-            raise Exception('Server returns error: %s' % answer.get('message', 'UNKNOWN'))
+        if isinstance(answer, dict) and answer.get('error', False):
+            exception = answer.get('exception')
+            raise Exception('Got error from server: {!r}'.format(exception))
 
         if response.status_code != 200:
-            raise Exception('Wrong HTTP code (%d) for url = %s: %s. %s'
-                            % (response.status_code, full_url, repr(response), response.text))
+            raise Exception('Server returned wrong HTTP code (not 200) without error flag')
 
         return answer
 
-    def inspect(self):
+    def inspect(self, model=None, version=None):
         """
         Perform inspect query on EDI server
 
+        :param model: model id
+        :type model: str
+        :param version: (Optional) model version
+        :type version: str
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
         """
-        answer = self._query(legion.edi.server.EDI_INSPECT)
-        return [legion.containers.k8s.ModelDeploymentDescription(**x) for x in answer]
+        payload = {}
+        if model:
+            payload['model'] = model
+        if version:
+            payload['version'] = version
+
+        answer = self._query(legion.edi.server.EDI_INSPECT, payload=payload)
+        return [legion.k8s.ModelDeploymentDescription(**x) for x in answer]
 
     def info(self):
         """
@@ -117,16 +126,14 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, count=1, k8s_image=None):
+    def deploy(self, image, count=1):
         """
         Deploy API endpoint
 
-        :param image: Docker image for deploy (for jybernetes deployment and local pull)
+        :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
         :param count: count of pods to create
         :type count: int
-        :param k8s_image: Docker image for kubernetes deployment
-        :type k8s_image: str or None
         :return: bool -- True
         """
         payload = {
@@ -134,12 +141,10 @@ class EdiClient:
         }
         if count:
             payload['count'] = count
-        if k8s_image:
-            payload['k8s_image'] = k8s_image
 
         return self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']
 
-    def undeploy(self, model, grace_period=0):
+    def undeploy(self, model, grace_period=0, version=None):
         """
         Undeploy API endpoint
 
@@ -147,17 +152,23 @@ class EdiClient:
         :type model: str
         :param grace_period: grace period for removing
         :type grace_period: int
+        :param version: (Optional) model version
+        :type version: str
         :return: bool -- True
         """
         payload = {
             'model': model
         }
+
         if grace_period:
             payload['grace_period'] = grace_period
 
+        if version:
+            payload['version'] = version
+
         return self._query(legion.edi.server.EDI_UNDEPLOY, action='POST', payload=payload)['status']
 
-    def scale(self, model, count):
+    def scale(self, model, count, version=None):
         """
         Scale model
 
@@ -165,13 +176,36 @@ class EdiClient:
         :type model: str
         :param count: count of pods to create
         :type count: int
+        :param version: (Optional) model version
+        :type version: str
         :return: bool -- True
         """
         payload = {
             'model': model,
             'count': count
         }
+        if version:
+            payload['version'] = version
+
         return self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload)['status']
+
+
+def add_edi_arguments(parser):
+    """
+    Add EDI arguments parser
+
+    :param parser:
+    :type parser:
+    :return:
+    """
+    parser.add_argument('--edi',
+                        type=str, help='EDI server host')
+    parser.add_argument('--user',
+                        type=str, help='EDI server user')
+    parser.add_argument('--password',
+                        type=str, help='EDI server password')
+    parser.add_argument('--token',
+                        type=str, help='EDI server token')
 
 
 def build_client(args):
@@ -180,7 +214,7 @@ def build_client(args):
 
     :param args: command arguments with .namespace
     :type args: :py:class:`argparse.Namespace`
-    :return:
+    :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
     host = os.environ.get(*legion.config.EDI_URL)
     user = os.environ.get(*legion.config.EDI_USER)

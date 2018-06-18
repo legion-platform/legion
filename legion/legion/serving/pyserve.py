@@ -20,7 +20,6 @@ Flask app
 import logging
 import os
 
-import consul
 import legion.config
 import legion.external.grafana
 import legion.http
@@ -129,34 +128,6 @@ def create_application():
     return application
 
 
-def register_service(application):
-    """
-    Register application in Consul
-
-    :param application: Flask application instance
-    :type application: :py:class:`Flask.app`
-    :return: None
-    """
-    consul_host = application.config['CONSUL_ADDR']
-    consul_port = int(application.config['CONSUL_PORT'])
-    client = consul.Consul(host=consul_host, port=consul_port)
-
-    service = application.config['MODEL_ID']
-
-    addr = application.config['LEGION_ADDR']
-    port = int(application.config['LEGION_PORT'])
-
-    print('Registering model %s located at %s:%d on http://%s:%s' % (service, addr, port, consul_host, consul_port))
-
-    client.agent.service.register(
-        service,
-        address=addr,
-        port=port,
-        tags=['legion', 'model'],
-        check=consul.Check.http('http://%s:%d/healthcheck' % (addr, port), '2s')
-    )
-
-
 def register_dashboard(application):
     """
     Register application in Grafana (create dashboard)
@@ -176,7 +147,7 @@ def register_dashboard(application):
 
 def init_application(args=None):
     """
-    Initialize configured Flask application instance, register application on consul
+    Initialize configured Flask application instance
     Overall configuration priority: config_default.py, env::FLASK_APP_SETTINGS_FILES file,
     ENV parameters, CLI parameters
 
@@ -187,28 +158,8 @@ def init_application(args=None):
     application = create_application()
     legion.http.configure_application(application, args)
 
-    # Check LEGION_ADDR if IP_AUTODISCOVER enabled (by default)
-    if application.config['IP_AUTODISCOVER']:
-        cfg_addr = application.config['LEGION_ADDR']
-        if cfg_addr == "" or cfg_addr == "0.0.0.0":
-            application.config['LEGION_ADDR'] = utils.detect_ip()
-
     # Put a model object into application configuration
     application.config['model'] = init_model(application)
-
-    # Register instance on Consul
-    if application.config['REGISTER_ON_CONSUL']:
-        register_service(application)
-        logging.info('Consul consensus achieved')
-    else:
-        logging.info('Registration on Consul has been skipped due to configuration')
-
-    # Register dashboard in Grafana
-    # if application.config['REGISTER_ON_GRAFANA']:
-    #     register_dashboard(application)
-    #     logging.info('Grafana dashboard has been registered')
-    # else:
-    #     logging.info('Registration on Grafana has been skipped due to configuration')
 
     return application
 

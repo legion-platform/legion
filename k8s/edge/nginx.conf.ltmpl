@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+{{ load_module('legion.template_plugins.enclave_models_monitor') }}
+
 worker_processes  1;
 
 events {
@@ -50,16 +52,6 @@ http{
     statistics_sender.init(host, port, namespace)
   }
 
-  {{range services}} {{$name := .Name}} {{$service := service .Name}}
-  {{if (.Tags | contains "model") }}
-  upstream {{$name}} {
-    zone upstream-{{$name}} 64k;
-    {{range $service}}server {{.Address}}:{{.Port}} max_fails=3 fail_timeout=60 weight=1;
-    {{else}}server 127.0.0.1:65535; # force a 502{{end}}
-  }
-  {{end}}
-  {{end}}
-
   server {
     listen 80;
     server_name edge;
@@ -73,10 +65,9 @@ http{
     }
 
     # Models API
-    {{range services}} {{$name := .Name}}
-    {{if (.Tags | contains "model")}}
-    location /api/model/{{$name}} {
-        proxy_pass http://{{$name}};
+    {% for model_endpoint in models %}
+    location /api/model/{{ model_endpoint.url }} {
+        proxy_pass {{ model_endpoint.model_service.url }}/api/model/{{ model_endpoint.model_service.id }};
 
         expires -1;
         add_header Cache-Control no-cache;
@@ -86,10 +77,9 @@ http{
         log_by_lua_block {
             local statistics_sender = require "statistics_sender"
             local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)
-            statistics_sender.send_request_statistics("{{$name}}", latency)
+            statistics_sender.send_request_statistics("{{ model_endpoint.model_service.metrics_name }}", latency)
         }
     }
-    {{end}}
-    {{end}}
+    {% endfor %}
   }
 }

@@ -3,4 +3,4 @@ set -e
 
 chmod a+rwx /var/run/docker.sock
 
-exec "edi"
+exec "edi" "--verbose"

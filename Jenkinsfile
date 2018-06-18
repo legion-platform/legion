@@ -156,7 +156,6 @@ node {
                 """
                 UploadDockerImage('legion/base-python-image')
             }
-
             parallel (
                 'Build Grafana Docker image': {
                     sh """
@@ -172,8 +171,9 @@ node {
                     sed -i "s/{VERSION}/${Globals.baseVersion} ${Globals.localVersion}/" k8s/edge/static/index.html
                     sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
                     sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
+
                     cd k8s/edge
-                    docker build $dockerCacheArg -t legion/k8s-edge .
+                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-edge .
                     """
                     UploadDockerImage('legion/k8s-edge')
                 }, 'Build Jenkins Docker image': {
@@ -182,6 +182,12 @@ node {
                     docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
                     """
                     UploadDockerImage('legion/k8s-jenkins')
+                }, 'Build Bare model': {
+                    sh """
+                    cd k8s/test-bare-model-api
+                    docker build $dockerCacheArg -t legion/test-bare-model-api .
+                    """
+                    UploadDockerImage('legion/test-bare-model-api')
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi

@@ -2,10 +2,12 @@ graft legion/const
 graft legion/containers
 graft legion/edi
 graft legion/external
+graft legion/k8s
 graft legion/http
 graft legion/model
 graft legion/serving
 graft legion/static
+graft legion/template_plugins
 graft legion/templates
 graft legion/utils
 recursive-include requirements *.txt

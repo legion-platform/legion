@@ -9,11 +9,15 @@ node {
             currentBuild.description = "${params.Profile} ${params.GitBranch}"
         }
         
-        stage('Install tools package'){
+        stage('Install packages'){
                 sh '''
                 sudo rm -rf .venv
                 virtualenv .venv -p $(which python3)
     
+                cd legion
+                ../.venv/bin/python3 setup.py develop
+                cd ..
+
                 cd legion_test
                 ../.venv/bin/python3 setup.py develop
                 '''
@@ -67,30 +71,45 @@ node {
             }
         }
 
-        stage('Run robot tests'){
+        stage('Run regression tests'){
             if (params.UseRegressionTests){
                 withAWS(credentials: 'kops') {
                     sh '''
+                    cd legion
+                    ../.venv/bin/pip install -r requirements/base.txt
+                    ../.venv/bin/pip install -r requirements/test.txt
+                    ../.venv/bin/python setup.py develop
+                    cd ..
+
                     cd legion_test
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
                     ../.venv/bin/python setup.py develop
 
-                    cd ../tests
-                    ../.venv/bin/pip install yq
+                    echo "Starting robot tests"
+                    cd ../tests/robot
+                    ../../.venv/bin/pip install yq
 
-                    PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
+                    PATH_TO_PROFILE="../../deploy/profiles/$Profile.yml"
                     CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
                     CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
                     echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
                     kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+                    PATH=../../.venv/bin:$PATH DISPLAY=:99 \
+                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+                     ../../.venv/bin/python3 -m robot.run *.robot || true
 
-                    DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
+                    echo "Starting python tests"
+                    cd ../python
+
+                    kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+                    ../../.venv/bin/nosetests --with-xunit || true
                     '''
                     step([
                         $class : 'RobotPublisher',
-                        outputPath : 'tests/',
+                        outputPath : 'tests/robot/',
                         outputFileName : "*.xml",
                         disableArchiveOutput : false,
                         passThreshold : 100,
@@ -99,6 +118,7 @@ node {
                         otherFiles : "*.png",
                     ])
                 }
+                junit 'tests/python/nosetests.xml'
             }
             else {
                 println('Skipped due to UseRegressionTests property')

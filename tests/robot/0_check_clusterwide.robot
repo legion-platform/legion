@@ -3,7 +3,7 @@ Documentation       Check clusterwide and enclave resources
 Resource            resources/browser.robot
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py   ../deploy/profiles/
+Variables           load_variables_from_profiles.py   ../../deploy/profiles/
 Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
@@ -51,13 +51,6 @@ Check Nexus Components available
 #    List Should Contain Value               ${componentNames}           docker-hosted
 #    List Should Contain Value               ${componentNames}           raw
 
-Check enclave EDI availability
-    [Documentation]  Try to connect to EDI in each enclave
-    [Tags]  edi  cli  enclave
-    :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  ${edi_state} =           Run EDI inspect  ${enclave}
-    \  Should not contain       ${edi_state}   legionctl: error
-    \  Should not contain       ${edi_state}   Exception
 
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave

@@ -4,6 +4,7 @@ cython==0.28.1
 requests==2.18.4
 dill==0.2.7.1
 python-interface==1.4.0
+numpy==1.14.3
 pandas==0.22.0
 unittest2==1.1.0
 flask==0.12.2
@@ -12,7 +13,6 @@ jupyter==1.0.0
 urllib3==1.22
 sklearn==0.0
 pydevd==1.1.1
-python-consul==0.7.2
 matplotlib==2.2.2
 scipy==1.0.0
 Pillow==5.0.0
@@ -26,3 +26,4 @@ aiohttp_wsgi==0.7.1
 PyYAML==3.12
 kubernetes==5.0.0
 surprise==0.1
+aionotify==0.2.0
