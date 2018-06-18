@@ -278,6 +278,12 @@ node {
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-airflow .
                     """
                     UploadDockerImage('legion/k8s-airflow')
+                }, 'Build Fluentd image': {
+                    sh """
+                    cd k8s/fluentd
+                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-fluentd .
+                    """
+                    UploadDockerImage('legion/k8s-fluentd')
                 }, 'Run Python tests': {
                     sh """
                     cd legion

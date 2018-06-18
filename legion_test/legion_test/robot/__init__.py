@@ -5,3 +5,5 @@ from .grafana import Grafana
 from .airflow import Airflow
 from .k8s import K8s
 from .flower import Flower
+from .feedback import Feedback
+from .s3 import S3

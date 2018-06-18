@@ -85,6 +85,11 @@ airflow_s3_url: "s3://{{ airflow_s3_bucket_name }}/{{ enclave }}/"
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
 
+collector:
+  replicas: 1
+  bucket: epm-legion-data-demo
+  region: us-east-2
+
 # Addons
 dashboard:
   version: "1.8.3"

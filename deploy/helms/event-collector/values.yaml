@@ -1,0 +1,37 @@
+rootDomain: k8s-nightly.epm.kharlamov.biz
+localDomain: "cluster.local"
+domainDelimiter: "-"
+
+replicas: 1
+ingress:
+    annotations: {}
+    domain:
+      partial: feedback
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
+
+image:
+  repository: ""
+  name: "legion/k8s-fluentd"
+  tag: "latest"
+  pullPolicy: "Always"
+
+s3:
+  key_id: "none"
+  secret_key: "none"
+
+  bucket: "none"
+  region: "us-east-2"
+
+  path: "events/${tag}/year=%Y/month=%m/day=%d/"
+  time_slice_format: "%Y%m%d%H"
+  time_slice_wait: "5m"
+
+  store_as: "json"
+
+  buffering:
+    timekey: 1m       # chunks length (window size)
+    timekey_wait: 0s  # delay for flush (after end of window)
+
+  format: "json"
