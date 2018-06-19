@@ -65,6 +65,7 @@ def deployLegion() {
 
 def createjenkinsJobs() {
     if (params.CreateJenkinsTests){
+        def targetBranch = params.GitBranch
         sh """
         cd legion_test
         ../.venv/bin/pip install -r requirements/base.txt
