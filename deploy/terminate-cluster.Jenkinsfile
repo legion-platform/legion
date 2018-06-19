@@ -1,6 +1,6 @@
 node {
+    def legion
     try {
-        def legion
         stage('Checkout GIT'){
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
