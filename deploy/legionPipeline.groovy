@@ -74,7 +74,7 @@ def createjenkinsJobs() {
         cd ..
 
         .venv/bin/create_example_jobs \
-        "https://jenkins.${Profile}" \
+        "https://jenkins.${params.Profile}" \
         examples \
         . \
         "git@github.com:epam/legion.git" \
