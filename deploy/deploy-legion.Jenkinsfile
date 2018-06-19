@@ -5,11 +5,11 @@ node {
         stage('Checkout GIT'){
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
-
-            def legion = load 'deploy/legionPipeline.groovy'
-
-            legion.buildDescription()
         }
+
+        def legion = load 'deploy/legionPipeline.groovy'
+
+        legion.buildDescription()
         
         stage('Install tools package'){
             legion.installTools()
