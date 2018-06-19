@@ -1,7 +1,7 @@
 config:
   provider: iodc
   redirect_url: https://auth.{{ cluster_name }}/oauth2/callback
-  oidc_issuer_url: {{ dex.url }}
+  oidc_issuer_url: https://dex.{{ cluster_name }}
   whitelist_domain: .{{ cluster_name }}
   cookie_domain: .{{ cluster_name }}
   cookie_secure: true
