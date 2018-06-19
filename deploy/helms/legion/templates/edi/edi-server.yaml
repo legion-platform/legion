@@ -40,7 +40,9 @@ spec:
         - name: LEGION_API_ADDR 
           value: "0.0.0.0"
         - name: LEGION_API_PORT
-          value: "80"
+          value: "5000"
+        - name: VERBOSE
+          value: "1"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 
@@ -51,13 +53,13 @@ spec:
           name: cluster-state
           readOnly: true
         ports:
-        - containerPort: 80
+        - containerPort: 5000
           name: api
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 5000
           initialDelaySeconds: 120
           timeoutSeconds: 8
           failureThreshold: 5
@@ -76,7 +78,7 @@ spec:
     component: "{{ .Release.Name }}-edi"
   ports:
   - name: api
-    port: 80
+    port: 5000
     protocol: TCP
 ---
 {{- if .Values.edi.ingress.enabled -}}
@@ -102,14 +104,14 @@ spec:
         paths:
           - backend:
               serviceName: "{{ .Release.Name }}-edi"
-              servicePort: 80
+              servicePort: 5000
     {{- if .Values.addLocalDomain }}
     - host: "{{ .Values.edi.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:
               serviceName: "{{ .Release.Name }}-edi"
-              servicePort: 80
+              servicePort: 5000
     {{- end }}
   {{- if .Values.edi.ingress.tls.enabled }}
   tls:
