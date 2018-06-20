@@ -11,8 +11,8 @@ config:
   skip_provider_button: true
   scope: openid profile email offline_access groups
   http_address: 0.0.0.0:4180
-  client_secret: {{ dex.client_secret }}
-  client_id: {{ dex.client_id }}
+  client_secret: {{ dex.config.client_secret }}
+  client_id: {{ dex.config.client_id }}
 
 ingress:
   enabled: true
