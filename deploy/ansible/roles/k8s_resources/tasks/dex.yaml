@@ -1,7 +1,8 @@
 ---
 
-- name: Remove dex chart
-  command: "helm --kube-context {{ cluster_name }} del --purge dex"
+- name: Get Dex chart status
+  shell: helm --kube-context {{ cluster_name }} status dex
+  register: helm_dex_status
   ignore_errors: true
   when: dex.enabled
   tags: dex
@@ -11,14 +12,14 @@
     src: dex.yml.j2
     dest: "{{ tmp_dir }}/dex.{{ cluster_name }}.yml"
     mode: 0644
-  when: dex.enabled
+  when: dex.enabled and helm_dex_status==0
   tags: dex
 
 - name: Install Dex
   command: "helm --kube-context {{ cluster_name }} install dex --name dex --namespace kube-system -f {{ tmp_dir }}/dex.{{ cluster_name }}.yml --wait"
   args:
     chdir: ../helms
-  when: dex.enabled
+  when: dex.enabled and helm_dex_status==0
   tags: dex
 
 - name: Get Ingress ELB endpoint
