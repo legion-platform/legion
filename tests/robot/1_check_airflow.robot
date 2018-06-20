@@ -3,6 +3,7 @@ Documentation       Legion stack operational check
 Resource            resources/keywords.robot
 Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
+Library             DateTime
 
 *** Test Cases ***
 Check test dags should not fail
@@ -14,7 +15,8 @@ Check test dags should not fail
         :FOR    ${dag}   IN   @{dags}
         \   ${tasks} =              Find Airflow Tasks  ${dag}
             :FOR    ${task}     IN      @{tasks}
-            \   ${status} =     Trigger Airflow task    ${dag}  ${task}  2018-06-01 00:00:00
+            \   ${date_time} =  Get Current Date  result_format='%Y-%m-%d %H:%M:%S'
+                ${status} =     Trigger Airflow task    ${dag}  ${task}  ${date_time}
                 should be equal     ${status}   ${None}
         should not be empty         ${dags}
         ${failed_dags} =            Get failed Airflow DAGs
