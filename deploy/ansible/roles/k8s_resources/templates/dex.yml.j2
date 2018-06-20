@@ -1,0 +1,18 @@
+replicaCount: {{ dex.replicas }}
+
+connectors:
+{{ dex.config.connectors|to_yaml }}
+
+staticClients:
+- id: {{ dex.config.client_id }}
+  secret: {{ dex.config.client_secret }}
+  redirectURIs:
+  - 'https://auth.{{ cluster_name }}/oauth2/callback'
+  - 'https://jenkins.{{ cluster_name }}/securityRealm/finishLogin'
+  - 'https://auth.{{ cluster_name }}/callback/{{ env_name }}'
+  name: '{{ cluster_name }} Cluster'
+
+staticPasswords:
+{{ dex.config.staticPasswords|to_yaml }}
+
+tls_secret: {{ cluster_name }}-tls

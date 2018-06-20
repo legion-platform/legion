@@ -1,0 +1,42 @@
+---
+
+- name: Remove dex chart
+  command: "helm --kube-context {{ cluster_name }} del --purge dex"
+  ignore_errors: true
+  when: dex.enabled
+  tags: dex
+
+- name: Create Dex configuration (values) file
+  template:
+    src: dex.yml.j2
+    dest: "{{ tmp_dir }}/dex.{{ cluster_name }}.yml"
+    mode: 0644
+  when: dex.enabled
+  tags: dex
+
+- name: Install Dex
+  command: "helm --kube-context {{ cluster_name }} install dex --name dex --namespace kube-system -f {{ tmp_dir }}/dex.{{ cluster_name }}.yml --wait"
+  args:
+    chdir: ../helms
+  when: dex.enabled
+  tags: dex
+
+- name: Get Ingress ELB endpoint
+  shell: kubectl --context {{ cluster_name }} describe services dex --namespace kube-system |grep .elb.amazonaws.com| awk '{ print $3 }'
+  register: dex_elb_endpoint
+  until: dex_elb_endpoint.stdout.find(".elb.amazonaws.com") != -1
+  retries: 10
+  delay: 10
+  when: dex.enabled
+  tags: dex
+
+- name: Create dex DNS record
+  route53:
+    state: present
+    zone: "{{ route53_zone }}"
+    record: "dex.{{ base_domain }}"
+    type: CNAME
+    value: "{{ dex_elb_endpoint.stdout }}"
+    overwrite: true
+  when: dex.enabled
+  tags: dex

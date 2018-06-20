@@ -85,12 +85,28 @@ dashboard:
 # Dex
 dex:
   enabled: false
-  #client_id: some_id
-  #client_secret: clientSecret
-  #ca_store: path to the ca store location
-  #groups:
-  #- clusterrolebinding: cluster-admin
-  #  group: some-group-that-binds-to-cluster-admin-role
-  #- clusterrolebinding: view
-  #  group: some-group-that-binds-to-view-rele
-
+  # replicas: 1
+  # config:
+  #   client_id: client_id
+  #   client_secret: client_secret
+  #   connectors:
+  #   - type: gitlab
+  #     id: gitlab
+  #     name: Some GitLab
+  #     config:
+  #       baseURL: https://gitlab.domain.com
+  #       clientID: clientID
+  #       clientSecret: clientSecret
+  #       redirectURI: https://dex.domain.com/callback
+  #   staticPasswords:
+  #   - email: "admin@example.com"
+  #     # bcrypt hash of the string "password"
+  #     password: password
+  #     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+  #     username: "admin"
+  #     userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  #   groups:
+  #   - clusterrolebinding: cluster-admin
+  #     group: some-admin-group
+  #   - clusterrolebinding: view
+  #     group: some-view-group

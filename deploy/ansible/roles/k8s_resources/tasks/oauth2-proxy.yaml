@@ -1,7 +1,7 @@
 ---
 
 - name: Remove dex oauth2-proxy
-  command: "helm --kube-context {{ cluster_name }} del --purge dex-auth"
+  command: "helm --kube-context {{ cluster_name }} del --purge dex-oauth2-proxy"
   ignore_errors: true
   when: dex.enabled
 
@@ -13,7 +13,7 @@
   when: dex.enabled
 
 - name: Install Dex oauth2-proxy
-  command: "helm --kube-context {{ cluster_name }} install oauth2-proxy --name dex-auth --namespace kube-system -f {{ tmp_dir }}/oauth2-proxy.{{ cluster_name }}.yml"
+  command: "helm --kube-context {{ cluster_name }} install oauth2-proxy --name dex-oauth2-proxy --namespace kube-system -f {{ tmp_dir }}/oauth2-proxy.{{ cluster_name }}.yml"
   args:
     chdir: ../helms
   when: dex.enabled
