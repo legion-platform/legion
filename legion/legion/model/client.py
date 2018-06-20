@@ -22,6 +22,7 @@ import json
 import requests
 
 import legion.config
+import legion.http
 from legion.utils import normalize_name
 
 from PIL import Image as PYTHON_Image
@@ -114,6 +115,15 @@ class ModelClient:
         return self.api_url + '/invoke'
 
     @property
+    def batch_url(self):
+        """
+        Build API batch invoke URL
+
+        :return: str -- batch invoke url
+        """
+        return self.api_url + '/batch'
+
+    @property
     def info_url(self):
         """
         Build API info URL
@@ -125,21 +135,77 @@ class ModelClient:
     @staticmethod
     def _parse_response(response):
         """
-        Parse model response
+        Parse model response (requests or FlaskClient)
 
-        :param response: model response
+        :param response: model HTTP response
+        :type response: object with .text or .data and .status_code attributes
         :return: dict -- parsed response
         """
+        data = response.text if hasattr(response, 'text') else response.data
+
         if not 200 <= response.status_code < 400:
             raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'
-                            .format(response.status_code, response.text, response.url))
-
-        data = response.text
+                            .format(response.status_code, data, response.url))
 
         if isinstance(data, bytes):
             data = data.decode('utf-8')
 
         return json.loads(data)
+
+    @staticmethod
+    def _prepare_invoke_request(**parameters):
+        """
+        Build POST and FILE fields for request due their type
+
+        :param parameters: dict -- invoke parameters
+        :return: tuple[dict, dict] -- POST and FILE dictionaries in tuple
+        """
+        post_fields_dict = {k: v for (k, v) in parameters.items() if not isinstance(v, bytes)}
+        post_files = {k: v for (k, v) in parameters.items() if isinstance(v, bytes)}
+
+        post_fields_list = []
+        for (k, v) in post_fields_dict.items():
+            if isinstance(v, tuple) or isinstance(v, list):
+                for item in v:
+                    post_fields_list.append((k + '[]', str(item)))
+            else:
+                post_fields_list.append((k, str(v)))
+
+        return post_fields_list, post_files
+
+    @property
+    def _additional_kwargs(self):
+        """
+        Get additional HTTP client key-value arguments like timestamp
+
+        :return: dict -- additional kwargs
+        """
+        kwargs = {}
+        if self._timeout is not None:
+            kwargs['timeout'] = self._timeout
+        return kwargs
+
+    def batch(self, invoke_parameters):
+        """
+        Send batch invoke request
+
+        :param invoke_parameters: list of dictionaries
+        :type invoke_parameters: list[dict]
+        :return: list -- parsed model response
+        """
+        request_lines = []
+        for parameters in invoke_parameters:
+            data, files = self._prepare_invoke_request(**parameters)
+            if files:
+                raise Exception('Files object not allowed for batch invocation')
+
+            request_lines.append(legion.http.encode_http_params(data))
+
+        content = '\n'.join(request_lines)
+        response = self._http_client.post(self.batch_url,
+                                          data=content,
+                                          **self._additional_kwargs)
+        return self._parse_response(response)
 
     def invoke(self, **parameters):
         """
@@ -149,20 +215,10 @@ class ModelClient:
         :type parameters: dict[str, object] -- dictionary with parameters
         :return: dict -- parsed model response
         """
-        post_fields_dict = {k: v for (k, v) in parameters.items() if not isinstance(v, bytes)}
-        post_files = {k: v for (k, v) in parameters.items() if isinstance(v, bytes)}
-
-        post_fields_list = []
-        for (k, v) in post_fields_dict.items():
-            if isinstance(v, tuple) or isinstance(v, list):
-                for item in v:
-                    post_fields_list.append((k + '[]', item))
-            else:
-                post_fields_list.append((k, v))
-
+        data, files = self._prepare_invoke_request(**parameters)
         response = self._http_client.post(self.invoke_url,
-                                          data=post_fields_list, files=post_files,
-                                          timeout=self._timeout)
+                                          data=data, files=files,
+                                          **self._additional_kwargs)
 
         return self._parse_response(response)
 
@@ -173,6 +229,6 @@ class ModelClient:
         :return: dict -- parsed model info
         """
         response = self._http_client.get(self.info_url,
-                                         timeout=self._timeout)
+                                         **self._additional_kwargs)
 
         return self._parse_response(response)

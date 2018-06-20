@@ -35,7 +35,20 @@ blueprint = Blueprint('pyserve', __name__)
 SERVE_ROOT = '/'
 SERVE_INFO = '/api/model/{model_id}/info'
 SERVE_INVOKE = '/api/model/{model_id}/invoke'
+SERVE_BATCH = '/api/model/{model_id}/batch'
 SERVE_HEALTH_CHECK = '/healthcheck'
+
+
+def validate_model_id(model_id):
+    """
+    Check that passed model id is equal to current model's id
+
+    :param model_id: model id
+    :type model_id: str
+    :return: None
+    """
+    if model_id != app.config['MODEL_ID']:
+        raise Exception('Invalid model handler: {}, not {}'.format(app.config['MODEL_ID'], model_id))
 
 
 @blueprint.route(SERVE_ROOT)
@@ -57,8 +70,7 @@ def model_info(model_id):
     :type model_id: str
     :return: :py:class:`Flask.Response` -- model description
     """
-    if model_id != app.config['MODEL_ID']:
-        raise Exception('Invalid model handler: {}, not {}'.format(app.config['MODEL_ID'], model_id))
+    validate_model_id(model_id)
 
     model = app.config['model']
 
@@ -74,8 +86,7 @@ def model_invoke(model_id):
     :type model_id: str
     :return: :py:class:`Flask.Response` -- result of calculation
     """
-    if model_id != app.config['MODEL_ID']:
-        raise Exception('Invalid model handler: {}, not {}'.format(app.config['MODEL_ID'], model_id))
+    validate_model_id(model_id)
 
     input_dict = legion.http.parse_request(request)
 
@@ -84,6 +95,26 @@ def model_invoke(model_id):
     output = model.apply(input_dict)
 
     return legion.http.prepare_response(output)
+
+
+@blueprint.route(SERVE_BATCH.format(model_id='<model_id>'), methods=['POST'])
+def model_batch(model_id):
+    """
+    Call model for calculation in batch model
+
+    :param model_id: model name
+    :type model_id: str
+    :return: :py:class:`Flask.Response` -- result of calculation
+    """
+    validate_model_id(model_id)
+
+    input_dicts = legion.http.parse_batch_request(request)
+
+    model = app.config['model']
+
+    responses = [model.apply(input_dict) for input_dict in input_dicts]
+
+    return legion.http.prepare_response(responses)
 
 
 @blueprint.route(SERVE_HEALTH_CHECK)

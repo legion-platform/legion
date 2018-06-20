@@ -37,6 +37,7 @@ except ImportError:
         create_simple_summation_model_lists_with_files_info
 
 import legion.serving.pyserve as pyserve
+import legion.model
 
 
 class TestModelApiEndpoints(unittest2.TestCase):
@@ -141,6 +142,19 @@ class TestModelApiEndpoints(unittest2.TestCase):
 
             self.assertIsInstance(result, dict, 'Result not a dict')
             self.assertDictEqual(result, {'x': a + b})
+
+    def test_model_invoke_summation_with_batch_mode(self):
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            client = legion.model.ModelClient(self.MODEL_ID, http_client=model.client, use_relative_url=True)
+
+            parameters = [{'a': randint(1, 20), 'b': randint(2, 50)} for _ in range(10)]
+            expected_answer = [{'x': pair['a'] + pair['b']} for pair in parameters]
+
+            response = client.batch(parameters)
+
+            self.assertIsInstance(response, list, 'Result not a list')
+            self.assertListEqual(response, expected_answer, 'Invalid answer')
 
     def test_model_invoke_summation_with_df_and_files(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,

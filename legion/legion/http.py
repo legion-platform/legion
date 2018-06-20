@@ -19,13 +19,39 @@ Flask package
 import functools
 import os
 import logging
+import urllib
 
 import legion.config
 import legion.utils
 
 import flask
+from requests.compat import urlencode
+from requests.utils import to_key_val_list
+from urllib.parse import parse_qs
 
 LOGGER = logging.getLogger(__name__)
+
+
+def encode_http_params(data):
+    """
+    Encode HTTP parameters to URL query string
+
+    :param data: data as text or tuple/list
+    :type data: str or bytes or tuple or list
+    :return: str -- encoded data
+    """
+    if isinstance(data, (str, bytes)):
+        return urlencode(data)
+    elif hasattr(data, '__iter__'):
+        result = []
+        for k, vs in to_key_val_list(data):
+            if vs is not None:
+                result.append(
+                    (k.encode('utf-8') if isinstance(k, str) else k,
+                     vs.encode('utf-8') if isinstance(vs, str) else vs))
+        return urlencode(result, doseq=True)
+    else:
+        raise ValueError('Invalid argument')
 
 
 def parse_multi_dict(multi_dict, map=None):
@@ -54,6 +80,40 @@ def parse_multi_dict(multi_dict, map=None):
     return result
 
 
+def parse_url_querystring(querystring_dict):
+    """
+    Parse URL query strings dictionaries like {'a': ['123'], 'b[]': ['one', 'two']}
+    to appropriate dictionaries ({'a': '123', 'b': ['one', 'two']})
+
+    :param querystring_dict: querystring dictionary
+    :type querystring_dict: dict
+    :return: dict -- parsed and flatted querystring dictionary
+    """
+    result = {}
+    for k in querystring_dict:
+        if k.endswith('[]'):
+            key = k[:-2]
+            result[key] = querystring_dict[k]
+        else:
+            result[k] = querystring_dict[k][0]
+    return result
+
+
+def parse_batch_request(input_request):
+    """
+    Parse request in batch mode with payload encoded in body
+
+    :param input_request: request object
+    :type input_request: :py:class:`Flask.request`
+    :return: list[dict] -- list of dicts with requested fields
+    """
+    if not input_request.data:
+        raise Exception('Request does not contain any data')
+
+    return [parse_url_querystring(parse_qs(line))
+            for line in input_request.data.decode('utf-8').split('\n')]
+
+
 def parse_request(input_request):
     """
     Produce a input dictionary from HTTP request (GET/POST fields, and Files)
@@ -78,10 +138,10 @@ def parse_request(input_request):
 
 def prepare_response(response):
     """
-    Produce an HTTP response from dict
+    Produce an HTTP response from dict/list
 
-    :param response: dict with data
-    :type response: dict[str, any]
+    :param response: dict/list with data
+    :type response: dict[str, any] or list[any]
     :return: bytes
     """
     return flask.jsonify(response)
