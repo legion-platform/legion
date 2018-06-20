@@ -9,6 +9,8 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+issuer: https://dex.domain.com
+
 connectors: []
 #- type: github
 #  id: github
