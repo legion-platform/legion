@@ -78,7 +78,8 @@ spec:
     component: "{{ .Release.Name }}-edi"
   ports:
   - name: api
-    port: 5000
+    targetPort: 5000
+    port: 80
     protocol: TCP
 ---
 {{- if .Values.edi.ingress.enabled -}}
@@ -104,14 +105,14 @@ spec:
         paths:
           - backend:
               serviceName: "{{ .Release.Name }}-edi"
-              servicePort: 5000
+              servicePort: 80
     {{- if .Values.addLocalDomain }}
     - host: "{{ .Values.edi.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
       http:
         paths:
           - backend:
               serviceName: "{{ .Release.Name }}-edi"
-              servicePort: 5000
+              servicePort: 80
     {{- end }}
   {{- if .Values.edi.ingress.tls.enabled }}
   tls:
