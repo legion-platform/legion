@@ -15,7 +15,7 @@ spec:
 {% if dex.enabled == true %}
     oidcClientID: {{ dex.client_id }}
     oidcGroupsClaim: groups
-    oidcIssuerURL: {{ dex.url }}
+    oidcIssuerURL: https://dex.{{ cluster_name }}
     oidcUsernameClaim: email
     runtimeConfig:
       rbac.authorization.k8s.io/v1alpha1: "true"
