@@ -5,6 +5,7 @@
   shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
 
 - include: ingress.yaml
+- include: dex.yaml
 - include: oauth2-proxy.yaml
 - include: cluster-groups.yaml
 - include: copy-ca-cert.yaml
