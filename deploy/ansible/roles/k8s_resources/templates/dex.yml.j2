@@ -1,5 +1,7 @@
 replicaCount: {{ dex.replicas }}
 
+issuer: https://dex.{{ cluster_name }}
+
 connectors:
 {{ dex.config.connectors|to_yaml }}
 
