@@ -75,6 +75,8 @@ webserver:
 
   dex_group_profiler: ~
 
+  dex_admin_email: admin@example.com
+
 smtp:
   smtp_host: localhost
   smtp_starttls: true

@@ -126,6 +126,9 @@ dex_group_admin = {{ .Values.webserver.dex_group_admin }}
 # Group name in Dex, which indicates Data Profiler user.
 dex_group_profiler = {{ .Values.webserver.dex_group_profiler }}
 
+# Email of an user, that is defined in Dex as Static user and used for service purposes.
+dex_admin_email = {{ .Values.webserver.dex_admin_email }}
+
 # Filter the list of dags by owner name (requires authentication to be enabled)
 filter_by_owner = {{ .Values.webserver.filter_by_owner }}
 

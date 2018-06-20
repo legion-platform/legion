@@ -117,11 +117,18 @@ def load_user_from_header(auth_header):
     if conf.has_option('webserver', 'dex_group_profiler'):
         profiler_group = conf.get('webserver', 'dex_group_profiler')
 
+    admin_email = None
+    if conf.has_option('webserver', 'dex_admin_email'):
+        admin_email = conf.get('webserver', 'dex_admin_email')
+
     is_superuser = False
     is_data_profiler = False
 
     if admin_group or profiler_group:
-        if admin_group and admin_group in groups:
+        if admin_email and admin_email == email:  # if the user is a Admin
+            is_superuser = True
+            is_data_profiler = True
+        elif admin_group and admin_group in groups:
             is_superuser = True
         elif profiler_group and profiler_group in groups:
             is_data_profiler = True
@@ -165,11 +172,18 @@ def login(self, request):
     if conf.has_option('webserver', 'dex_group_profiler'):
         profiler_group = conf.get('webserver', 'dex_group_profiler')
 
+    admin_email = None
+    if conf.has_option('webserver', 'dex_admin_email'):
+        admin_email = conf.get('webserver', 'dex_admin_email')
+
     is_superuser = False
     is_data_profiler = False
 
     if admin_group or profiler_group:
-        if admin_group and admin_group in groups:
+        if admin_email and admin_email == email:  # if the user is a Admin
+            is_superuser = True
+            is_data_profiler = True
+        elif admin_group and admin_group in groups:
             is_superuser = True
         elif profiler_group and profiler_group in groups:
             is_data_profiler = True
