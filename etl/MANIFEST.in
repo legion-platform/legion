@@ -1,2 +1,0 @@
-graft etl/slack
-recursive-include requirements *.txt
