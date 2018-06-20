@@ -105,9 +105,9 @@ def load_user_from_header(auth_header):
     if not jwt_obj:
         return None
 
-    name = jwt_obj.get('name')
-    email = jwt_obj.get('email')
-    groups = jwt_obj.get('groups')
+    name = jwt_obj.get('name', '')
+    email = jwt_obj.get('email', '')
+    groups = jwt_obj.get('groups', [])
 
     admin_group = None
     if conf.has_option('webserver', 'dex_group_admin'):
@@ -153,9 +153,9 @@ def login(self, request):
             'JWT header is invalid or absent.', mimetype='text/plain')
         return response
 
-    name = jwt_obj.get('name')
-    email = jwt_obj.get('email')
-    groups = jwt_obj.get('groups')
+    name = jwt_obj.get('name', '')
+    email = jwt_obj.get('email', '')
+    groups = jwt_obj.get('groups', [])
 
     admin_group = None
     if conf.has_option('webserver', 'dex_group_admin'):
