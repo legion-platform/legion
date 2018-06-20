@@ -13,7 +13,7 @@ spec:
   kubeAPIServer:
     authorizationRbacSuperUser: admin
 {% if dex.enabled == true %}
-    oidcClientID: {{ dex.client_id }}
+    oidcClientID: {{ dex.config.client_id }}
     oidcGroupsClaim: groups
     oidcIssuerURL: https://dex.{{ cluster_name }}
     oidcUsernameClaim: email
