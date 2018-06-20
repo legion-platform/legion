@@ -28,7 +28,6 @@ from flask import flash
 
 from flask import url_for, redirect
 
-from airflow import settings, models
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow import configuration as conf
 
@@ -117,8 +116,6 @@ def load_user_from_header(auth_header):
     profiler_group = None
     if conf.has_option('webserver', 'dex_group_profiler'):
         profiler_group = conf.get('webserver', 'dex_group_profiler')
-
-    print('admin_group={}, profiler_group={}'.format(admin_group, profiler_group))
 
     is_superuser = False
     is_data_profiler = False
