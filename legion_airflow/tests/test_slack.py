@@ -18,7 +18,7 @@ Unit test for slack package.
 """
 
 import unittest
-from etl.slack import notification
+from legion_airflow.slack import notification
 
 
 class TestNotification(unittest.TestCase):

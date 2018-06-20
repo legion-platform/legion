@@ -14,5 +14,5 @@
 #    limitations under the License.
 #
 """
-etl main package.
+legion_airflow main package.
 """

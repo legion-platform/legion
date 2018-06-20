@@ -47,15 +47,15 @@ def extract_version(filename):
                 "Unable to find version string in %s." % (file_content,))
 
 
-setup(name='etl',
+setup(name='legion_airflow',
       version=extract_version(
-          os.path.join(PACKAGE_ROOT_PATH, 'etl','version.py')),
+          os.path.join(PACKAGE_ROOT_PATH, 'legion_airflow','version.py')),
       description='External library for airflow',
-      url='http://github.com/legion/legion',
+      url='https://github.com/legion-platform/legion',
       author='Legion team',
-      author_email='alexey@kharlamov.biz',
+      author_email='legion-dev@googlegroups.com',
       license='Apache v2',
-      packages=['etl'],
+      packages=['legion_airflow'],
       include_package_data=True,
       scripts=[],
       install_requires=extract_requirements(

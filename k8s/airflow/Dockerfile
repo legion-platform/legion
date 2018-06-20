@@ -23,7 +23,6 @@ ARG pip_legion_version_string=""
 
 RUN apt-get update && apt-get install -y \
  wget \
- default-jdk \
  python3.5 \
  python3.5-dev \
  vim \

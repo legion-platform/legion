@@ -87,10 +87,10 @@ node {
                     cd -
                     """
 
-                    print('Build and distributing etl')
+                    print('Build and distributing legion_airflow')
                     sh """
-                    cp legion/legion/version.py etl/etl/version.py
-                    cd etl
+                    cp legion/legion/version.py legion_airflow/legion_airflow/version.py
+                    cd legion_airflow
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
                     ../.venv/bin/python3 setup.py sdist
@@ -133,18 +133,18 @@ node {
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
 
                     sh '''
-                    cd etl
-                    ../.venv/bin/pycodestyle etl
+                    cd legion_airflow
+                    ../.venv/bin/pycodestyle legion_airflow
                     ../.venv/bin/pycodestyle tests
-                    ../.venv/bin/pydocstyle etl
+                    ../.venv/bin/pydocstyle legion_airflow
 
-                    ../.venv/bin/pylint etl >> pylint.log || exit 0
+                    ../.venv/bin/pylint legion_airflow >> pylint.log || exit 0
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
 
-                    archiveArtifacts 'etl/pylint.log'
-                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'etl/pylint.log']], unHealthy: ''
+                    archiveArtifacts 'legion_airflow/pylint.log'
+                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
                 }, 'Build Jenkins plugin': {
                     sh """
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
