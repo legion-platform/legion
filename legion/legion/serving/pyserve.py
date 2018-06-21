@@ -100,7 +100,7 @@ def model_invoke(model_id):
 @blueprint.route(SERVE_BATCH.format(model_id='<model_id>'), methods=['POST'])
 def model_batch(model_id):
     """
-    Call model for calculation in batch model
+    Call model for calculation in batch mode
 
     :param model_id: model name
     :type model_id: str
