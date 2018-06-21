@@ -58,7 +58,7 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
         raise ValueError('Cant find session ID in Cookies')
 
 
-def get_session_id() -> str:
+def get_session_id():
     """Get stored Session ID value.
 
     :return: session ID value
@@ -69,9 +69,9 @@ def get_session_id() -> str:
         raise ValueError('Session ID is not inited')
 
 
-def get_session_cookies() -> dict:
+def get_session_cookies():
     """Get session cookies that can be used inside Request.
-    :return: cookies dict
+    :return: cookies dict or None if Session ID wasn't found
     """
     if _session_id:
         return {SESSION_ID_COOKIE_NAME: _session_id}
