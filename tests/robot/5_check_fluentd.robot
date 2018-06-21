@@ -30,7 +30,7 @@ Check feedback processing
     Log list                ${files}
     ${last} =	            Get From List	         ${files}	        -1
 
-    File exists in bucket   ${last}
+    Check file exists in bucket                      ${last}
     ${data} =               Get file content from bucket    ${last}
 
     Should Contain          ${data}                 {"a":"${a_value}"}

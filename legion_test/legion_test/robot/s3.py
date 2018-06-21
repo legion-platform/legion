@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ class S3:
 
         return [file['Key'] for file in files]
 
-    def file_exists_in_bucket(self, file):
+    def check_file_exists_in_bucket(self, file):
         """
         Check that file exists in bucket
 

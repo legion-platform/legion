@@ -171,7 +171,7 @@ class Utils:
         """
         Wait up to second then generate time from template
 
-        :param second: target second
+        :param second: target second (0..59)
         :type second: int
         :param time_template: (Optional) time template
         :type time_template: str
