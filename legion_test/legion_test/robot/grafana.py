@@ -17,8 +17,9 @@
 Robot test library - grafana
 """
 from legion_test.grafana import GrafanaClient
-
+from legion_test.robot.dex_client import get_session_cookies
 import requests
+
 
 
 class Grafana:
@@ -97,7 +98,7 @@ class Grafana:
             'maxDataPoints': 1000
         }
 
-        response = requests.post(url, data=payload, headers=headers, auth=auth)
+        response = requests.post(url, data=payload, headers=headers, auth=auth, cookies=get_session_cookies())
         print('Data: {}'.format(response.text))
 
         data = response.json()
