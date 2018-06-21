@@ -1,6 +1,6 @@
 ---
 
-- name: Get  chart status
+- name: Get chart status
   shell: helm --kube-context {{ cluster_name }} ls --all event-collector-{{ enclave }}
   register: event_collector_deployment_status
 
