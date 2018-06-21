@@ -61,11 +61,19 @@ webserver:
 
   expose_config: true
 
-  authenticate: false
+  authenticate: true
 
   filter_by_owner: false
 
   email_backend: airflow.utils.email.send_email_smtp
+
+  authenticate: false
+
+  auth_backend: etl.auth.dex_auth
+
+  dex_group_admin: ~
+
+  dex_group_profiler: ~
 
 smtp:
   smtp_host: localhost
@@ -75,6 +83,11 @@ smtp:
   smtp_port: 25
   smtp_password: airflow
   smtp_mail_from: airflow@airflow.local
+
+slack:
+  username: ~
+  channel: ~
+  token: ~
 
 celery:
   celery_app_name: airflow.executors.celery_executor
