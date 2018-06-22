@@ -13,19 +13,19 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM library/ubuntu:16.04
+FROM alpine:3.7
 
 ADD requirements.txt /root/requirements.txt
 
 # Theano requires C++ compiler to produce effective code
-RUN apt-get update && apt-get install -y --no-install-recommends python3 \
-    g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
-    libtiff5-dev libjpeg8-dev zlib1g-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk \
-    libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk
-
-RUN pip3 install "numpy>=1.11.2"
+RUN apk add --update \
+    python3
+RUN apk add --update \
+    g++ python3-dev py-pip py-setuptools file wget git \
+    tiff-dev jpeg-dev zlib-dev
+RUN apk add --update \
+    tcl-dev tk-dev python2-tkinter python3-tkinter-tests \
+    freetype-dev lcms2-dev libwebp harfbuzz fribidi
 
 RUN pip3 install --upgrade pip==9.0.3 \
     && pip3 install -r /root/requirements.txt
