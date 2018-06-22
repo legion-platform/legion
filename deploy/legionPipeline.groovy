@@ -43,105 +43,90 @@ def terminateCluster() {
 }
 
 def deployLegion() {
-    if (params.DeployLegion){
-        dir('deploy/ansible'){
-            withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-                withAWS(credentials: 'kops') {
-                    wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                        ansiblePlaybook(
-                            playbook: 'deploy-legion.yml',
-                            extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion}"',
-                            colorized: true
-                        )
-                    }
+    dir('deploy/ansible'){
+        withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+            withAWS(credentials: 'kops') {
+                wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                    ansiblePlaybook(
+                        playbook: 'deploy-legion.yml',
+                        extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion}"',
+                        colorized: true
+                    )
                 }
             }
         }
     }
-    else {
-            print("Skipping Legion Deployment")
-    }
 }
 
 def createjenkinsJobs() {
-    if (params.CreateJenkinsTests){
-        def targetBranch = params.GitBranch
-        sh """
-        cd legion_test
+    def targetBranch = params.GitBranch
+    sh """
+    cd legion_test
+    ../.venv/bin/pip install -r requirements/base.txt
+    ../.venv/bin/pip install -r requirements/test.txt
+    ../.venv/bin/python setup.py develop
+    cd ..
+
+    .venv/bin/create_example_jobs \
+    "https://jenkins.${params.Profile}" \
+    examples \
+    . \
+    "git@github.com:epam/legion.git" \
+    ${targetBranch} \
+    --connection-timeout 600 \
+    --git-root-key "legion-root-key" \
+    --model-host "" \
+    --dynamic-model-prefix "DYNAMIC MODEL"
+    """
+}
+
+def runRobotTests() {
+    withAWS(credentials: 'kops') {
+        sh '''
+        cd legion
         ../.venv/bin/pip install -r requirements/base.txt
         ../.venv/bin/pip install -r requirements/test.txt
         ../.venv/bin/python setup.py develop
         cd ..
 
-        .venv/bin/create_example_jobs \
-        "https://jenkins.${params.Profile}" \
-        examples \
-        . \
-        "git@github.com:epam/legion.git" \
-        ${targetBranch} \
-        --connection-timeout 600 \
-        --git-root-key "legion-root-key" \
-        --model-host "" \
-        --dynamic-model-prefix "DYNAMIC MODEL"
-        """
+        cd legion_test
+        ../.venv/bin/pip install -r requirements/base.txt
+        ../.venv/bin/pip install -r requirements/test.txt
+        ../.venv/bin/python setup.py develop
+
+        echo "Starting robot tests"
+        cd ../tests/robot
+        ../../.venv/bin/pip install yq
+
+        PATH_TO_PROFILE="../../deploy/profiles/$Profile.yml"
+        CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
+        CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+        echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+
+        kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+        PATH=../../.venv/bin:$PATH DISPLAY=:99 \
+        PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+         ../../.venv/bin/python3 -m robot.run *.robot || true
+
+        echo "Starting python tests"
+        cd ../python
+
+        kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+        PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+        ../../.venv/bin/nosetests --with-xunit || true
+        '''
+        step([
+            $class : 'RobotPublisher',
+            outputPath : 'tests/robot/',
+            outputFileName : "*.xml",
+            disableArchiveOutput : false,
+            passThreshold : 100,
+            unstableThreshold: 95.0,
+            onlyCritical : true,
+            otherFiles : "*.png",
+        ])
     }
-    else {
-        println('Skipping Jenkins Jobs creation')
-    }
-}
-
-def runRobotTests() {
-            if (params.UseRegressionTests){
-                withAWS(credentials: 'kops') {
-                    sh '''
-                    cd legion
-                    ../.venv/bin/pip install -r requirements/base.txt
-                    ../.venv/bin/pip install -r requirements/test.txt
-                    ../.venv/bin/python setup.py develop
-                    cd ..
-
-                    cd legion_test
-                    ../.venv/bin/pip install -r requirements/base.txt
-                    ../.venv/bin/pip install -r requirements/test.txt
-                    ../.venv/bin/python setup.py develop
-
-                    echo "Starting robot tests"
-                    cd ../tests/robot
-                    ../../.venv/bin/pip install yq
-
-                    PATH_TO_PROFILE="../../deploy/profiles/$Profile.yml"
-                    CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
-                    CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
-                    echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
-
-                    kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-                    PATH=../../.venv/bin:$PATH DISPLAY=:99 \
-                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-                     ../../.venv/bin/python3 -m robot.run *.robot || true
-
-                    echo "Starting python tests"
-                    cd ../python
-
-                    kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-                    ../../.venv/bin/nosetests --with-xunit || true
-                    '''
-                    step([
-                        $class : 'RobotPublisher',
-                        outputPath : 'tests/robot/',
-                        outputFileName : "*.xml",
-                        disableArchiveOutput : false,
-                        passThreshold : 100,
-                        unstableThreshold: 95.0,
-                        onlyCritical : true,
-                        otherFiles : "*.png",
-                    ])
-                }
-                junit 'tests/python/nosetests.xml'
-    }
-    else {
-        println('Skipped due to UseRegressionTests property')
-    }
+    junit 'tests/python/nosetests.xml'
 }
 
 def deployLegionEnclave() {
