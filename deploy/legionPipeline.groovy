@@ -91,37 +91,53 @@ def createjenkinsJobs() {
 }
 
 def runRobotTests() {
-    if (params.UseRegressionTests){
-        withAWS(credentials: 'kops') {
-            sh '''
-            cd legion_test
-            ../.venv/bin/pip install -r requirements/base.txt
-            ../.venv/bin/pip install -r requirements/test.txt
-            ../.venv/bin/python setup.py develop
+            if (params.UseRegressionTests){
+                withAWS(credentials: 'kops') {
+                    sh '''
+                    cd legion
+                    ../.venv/bin/pip install -r requirements/base.txt
+                    ../.venv/bin/pip install -r requirements/test.txt
+                    ../.venv/bin/python setup.py develop
+                    cd ..
 
-            cd ../tests
-            ../.venv/bin/pip install yq
+                    cd legion_test
+                    ../.venv/bin/pip install -r requirements/base.txt
+                    ../.venv/bin/pip install -r requirements/test.txt
+                    ../.venv/bin/python setup.py develop
 
-            PATH_TO_PROFILE="../deploy/profiles/$Profile.yml"
-            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
-            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
-            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+                    echo "Starting robot tests"
+                    cd ../tests/robot
+                    ../../.venv/bin/pip install yq
 
-            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+                    PATH_TO_PROFILE="../../deploy/profiles/$Profile.yml"
+                    CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
+                    CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+                    echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
-            DISPLAY=:99 PROFILE=$Profile ../.venv/bin/python3 -m robot.run *.robot || true
-            '''
-            step([
-                $class : 'RobotPublisher',
-                outputPath : 'tests/',
-                outputFileName : "*.xml",
-                disableArchiveOutput : false,
-                passThreshold : 100,
-                unstableThreshold: 95.0,
-                onlyCritical : true,
-                otherFiles : "*.png",
-            ])
-        }
+                    kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+                    PATH=../../.venv/bin:$PATH DISPLAY=:99 \
+                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+                     ../../.venv/bin/python3 -m robot.run *.robot || true
+
+                    echo "Starting python tests"
+                    cd ../python
+
+                    kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+                    PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+                    ../../.venv/bin/nosetests --with-xunit || true
+                    '''
+                    step([
+                        $class : 'RobotPublisher',
+                        outputPath : 'tests/robot/',
+                        outputFileName : "*.xml",
+                        disableArchiveOutput : false,
+                        passThreshold : 100,
+                        unstableThreshold: 95.0,
+                        onlyCritical : true,
+                        otherFiles : "*.png",
+                    ])
+                }
+                junit 'tests/python/nosetests.xml'
     }
     else {
         println('Skipped due to UseRegressionTests property')
