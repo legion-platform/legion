@@ -16,6 +16,10 @@
 keys/*
 cover/*
 
+*.tmp.yml
+*.tmp.out
+requirements.lock
+
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 
@@ -123,5 +127,6 @@ ENV/
 workspace/
 keys/
 
-tests/*.html
-tests/*.xml
+tests/robot/*.html
+tests/robot/*.xml
+tests/python/cover/*

@@ -9,7 +9,7 @@ node {
         legion = load 'deploy/legionPipeline.groovy'
 
         legion.buildDescription()
-        
+
         stage('Install tools package'){
             legion.installTools()
         }
@@ -33,7 +33,7 @@ node {
             }
         }
 
-        stage('Run robot tests'){
+        stage('Run regression tests'){
             if (params.UseRegressionTests){
                 legion.runRobotTests()
             }

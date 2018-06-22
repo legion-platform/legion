@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Information about {{MODEL_ID}}. Copyright 2017 EPAM Systems, Apache License, Version 2.0.",
+  "description": "Information about {{MODEL_ID}}. Copyright 2018 EPAM Systems, Apache License, Version 2.0.",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
@@ -72,7 +72,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "highestMax(hitcount(stats.legion.model.{{MODEL_ID}}.request.count, '1m'), 1)",
+              "target": "highestMax(hitcount(stats.legion.model.{{MODEL_ID}}.$version.request.count, '1m'), 1)",
               "textEditor": false
             }
           ],
@@ -146,7 +146,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "highestMax(stats.timers.legion.model.{{MODEL_ID}}.request.time.upper, 1)"
+              "target": "highestMax(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.upper, 1)"
             }
           ],
           "thresholds": "",
@@ -213,7 +213,7 @@
           "targets": [
             {
               "refId": "B",
-              "target": "alias(hitcount(stats.legion.model.{{MODEL_ID}}.request.count, '1s'), 'Queries / second')",
+              "target": "alias(hitcount(stats.legion.model.{{MODEL_ID}}.$version.request.count, '1s'), 'Queries / second')",
               "textEditor": true
             }
           ],
@@ -303,27 +303,27 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.request.time.upper_50, '50%')",
+              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.upper_50, '50%')",
               "textEditor": false
             },
             {
               "refId": "B",
-              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.request.time.upper_90, '90%')",
+              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.upper_90, '90%')",
               "textEditor": false
             },
             {
               "refId": "C",
-              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.request.time.upper_95, '95%')",
+              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.upper_95, '95%')",
               "textEditor": false
             },
             {
               "refId": "D",
-              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.request.time.upper_99, '99%')",
+              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.upper_99, '99%')",
               "textEditor": false
             },
             {
               "refId": "E",
-              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.request.time.upper, '100%')",
+              "target": "alias(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.upper, '100%')",
               "textEditor": false
             }
           ],
@@ -437,37 +437,37 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_5, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '<=5ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_5, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '<=5ms')",
               "textEditor": true
             },
             {
               "refId": "B",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_10, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '>5 ms & <=10ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_10, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '>5 ms & <=10ms')",
               "textEditor": true
             },
             {
               "refId": "C",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_50, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '>10 ms & <=50ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_50, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '>10 ms & <=50ms')",
               "textEditor": true
             },
             {
               "refId": "D",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_100, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '>50 ms & <=100ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_100, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '>50 ms & <=100ms')",
               "textEditor": true
             },
             {
               "refId": "E",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_200, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '>100 ms & <=200ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_200, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '>100 ms & <=200ms')",
               "textEditor": true
             },
             {
               "refId": "F",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_400, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '>200 ms & <=400ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_400, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '>200 ms & <=400ms')",
               "textEditor": true
             },
             {
               "refId": "G",
-              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.request.time.histogram.bin_inf, stats.timers.legion.model.{{MODEL_ID}}.request.time.count), '>400 ms')",
+              "target": "alias(asPercent(stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.histogram.bin_inf, stats.timers.legion.model.{{MODEL_ID}}.$version.request.time.count), '>400 ms')",
               "textEditor": true
             }
           ],
@@ -523,7 +523,28 @@
     "model_{{MODEL_ID}}"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "datasource": "graphite",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Model Version",
+        "multi": false,
+        "name": "version",
+        "options": [
+        ],
+        "query": "stats.legion.model.{{MODEL_ID}}.*",
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "now-1h",

@@ -17,6 +17,7 @@
 Robot test library - grafana
 """
 from legion_test.grafana import GrafanaClient
+from legion_test.utils import normalize_name
 
 import requests
 
@@ -69,12 +70,14 @@ class Grafana:
         if not self._client.is_dashboard_exists(model_id):
             raise Exception('Dashboard not exists')
 
-    def metric_should_be_presented(self, model_id):
+    def metric_should_be_presented(self, model_id, model_version):
         """
         Check that requests count metric for model exists
 
         :param model_id: model ID
         :type model_id: str
+        :param model_version: model version
+        :type model_version: str
         :raises: Exception
         :return: None
         """
@@ -88,8 +91,13 @@ class Grafana:
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
+        model_identifier = '{}.{}'.format(normalize_name(model_id, dns_1035=True),
+                                          normalize_name(model_version, dns_1035=True))
+
+        target = 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_identifier)
+
         payload = {
-            'target': 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_id),
+            'target': target,
             'from': '-5min',
             'until': 'now',
             'format': 'json',
@@ -98,7 +106,7 @@ class Grafana:
         }
 
         response = requests.post(url, data=payload, headers=headers, auth=auth)
-        print('Data: {}'.format(response.text))
+        print('Loading {} metrics. Data: {}'.format(target, response.text))
 
         data = response.json()
         if not data:
@@ -111,4 +119,3 @@ class Grafana:
                 break
         else:
             raise Exception('Cannot find any value > 0')
-

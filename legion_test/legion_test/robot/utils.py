@@ -101,3 +101,37 @@ class Utils:
         for value in values:
             result -= value
         return result
+
+    @staticmethod
+    def parse_edi_inspect_columns_info(edi_output):
+        """
+        Parse EDI inspect output
+
+        :param edi_output: EDI stdout
+        :type edi_output: str
+        :return: list[list[str]] -- parsed EDI output
+        """
+        lines = edi_output.splitlines()
+        if len(lines) < 2:
+            return []
+
+        return [[item.strip() for item in line.split('|')] for line in lines[1:]]
+
+    @staticmethod
+    def find_model_information_in_edi(parsed_edi_output, model_id, model_version=None):
+        """
+        Get specific model EDI output
+
+        :param parsed_edi_output: parsed EDI output
+        :type parsed_edi_output: list[list[str]]
+        :param model_id: model id
+        :type model_id: str
+        :param model_version: (Optional) model version
+        :type model_version: str
+        :return: list[str] -- parsed EDI output for specific model
+        """
+        founded = [info for info in parsed_edi_output if info[0] == model_id and model_version in (None, info[2])]
+        if not founded:
+            raise Exception('Info about model {!r} v {!r} not found'.format(model_id, model_version))
+
+        return founded[0]

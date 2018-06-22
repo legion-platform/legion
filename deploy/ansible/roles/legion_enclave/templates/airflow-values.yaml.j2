@@ -28,10 +28,13 @@ postgres:
   port: 5432
 
 core:
-  logging_level: info
+  logging_level: debug
   remote_logging: true
   remote_base_log_folder: {{ airflow_s3_log_url }}
   remote_log_conn_id: s3_conn
+
+webserver:
+  worker_refresh_interval: 10
 
 smtp:
   smtp_host: {{ airflow.email.smtp_host }}

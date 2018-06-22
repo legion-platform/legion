@@ -71,14 +71,14 @@ spec:
           httpGet:
             path: /
             port: 8080
-          initialDelaySeconds: 180
+          initialDelaySeconds: 60
           periodSeconds: 3
         readinessProbe:
           httpGet:
-            path: /
+            path: /admin/rest_api/api?api=version
             port: 8080
-          initialDelaySeconds: 180
-          periodSeconds: 3
+          initialDelaySeconds: 60
+          periodSeconds: 5
       volumes:
       - name: airflow-config-dir
         configMap:

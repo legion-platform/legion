@@ -10,16 +10,6 @@ package:
     repository: "{{ nexus_docker_repo }}/legion/base-python-image"
     tag: "{{ base_version }}-{{ local_version }}"
 
-consul:
-  uiIngress:
-    enabled: true
-    hosts:
-    - consul{{ domain_delimiter }}{{ root_domain }}
-    tls:
-    - hosts:
-      - consul{{ domain_delimiter }}{{ root_domain }}
-      secretName: {{ root_domain }}-tls
-
 grafana:
   image:
     repository: "{{ nexus_docker_repo }}/legion/k8s-grafana"

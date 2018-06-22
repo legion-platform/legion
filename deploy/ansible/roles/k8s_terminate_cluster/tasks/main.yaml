@@ -17,6 +17,7 @@
     instance_name: "{{ env_name }}-airflow-rds"
     region: "{{ aws_region }}"
     wait: yes
+    wait_timeout: 600
   when: rds_instance_status.changed
 
 - name: Ensure RDS instance is deleted

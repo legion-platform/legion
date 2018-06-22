@@ -11,13 +11,6 @@ IPs:
   - 35.170.177.113
 
 
-consul:
-  enabled: true
-
-  Replicas: 3
-  antiAffinity: soft
-
-
 edi:
   enabled: true
   replicas: 1
@@ -45,8 +38,6 @@ edge:
     repository: "legion/k8s-edge"
     tag: "latest"
     pullPolicy: "Always"
-
-  # consul: "special-consul-address:8500"
 
   ingress:
     enabled: true
