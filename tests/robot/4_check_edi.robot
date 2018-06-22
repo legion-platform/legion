@@ -59,7 +59,7 @@ Check EDI scale procedure
     Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
 
     ${scale_result} =  Run EDI scale       ${MODEL_TEST_ENCLAVE}        ${TEST_MODEL_ID}   2
-    Should not contain                     ${scale_result}              error
+    Should Be Equal As Integers      ${edi_state.rc}   0
     # TODO: check exit code == 0
     Sleep            10
 
