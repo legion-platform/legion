@@ -1,3 +1,16 @@
+# TODO -----------------
+       # -деплой двух моделей с одинаковым id но разными версиями
+       #-scale and undeploy при наличии двух версий:
+       #1. Без указания модел версии выдает ошибку
+       #2. С указанием некорректной версии тоже ошибка
+       #3. Работает с указанием конкретной версии
+       #- scale and undeploy при наличии одной версии:
+       #1. Работает без указания модел версии
+       #2. С указанием некорректной версии ошибка
+       #3. Работает с указанием конкретной версии
+       #- проверить работу инспекта с двумя задеплоенными версиями
+# TODO -----------------
+
 *** Settings ***
 Documentation       Legion's EDI operational check
 Resource            resources/keywords.robot
@@ -14,13 +27,15 @@ Check EDI availability in all enclaves
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  ${edi_state} =           Run EDI inspect  ${enclave}
     \  Log                      ${edi_state}
-    \  Should Be Equal As Integers      ${edi_state.rc}   0
+    \  Should not contain       ${edi_state}   legionctl: error
+    \  Should not contain       ${edi_state}   Exception
+     # TODO: check return code 0 from command line
 
 Check EDI deploy and undeploy procedure
     [Documentation]  Try to deploy and undeploy dummy model trough EDI console
     [Tags]  edi  cli  enclave
     Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            15    # because no way to control explicitly starting the model inside
+    Sleep            15
 
     ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
