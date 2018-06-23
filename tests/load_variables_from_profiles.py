@@ -14,7 +14,7 @@
 #    limitations under the License.
 #
 """
-Variables loader (from profiles/{env.PROFILE}.ansible.yml files)
+Variables loader (from profiles/{env.PROFILE}.yml and /{env.CREDENTIAL_SECRETS}.yml files)
 """
 
 import os
@@ -23,6 +23,7 @@ import yaml
 from legion_test.robot.dex_client import init_session_id
 
 PROFILE_ENVIRON_KEY = 'PROFILE'
+CREDENTIAL_SECRETS_ENVIRONMENT_KEY = 'CREDENTIAL_SECRETS'
 
 
 def get_variables(arg):
@@ -33,6 +34,7 @@ def get_variables(arg):
     :type args: str
     :return: dict[str, Any] -- values for robot
     """
+    # load Profile
     profile = os.getenv(PROFILE_ENVIRON_KEY)
     if not profile:
         raise Exception('Cannot get profile - {} env variable is not set'.format(PROFILE_ENVIRON_KEY))
@@ -47,6 +49,17 @@ def get_variables(arg):
 
     with open(profile, 'r') as stream:
         data = yaml.load(stream)
+
+    # load Secrets
+    secrets = os.getenv(CREDENTIAL_SECRETS_ENVIRONMENT_KEY)
+    if not secrets:
+        raise Exception('Cannot get secrets - {} env variable is not set'.format(CREDENTIAL_SECRETS_ENVIRONMENT_KEY))
+
+    if not os.path.exists(secrets):
+        raise Exception('Cannot get secrets - file not found {}'.format(secrets))
+
+    with open(secrets, 'r') as stream:
+        data.update(yaml.load(stream))
 
     variables = {
         'CLUSTER_NAMESPACE': data['namespace'],

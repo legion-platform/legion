@@ -69,7 +69,8 @@ node {
 
         stage('Run robot tests'){
             if (params.UseRegressionTests){
-                withAWS(credentials: 'kops') {
+                withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                  withAWS(credentials: 'kops') {
                     sh '''
                     cd legion_test
                     ../.venv/bin/pip install -r requirements/base.txt
@@ -98,6 +99,7 @@ node {
                         onlyCritical : true,
                         otherFiles : "*.png",
                     ])
+                  }
                 }
             }
             else {
