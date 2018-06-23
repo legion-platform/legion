@@ -73,7 +73,8 @@ node {
 
         stage('Run regression tests'){
             if (params.UseRegressionTests){
-                withAWS(credentials: 'kops') {
+                withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                  withAWS(credentials: 'kops') {
                     sh '''
                     cd legion
                     ../.venv/bin/pip install -r requirements/base.txt
@@ -117,6 +118,7 @@ node {
                         onlyCritical : true,
                         otherFiles : "*.png",
                     ])
+                  }
                 }
                 junit 'tests/python/nosetests.xml'
             }
