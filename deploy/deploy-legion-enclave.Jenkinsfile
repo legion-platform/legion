@@ -3,7 +3,6 @@ node {
     try{
         stage('Checkout GIT'){
             def scmVars = checkout scm
-            targetBranch = scmVars.GIT_COMMIT
         }
 
         legion = load 'deploy/legionPipeline.groovy'
