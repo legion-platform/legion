@@ -17,13 +17,16 @@ node {
 
         stage('Create Kubernetes Cluster') {
             dir('deploy/ansible'){
-                withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                withCredentials([
+                    file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
                     withAWS(credentials: 'kops') {
-                        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                            ansiblePlaybook(
-                                playbook: 'create-cluster.yml',
-                                extras: ' --extra-vars "profile=${Profile} skip_kops=${Skip_kops}"',
-                                colorized: true
+                    wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                        ansiblePlaybook(
+                            playbook: 'create-cluster.yml',
+                            extras: '--vault-password-file=${vault} \
+                                    --extra-vars "profile=${Profile} \
+                                    skip_kops=${Skip_kops}"',
+                            colorized: true
                             )
                         }
                     }
