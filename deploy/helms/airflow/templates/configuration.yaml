@@ -135,6 +135,12 @@ smtp_port = {{ .Values.smtp.smtp_port }}
 smtp_password = {{ .Values.smtp.smtp_password }}
 smtp_mail_from = {{ .Values.smtp.smtp_mail_from }}
 
+[slack]
+# This section only applies if you are using slack as an email_backend to receive notifications
+channel = {{ .Values.slack.channel }}
+username = {{ .Values.slack.username }}
+token = {{ .Values.slack.token }}
+
 [celery]
 # This section only applies if you are using the CeleryExecutor in
 # [core] section above
