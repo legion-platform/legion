@@ -99,22 +99,6 @@ node {
                     ../.venv/bin/python3 setup.py develop
                     cd -
                     """
-                }, 'Build docs': {
-                    fullBuildNumber = env.BUILD_NUMBER
-                    fullBuildNumber.padLeft(4, '0')
-
-                    sh '''
-                    cd legion
-                    LEGION_VERSION="\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')"
-                    cd docs
-                    sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
-                    sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
-                    make html
-                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
-                    cd ../../
-                    '''
-
-                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')/\""
                 }, 'Run Python code analyzers': {
                     sh '''
                     cd legion
@@ -174,15 +158,32 @@ node {
                     }
                 }
             )
+            parallel (
+                'Build Base Docker image': {
+                    dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
+                    sh """
+                    cd base-python-image
+                    docker build $dockerCacheArg -t legion/base-python-image .
+                    """
+                    UploadDockerImage('legion/base-python-image')
+                }, 'Build docs': {
+                    fullBuildNumber = env.BUILD_NUMBER
+                    fullBuildNumber.padLeft(4, '0')
 
-            stage('Build Base Docker image'){
-                dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
-                sh """
-                cd base-python-image
-                docker build $dockerCacheArg -t legion/base-python-image .
-                """
-                UploadDockerImage('legion/base-python-image')
-            }
+                    sh '''
+                    cd legion
+                    LEGION_VERSION="\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')"
+                    cd docs
+                    sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
+                    sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
+                    make html
+                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
+                    cd ../../
+                    '''
+
+                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')/\""
+                }
+            )
             parallel (
                 'Build Grafana Docker image': {
                     sh """
