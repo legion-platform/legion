@@ -35,6 +35,7 @@ core:
 
 webserver:
   worker_refresh_interval: 10
+  email_backend: {{ airflow.webserver.email_backend | default('airflow.utils.email.send_email_smtp') }}
 
 smtp:
   smtp_host: {{ airflow.email.smtp_host }}
@@ -44,6 +45,11 @@ smtp:
   smtp_port: {{ airflow.email.smtp_port }}
   smtp_password: {{ airflow.email.smtp_password }}
   smtp_mail_from: {{ airflow.email.smtp_mail_from }}
+
+slack:
+  username: {{ airflow.slack.username | default('~') }}
+  channel: {{ airflow.slack.channel | default('~') }}
+  token: {{ airflow.slack.token | default('~') }}
 
 storage:
   use_specified_pvc: true
