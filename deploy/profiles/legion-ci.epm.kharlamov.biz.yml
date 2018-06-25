@@ -85,7 +85,7 @@ dashboard:
 # Dex
 dex:
   enabled: false
-  # replicas: 1
+  replicas: 1
   # config:
   #   client_id: client_id
   #   client_secret: client_secret
