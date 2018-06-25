@@ -19,13 +19,16 @@ def buildDescription(){
 def createCluster() {
     dir('deploy/ansible'){
         sh 'env'
-        withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+        withCredentials([
+            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
-                wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    ansiblePlaybook(
-                        playbook: 'create-cluster.yml',
-                        extras: ' --extra-vars "profile=${Profile} skip_kops=${Skip_kops}"',
-                        colorized: true
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                ansiblePlaybook(
+                    playbook: 'create-cluster.yml',
+                    extras: '--vault-password-file=${vault} \
+                            --extra-vars "profile=${Profile} \
+                            skip_kops=${Skip_kops}"',
+                    colorized: true
                     )
                 }
             }
@@ -49,12 +52,15 @@ def terminateCluster() {
 
 def deployLegion() {
     dir('deploy/ansible'){
-        withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     ansiblePlaybook(
                         playbook: 'deploy-legion.yml',
-                        extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion}"',
+                        extras: '--vault-password-file=${vault} \
+                                --extra-vars "profile=${Profile} \
+                                base_version=${BaseVersion}  \
+                                local_version=${LocalVersion}"',
                         colorized: true
                     )
                 }
@@ -137,12 +143,17 @@ def runRobotTests() {
 
 def deployLegionEnclave() {
     dir('deploy/ansible'){
-        withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+        withCredentials([
+            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     ansiblePlaybook(
                         playbook: 'deploy-legion-enclave.yml',
-                        extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion} enclave_name=${EnclaveName}"',
+                        extras: '--vault-password-file=${vault} \
+                                --extra-vars "profile=${Profile} \
+                                base_version=${BaseVersion}  \
+                                local_version=${LocalVersion} \
+                                enclave_name=${EnclaveName}"',
                         colorized: true
                     )
                 }
@@ -153,12 +164,15 @@ def deployLegionEnclave() {
 
 def terminateLegionEnclave() {
     dir('deploy/ansible'){
-        withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+        withCredentials([
+            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     ansiblePlaybook(
                         playbook: 'terminate-legion-enclave.yml',
-                            extras: ' --extra-vars "profile=${Profile} enclave_name=${EnclaveName}"',
+                            extras: '--vault-password-file=${vault} \
+                                    --extra-vars "profile=${Profile} \
+                                    enclave_name=${EnclaveName}"',
                             colorized: true
                         )
                 }

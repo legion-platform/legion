@@ -110,3 +110,7 @@ dex:
   #   group: some-admin-group
   # - clusterrolebinding: view
   #   group: some-view-group
+
+# Secrets
+secrets_bucket: "legion-cluster"
+secrets_file: "/tmp/vault/{{ cluster_name }}"
