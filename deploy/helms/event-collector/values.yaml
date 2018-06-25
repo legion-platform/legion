@@ -1,4 +1,4 @@
-rootDomain: k8s-nightly.epm.kharlamov.biz
+rootDomain: ""
 localDomain: "cluster.local"
 domainDelimiter: "-"
 

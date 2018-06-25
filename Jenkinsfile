@@ -109,7 +109,7 @@ node {
                     sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
                     sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
                     make html
-                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
+                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/' || true
                     cd ../../
                     '''
 

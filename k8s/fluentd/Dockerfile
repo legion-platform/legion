@@ -16,17 +16,16 @@
 
 FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
 
-RUN gem install fluent-plugin-s3 -v '~>1.0.0'
-
-
-# Install legion dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends python3 \
-    g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
-    libtiff5-dev libjpeg62-turbo-dev zlib1g-dev \
-    libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk
-
-RUN pip3 install "numpy>=1.11.2"
+# Install fluentd-s3 plugin, legion requirements and clean up apt cache
+RUN gem install fluent-plugin-s3 -v '~>1.0.0' && \
+    apt-get update && apt-get install -y --no-install-recommends python3 \
+      g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
+      libtiff5-dev libjpeg62-turbo-dev zlib1g-dev \
+      libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
+      tcl8.6-dev tk8.6-dev python-tk python3-tk \
+      procps && \
+    pip3 install "numpy>=1.11.2" && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy bootstrap script
 COPY run.sh /run.sh
@@ -34,9 +33,6 @@ RUN chmod a+x /run.sh
 
 # Copy template
 COPY fluentd.t /etc/fluent/fluentd.t
-
-# Install additional required packages
-RUN apt-get update && apt-get install -y procps
 
 # Install legion
 ARG pip_extra_index_params=""
