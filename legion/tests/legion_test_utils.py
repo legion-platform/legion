@@ -152,6 +152,7 @@ class ModelServeTestBuild:
 
         self.application = None
         self.client = None
+        self.model_client = None
 
     def __enter__(self):
         """
@@ -176,6 +177,9 @@ class ModelServeTestBuild:
                 self.application = pyserve.init_application(None)
                 self.application.testing = True
                 self.client = self.application.test_client()
+                self.model_client = legion.model.ModelClient(self._model_id,
+                                                             http_client=self.client,
+                                                             use_relative_url=True)
 
             return self
         except Exception as build_exception:
