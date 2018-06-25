@@ -15,18 +15,15 @@
 #
 FROM legion/base-python-image
 
-RUN apt-get update && apt-get install --yes \
-    apt-transport-https \
+#RUN add-apt-repository \
+#   "deb [arch=amd64] https://download.docker.com/linux/debian jessie stable"
+
+#RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+
+RUN apk add --update \
     ca-certificates \
     curl \
-    software-properties-common
-
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-
-RUN add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/debian jessie stable"
-
-RUN apt-get update && apt-get install --yes docker-ce
+    docker-ce
 
 # Standard set up Nginx
 ENV NGINX_VERSION 1.13.7-1~stretch
