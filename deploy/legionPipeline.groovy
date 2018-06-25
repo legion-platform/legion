@@ -58,8 +58,7 @@ def deployLegion() {
     }
 }
 
-def createjenkinsJobs() {
-    def targetBranch = params.GitBranch
+def createjenkinsJobs(String commitID) {
     sh """
     cd legion_test
     ../.venv/bin/pip install -r requirements/base.txt
@@ -72,7 +71,7 @@ def createjenkinsJobs() {
     examples \
     . \
     "git@github.com:epam/legion.git" \
-    ${targetBranch} \
+    ${commitID} \
     --connection-timeout 600 \
     --git-root-key "legion-root-key" \
     --model-host "" \

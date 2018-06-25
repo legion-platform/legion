@@ -1,9 +1,10 @@
 node {
     def legion
+    def commitID
     try{
         stage('Checkout GIT'){
             def scmVars = checkout scm
-            targetBranch = scmVars.GIT_COMMIT
+            commitID = scmVars.GIT_COMMIT
         }
 
         legion = load 'deploy/legionPipeline.groovy'
@@ -26,7 +27,7 @@ node {
         
         stage('Create jenkins jobs'){
             if (params.CreateJenkinsTests){
-                legion.createjenkinsJobs()
+                legion.createjenkinsJobs(commitID)
             }
             else {
                 println('Skipping Jenkins Jobs creation')
