@@ -1,5 +1,3 @@
-def targetBranch = params.GitBranch
-
 node {
     def legion
     try{
