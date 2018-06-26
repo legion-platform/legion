@@ -142,20 +142,6 @@ node {
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
-    
-                    archiveArtifacts 'legion/pylint.log'
-                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
-
-                    sh '''
-                    cd legion_airflow
-                    ../.venv/bin/pycodestyle legion_airflow
-                    ../.venv/bin/pycodestyle tests
-                    ../.venv/bin/pydocstyle legion_airflow
-
-                    ../.venv/bin/pylint legion_airflow >> pylint.log || exit 0
-                    ../.venv/bin/pylint tests >> pylint.log || exit 0
-                    cd ..
-                    '''
 
                     archiveArtifacts 'legion_airflow/pylint.log'
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
