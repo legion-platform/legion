@@ -19,17 +19,15 @@ ADD requirements.txt /root/requirements.txt
 
 # Theano requires C++ compiler to produce effective code
 RUN apk add --update \
-   
-
-RUN apk add --update \
-    g++  python3 python3-dev py-pip py-setuptools file wget git fribidi\
+    python3 g++ python3-dev py-pip py-setuptools file wget git fribidi\
     tiff-dev jpeg-dev zlib-dev tcl-dev tk-dev python2-tkinter \
-    python3-tkinter-tests freetype-dev lcms2-dev libwebp harfbuzz      
+    python3-tkinter-tests freetype-dev lcms2-dev libwebp harfbuzz \
+    libstdc++ musl-dev linux-headers build-base \
+    openblas-dev freetype-dev pkgconfig \
+    && ln -s locale.h /usr/include/xlocale.h
 
-RUN apk add --update libstdc++ openblas lapack-dev openblas-dev musl-dev && \
-    ln -s locale.h /usr/include/xlocale.h
-
-RUN pip3 install --upgrade pip==9.0.3 \
-    && pip3 install --disable-pip-version-check  --no-cache-dir -r /root/requirements.txt
+RUN pip3 install --upgrade pip==9.0.3 numpy==1.14.3
+RUN pip3 install --upgrade scipy==1.0.0
+RUN pip3 install --disable-pip-version-check  --no-cache-dir -r /root/requirements.txt
 
 WORKDIR /app
