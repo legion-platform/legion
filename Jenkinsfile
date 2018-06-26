@@ -91,10 +91,6 @@ node {
                     sh """
                     cp legion/legion/version.py legion_airflow/legion_airflow/version.py
                     cd legion_airflow
-<<<<<<< 907e108fcdc8bed876ad0e78541aeddcd40a53fa
-
-=======
->>>>>>> [#156] Refactoring, minor fixes
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
                     ../.venv/bin/python3 setup.py sdist
