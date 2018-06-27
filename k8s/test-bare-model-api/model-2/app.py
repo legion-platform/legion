@@ -20,7 +20,7 @@ def model_info(model):
 
 @app.route('/api/model/<model>/invoke', methods=['GET', 'POST'])
 def model_invoke(model):
-    return jsonify(result=43.0)
+    return jsonify(result=44.0)
 
 
 if __name__ == '__main__':
