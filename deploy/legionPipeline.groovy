@@ -2,6 +2,11 @@ def installTools(){
     sh '''
     sudo rm -rf .venv
     virtualenv .venv -p $(which python3)
+
+    cd legion
+    ../.venv/bin/python3 setup.py develop
+    cd ..
+
     cd legion_test
     ../.venv/bin/python3 setup.py develop
     '''
