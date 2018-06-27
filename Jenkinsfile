@@ -227,10 +227,13 @@ node {
                     UploadDockerImage('legion/k8s-jenkins')
                 }, 'Build Bare model': {
                     sh """
-                    cd k8s/test-bare-model-api
-                    docker build $dockerCacheArg -t legion/test-bare-model-api .
+                    cd k8s/test-bare-model-api/model-1
+                    docker build $dockerCacheArg -t legion/test-bare-model-api-model-1 .
+                    cd k8s/test-bare-model-api/model-2
+                    docker build $dockerCacheArg -t legion/test-bare-model-api-model-2 .
                     """
-                    UploadDockerImage('legion/test-bare-model-api')
+                    UploadDockerImage('legion/test-bare-model-api-model-1')
+                    UploadDockerImage('legion/test-bare-model-api-model-2')
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi

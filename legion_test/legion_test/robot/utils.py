@@ -19,6 +19,9 @@ Robot test library - utils
 
 import socket
 import requests
+import time
+
+from legion.legion.model import ModelClient
 
 
 class Utils:
@@ -135,3 +138,31 @@ class Utils:
             raise Exception('Info about model {!r} v {!r} not found'.format(model_id, model_version))
 
         return founded[0]
+
+    @staticmethod
+    def check_model_started(url):
+        """
+        Check if model started by get request
+
+        :param url: url with model_id for checking
+        :type url: str
+        :return:  str -- response test
+        """
+        credentials = None
+        tries = 0
+        response = ""
+        while tries <= 6:
+            response = requests.get(url,
+                                    stream=True,
+                                    verify=False,
+                                    auth=credentials)
+            if response.status_code >= 400 or response.status_code < 200:
+                print("Response code = " + response.status_code + ", sleep and try again")
+                tries += 1
+                time.sleep(3)
+            elif response.status_code == 200:
+                break
+            elif tries == 6:
+                raise Exception('Returned wrong status code: {}'.format(response.status_code))
+
+        return response.text
