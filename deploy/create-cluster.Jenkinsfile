@@ -3,8 +3,6 @@ node {
     try{
         stage('Checkout GIT'){
             checkout scm
-
-            legion.buildDescription()
         }
 
         legion = load 'deploy/legionPipeline.groovy'
