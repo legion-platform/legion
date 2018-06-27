@@ -26,7 +26,7 @@ RUN apk add --update \
     openblas-dev freetype-dev pkgconfig \
     && ln -s locale.h /usr/include/xlocale.h
 
-RUN pip3 install --disable-pip-version-check --upgrade pip==10.0.1 numpy==1.14.3
+RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 numpy==1.14.3
 RUN pip3 install --disable-pip-version-check --upgrade scipy==1.0.0
 RUN pip3 install --disable-pip-version-check  --no-cache-dir -r /root/requirements.txt
 
