@@ -1,16 +1,3 @@
-# TODO -----------------
-       # -деплой двух моделей с одинаковым id но разными версиями
-       #-scale and undeploy при наличии двух версий:
-       #1. Без указания модел версии выдает ошибку
-       #2. С указанием некорректной версии тоже ошибка
-       #3. Работает с указанием конкретной версии
-       #- scale and undeploy при наличии одной версии:
-       #1. Работает без указания модел версии
-       #2. С указанием некорректной версии ошибка
-       #3. Работает с указанием конкретной версии
-       #- проверить работу инспекта с двумя задеплоенными версиями
-# TODO -----------------
-
 *** Settings ***
 Documentation       Legion's EDI operational check
 Resource            resources/keywords.robot
@@ -18,80 +5,78 @@ Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py   ../../deploy/profiles/
 Library             legion_test.robot.Utils
 Library             Collections
-Test Setup          Choose cluster context            ${CLUSTER_NAME}
+Test Setup          Run Keywords
+...                 Choose cluster context    ${CLUSTER_NAME}
+...                 Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
+...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
+...                 Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}  AND
+...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}  AND
+...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
+...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+Test Teardown       Run Keywords
+...                 Run EDI undeploy by model version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   AND
+...                 Run EDI undeploy by model version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
 
 *** Test Cases ***
 Check EDI availability in all enclaves
+    [Setup]     Choose cluster context    ${CLUSTER_NAME}
     [Documentation]  Try to connect to EDI in each enclave
     [Tags]  edi  cli  enclave
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  ${edi_state} =           Run EDI inspect  ${enclave}
     \  Log                      ${edi_state}
-    \  Should not contain       ${edi_state}   legionctl: error
-    \  Should not contain       ${edi_state}   Exception
-     # TODO: check return code 0 from command line
+    \  Should Be Equal As Integers      ${edi_state.rc}   0
+    [Teardown]    NONE
 
-Check EDI deploy and undeploy procedure
-    [Documentation]  Try to deploy and undeploy dummy model trough EDI console
+Check EDI deploy 2 models with different versions but the same id
+    [Setup]     Choose cluster context    ${CLUSTER_NAME}
     [Tags]  edi  cli  enclave
-    Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            15
+    Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+    Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
 
-    ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
-    ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
-    Log  ${edi_state}
-    Log  ${target_model}
-
-    Should Be Equal  ${target_model[0]}    ${TEST_MODEL_ID}             invalid model id
-    Should Be Equal  ${target_model[1]}    ${TEST_MODEL_IMAGE}          invalid model image
-    Should Be Equal  ${target_model[2]}    ${TEST_MODEL_VERSION}        invalid model version
-    Should Be Equal  ${target_model[3]}    1                            invalid actual scales
-    Should Be Equal  ${target_model[4]}    1                            invalid desired scale
-    Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
-
-    Run EDI undeploy without version                   ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_ID}
-
-    ${edi_state} =   Run EDI inspect                   ${MODEL_TEST_ENCLAVE}
-    Log  ${edi_state}
-    Should not contain                                 ${edi_state}                  ${TEST_MODEL_ID}
-
-Check EDI scale procedure
-    [Documentation]  Try to deploy, scale and undeploy dummy model trough EDI console
+Check EDI scale up 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave
-    Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            15
+    # scale one model
+    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
 
-    ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
-    ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
-    Log  ${edi_state}
-    Log  ${target_model}
+Check EDI scale down 1 of 2 models with different versions but the same id
+    [Tags]  edi  cli  enclave
+    # scale one model up
+    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
+    # scale one model down
+    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    1     ${TEST_MODEL_1_VERSION}
 
-    Should Be Equal  ${target_model[0]}    ${TEST_MODEL_ID}             invalid model id
-    Should Be Equal  ${target_model[1]}    ${TEST_MODEL_IMAGE}          invalid model image
-    Should Be Equal  ${target_model[2]}    ${TEST_MODEL_VERSION}        invalid model version
-    Should Be Equal  ${target_model[3]}    1                            invalid actual scales
-    Should Be Equal  ${target_model[4]}    1                            invalid desired scale
-    Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
+Check EDI scale up 1 of 2 models with different versions but the same id - invalid version
+    [Tags]  edi  cli  enclave
+    # try to scale one model with invalid version
+    Run EDI scale model with version and check error  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}121  No one model can be found
 
-    ${scale_result} =  Run EDI scale       ${MODEL_TEST_ENCLAVE}        ${TEST_MODEL_ID}   2
-    Should not contain                     ${scale_result}              error
-    # TODO: check exit code == 0
-    Sleep            10
+Check EDI scale up 1 of 2 models with different versions but the same id - without version
+    [Tags]  edi  cli  enclave
+    # try to scale one model with invalid version
+    Run EDI scale model without version and check error  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2     Please specify version of model
 
-    ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
-    ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
-    Log  ${edi_state}
-    Log  ${target_model}
+Check EDI undeploy 1 of 2 models with different versions but the same id
+    [Tags]  edi  cli  enclave
+    # scale one model up
+    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
 
-    Should Be Equal  ${target_model[0]}    ${TEST_MODEL_ID}             invalid model id
-    Should Be Equal  ${target_model[1]}    ${TEST_MODEL_IMAGE}          invalid model image
-    Should Be Equal  ${target_model[2]}    ${TEST_MODEL_VERSION}        invalid model version
-    Should Be Equal  ${target_model[3]}    2                            invalid actual scales
-    Should Be Equal  ${target_model[4]}    2                            invalid desired scale
-    Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
+Check EDI undeploy 1 of 2 models with different versions but the same id - invalid version
+    [Tags]  edi  cli  enclave
+    # scale one model up
+    Run EDI scale model with version and check          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
+    # try to undeploy with invalid model version
+    Run EDI undeploy by model version and check error   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}    Cannot find any deployment
 
-    Run EDI undeploy without version                   ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_ID}
+Check EDI undeploy 1 of 2 models with different versions but the same id - without version
+    [Tags]  edi  cli  enclave
+       # try to undeploy with invalid model version
+    Run EDI undeploy model without version and check error ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   Please specify version of model
 
-    ${edi_state} =   Run EDI inspect                   ${MODEL_TEST_ENCLAVE}
-    Log  ${edi_state}
-    Should not contain                                 ${edi_state}                  ${TEST_MODEL_ID}
+
+
+
