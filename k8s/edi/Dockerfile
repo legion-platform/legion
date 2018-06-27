@@ -19,8 +19,6 @@ RUN apk add --update \
     ca-certificates curl openrc docker \
     nginx pcre pcre-dev supervisor
 
-RUN rc-update add docker boot 
-
 EXPOSE 5000
 
 # forward request and error logs to docker log collector
@@ -30,17 +28,18 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 # Make NGINX run on the foreground
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
+RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
 COPY app_uwsgi.ini /usr/local/lib/python3.5/dist-packages/legion/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY chmod-docker-and-run-edi.sh /usr/local/bin/chmod-docker-and-run-edi.sh
 
 ENV UWSGI_INI /usr/local/lib/python3.5/dist-packages/legion/uwsgi.ini
 
-#ENTRYPOINT chmod a+rwx /var/run/docker.sock
-CMD ["/usr/bin/supervisord"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 
+COPY chmod-docker-and-run-edi.sh /usr/local/bin/chmod-docker-and-run-edi.sh
+RUN chmod a+rwx /usr/local/bin/chmod-docker-and-run-edi.sh
 ENTRYPOINT ["/usr/local/bin/chmod-docker-and-run-edi.sh"]
 
 ARG pip_extra_index_params=""

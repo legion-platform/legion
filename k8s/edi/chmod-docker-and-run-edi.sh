@@ -1,9 +1,8 @@
 #!/bin/sh
 set -e
 
-docker daemon \
-			--host=unix:///var/run/docker.sock &
-
+dockerd &
+sleep 3
 chmod a+rwx /var/run/docker.sock
 
 exec "$@"
