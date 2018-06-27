@@ -5,8 +5,6 @@ node {
             def scmVars = checkout scm
             targetBranch = scmVars.GIT_COMMIT
 
-            legion = load 'legionPipeline.groovy'
-
             legion.buildDescription()
         }
 
