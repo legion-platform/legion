@@ -1,0 +1,73 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "dex.fullname" . }}
+  labels:
+    app: {{ template "dex.name" . }}
+    chart: {{ template "dex.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "dex.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "dex.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+      - name: dex-config
+        secret:
+          secretName: {{ template "dex.fullname" . }}
+{{- if .Values.ingress.enabled }}{{- else }}
+      - name: dex-tls
+        secret:
+          secretName: {{ .Values.tls_secret }}
+{{- end }}
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ template "dex.fullname" . }}
+{{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+          - mountPath: /config.yaml
+            subPath: config.yaml
+            name: dex-config
+            readOnly: true
+{{- if .Values.ingress.enabled }}{{- else }}
+          - mountPath: /tls
+            name: dex-tls
+{{- end }}
+          args:
+          - serve
+          - /config.yaml
+          ports:
+            - name: https
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.targetPort }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.targetPort }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

@@ -36,6 +36,10 @@ core:
 webserver:
   worker_refresh_interval: 10
   email_backend: {{ airflow.webserver.email_backend | default('airflow.utils.email.send_email_smtp') }}
+  authenticate: {{ airflow_auth.enabled }}
+  dex_group_admin: {{ airflow_auth.dex_group_admin }}
+  dex_group_profiler: {{ airflow_auth.dex_group_profiler }}
+  auth_backend: {{ airflow_auth.auth_backend }}
 
 smtp:
   smtp_host: {{ airflow.email.smtp_host }}
@@ -62,3 +66,12 @@ ingress:
   url_suffix: {{ enclave }}
   tls:
     enabled: true
+{% if dex.enabled == true %}
+  annotations:
+    nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+    nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      auth_request_set $token $upstream_http_authorization;
+      proxy_set_header Authorization $token;
+{% endif %}
+
