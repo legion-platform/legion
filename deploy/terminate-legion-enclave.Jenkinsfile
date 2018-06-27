@@ -11,12 +11,15 @@ node {
  
         stage('Terminate Legion Enclave') {
             dir('deploy/ansible'){
-                withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                withCredentials([
+                    file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
                     withAWS(credentials: 'kops') {
                         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                             ansiblePlaybook(
                                 playbook: 'terminate-legion-enclave.yml',
-                                    extras: ' --extra-vars "profile=${Profile} enclave_name=${EnclaveName}"',
+                                    extras: '--vault-password-file=${vault} \
+                                            --extra-vars "profile=${Profile} \
+                                            enclave_name=${EnclaveName}"',
                                     colorized: true
                                 )
                         }

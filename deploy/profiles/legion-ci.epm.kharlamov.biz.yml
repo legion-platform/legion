@@ -81,3 +81,7 @@ airflow_pvc: 200m
 dashboard:
   version: "1.8.3"
   insecure: true
+
+# Secrets
+secrets_bucket: "legion-cluster"
+secrets_file: "/tmp/vault/{{ cluster_name }}"

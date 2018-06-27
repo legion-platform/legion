@@ -27,12 +27,15 @@ node {
         stage('Deploy Legion') {
             if (params.DeployLegion){
                 dir('deploy/ansible'){
-                    withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+                    withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
                         withAWS(credentials: 'kops') {
                             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                                 ansiblePlaybook(
                                     playbook: 'deploy-legion.yml',
-                                    extras: ' --extra-vars "profile=${Profile} base_version=${BaseVersion}  local_version=${LocalVersion}"',
+                                    extras: '--vault-password-file=${vault} \
+                                            --extra-vars "profile=${Profile} \
+                                            base_version=${BaseVersion}  \
+                                            local_version=${LocalVersion}"',
                                     colorized: true
                                 )
                             }
