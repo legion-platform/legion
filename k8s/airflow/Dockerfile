@@ -84,6 +84,7 @@ COPY entrypoint.sh /home/airflow/init.sh
 
 COPY requirements.txt /home/airflow/requirements.txt
 RUN pip install -r /home/airflow/requirements.txt && \
+    pip install $pip_extra_index_params legion$pip_legion_version_string && \
     pip install $pip_extra_index_params legion_airflow$pip_legion_version_string
 
 RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME} && \
