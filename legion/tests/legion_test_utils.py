@@ -253,7 +253,7 @@ class ModelTestDeployment:
                 python_package_version=None,
                 python_repository=None,
                 docker_image_tag=None,
-                serving=deploy.VALID_SERVING_WORKERS[1],
+                serving=deploy.VALID_SERVING_WORKERS[0],
                 push_to_registry=None
             )
             self.image = deploy.build_model(args)
