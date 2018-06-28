@@ -182,14 +182,17 @@ node {
                     docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
                     """
                     UploadDockerImage('legion/k8s-jenkins')
-                }, 'Build Bare model': {
+                }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
                     docker build $dockerCacheArg -t legion/test-bare-model-api-model-1 .
+                    """
+                    UploadDockerImage('legion/test-bare-model-api-model-1')
+                }, 'Build Bare model 2': {
+                    sh """
                     cd k8s/test-bare-model-api/model-2
                     docker build $dockerCacheArg -t legion/test-bare-model-api-model-2 .
                     """
-                    UploadDockerImage('legion/test-bare-model-api-model-1')
                     UploadDockerImage('legion/test-bare-model-api-model-2')
                 }, 'Build Edi Docker image': {
                     sh """
