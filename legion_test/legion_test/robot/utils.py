@@ -140,22 +140,20 @@ class Utils:
         return founded[0]
 
     @staticmethod
-    def check_model_started(url):
+    def check_valid_http_response(url):
         """
-        Check if model started by get request
+        Check if model return valid code for get request
 
         :param url: url with model_id for checking
         :type url: str
-        :return:  str -- response test
+        :return:  str -- response text
         """
-        credentials = None
         tries = 0
         response = ""
         while tries <= 6:
             response = requests.get(url,
                                     stream=True,
-                                    verify=False,
-                                    auth=credentials)
+                                    verify=False)
             if response.status_code >= 400 or response.status_code < 200:
                 print("Response code = " + response.status_code + ", sleep and try again")
                 tries += 1
