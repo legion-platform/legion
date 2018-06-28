@@ -11,8 +11,7 @@
     {
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
-      "Resource": [
-        "arn:aws:s3:::{{ airflow_s3_bucket_name }}"
+      "Resource": "arn:aws:s3:::{{ airflow_s3_bucket_name }}"
     }
   ]
 }
