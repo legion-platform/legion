@@ -1,2 +1,7 @@
 slackclient==1.2.1
+<<<<<<< e0b72c2adcdb4b2d7f4fb2020b27d024c0aea160
 PyJWT==1.3.0
+=======
+smart_open==1.5.7
+boto3==1.7.28
+>>>>>>> [#131] Add s3 hook to Airflow and dag to test s3 access.
