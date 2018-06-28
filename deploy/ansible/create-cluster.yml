@@ -10,7 +10,7 @@
   connection: local
   gather_facts: True
   vars_files:
-    - "../profiles/{{ profile }}.yml"
+    - "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
     - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
 
   roles:
