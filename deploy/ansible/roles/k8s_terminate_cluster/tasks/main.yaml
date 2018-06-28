@@ -1,9 +1,5 @@
 ---
 
-# Make sure kubectl is configured with proper cluster
-- name: Configure kubectl using kops
-  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
-
 - include: aws-resources.yaml
 - include: kube2iam.yaml
 - include: kops-cluster.yaml

@@ -32,6 +32,8 @@
 
 - name: Remove kube2iam daemonset
   shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true
+  ignore_errors: true
 
 - name: Remove kube2iam service account
   shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
+  ignore_errors: true
