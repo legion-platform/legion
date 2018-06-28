@@ -86,50 +86,52 @@ def createjenkinsJobs(String commitID) {
 
 def runRobotTests() {
     withAWS(credentials: 'kops') {
-        sh '''
-        cd legion
-        ../.venv/bin/pip install -r requirements/base.txt
-        ../.venv/bin/pip install -r requirements/test.txt
-        ../.venv/bin/python setup.py develop
-        cd ..
+    	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+            sh '''
+            cd legion
+            ../.venv/bin/pip install -r requirements/base.txt
+            ../.venv/bin/pip install -r requirements/test.txt
+            ../.venv/bin/python setup.py develop
+            cd ..
 
-        cd legion_test
-        ../.venv/bin/pip install -r requirements/base.txt
-        ../.venv/bin/pip install -r requirements/test.txt
-        ../.venv/bin/python setup.py develop
+            cd legion_test
+            ../.venv/bin/pip install -r requirements/base.txt
+            ../.venv/bin/pip install -r requirements/test.txt
+            ../.venv/bin/python setup.py develop
 
-        echo "Starting robot tests"
-        cd ../tests/robot
-        ../../.venv/bin/pip install yq
+            echo "Starting robot tests"
+            cd ../tests/robot
+            ../../.venv/bin/pip install yq
 
-        PATH_TO_PROFILE="../../deploy/profiles/$Profile.yml"
-        CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
-        CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
-        echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+            PATH_TO_PROFILE="../../deploy/profiles/$Profile.yml"
+            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
+            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
-        kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-        PATH=../../.venv/bin:$PATH DISPLAY=:99 \
-        PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-         ../../.venv/bin/python3 -m robot.run *.robot || true
+            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            PATH=../../.venv/bin:$PATH DISPLAY=:99 \
+            PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+            ../../.venv/bin/python3 -m robot.run *.robot || true
 
-        echo "Starting python tests"
-        cd ../python
+            echo "Starting python tests"
+            cd ../python
 
-        kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-        PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-        ../../.venv/bin/nosetests --with-xunit || true
-        '''
-        step([
-            $class : 'RobotPublisher',
-            outputPath : 'tests/robot/',
-            outputFileName : "*.xml",
-            disableArchiveOutput : false,
-            passThreshold : 100,
-            unstableThreshold: 95.0,
-            onlyCritical : true,
-            otherFiles : "*.png",
-        ])
-    }
+            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+            ../../.venv/bin/nosetests --with-xunit || true
+            '''
+            step([
+                $class : 'RobotPublisher',
+                outputPath : 'tests/robot/',
+                outputFileName : "*.xml",
+                disableArchiveOutput : false,
+                passThreshold : 100,
+                unstableThreshold: 95.0,
+                onlyCritical : true,
+                otherFiles : "*.png",
+            ])
+        }
+	}
     junit 'tests/python/nosetests.xml'
 }
 
