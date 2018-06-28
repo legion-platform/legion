@@ -1,0 +1,11 @@
+---
+
+- name: Create view clusterrolebinding
+  command: "kubectl --context {{ cluster_name }} create clusterrolebinding view --clusterrole view"
+  ignore_errors: true
+  when: dex.enabled
+
+- name: Bind user groups to clusterrolebindings
+  command: "kubectl --context {{ cluster_name }} set subject clusterrolebinding {{ item.clusterrolebinding }} --group={{ item.group }}"
+  with_items: "{{ dex.groups }}"
+  when: dex.enabled

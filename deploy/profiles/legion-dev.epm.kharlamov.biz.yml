@@ -83,3 +83,32 @@ airflow_pvc: 200m
 dashboard:
   version: "1.8.3"
   insecure: true
+
+# Dex
+dex:
+  enabled: false
+  # replicas: 1
+  # config:
+  #   client_id: client_id
+  #   client_secret: client_secret
+  #   connectors:
+  #   - type: gitlab
+  #     id: gitlab
+  #     name: Some GitLab
+  #     config:
+  #       baseURL: https://gitlab.domain.com
+  #       clientID: clientID
+  #       clientSecret: clientSecret
+  #       redirectURI: https://dex.domain.com/callback
+  #   staticPasswords:
+  #   - email: "admin@example.com"
+  #     # bcrypt hash of the string "password"
+  #     password: password
+  #     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+  #     username: "admin"
+  #     userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  # groups:
+  # - clusterrolebinding: cluster-admin
+  #   group: some-admin-group
+  # - clusterrolebinding: view
+  #   group: some-view-group

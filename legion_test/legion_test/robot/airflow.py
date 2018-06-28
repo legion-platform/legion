@@ -21,7 +21,7 @@ import requests
 from requests.exceptions import RequestException
 import logging
 import time
-
+from legion_test.robot.dex_client import get_session_cookies
 
 class Airflow:
     """
@@ -87,7 +87,7 @@ class Airflow:
             url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
         else:
             url = (self.BASE_URL_TEMPLATE % self.root_url) + path
-        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, **kwargs)
+        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
         if response.status_code == 200:
             return response.json()
         else:
