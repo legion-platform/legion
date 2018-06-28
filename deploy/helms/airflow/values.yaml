@@ -140,3 +140,5 @@ ingress:
   tls:
     enabled: false
     autoSecretNameDeduction: true
+
+legion_release: ~
