@@ -6,7 +6,7 @@ Variables           load_variables_from_profiles.py   ../../deploy/profiles/
 Library             legion_test.robot.Utils
 Library             Collections
 Test Setup          Run Keywords
-...                 Choose cluster context    ${CLUSTER_NAME}
+...                 Choose cluster context    ${CLUSTER_NAME}   AND
 ...                 Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
 ...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
 ...                 Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}  AND

@@ -7,7 +7,7 @@ class Globals {
 def UploadDockerImage(imageName) {
     sh """
     docker tag ${imageName} ${params.DockerRegistry}/${imageName}:latest
-    docker tag ${imageName} ${params.DockerRegistry}/${imageName}e:${Globals.baseVersion}
+    docker tag ${imageName} ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}
     docker tag ${imageName} ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}-${Globals.localVersion}
     docker push ${params.DockerRegistry}/${imageName}:latest
     docker push ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}

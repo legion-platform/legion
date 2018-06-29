@@ -21,8 +21,6 @@ import socket
 import requests
 import time
 
-from legion.legion.model import ModelClient
-
 
 class Utils:
     """
