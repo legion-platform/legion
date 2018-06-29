@@ -36,7 +36,7 @@ class S3Hook(BaseHook):
         self.extras = self.connection.extra_dejson
         self.aws_access_key_id = self.extras.get('aws_access_key_id', None)
         self.aws_secret_access_key = self.extras.get('aws_secret_access_key', None)
-        self.key_prefix = self.extras.get('key_prefix', conf.get('storage', 's3_bucket_path'))
+        self.key_prefix = self.extras.get('key_prefix', conf.get('core', 's3_bucket_path'))
         self.bucket_prefix = self.extras.get('bucket_prefix', '')
 
     def open_file(self, bucket: str, key: str, mode: str = 'rb', encoding: str = 'utf-8'):
