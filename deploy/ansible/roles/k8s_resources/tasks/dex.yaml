@@ -36,6 +36,7 @@
     state: present
     zone: "{{ route53_zone }}"
     record: "dex.{{ base_domain }}"
+    ttl: 60
     type: CNAME
     value: "{{ dex_elb_endpoint.stdout }}"
     overwrite: true
