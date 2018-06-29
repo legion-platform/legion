@@ -27,12 +27,11 @@ node {
             stage('Install build dependencies'){
                 sh '''
                 sudo rm -rf .venv
-                virtualenv .venv -p $(which python3)
-
+                virtualenv .venv -p $(which python3.6)
                 sudo chmod a+r -R .
                 cd legion
-                ../.venv/bin/pip3 install -r requirements/base.txt
-                ../.venv/bin/pip3 install -r requirements/test.txt
+                ../.venv/bin/pip install -r requirements/base.txt
+                ../.venv/bin/pip install -r requirements/test.txt
                 '''
             }
 
@@ -40,9 +39,9 @@ node {
                 'Build Python packages': {
                     sh '''
                     cd legion_test
-                    ../.venv/bin/python3 setup.py sdist
-                    ../.venv/bin/python3 setup.py bdist_wheel
-                    ../.venv/bin/python3 setup.py develop
+                    ../.venv/bin/python3.6 setup.py sdist
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
+                    ../.venv/bin/python3.6 setup.py develop
                     cd -
                     '''
 
@@ -70,20 +69,20 @@ node {
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
                     cd legion_test
-                    ../.venv/bin/python3 setup.py sdist
-                    ../.venv/bin/python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
-                    ../.venv/bin/python3 setup.py bdist_wheel
-                    ../.venv/bin/python3 setup.py develop
+                    ../.venv/bin/python3.6 setup.py sdist
+                    ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
+                    ../.venv/bin/python3.6 setup.py develop
                     cd -
                     """
 
                     print('Build and distributing legion')
                     sh """
                     cd legion
-                    ../.venv/bin/python3 setup.py sdist
-                    ../.venv/bin/python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
-                    ../.venv/bin/python3 setup.py bdist_wheel
-                    ../.venv/bin/python3 setup.py develop
+                    ../.venv/bin/python3.6 setup.py sdist
+                    ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
+                    ../.venv/bin/python3.6 setup.py develop
                     cd -
                     """
 
@@ -93,12 +92,28 @@ node {
                     cd legion_airflow
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
-                    ../.venv/bin/python3 setup.py sdist
-                    ../.venv/bin/python3 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
-                    ../.venv/bin/python3 setup.py bdist_wheel
-                    ../.venv/bin/python3 setup.py develop
+                    ../.venv/bin/python3.6 setup.py sdist
+                    ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
+                    ../.venv/bin/python3.6 setup.py develop
                     cd -
                     """
+                }, 'Build docs': {
+                    fullBuildNumber = env.BUILD_NUMBER
+                    fullBuildNumber.padLeft(4, '0')
+
+                    sh '''
+                    cd legion
+                    LEGION_VERSION="\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')"
+                    cd docs
+                    sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
+                    sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
+                    make html
+                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
+                    cd ../../
+                    '''
+
+                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')/\""
                 }, 'Run Python code analyzers': {
                     sh '''
                     cd legion
@@ -251,7 +266,7 @@ node {
                     junit 'legion/nosetests.xml'
     
                     sh """
-                    cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')-cover/\"
+                    cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')-cover/\"
                     """
                 }
             )
