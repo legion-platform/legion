@@ -39,6 +39,15 @@ jenkins:
 
     dags_volume_pvc: ''
 
+  openId:
+    enable: false
+    clientId: ~
+    clientSecret: ~
+    tokenServerUrl: ~
+    authServerUrl: ~
+    adminGroups: ~
+    readOnlyGroups: ~
+
 nexus:
   # Nexus repository configuration
   enabled: false
@@ -111,5 +120,14 @@ grafana:
       enabled: true
       autoSecretNameDeduction: true
 
+  openId:
+    enable: false
+    clientId: ~
+    clientSecret: ~
+    tokenServerUrl: ~
+    authServerUrl: ~
+
 graphite:
   enabled: true
+
+
