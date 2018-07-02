@@ -118,7 +118,7 @@ def runRobotTests() {
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/python3 -m robot.run *.robot || true
+            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES:$PATH_TO_PROFILES *.robot || true
 
             echo "Starting python tests"
             cd ../python
