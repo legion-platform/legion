@@ -2,7 +2,7 @@
 Documentation       Legion's EDI operational check
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py   ../../deploy/profiles/
+Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES}
 Library             legion_test.robot.Utils
 Library             Collections
 Test Setup          Choose cluster context            ${CLUSTER_NAME}
