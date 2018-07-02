@@ -221,7 +221,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
     def summary = """\
     @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
     branch *${GitBranch}*
-    profile *<https://${Profile}|${Profile}>*
+    profile *<https://${env.Profile}|${env.Profile}>*
     ${arguments}
     local version: *${LocalVersion}*
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
