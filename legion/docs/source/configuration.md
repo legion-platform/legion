@@ -110,12 +110,22 @@ storageclass: efs              # Which storage use in PVCs
 dashboard:                     # Kubernetes dashboard configuration
   version: "1.8.3"             # Dashboard version
   insecure: true               # Allow insecure access
+
+# Dex
+dex:
+  enabled: false   # by default Dex is disabled in profiles (but enabled in secrets)
+
+# Secrets
+secrets_bucket: "legion-secrets"               # S3 bucket with secrets
+secrets_file: "/tmp/vault/{{ cluster_name }}"  # path for temporary storage
 ```
 
 ## Secrets 
-Each secret should be uploaded to Jenkins secrets with same name as profile (without extension).
+Each secret should be encrypted with Ansible vault and uploaded to S3. 
+Secret should be stored on a Jenkins like credentials file (for example vault-legion-dev.epm.kharlamov.biz).
+S3 path to secrets builds using next template `{{ secrets_bucket }}/vault/{{ profile }}` for example `legion-secrets/vault/legion-dev.epm.kharlamov.biz`
 
-File should consists of appropriate YAML formatted text.
+Decrypted file should consists of appropriate YAML formatted text.
 
 ### Secrets format
 Here is an example of secret file
