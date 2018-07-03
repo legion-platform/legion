@@ -10,10 +10,10 @@ Each cluster that you want to deploy with our Jenkinsfiles and ansible playbooks
 
 Each profile should be located in `/deploy/profiles` directory of current repository. Profile file name consists of two parts: envinroment name (usually equal to DNS name) and `.yml` extension.
 
-File should consist appropriate YAML formatted text.
+File should consists of appropriate YAML formatted text.
 
 ### Profile format
-Here is example of profile file
+Here is an example of profile file
 
 ```yaml
 # DNS
@@ -30,7 +30,7 @@ env_name: legion-dev    # short name of env, will be added in resource tags
 # Ansible variables
 tmp_dir: /tmp/                          # directory for storing temporary files (on host during deploy)
 git_key: "/home/jenkins/deploy.cert"    # SSH Git access key which will be copied to Jenkins in cluster 
-ssh_public_key: ~/.ssh/id_rsa.pub       # public key which be copied to cluster
+ssh_public_key: ~/.ssh/id_rsa.pub       # public key which will be copied to cluster
 
 
 # AWS configuration
@@ -52,11 +52,11 @@ node_extra_shapes:         # list of shapes that can be started up during model 
 node_extra_min: 0          # minimum count of nodes for model building
 node_extra_max: 2          # maximum count of nodes for model building
 
-vpc_id: vpc-5729c13e               # target VPC ID [?]
+vpc_id: vpc-5729c13e               # VPC id where the cluster will be created 
 
 
 # Common cluster configuration for KOPS
-cluster_name: legion-dev.epm.kharlamov.biz # name of cluster [?]
+cluster_name: legion-dev.epm.kharlamov.biz # unique KOPS cluster name
 state_store: s3://legion-cluster  # AWS S3 bucket for storing KOPS state
 aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08  # base Kubernetes image
 kubernetes_version: 1.9.3         # kubernetes version
@@ -73,8 +73,8 @@ cluster_zones:                    # configuration of cluster zones
     kops_utility_cidr: "{{ private_network }}.105.0/24"
 
 
-# TLS sertificates issuing configuration (via Lets Encrypt)
-certificate_email: legion@epam.com
+# TLS sertificates issuing configuration (via Let's Encrypt)
+certificate_email: legion@epam.com      # Let's Encrypt notification email
 cert_dir: "/etc/dynssl"                 # folder for storing SSL certificates on host
 
 # Deploying and test configuration
@@ -87,7 +87,7 @@ deployment: legion      # name of deployment
 examples_to_test:       # which Jenkins examples will be executed in tests
   - Test-Summation
   - Digit-Recognition
-model_id_to_test: income  # id of model which be tested in EDI tests [?]
+model_id_to_test: income  # id of model which will be tested in EDI tests
 enclaves:  # list of enclaves which will be automatically deployed after Legion deploy
   - company-a
 
@@ -102,7 +102,7 @@ airflow_rds_shape: "db.t2.medium"                                        # shape
 airflow_rds_size: "50"                                                   # size of Airflow RDS in GB
 
 # Airflow DAGs configuration [?]
-airflow_s3_url: 's3://epm-legion-data-dev/'                              # Configuration for Airflow DAGs                   
+airflow_s3_url: 's3://epm-legion-data-dev/'                              # Airflow storage location at S3             
 airflow_expected_output: 'expected-data/'                                # Configuration for Airflow DAGs
 
 # Addons configuration
@@ -115,10 +115,10 @@ dashboard:                     # Kubernetes dashboard configuration
 ## Secrets 
 Each secret should be uploaded to Jenkins secrets with same name as profile (without extension).
 
-File should consist appropriate YAML formatted text.
+File should consists of appropriate YAML formatted text.
 
 ### Secrets format
-Here is example of secret file
+Here is an example of secret file
 
 ```yaml
 # AWS resources configuration
@@ -167,5 +167,5 @@ external_access_sgs: # list of AWS SG that should be added on ELB
   - sg-00000000
 allowed_wan_ips:  # list of whitelisted CIDRs
   - 20.10.30.40/32
-jenkins_cc_sg: sg-00000000 # [?]
+jenkins_cc_sg: sg-00000000 # CC Jenkins Security Group to be whitelisted on cluster
 ```
