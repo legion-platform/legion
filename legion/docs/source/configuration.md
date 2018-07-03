@@ -123,6 +123,7 @@ Here is an example of secret file
 ```yaml
 # AWS resources configuration
 aws:
+  account_id: 000000000000
   rds: # credentials for dynamically deployed RDS
     username: user
     password: pass
@@ -142,7 +143,7 @@ airflow:
   # Connection to S3
   - connection_id: s3_conn
     connection_type: S3
-    extra: {"aws_secret_access_key": "AWS_SEC_KEY", "aws_access_key_id": "AWS_KEY_ID", "bucket_prefix": "epm-legion-data"}
+    extra: {"bucket_prefix": "epm-legion-data"}
   
   # SMTP credentials for email notifications
   email:
@@ -157,6 +158,14 @@ airflow:
   # Fernet key
   fernet_key: exampleexampleexample=
 
+  # Airflow-slack integration
+  slack:
+    channel: airflow
+    username: Airflow
+    token: ""
+  webserver:
+    email_backend: "etl.slack.send_notification" # set email_backend to empty for Slack disabling notifications
+
 # Fluentd configuration for event log collection
 fluentd:
   aws: # Credentials for storing data on S3
@@ -168,4 +177,40 @@ external_access_sgs: # list of AWS SG that should be added on ELB
 allowed_wan_ips:  # list of whitelisted CIDRs
   - 20.10.30.40/32
 jenkins_cc_sg: sg-00000000 # CC Jenkins Security Group to be whitelisted on cluster
+
+
+# Airflow auth configuration
+airflow_auth:
+  enabled: true
+  dex_group_admin: legion-platform:admin      # link to GitHub group
+  dex_group_profiler: legion-platform:view    # link to GitHub group
+  auth_backend: legion_airflow.auth.dex_auth  # Python auth backend
+
+# DEX configuration
+dex:
+  enabled: true
+  config:
+    client_id: legion-dev.epm.kharlamov.biz # env. name ()
+    client_secret: AAAAAAAAAAAAAAAA # randomly generated 24-len password
+    connectors:
+    - type: github
+      id: github
+      name: GitHub
+      config:
+        clientID: client_id
+        clientSecret: client_secret
+        redirectURI: https://dex.legion-dev.epm.kharlamov.biz/callback # DEX callback URL
+        orgs:
+        - name: legion-platform  # linked GitHub organizations
+    staticPasswords:  # static hardcoded passwords for test
+    - email: "user@example.com"      
+      password: password
+      hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W" # bcrypt hash of the string "password"
+      username: "user"
+      userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  groups:  # GitHub groups mapping
+  - clusterrolebinding: cluster-admin
+    group: legion-platform:admin
+  - clusterrolebinding: view
+    group: legion-platform:view
 ```
