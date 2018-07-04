@@ -16,7 +16,6 @@
 #
 """
 Entry point for WSGI server with AIO support
-Example of usage: gunicorn legion.wsgi_aio:aioapp -k aiohttp.worker.GunicornWebWorker
 """
 
 try:

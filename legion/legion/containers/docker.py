@@ -29,7 +29,7 @@ import legion.io
 import legion.utils
 
 LOGGER = logging.getLogger('docker')
-VALID_SERVING_WORKERS = 'uwsgi', 'gunicorn'
+VALID_SERVING_WORKERS = 'uwsgi'
 
 
 def build_docker_client(args=None):
