@@ -62,10 +62,10 @@
 
   - name: Remove enclave Airflow S3 access policy
     iam_managed_policy:
-      policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
+      policy_name: "{{ cluster_name }}-{{ enclave_name }}-airflow-s3-access-policy"
       state: absent
   
   - name: Remove enclave Airflow IAM role
     iam_role:
-      name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+      name: "{{ cluster_name }}-{{ enclave_name }}-airflow-role"
       state: absent
