@@ -1,5 +1,7 @@
 # Preparing development enviroment 
 1. Using Vargant or VirtualBox install Ubuntu/Lubuntu image v16.04.
+To fix bidirectional copy paste from windows to Ubuntu look for solution
+https://askubuntu.com/questions/22743/how-do-i-install-guest-additions-in-a-virtualbox-vm/22745#22745
 2. Install packages to new system:
     * Java (JRE,JDK)
     ```bash
@@ -28,7 +30,7 @@
     ```bash
     wget https://github.com/kubernetes/kops/releases/download/1.8.0/kops-linux-amd64
     chmod +x kops-linux-amd64
-    mv kops-linux-amd64 /usr/local/bin/kops
+    sudo mv kops-linux-amd64 /usr/local/bin/kops
     ```
     
     * kubectl binaries

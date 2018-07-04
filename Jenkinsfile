@@ -141,6 +141,20 @@ node {
                     cd ..
                     '''
 
+                    archiveArtifacts 'legion/pylint.log'
+                    warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                    sh '''
+                    cd legion_airflow
+                    ../.venv/bin/pycodestyle legion_airflow
+                    ../.venv/bin/pycodestyle tests
+                    ../.venv/bin/pydocstyle legion_airflow
+
+                    ../.venv/bin/pylint legion_airflow >> pylint.log || exit 0
+                    ../.venv/bin/pylint tests >> pylint.log || exit 0
+                    cd ..
+                    '''
+
                     archiveArtifacts 'legion_airflow/pylint.log'
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
 
@@ -225,14 +239,17 @@ node {
                     docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
                     """
                     UploadDockerImage('legion/k8s-jenkins')
-                }, 'Build Bare model': {
+                }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
                     docker build $dockerCacheArg -t legion/test-bare-model-api-model-1 .
+                    """
+                    UploadDockerImage('legion/test-bare-model-api-model-1')
+                }, 'Build Bare model 2': {
+                    sh """
                     cd k8s/test-bare-model-api/model-2
                     docker build $dockerCacheArg -t legion/test-bare-model-api-model-2 .
                     """
-                    UploadDockerImage('legion/test-bare-model-api-model-1')
                     UploadDockerImage('legion/test-bare-model-api-model-2')
                 }, 'Build Edi Docker image': {
                     sh """

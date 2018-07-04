@@ -5,78 +5,178 @@ Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py   ../../deploy/profiles/
 Library             legion_test.robot.Utils
 Library             Collections
+Suite Setup         Choose cluster context    ${CLUSTER_NAME}
 Test Setup          Run Keywords
-...                 Choose cluster context    ${CLUSTER_NAME}
-...                 Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
-...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
-...                 Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}  AND
-...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}  AND
-...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}  AND
-...                 Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}   AND
+...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
 Test Teardown       Run Keywords
-...                 Run EDI undeploy by model version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   AND
-...                 Run EDI undeploy by model version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   AND
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
 
 *** Test Cases ***
 Check EDI availability in all enclaves
-    [Setup]     Choose cluster context    ${CLUSTER_NAME}
+    [Setup]         NONE
     [Documentation]  Try to connect to EDI in each enclave
     [Tags]  edi  cli  enclave
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  ${edi_state} =           Run EDI inspect  ${enclave}
     \  Log                      ${edi_state}
-    \  Should Be Equal As Integers      ${edi_state.rc}   0
-    [Teardown]    NONE
+    \  Should Be Equal As Integers       ${edi_state.rc}   0
+    [Teardown]      NONE
 
 Check EDI deploy 2 models with different versions but the same id
-    [Setup]     Choose cluster context    ${CLUSTER_NAME}
+    [Setup]         NONE
     [Tags]  edi  cli  enclave
-    Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-    Run EDI deploy and check model started      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
-    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
-    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}  ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-    Run EDI inspect and verify info from edi    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}  ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
-
-Check EDI scale up 1 of 2 models with different versions but the same id
-    [Tags]  edi  cli  enclave
-    # scale one model
-    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
-
-Check EDI scale down 1 of 2 models with different versions but the same id
-    [Tags]  edi  cli  enclave
-    # scale one model up
-    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
-    # scale one model down
-    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    1     ${TEST_MODEL_1_VERSION}
-
-Check EDI scale up 1 of 2 models with different versions but the same id - invalid version
-    [Tags]  edi  cli  enclave
-    # try to scale one model with invalid version
-    Run EDI scale model with version and check error  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}121  No one model can be found
-
-Check EDI scale up 1 of 2 models with different versions but the same id - without version
-    [Tags]  edi  cli  enclave
-    # try to scale one model with invalid version
-    Run EDI scale model without version and check error  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2     Please specify version of model
+    ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers         ${resp_dict.rc}         0
+    ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                      ${resp}                 "version": ${TEST_MODEL_1_VERSION}
+    ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
+                    Should Be Equal As Integers         ${resp_dict.rc}         0
+    ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+                    Should contain                      ${resp}                 "version": ${TEST_MODEL_2_VERSION}
 
 Check EDI undeploy 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave
-    # scale one model up
-    Run EDI scale model with version and check  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
+    ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp_dict.rc}         0
+    ${resp}=        Run EDI inspect                 ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers     ${resp.rc}              0
+                    Should not contain              ${resp.output}          ${TEST_MODEL_1_VERSION}
+                    Should contain                  ${resp.output}          ${TEST_MODEL_2_VERSION}
 
-Check EDI undeploy 1 of 2 models with different versions but the same id - invalid version
+Check EDI undeploy all model instances by version
     [Tags]  edi  cli  enclave
-    # scale one model up
-    Run EDI scale model with version and check          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    2     ${TEST_MODEL_1_VERSION}
-    # try to undeploy with invalid model version
-    Run EDI undeploy by model version and check error   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}    Cannot find any deployment
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp.rc}              0
+                    Sleep                           10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse      ${MODEL_TEST_ENCLAVE}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+                    Log                             ${model_1}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+                    Log                             ${model_2}
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
 
-Check EDI undeploy 1 of 2 models with different versions but the same id - without version
+    ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp_dict.rc}         0
+    ${resp}=        Run EDI inspect                 ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers     ${resp.rc}              0
+                    Should not contain              ${resp.output}          ${TEST_MODEL_1_VERSION}
+                    Should contain                  ${resp.output}          ${TEST_MODEL_2_VERSION}
+
+Check EDI undeploy 1 of 2 models by invalid version
     [Tags]  edi  cli  enclave
-       # try to undeploy with invalid model version
-    Run EDI undeploy model without version and check error ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   Please specify version of model
+    ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers     ${resp_dict.rc}         0
+                    Should contain                  ${resp_dict.output}     Cannot find any deployment - ignoring
 
+Check EDI undeploy 1 of 2 models without version
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
+                    Should Be Equal As Integers        ${resp_dict.rc}         2
+                    Should contain                     ${resp_dict.output}     Please specify version of model
 
+Check EDI scale up 1 of 2 models with different versions but the same id
+    [Tags]  edi  cli  enclave
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp.rc}              0
+                    Sleep                           10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse      ${MODEL_TEST_ENCLAVE}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+                    Log                             ${model_1}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+                    Log                             ${model_2}
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
 
+Check EDI scale down 1 of 2 models with different versions but the same id
+    [Tags]  edi  cli  enclave
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp.rc}              0
+                    Sleep                           10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse      ${MODEL_TEST_ENCLAVE}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+                    Log                             ${model_1}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+                    Log                             ${model_2}
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
 
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    1   ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp.rc}              0
+                    Sleep                           10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse      ${MODEL_TEST_ENCLAVE}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+                    Log                             ${model_1}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+                    Log                             ${model_2}
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  1
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
+
+Check EDI scale up 1 of 2 models by invalid version
+    [Tags]  edi  cli  enclave
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}121
+                    Should Be Equal As Integers     ${resp.rc}              2
+                    Should contain                  ${resp.output}          No one model can be found
+
+Check EDI scale up 1 of 2 models without version
+    [Tags]  edi  cli  enclave
+    ${resp}=        Run EDI scale                   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2
+                    Should Be Equal As Integers     ${resp.rc}              2
+                    Should contain                  ${resp.output}          Please specify version of model
+
+Check EDI model inspect by model id return 2 models
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}
+                    Should Be Equal As Integers     ${resp_dict.rc}          0
+                    Should contain                  ${resp_dict.output}      ${TEST_MODEL_IMAGE_1}
+                    Should contain                  ${resp_dict.output}      ${TEST_MODEL_IMAGE_2}
+
+Check EDI model inspect by model version return 1 model
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers         ${resp_dict.rc}          0
+                    Should contain                      ${resp_dict.output}      ${TEST_MODEL_IMAGE_1}
+                    Should not contain                  ${resp_dict.output}      ${TEST_MODEL_IMAGE_2}
+
+Check EDI model inspect by model id and version return 1 model
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}      ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers                      ${resp_dict.rc}         0
+                    Should contain                                   ${resp_dict.output}     ${TEST_MODEL_IMAGE_1}
+                    Should not contain                               ${resp_dict.output}     ${TEST_MODEL_IMAGE_2}
+
+Check EDI model inspect by invalid model id
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test
+                    Should Be Equal As Integers     ${resp_dict.rc}          0
+                    Should be empty                 ${resp_dict.output}
+
+Check EDI model inspect by invalid model version
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model version    ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers         ${resp_dict.rc}        0
+                    Should be empty                     ${resp_dict.output}
+
+Check EDI model inspect by invalid model id and invalid version
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers                      ${resp_dict.rc}          0
+                    Should be empty                                  ${resp_dict.output}
+
+Check EDI model inspect by invalid model id and valid version
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers                      ${resp_dict.rc}          0
+                    Should be empty                                  ${resp_dict.output}
+
+Check EDI model inspect by valid model id and invalid version
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers                      ${resp_dict.rc}          0
+                    Should be empty                                  ${resp_dict.output}
