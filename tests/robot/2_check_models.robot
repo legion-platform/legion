@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Legion stack operational check
 Resource            resources/keywords.robot
-Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES}
+Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             legion_test.robot.Jenkins
 

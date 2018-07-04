@@ -109,10 +109,10 @@ def runRobotTests() {
             cd ../tests/robot
             ../../.venv/bin/pip install yq
             
-            PATH_TO_PROFILES="${PROFILES_PATH:-../../deploy/profiles}/"
-            PATH_TO_PROFILE="${PATH_TO_PROFILES}$Profile.yml"
-            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE)
-            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE)
+            PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
+            PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES}$Profile.yml"
+            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
+            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
