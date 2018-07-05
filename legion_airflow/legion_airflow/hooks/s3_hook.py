@@ -415,9 +415,10 @@ class S3TaskHandlerWithIAM(S3TaskHandler):
         try:
             from legion_airflow.hooks.s3_hook import S3Hook
             return S3Hook(remote_conn_id)
-        except:
+        except Exception as e:
             self.log.error(
                 'Could not create an S3Hook with connection id "%s". '
                 'Please make sure that airflow[s3] is installed and '
                 'the S3 connection exists.', remote_conn_id
             )
+            raise
