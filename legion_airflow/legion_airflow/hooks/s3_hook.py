@@ -8,7 +8,7 @@ import boto3
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
-from airflow.utils.log import S3TaskHandler
+from airflow.utils.log.s3_task_handler import S3TaskHandler
 
 
 class S3Hook(BaseHook):
@@ -411,7 +411,7 @@ class S3TaskHandlerWithIAM(S3TaskHandler):
     """
 
     def _build_hook(self):
-        remote_conn_id = configuration.conf.get('core', 'REMOTE_LOG_CONN_ID')
+        remote_conn_id = conf.conf.get('core', 'REMOTE_LOG_CONN_ID')
         try:
             from legion_airflow.hooks.s3_hook import S3Hook
             return S3Hook(remote_conn_id)
@@ -420,4 +420,4 @@ class S3TaskHandlerWithIAM(S3TaskHandler):
                 'Could not create an S3Hook with connection id "%s". '
                 'Please make sure that airflow[s3] is installed and '
                 'the S3 connection exists.', remote_conn_id
-)
+            )
