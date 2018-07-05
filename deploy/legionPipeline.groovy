@@ -90,7 +90,7 @@ def createjenkinsJobs(String commitID) {
     """
 }
 
-def runRobotTests() {
+def runRobotTests(String tags) {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
             sh '''
@@ -117,7 +117,7 @@ def runRobotTests() {
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/python3 -m robot.run *.robot || true
+            ../../.venv/bin/python3 -m robot.run ${tags} *.robot || true
 
             echo "Starting python tests"
             cd ../python

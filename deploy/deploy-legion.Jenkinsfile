@@ -36,7 +36,7 @@ node {
 
         stage('Run regression tests'){
             if (params.UseRegressionTests){
-                legion.runRobotTests()
+                legion.runRobotTests(params.TestsTags)
             }
             else {
                 println('Skipped due to UseRegressionTests property')
