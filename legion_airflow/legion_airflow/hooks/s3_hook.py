@@ -8,7 +8,11 @@ import boto3
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
+<<<<<<< 0530fb997101159cef210e94dc4288c6e341e52e
 from airflow.utils.log.s3_task_handler import S3TaskHandler
+=======
+from airflow.utils.log import S3TaskHandler
+>>>>>>> [#131] Add S3 hook handler with legion s3 hook
 
 
 class S3Hook(BaseHook):
