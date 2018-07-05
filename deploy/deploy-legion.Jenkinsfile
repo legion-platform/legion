@@ -1,6 +1,7 @@
 node {
     def legion
     def commitID
+    def tag
     try{
         stage('Checkout GIT'){
             def scmVars = checkout scm
@@ -36,7 +37,8 @@ node {
 
         stage('Run regression tests'){
             if (params.UseRegressionTests){
-                legion.runRobotTests(params.TestsTags)
+                tag = params.TestsTags
+                legion.runRobotTests(tag)
             }
             else {
                 println('Skipped due to UseRegressionTests property')
