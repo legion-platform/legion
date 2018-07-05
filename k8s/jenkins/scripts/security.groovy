@@ -113,7 +113,7 @@ if (enableOpenId.toLowerCase() == "true") {
   String tokenServerUrl = env['OPENID_TOKEN_SERVER_URL']
   String authorizationServerUrl = env['OPENID_AUTH_SERVER_URL']
   String userInfoServerUrl = ''
-  String userNameField = 'sub'
+  String userNameField = 'email'
   String tokenFieldToCheckKey = ''
   String tokenFieldToCheckValue = ''
   String fullNameFieldName = 'name'
