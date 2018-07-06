@@ -70,24 +70,28 @@ def deployLegion() {
 }
 
 def createjenkinsJobs(String commitID) {
-    sh """
-    cd legion_test
-    ../.venv/bin/pip install -r requirements/base.txt
-    ../.venv/bin/pip install -r requirements/test.txt
-    ../.venv/bin/python setup.py develop
-    cd ..
+    withAWS(credentials: 'kops') {
+    	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+            sh """
+            cd legion_test
+            ../.venv/bin/pip install -r requirements/base.txt
+            ../.venv/bin/pip install -r requirements/test.txt
+            ../.venv/bin/python setup.py develop
+            cd ..
 
-    .venv/bin/create_example_jobs \
-    "https://jenkins.${params.Profile}" \
-    examples \
-    . \
-    "git@github.com:epam/legion.git" \
-    ${commitID} \
-    --connection-timeout 600 \
-    --git-root-key "legion-root-key" \
-    --model-host "" \
-    --dynamic-model-prefix "DYNAMIC MODEL"
-    """
+            .venv/bin/create_example_jobs \
+            "https://jenkins.${params.Profile}" \
+            examples \
+            . \
+            "git@github.com:epam/legion.git" \
+            ${commitID} \
+            --connection-timeout 600 \
+            --git-root-key "legion-root-key" \
+            --model-host "" \
+            --dynamic-model-prefix "DYNAMIC MODEL"
+            """
+        }
+	}
 }
 
 def runRobotTests(tags="") {
