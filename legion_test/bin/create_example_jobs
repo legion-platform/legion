@@ -23,6 +23,8 @@ import os
 import time
 from typing import NamedTuple
 from urllib.parse import quote
+from legion_test.robot import dex_client
+from legion_test import profiler_loader
 
 from legion_test.template import render_template
 
@@ -43,6 +45,7 @@ Options = NamedTuple('Options', [
     ('connection_timeout', str),
     ('socket_reconnect_sleep', int),
     ('plain_tasks', bool),
+    ('auth_dex', bool),
 ])
 
 
@@ -193,6 +196,12 @@ def work(options):
 
     client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
 
+    if options.auth_dex:
+        variables = profiler_loader.get_variables()
+        client.crumb = {'crumbRequestField': 'Cookie',
+                              'crumb': ';'.join(['{}={}'.format(k, v)
+                                                 for (k, v) in dex_client.get_session_cookies().items()])}
+
     start = time.time()
 
     connected = False
@@ -230,14 +239,16 @@ if __name__ == '__main__':
     parser.add_argument('git_branch', type=str, help='Default GIT branch')
     parser.add_argument('--git-root-key', type=str, help='Git credentials ID', default='legion-root-key')
     parser.add_argument('--model-host', type=str, help='Host with model', default='http://edge:80')
-    parser.add_argument('--jenkins-user', type=str, help='Jenkins server user', default='admin')
-    parser.add_argument('--jenkins-password', type=str, help='Jenkins server password', default='admin')
+    parser.add_argument('--jenkins-user', type=str, help='Jenkins server user')
+    parser.add_argument('--jenkins-password', type=str, help='Jenkins server password')
     parser.add_argument('--dynamic-model-prefix', type=str, help='Dynamic model job prefix', default='DYNAMIC MODEL')
     parser.add_argument('--perf-test-prefix', type=str, help='Performance test prefix', default='PERF TEST')
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     parser.add_argument('--plain-tasks', action='store_true', help='Create plain jenkins tasks '
                                                                    '(not for dynamic model using founded template)')
+    parser.add_argument('--auth-dex', action='store_true', help='Perform authentication in Dex')
+
     args = parser.parse_args()
     arguments = Options(
         jenkins_url=args.jenkins_url,
@@ -254,5 +265,6 @@ if __name__ == '__main__':
         connection_timeout=args.connection_timeout,
         socket_reconnect_sleep=args.socket_reconnect_sleep,
         plain_tasks=args.plain_tasks,
+        auth_dex=args.auth_dex,
     )
     work(arguments)

@@ -84,12 +84,12 @@ class Jenkins:
         :return: None
         """
         self._client = jenkins.Jenkins(domain,
-                                       #username=user,
-                                       #password=password,
+                                       username=user,
+                                       password=password,
                                        timeout=int(timeout))
         if add_dex_cookies:
             self._client.crumb = {'crumbRequestField': 'Cookie',
-                        'crumb': ';'.join(['{}={}'.format(k,v)
+                            'crumb': ';'.join(['{}={}'.format(k,v)
                                           for (k,v) in get_session_cookies().items()])}
         self._client.get_all_jobs()
 
