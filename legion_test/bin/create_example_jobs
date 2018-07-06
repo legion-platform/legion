@@ -197,10 +197,10 @@ def work(options):
     client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
 
     if options.auth_dex:
-        variables = profiler_loader.get_variables()
+        profiler_loader.get_variables()
         client.crumb = {'crumbRequestField': 'Cookie',
-                              'crumb': ';'.join(['{}={}'.format(k, v)
-                                                 for (k, v) in dex_client.get_session_cookies().items()])}
+                        'crumb': ';'.join(['{}={}'.format(k, v)
+                                           for (k, v) in dex_client.get_session_cookies().items()])}
 
     start = time.time()
 
