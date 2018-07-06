@@ -413,7 +413,6 @@ class S3TaskHandlerWithIAM(S3TaskHandler):
     def _build_hook(self):
         remote_conn_id = conf.conf.get('core', 'REMOTE_LOG_CONN_ID')
         try:
-            from legion_airflow.hooks.s3_hook import S3Hook
             return S3Hook(remote_conn_id)
         except Exception as e:
             self.log.error(
