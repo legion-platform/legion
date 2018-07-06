@@ -16,7 +16,6 @@
 #
 """
 Entry point for WSGI server
-Example of usage: gunicorn legion.wsgi:application -k sync
 """
 
 try:

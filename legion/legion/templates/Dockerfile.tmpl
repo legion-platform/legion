@@ -28,7 +28,4 @@ RUN pip3 install {{PIP_REPOSITORY}} {{PIP_INSTALL_TARGET}}
 
 ENV MODEL_FILE="/legion/{{MODEL_FILE}}" \
     MODEL_ID="{{MODEL_ID}}" \
-    GUNICORN_WORKER_CLASS="aiohttp.worker.GunicornWebWorker" \
-    GUNICORN_WORKER_COUNT="1" \
-    GUNICORN_WORKER_PATH="legion.serving.wsgi_aio:aioapp" \
     VERBOSE="false"
