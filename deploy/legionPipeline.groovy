@@ -72,21 +72,21 @@ def deployLegion() {
 def createjenkinsJobs(String commitID) {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-            sh """
+            sh '''
             cd legion_test
             ../.venv/bin/pip install -r requirements/base.txt
             ../.venv/bin/pip install -r requirements/test.txt
             ../.venv/bin/python setup.py develop
             cd ..
 
-            PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
+            PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
             PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}${params.Profile}.yml"
             CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
             CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            PATH=../../.venv/bin:$PATH DISPLAY=:99 \
+            PATH=.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=${params.Profile} \
             .venv/bin/create_example_jobs \
             "https://jenkins.${params.Profile}" \
@@ -99,7 +99,7 @@ def createjenkinsJobs(String commitID) {
             --model-host "" \
             --dynamic-model-prefix "DYNAMIC MODEL" \
             --auth-dex
-            """
+            '''
         }
 	}
 }
