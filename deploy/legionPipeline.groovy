@@ -89,6 +89,7 @@ def createjenkinsJobs(String commitID) {
             --git-root-key "legion-root-key" \
             --model-host "" \
             --dynamic-model-prefix "DYNAMIC MODEL"
+            --auth-dex
             """
         }
 	}
