@@ -22,6 +22,7 @@ import json
 import jenkins
 from six.moves.urllib.request import Request
 from six.moves.urllib.error import HTTPError
+from legion_test.robot.dex_client import get_session_cookies
 
 JOB_MODEL_ID = '%(folder_url)sjob/%(short_name)s/%(build_number)s/model/json'
 
@@ -68,7 +69,7 @@ class Jenkins:
         """
         self._client = None  # type: jenkins.Jenkins
 
-    def connect_to_jenkins(self, domain, user, password, timeout=10):
+    def connect_to_jenkins(self, domain, user=None, password=None, add_dex_cookies=True, timeout=10):
         """
         Connect to Jenkins server
 
@@ -83,10 +84,13 @@ class Jenkins:
         :return: None
         """
         self._client = jenkins.Jenkins(domain,
-                                       username=user,
-                                       password=password,
+                                       #username=user,
+                                       #password=password,
                                        timeout=int(timeout))
-
+        if add_dex_cookies:
+            self._client.crumb = {'crumbRequestField': 'Cookie',
+                        'crumb': ';'.join(['{}={}'.format(k,v)
+                                          for (k,v) in get_session_cookies().items()])}
         self._client.get_all_jobs()
 
     def run_jenkins_job(self, job_name, **parameters):
