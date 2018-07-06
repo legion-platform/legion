@@ -197,7 +197,7 @@ def work(options):
     client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
 
     if options.auth_dex:
-        profiler_loader.get_variables()
+        profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
         client.crumb = {'crumbRequestField': 'Cookie',
                         'crumb': ';'.join(['{}={}'.format(k, v)
                                            for (k, v) in dex_client.get_session_cookies().items()])}
