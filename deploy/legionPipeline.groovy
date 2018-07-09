@@ -209,14 +209,14 @@ def notifyBuild(String buildStatus = 'STARTED') {
     if (params.Skip_kops != null) {
         arguments = arguments + "\nskip kops *${params.Skip_kops}*"
     }
-    if (params.BaseVersion && params.LocalVersion) {
+    if (params.BaseVersion != null && params.LocalVersion != null) {
         arguments = arguments + "\nversion *${params.BaseVersion} ${params.LocalVersion}*"
     }
 
     if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
         arguments = arguments + "\nDeploy *${params.DeployLegion}*, Create Jenkins tests *${params.CreateJenkinsTests}*, Use regression tests *${params.UseRegressionTests}*"
     }
-    if (params.EnclaveName) {
+    if (params.EnclaveName != null) {
         arguments = arguments + "\nEnclave *${params.EnclaveName}*"
     }
     def summary = """\
