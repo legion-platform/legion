@@ -1,7 +1,7 @@
 #
 #    Copyright 2018 IQVIA. All Rights Reserved.
 #
-
+"""S3 task handler wrapper."""
 from airflow import configuration as conf
 from airflow.utils.log.s3_task_handler import S3TaskHandler
 
