@@ -15,61 +15,34 @@
 #
 FROM legion/base-python-image
 
-RUN apt-get update && apt-get install --yes \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    software-properties-common
+RUN apk add --update \
+    ca-certificates curl openrc docker \
+    nginx pcre pcre-dev supervisor py-gunicorn
 
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-
-RUN add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/debian jessie stable"
-
-RUN apt-get update && apt-get install --yes docker-ce
-
-# Standard set up Nginx
-ENV NGINX_VERSION 1.13.7-1~stretch
-ENV NJS_VERSION   1.13.7.0.1.15-1~stretch
-
-RUN set -x \
-	&& apt-get update \
-	&& apt-get install --no-install-recommends --no-install-suggests -y nginx libpcre3 libpcre3-dev
+EXPOSE 5000
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
-EXPOSE 5000
-
-# Install uWSGI
-RUN pip install uwsgi
-
 # Make NGINX run on the foreground
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
+RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
-
-RUN apt-get update && apt-get install -y supervisor
+COPY app_uwsgi.ini /usr/lib/python3.6/site-packages/legion/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-ENV UWSGI_INI /usr/local/lib/python3.5/dist-packages/legion/uwsgi.ini
+ENV UWSGI_INI /usr/lib/python3.6/site-packages/legion/uwsgi.ini
 
-ENV NGINX_MAX_UPLOAD 0
-
-ENV LISTEN_PORT 5000
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 
 COPY chmod-docker-and-run-edi.sh /usr/local/bin/chmod-docker-and-run-edi.sh
 RUN chmod a+rwx /usr/local/bin/chmod-docker-and-run-edi.sh
 ENTRYPOINT ["/usr/local/bin/chmod-docker-and-run-edi.sh"]
 
-COPY app_uwsgi.ini /usr/local/lib/python3.5/dist-packages/legion/uwsgi.ini
-RUN rm /etc/nginx/sites-enabled/default
-
-CMD ["/usr/bin/supervisord"]
-
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
-RUN pip install $pip_extra_index_params legion$pip_legion_version_string
+RUN pip install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
