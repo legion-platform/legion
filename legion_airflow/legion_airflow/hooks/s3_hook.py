@@ -8,11 +8,6 @@ import boto3
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
-<<<<<<< 0530fb997101159cef210e94dc4288c6e341e52e
-from airflow.utils.log.s3_task_handler import S3TaskHandler
-=======
-from airflow.utils.log import S3TaskHandler
->>>>>>> [#131] Add S3 hook handler with legion s3 hook
 
 
 class S3Hook(BaseHook):
@@ -407,21 +402,3 @@ class CsvWriter(object):
                     row += column_splitter
                 row += cell
         return row
-
-
-class S3TaskHandlerWithIAM(S3TaskHandler):
-    """
-    S3TaskHandler with legion S3 hook which supports AWS IAM authentication.
-    """
-
-    def _build_hook(self):
-        remote_conn_id = conf.conf.get('core', 'REMOTE_LOG_CONN_ID')
-        try:
-            return S3Hook(remote_conn_id)
-        except Exception as e:
-            self.log.error(
-                'Could not create an S3Hook with connection id "%s". '
-                'Please make sure that airflow[s3] is installed and '
-                'the S3 connection exists.', remote_conn_id
-            )
-            raise
