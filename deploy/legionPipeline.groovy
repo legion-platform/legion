@@ -72,6 +72,7 @@ def deployLegion() {
 def createjenkinsJobs(String commitID) {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+	    env.commitID = commitID
             sh '''
             cd legion_test
             ../.venv/bin/pip install -r requirements/base.txt
@@ -79,18 +80,18 @@ def createjenkinsJobs(String commitID) {
             ../.venv/bin/python setup.py develop
             cd ..
             
-	    cd venv/bin
-            PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
-            PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
-            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
-            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
+	    cd .venv/bin
+            export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
+            export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
+            export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
+            export CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=./:$PATH DISPLAY=:99 \
-            PROFILE=${params.Profile} \
+            PROFILE=${Profile} \
             ./create_example_jobs \
-            "https://jenkins.${params.Profile}" \
+            "https://jenkins.${Profile}" \
             ../../examples \
             . \
             "git@github.com:epam/legion.git" \
