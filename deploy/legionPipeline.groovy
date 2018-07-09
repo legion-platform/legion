@@ -80,7 +80,7 @@ def createjenkinsJobs(String commitID) {
             cd ..
 
             PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
-            PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}${params.Profile}.yml"
+            PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
             CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
