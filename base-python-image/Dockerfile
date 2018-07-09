@@ -13,21 +13,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM library/ubuntu:16.04
+FROM alpine:3.7
+
+RUN apk add --update --no-cache \
+    python3 g++ python3-dev py-pip py-setuptools file wget git fribidi\
+    tiff-dev jpeg-dev zlib-dev tcl-dev tk-dev python2-tkinter \
+    python3-tkinter-tests freetype-dev lcms2-dev libwebp harfbuzz \
+    libstdc++ musl-dev linux-headers build-base pcre pcre-dev\
+    openblas-dev freetype-dev pkgconfig \
+    && ln -s locale.h /usr/include/xlocale.h
 
 ADD requirements.txt /root/requirements.txt
 
-# Theano requires C++ compiler to produce effective code
-RUN apt-get update && apt-get install -y --no-install-recommends python3 \
-    g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
-    libtiff5-dev libjpeg8-dev zlib1g-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk \
-    libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk
-
-RUN pip3 install "numpy>=1.11.2"
-
-RUN pip3 install --upgrade pip==9.0.3 \
-    && pip3 install -r /root/requirements.txt
+RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 numpy==1.14.3
+RUN pip3 install --disable-pip-version-check --upgrade scipy==1.0.0
+RUN pip3 install --disable-pip-version-check  --no-cache-dir -r /root/requirements.txt
 
 WORKDIR /app

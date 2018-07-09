@@ -1,41 +1,27 @@
-# Standard set up Nginx
-ENV NGINX_VERSION 1.13.7-1~stretch
-ENV NJS_VERSION   1.13.7.0.1.15-1~stretch
+RUN apk add --update \
+    ca-certificates curl openrc docker \
+    nginx pcre pcre-dev supervisor py-gunicorn
 
-RUN set -x \
-	&& apt-get update \
-	&& apt-get install --no-install-recommends --no-install-suggests -y nginx libpcre3 libpcre3-dev
+EXPOSE 5000
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
-EXPOSE 5000
-
-# Install uWSGI
-RUN pip install uwsgi
-
 # Make NGINX run on the foreground
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
+RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
-
-RUN apt-get update && apt-get install -y supervisor
+COPY app_uwsgi.ini /usr/lib/python3.6/site-packages/legion/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-ENV UWSGI_INI /usr/local/lib/python3.5/dist-packages/legion/uwsgi.ini
+ENV UWSGI_INI /usr/lib/python3.6/site-packages/legion/uwsgi.ini
 
-ENV NGINX_MAX_UPLOAD 0
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 
-ENV LISTEN_PORT 5000
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
-
-COPY app_uwsgi.ini /usr/local/lib/python3.5/dist-packages/legion/uwsgi.ini
-RUN rm /etc/nginx/sites-enabled/default
-
-CMD ["/usr/bin/supervisord"]
+RUN pip install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
