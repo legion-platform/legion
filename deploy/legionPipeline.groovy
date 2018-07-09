@@ -93,7 +93,7 @@ def createjenkinsJobs(String commitID) {
             ./create_example_jobs \
             "https://jenkins.${Profile}" \
             ../../examples \
-            . \
+            ../../ \
             "git@github.com:epam/legion.git" \
             ${commitID} \
             --connection-timeout 600 \
