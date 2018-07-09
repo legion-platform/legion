@@ -78,7 +78,8 @@ def createjenkinsJobs(String commitID) {
             ../.venv/bin/pip install -r requirements/test.txt
             ../.venv/bin/python setup.py develop
             cd ..
-
+            
+	    cd venv/bin
             PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
             PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
@@ -86,11 +87,11 @@ def createjenkinsJobs(String commitID) {
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            PATH=.venv/bin:$PATH DISPLAY=:99 \
+            PATH=./:$PATH DISPLAY=:99 \
             PROFILE=${params.Profile} \
-            .venv/bin/create_example_jobs \
+            ./create_example_jobs \
             "https://jenkins.${params.Profile}" \
-            examples \
+            ../../examples \
             . \
             "git@github.com:epam/legion.git" \
             ${commitID} \
