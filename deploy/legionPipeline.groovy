@@ -224,7 +224,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
     branch *${GitBranch}*
     profile *<https://${env.Profile}|${env.Profile}>*
     ${arguments}
-    local version: *${LocalVersion}*
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 
