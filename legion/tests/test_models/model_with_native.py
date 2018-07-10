@@ -6,7 +6,7 @@ import legion.io
 
 init('native model')
 
-installation_result = subprocess.run('apt-get update && apt-get install -y mc',
+installation_result = subprocess.run('apk add --update --no-cache mc',
                                      cwd='/', shell=True,
                                      stdout=subprocess.PIPE)
 if installation_result.returncode != 0:
