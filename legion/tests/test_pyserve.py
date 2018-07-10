@@ -20,21 +20,18 @@ import json
 from random import randint
 import urllib.parse
 from io import BytesIO
+import sys
+import os
+
 from werkzeug.datastructures import FileMultiDict
 
+sys.path.extend(os.path.dirname(__file__))
 
-try:
-    from .legion_test_utils import patch_environ, ModelServeTestBuild
-    from .legion_test_models import create_simple_summation_model_by_df, \
-        create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
-        create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
-        create_simple_summation_model_lists_with_files_info
-except ImportError:
-    from legion_test_utils import patch_environ, ModelServeTestBuild
-    from legion_test_models import create_simple_summation_model_by_df, \
-        create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
-        create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
-        create_simple_summation_model_lists_with_files_info
+from legion_test_utils import patch_environ, ModelServeTestBuild
+from legion_test_models import create_simple_summation_model_by_df, \
+    create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
+    create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
+    create_simple_summation_model_lists_with_files_info
 
 import legion.serving.pyserve as pyserve
 import legion.model

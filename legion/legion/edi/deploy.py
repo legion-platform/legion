@@ -35,7 +35,6 @@ import legion.utils
 from legion.utils import Colors, ExternalFileReader
 
 LOGGER = logging.getLogger(__name__)
-VALID_SERVING_WORKERS = legion.containers.docker.VALID_SERVING_WORKERS
 
 INSPECT_FORMAT_COLORIZED = 'colorized'
 INSPECT_FORMAT_TABULAR = 'column'
@@ -58,73 +57,24 @@ def build_model(args):
 
         with legion.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
             model_id = container.get('model.id', None)
-            if args.model_id:
-                model_id = args.model_id
-
-        if not model_id:
-            raise Exception('Model ID is missed')
 
         image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
 
-        base_docker_image = args.base_docker_image
-        if not base_docker_image:
-            base_docker_image = 'legion/base-python-image:latest'
-
-        print('Building docker image...')
+        LOGGER.info('Building docker image...')
         image = legion.containers.docker.build_docker_image(
             client,
-            base_docker_image,
             model_id,
             external_reader.path,
             image_labels,
-            args.python_package,
-            args.python_package_version,
-            args.python_repository,
-            args.docker_image_tag,
-            args.serving
+            args.docker_image_tag
         )
 
-        LOGGER.info('Built image: %s with python package: %s', image, args.python_package)
-        print('Built image: %s with python package: %s for model %s' % (image, args.python_package, model_id))
+        LOGGER.info('Image has been built: {}'.format(image))
 
         legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.id)
 
         if args.push_to_registry:
-            external_image_name = args.push_to_registry
-            docker_registry = external_image_name
-            version = None
-
-            registry_delimiter = docker_registry.find('/')
-            if registry_delimiter < 0:
-                raise Exception('Invalid registry format')
-
-            registry = docker_registry[:registry_delimiter]
-            image_name = docker_registry[registry_delimiter+1:]
-
-            version_delimiter = image_name.find(':')
-            if version_delimiter > 0:
-                version = image_name[version_delimiter+1:]
-                image_name = image_name[:version_delimiter]
-
-            docker_registry_user = os.getenv(*legion.config.DOCKER_REGISTRY_USER)
-            docker_registry_password = os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD)
-            auth_config = None
-
-            if docker_registry_user and docker_registry_password:
-                auth_config = {
-                    'username': docker_registry_user,
-                    'password': docker_registry_password
-                }
-
-            image_and_registry = '{}/{}'.format(registry, image_name)
-
-            print('Tagging image %s v %s for model %s as %s' % (image.short_id, version, model_id, image_and_registry))
-            image.tag(image_and_registry, version)
-            print('Pushing %s:%s to %s' % (image_and_registry, version, registry))
-            client.images.push(image_and_registry, tag=version, auth_config=auth_config)
-            print('Successfully pushed image %s:%s' % (image_and_registry, version))
-
-            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)
+            legion.containers.docker.push_image_to_registry(client, image, args.push_to_registry)
 
         return image
 

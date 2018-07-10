@@ -18,7 +18,6 @@ legion k8s functions
 """
 import logging
 import os
-import shutil
 
 import docker
 import docker.errors
@@ -28,8 +27,7 @@ import legion.containers.headers
 import legion.io
 import legion.utils
 
-LOGGER = logging.getLogger('docker')
-VALID_SERVING_WORKERS = 'uwsgi', 'gunicorn'
+LOGGER = logging.getLogger(__name__)
 
 
 def build_docker_client(args=None):
@@ -44,103 +42,136 @@ def build_docker_client(args=None):
     return client
 
 
-def build_docker_image(client, base_image, model_id, model_file, labels,
-                       python_package, python_package_version, python_repository,
-                       docker_image_tag, serving):
+def get_docker_container_id_from_cgroup_line(line):
     """
-    Build docker image from base image and model file
+    Get docker container id from proc cgroups line
+
+    :argument line: line from /proc/<pid>/cgroup
+    :type line: str
+    :return: str -- container ID
+    """
+    parts = line.split('/')
+
+    try:
+        if 'docker' in parts:
+            docker_pos = parts.index('docker')
+            return parts[docker_pos + 1]
+        elif 'kubepods' in parts:
+            kubepods_pos = parts.index('kubepods')
+            return parts[kubepods_pos + 3]
+        else:
+            raise Exception('Cannot find docker or kubepods tag in cgroups')
+    except Exception as container_detection_error:
+        raise Exception('Cannot find container ID in line {}: {}'.format(line, container_detection_error))
+
+
+def get_current_docker_container_id():
+    """
+    Get ID of current docker container using proc cgroups
+
+    :return: str -- current container id
+    """
+    with open('/proc/self/cgroup') as f:
+        lines = [line.strip('\n') for line in f]
+        longest_line = max(lines, key=len)
+        return get_docker_container_id_from_cgroup_line(longest_line)
+
+
+def commit_image(client, container_id=None):
+    """
+    Commit container and return image sha commit id
 
     :param client: Docker client
     :type client: :py:class:`docker.client.DockerClient`
-    :param base_image: name of base image
-    :type base_image: str
+    :param container_id: (Optional) id of target container. Current if None
+    :type container_id: str
+    :return: str -- docker image id
+    """
+    if not container_id:
+        container_id = get_current_docker_container_id()
+
+    container = client.containers.get(container_id)
+    image = container.commit()
+
+    return image.id
+
+
+def build_docker_image(client, model_id, model_file, labels,
+                       docker_image_tag):
+    """
+    Build docker image from current image with addition files
+
+    :param client: Docker client
+    :type client: :py:class:`docker.client.DockerClient`
     :param model_id: model id
     :type model_id: str
-    :param model_file: path to model file
+    :param model_file: path to model file (in the temporary directory)
     :type model_file: str
     :param labels: image labels
     :type labels: dict[str, str]
-    :param python_package: path to wheel or None for install from PIP
-    :type python_package: str or None
-    :param python_package_version: custom package version
-    :type python_package_version: str or None
-    :param python_repository: custom PIP repository
-    :type python_repository: str or None
     :param docker_image_tag: str docker image tag
     :type docker_image_tag: str ot None
-    :param serving: serving worker, one of VALID_SERVING_WORKERS
-    :type serving: str
     :return: docker.models.Image
     """
     with legion.utils.TemporaryFolder('legion-docker-build') as temp_directory:
-        folder, model_filename = os.path.split(model_file)
+        # Copy Jenkins workspace from mounted volume to persistent container directory
+        target_workspace = '/app'
+        target_model_file = os.path.join(target_workspace, model_id)
 
-        shutil.copy2(model_file, os.path.join(temp_directory.path, model_filename))
+        try:
+            LOGGER.info('Copying model binary from {!r} to {!r}'
+                        .format(model_file, target_model_file))
+            legion.utils.copy_file(model_file, target_model_file)
+        except Exception as model_binary_copy_exception:
+            LOGGER.exception('Unable to move model binary to persistent location',
+                             exc_info=model_binary_copy_exception)
+            raise
 
-        install_target = 'legion'
-        wheel_target = False
-        source_repository = ''
+        try:
+            workspace_path = os.getcwd()
+            LOGGER.info('Copying model workspace from {!r} to {!r}'.format(workspace_path, target_workspace))
+            legion.utils.copy_directory_contents(workspace_path, target_workspace)
+        except Exception as model_workspace_copy_exception:
+            LOGGER.exception('Unable to move model workspace to persistent location',
+                             exc_info=model_workspace_copy_exception)
+            raise
 
-        if python_package:
-            if not os.path.exists(python_package):
-                raise Exception('Python package file not found: %s' % python_package)
+        # Copy additional files for docker build
+        additional_directory = os.path.abspath(os.path.join(
+            os.path.dirname(__file__),
+            '..', 'templates', 'docker_files'
+        ))
+        legion.utils.copy_directory_contents(additional_directory, temp_directory.path)
 
-            install_target = os.path.basename(python_package)
-            wheel_target = True
-            shutil.copy2(python_package, os.path.join(temp_directory.path, install_target))
-        else:
-            if python_package_version:
-                install_target = 'legion==%s' % python_package_version
-            if python_repository:
-                source_repository = '--extra-index-url %s' % python_repository
-
-        if serving not in VALID_SERVING_WORKERS:
-            raise Exception('Unknown serving parameter. Should be one of %s' % (', '.join(VALID_SERVING_WORKERS),))
-
-        # Copy additional payload from templates / docker_files / <serving>
-        additional_directory = os.path.join(
-            os.path.dirname(__file__), '..', 'templates', 'docker_files', serving)
-
-        for file in os.listdir(additional_directory):
-            path = os.path.join(additional_directory, file)
-            if os.path.isfile(path) and file != 'Dockerfile':
-                shutil.copy2(path, os.path.join(temp_directory.path, file))
-
-        additional_docker_file = os.path.join(additional_directory, 'Dockerfile')
-        with open(additional_docker_file, 'r') as additional_docker_file_stream:
-            additional_docker_file_content = additional_docker_file_stream.read()
+        # ALL Filesystem modification below next line would be ignored
+        captured_image_id = commit_image(client)
+        LOGGER.info('Image {} has been captured'.format(captured_image_id))
 
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
-            'ADDITIONAL_DOCKER_CONTENT': additional_docker_file_content,
-            'DOCKER_BASE_IMAGE': base_image,
+            'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
-            'MODEL_FILE': model_filename,
-            'PIP_INSTALL_TARGET': install_target,
-            'PIP_REPOSITORY': source_repository,
-            'PIP_CUSTOM_TARGET': wheel_target
+            'MODEL_FILE': target_model_file
         })
 
-        labels = {k: str(v) if v else None for (k, v) in labels.items()}
+        labels = {k: str(v) if v else None
+                  for (k, v) in labels.items()}
 
         with open(os.path.join(temp_directory.path, 'Dockerfile'), 'w') as file:
             file.write(docker_file_content)
 
-        LOGGER.info('Building docker image in folder %s' % (temp_directory.path))
+        LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
+        logs = None
         try:
-            image = client.images.build(
+            image, logs = client.images.build(
                 tag=docker_image_tag,
                 nocache=True,
                 path=temp_directory.path,
                 rm=True,
                 labels=labels
             )
-        except docker.errors.BuildError as build_error:
-            LOGGER.error('Cannot build image: %s' % (build_error))
-            raise build_error
-
-        # TODO: Temporary
-        if isinstance(image, tuple):
-            return image[0]
+        except Exception as build_error:
+            LOGGER.error('Cannot build image: {}. Build logs: {}'.format(build_error, logs))
+            raise
 
         return image
 
@@ -159,13 +190,14 @@ def generate_docker_labels_for_image(model_file, model_id, args):
     """
     with legion.io.ModelContainer(model_file, do_not_load_model=True) as container:
         base = {
-            'com.epam.legion.model.id': model_id,
-            'com.epam.legion.model.version': container.get('model.version', 'undefined'),
-            'com.epam.legion.class': 'pyserve',
-            'com.epam.legion.container_type': 'model'
+            legion.containers.headers.DOMAIN_MODEL_ID: model_id,
+            legion.containers.headers.DOMAIN_MODEL_VERSION: container.get('model.version', 'undefined'),
+            legion.containers.headers.DOMAIN_CLASS: 'pyserve',
+            legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model'
         }
+
         for key, value in container.items():
-            base['com.epam.' + key] = value
+            base[legion.containers.headers.DOMAIN_PREFIX + key] = value
 
         return base
 
@@ -181,58 +213,49 @@ def generate_docker_labels_for_container(image):
     return image.labels
 
 
-def find_network(client, args):
+def push_image_to_registry(client, image, external_image_name):
     """
-    Find legion network on docker host
+    Push docker image to registry
 
     :param client: Docker client
     :type client: :py:class:`docker.client.DockerClient`
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: str id of network
+    :param image: Docker image
+    :type image: :py:class:`docker.models.images.Image`
+    :param external_image_name: target Docker image name (with repository)
+    :type external_image_name: str
+    :return: None
     """
-    network_id = args.docker_network
+    docker_registry = external_image_name
+    version = None
 
-    if network_id is None:
-        LOGGER.debug('No network provided, trying to detect an active legion network')
-        nets = client.networks.list()
-        for network in nets:
-            name = network.name
-            if name.endswith('legion_root'):
-                LOGGER.info('Detected network %s', name)
-                network_id = network.id
-                break
-    else:
-        if network_id not in client.networks.list():
-            network_id = None
+    registry_delimiter = docker_registry.find('/')
+    if registry_delimiter < 0:
+        raise Exception('Invalid registry format')
 
-    if not network_id:
-        LOGGER.error('Using empty docker network')
+    registry = docker_registry[:registry_delimiter]
+    image_name = docker_registry[registry_delimiter + 1:]
 
-    return network_id
+    version_delimiter = image_name.find(':')
+    if version_delimiter > 0:
+        version = image_name[version_delimiter + 1:]
+        image_name = image_name[:version_delimiter]
 
+    docker_registry_user = os.getenv(*legion.config.DOCKER_REGISTRY_USER)
+    docker_registry_password = os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD)
+    auth_config = None
 
-def get_stack_containers_and_images(client, network_id):
-    """
-    Get information about legion containers and images
+    if docker_registry_user and docker_registry_password:
+        auth_config = {
+            'username': docker_registry_user,
+            'password': docker_registry_password
+        }
 
-    :param client: Docker client
-    :type client: :py:class:`docker.client.DockerClient`
-    :param network_id: docker network
-    :type network_id: str
-    :return: dict with lists 'services', 'models' and 'model_images'
-    """
-    containers = client.containers.list(True)
-    containers = [c
-                  for c in containers
-                  if 'com.epam.legion.container_type' in c.labels
-                  and (not network_id
-                       or network_id in (n['NetworkID'] for n in c.attrs['NetworkSettings']['Networks'].values()))]
+    image_and_registry = '{}/{}'.format(registry, image_name)
 
-    images = client.images.list(filters={'label': 'com.epam.legion.container_type'})
+    image.tag(image_and_registry, version)
+    LOGGER.info('Pushing {}:{} to {}'.format(image_and_registry, version, registry))
 
-    return {
-        'services': [c for c in containers if c.labels['com.epam.legion.container_type'] == 'service'],
-        'models': [c for c in containers if c.labels['com.epam.legion.container_type'] == 'model'],
-        'model_images': [i for i in images if i.labels['com.epam.legion.container_type'] == 'model'],
-    }
+    client.images.push(image_and_registry, tag=version, auth_config=auth_config)
+    LOGGER.info('Successfully pushed image {}:{}'.format(image_and_registry, version))
+
+    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)

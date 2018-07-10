@@ -176,9 +176,10 @@ def get_meta_from_docker_labels(labels):
     )
 
     compatible_labels = {
-        normalize_name(k): normalize_name(v)
+        normalize_name(k)[:63]: normalize_name(v)[:63]
         for k, v in
         labels.items()
+        if k.startswith(legion.containers.headers.DOMAIN_PREFIX)
     }
 
     compatible_labels[LEGION_COMPONENT_LABEL] = LEGION_COMPONENT_NAME_MODEL

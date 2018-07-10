@@ -14,23 +14,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-
-try:
-    import docker_bootup
-except ImportError:
-    pass
-
 import sys
 import os
 import argparse
 import logging
 
+import legion.docker_bootup
 from legion.serving.pyserve import serve_model
 from legion.external.edi import add_edi_arguments
 from legion.edi.deploy import \
     build_model, \
     deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
-    VALID_INSPECT_FORMATS, VALID_SERVING_WORKERS
+    VALID_INSPECT_FORMATS
 import legion.utils
 
 ROOT_LOGGER = logging.getLogger()
@@ -43,31 +38,14 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers()
 
     # --------- LOCAL DOCKER SECTION -----------
-    build_parser = subparsers.add_parser('build', description='build model into new docker image')
+    build_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '
+                                                              'in the docker container)')
     build_parser.add_argument('model_file',
                               type=str, help='serialized model file name')
-    build_parser.add_argument('--model_id',
-                              type=str, help='alpha-numeric identifier of the model to publish (for overriding)')
-    build_parser.add_argument('--model-type',
-                              type=str, help='legion-python, tensorflow, mleap',
-                              default='legion-python')
-    build_parser.add_argument('--python-package',
-                              type=str, help='path to legion-python package wheel')
-    build_parser.add_argument('--python-package-version',
-                              type=str, help='version of python package')
-    build_parser.add_argument('--python-repository',
-                              type=str, help='package server with legion package')
-    build_parser.add_argument('--base-docker-image',
-                              type=str, help='base docker image for new image')
     build_parser.add_argument('--docker-image-tag',
                               type=str, help='docker image tag')
     build_parser.add_argument('--push-to-registry',
                               type=str, help='docker registry address')
-    build_parser.add_argument('--with-deploy',
-                              action='store_true', help='deploy after build')
-    build_parser.add_argument('--serving',
-                              default=VALID_SERVING_WORKERS[0],
-                              type=str, help='serving worker: %s' % ', '.join(VALID_SERVING_WORKERS))
     build_parser.set_defaults(func=build_model)
 
     # --------- KUBERNETES SECTION -----------

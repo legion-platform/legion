@@ -13,8 +13,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-keys/*
-cover/*
+keys/
+cover/
 
 *.tmp.yml
 *.tmp.out
@@ -23,6 +23,7 @@ requirements.lock
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 .vscode/
+.noseids
 
 ### Python template
 # Byte-compiled / optimized / DLL files

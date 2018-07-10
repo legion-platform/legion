@@ -13,16 +13,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from __future__ import print_function
-
-from argparse import Namespace
-
-try:
-    from .legion_test_utils import ModelTestDeployment, patch_environ, get_latest_distribution
-    from .legion_test_models import create_simple_summation_model_by_df
-except ImportError:
-    from legion_test_utils import ModelTestDeployment, patch_environ, get_latest_distribution
-    from legion_test_models import create_simple_summation_model_by_df
+import os
+import sys
+import logging
 
 import legion.config
 import legion.containers.docker
@@ -32,35 +25,112 @@ import legion.model.model_id
 
 import unittest2
 
+# Extend PYTHONPATH in order to import test tools and models
+sys.path.extend(os.path.dirname(__file__))
+
+from legion_test_utils import ModelLocalContainerExecutionContext, build_distribution, \
+    ModelDockerBuilderContainerContext
+
 
 class TestDeploy(unittest2.TestCase):
-    MODEL_ID = 'temp'
-    MODEL_VERSION = '1.8'
+    @classmethod
+    def setUpClass(cls):
+        """
+        Enable logs on tests start, setup connection context
 
-    def setUp(self):
-        common_arguments = Namespace(docker_network=None)
-        self.client = legion.containers.docker.build_docker_client(common_arguments)
-        self.wheel_path = get_latest_distribution()
+        :return: None
+        """
+        logging.basicConfig(level=logging.DEBUG)
+        build_distribution()
 
-    def tearDown(self):
-        pass
+    def test_summation_model_build_and_query(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.prepare_workspace()
+            context.copy_model('summation_model')
+            model_id, model_version, model_file, _ = context.execute_model('summation_model')
+            image_id, _ = context.build_model_container(model_file)
 
-    def test_model_simple_summation_model_by_df(self):
-        with ModelTestDeployment(self.MODEL_ID, self.MODEL_VERSION,
-                                 create_simple_summation_model_by_df, self.wheel_path) as deployment:
-            self.assertEqual(deployment.model_information['version'], self.MODEL_VERSION, 'Incorrect model version')
-            self.assertEqual(deployment.model_information['use_df'], True, 'Incorrect model use_df field')
-            self.assertDictEqual(deployment.model_information['input_params'],
-                                 {'b': {'numpy_type': 'int64', 'type': 'Integer'},
-                                  'a': {'numpy_type': 'int64', 'type': 'Integer'}},
-                                 'Incorrect model input_params')
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertDictEqual(context.model_information, {
+                'input_params': False,
+                'use_df': False,
+                'version': '1.0'
+            }, 'invalid model information')
 
-            a = 10
-            b = 20
+            self.assertEqual(context.client.invoke(a=10, b=20)['result'], 30, 'invalid invocation result')
+            self.assertListEqual(
+                context.client.batch([{'a': 10, 'b': 10}, {'a': 20, 'b': 30}]),
+                [
+                    {
+                        'result': 20,
+                    },
+                    {
+                        'result': 50,
+                    }
+                ],
+                'invalid batch invocation result'
+            )
 
-            result = deployment.client.invoke(a=a, b=b)
-            self.assertIsInstance(result, dict, 'Result not a dict')
-            self.assertDictEqual(result, {'x': a + b})
+    def test_complex_model_build_and_query(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.prepare_workspace()
+            context.copy_model('complex_model')
+            context.copy_model_directory('complex_package')
+            model_id, model_version, model_file, _ = context.execute_model('complex_model')
+            image_id, _ = context.build_model_container(model_file)
+
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertDictEqual(context.model_information, {
+                'input_params': False,
+                'use_df': False,
+                'version': '1.0'
+            }, 'invalid model information')
+
+            self.assertEqual(context.client.invoke(value=20)['result'], 62, 'invalid invocation result')
+            self.assertListEqual(
+                context.client.batch([{'value': 1}, {'value': 100}]),
+                [
+                    {
+                        'result': 43,
+                    },
+                    {
+                        'result': 142,
+                    }
+                ],
+                'invalid batch invocation result'
+            )
+
+    def test_io_model_build_and_simple_query(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.prepare_workspace()
+            context.copy_model('model_with_io_operations')
+            model_id, model_version, model_file, _ = context.execute_model('model_with_io_operations')
+            image_id, _ = context.build_model_container(model_file)
+
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertDictEqual(context.model_information, {
+                'input_params': False,
+                'use_df': False,
+                'version': '1.0'
+            }, 'invalid model information')
+
+            self.assertEqual(context.client.invoke(value=20)['result'], 62, 'invalid invocation result')
+
+    def test_native_model_build_and_simple_query(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.prepare_workspace()
+            context.copy_model('model_with_native')
+            model_id, model_version, model_file, _ = context.execute_model('model_with_native')
+            image_id, _ = context.build_model_container(model_file)
+
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertDictEqual(context.model_information, {
+                'input_params': False,
+                'use_df': False,
+                'version': '1.0'
+            }, 'invalid model information')
+
+            self.assertEqual(context.client.invoke(x=1)['code'], 0, 'invalid invocation result')
 
 
 if __name__ == '__main__':

@@ -18,6 +18,7 @@ legion utils functional
 """
 
 import os
+import distutils.dir_util
 import re
 import shutil
 import socket
@@ -26,6 +27,7 @@ import sys
 import tempfile
 
 import legion.config
+import legion.containers.headers
 
 import docker
 import requests
@@ -284,6 +286,32 @@ def _get_auth_credentials_for_external_resource():
     return None
 
 
+def copy_file(source_file, target_file):
+    """
+    Copy file from one location to another
+
+    :param source_file: source file location
+    :type source_file: str
+    :param target_file: target file location
+    :type target_file: str
+    :return: None
+    """
+    shutil.copyfile(source_file, target_file)
+
+
+def copy_directory_contents(source_directory, target_directory):
+    """
+    Copy all files from source directory to targer directory
+
+    :param source_directory: source directory
+    :type source_directory: str
+    :param target_directory: target directory
+    :type target_directory: str
+    :return: None
+    """
+    distutils.dir_util.copy_tree(source_directory, target_directory)
+
+
 def save_file(temp_file, target_file, remove_after_delete=False):
     """
     Upload local file to external resource
@@ -300,7 +328,7 @@ def save_file(temp_file, target_file, remove_after_delete=False):
         if is_local_resource(target_file):
             if os.path.abspath(temp_file) != os.path.abspath(target_file):
                 shutil.copy2(temp_file, target_file)
-            result_path = target_file
+            result_path = os.path.abspath(target_file)
         else:
             url = normalize_external_resource_path(target_file)
 
@@ -450,7 +478,7 @@ def send_header_to_stderr(header, value):
     :type value: str
     :return: None
     """
-    message = 'X-Legion-%s:%s' % (header, value)
+    message = '{}{}:{}'.format(legion.containers.headers.STDERR_PREFIX, header, value)
     print(message, file=sys.__stderr__, flush=True)
 
 
