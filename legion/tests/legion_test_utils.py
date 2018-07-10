@@ -216,7 +216,7 @@ class ModelDockerBuilderContainerContext:
 
         self._docker_container = self._docker_client.containers.run(
             self._docker_base_image.id,
-            command='sleep infinity',  # keep container running
+            command='sleep 99999',  # keep container running for 99999 seconds
             detach=True,  # in the background
             remove=True,  # remove automatically after kill
             environment=build_environ_for_test_environments(),  # pass required environment variables from host machine
@@ -243,15 +243,20 @@ class ModelDockerBuilderContainerContext:
         :return: None
         """
         if self._docker_container:
-            LOGGER.info('Killing container')
-            self._docker_container.kill()
+            try:
+                LOGGER.info('Killing container')
+                self._docker_container.kill()
+            except Exception as container_kill_exception:
+                LOGGER.info('Cannot kill container: {}'.format(container_kill_exception))
 
     def __enter__(self):
         try:
             self._prepare_base_docker_container()
             self._setup_legion_wheel_in_docker_container()
-        except Exception:
+        except Exception as container_prepare_exception:
             self._shutdown_docker_container()
+            log_docker_container_logs(self._docker_container)
+            LOGGER.exception('Cannot start container', exc_info=container_prepare_exception)
             raise
 
         return self
@@ -274,7 +279,7 @@ class ModelDockerBuilderContainerContext:
         LOGGER.info('Executing command {!r}'.format(target_command))
         exitcode, output = self._docker_container.exec_run(target_command)
         output = output.decode('utf-8')
-
+        LOGGER.info('Process returned code: {}'.format(exitcode))
         LOGGER.info(output)
 
         if exitcode != 0:
@@ -627,8 +632,11 @@ class ModelLocalContainerExecutionContext:
                 container = self._docker_client.containers.get(self.container.id)
                 log_docker_container_logs(container)
 
-                LOGGER.info('Killing container')
-                container.kill()
+                try:
+                    LOGGER.info('Killing container')
+                    container.kill()
+                except Exception as container_kill_exception:
+                    LOGGER.info('Cannot kill container: {}'.format(container_kill_exception))
             except Exception as removing_exception:
                 LOGGER.exception('Cannot remove container: {}'.format(removing_exception),
                                  exc_info=removing_exception)
