@@ -27,7 +27,11 @@ import legion.utils as utils
 import legion.containers.docker
 import requests.auth
 import unittest2
-from legion_test_utils import LegionTestContainer
+
+try:
+    from .legion_test_utils import LegionTestContainer
+except ImportError:
+    from legion_test_utils import LegionTestContainer
 
 
 LOGGER = logging.getLogger(__name__)
