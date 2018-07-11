@@ -150,7 +150,7 @@ class TestUtilsExternalFile(unittest2.TestCase):
         LOGGER.info('Starting httpbin container from {} image...'.format(httpbin_image))
 
         with LegionTestContainer(image=httpbin_image, port=80) as httpbin_container:
-            target_resource = 'https://localhost:{}/put'.format(httpbin_container.host_port)
+            target_resource = 'http://localhost:{}/put'.format(httpbin_container.host_port)
             result_path = utils.save_file(self._temp_file_path, target_resource)
 
             self.assertEqual(target_resource, result_path)
