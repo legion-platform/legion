@@ -128,6 +128,7 @@ def patch_environ(values, flush_existence=False):
 
     return patch('os.environ', new_values)
 
+
 class LegionTestContainer:
     """
     Context manager for docker containers execution
@@ -160,7 +161,7 @@ class LegionTestContainer:
 
         try:
             self.container = self._docker_client.containers.run(self._image,
-                                                                ports={self._port:0},
+                                                                ports={self._port: 0},
                                                                 detach=True,
                                                                 remove=True)
             self.container_id = self.container.id
@@ -178,7 +179,6 @@ class LegionTestContainer:
                     self._port)][0]['HostPort']
             except Exception as err:
                 raise Exception('Error while trying to get exposed container port: {}'.format(err))
-
 
         except docker.errors.ContainerError:
             raise Exception('Error creating container from {} image'.format(self._image))
