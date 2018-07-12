@@ -35,6 +35,9 @@ import requests.auth
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 
+KUBERNETES_STRING_LENGTH_LIMIT = 63
+
+
 def render_template(template_name, values=None):
     """
     Render template with parameters
@@ -205,7 +208,7 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 
-def normalize_name(name, dns_1035=False):
+def normalize_name(name, dns_1035=False, kubernetes_compatible=False):
     """
     Normalize name
 
@@ -213,6 +216,8 @@ def normalize_name(name, dns_1035=False):
     :type name: str
     :param dns_1035: (Optional) use DNS-1035 format, by default False
     :type dns_1035: bool
+    :param kubernetes_compatible: (Optional) fit into kubernetes length limitations
+    :type kubernetes_compatible: bool
     :return: str -- normalized name
     """
     invalid_delimiters = ' ', '_', '+'
@@ -224,7 +229,11 @@ def normalize_name(name, dns_1035=False):
     for char in invalid_delimiters:
         name = name.replace(char, '-')
 
-    return re.sub(invalid_chars, '', name)
+    value = re.sub(invalid_chars, '', name)
+    if kubernetes_compatible:
+        value = value[:KUBERNETES_STRING_LENGTH_LIMIT]
+
+    return value
 
 
 def is_local_resource(path):
