@@ -19,6 +19,7 @@ Robot test library - utils
 
 import socket
 import requests
+import time
 
 
 class Utils:
@@ -135,3 +136,24 @@ class Utils:
             raise Exception('Info about model {!r} v {!r} not found'.format(model_id, model_version))
 
         return founded[0]
+
+    @staticmethod
+    def check_valid_http_response(url):
+        """
+        Check if model return valid code for get request
+
+        :param url: url with model_id for checking
+        :type url: str
+        :return:  str -- response text
+        """
+        response = ""
+        for i in range(6):
+            response = requests.get(url)
+            if response.status_code >= 400 or response.status_code < 200:
+                print('Response code = {}, sleep and try again'.format(response.status_code))
+                time.sleep(3)
+            elif response.status_code == 200:
+                break
+            elif i == 5:
+                raise Exception('Returned wrong status code: {}'.format(response.status_code))
+        return response.text

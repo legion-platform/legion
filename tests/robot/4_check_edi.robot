@@ -5,78 +5,178 @@ Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             Collections
-Test Setup          Choose cluster context            ${CLUSTER_NAME}
+Suite Setup         Choose cluster context                              ${CLUSTER_NAME}
+Test Setup          Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+Test Teardown       Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
 
 *** Test Cases ***
 Check EDI availability in all enclaves
+    [Setup]         NONE
     [Documentation]  Try to connect to EDI in each enclave
     [Tags]  edi  cli  enclave
-    :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  ${edi_state} =           Run EDI inspect  ${enclave}
-    \  Log                      ${edi_state}
-    \  Should not contain       ${edi_state}   legionctl: error
-    \  Should not contain       ${edi_state}   Exception
+    :FOR    ${enclave}      IN                            @{ENCLAVES}
+    \       ${edi_state}=   Run EDI inspect               ${enclave}
+    \                       Should Be Equal As Integers   ${edi_state.rc}         0
+                            [Teardown]                    NONE
 
-Check EDI deploy and undeploy procedure
-    [Documentation]  Try to deploy and undeploy dummy model trough EDI console
+Check EDI deploy procedure
+    [Setup]         NONE
+    [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave
-    Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            15
+    ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers         ${resp_dict.rc}         0
+    ${response}=    Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                      ${response}             "version": ${TEST_MODEL_1_VERSION}
 
-    ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
-    ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
-    Log  ${edi_state}
-    Log  ${target_model}
+#Check EDI deploy with scale to 0
+#    [Setup]         NONE
+#    [Documentation]  Try to deploy dummy model through EDI console
+#    [Tags]  edi  cli  enclave
+#    ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   0
+#                    Should Be Equal As Integers    ${resp_dict.rc}         0
+#    ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+#                    Should contain                 ${response}             "version": ${TEST_MODEL_1_VERSION}
+#
+#    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
+#                    Should Be Equal As Integers    ${resp_dict.rc}          0
+#                    Should be empty                ${resp_dict.output}
 
-    Should Be Equal  ${target_model[0]}    ${TEST_MODEL_ID}             invalid model id
-    Should Be Equal  ${target_model[1]}    ${TEST_MODEL_IMAGE}          invalid model image
-    Should Be Equal  ${target_model[2]}    ${TEST_MODEL_VERSION}        invalid model version
-    Should Be Equal  ${target_model[3]}    1                            invalid actual scales
-    Should Be Equal  ${target_model[4]}    1                            invalid desired scale
-    Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
-
-    Run EDI undeploy without version                   ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_ID}
-
-    ${edi_state} =   Run EDI inspect                   ${MODEL_TEST_ENCLAVE}
-    Log  ${edi_state}
-    Should not contain                                 ${edi_state}                  ${TEST_MODEL_ID}
-
-Check EDI scale procedure
-    [Documentation]  Try to deploy, scale and undeploy dummy model trough EDI console
+Check EDI deploy with scale to 1
+    [Setup]         NONE
+    [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave
-    Run EDI deploy                                     ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_IMAGE}
-    Sleep            15
+    ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   1
+                    Should Be Equal As Integers    ${resp_dict.rc}         0
+    ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                 ${response}             "version": ${TEST_MODEL_1_VERSION}
 
-    ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
-    ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
-    Log  ${edi_state}
-    Log  ${target_model}
+    ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
+    ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
+                    Log                            ${model}
+                    Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   1
 
-    Should Be Equal  ${target_model[0]}    ${TEST_MODEL_ID}             invalid model id
-    Should Be Equal  ${target_model[1]}    ${TEST_MODEL_IMAGE}          invalid model image
-    Should Be Equal  ${target_model[2]}    ${TEST_MODEL_VERSION}        invalid model version
-    Should Be Equal  ${target_model[3]}    1                            invalid actual scales
-    Should Be Equal  ${target_model[4]}    1                            invalid desired scale
-    Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
+Check EDI deploy with scale to 2
+    [Setup]         NONE
+    [Documentation]  Try to deploy dummy model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   2
+                    Should Be Equal As Integers    ${resp_dict.rc}         0
+    ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                 ${response}             "version": ${TEST_MODEL_1_VERSION}
 
-    ${scale_result} =  Run EDI scale       ${MODEL_TEST_ENCLAVE}        ${TEST_MODEL_ID}   2
-    Should not contain                     ${scale_result}              error
-    Sleep            10
+    ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
+    ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
+                    Log                            ${model}
+                    Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   2
 
-    ${edi_state} =      Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
-    ${target_model} =   Find model information in edi  ${edi_state}                  ${TEST_MODEL_ID}
-    Log  ${edi_state}
-    Log  ${target_model}
+Check EDI invalid model name deploy procedure
+    [Setup]         NONE
+    [Documentation]  Try to deploy dummy invalid model name through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}test
+                    Should Be Equal As Integers   ${resp_dict.rc}         2
+                    Should Contain                ${resp_dict.output}     Cannot pull docker image ${TEST_MODEL_IMAGE_1}test
 
-    Should Be Equal  ${target_model[0]}    ${TEST_MODEL_ID}             invalid model id
-    Should Be Equal  ${target_model[1]}    ${TEST_MODEL_IMAGE}          invalid model image
-    Should Be Equal  ${target_model[2]}    ${TEST_MODEL_VERSION}        invalid model version
-    Should Be Equal  ${target_model[3]}    2                            invalid actual scales
-    Should Be Equal  ${target_model[4]}    2                            invalid desired scale
-    Should Be Empty  ${target_model[5]}                                 got some errors ${target_model[5]}
+Check EDI double deploy procedure for the same model
+    [Setup]         NONE
+    [Documentation]  Try to deploy twice the same dummy model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers   ${resp_dict.rc}         0
+    ${response}=    Check model started           ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                ${response}             "version": ${TEST_MODEL_1_VERSION}
+    ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers   ${resp_dict.rc}         2
+                    Should Contain                ${resp_dict.output}     Duplicating model id and version (id=${TEST_MODEL_ID}, version=${TEST_MODEL_1_VERSION})
 
-    Run EDI undeploy without version                   ${MODEL_TEST_ENCLAVE}         ${TEST_MODEL_ID}
+Check EDI undeploy procedure
+    [Documentation]  Try to undeploy dummy valid model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers         ${resp_dict.rc}         0
+    ${resp_dict}=   Run EDI inspect                     ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers         ${resp_dict.rc}         0
+                    Should not contain                  ${resp_dict.output}     ${model_id}
 
-    ${edi_state} =   Run EDI inspect                   ${MODEL_TEST_ENCLAVE}
-    Log  ${edi_state}
-    Should not contain                                 ${edi_state}                  ${TEST_MODEL_ID}
+Check EDI invalid undeploy procedure
+    [Setup]         NONE
+    [Documentation]  Try to undeploy invalid dummy model name through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}test
+                    Should Be Equal As Integers       ${resp_dict.rc}         0
+                    Should Contain                    ${resp_dict.output}     Cannot find any deployment - ignoring
+    [Teardown]      NONE
+
+Check EDI scale up procedure
+    [Documentation]  Try to scale up model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
+                    Should Be Equal As Integers    ${resp_dict.rc}           0
+                    Sleep                          10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
+    ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
+                    Log                            ${model}
+                    Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   2
+                    
+Check EDI scale down procedure
+    [Documentation]  Try to scale up model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Sleep                          10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
+    ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
+                    Log                            ${model}
+                    Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   2
+                                    
+    ${resp_dict}=   Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    1
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Sleep                          10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
+    ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
+                    Log                            ${model}
+                    Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   1
+                                      
+Check EDI scale to 0 procedure
+    [Documentation]  Try to scale to 0 model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    0
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Sleep                          10  # because no way to control explicitly scaling the model inside
+    # TODO remove sleep
+    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Should contain                 ${resp_dict.output}      ERROR: MODEL API DOES NOT RESPOND
+
+Check EDI invalid model id scale up procedure
+    [Documentation]  Try to scale up dummy model with invalid name through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI scale                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}test   2
+                    Should Be Equal As Integers  ${resp_dict.rc}         2
+                    Should contain               ${resp_dict.output}     No one model can be found
+
+Check EDI enclave inspect procedure
+    [Documentation]  Try to inspect enclave through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Should contain                 ${resp_dict.output}      ${TEST_MODEL_ID}
+
+Check EDI invalid enclave name inspect procedure
+    [Documentation]  Try to inspect enclave through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}test
+                    Should Be Equal As Integers    ${resp_dict.rc}          2
+                    Should contain                 ${resp_dict.output}      ERROR - Failed to connect
+
+Check EDI enclave inspect procedure without deployed model
+    [Setup]         NONE
+    [Documentation]  Try inspect through EDI console on empty enclave
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Should be empty                ${resp_dict.output}
+    [Teardown]      NONE

@@ -30,6 +30,7 @@ def get_variables(arg):
     :return: dict[str, Any] -- values for robot
     """
     variables = legion_test.profiler_loader.get_variables(arg)
-    variables['TEST_MODEL_IMAGE'] = legion_test.test_assets.get_test_bare_model_api_image(variables)
+    variables['TEST_MODEL_IMAGE_1'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 1)
+    variables['TEST_MODEL_IMAGE_2'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 2)
 
     return variables
