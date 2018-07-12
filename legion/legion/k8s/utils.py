@@ -43,7 +43,10 @@ from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE
 from docker_registry_client import DockerRegistryClient
+<<<<<<< c192c7c09d7e7c8079dc82166ceb59f13a5b311a
 from typing import NamedTuple
+=======
+>>>>>>> [#214] Add image url parser
 
 
 LOGGER = logging.getLogger(__name__)
@@ -149,6 +152,7 @@ def get_docker_image_labels(image):
     :type image: str
     :return: dict[str, Any] -- image labels
     """
+<<<<<<< c192c7c09d7e7c8079dc82166ceb59f13a5b311a
     image_attributes = parse_docker_image_url(image)
 
     try:
@@ -165,6 +169,26 @@ def get_docker_image_labels(image):
 
     except Exception as err:
         raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
+=======
+    
+    try:
+        image_attributes = parse_docker_image_url(image)
+
+
+
+    try:
+        registry_client = DockerRegistryClient(
+            host = repo_url
+            username=
+            password=
+        )
+        try:
+            docker_image = docker_client.images.get(image)
+        except docker.errors.ImageNotFound:
+            docker_image = docker_client.images.pull(image)
+    except Exception as docker_pull_exception:
+        raise Exception('Cannot pull docker image {}: {}'.format(image, docker_pull_exception))
+>>>>>>> [#214] Add image url parser
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
@@ -218,12 +242,31 @@ def parse_docker_image_url(image):
     :type image: str
     :return: namedtuple[str, Any]
     """
-    image_attributes = NamedTuple('image_attributes', [
-        ('repo', str),
-        ('ref', str)
-    ])
 
     try:
+
+        image_attrs = NamedTuple('image_attrs', [
+            ('jenkins_url', str),
+            ('base_directory', str),
+            ('git_directory', str),
+            ('git_url', str),
+            ('git_branch', str),
+            ('git_root_key', str),
+            ('model_host', str),
+            ('jenkins_user', str),
+            ('jenkins_password', str),
+            ('dynamic_model_prefix', str),
+            ('perf_test_prefix', str),
+            ('connection_timeout', str),
+            ('socket_reconnect_sleep', int),
+            ('plain_tasks', bool),
+            ('repo', str),
+            ('ref', str)
+        ])
+        repo_url = model_image.repo_url
+        repository =model_image.repository
+        ref = model_image.ref
+
         image_attrs_regexp = "(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)"
 
         image_attrs_list = re.search(image_attrs_regexp, image)
@@ -234,8 +277,6 @@ def parse_docker_image_url(image):
         )
 
     except Exception as err:
-        raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
-            image,
-            err))
+        raise Exception('Can\'t get image attributes from image url {}: {}'.format(image, err))
 
     return image_attrs
