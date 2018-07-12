@@ -41,6 +41,8 @@ import legion.k8s.enclave
 from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE
+from docker_registry_client import DockerRegistryClient
+
 
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None
@@ -145,8 +147,18 @@ def get_docker_image_labels(image):
     :type image: str
     :return: dict[str, Any] -- image labels
     """
-    docker_client = legion.containers.docker.build_docker_client(None)
+    
     try:
+        image_attributes = parse_docker_image_url(image)
+
+
+
+    try:
+        registry_client = DockerRegistryClient(
+            host = repo_url
+            username=
+            password=
+        )
         try:
             docker_image = docker_client.images.get(image)
         except docker.errors.ImageNotFound:
@@ -196,3 +208,39 @@ def get_meta_from_docker_labels(labels):
     compatible_labels[LEGION_SYSTEM_LABEL] = LEGION_SYSTEM_VALUE
 
     return normalize_name(k8s_name, dns_1035=True), compatible_labels, model_id, model_version
+
+
+def parse_docker_image_url(image):
+    """
+    Get Repository name, image name and version from image url
+
+    :param image: full docker image url
+    :type image: str
+    :return: namedtuple[str, Any]
+    """
+    try:
+
+        image_attrs = NamedTuple('image_attrs', [
+            ('jenkins_url', str),
+            ('base_directory', str),
+            ('git_directory', str),
+            ('git_url', str),
+            ('git_branch', str),
+            ('git_root_key', str),
+            ('model_host', str),
+            ('jenkins_user', str),
+            ('jenkins_password', str),
+            ('dynamic_model_prefix', str),
+            ('perf_test_prefix', str),
+            ('connection_timeout', str),
+            ('socket_reconnect_sleep', int),
+            ('plain_tasks', bool),
+        ])
+        repo_url = model_image.repo_url
+        repository =model_image.repository
+        ref = model_image.ref
+
+    except Exception as err:
+        raise Exception('Can\'t get model attributes from image url: {}'.format(err))
+
+    return image_attrs
