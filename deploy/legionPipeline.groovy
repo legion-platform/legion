@@ -90,7 +90,7 @@ def createjenkinsJobs(String commitID) {
     """
 }
 
-def runRobotTests(String tags) {
+def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
             env.tags=tags
