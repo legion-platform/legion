@@ -129,6 +129,81 @@ def patch_environ(values, flush_existence=False):
     return patch('os.environ', new_values)
 
 
+class LegionTestContainer:
+    """
+    Context manager for docker containers execution
+    """
+
+    def __init__(self, image, port):
+        """
+        Create context
+
+        :param image: The image name to start container from
+        :type image: str
+        :param port: Container port to be exposed to the host system
+        :type port: int
+        """
+
+        self._docker_client = legion.containers.docker.build_docker_client(None)
+        self._image = image
+        self._port = port
+
+        self.container = None
+        self.container_id = None
+        self.host_port = None
+
+    def __enter__(self):
+        """
+        Enter into context
+
+        :return: self
+        """
+
+        try:
+            self.container = self._docker_client.containers.run(self._image,
+                                                                ports={self._port: 0},
+                                                                detach=True,
+                                                                remove=True)
+            self.container_id = self.container.id
+
+            wait = 3
+            LOGGER.info('Waiting {} sec'.format(wait))
+            time.sleep(wait)
+
+            self.container = self._docker_client.containers.get(self.container_id)
+            if self.container.status != 'running':
+                raise Exception('Invalid container state: {}'.format(self.container.status))
+
+            try:
+                self.host_port = self.container.attrs['NetworkSettings']['Ports']['{}/tcp'.format(
+                    self._port)][0]['HostPort']
+            except Exception as err:
+                raise Exception('Error while trying to get exposed container port: {}'.format(err))
+
+        except docker.errors.ContainerError:
+            raise Exception('Error creating container from {} image'.format(self._image))
+
+        return self
+
+    def __exit__(self, *args, exception=None):
+        """
+        Exit from context with container cleanup
+
+        :param args: list of arguments
+        :return: None
+        """
+        if self.container:
+            try:
+                try:
+                    LOGGER.info('Wiping {} container'.format(self.container_id))
+                    self.container.kill()
+                except Exception as container_kill_exception:
+                    LOGGER.info('Can\'t kill container: {}'.format(container_kill_exception))
+            except Exception as removing_exception:
+                LOGGER.exception('Can\'t remove container: {}'.format(removing_exception),
+                                 exc_info=removing_exception)
+
+
 class ModelServeTestBuild:
     """
     Context manager for building and testing models with pyserve
