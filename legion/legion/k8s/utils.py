@@ -43,10 +43,14 @@ from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE
 from docker_registry_client import DockerRegistryClient
+<<<<<<< b530c4a7dda9eb0af4f5875d47167bcd3943fb2a
 <<<<<<< c192c7c09d7e7c8079dc82166ceb59f13a5b311a
 from typing import NamedTuple
 =======
 >>>>>>> [#214] Add image url parser
+=======
+from typing import NamedTuple
+>>>>>>> [#214] Get image labels from registry
 
 
 LOGGER = logging.getLogger(__name__)
@@ -152,6 +156,7 @@ def get_docker_image_labels(image):
     :type image: str
     :return: dict[str, Any] -- image labels
     """
+<<<<<<< b530c4a7dda9eb0af4f5875d47167bcd3943fb2a
 <<<<<<< c192c7c09d7e7c8079dc82166ceb59f13a5b311a
     image_attributes = parse_docker_image_url(image)
 
@@ -174,14 +179,19 @@ def get_docker_image_labels(image):
     try:
         image_attributes = parse_docker_image_url(image)
 
+=======
+>>>>>>> [#214] Get image labels from registry
 
+    image_attributes = parse_docker_image_url(image)
 
     try:
         registry_client = DockerRegistryClient(
-            host = repo_url
-            username=
-            password=
+            host=os.getenv(*legion.config.NEXUS_DOCKER_REGISTRY),
+            username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
+            password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
+            api_version=2
         )
+<<<<<<< b530c4a7dda9eb0af4f5875d47167bcd3943fb2a
         try:
             docker_image = docker_client.images.get(image)
         except docker.errors.ImageNotFound:
@@ -189,6 +199,15 @@ def get_docker_image_labels(image):
     except Exception as docker_pull_exception:
         raise Exception('Cannot pull docker image {}: {}'.format(image, docker_pull_exception))
 >>>>>>> [#214] Add image url parser
+=======
+
+        manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
+        labels = json.loads(
+            manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+
+    except Exception as err:
+        raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
+>>>>>>> [#214] Get image labels from registry
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
@@ -237,36 +256,16 @@ def get_meta_from_docker_labels(labels):
 def parse_docker_image_url(image):
     """
     Get Repository host address, image name and version from image url
-
     :param image: full docker image url
     :type image: str
     :return: namedtuple[str, Any]
     """
+    image_attributes = NamedTuple('image_attributes', [
+        ('repo', str),
+        ('ref', str)
+    ])
 
     try:
-
-        image_attrs = NamedTuple('image_attrs', [
-            ('jenkins_url', str),
-            ('base_directory', str),
-            ('git_directory', str),
-            ('git_url', str),
-            ('git_branch', str),
-            ('git_root_key', str),
-            ('model_host', str),
-            ('jenkins_user', str),
-            ('jenkins_password', str),
-            ('dynamic_model_prefix', str),
-            ('perf_test_prefix', str),
-            ('connection_timeout', str),
-            ('socket_reconnect_sleep', int),
-            ('plain_tasks', bool),
-            ('repo', str),
-            ('ref', str)
-        ])
-        repo_url = model_image.repo_url
-        repository =model_image.repository
-        ref = model_image.ref
-
         image_attrs_regexp = "(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)"
 
         image_attrs_list = re.search(image_attrs_regexp, image)
@@ -277,6 +276,8 @@ def parse_docker_image_url(image):
         )
 
     except Exception as err:
-        raise Exception('Can\'t get image attributes from image url {}: {}'.format(image, err))
+        raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
+            image,
+            err))
 
-    return image_attrs
+return image_attrs
