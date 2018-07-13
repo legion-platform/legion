@@ -151,13 +151,10 @@ def load_secrets(path_to_secrets):
 def get_docker_image_labels(image):
     """
     Get labels from docker image
-
     :param image: docker image
     :type image: str
     :return: dict[str, Any] -- image labels
     """
-<<<<<<< b530c4a7dda9eb0af4f5875d47167bcd3943fb2a
-<<<<<<< c192c7c09d7e7c8079dc82166ceb59f13a5b311a
     image_attributes = parse_docker_image_url(image)
 
     try:
@@ -174,40 +171,6 @@ def get_docker_image_labels(image):
 
     except Exception as err:
         raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
-=======
-    
-    try:
-        image_attributes = parse_docker_image_url(image)
-
-=======
->>>>>>> [#214] Get image labels from registry
-
-    image_attributes = parse_docker_image_url(image)
-
-    try:
-        registry_client = DockerRegistryClient(
-            host=os.getenv(*legion.config.NEXUS_DOCKER_REGISTRY),
-            username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
-            password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
-            api_version=2
-        )
-<<<<<<< b530c4a7dda9eb0af4f5875d47167bcd3943fb2a
-        try:
-            docker_image = docker_client.images.get(image)
-        except docker.errors.ImageNotFound:
-            docker_image = docker_client.images.pull(image)
-    except Exception as docker_pull_exception:
-        raise Exception('Cannot pull docker image {}: {}'.format(image, docker_pull_exception))
->>>>>>> [#214] Add image url parser
-=======
-
-        manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
-        labels = json.loads(
-            manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-
-    except Exception as err:
-        raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
->>>>>>> [#214] Get image labels from registry
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
