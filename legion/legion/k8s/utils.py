@@ -149,7 +149,6 @@ def get_docker_image_labels(image):
     :type image: str
     :return: dict[str, Any] -- image labels
     """
-
     image_attributes = parse_docker_image_url(image)
 
     try:
@@ -219,7 +218,6 @@ def parse_docker_image_url(image):
     :type image: str
     :return: namedtuple[str, Any]
     """
-
     image_attributes = NamedTuple('image_attributes', [
         ('repo', str),
         ('ref', str)
