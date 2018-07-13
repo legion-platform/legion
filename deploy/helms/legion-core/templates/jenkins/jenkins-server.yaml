@@ -78,6 +78,8 @@ spec:
           value: "http"
         - name: EXTERNAL_RESOURCE_HOST
           value: "{{ .Release.Name }}-nexus.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8081/repository/raw"
+        - name: NEXUS_DOCKER_REGISTRY
+          value: "https://{{ .Release.Name }}-nexus.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
         - name: EXTERNAL_RESOURCE_USER
           value: "admin"
         - name: EXTERNAL_RESOURCE_PASSWORD

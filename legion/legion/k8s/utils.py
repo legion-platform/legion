@@ -17,7 +17,6 @@
 legion k8s utils functions
 """
 import os
-import os.path
 import logging
 
 import docker
@@ -29,6 +28,8 @@ import kubernetes.config.config_exception
 import urllib3
 import urllib3.exceptions
 import yaml
+import json
+import re
 
 import legion
 import legion.containers.docker
@@ -42,6 +43,7 @@ from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE
 from docker_registry_client import DockerRegistryClient
+from typing import NamedTuple
 
 
 LOGGER = logging.getLogger(__name__)
@@ -147,24 +149,23 @@ def get_docker_image_labels(image):
     :type image: str
     :return: dict[str, Any] -- image labels
     """
-    
-    try:
-        image_attributes = parse_docker_image_url(image)
 
-
+    image_attributes = parse_docker_image_url(image)
 
     try:
         registry_client = DockerRegistryClient(
-            host = repo_url
-            username=
-            password=
+            host=os.getenv(*legion.config.NEXUS_DOCKER_REGISTRY),
+            username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
+            password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
+            api_version=2
         )
-        try:
-            docker_image = docker_client.images.get(image)
-        except docker.errors.ImageNotFound:
-            docker_image = docker_client.images.pull(image)
-    except Exception as docker_pull_exception:
-        raise Exception('Cannot pull docker image {}: {}'.format(image, docker_pull_exception))
+
+        manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
+        labels = json.loads(
+            manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+
+    except Exception as err:
+        raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
@@ -172,13 +173,13 @@ def get_docker_image_labels(image):
         legion.containers.headers.DOMAIN_CONTAINER_TYPE
     ]
 
-    if any(header not in docker_image.labels for header in required_headers):
+    if any(header not in labels for header in required_headers):
         raise Exception('Missed one of %s labels. Available labels: %s' % (
             ', '.join(required_headers),
-            ', '.join(tuple(docker_image.labels.keys()))
+            ', '.join(tuple(labels.keys()))
         ))
 
-    return docker_image.labels
+    return labels
 
 
 def get_meta_from_docker_labels(labels):
@@ -212,35 +213,31 @@ def get_meta_from_docker_labels(labels):
 
 def parse_docker_image_url(image):
     """
-    Get Repository name, image name and version from image url
+    Get Repository host address, image name and version from image url
 
     :param image: full docker image url
     :type image: str
     :return: namedtuple[str, Any]
     """
-    try:
 
-        image_attrs = NamedTuple('image_attrs', [
-            ('jenkins_url', str),
-            ('base_directory', str),
-            ('git_directory', str),
-            ('git_url', str),
-            ('git_branch', str),
-            ('git_root_key', str),
-            ('model_host', str),
-            ('jenkins_user', str),
-            ('jenkins_password', str),
-            ('dynamic_model_prefix', str),
-            ('perf_test_prefix', str),
-            ('connection_timeout', str),
-            ('socket_reconnect_sleep', int),
-            ('plain_tasks', bool),
-        ])
-        repo_url = model_image.repo_url
-        repository =model_image.repository
-        ref = model_image.ref
+    image_attributes = NamedTuple('image_attributes', [
+        ('repo', str),
+        ('ref', str)
+    ])
+
+    try:
+        image_attrs_regexp = "(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)"
+
+        image_attrs_list = re.search(image_attrs_regexp, image)
+
+        image_attrs = image_attributes(
+            repo=image_attrs_list.group[1],
+            ref=image_attrs_list.group[2]
+        )
 
     except Exception as err:
-        raise Exception('Can\'t get model attributes from image url: {}'.format(err))
+        raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
+            image,
+            err))
 
     return image_attrs
