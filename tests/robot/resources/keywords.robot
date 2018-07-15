@@ -106,7 +106,7 @@ Run EDI deploy and check model started
     ${edi_state}=   Run EDI deploy       ${enclave}              ${image}
     Should Be Equal As Integers          ${edi_state.rc}         0
     ${response}=    Check model started  ${enclave}              ${model_id}             ${model_ver}
-    Should contain                       ${response}             "version": "${model_ver}"
+    Should contain                       ${response}             "version": ${model_ver}
 
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy by model version and check
@@ -180,14 +180,10 @@ Verify model info from edi
     Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
     Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
 
-Run and wait Jenkins job
-    [Arguments]          ${model_name}                      ${enclave}
-    Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
-    Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
-
 Test model pipeline
     [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
-    Run and wait Jenkins job                                ${model_name}        ${enclave}
+    Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
+    Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
     Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
     Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
     ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
@@ -198,11 +194,6 @@ Test model pipeline
     ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
     ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
     Log                  External model URL is ${model_url}
-    ${model_image} =     Get From Dictionary                ${model_meta}                 modelImageTagExternal
-    Log                  ${model_image}
-    Run Keyword If       '${model_name}' == 'Test-Summation'            Set Suite Variable    ${TEST_MODEL_IMAGE_1}       ${model_image}
-    ... 	ELSE IF      '${model_name}' == 'Test-Summation-v1.1'       Set Suite Variable    ${TEST_MODEL_IMAGE_2}       ${model_image}
-    Log                  TEST_MODEL_IMAGE_1 = ${TEST_MODEL_IMAGE_1}
     Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
     Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}
