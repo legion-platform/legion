@@ -217,6 +217,7 @@ Run, wait and check jenkins jobs for enclave
 
 Run test-summation model setup
     [Arguments]          ${model_name}                      ${enclave}
+    Connect to Jenkins endpoint
     ${is_built}=    Check test-summation model is built     ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
                     Run Keyword If                          ${is_built} == true                Log   ${model_name} is successfully built!
     ... 	        ELSE IF                                 ${is_built} == false               Build test-summation model       ${model_name}       ${enclave}=${CLUSTER_NAMESPACE}
