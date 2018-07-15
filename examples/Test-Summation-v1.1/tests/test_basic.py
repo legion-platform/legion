@@ -13,22 +13,26 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-"""
-Variables loader (from profiles/{env.PROFILE}.ansible.yml files)
-"""
+import random
+import os
 
-import legion_test.profiler_loader
-import legion_test.test_assets
+from legion.model import ModelClient
+import legion.config
+
+import unittest2
 
 
-def get_variables(arg):
-    """
-    Gather and return all variables to robot
+class BasicTest(unittest2.TestCase):
+    def setUp(self):
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID))
 
-    :param arg: path to directory with profiles
-    :type args: str
-    :return: dict[str, Any] -- values for robot
-    """
-    variables = legion_test.profiler_loader.get_variables(arg)
+    def test_random_sum(self):
+        a = random.randint(0, 100)
+        b = random.randint(0, 100)
+        response = self._client.invoke(a=a, b=b)
 
-    return variables
+        self.assertEqual(response['result'], a + b, 'Wrong answer for a={} and b={}'.format(a, b))
+
+
+if __name__ == '__main__':
+    unittest2.main()

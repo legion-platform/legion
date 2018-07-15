@@ -1,0 +1,25 @@
+node {
+    def legion = load legion()
+
+    legion.pod(ram: '1Gi') {
+        stage('clone repo'){
+            checkout scm
+        }
+        
+        stage('run notebook'){
+            legion.runNotebook('Summation.ipynb')
+        }
+
+        stage('build'){
+            legion.build()
+        }
+
+        stage('deploy'){
+            legion.deploy()
+        }
+
+        stage('run tests') {
+            legion.runTests()
+        }
+    }
+}
