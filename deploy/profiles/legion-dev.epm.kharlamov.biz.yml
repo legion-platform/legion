@@ -67,6 +67,7 @@ service_account:
   password: admin
 examples_to_test:
   - Test-Summation
+  - Test-Summation-v1.1
   - Digit-Recognition
 model_id_to_test: income
 enclaves:

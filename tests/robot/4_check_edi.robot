@@ -1,11 +1,14 @@
 *** Settings ***
 Documentation       Legion's EDI operational check
+Test Timeout        5 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             Collections
-Suite Setup         Choose cluster context                              ${CLUSTER_NAME}
+Suite Setup         Run Keywords
+...                 Choose cluster context                              ${CLUSTER_NAME}     AND
+...                 Run test-summation model setup                      ${TEST_MODEL_1_NAME}        ${MODEL_TEST_ENCLAVE}
 Test Setup          Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
 Test Teardown       Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
 
@@ -17,7 +20,7 @@ Check EDI availability in all enclaves
     :FOR    ${enclave}      IN                            @{ENCLAVES}
     \       ${edi_state}=   Run EDI inspect               ${enclave}
     \                       Should Be Equal As Integers   ${edi_state.rc}         0
-                            [Teardown]                    NONE
+    [Teardown]                    NONE
 
 Check EDI deploy procedure
     [Setup]         NONE
@@ -178,5 +181,5 @@ Check EDI enclave inspect procedure without deployed model
     [Tags]  edi  cli  enclave
     ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers    ${resp_dict.rc}          0
-                    Should be empty                ${resp_dict.output}
+                    Should Not Contain             ${resp_dict.output}      ${model_id}
     [Teardown]      NONE
