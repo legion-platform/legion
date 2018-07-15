@@ -1,11 +1,15 @@
 *** Settings ***
 Documentation       Legion's EDI operational check
+Test Timeout        5 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py   ../../deploy/profiles/
 Library             legion_test.robot.Utils
 Library             Collections
-Suite Setup         Choose cluster context    ${CLUSTER_NAME}
+Suite Setup         Run Keywords
+...                 Choose cluster context                              ${CLUSTER_NAME}     AND
+...                 Run test-summation model setup                      ${TEST_MODEL_1_NAME}        ${MODEL_TEST_ENCLAVE}    AND
+...                 Run test-summation model setup                      ${TEST_MODEL_2_NAME}        ${MODEL_TEST_ENCLAVE}
 Test Setup          Run Keywords
 ...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}   AND
 ...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}

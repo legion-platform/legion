@@ -148,7 +148,7 @@ class Utils:
         """
         response = ""
         for i in range(6):
-            response = requests.get(url)
+            response = requests.get(url, timeout=10)
             if response.status_code >= 400 or response.status_code < 200:
                 print('Response code = {}, sleep and try again'.format(response.status_code))
                 time.sleep(3)

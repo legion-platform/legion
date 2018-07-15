@@ -13,22 +13,21 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-"""
-Variables loader (from profiles/{env.PROFILE}.ansible.yml files)
-"""
+from legion.model import ModelClient
 
-import legion_test.profiler_loader
-import legion_test.test_assets
+from locust import HttpLocust, task, TaskSet
 
 
-def get_variables(arg):
-    """
-    Gather and return all variables to robot
+class ModelTaskSet(TaskSet):
+    @task()
+    def invoke_nine_decode(self):
+        self._model_client.invoke(a=10, b=20)
 
-    :param arg: path to directory with profiles
-    :type args: str
-    :return: dict[str, Any] -- values for robot
-    """
-    variables = legion_test.profiler_loader.get_variables(arg)
+    def on_start(self):
+        self._model_client = ModelClient('test_summation', use_relative_url=True, http_client=self.client)
 
-    return variables
+
+class TestLocust(HttpLocust):
+    task_set = ModelTaskSet
+    min_wait = 0
+    max_wait = 0

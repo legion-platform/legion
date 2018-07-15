@@ -201,3 +201,37 @@ Run, wait and check jenkins jobs for enclave
     [Arguments]             ${enclave}
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
     \    Test model pipeline  ${model_name}  ${enclave}
+
+Run test-summation model setup
+    [Arguments]          ${model_name}                      ${enclave}
+    ${is_built}=    Check test-summation model is built     ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
+                    Run Keyword If                          ${is_built} == true                Log   ${model_name} is successfully built!
+    ... 	        ELSE IF                                 ${is_built} == false               Build test-summation model       ${model_name}       ${enclave}=${CLUSTER_NAMESPACE}
+    ... 	        ELSE                                    Log                                Could not build model!!!
+
+
+Check test-summation model is built
+    [Arguments]          ${model_name}                      ${enclave}
+    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
+    Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
+    ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
+    Log                  Model meta is ${model_meta}
+    ${model_path} =      Get From Dictionary                ${model_meta}                 modelPath
+    ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
+    ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
+    ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
+    ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
+    Log                  External model URL is ${model_url}
+    Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
+    Run Keyword If       ${model_name} == 'Test-Summation'      Set Suite Variable   ${TEST_MODEL_IMAGE_1}              ${model_url}
+    ... 	             ELSE IF                ${model_name} == 'Test-Summation-v1.1'            Set Suite Variable    ${TEST_MODEL_IMAGE_1}              ${model_url}
+    ${edi_state}=        Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+    Log                  State of ${model_id} is ${edi_state}
+    [Return]             true
+
+Build test-summation model
+    [Arguments]          ${model_name}                      ${enclave}
+    Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
+    Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
+    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
+    Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
