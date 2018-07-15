@@ -3,13 +3,10 @@ Documentation       Legion's EDI operational check
 Test Timeout        5 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py   ../../deploy/profiles/
+Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             Collections
-Suite Setup         Run Keywords
-...                 Choose cluster context                              ${CLUSTER_NAME}     AND
-...                 Build test-summation model                          ${TEST_MODEL_1_NAME}        ${MODEL_TEST_ENCLAVE}   AND
-...                 Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
+Suite Setup         Choose cluster context                              ${CLUSTER_NAME}
 Test Setup          Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
 Test Teardown       Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
 
