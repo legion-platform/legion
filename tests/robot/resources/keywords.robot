@@ -214,6 +214,8 @@ Run, wait and check jenkins jobs for enclave
 
 Run test-summation model setup
     [Arguments]          ${model_name}                      ${enclave}
+    Log                  ${model_name} and ${enclave}=${CLUSTER_NAMESPACE}
+    Connect to Jenkins endpoint
     ${is_built}=    Check test-summation model is built     ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
                     Run Keyword If                          ${is_built} == true                Log   ${model_name} is successfully built!
     ... 	        ELSE IF                                 ${is_built} == false               Build test-summation model       ${model_name}       ${enclave}=${CLUSTER_NAMESPACE}
@@ -233,8 +235,8 @@ Check test-summation model is built
     ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
     Log                  External model URL is ${model_url}
     Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
-    Run Keyword If       ${model_name} == 'Test-Summation'      Set Suite Variable   ${TEST_MODEL_IMAGE_1}              ${model_url}
-    ... 	             ELSE IF                ${model_name} == 'Test-Summation-v1.1'            Set Suite Variable    ${TEST_MODEL_IMAGE_1}              ${model_url}
+    Run Keyword If       ${model_name} == Test-Summation      Set Suite Variable   ${TEST_MODEL_IMAGE_1}              ${model_url}
+    ... 	             ELSE IF                ${model_name} == Test-Summation-v1.1            Set Suite Variable    ${TEST_MODEL_IMAGE_1}              ${model_url}
     ${edi_state}=        Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
     Log                  State of ${model_id} is ${edi_state}
     [Return]             true
