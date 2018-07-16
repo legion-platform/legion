@@ -555,7 +555,7 @@ class ModelLocalContainerExecutionContext:
 
             LOGGER.info('Model image has been deployed')
 
-            wait = 10
+            wait = 3
             LOGGER.info('Waiting {} sec'.format(wait))
             time.sleep(wait)
 

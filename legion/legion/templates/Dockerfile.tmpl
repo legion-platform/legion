@@ -46,6 +46,8 @@ CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
+WORKDIR /app
+
 RUN pip install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
 
 ENV MODEL_FILE="{{MODEL_FILE}}" \
