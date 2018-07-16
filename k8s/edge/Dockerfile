@@ -24,15 +24,15 @@ ENV DUMB_INIT_VERSION 1.2.0
 # Dumb-init, python3, lua
 RUN set -ex \
   && apt-get update && apt-get install -y openssl \
-     bash zlib zlib-dev ca-certificates gnupg openssl luarocks5.3 \
-  && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
+     bash zlib1g zlib1g-dev ca-certificates gnupg openssl luarocks \
+  && luarocks install lua-resty-statsd 3.0.3-1 \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64" \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/sha256sums" \
   && grep "dumb-init_${DUMB_INIT_VERSION}_amd64$" sha256sums | sha256sum -c \
   && rm sha256sums \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
   && chmod +x /usr/bin/dumb-init \
-  && pip3 --disable-pip-version-check argparse jinja2
+  && pip3 install --disable-pip-version-check argparse jinja2
 
 # Install Legion
 ARG pip_extra_index_params=""

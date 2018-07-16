@@ -22,10 +22,11 @@ RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa 
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
-    g++ apt-utils build-essential python3-dev python3.6-dev python3-pip libpython3.6-dev python3-setuptools file wget git \
-    libtiff5-dev libjpeg8-dev zlib1g-dev tcl8.6-dev tk8.6-dev python-tk python3-tk \
-    libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk
+    g++ apt-utils build-essential python3-dev python3.6-dev python3-pip libpython3.6-dev \
+    python3-setuptools file wget git libtiff5-dev libjpeg8-dev zlib1g-dev tcl8.6-dev \
+    tk8.6-dev python-tk python3-tk libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev \
+    libfribidi-dev tcl8.6-dev tk8.6-dev python-tk python3-tk && \
+    apt-get clean && apt-get autoclean
 
 COPY requirements.txt /root/requirements.txt
 
