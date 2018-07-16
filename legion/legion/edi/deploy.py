@@ -124,7 +124,7 @@ def build_model(args):
             client.images.push(image_and_registry, tag=version, auth_config=auth_config)
             print('Successfully pushed image %s:%s' % (image_and_registry, version))
 
-            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)
+            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry+":"+version)
 
         return image
 
