@@ -13,15 +13,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM openresty/openresty:1.13.6.2-alpine
+FROM openresty/openresty:xenial as builder
+
+FROM legion/base-python-image
+
+COPY --from=builder /usr/local/openresty /usr/local/openresty
 
 ENV DUMB_INIT_VERSION 1.2.0
 
 # Dumb-init, python3, lua
 RUN set -ex \
-  && apk add --no-cache --virtual .install-deps openssl \
-       python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
-       ca-certificates gnupg openssl git curl luarocks5.3 \
+  && apt-get update && apt-get install -y openssl \
+     bash zlib zlib-dev ca-certificates gnupg openssl luarocks5.3 \
   && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64" \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/sha256sums" \
@@ -29,15 +32,11 @@ RUN set -ex \
   && rm sha256sums \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
   && chmod +x /usr/bin/dumb-init \
-  && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0 \
-  && python3 -m pip install --upgrade pip==9.0.3 \
-  && python3 -m pip install "Pillow==5.0.0" \
-  && python3 -m pip install "numpy==1.14.3"
+  && pip3 --disable-pip-version-check argparse jinja2
 
 # Install Legion
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
-
 RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
 
 # Staff
