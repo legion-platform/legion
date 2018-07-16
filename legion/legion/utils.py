@@ -451,7 +451,7 @@ def send_header_to_stderr(header, value):
     :return: None
     """
     message = 'X-Legion-{}:{}'.format(header, value)
-    print(message, file=sys.__stderr__, flush=True)
+    print('\n' + message, file=sys.__stderr__, flush=True)
 
 
 def string_to_bool(value):
