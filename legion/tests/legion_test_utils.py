@@ -323,6 +323,8 @@ class ModelDockerBuilderContainerContext:
             raise Exception('{} should be directory'.format(source))
 
         parent, directory_name = target.rsplit('/', 1)
+        if not parent:
+            parent = '/'
 
         tarfile_buffer = io.BytesIO()
         tar = tarfile.open(mode='w', fileobj=tarfile_buffer)
@@ -341,24 +343,6 @@ class ModelDockerBuilderContainerContext:
         """
         return '/workspace'
 
-    def build_model_file_location(self, model_name):
-        """
-        Build path to model file in container
-
-        :param model_name: name of model file
-        :type model_name: str
-        :return: str -- path
-        """
-        return '{}/{}.py'.format(self.workspace, model_name)
-
-    def prepare_workspace(self):
-        """
-        Prepare workspace directory
-
-        :return: None
-        """
-        self.exec('mkdir -p {}'.format(self.workspace))
-
     def copy_model(self, model_name):
         """
         Copy model file to docker container
@@ -367,35 +351,21 @@ class ModelDockerBuilderContainerContext:
         :type model_name: str
         :return: None
         """
-        path = os.path.join(TEST_MODELS_LOCATION, model_name + '.py')
+        path = os.path.join(TEST_MODELS_LOCATION, model_name)
         if not os.path.exists(path):
             raise Exception('Unknown model {!r}. Path not exists: {!r}'.format(model_name, path))
 
-        self.copy_file(path, self.build_model_file_location(model_name))
+        self.copy_directory(path, self.workspace)
 
-    def copy_model_directory(self, directory_name):
-        """
-        Copy additional model directory to docker container
-
-        :param directory_name: name of model file without .py
-        :type directory_name: str
-        :return: None
-        """
-        path = os.path.join(TEST_MODELS_LOCATION, directory_name)
-        target_path = os.path.join(self.workspace, directory_name)
-        if not os.path.exists(path):
-            raise Exception('Unknown directory {!r}. Path not exists: {!r}'.format(directory_name, path))
-
-        self.copy_directory(path, target_path)
-
-    def execute_model(self, model_name):
+    def execute_model(self, python_file='run.py'):
         """
         Run model training process
 
-        :param model_name:
+        :param python_file: file to execute
+        :type python_file: str
         :return: tuple[str, str, str, str] -- model id, model version, model path, output of execution
         """
-        command = 'python3 "{}"'.format(self.build_model_file_location(model_name))
+        command = 'python3 "{}"'.format(python_file)
         output = self.exec(command, workdir=self.workspace)
 
         model_id = None
@@ -585,7 +555,7 @@ class ModelLocalContainerExecutionContext:
 
             LOGGER.info('Model image has been deployed')
 
-            wait = 3
+            wait = 10
             LOGGER.info('Waiting {} sec'.format(wait))
             time.sleep(wait)
 

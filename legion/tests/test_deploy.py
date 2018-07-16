@@ -45,9 +45,8 @@ class TestDeploy(unittest2.TestCase):
 
     def test_summation_model_build_and_query(self):
         with ModelDockerBuilderContainerContext() as context:
-            context.prepare_workspace()
             context.copy_model('summation_model')
-            model_id, model_version, model_file, _ = context.execute_model('summation_model')
+            model_id, model_version, model_file, _ = context.execute_model()
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
@@ -73,10 +72,8 @@ class TestDeploy(unittest2.TestCase):
 
     def test_complex_model_build_and_query(self):
         with ModelDockerBuilderContainerContext() as context:
-            context.prepare_workspace()
             context.copy_model('complex_model')
-            context.copy_model_directory('complex_package')
-            model_id, model_version, model_file, _ = context.execute_model('complex_model')
+            model_id, model_version, model_file, _ = context.execute_model()
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
@@ -102,9 +99,8 @@ class TestDeploy(unittest2.TestCase):
 
     def test_io_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
-            context.prepare_workspace()
             context.copy_model('model_with_io_operations')
-            model_id, model_version, model_file, _ = context.execute_model('model_with_io_operations')
+            model_id, model_version, model_file, _ = context.execute_model()
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
@@ -118,9 +114,8 @@ class TestDeploy(unittest2.TestCase):
 
     def test_native_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
-            context.prepare_workspace()
             context.copy_model('model_with_native')
-            model_id, model_version, model_file, _ = context.execute_model('model_with_native')
+            model_id, model_version, model_file, _ = context.execute_model()
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
