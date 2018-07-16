@@ -147,13 +147,17 @@ class Utils:
         :return:  str -- response text
         """
         response = ""
-        for i in range(6):
-            response = requests.get(url, timeout=10)
-            if response.status_code >= 400 or response.status_code < 200:
-                print('Response code = {}, sleep and try again'.format(response.status_code))
-                time.sleep(3)
-            elif response.status_code == 200:
-                break
-            elif i == 5:
-                raise Exception('Returned wrong status code: {}'.format(response.status_code))
+        try:
+            for i in range(6):
+                response = requests.get(url, timeout=10)
+                if response.status_code >= 400 or response.status_code < 200:
+                    print('Response code = {}, sleep and try again'.format(response.status_code))
+                    time.sleep(3)
+                elif response.status_code == 200:
+                    break
+                elif i == 5:
+                    raise Exception('Returned wrong status code: {}'.format(response.status_code))
+        except Exception as e:
+            print(e)
+
         return response.text
