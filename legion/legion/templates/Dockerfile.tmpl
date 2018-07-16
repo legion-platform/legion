@@ -15,15 +15,11 @@
 #
 FROM {{DOCKER_BASE_IMAGE_ID}}
 
-# Standard set up Nginx
-ENV NGINX_VERSION 1.13.7-1~stretch
-ENV NJS_VERSION   1.13.7.0.1.15-1~stretch
-
 # install requirements
 # forward request and error logs to docker log collector
 # and make NGINX run on the foreground
 RUN apk add --update \
-    ca-certificates curl openrc docker \
+    ca-certificates curl openrc \
     nginx pcre pcre-dev supervisor \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log \
