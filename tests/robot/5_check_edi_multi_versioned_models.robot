@@ -42,7 +42,7 @@ Check EDI undeploy 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
     ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp_dict.rc}         0
-    ${resp}=        Run EDI inspect                 ${MODEL_TEST_ENCLAVE}
+    ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
                     Should not contain              ${resp.output}          ${TEST_MODEL_1_VERSION}
                     Should contain                  ${resp.output}          ${TEST_MODEL_2_VERSION}
@@ -53,7 +53,7 @@ Check EDI undeploy all model instances by version
                     Should Be Equal As Integers     ${resp.rc}              0
                     Sleep                           10  # because no way to control explicitly scaling the model inside
     # TODO remove sleep
-    ${resp}=        Run EDI inspect with parse      ${MODEL_TEST_ENCLAVE}
+    ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
     ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
                     Log                             ${model_1}
     ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
