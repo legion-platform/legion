@@ -13,3 +13,4 @@
 - include: autoscaler.yaml
 - include: prometheus.yaml
 - include: pvc.yaml
+- include: kube2iam.yaml

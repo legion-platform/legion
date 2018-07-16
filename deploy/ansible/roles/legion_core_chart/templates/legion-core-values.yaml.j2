@@ -1,4 +1,5 @@
 rootDomain: {{ base_domain }}
+clusterName: {{ cluster_name }}
 namespace: default
 localDomain: "cluster.local"
 addLocalDomain: true
@@ -32,7 +33,7 @@ jenkins:
   airflow:
     enabled: true
     rest_url: 'http://airflow-web:8080/admin/rest_api'
-    s3_url: '{{ airflow_s3_url }}'
+    s3_url: "s3://{{ airflow_s3_bucket_name }}/"
     expected_output: '{{ airflow_expected_output }}'
 
 graphite:

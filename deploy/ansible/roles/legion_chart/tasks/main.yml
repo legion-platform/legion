@@ -1,0 +1,14 @@
+---
+
+- name: Configure kubectl using kops
+  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+
+- include: install_legion_to_enclave.yml
+  vars:
+    root_domain: "{{ enclave }}.{{ base_domain }}"
+    domain_delimiter: "-"
+    namespace: "{{ enclave }}"
+    source_secret_name: "{{ base_domain }}-tls"
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave

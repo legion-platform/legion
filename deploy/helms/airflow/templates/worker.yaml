@@ -11,6 +11,8 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
         app: "{{ .Release.Name }}-airflow-worker"
     spec:

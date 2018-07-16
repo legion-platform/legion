@@ -1,0 +1,39 @@
+---
+
+- name: Remove Jenkins airflow S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-jenkins-role"
+    policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
+    state: absent
+
+- name: Remove Jenkins IAM role
+  iam_role:
+    name: "{{ cluster_name }}-jenkins-role"
+    state: absent
+
+- name: Remove Airflow S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove enclave Airflow IAM role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove kube2iam daemonset
+  shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true
+  ignore_errors: true
+
+- name: Remove kube2iam service account
+  shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
+  ignore_errors: true

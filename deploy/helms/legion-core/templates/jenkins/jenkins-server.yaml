@@ -38,6 +38,8 @@ spec:
     component: "{{ .Release.Name }}-jenkins"
   template:
     metadata:
+      annotations:
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-jenkins-role"
       labels:
         component: "{{ .Release.Name }}-jenkins"
     spec:
