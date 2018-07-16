@@ -195,9 +195,12 @@ Test model pipeline
     ${model_path} =      Get From Dictionary                ${model_meta}                 modelPath
     ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
     ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
-    ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
-    ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
-    Log                  External model URL is ${model_url}
+    ${model_image} =     Get From Dictionary                ${model_meta}                 modelImageTagExternal
+    Log                  ${model_image}
+    Run Keyword If       '${model_name}' == 'Test-Summation'            Set Suite Variable    ${TEST_MODEL_IMAGE_1}       ${model_image}
+    ... 	ELSE IF      '${model_name}' == 'Test-Summation-v1.1'       Set Suite Variable    ${TEST_MODEL_IMAGE_2}       ${model_image}
+    Log                  TEST_MODEL_IMAGE_1 = ${TEST_MODEL_IMAGE_1}
+    Log                  TEST_MODEL_IMAGE_2 = ${TEST_MODEL_IMAGE_2}
     Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
     Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}
