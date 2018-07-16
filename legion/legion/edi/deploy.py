@@ -117,16 +117,14 @@ def build_model(args):
                 }
 
             image_and_registry = '{}/{}'.format(registry, image_name)
+            image_with_version = '{}:{}'.format(image_and_registry, version)
+            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)
 
             print('Tagging image %s v %s for model %s as %s' % (image.short_id, version, model_id, image_and_registry))
             image.tag(image_and_registry, version)
             print('Pushing %s:%s to %s' % (image_and_registry, version, registry))
             client.images.push(image_and_registry, tag=version, auth_config=auth_config)
             print('Successfully pushed image %s:%s' % (image_and_registry, version))
-
-            image_with_version = '{}:{}'.format(image_and_registry, version)
-
-            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)
 
         return image
 
