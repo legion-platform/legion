@@ -487,7 +487,7 @@ def send_header_to_stderr(header, value):
     :type value: str
     :return: None
     """
-    message = '{}{}:{}'.format(legion.containers.headers.STDERR_PREFIX, header, value)
+    message = '\n{}{}:{}'.format(legion.containers.headers.STDERR_PREFIX, header, value)
     print(message, file=sys.__stderr__, flush=True)
 
 
