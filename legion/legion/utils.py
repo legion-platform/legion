@@ -487,8 +487,8 @@ def send_header_to_stderr(header, value):
     :type value: str
     :return: None
     """
-    message = '\n{}{}:{}'.format(legion.containers.headers.STDERR_PREFIX, header, value)
-    print(message, file=sys.__stderr__, flush=True)
+    message = '{}{}:{}'.format(legion.containers.headers.STDERR_PREFIX, header, value)
+    print('\n' + message, file=sys.__stderr__, flush=True)
 
 
 def string_to_bool(value):
