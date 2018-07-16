@@ -141,7 +141,7 @@ def runNotebook(notebookName) {
     sh """
     echo \$GRAPHITE_HOST
 
-    pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
+    pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     export CONTAINER_DIR="`pwd`"
     cd ${env.ROOT_DIR}
     jupyter nbconvert --execute "${env.NOTEBOOK_NAME}" --stdout > notebook.html
@@ -163,10 +163,10 @@ def runScript(scriptPath){
     echo 'MODEL_ID = ' + env.MODEL_ID
 
     sh """
-    pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
+    pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     export CONTAINER_DIR="`pwd`"
     cd ${env.ROOT_DIR}
-    python3 "${env.TARGET_SCRIPT_PATH}" > script-log.txt
+    python3.6 "${env.TARGET_SCRIPT_PATH}" > script-log.txt
 
     echo "<html><body><h2>Script output</h2><pre>" > notebook.html
     cat script-log.txt >> notebook.html
@@ -253,7 +253,7 @@ def runPerformanceTests(testScript) {
 
     sh """
     echo "Starting quering ${modelApiHost}"
-    pip install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
+    pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     cd ${env.ROOT_DIR}/performance/ && locust -f ${env.TEST_SCRIPT} --no-web -c ${params.testUsers} -r ${params.testHatchRate} -n ${params.testRequestsCount} --host ${modelApiHost} --only-summary --logfile locust.log
     """
 
