@@ -22,6 +22,7 @@ MODEL_PATH = 'Model-Path'
 MODEL_VERSION = 'Model-Version'
 IMAGE_TAG_EXTERNAL = 'Model-Image-Tag-External'
 IMAGE_TAG_LOCAL = 'Model-Image-Tag-Local'
+SAVE_STATUS = 'Save-Status'
 
 DOMAIN_MODEL_ID = 'com.epam.legion.model.id'
 DOMAIN_MODEL_VERSION = 'com.epam.legion.model.version'

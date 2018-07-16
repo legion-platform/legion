@@ -450,7 +450,7 @@ def send_header_to_stderr(header, value):
     :type value: str
     :return: None
     """
-    message = 'X-Legion-%s:%s' % (header, value)
+    message = 'X-Legion-{}:{}'.format(header, value)
     print(message, file=sys.__stderr__, flush=True)
 
 
