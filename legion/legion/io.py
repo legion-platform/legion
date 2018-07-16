@@ -451,6 +451,7 @@ def _export(filename=None,
         print('Model has been saved to %s' % result_path, file=sys.stderr)
 
     send_header_to_stderr(legion.containers.headers.MODEL_PATH, result_path)
+    send_header_to_stderr(legion.containers.headers.SAVE_STATUS, 'OK')
     send_header_to_stderr(legion.containers.headers.MODEL_VERSION, version)
 
     return model
