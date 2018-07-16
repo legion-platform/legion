@@ -3,7 +3,7 @@ Documentation       Legion's EDI operational check
 Test Timeout        5 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
+Variables           load_variables_from_profiles.py   /home/alex/PycharmProjects/legion/deploy/profiles
 Library             legion_test.robot.Utils
 Library             Collections
 Suite Setup         Run Keywords
