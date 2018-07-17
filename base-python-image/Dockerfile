@@ -23,9 +23,9 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
     g++ apt-utils build-essential python3-dev python3.6-dev python3-pip libpython3.6-dev \
-    python3-setuptools file wget git libtiff5-dev libjpeg8-dev zlib1g-dev tcl8.6-dev \
-    tk8.6-dev python-tk python3-tk libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev \
-    libfribidi-dev tcl8.6-dev tk8.6-dev python-tk python3-tk && \
+    python3-setuptools apt-transport-https file wget curl git libtiff5-dev libjpeg8-dev zlib1g-dev \
+    tcl8.6-dev tk8.6-dev python-tk python3-tk libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev \
+    libfribidi-dev tcl8.6-dev tk8.6-dev python-tk python3-tk libpcre3 libpcre3-dev && \
     apt-get clean && apt-get autoclean
 
 COPY requirements.txt /root/requirements.txt
