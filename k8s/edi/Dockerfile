@@ -31,10 +31,10 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
-COPY app_uwsgi.ini /usr/lib/python3.6/site-packages/legion/uwsgi.ini
+COPY app_uwsgi.ini /usr/local/lib/python3.6/dist-packages/legion/serving/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-ENV UWSGI_INI /usr/lib/python3.6/site-packages/legion/uwsgi.ini
+ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/serving/uwsgi.ini
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
