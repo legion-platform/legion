@@ -16,7 +16,9 @@
 FROM legion/base-python-image
 
 RUN apt-get update && apt-get install \
-    ca-certificates curl nginx libpcre3 libpcre3-dev supervisor
+    ca-certificates curl  apt-transport-https nginx libpcre3 libpcre3-dev supervisor
+
+RUN pip3 install --disable-pip-version-check --upgrade uwsgi
 
 EXPOSE 5000
 
@@ -36,7 +38,7 @@ ENV UWSGI_INI /usr/lib/python3.6/site-packages/legion/uwsgi.ini
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
+# Install Legion
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
-
 RUN pip3 install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
