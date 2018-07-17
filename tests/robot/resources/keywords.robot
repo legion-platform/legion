@@ -30,42 +30,42 @@ Connect to enclave Flower
 Run EDI inspect enclave and check result
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${expected_rc}   ${expected_output}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for enclave ${enclave} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer for enclave ${enclave} is ${result.stdout}
+    ${dict}=              Create Dictionary   rc=${rc}    output=${result.stdout}
     Should Be Equal As Integers  ${dict.rc}        ${expected_rc}
     Should contain               ${dict.output}    ${expected_output}
 
 Run EDI inspect
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for enclave ${enclave} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stdout}
     [Return]              ${dict}
 
 Run EDI inspect by model id
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_id}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for enclave ${enclave} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stdout}
     [Return]              ${dict}
 
 Run EDI inspect by model version
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_ver}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl inspect --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for enclave ${enclave} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl inspect --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stdout}
     [Return]              ${dict}
 
 Run EDI inspect by model id and model version
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_id}     ${model_ver}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl inspect --model-id ${model_id} --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for enclave ${enclave} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl inspect --model-id ${model_id} --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stdout}
     [Return]              ${dict}
 
 Run EDI inspect with parse
@@ -88,17 +88,17 @@ Run EDI inspect with parse by model id
 Run EDI deploy
     [Documentation]  run legionctl 'deploy command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${image}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl deploy ${image} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for image ${image} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl deploy ${image} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer for image ${image} is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stderr}
     [Return]              ${dict}
 
 Run EDI deploy with scale
     [Documentation]  run legionctl 'deploy command with scale option', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${image}    ${scale_count}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl deploy ${image} --scale ${scale_count} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for image ${image} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl deploy ${image} --scale ${scale_count} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer for image ${image} is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stderr}
     [Return]              ${dict}
 
 Run EDI deploy and check model started
@@ -129,40 +129,41 @@ Run EDI undeploy model without version and check
 
 Run EDI undeploy with version
     [Arguments]           ${enclave}    ${model_id}  ${model_version}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl undeploy ${model_id} --model-version ${model_version} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl undeploy ${model_id} --model-version ${model_version} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}     shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stdout}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stdout}
     [Return]              ${dict}
 
 Run EDI undeploy without version
     [Documentation]  run legionctl 'undeploy command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${model_id}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl undeploy ${model_id} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for model_id ${model_id} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl undeploy ${model_id} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stdout}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stdout}
     [Return]              ${dict}
 
     # --------- SCALE COMMAND SECTION -----------
 Run EDI scale
     [Documentation]  run legionctl 'scale command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${model_id}     ${new_scale}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl scale ${model_id} ${new_scale} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for model_id ${model_id} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl scale ${model_id} ${new_scale} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}   shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stderr}
     [Return]              ${dict}
 
 Run EDI scale with version
     [Documentation]  run legionctl 'scale command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${model_id}     ${new_scale}    ${model_ver}
-    ${rc}   ${output}=    Run And Return Rc And Output   legionctl scale ${model_id} ${new_scale} --model-version ${model_ver} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                   EDI answer for model_id ${model_id} is ${output}
-    ${dict}=              Create Dictionary   rc=${rc}    output=${output}
+    ${result}=            Run Process   legionctl scale ${model_id} ${new_scale} --model-version ${model_ver} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    Log                   EDI answer is ${result.stdout} err is ${result.stderr}
+    ${dict}=              Create Dictionary   rc=${result.rc}    output=${result.stderr}
     [Return]              ${dict}
 
     # --------- OTHER KEYWORDS SECTION -----------
 Check model started
     [Documentation]  check if model run in container by http request
     [Arguments]           ${enclave}   ${model_id}  ${model_ver}
+    Sleep                 3
     Log                   request url is ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
     ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
     Log                   ${resp}

@@ -3,13 +3,11 @@ Documentation       Legion's EDI operational check
 Test Timeout        5 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py   ../../deploy/profiles/
+Variables           load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             Collections
-Suite Setup         Run Keywords
-...                 Choose cluster context                              ${CLUSTER_NAME}     AND
-...                 Build test-summation model                          ${TEST_MODEL_1_NAME}        ${MODEL_TEST_ENCLAVE}   AND
-...                 Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
+Library             Process
+Suite Setup         Choose cluster context                              ${CLUSTER_NAME}
 Test Setup          Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
 Test Teardown       Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
 
@@ -24,35 +22,35 @@ Check EDI availability in all enclaves
     [Teardown]                    NONE
 
 Check EDI deploy procedure
-    [Setup]         NONE
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave   one_version
     ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers         ${resp_dict.rc}         0
     ${response}=    Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                      ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
+                    Should contain                      ${response}             "model_version": ${TEST_MODEL_1_VERSION}
 
-#Check EDI deploy with scale to 0
-#    [Setup]         NONE
-#    [Documentation]  Try to deploy dummy model through EDI console
-#    [Tags]  edi  cli  enclave
-#    ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   0
-#                    Should Be Equal As Integers    ${resp_dict.rc}         0
-#    ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-#                    Should contain                 ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
-#
-#    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
-#                    Should Be Equal As Integers    ${resp_dict.rc}          0
-#                    Should be empty                ${resp_dict.output}
+Check EDI deploy with scale to 0
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
+    [Documentation]  Try to deploy dummy model through EDI console
+    [Tags]  edi  cli  enclave
+    ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   0
+                    Should Be Equal As Integers    ${resp_dict.rc}         0
+    ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                 ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
+
+    ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
+                    Should Be Equal As Integers    ${resp_dict.rc}          0
+                    Should be empty                ${resp_dict.output}
 
 Check EDI deploy with scale to 1
-    [Setup]         NONE
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave   one_version
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   1
                     Should Be Equal As Integers    ${resp_dict.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                 ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
+                    Should contain                 ${response}             "model_version": ${TEST_MODEL_1_VERSION}
 
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -60,13 +58,13 @@ Check EDI deploy with scale to 1
                     Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   1
 
 Check EDI deploy with scale to 2
-    [Setup]         NONE
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave   one_version
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   2
                     Should Be Equal As Integers    ${resp_dict.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                 ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
+                    Should contain                 ${response}             "model_version": ${TEST_MODEL_1_VERSION}
 
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -74,7 +72,7 @@ Check EDI deploy with scale to 2
                     Verify model info from edi     ${model}   ${TEST_MODEL_ID}    ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}   2
 
 Check EDI invalid model name deploy procedure
-    [Setup]         NONE
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy dummy invalid model name through EDI console
     [Tags]  edi  cli  enclave   one_version
     ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}test
@@ -82,13 +80,13 @@ Check EDI invalid model name deploy procedure
                     Should Contain                ${resp_dict.output}     Cannot pull docker image ${TEST_MODEL_IMAGE_1}test
 
 Check EDI double deploy procedure for the same model
-    [Setup]         NONE
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy twice the same dummy model through EDI console
     [Tags]  edi  cli  enclave   one_version
     ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers   ${resp_dict.rc}         0
     ${response}=    Check model started           ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
+                    Should contain                ${response}             "model_version": ${TEST_MODEL_1_VERSION}
     ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers   ${resp_dict.rc}         2
                     Should Contain                ${resp_dict.output}     Duplicating model id and version (id=${TEST_MODEL_ID}, version=${TEST_MODEL_1_VERSION})
