@@ -3,7 +3,7 @@ Documentation       Legion's EDI operational check
 Test Timeout        5 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           load_variables_from_profiles.py    /home/alex/PycharmProjects/legion/deploy/profiles
 Library             legion_test.robot.Utils
 Library             Collections
 Library             Process
@@ -36,12 +36,10 @@ Check EDI deploy with scale to 0
     [Tags]  edi  cli  enclave   one_version
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   0
                     Should Be Equal As Integers    ${resp_dict.rc}         0
-    ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                 ${response}             "version": ${TEST_MODEL_1_VERSION}
-
+#                    Should contain                 ${resp_dict.output}     Invalid scale parameter: should be greater then 0
     ${resp_dict}=   Run EDI inspect                ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers    ${resp_dict.rc}          0
-                    Should be empty                ${resp_dict.output}
+                    Should Not Contain             ${resp_dict.output}      ${model_id}
 
 Check EDI deploy with scale to 1
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
