@@ -146,18 +146,21 @@ class Utils:
         :type url: str
         :return:  str -- response text
         """
-        response = ""
-        try:
-            for i in range(6):
+        error = None
+        for i in range(6):
+            try:
                 response = requests.get(url, timeout=10)
-                if response.status_code >= 400 or response.status_code < 200:
+                if response.status_code == 200:
+                    return response.text
+                elif i >= 5:
+                    raise Exception('Returned wrong status code: {}'.format(response.status_code))
+                elif response.status_code >= 400 or response.status_code < 200:
                     print('Response code = {}, sleep and try again'.format(response.status_code))
                     time.sleep(3)
-                elif response.status_code == 200:
-                    break
-                elif i == 5:
-                    raise Exception('Returned wrong status code: {}'.format(response.status_code))
-        except Exception as e:
-            print(e)
-
-        return response.text
+            except requests.exceptions.Timeout as e:
+                error = e
+                time.sleep(3)
+        if error:
+            raise error
+        else:
+            raise Exception('Unexpected case happen!')
