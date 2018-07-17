@@ -16,8 +16,10 @@
 """
 legion utils functional
 """
-
+import datetime
+import contextlib
 import os
+import getpass
 import distutils.dir_util
 import re
 import shutil
@@ -25,6 +27,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 import legion.config
 import legion.containers.headers
@@ -390,6 +393,28 @@ def download_file(target_file):
     return os.path.abspath(temp_file)
 
 
+@contextlib.contextmanager
+def extract_archive_item(path, subpath):
+    """
+    Extract item from archive using context manager to temporary directory
+
+    :param path: path to archive
+    :type path: str
+    :param subpath: path to file in archive
+    :type subpath: str
+    :return: str -- path to temporary extracted file
+    """
+    with TemporaryFolder() as temp_directory:
+        try:
+            with zipfile.ZipFile(path, 'r') as stream:
+                target_path = os.path.join(temp_directory.path, subpath)
+                extracted_path = stream.extract(subpath, target_path)
+
+                yield extracted_path
+        except zipfile.BadZipFile:
+            raise Exception('File {} is not a archive'.format(path))
+
+
 class ExternalFileReader:
     """
     External file reader for opening files from http://, https:// and local FS
@@ -503,3 +528,34 @@ def string_to_bool(value):
         return value
 
     return value.lower() in ['true', '1', 't', 'y', 'yes']
+
+
+def deduce_model_file_name(model_id, model_version):
+    """
+    Get model file name
+
+    :param model_id: ID of model
+    :type model_id: str
+    :param model_version: version of model
+    :type model_version: str
+    :return: str -- auto deduced file name
+    """
+    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+
+    valid_user_names = [os.getenv(env) for env in legion.config.MODEL_NAMING_UID_ENV if os.getenv(env)]
+    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
+
+    commit_id = get_git_revision(os.getcwd())
+    if not commit_id:
+        commit_id = '0000'
+
+    file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(model_version), date_string, user_id, commit_id)
+
+    if string_to_bool(os.getenv(*legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
+        return '///%s' % file_name
+
+    default_prefix = os.getenv(*legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX)
+    if default_prefix:
+        return os.path.join(default_prefix, file_name)
+
+    return file_name

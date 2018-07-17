@@ -1,71 +1,19 @@
-#
-#    Copyright 2017 EPAM Systems
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-#
-"""
-legion model export / load
-"""
-
-import datetime
-import getpass
 import json
 import os
-import os.path
-import sys
-import logging
 import zipfile
-import contextlib
+
+import logging
+import legion.config
+import legion.containers.headers
+import legion.model
+import legion.model.types
+from legion.utils import send_header_to_stderr, extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
+
 
 import dill
-from pandas import DataFrame
 
-import legion
-from legion.model.types import build_df
-import legion.containers.headers
-import legion.config
-import legion.model.types
-from legion.model.model_id import get_model_id, get_model_version
-from legion.model.types import ColumnInformation
-from legion.model.types import deduct_types_on_pandas_df
-from legion.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 
 LOGGER = logging.getLogger(__name__)
-
-
-def _get_column_types(param_types):
-    """
-    Build dict with ColumnInformation from param_types argument for export function
-
-    :param param_types: pandas DF with custom dict or pandas DF.
-    Custom dict contains of column_name => legion.BaseType
-    :type param_types tuple(:py:class:`pandas.DataFrame`, dict) or :py:class:`pandas.DataFrame`
-    :return: dict[str, :py:class:`legion.types.ColumnInformation`] -- column name => column information
-    """
-    custom_props = None
-
-    if isinstance(param_types, tuple) and len(param_types) == 2 \
-            and isinstance(param_types[0], DataFrame) \
-            and isinstance(param_types[1], dict):
-
-        pandas_df_sample = param_types[0]
-        custom_props = param_types[1]
-    elif isinstance(param_types, DataFrame):
-        pandas_df_sample = param_types
-    else:
-        raise Exception('Provided invalid param types: not tuple[DataFrame, dict] or DataFrame')
-
-    return deduct_types_on_pandas_df(data_frame=pandas_df_sample, extra_columns=custom_props)
 
 
 class ModelEndpoint:
@@ -122,7 +70,7 @@ class ModelEndpoint:
         :return: dict -- output data
         """
         LOGGER.info('Input vector: %r' % input_vector)
-        data_frame = build_df(self.column_types, input_vector, not self.use_df)
+        data_frame = legion.model.types.build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
         data_frame = self.prepare(data_frame)
@@ -189,32 +137,8 @@ class ModelEndpoint:
     __repr__ = __str__
 
 
-@contextlib.contextmanager
-def extract_archive_item(path, subpath):
-    """
-    Extract item from archive using context manager to temporary directory
-
-    :param path: path to archive
-    :type path: str
-    :param subpath: path to file in archive
-    :type subpath: str
-    :return: str -- path to temporary extracted file
-    """
-    with TemporaryFolder('legion-model-save') as temp_directory:
-        try:
-            with zipfile.ZipFile(path, 'r') as stream:
-                target_path = os.path.join(temp_directory.path, subpath)
-                extracted_path = stream.extract(subpath, target_path)
-
-                yield extracted_path
-        except zipfile.BadZipFile:
-            raise Exception('File {} is not a archive'.format(path))
-
-
-class PyModel:
-    """
-    Archive representation of model with meta information (properties, str => str)
-    """
+class Model:
+    NAME = 'pymodel'
 
     ZIP_COMPRESSION = zipfile.ZIP_STORED
     ZIP_FILE_MODEL = 'model'
@@ -322,21 +246,14 @@ class PyModel:
         if not self.endpoints:
             raise ValueError('Cannot save empty model container (no one export function has been called)')
 
-        if not self.model_id:
-            model_id = get_model_id()
-            model_version = get_model_version()
-
-            if not model_id:
-                raise Exception('Cannot get model_id. Please set using legion.init_model(<id>, <version>)')
-
-            self._properties[self.PROPERTY_MODEL_ID] = model_id
-            self._properties[self.PROPERTY_MODEL_VERSION] = model_version
+        self._properties[self.PROPERTY_MODEL_ID] = self.model_id
+        self._properties[self.PROPERTY_MODEL_VERSION] = self.model_version
 
         self._path = path
 
         file_name_has_been_deduced = False
         if not self._path:
-            self._path = deduce_model_file_name(self.model_version)
+            self._path = deduce_model_file_name(self.model_id, self.model_version)
 
         self._properties.update(self._build_additional_properties())
         self._properties[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
@@ -389,7 +306,7 @@ class PyModel:
         if column_types:
             if not isinstance(column_types, dict) \
                     or not column_types.keys() \
-                    or not isinstance(list(column_types.values())[0], ColumnInformation):
+                    or not isinstance(list(column_types.values())[0], legion.model.types.ColumnInformation):
                 raise Exception('Bad param_types / input_data_frame provided')
 
         if prepare_func is None:
@@ -426,7 +343,7 @@ class PyModel:
         :type endpoint: str
         :return: :py:class:`legion.io.PyModel` -- model container
         """
-        column_types = _get_column_types(input_data_frame)
+        column_types = legion.model.types.get_column_types(input_data_frame)
         self._export(apply_func, prepare_func, column_types, True, endpoint)
         return self
 
@@ -490,7 +407,7 @@ class PyModel:
         return self._properties.copy()
 
     @staticmethod
-    def _build_additional_properties():
+    def _build_additional_lproperties():
         """
         Get additional properties for container
 
@@ -511,54 +428,12 @@ class PyModel:
             'jenkins.job_name': os.environ.get(*legion.config.JOB_NAME)
         }
 
+    @property
+    def model_properties(self):
+        return {}
 
-def deduce_param_types(data_frame, optional_dictionary=None):
-    """
-    Deduce param types of pandas DF. Optionally overwrite to custom legion.BaseType
+    def on_property_change(self, callback):
+        raise NotImplementedError()
 
-    :param data_frame: pandas DF
-    :type data_frame: :py:class:`pandas.DataFrame`
-    :param optional_dictionary: custom dict contains of column_name => legion.types.BaseType
-    :type optional_dictionary: dict[str, :py:class:`legion.types.BaseType`]
-    :return: dict[str, :py:class:`legion.types.ColumnInformation`]
-    """
-    if optional_dictionary:
-        return _get_column_types((data_frame, optional_dictionary))
-
-    return _get_column_types(data_frame)
-
-
-def deduce_model_file_name(version=None):
-    """
-    Get model file name
-
-    :param version: version of model
-    :type version: str or None
-    :return: str -- auto deduced file name
-    """
-    if not version:
-        version = '0.0'
-
-    model_id = get_model_id()
-    if not model_id:
-        raise Exception('Cannot get model_id. Please set using legion.init_model(<name>)')
-
-    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
-
-    valid_user_names = [os.getenv(env) for env in legion.config.MODEL_NAMING_UID_ENV if os.getenv(env)]
-    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
-
-    commit_id = get_git_revision(os.getcwd())
-    if not commit_id:
-        commit_id = '0000'
-
-    file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(version), date_string, user_id, commit_id)
-
-    if string_to_bool(os.getenv(*legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
-        return '///%s' % file_name
-
-    default_prefix = os.getenv(*legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX)
-    if default_prefix:
-        return os.path.join(default_prefix, file_name)
-
-    return file_name
+    def send_metrics(self, metric_name, metric_value):
+        raise NotImplementedError()
