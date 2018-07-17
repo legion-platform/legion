@@ -32,11 +32,11 @@ Check EDI deploy 2 models with different versions but the same id
     ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers         ${resp_dict.rc}         0
     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                      ${resp}                 "version": ${TEST_MODEL_1_VERSION}
+                    Should contain                      ${resp}                 "version": "${TEST_MODEL_1_VERSION}"
     ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
                     Should Be Equal As Integers         ${resp_dict.rc}         0
     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
-                    Should contain                      ${resp}                 "version": ${TEST_MODEL_2_VERSION}
+                    Should contain                      ${resp}                 "version": "${TEST_MODEL_2_VERSION}"
 
 Check EDI undeploy 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions

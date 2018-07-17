@@ -28,11 +28,12 @@ Check EDI deploy procedure
     ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers         ${resp_dict.rc}         0
     ${response}=    Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                      ${response}             "version": ${TEST_MODEL_1_VERSION}
+                    Should contain                      ${response}             "version": "${TEST_MODEL_1_VERSION}"
 
 Check EDI deploy with scale to 0
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
+    [Tags]  edi  cli  enclave   one_version
     [Tags]  edi  cli  enclave
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   0
                     Should Be Equal As Integers    ${resp_dict.rc}         0
@@ -50,7 +51,7 @@ Check EDI deploy with scale to 1
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   1
                     Should Be Equal As Integers    ${resp_dict.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                 ${response}             "version": ${TEST_MODEL_1_VERSION}
+                    Should contain                 ${response}             "version": "${TEST_MODEL_1_VERSION}"
 
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -64,7 +65,7 @@ Check EDI deploy with scale to 2
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   2
                     Should Be Equal As Integers    ${resp_dict.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                 ${response}             "version": ${TEST_MODEL_1_VERSION}
+                    Should contain                 ${response}             "version": "${TEST_MODEL_1_VERSION}"
 
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -86,7 +87,7 @@ Check EDI double deploy procedure for the same model
     ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers   ${resp_dict.rc}         0
     ${response}=    Check model started           ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                ${response}             "version": ${TEST_MODEL_1_VERSION}
+                    Should contain                ${response}             "version": "${TEST_MODEL_1_VERSION}"
     ${resp_dict}=   Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers   ${resp_dict.rc}         2
                     Should Contain                ${resp_dict.output}     Duplicating model id and version (id=${TEST_MODEL_ID}, version=${TEST_MODEL_1_VERSION})
