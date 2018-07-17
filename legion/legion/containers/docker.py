@@ -258,4 +258,5 @@ def push_image_to_registry(client, image, external_image_name):
     client.images.push(image_and_registry, tag=version, auth_config=auth_config)
     LOGGER.info('Successfully pushed image {}:{}'.format(image_and_registry, version))
 
-    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)
+    image_with_version = '{}/{}:{}'.format(registry, image_name, version)
+    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)
