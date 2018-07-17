@@ -110,7 +110,7 @@ Run EDI deploy and check model started
 
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy by model version and check
-    [Timeout]       2 min    undeploy by model version fails after 2 min
+    [Timeout]       2 min
     [Arguments]           ${enclave}    ${model_id}    ${model_ver}
     ${resp_dict}=                Run EDI undeploy with version  ${enclave}   ${model_id}    ${model_ver}
     Should Be Equal As Integers  ${resp_dict.rc}        0
@@ -177,7 +177,7 @@ Verify model info from edi
     Should Be Equal  ${target_model[2]}    ${model_version}   invalid model version
     Should Be Equal  ${target_model[3]}    ${scale_num}       invalid actual scales
     Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
-    Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
+#    Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
 
 Run and wait Jenkins job
     [Arguments]          ${model_name}                      ${enclave}
