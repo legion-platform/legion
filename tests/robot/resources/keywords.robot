@@ -106,7 +106,7 @@ Run EDI deploy and check model started
     ${edi_state}=   Run EDI deploy       ${enclave}              ${image}
     Should Be Equal As Integers          ${edi_state.rc}         0
     ${response}=    Check model started  ${enclave}              ${model_id}             ${model_ver}
-    Should contain                       ${response}             "version": "${model_ver}"
+    Should contain                       ${response}             "version": ${model_ver}
 
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy by model version and check
