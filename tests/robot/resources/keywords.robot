@@ -106,10 +106,11 @@ Run EDI deploy and check model started
     ${edi_state}=   Run EDI deploy       ${enclave}              ${image}
     Should Be Equal As Integers          ${edi_state.rc}         0
     ${response}=    Check model started  ${enclave}              ${model_id}             ${model_ver}
-    Should contain                       ${response}             "version": ${model_ver}
+    Should contain                       ${response}             "version": "${model_ver}"
 
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy by model version and check
+    [Timeout]       2 min    undeploy by model version fails after 2 min
     [Arguments]           ${enclave}    ${model_id}    ${model_ver}
     ${resp_dict}=                Run EDI undeploy with version  ${enclave}   ${model_id}    ${model_ver}
     Should Be Equal As Integers  ${resp_dict.rc}        0
@@ -178,10 +179,14 @@ Verify model info from edi
     Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
     Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
 
-Test model pipeline
-    [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
+Run and wait Jenkins job
+    [Arguments]          ${model_name}                      ${enclave}
     Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
     Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
+
+Test model pipeline
+    [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
+    Run and wait Jenkins job                                ${model_name}        ${enclave}
     Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
     Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
     ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
@@ -224,29 +229,26 @@ Run test-summation model setup
     ... 	        ELSE IF                                 ${is_built} == false               Build test-summation model       ${model_name}       ${enclave}=${CLUSTER_NAMESPACE}
     ... 	        ELSE                                    Log                                Could not build model!!!
 
-
-Check test-summation model is built
-    [Arguments]          ${model_name}                      ${enclave}
-    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
-    Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
-    ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
-    Log                  Model meta is ${model_meta}
-    ${model_path} =      Get From Dictionary                ${model_meta}                 modelPath
-    ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
-    ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
-    ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
-    ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
-    Log                  External model URL is ${model_url}
-    Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
-    Run Keyword If       ${model_name} == Test-Summation      Set Suite Variable   ${TEST_MODEL_IMAGE_1}              ${model_url}
-    ... 	             ELSE IF                ${model_name} == Test-Summation-v1.1            Set Suite Variable    ${TEST_MODEL_IMAGE_1}              ${model_url}
-    ${edi_state}=        Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
-    Log                  State of ${model_id} is ${edi_state}
-    [Return]             true
-
 Build test-summation model
-    [Arguments]          ${model_name}                      ${enclave}
-    Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
-    Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
-    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
-    Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
+    [Arguments]             ${model_name}     ${enclave}=${CLUSTER_NAMESPACE}
+                            Connect to Jenkins endpoint
+    ${is_build_success}=    Run Keyword And Return Status     Last Jenkins job is successful     DYNAMIC MODEL ${model_name}
+                            Run Keyword Unless 	              ${is_build_success}    Run and wait Jenkins job    ${model_name}        ${enclave}
+                            Last Jenkins job is successful    DYNAMIC MODEL ${model_name}
+                            Jenkins artifact present          DYNAMIC MODEL ${model_name}   notebook.html
+    ${model_meta} =         Jenkins log meta information      DYNAMIC MODEL ${model_name}
+                            Log                               Model meta is ${model_meta}
+    ${model_path} =         Get From Dictionary               ${model_meta}                 modelPath
+    ${model_id} =           Get From Dictionary               ${model_meta}                 modelId
+    ${model_version} =      Get From Dictionary               ${model_meta}                 modelVersion
+    ${model_path} =	        Get Regexp Matches	              ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
+    ${model_url} =          Set Variable                      ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
+                            Log                               External model URL is ${model_url}
+    ${model_image} =        Get From Dictionary               ${model_meta}                 modelImageTagExternal
+                            Log                               ${model_image}
+                            Run Keyword If       '${model_name}' == 'Test-Summation'            Set Suite Variable    ${TEST_MODEL_IMAGE_1}       ${model_image}
+                            ... 	ELSE IF      '${model_name}' == 'Test-Summation-v1.1'       Set Suite Variable    ${TEST_MODEL_IMAGE_2}       ${model_image}
+                            Log                                TEST_MODEL_IMAGE_1 = ${TEST_MODEL_IMAGE_1}
+                            Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
+    ${edi_state}=           Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}
+                            Log                                State of ${model_id} is ${edi_state}
