@@ -116,9 +116,8 @@ def build_model(args):
                     'password': docker_registry_password
                 }
 
-            image_and_registry = '{}/{}'.format(registry, image_name)
-            image_with_version = '{}:{}'.format(image_and_registry, version)
-            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)
+            image_and_registry = '{}/{}:{}'.format(registry, image_name, version)
+            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)
 
             print('Tagging image %s v %s for model %s as %s' % (image.short_id, version, model_id, image_and_registry))
             image.tag(image_and_registry, version)
