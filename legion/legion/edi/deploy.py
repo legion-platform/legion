@@ -55,8 +55,8 @@ def build_model(args):
         if not os.path.exists(external_reader.path):
             raise Exception('Cannot find model binary {}'.format(external_reader.path))
 
-        with legion.io.ModelContainer(external_reader.path, do_not_load_model=True) as container:
-            model_id = container.get('model.id', None)
+        container = legion.io.PyModel().load(external_reader.path)
+        model_id = container.model_id
 
         image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
 

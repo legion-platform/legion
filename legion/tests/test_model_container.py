@@ -16,58 +16,164 @@
 from __future__ import print_function
 
 import os
+import logging
+import unittest2
+
+import numpy
+import pandas
 
 import legion.io
 import legion.model
 import legion.model.model_id
 import legion.model.types
-import numpy
-import pandas
-import unittest2
 
 
-class TestModelContainer(unittest2.TestCase):
-    def test_model_pack_unpack(self):
-        def prepare(x):
-            x['additional'] = x['d_int']
-            return x
+LOGGER = logging.getLogger(__name__)
+MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model.bin')
+MODEL_ID = 'demo-model'
+MODEL_VERSION = '1.3'
 
-        def apply(x):
-            assert type(x) == pandas.DataFrame
 
-            assert x['d_int'].dtype == numpy.int
-            assert x['d_float'].dtype == numpy.float
+class CustomBoolObject(legion.model.types.BaseType):
+    def __init__(self):
+        super().__init__(default_numpy_type=numpy.bool_)
 
-        df = pandas.DataFrame([{
-            'd_int': 1,
-            'd_float': 1.0,
-        }])
+    def parse(self, value):
+        """
+        Parse boolean strings like 'of course', 'not sure'
+        :param value:
+        :return:
+        """
+        str_value = value.lower()
+        if str_value == 'of course':
+            return True
+        elif str_value == 'not sure':
+            return False
+        else:
+            raise Exception('Invalid value: %s' % (str_value,))
 
-        version = '1.3'
-        path = 'test.model'
-        model_id = 'demo-model'
+    def export(self, value):
+        return value
 
-        try:
-            legion.model.model_id.init(model_id)
-            legion.io.export_df(apply, df, filename=path, prepare_func=prepare, version=version)
 
-            self.assertTrue(os.path.exists(path), 'File not exists')
+def make_square(x):
+    if x['are_you_sure']:
+        return x['value'] ** 2
+    return x['value']
 
-            with legion.io.ModelContainer(path) as container:
-                self.assertTrue('model.id' in container, 'Property `model.id` is not set')
-                self.assertTrue('model.version' in container, 'Property `model.version` is not set')
-                self.assertEqual(container['model.version'], version, 'Undefined version of model')
-                self.assertEqual(container['model.id'], model_id, 'Undefined id of model')
-                self.assertEqual(container.model.prepare_func({'d_int': 10})['additional'], 10, 'Model check failed')
 
-                self.assertIsInstance(container.model.column_types, dict, 'Column types dict is not dict')
-                random_column = container.model.column_types[list(container.model.column_types.keys())[0]]
-                self.assertIsInstance(random_column, legion.model.types.ColumnInformation,
-                                      'Random column is not ColumnInf.')
+def apply_add(x):
+    return x['a'] + x['b']
 
-        finally:
-            if os.path.exists(path):
-                os.unlink(path)
+
+def apply_sub(x):
+    return x['a'] - x['b']
+
+
+def prepare_pd(x):
+    x['additional'] = x['d_int']
+    return x
+
+
+def apply_pd(x):
+    assert type(x) == pandas.DataFrame
+
+    assert x['d_int'].dtype == numpy.int
+    assert x['d_float'].dtype == numpy.float
+
+
+df = pandas.DataFrame([{
+    'd_int': 1,
+    'd_float': 1.0,
+}])
+
+
+class TestPyModel(unittest2.TestCase):
+    @classmethod
+    def tearDown(cls):
+        if os.path.exists(MODEL_PATH):
+            logging.info('Removing {}'.format(MODEL_PATH))
+            os.unlink(MODEL_PATH)
+
+        legion.model.model_id._model_id = None
+        legion.model.model_id._model_version = None
+
+    def test_square_with_cast(self):
+        legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
+        legion.io.PyModel() \
+            .export(make_square, {
+                'value': legion.model.int32,
+                'are_you_sure':  legion.model.types.ColumnInformation(CustomBoolObject())
+                }, endpoint='square') \
+            .save(MODEL_PATH)
+
+        self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
+
+        container = legion.io.PyModel().load(MODEL_PATH)
+        invoke = container.endpoints['square'].invoke
+        self.assertEqual(invoke({'value': 10, 'are_you_sure': 'of course'}), 100)
+        self.assertEqual(invoke({'value': 10, 'are_you_sure': 'not sure'}), 10)
+
+    def test_model_pack_native_multiple_endpoints(self):
+
+        legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
+        legion.io.PyModel() \
+            .export_untyped(apply_add, endpoint='add') \
+            .export_untyped(apply_sub, endpoint='sub') \
+            .save(MODEL_PATH)
+
+        self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
+
+        container = legion.io.PyModel().load(MODEL_PATH)
+
+        self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
+        self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
+
+        endpoints = container.endpoints
+        endpoint_names = set(endpoints.keys())
+        self.assertSetEqual({'add', 'sub'}, endpoint_names)
+
+        add_endpoint = endpoints['add']
+        self.assertIsInstance(add_endpoint, legion.io.ModelEndpoint)
+        self.assertEqual(add_endpoint.name, 'add')
+        self.assertEqual(add_endpoint.use_df, False)
+        self.assertEqual(add_endpoint.apply({'a': 10, 'b': 32}), 42)
+
+        sub_endpoint = endpoints['sub']
+        self.assertIsInstance(sub_endpoint, legion.io.ModelEndpoint)
+        self.assertEqual(sub_endpoint.name, 'sub')
+        self.assertEqual(sub_endpoint.use_df, False)
+        self.assertEqual(sub_endpoint.apply({'a': 80, 'b': 32}), 48)
+
+    def test_model_pack_with_df_single_endpoint(self):
+
+        legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
+        legion.io.PyModel() \
+            .export_df(apply_pd, df, prepare_func=prepare_pd) \
+            .save(MODEL_PATH)
+
+        self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
+
+        container = legion.io.PyModel().load(MODEL_PATH)
+
+        self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
+        self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
+
+        endpoints = container.endpoints
+        self.assertIn('default', endpoints.keys())
+
+        endpoint = endpoints['default']
+
+        self.assertIsInstance(endpoint, legion.io.ModelEndpoint)
+        self.assertEqual(endpoint.name, 'default')
+        self.assertEqual(endpoint.use_df, True)
+
+        self.assertEqual(endpoint.prepare({'d_int': 10})['additional'], 10, 'Model check failed')
+
+        self.assertIsInstance(endpoint.column_types, dict, 'Column types dict is not dict')
+        random_column = endpoint.column_types[list(endpoint.column_types.keys())[0]]
+        self.assertIsInstance(random_column, legion.model.types.ColumnInformation,
+                              'Random column is not ColumnInf.')
 
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ import legion.io
 import time
 
 use_built_in = True
-legion.model.init('movie-lens')
+legion.model.init('movie-lens', '1.0')
 
 
 class Profiler(object):
@@ -172,13 +172,11 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-legion.io.export(
+legion.io.PyModel().export(
     recommend,
     {
-        'uid': legion.model.types.ColumnInformation(legion.model.types.Integer, legion.model.int32)
-    },
-    version='1.0'
-)
+        'uid': legion.model.int32
+    })
 
 recommendation_example = recommend({'uid': 1})
 print(repr(recommendation_example))

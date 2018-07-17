@@ -16,58 +16,50 @@
 """
 Model model_id
 """
-import os
-
 import legion.containers.headers
 import legion.config
 from legion.utils import normalize_name, send_header_to_stderr
 
 _model_id = None
-_model_initialized_from_function = False
+_model_version = None
 
 
-def send_model_id(model_id):
+def send_model_information_to_stderr(model_id, model_version):
     """
     Send information about model name to stderr
 
     :param model_id: model name
     :type model_id: str
+    :param model_version: model version
+    :type model_version: str
     :return: None
     """
     send_header_to_stderr(legion.containers.headers.MODEL_ID, normalize_name(model_id))
+    send_header_to_stderr(legion.containers.headers.MODEL_VERSION, model_version)
 
 
-def init(model_id=None):
+def init(model_id, version='1.0'):
     """
     Init metrics from value or from ENV
 
     :param model_id: model name
-    :type model_id: str or None
+    :type model_id: str
+    :param version: model version
+    :type version: str
     :return: None
     """
     global _model_id
-    global _model_initialized_from_function
+    global _model_version
 
     if _model_id:
         raise Exception('Model already has been initialized')
-
-    if model_id:
-        _model_initialized_from_function = True
-    else:
-        _model_initialized_from_function = False
-        deducted_model_id = os.getenv(*legion.config.MODEL_ID)
-        if not deducted_model_id:
-            raise Exception('Cannot deduct model name. ENV %s is empty' % legion.config.MODEL_ID[0])
-        else:
-            model_id = deducted_model_id
-
-    model_id = normalize_name(model_id)
 
     if not model_id:
         raise Exception('Model name string length should be greater that 1 (after normalization)')
 
     _model_id = normalize_name(model_id)
-    send_model_id(model_id)
+    _model_version = version
+    send_model_information_to_stderr(_model_id, _model_version)
 
 
 def get_model_id():
@@ -79,10 +71,10 @@ def get_model_id():
     return _model_id
 
 
-def is_model_id_auto_deduced():
+def get_model_version():
     """
-    Is model id has benn auto deduced (from ENV variable)
+    Get current model version
 
-    :return: bool
+    :return: str or None
     """
-    return not _model_initialized_from_function
+    return _model_version

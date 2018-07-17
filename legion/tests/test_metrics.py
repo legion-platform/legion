@@ -34,15 +34,14 @@ def _reset_model_id():
 
 
 class MetricContent:
-    def __init__(self, model, build, init_at_startup=True):
+    def __init__(self, model, version, build):
         self._model = model
+        self._version = version
         self._build = build
         self._old_build_number_env = os.getenv(*env.BUILD_NUMBER)
-        self._init_at_startup = init_at_startup
 
     def __enter__(self):
-        if self._init_at_startup:
-            legion.model.model_id.init(self._model)
+        legion.model.model_id.init(self._model, self._version)
         os.environ[env.BUILD_NUMBER[0]] = str(self._build)
         return self
 
@@ -60,16 +59,18 @@ class TestMetrics(unittest2.TestCase):
 
     def test_metrics_name_building(self):
         model_id = 'demo'
+        model_version = '1.0'
         build_number = 3
         metric = metrics.Metric.TEST_ACCURACY
-        with MetricContent(model_id, build_number):
+        with MetricContent(model_id, model_version, build_number):
             metrics_name = metrics.get_metric_name(metric)
             self.assertEqual(metrics_name, '%s.metrics.%s' % (model_id, metric.value))
 
     def test_metrics_get_build_number(self):
         model_id = 'demo'
+        model_version = '1.0'
         build_number = 10
-        with MetricContent(model_id, build_number):
+        with MetricContent(model_id, model_version, build_number):
             self.assertEqual(metrics.get_build_number(), build_number)
 
     def test_model_id_deduction_exception(self):
@@ -80,14 +81,15 @@ class TestMetrics(unittest2.TestCase):
 
     def test_metrics_send(self):
         model_id = 'demo'
+        model_version = '1.0'
         build_number = 10
         metric = metrics.Metric.TEST_ACCURACY
         value = 30.0
         host, port, namespace = metrics.get_metric_endpoint()
         os.environ[env.MODEL_ID[0]] = str(model_id)
-        with patch('legion.model.model_id.send_model_id') as send_model_id_mock:
-            with MetricContent(model_id, build_number, init_at_startup=False):
-                self.assertEqual(len(send_model_id_mock.call_args_list), 0)
+        with patch('legion.model.model_id.send_model_information_to_stderr') as send_model_id_mock:
+            with MetricContent(model_id, model_version, build_number):
+                self.assertEqual(len(send_model_id_mock.call_args_list), 1)
                 with patch('legion.metrics.send_tcp') as send_tcp_mock:
                     timestamp = int(time.time())
                     metrics.send_metric(metric, value)

@@ -43,7 +43,7 @@ def get_model_id_for_metrics():
     :return: srt -- model name
     """
     if not get_model_id():
-        init()
+        raise Exception('Model ID and version has not been initialized')
 
     return get_model_id()
 

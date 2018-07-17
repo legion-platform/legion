@@ -67,7 +67,7 @@ http{
     # Models API
     {% for model_endpoint in models %}
     location /api/model/{{ model_endpoint.url }} {
-        proxy_pass {{ model_endpoint.model_service.url }}/api/model/{{ model_endpoint.model_service.id }};
+        proxy_pass {{ model_endpoint.model_service.url }}/api/model/{{ model_endpoint.model_service.id }}/{{ model_endpoint.model_service.version }};
 
         expires -1;
         add_header Cache-Control no-cache;

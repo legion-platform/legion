@@ -17,12 +17,6 @@ import os
 import sys
 import logging
 
-import legion.config
-import legion.containers.docker
-import legion.io
-import legion.model.client
-import legion.model.model_id
-
 import unittest2
 
 # Extend PYTHONPATH in order to import test tools and models

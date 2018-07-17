@@ -16,6 +16,9 @@
 keys/
 cover/
 
+test.model
+.noseids
+
 *.tmp.yml
 *.tmp.out
 requirements.lock

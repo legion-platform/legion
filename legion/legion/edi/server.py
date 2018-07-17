@@ -194,6 +194,7 @@ def inspect(model=None, version=None):
 
         model_client = legion.model.ModelClient(
             model_id=model_service.id,
+            model_version=model_service.version,
             host=model_service.url,
             timeout=3
         )
