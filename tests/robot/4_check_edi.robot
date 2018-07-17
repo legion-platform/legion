@@ -34,7 +34,6 @@ Check EDI deploy with scale to 0
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave   one_version
-    [Tags]  edi  cli  enclave
     ${resp_dict}=   Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   0
                     Should Be Equal As Integers    ${resp_dict.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
