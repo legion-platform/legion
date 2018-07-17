@@ -117,9 +117,9 @@ node {
                 }, 'Run Python code analyzers': {
                     sh '''
                     cd legion
-                    ../.venv/bin/pycodestyle legion
-                    ../.venv/bin/pycodestyle tests
-                    ../.venv/bin/pydocstyle legion
+                    ../.venv/bin/pycodestyle --show-source --show-pep8 legion
+                    ../.venv/bin/pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503
+                    ../.venv/bin/pydocstyle --source legion
 
                     export TERM="linux"
                     rm -f pylint.log
@@ -281,7 +281,7 @@ node {
                 }, 'Run Python tests': {
                     sh """
                     cd legion
-                    ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html
+                    VERBOSE=true ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
                     """
                     junit 'legion/nosetests.xml'
     

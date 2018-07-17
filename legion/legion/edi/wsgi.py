@@ -18,11 +18,6 @@
 Entry point for WSGI server
 """
 
-try:
-    import docker_bootup
-except ImportError:
-    pass
-
 from legion.logging import redirect_to_stdout, set_log_level
 from legion.edi.server import init_application
 

@@ -17,15 +17,18 @@
 legion headers (for meta-information)
 """
 
+STDERR_PREFIX = 'X-Legion-'
+
 MODEL_ID = 'Model-Id'
 MODEL_PATH = 'Model-Path'
 MODEL_VERSION = 'Model-Version'
 IMAGE_TAG_EXTERNAL = 'Model-Image-Tag-External'
 IMAGE_TAG_LOCAL = 'Model-Image-Tag-Local'
 
-DOMAIN_MODEL_ID = 'com.epam.legion.model.id'
-DOMAIN_MODEL_VERSION = 'com.epam.legion.model.version'
-DOMAIN_CLASS = 'com.epam.legion.class'
-DOMAIN_CONTAINER_TYPE = 'com.epam.legion.container_type'
-DOMAIN_CONTAINER_DESCRIPTION = 'com.epam.legion.container_description'
-DOMAIN_CONTAINER_REQUIRED = 'com.epam.legion.container_required'
+DOMAIN_PREFIX = 'com.epam.'
+DOMAIN_MODEL_ID = DOMAIN_PREFIX + 'legion.model.id'
+DOMAIN_MODEL_VERSION = DOMAIN_PREFIX + 'legion.model.version'
+DOMAIN_CLASS = DOMAIN_PREFIX + 'legion.class'
+DOMAIN_CONTAINER_TYPE = DOMAIN_PREFIX + 'legion.container_type'
+DOMAIN_CONTAINER_DESCRIPTION = DOMAIN_PREFIX + 'legion.container_description'
+DOMAIN_CONTAINER_REQUIRED = DOMAIN_PREFIX + 'legion.container_required'

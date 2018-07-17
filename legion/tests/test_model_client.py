@@ -17,14 +17,14 @@ from __future__ import print_function
 
 import unittest2
 import os
+import sys
 
-try:
-    from .legion_test_utils import patch_environ
-except ImportError:
-    from legion_test_utils import patch_environ
+# Extend PYTHONPATH in order to import test tools and models
+sys.path.extend(os.path.dirname(__file__))
+
+from legion_test_utils import patch_environ
 import legion.config
 import legion.model.client
-import legion.serving.pyserve as pyserve
 
 
 class TestModelClient(unittest2.TestCase):

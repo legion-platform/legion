@@ -17,7 +17,7 @@ FROM legion/base-python-image
 
 RUN apk add --update \
     ca-certificates curl openrc docker \
-    nginx pcre pcre-dev supervisor py-gunicorn
+    nginx pcre pcre-dev supervisor
 
 EXPOSE 5000
 
