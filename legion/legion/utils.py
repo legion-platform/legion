@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -450,8 +450,8 @@ def send_header_to_stderr(header, value):
     :type value: str
     :return: None
     """
-    message = 'X-Legion-{}:{}'.format(header, value)
-    print('\n' + message, file=sys.__stderr__, flush=True)
+    message = '\nX-Legion-{}:{}'.format(header, value)
+    print(message, file=sys.__stderr__, flush=True)
 
 
 def string_to_bool(value):
