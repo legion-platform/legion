@@ -15,8 +15,9 @@
 #
 FROM legion/base-python-image
 
+<<<<<<< 5df10e8981652db50eabc46efcd6366a4a911e8d
 RUN apt-get update && apt-get install \
-    ca-certificates curl  apt-transport-https nginx \
+    ca-certificates curl apt-transport-https nginx \
     libpcre3 libpcre3-dev supervisor
 
 EXPOSE 5000
