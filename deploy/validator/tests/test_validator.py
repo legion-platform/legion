@@ -33,7 +33,10 @@ class ValidatorTests(unittest2.TestCase):
             },
             'f':[{
                 'h':None,
-            },],
+            },{
+                'h': None,
+            }
+            ],
         }
         self._template = {
             "a": None,
@@ -44,7 +47,7 @@ class ValidatorTests(unittest2.TestCase):
             },
             'f': [{
                 'h': None,
-            }, ],
+            }],
         }
 
 
@@ -60,7 +63,8 @@ class ValidatorTests(unittest2.TestCase):
     def test_invalid_recursive(self):
         del self._input["c"]["d"]
         del self._input["f"][0]["h"]
-        self.assertEqual(validate(self._input, self._template), ["/c/d", '/f/h'])
+        del self._input["f"][1]["h"]
+        self.assertEqual(validate(self._input, self._template), ["/c/d", '/f/h', '/f/h'])
 
 
 if __name__ == "__main__":
