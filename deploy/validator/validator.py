@@ -47,8 +47,7 @@ def validate(f, temp, key=""):
                 absent_keys.append(key + "/" + str(el))
         else: # check recursive type (list or dict)
             if isinstance(value, list):
-                for e in f[el]:
-                    absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
+                absent_keys.extend(validate(f[el][0], temp[el][0], key + "/" + el))
             else:
                 absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
     return absent_keys
@@ -83,8 +82,6 @@ if __name__ == "__main__":
     with open(args.template, 'r') as stream:
         template = yaml.load(stream)
 
-    if not file:
-        raise Exception("{} is empty".format(args.file))
 
     data = validate(file, template)
 
