@@ -17,6 +17,8 @@
 """
 YAML file validator
 """
+
+
 import sys
 import os
 
@@ -43,7 +45,7 @@ def validate(f, temp, key=""):
         if not value:
             if (f is None) or not (el in f):
                 absent_keys.append(key + "/" + str(el))
-        else:
+        else: # check recursive type (list or dict)
             if isinstance(value, list):
                 for e in f[el]:
                     absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
