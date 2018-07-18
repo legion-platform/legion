@@ -18,9 +18,9 @@ YAML file validator unittests
 """
 
 import unittest2
-import sys
+import sys, os
 
-sys.path.append('..')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from validator import validate
 
