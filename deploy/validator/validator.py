@@ -39,18 +39,22 @@ def validate(f, temp, key=""):
     absent_keys = []
 
     for el in temp:
-        if not temp[el]:
-            if not (el in f):
+        value = temp[el]
+        if not value:
+            if (f is None) or not (el in f):
                 absent_keys.append(key + "/" + str(el))
         else:
-            absent_keys.extend(validate(f[el][0], temp[el][0], key + "/" + el))
-
+            if isinstance(value, list):
+                absent_keys.extend(validate(f[el][0], temp[el][0], key + "/" + el))
+            else:
+                absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
     return absent_keys
 
 
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description="YAML-file validator")
     parser.add_argument('file',
                         help='path to yaml-file',
