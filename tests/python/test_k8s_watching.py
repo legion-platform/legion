@@ -33,6 +33,7 @@ import legion.external
 import legion.template_plugins
 import legion_test.profiler_loader
 import legion_test.utils
+from nose.plugins.attrib import attr
 
 
 warnings.simplefilter('ignore', ResourceWarning)
@@ -67,6 +68,7 @@ class TestK8SWatching(unittest2.TestCase):
         except:
             pass
 
+    @attr('k8s', 'watch')
     def test_watch_enclaves(self):
         """
         Check enclave watching

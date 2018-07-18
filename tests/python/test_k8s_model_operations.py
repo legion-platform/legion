@@ -33,6 +33,7 @@ import legion_test.profiler_loader
 import legion_test.test_assets
 import legion_test.utils
 import legion_test.robot
+from nose.plugins.attrib import attr
 
 warnings.simplefilter('ignore', ResourceWarning)
 
@@ -69,6 +70,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
 
+    @attr('k8s', 'models')
     def _remove_model_if_exists(self, model_id, model_version=None):
         """
         Remove model if exists
@@ -94,6 +96,7 @@ class TestK8SModelOperations(unittest2.TestCase):
                 except Exception as remove_exception:
                     logging.error('Cannot remove model service: {}'.format(remove_exception))
 
+    @attr('k8s', 'models')
     def _get_test_enclave(self):
         """
         Get test enclave object
@@ -107,6 +110,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         self.assertIn(VARIABLES['MODEL_TEST_ENCLAVE'], enclaves_map, 'cannot find test enclave')
         return enclaves_map[VARIABLES['MODEL_TEST_ENCLAVE']]
 
+    @attr('k8s', 'models')
     def test_bare_model_deploy(self):
         """
         Test bare model deploy
@@ -124,6 +128,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         self.assertEqual(model_service.id, TEST_MODEL_ID)
         self.assertEqual(model_service.version, TEST_MODEL_VERSION)
 
+    @attr('k8s', 'models')
     def test_bare_model_deploy_undeploy(self):
         """
         Test bare model deploy
@@ -142,6 +147,7 @@ class TestK8SModelOperations(unittest2.TestCase):
 
         self.assertFalse(enclave.get_models(TEST_MODEL_ID, TEST_MODEL_VERSION), 'model has not been removed')
 
+    @attr('k8s', 'models')
     def test_model_watch_service_endpoints_state(self):
         states = []
 
@@ -172,6 +178,7 @@ class TestK8SModelOperations(unittest2.TestCase):
             time.sleep(10)
             self.assertFalse(is_test_model_in_last_state(), 'state has been found but model has been removed')
 
+    @attr('k8s', 'models')
     def test_model_information(self):
         """
         Test that target-test model present
@@ -209,6 +216,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         self.assertIsInstance(model_service.image, str, 'cannot get model image')
         self.assertGreater(len(model_service.image), 0, 'empty model image string')
 
+    @attr('k8s', 'models')
     def test_model_scale_up_and_down(self):
         """
         Test model scale up and scale down procedure

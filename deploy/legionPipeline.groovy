@@ -119,14 +119,14 @@ def runRobotTests(tags="") {
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $tags *.robot || true
+            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $tags.tokenize('&')[0] *.robot || true
 
             echo "Starting python tests"
             cd ../python
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/nosetests --with-xunit || true
+            PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+            ../../.venv/bin/nosetests '$tags.tokenize('&').last()' --with-xunit || true
             '''
             step([
                 $class : 'RobotPublisher',

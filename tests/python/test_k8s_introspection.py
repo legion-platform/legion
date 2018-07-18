@@ -25,7 +25,7 @@ import legion.config
 import legion.external
 import legion_test.profiler_loader
 import legion_test.utils
-
+from nose.plugins.attrib import attr
 
 warnings.simplefilter('ignore', ResourceWarning)
 VARIABLES = legion_test.profiler_loader.get_variables()
@@ -45,6 +45,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
 
+    @attr('k8s', 'inspection')
     def _get_test_enclave(self):
         """
         Get test enclave
@@ -58,6 +59,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         self.assertIn(VARIABLES['MODEL_TEST_ENCLAVE'], enclaves_map, 'cannot find test enclave')
         return enclaves_map[VARIABLES['MODEL_TEST_ENCLAVE']]
 
+    @attr('k8s', 'inspection')
     def test_building_connection(self):
         """
         Test connection builder
@@ -66,6 +68,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         """
         legion.k8s.build_client()
 
+    @attr('k8s', 'inspection')
     def test_find_enclaves(self):
         """
         Test that we can found any enclave
@@ -75,6 +78,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         enclaves = legion.k8s.find_enclaves()
         self.assertGreater(len(enclaves), 0, 'cannot find any enclave')
 
+    @attr('k8s', 'inspection')
     def test_target_enclave_presented(self):
         """
         Test that target-test enclave can be found
@@ -83,6 +87,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         """
         self._get_test_enclave()
 
+    @attr('k8s', 'inspection')
     def test_check_enclave_object(self):
         """
         Test that target-test enclave consists of all services
@@ -97,6 +102,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         self.assertIsNotNone(enclave.grafana_service, 'cannot find Grafana service')
         self.assertIsNotNone(enclave.graphite_service, 'cannot find Graphite service')
 
+    @attr('k8s', 'inspection')
     def test_check_edi_client(self):
         """
         Check EDI client
