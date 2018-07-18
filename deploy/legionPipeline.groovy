@@ -94,6 +94,8 @@ def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
             env.tags=tags
+            env.robot_tags=tags.split('&').first()
+            env.nose_tags=tags.split('&').last()
             sh '''
             cd legion
             ../.venv/bin/pip install -r requirements/base.txt
@@ -119,14 +121,14 @@ def runRobotTests(tags="") {
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $tags.tokenize('&')[0] *.robot || true
+            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $robot_tags *.robot || true
 
             echo "Starting python tests"
             cd ../python
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/nosetests '$tags.tokenize('&').last()' --with-xunit || true
+            ../../.venv/bin/nosetests $nose_tags --with-xunit || true
             '''
             step([
                 $class : 'RobotPublisher',
