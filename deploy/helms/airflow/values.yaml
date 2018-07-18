@@ -75,7 +75,7 @@ webserver:
 
   dex_group_profiler: ~
 
-  dex_admin_email: admin@example.com
+  dex_admin_email: test@legion.com
 
 smtp:
   smtp_host: localhost
