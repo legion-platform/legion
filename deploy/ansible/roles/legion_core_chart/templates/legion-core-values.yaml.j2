@@ -36,6 +36,23 @@ jenkins:
     s3_url: "s3://{{ airflow_s3_bucket_name }}/"
     expected_output: '{{ airflow_expected_output }}'
 
+  openId:
+    enable: {{ dex.enabled | default(false) | bool }}
+    clientId: {{ dex.config.client_id | default("~") }}
+    clientSecret: {{ dex.config.client_secret | default("~") }}
+    tokenServerUrl: https://dex.{{ cluster_name }}/token
+    authServerUrl: https://dex.{{ cluster_name }}/auth
+    adminGroups: "
+    {%- for item in dex.groups -%}
+    {%- if item.clusterrolebinding == "cluster-admin" %} {{ item.group }}
+    {%- endif -%}
+    {% endfor %}"
+    readOnlyGroups: "
+    {%- for item in dex.groups -%}
+    {%- if item.clusterrolebinding == "view" %} {{ item.group }}
+    {%- endif -%}
+    {% endfor %}"
+
 graphite:
   enabled: true
   image:

@@ -70,24 +70,40 @@ def deployLegion() {
 }
 
 def createjenkinsJobs(String commitID) {
-    sh """
-    cd legion_test
-    ../.venv/bin/pip install -r requirements/base.txt
-    ../.venv/bin/pip install -r requirements/test.txt
-    ../.venv/bin/python setup.py develop
-    cd ..
+    withAWS(credentials: 'kops') {
+    	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+	    env.commitID = commitID
+            sh '''
+            cd legion_test
+            ../.venv/bin/pip install -r requirements/base.txt
+            ../.venv/bin/pip install -r requirements/test.txt
+            ../.venv/bin/python setup.py develop
+            cd ..
+            
+	    cd .venv/bin
+            export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
+            export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
+            export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
+            export CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
+            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
 
-    .venv/bin/create_example_jobs \
-    "https://jenkins.${params.Profile}" \
-    examples \
-    . \
-    "git@github.com:epam/legion.git" \
-    ${commitID} \
-    --connection-timeout 600 \
-    --git-root-key "legion-root-key" \
-    --model-host "" \
-    --dynamic-model-prefix "DYNAMIC MODEL"
-    """
+            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            PATH=./:$PATH DISPLAY=:99 \
+            PROFILE=${Profile} \
+            ./create_example_jobs \
+            "https://jenkins.${Profile}" \
+            ../../examples \
+            ../../ \
+            "git@github.com:epam/legion.git" \
+            ${commitID} \
+            --connection-timeout 600 \
+            --git-root-key "legion-root-key" \
+            --model-host "" \
+            --dynamic-model-prefix "DYNAMIC MODEL" \
+            --auth-dex
+            '''
+        }
+	}
 }
 
 def runRobotTests(tags="") {
