@@ -102,9 +102,9 @@ class TestPyModel(unittest2.TestCase):
         legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
         legion.io.PyModel() \
             .export(make_square, {
-                'value': legion.model.int32,
-                'are_you_sure':  legion.model.types.ColumnInformation(CustomBoolObject())
-                }, endpoint='square') \
+                    'value': legion.model.int32,
+                    'are_you_sure': legion.model.types.ColumnInformation(CustomBoolObject())
+                    }, endpoint='square') \
             .save(MODEL_PATH)
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')

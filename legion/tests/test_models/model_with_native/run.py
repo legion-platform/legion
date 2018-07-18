@@ -4,7 +4,7 @@ from legion.model.model_id import init
 import legion.io
 
 
-init('native model')
+init('native model', '1.0')
 
 installation_result = subprocess.run('apk add --update --no-cache mc',
                                      cwd='/', shell=True,
@@ -19,6 +19,4 @@ def calculate(x):
     return info.returncode
 
 
-legion.io.export_untyped(lambda x: {'code': calculate(x)},
-                         filename='native.model',
-                         version='1.0')
+legion.io.PyModel().export_untyped(lambda x: {'code': calculate(x)}).save('native.model')

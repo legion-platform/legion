@@ -285,8 +285,8 @@ class PyModel:
         :return:
         """
         return {
-            'id': self.model_id,
-            'version': self.model_version,
+            'model_id': self.model_id,
+            'model_version': self.model_version,
             'endpoints': {ep.name: ep.description for ep in self.endpoints.values()}
         }
 

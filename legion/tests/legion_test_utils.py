@@ -158,6 +158,7 @@ class LegionTestContainer:
                 LOGGER.exception('Can\'t remove container: {}'.format(removing_exception),
                                  exc_info=removing_exception)
 
+
 def print_docker_container_logs(container):
     """
     Print docker container logs to stdout
@@ -580,7 +581,7 @@ class ModelLocalContainerExecutionContext:
             LOGGER.info('Building client')
             url = 'http://{}:{}'.format('localhost', self.model_port)
             LOGGER.info('Target URI is {}'.format(url))
-            self.client = ModelClient(self._model_id, url)
+            self.client = ModelClient(self._model_id, self._model_version, url)
 
             LOGGER.info('Getting model information')
             self.model_information = self.client.info()

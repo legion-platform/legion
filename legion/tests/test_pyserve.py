@@ -72,8 +72,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertIn('version', data, 'Cannot find version field')
-            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
+            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_version', data, 'Cannot find version field')
+            self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
             self.assertIn('endpoints', data, 'Cannot find endpoints info field')
             self.assertIn('default', data['endpoints'], 'Cannot find default endpoint')
@@ -97,8 +98,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertIn('version', data, 'Cannot find version field')
-            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
+            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_version', data, 'Cannot find version field')
+            self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
             self.assertIn('endpoints', data, 'Cannot find endpoints info field')
             self.assertIn('default', data['endpoints'], 'Cannot find default endpoint')
@@ -122,8 +124,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertIn('version', data, 'Cannot find version field')
-            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
+            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_version', data, 'Cannot find version field')
+            self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
             self.assertIn('endpoints', data, 'Cannot find endpoints info field')
             self.assertIn('default', data['endpoints'], 'Cannot find default endpoint')
