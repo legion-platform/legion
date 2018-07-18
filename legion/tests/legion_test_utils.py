@@ -159,6 +159,22 @@ class LegionTestContainer:
                                  exc_info=removing_exception)
 
 
+def print_docker_container_logs(container):
+    """
+    Print docker container logs to stdout
+
+    :param container: docker container
+    :type container: :py:class:`docker.models.containers.Container`
+    :return: None
+    """
+    try:
+        logs = container.logs().decode('utf-8')
+        print('--- CONTAINER LOGS ---')
+        print(logs)
+    except Exception as container_log_access_exception:
+        print('Cannot get logs of container: {}'.format(container_log_access_exception))
+
+
 def is_environ_should_be_passed(environ_name):
     """
     Is environ for tests? (should be copied)
@@ -408,7 +424,7 @@ class ModelDockerBuilderContainerContext:
         return tag, output
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        log_docker_container_logs(self._docker_container)
+        print_docker_container_logs(self._docker_container)
         self._shutdown_docker_container()
 
 
@@ -446,8 +462,8 @@ class ModelServeTestBuild:
         try:
             print('Building model file {} v {}'.format(self._model_id, self._model_version))
             legion.model.model_id._model_id = self._model_id
-            legion.model.model_id._model_initialized_from_function = True
-            self._model_builder(self._model_path, self._model_version)
+            legion.model.model_id._model_version = self._model_version
+            self._model_builder(self._model_path)
             print('Model file has been built')
 
             print('Creating pyserve')
@@ -461,6 +477,7 @@ class ModelServeTestBuild:
                 self.application.testing = True
                 self.client = self.application.test_client()
                 self.model_client = legion.model.ModelClient(self._model_id,
+                                                             self._model_version,
                                                              http_client=self.client,
                                                              use_relative_url=True)
 
@@ -480,22 +497,6 @@ class ModelServeTestBuild:
 
         if exception:
             raise exception
-
-
-def log_docker_container_logs(container):
-    """
-    Print docker container logs
-
-    :param container:
-    :return:
-    """
-    try:
-        logs = container.logs().decode('utf-8')
-
-        LOGGER.info('--- CONTAINER LOGS ---')
-        LOGGER.info(logs)
-    except Exception as log_exceptions:
-        LOGGER.exception('Cannot get logs of container', exc_info=log_exceptions)
 
 
 class ModelLocalContainerExecutionContext:
@@ -561,7 +562,7 @@ class ModelLocalContainerExecutionContext:
 
             self.container = self._docker_client.containers.get(self.container_id)
             if self.container.status != 'running':
-                log_docker_container_logs(self.container)
+                print_docker_container_logs(self.container)
                 raise Exception('Invalid container state: {}'.format(self.container.status))
 
             LOGGER.info('OK')
@@ -580,7 +581,7 @@ class ModelLocalContainerExecutionContext:
             LOGGER.info('Building client')
             url = 'http://{}:{}'.format('localhost', self.model_port)
             LOGGER.info('Target URI is {}'.format(url))
-            self.client = ModelClient(self._model_id, url)
+            self.client = ModelClient(self._model_id, self._model_version, url)
 
             LOGGER.info('Getting model information')
             self.model_information = self.client.info()
@@ -600,7 +601,7 @@ class ModelLocalContainerExecutionContext:
             try:
                 LOGGER.info('Finding container')
                 container = self._docker_client.containers.get(self.container.id)
-                log_docker_container_logs(container)
+                print_docker_container_logs(container)
 
                 try:
                     LOGGER.info('Killing container')

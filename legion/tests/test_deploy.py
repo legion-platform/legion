@@ -17,12 +17,6 @@ import os
 import sys
 import logging
 
-import legion.config
-import legion.containers.docker
-import legion.io
-import legion.model.client
-import legion.model.model_id
-
 import unittest2
 
 # Extend PYTHONPATH in order to import test tools and models
@@ -47,13 +41,21 @@ class TestDeploy(unittest2.TestCase):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('summation_model')
             model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'test-summation', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
-                'input_params': False,
-                'use_df': False,
-                'version': '1.0'
+                'endpoints': {
+                    'default': {
+                        'input_params': False,
+                        'name': 'default',
+                        'use_df': False,
+                    }
+                },
+                'model_id': model_id,
+                'model_version': model_version
             }, 'invalid model information')
 
             self.assertEqual(context.client.invoke(a=10, b=20)['result'], 30, 'invalid invocation result')
@@ -70,17 +72,80 @@ class TestDeploy(unittest2.TestCase):
                 'invalid batch invocation result'
             )
 
-    def test_complex_model_build_and_query(self):
+    def test_math_model_build_and_query_with_multiple_endpoints(self):
         with ModelDockerBuilderContainerContext() as context:
-            context.copy_model('complex_model')
+            context.copy_model('math_model')
             model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'test-math', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
-                'input_params': False,
-                'use_df': False,
-                'version': '1.0'
+                'endpoints': {
+                    'sum': {
+                        'input_params': False,
+                        'name': 'sum',
+                        'use_df': False,
+                    },
+                    'mul': {
+                        'input_params': False,
+                        'name': 'mul',
+                        'use_df': False,
+                    }
+                },
+                'model_id': model_id,
+                'model_version': model_version
+            }, 'invalid model information')
+
+            self.assertEqual(context.client.invoke(a=10, b=20, endpoint='sum')['result'], 30,
+                             'invalid invocation result')
+            self.assertEqual(context.client.invoke(a=40, b=2, endpoint='mul')['result'], 80,
+                             'invalid invocation result')
+            self.assertListEqual(
+                context.client.batch([{'a': 10, 'b': 10}, {'a': 20, 'b': 30}], endpoint='sum'),
+                [
+                    {
+                        'result': 20,
+                    },
+                    {
+                        'result': 50,
+                    }
+                ],
+                'invalid batch invocation result'
+            )
+            self.assertListEqual(
+                context.client.batch([{'a': 2, 'b': 15}, {'a': 1, 'b': 20}], endpoint='mul'),
+                [
+                    {
+                        'result': 30,
+                    },
+                    {
+                        'result': 20,
+                    }
+                ],
+                'invalid batch invocation result'
+            )
+
+    def test_complex_model_build_and_query(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.copy_model('complex_model')
+            model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'complex', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
+            image_id, _ = context.build_model_container(model_file)
+
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertDictEqual(context.model_information, {
+                'endpoints': {
+                    'default': {
+                        'input_params': False,
+                        'name': 'default',
+                        'use_df': False,
+                    }
+                },
+                'model_id': model_id,
+                'model_version': model_version
             }, 'invalid model information')
 
             self.assertEqual(context.client.invoke(value=20)['result'], 62, 'invalid invocation result')
@@ -101,13 +166,21 @@ class TestDeploy(unittest2.TestCase):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('model_with_io_operations')
             model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'io-model', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
-                'input_params': False,
-                'use_df': False,
-                'version': '1.0'
+                'endpoints': {
+                    'default': {
+                        'input_params': False,
+                        'name': 'default',
+                        'use_df': False,
+                    }
+                },
+                'model_id': model_id,
+                'model_version': model_version
             }, 'invalid model information')
 
             self.assertEqual(context.client.invoke(value=20)['result'], 62, 'invalid invocation result')
@@ -116,13 +189,21 @@ class TestDeploy(unittest2.TestCase):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('model_with_native')
             model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'native-model', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
-                'input_params': False,
-                'use_df': False,
-                'version': '1.0'
+                'endpoints': {
+                    'default': {
+                        'input_params': False,
+                        'name': 'default',
+                        'use_df': False,
+                    },
+                },
+                'model_id': model_id,
+                'model_version': model_version
             }, 'invalid model information')
 
             self.assertEqual(context.client.invoke(x=1)['code'], 0, 'invalid invocation result')

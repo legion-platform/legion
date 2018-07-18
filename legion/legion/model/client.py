@@ -49,12 +49,14 @@ class ModelClient:
     Model HTTP client
     """
 
-    def __init__(self, model_id, host=None, http_client=None, use_relative_url=False, timeout=None):
+    def __init__(self, model_id, model_version, host=None, http_client=None, use_relative_url=False, timeout=None):
         """
         Build client
 
         :param model_id: model id
         :type model_id: str
+        :param model_version: model version
+        :type model_version: str
         :param host: host that server model HTTP requests (default: from ENV)
         :type host: str or None
         :param http_client: HTTP client (default: requests)
@@ -65,6 +67,7 @@ class ModelClient:
         :type timeout: int
         """
         self._model_id = normalize_name(model_id)
+        self._model_version = model_version
 
         if host:
             self._host = host
@@ -103,25 +106,33 @@ class ModelClient:
 
         :return: str -- api root url
         """
-        return '{host}/api/model/{model_id}'.format(host=self._host, model_id=self._model_id)
+        return '{host}/api/model/{model_id}/{model_version}'.format(host=self._host,
+                                                                    model_id=self._model_id,
+                                                                    model_version=self._model_version)
 
-    @property
-    def invoke_url(self):
+    def build_invoke_url(self, endpoint=None):
         """
         Build API invoke URL
 
+        :param endpoint: (Optional) target endpoint
+        :type endpoint: str
         :return: str -- invoke url
         """
-        return self.api_url + '/invoke'
+        if endpoint:
+            return '{}/invoke/{}'.format(self.api_url, endpoint)
+        return '{}/invoke'.format(self.api_url)
 
-    @property
-    def batch_url(self):
+    def build_batch_url(self, endpoint=None):
         """
         Build API batch invoke URL
 
+        :param endpoint: (Optional) target endpoint
+        :type endpoint: str
         :return: str -- batch invoke url
         """
-        return self.api_url + '/batch'
+        if endpoint:
+            return '{}/batch/{}'.format(self.api_url, endpoint)
+        return '{}/batch'.format(self.api_url)
 
     @property
     def info_url(self):
@@ -143,14 +154,20 @@ class ModelClient:
         """
         data = response.text if hasattr(response, 'text') else response.data
 
-        if not 200 <= response.status_code < 400:
-            raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'
-                            .format(response.status_code, data, response.url))
-
         if isinstance(data, bytes):
             data = data.decode('utf-8')
 
-        return json.loads(data)
+        try:
+            data = json.loads(data)
+        except ValueError:
+            pass
+
+        if not 200 <= response.status_code < 400:
+            url = response.url if hasattr(response, 'url') else None
+            raise Exception('Wrong status code returned: {}. Data: {}. URL: {}'
+                            .format(response.status_code, data, url))
+
+        return data
 
     @staticmethod
     def _prepare_invoke_request(**parameters):
@@ -185,12 +202,14 @@ class ModelClient:
             kwargs['timeout'] = self._timeout
         return kwargs
 
-    def batch(self, invoke_parameters):
+    def batch(self, invoke_parameters, endpoint=None):
         """
         Send batch invoke request
 
         :param invoke_parameters: list of dictionaries
         :type invoke_parameters: list[dict]
+        :param endpoint: name of endpoint
+        :type endpoint: str
         :return: list -- parsed model response
         """
         request_lines = []
@@ -202,21 +221,25 @@ class ModelClient:
             request_lines.append(legion.http.encode_http_params(data))
 
         content = '\n'.join(request_lines)
-        response = self._http_client.post(self.batch_url,
+        url = self.build_batch_url(endpoint)
+        response = self._http_client.post(url,
                                           data=content,
                                           **self._additional_kwargs)
         return self._parse_response(response)
 
-    def invoke(self, **parameters):
+    def invoke(self, endpoint=None, **parameters):
         """
         Invoke model with parameters
 
         :param parameters: parameters for model
         :type parameters: dict[str, object] -- dictionary with parameters
+        :param endpoint: name of endpoint
+        :type endpoint: str
         :return: dict -- parsed model response
         """
         data, files = self._prepare_invoke_request(**parameters)
-        response = self._http_client.post(self.invoke_url,
+        url = self.build_invoke_url(endpoint)
+        response = self._http_client.post(url,
                                           data=data, files=files,
                                           **self._additional_kwargs)
 

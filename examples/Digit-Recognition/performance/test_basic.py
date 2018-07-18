@@ -27,7 +27,7 @@ class ModelTaskSet(TaskSet):
         self._model_client.invoke(image=image)
 
     def on_start(self):
-        self._model_client = ModelClient('recognize_digits', use_relative_url=True, http_client=self.client)
+        self._model_client = ModelClient('recognize_digits', '1.0', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):

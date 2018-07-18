@@ -8,18 +8,31 @@ def root():
     return jsonify(demo=True)
 
 
-@app.route('/api/model/<model>/info', methods=['GET', 'POST'])
-def model_info(model):
+@app.route('/healthcheck')
+def healthcheck():
+    return jsonify(demo=True)
+
+
+@app.route('/api/model/<model>/<version>/info', methods=['GET', 'POST'])
+def model_info(model, version):
     return jsonify(
-        version=1.0,
-        use_df=False,
-        input_params={'b': {'numpy_type': 'int64', 'type': 'Integer'},
-                      'a': {'numpy_type': 'int64', 'type': 'Integer'}}
+        model_version=version,
+        model_id=model,
+        endpoints={
+            'default': {
+                'name': 'default',
+                'use_df': False,
+                'input_params': {'b': {'numpy_type': 'int64', 'type': 'Integer'},
+                                 'a': {'numpy_type': 'int64', 'type': 'Integer'}}
+
+            }
+        }
     )
 
 
-@app.route('/api/model/<model>/invoke', methods=['GET', 'POST'])
-def model_invoke(model):
+@app.route('/api/model/<model>/<version>/invoke', methods=['GET', 'POST'])
+@app.route('/api/model/<model>/<version>/invoke/<endpoint>', methods=['GET', 'POST'])
+def model_invoke(model, version, endpoint=None):
     return jsonify(result=42.0)
 
 
