@@ -16,10 +16,17 @@ def healthcheck():
 @app.route('/api/model/<model>/<version>/info', methods=['GET', 'POST'])
 def model_info(model, version):
     return jsonify(
-        version=version,
-        use_df=False,
-        input_params={'b': {'numpy_type': 'int64', 'type': 'Integer'},
-                      'a': {'numpy_type': 'int64', 'type': 'Integer'}}
+        model_version=version,
+        model_id=model,
+        endpoints={
+            'default': {
+                'name': 'default',
+                'use_df': False,
+                'input_params': {'b': {'numpy_type': 'int64', 'type': 'Integer'},
+                                 'a': {'numpy_type': 'int64', 'type': 'Integer'}}
+
+            }
+        }
     )
 
 

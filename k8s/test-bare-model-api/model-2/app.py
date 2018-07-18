@@ -11,10 +11,17 @@ def root():
 @app.route('/api/model/<model>/info', methods=['GET', 'POST'])
 def model_info(model):
     return jsonify(
-        version=1.1,
-        use_df=False,
-        input_params={'b': {'numpy_type': 'int64', 'type': 'Integer'},
-                      'a': {'numpy_type': 'int64', 'type': 'Integer'}}
+        model_id=model,
+        model_version=1.1,
+        endpoints={
+            'default': {
+                'name': 'default',
+                'use_df': False,
+                'input_params': {'b': {'numpy_type': 'int64', 'type': 'Integer'},
+                                 'a': {'numpy_type': 'int64', 'type': 'Integer'}}
+
+            }
+        }
     )
 
 
