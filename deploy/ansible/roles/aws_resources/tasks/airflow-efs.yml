@@ -9,6 +9,7 @@
     tags:
       vendor: "{{ vendor }}"
       env_name: "{{ env_name }}"
+      KubernetesCluster: "{{ cluster_name }}"
     rules:
       - proto: tcp
         from_port: 2049
@@ -46,6 +47,7 @@
       vendor: "{{ vendor }}"
       env_name: "{{ env_name }}"
       purpose: "airflow_storage"
+      KubernetesCluster: "{{ cluster_name }}"
     targets: "{{ efs_targets }}"
   register: airflow_efs
 
