@@ -80,6 +80,8 @@ if __name__ == "__main__":
     with open(args.template, 'r') as stream:
         template = yaml.load(stream)
 
+    if not file:
+        raise Exception("{} is empty".format(args.file))
 
     data = validate(file, template)
 
