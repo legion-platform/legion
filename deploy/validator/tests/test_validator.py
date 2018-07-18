@@ -18,8 +18,11 @@ YAML file validator unittests
 """
 
 import unittest2
+import sys
 
-from deploy.validator.validator import validate
+sys.path.append('..')
+
+from validator import validate
 
 class ValidatorTests(unittest2.TestCase):
 
