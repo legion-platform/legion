@@ -1,0 +1,89 @@
+# DNS
+base_domain: ~       # DNS name of environment
+route53_zone: ~      # AWS Route53 zone on which domain will be created (zone should be parked before deploy)
+
+
+# Common
+vendor: ~            # name of vendor, will be used in resource tags
+env_type: ~           # name of env. type, will be added in resource tags
+env_name: ~    # short name of env, will be added in resource tags
+
+
+# Ansible variables
+tmp_dir: ~                          # directory for storing temporary files (on host during deploy)
+git_key: ~    # SSH Git access key which will be copied to Jenkins in cluster
+ssh_public_key: ~       # public key which will be copied to cluster
+
+
+# AWS configuration
+aws_region: ~      # target AWS region for EC2 instances
+bastion_shape: ~    # shape for bastion nodes (not as part of Kubernetes cluster)
+master_shape: ~     # shape for masters
+node_shape: ~       # shape for modes
+node_autoscaler_min: ~     # minimum count of nodes for autoscaler group
+node_autoscaler_max: ~     # maximum count of nodes for autoscaler group
+node_extra_shapes: ~        # list of shapes that can be started up during model building of Jenkins (will be shutted down automatically)
+
+node_extra_min: ~          # minimum count of nodes for model building
+node_extra_max: ~          # maximum count of nodes for model building
+
+vpc_id: ~               # VPC id where the cluster will be created
+
+
+# Common cluster configuration for KOPS
+cluster_name: ~ # unique KOPS cluster name
+state_store: ~  # AWS S3 bucket for storing KOPS state
+aws_image: ~  # base Kubernetes image
+kubernetes_version: ~         # kubernetes version
+private_network: ~         # private network prefix
+cluster_zones:                    # configuration of cluster zones
+  - zone_name: ~
+    kops_cidr: ~
+    kops_utility_cidr: ~
+
+
+
+# TLS sertificates issuing configuration (via Let's Encrypt)
+certificate_email: ~      # Let's Encrypt notification email
+cert_dir: ~                 # folder for storing SSL certificates on host
+
+# Deploying and test configuration
+use_https: ~ # [?]
+use_https_for_tests: ~ # [?]
+nexus_pypi_repo: ~ # repository for Python packages
+nexus_docker_repo: ~ # docker registry with builded images
+namespace: ~      # namespace of core deployment
+deployment: ~      # name of deployment
+examples_to_test: ~      # which Jenkins examples will be executed in tests
+
+model_id_to_test: ~  # id of model which will be tested in EDI tests
+enclaves: ~ # list of enclaves which will be automatically deployed after Legion deploy
+
+
+# Airflow specific configuration
+airflow_dags_dir: ~                                        # Name of Aitflow DAGs directory
+airflow_dags_pvc: ~                                    # Name of Airflow DAGs PVC which will be created in Cluster
+airflow_s3_log_url: ~                     # S3 url for storing Airflow logs
+airflow_pvc: ~                                                        # Airflow PVC size (for storing DAGs code)
+
+# Airflow RDS configuration
+airflow_rds_shape: ~                                        # shape for Airflow RDS
+airflow_rds_size: ~                                                   # size of Airflow RDS in GB
+
+# Airflow DAGs configuration [?]
+airflow_s3_url: ~                              # Airflow storage location at S3
+airflow_expected_output: ~                                # Configuration for Airflow DAGs
+
+# Addons configuration
+storageclass: ~              # Which storage use in PVCs
+dashboard:                     # Kubernetes dashboard configuration
+  version: ~             # Dashboard version
+  insecure: ~               # Allow insecure access
+
+# Dex
+dex:
+  enabled: ~   # by default Dex is disabled in profiles (but enabled in secrets)
+
+# Secrets
+secrets_bucket: ~               # S3 bucket with secrets
+secrets_file: ~  # path for temporary storage
