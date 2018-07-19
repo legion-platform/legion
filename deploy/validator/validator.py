@@ -17,13 +17,26 @@
 """
 YAML file validator
 """
+#!/usr/bin/python3
+
+DOCUMENTATION = '''
+---
+module: validator
+short_description: Validate YAML-files 
+'''
+
+EXAMPLES = '''
+- name: Validate Yaml-file
+  validator:
+    source: path/to/yaml
+    template: path/to/template
+'''
 
 
-import sys
 import os
 
-import argparse
 import yaml
+from ansible.module_utils.basic import AnsibleModule
 
 def validate(f, temp, key=""):
     """
@@ -54,38 +67,33 @@ def validate(f, temp, key=""):
 
 
 
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            source=dict(type='str', required=True),
+            template=dict(type='str', required=True)
+        ),
+        supports_check_mode=True
+    )
+    for path in (module.params['source'], module.params['template']):
+        if not os.path.exists(path):
+            module.fail_json(msg="{} file doesn't exist".format(path))
+        if not os.path.isfile(path):
+            module.fail_json(msg="{} is directory".format(path))
+
+        with open(module.params['source'], 'r') as stream:
+            file = yaml.load(stream)
+
+        with open(module.params['template'], 'r') as stream:
+            template = yaml.load(stream)
+
+
+        data = validate(file, template)
+
+        if data:
+            module.fail_json(msg="{} keys is missing in {} file".format(data, module.params['source']))
+        module.exit_json(msg="Validate successfull")
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="YAML-file validator")
-    parser.add_argument('file',
-                        help='path to yaml-file',
-                        type=str,
-                        )
-    parser.add_argument('template',
-                        help='path to template',
-                        type=str,
-                        )
-    args = parser.parse_args(sys.argv[1:])
-
-    # Check files existing and type
-
-    for path in (args.file, args.template):
-        if not os.path.exists(path):
-            raise Exception("{} file doesn't exists".format(path))
-        if not os.path.isfile(path):
-            raise Exception("{} isn't file".format(path))
-
-    with open(args.file, 'r') as stream:
-        file = yaml.load(stream)
-
-    with open(args.template, 'r') as stream:
-        template = yaml.load(stream)
-
-
-    data = validate(file, template)
-
-    if data:
-        raise Exception("{} file doesn't have {} keys".format(args.file, data))
-
-    print("Validate successful")
+    main()
