@@ -21,15 +21,22 @@
         dest: "{{ secrets_file }}"
         mode: get
 
+    - name: Download secrets template from S3
+      aws_s3:
+        bucket: "{{ secrets_bucket }}"
+        object: "vault/{{ secrets_templ_name }}"
+        dest: "{{ secrets_template }}"
+        mode: get
+
     - name: Validate profile yaml-file
       validator:
         source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
-        template: "{{ lookup('env', 'PROFILES_TEMPLATE_PATH') or '../profiles' }}/profiles.yaml"
+        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/profiles_template.yaml"
 
     - name: Validate secret yaml-file
       validator:
         source: "{{ secrets_file }}"
-        template: "{{ lookup('env', 'SECRETS_TEMPLATE_PATH') or '../profiles' }}/secrets.yaml"
+        template: "{{ secrets_template }}"
 
     - name: Include vars
       include_vars:
@@ -41,6 +48,11 @@
     - name: Delete secrets file
       file:
         name: "{{ secrets_file }}"
+        state: absent
+
+    - name: Delete secrets template
+      file:
+        name: "{{ secrets_template }}"
         state: absent
 
 #  roles:
