@@ -50,6 +50,8 @@ def validate(f, temp, key=""):
     :type key: str
     :return: list
     """
+    if not isinstance(f, dict):
+        return []
 
     absent_keys = []
     print(f, temp)
