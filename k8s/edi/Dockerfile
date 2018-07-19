@@ -31,7 +31,6 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
-COPY app_uwsgi.ini /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
