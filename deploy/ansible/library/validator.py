@@ -60,7 +60,8 @@ def validate(f, temp, key=""):
                 absent_keys.append(key + "/" + str(el))
         else: # check recursive type (list or dict)
             if isinstance(value, list):
-                absent_keys.extend(validate(f[el][0], temp[el][0], key + "/" + el))
+                for e in f[el]:
+                    absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
             elif isinstance(value, dict):
                 absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
     return absent_keys
