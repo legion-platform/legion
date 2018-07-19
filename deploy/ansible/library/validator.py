@@ -50,22 +50,21 @@ def validate(f, temp, key=""):
     :type key: str
     :return: list
     """
-    if not isinstance(f, dict):
-        return []
+
 
     absent_keys = []
-    print(f, temp)
-    for el in temp:
-        value = temp[el]
-        if not value:
-            if (f is None) or not (el in f):
-                absent_keys.append(key + "/" + str(el))
-        else: # check recursive type (list or dict)
-            if isinstance(value, list):
-                for e in f[el]:
-                    absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
-            elif isinstance(value, dict):
-                absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
+    if isinstance(f, dict): # check source data to supported type (skip encryption info)
+        for el in temp:
+            value = temp[el]
+            if not value:
+                if (f is None) or not (el in f):
+                    absent_keys.append(key + "/" + str(el))
+            else: # check recursive type (list or dict)
+                if isinstance(value, list):
+                    for e in f[el]:
+                        absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
+                elif isinstance(value, dict):
+                    absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
     return absent_keys
 
 

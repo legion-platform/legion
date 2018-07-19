@@ -24,12 +24,12 @@
     - name: Validate profile yaml-file
       validator:
         source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
-        template: "library/templates/profiles.yaml"
+        template: "{{ lookup('env', 'PROFILES_TEMPLATE_PATH') or '../profiles' }}/profiles.yaml"
 
     - name: Validate secret yaml-file
       validator:
         source: "{{ secrets_file }}"
-        template: "library/templates/secrets.yaml"
+        template: "{{ lookup('env', 'SECRETS_TEMPLATE_PATH') or '../profiles' }}/secrets.yaml"
 
     - name: Include vars
       include_vars:
