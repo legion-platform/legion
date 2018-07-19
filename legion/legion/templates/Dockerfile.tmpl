@@ -37,8 +37,6 @@ COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/serving/uwsgi.ini
-
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 
 ARG pip_extra_index_params=""
