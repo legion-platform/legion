@@ -52,7 +52,7 @@ def validate(f, temp, key=""):
     """
 
     absent_keys = []
-
+    print(f, temp)
     for el in temp:
         value = temp[el]
         if not value:
