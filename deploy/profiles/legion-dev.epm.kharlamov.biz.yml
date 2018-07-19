@@ -52,7 +52,7 @@ cluster_zones:
     kops_utility_cidr: "{{ private_network }}.105.0/24"
 
 # Legion specific variables
-ssh_public_key: ~/.ssh/id_rsa.pub
+#ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: legion@epam.com
 git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
