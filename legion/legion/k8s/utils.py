@@ -159,7 +159,7 @@ def get_docker_image_labels(image):
 
     try:
         registry_client = DockerRegistryClient(
-            host=os.getenv(*legion.config.NEXUS_DOCKER_REGISTRY),
+            host=image_attributes.host,
             username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
             password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
             api_version=2
@@ -234,6 +234,7 @@ def parse_docker_image_url(image):
         image_attrs_list = re.search(image_attrs_regexp, image)
 
         image_attrs = image_attributes(
+            host=image_attrs_list.group[0],
             repo=image_attrs_list.group[1],
             ref=image_attrs_list.group[2]
         )

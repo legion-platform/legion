@@ -58,9 +58,8 @@ class TestK8S(unittest2.TestCase):
             image = docker_client.images.get(image)
             image.tag('{}/{}'.format(registry, image))
             docker_client.images.push('{}/{}'.format(registry, image))
-            image_url = 
         except Exception as err:
-            print('Can\'t push image to registry: {}'format(err))
+            print('Can\'t push image to registry: {}'.format(err))
 
         return image_url
 
