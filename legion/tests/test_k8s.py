@@ -51,7 +51,7 @@ class TestK8S(unittest2.TestCase):
         )
 
         return new_image[0]
-    
+
     def _push_docker_image_to_registry(self, image, registry):
         try:
             docker_client = legion.containers.docker.build_docker_client()

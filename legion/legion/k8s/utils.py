@@ -43,14 +43,7 @@ from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE
 from docker_registry_client import DockerRegistryClient
-<<<<<<< b530c4a7dda9eb0af4f5875d47167bcd3943fb2a
-<<<<<<< c192c7c09d7e7c8079dc82166ceb59f13a5b311a
 from typing import NamedTuple
-=======
->>>>>>> [#214] Add image url parser
-=======
-from typing import NamedTuple
->>>>>>> [#214] Get image labels from registry
 
 
 LOGGER = logging.getLogger(__name__)
@@ -233,7 +226,7 @@ def parse_docker_image_url(image):
 
         image_attrs_list = re.search(image_attrs_regexp, image)
 
-        image_attrs = image_attributes(
+        image_attributes = image_attributes(
             host=image_attrs_list.group[0],
             repo=image_attrs_list.group[1],
             ref=image_attrs_list.group[2]
@@ -244,4 +237,4 @@ def parse_docker_image_url(image):
             image,
             err))
 
-return image_attrs
+    return image_attributes
