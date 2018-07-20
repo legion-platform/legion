@@ -86,19 +86,21 @@ def main():
         if not os.path.isfile(path):
             module.fail_json(msg="{} is directory".format(path))
 
+
     with open(module.params['source'], 'r') as stream:
         file = yaml.load(stream)
 
     with open(module.params['template'], 'r') as stream:
         template = yaml.load(stream)
 
-    print(file, template)
+    if not file:
+        module.fail_json(msg="{} file is empty".format(module.params['source']))
+
     data = validate(file, template)
 
     if data:
         module.fail_json(msg="{} keys is missing in {} file".format(data, module.params['source']))
-    elif data is None:
-        module.fail_json(msg="{} file is empty".format(module.params['source']))
+
     module.exit_json(msg="Validate successfull")
 
 if __name__ == "__main__":
