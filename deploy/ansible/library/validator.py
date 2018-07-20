@@ -65,6 +65,8 @@ def validate(f, temp, key=""):
                         absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
                 elif isinstance(value, dict):
                     absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
+    else:
+        raise Exception("{}".f)
 
     return absent_keys
 
@@ -96,7 +98,6 @@ def main():
     if not file:
         module.fail_json(msg="{} file is empty".format(module.params['source']))
 
-    module.log(msg="{}".format(file))
     data = validate(file, template)
 
     if data:
