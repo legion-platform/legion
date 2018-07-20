@@ -96,7 +96,7 @@ def main():
     if not file:
         module.fail_json(msg="{} file is empty".format(module.params['source']))
 
-    module.debug(msg="{}".format(file))
+    module.log(msg="{}".format(file))
     data = validate(file, template)
 
     if data:
