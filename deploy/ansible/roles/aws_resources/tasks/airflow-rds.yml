@@ -9,6 +9,7 @@
     tags:
       vendor: "{{ vendor }}"
       env_name: "{{ env_name }}"
+      KubernetesCluster: "{{ cluster_name }}"
     rules:
       - proto: tcp
         from_port: 5432
@@ -58,6 +59,7 @@
     tags:
       vendor: "{{ vendor }}"
       env_name: "{{ env_name }}"
+      KubernetesCluster: "{{ cluster_name }}"
   register: airflow_rds_instance
 
 - debug: 
