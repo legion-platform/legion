@@ -90,11 +90,11 @@ def main():
         if not os.path.isfile(path):
             module.fail_json(msg="{} is directory".format(path))
 
-    if module.params['source'].endswith('yml'):
-        with open(module.params['source'], 'r') as stream:
+    with open(module.params['source'], 'r') as stream:
+        if module.params['source'].endswith('yml'):
             file = yaml.load(stream)
-    else:
-        file = yaml.load(vault.load(open(module.params['source'])))
+        else:
+            file = yaml.load(vault.load(stream))
 
     with open(module.params['template'], 'r') as stream:
         template = yaml.load(stream)
