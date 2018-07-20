@@ -21,6 +21,8 @@
         dest: "{{ secrets_file }}"
         mode: get
 
+    -
+
     - name: Validate profile yaml-file
       validator:
         source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"

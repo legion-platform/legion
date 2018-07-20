@@ -37,6 +37,7 @@ import os
 
 import yaml
 from ansible.module_utils.basic import AnsibleModule
+from ansible_vault import Vault
 
 def validate(f, temp, key=""):
     """
@@ -65,8 +66,6 @@ def validate(f, temp, key=""):
                         absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
                 elif isinstance(value, dict):
                     absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
-    else:
-        raise Exception("{}".format(f))
 
     return absent_keys
 
@@ -82,15 +81,20 @@ def main():
         ),
         supports_check_mode=True
     )
+
+    vault = Vault(os.environ['vault'])
+
     for path in (module.params['source'], module.params['template']):
         if not os.path.exists(path):
             module.fail_json(msg="{} file doesn't exist".format(path))
         if not os.path.isfile(path):
             module.fail_json(msg="{} is directory".format(path))
 
-
-    with open(module.params['source'], 'r') as stream:
-        file = yaml.load(stream)
+    if module.params['source'].endswith('yml'):
+        with open(module.params['source'], 'r') as stream:
+            file = yaml.load(stream)
+    else:
+        file = yaml.load(vault.load(open(module.params['source'])))
 
     with open(module.params['template'], 'r') as stream:
         template = yaml.load(stream)
