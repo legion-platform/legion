@@ -60,6 +60,7 @@ def validate(f, temp, key=""):
             value = temp[el]
             if not (el in f):
                 absent_keys.append(key + "/" + str(el))
+                continue
             if isinstance(value, list):
                 for e in f[el]:
                     absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
