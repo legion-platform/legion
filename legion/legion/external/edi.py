@@ -126,7 +126,7 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, count=1):
+    def deploy(self, image, count=1, timeout=10):
         """
         Deploy API endpoint
 
@@ -134,6 +134,8 @@ class EdiClient:
         :type image: str
         :param count: count of pods to create
         :type count: int
+        :param timeout: model pod startup timeout (used in liveness and readiness probes)
+        :type timeout: int
         :return: bool -- True
         """
         payload = {
@@ -141,6 +143,8 @@ class EdiClient:
         }
         if count is not None:
             payload['count'] = count
+        if timeout:
+            payload['timeout'] = timeout
 
         return self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']
 

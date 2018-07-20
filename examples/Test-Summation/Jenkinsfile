@@ -15,7 +15,7 @@ node {
         }
 
         stage('deploy'){
-            legion.deploy()
+            legion.deploy(count: 2, timeout: 15)
         }
 
         stage('run tests') {
