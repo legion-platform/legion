@@ -21,10 +21,6 @@
         dest: "{{ secrets_file }}"
         mode: get
 
-    - name: Include vars
-      include_vars:
-        file: "{{ secrets_file }}"
-
     - name: Validate profile yaml-file
       validator:
         source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
@@ -34,6 +30,12 @@
       validator:
         source: "{{ secrets_file }}"
         template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/secrets_template.yaml"
+
+    - name: Include vars
+      include_vars:
+        file: "{{ secrets_file }}"
+
+
 
 
 
