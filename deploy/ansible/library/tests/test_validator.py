@@ -65,6 +65,10 @@ class ValidatorTests(unittest2.TestCase):
         del self._input["f"][0]["h"]
         self.assertEqual(validate(self._input, self._template), ["/c/d", '/f/h'])
 
+    def test_empty_source(self):
+        self._input = None
+        self.assertEqual(validate(self._input, self._template), None)
+
 
 if __name__ == "__main__":
     unittest2.main()

@@ -65,10 +65,10 @@ def validate(f, temp, key=""):
                         absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
                 elif isinstance(value, dict):
                     absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
+
         return absent_keys
     else:
         return None
-
 
 
 
@@ -99,7 +99,7 @@ def main():
     if data:
         module.fail_json(msg="{} keys is missing in {} file".format(data, module.params['source']))
     elif data is None:
-        module.fail_json(msg="{} file doesn't contain valid data".format(module.params['source']))
+        module.fail_json(msg="{} file is empty".format(module.params['source']))
     module.exit_json(msg="Validate successfull")
 
 if __name__ == "__main__":
