@@ -26,16 +26,15 @@
         source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
         template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/profiles_template.yaml"
 
-    - name: Validate secret yaml-file
-      validator:
-        source: hostvars[inventory_hostname]
-        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/secrets_template.yaml"
 
     - name: Include vars
       include_vars:
         file: "{{ secrets_file }}"
 
-
+    - name: Validate secret yaml-file
+      validator:
+        source: "{{ vars }}"
+        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/secrets_template.yaml"
 
 
 
