@@ -174,6 +174,7 @@ def runScript(scriptPath){
 
     cp script-log.txt "\$CONTAINER_DIR"
     cp notebook.html "\$CONTAINER_DIR"
+    sleep 15
     """
 
     sleep time: 1, unit: 'SECONDS'
