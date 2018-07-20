@@ -54,20 +54,17 @@ def validate(f, temp, key=""):
 
 
     absent_keys = []
+
     if isinstance(f, dict): # check source data to supported type (skip encryption info)
         for el in temp:
             value = temp[el]
-            if not value:
-                if (f is None) or not (el in f):
-                    absent_keys.append(key + "/" + str(el))
-            else: # check recursive type (list or dict)
-                if not (el in f):
-                    absent_keys.append(key + "/" + str(el))
-                elif isinstance(value, list):
-                    for e in f[el]:
-                        absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
-                elif isinstance(value, dict):
-                    absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
+            if not (el in f):
+                absent_keys.append(key + "/" + str(el))
+            if isinstance(value, list):
+                for e in f[el]:
+                    absent_keys.extend(validate(e, temp[el][0], key + "/" + el))
+            elif isinstance(value, dict):
+                absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
 
     return absent_keys
 
@@ -84,7 +81,7 @@ def main():
         supports_check_mode=True
     )
 
-    if module.params['source'].endswith('yml'):
+    if module.params['source'].endswith('yml'): # check if source is yaml or ansible dict
         for path in (module.params['source'], module.params['template']):
             if not os.path.exists(path):
                 module.fail_json(msg="{} file doesn't exist".format(path))
@@ -113,7 +110,8 @@ def main():
     data = validate(file, template)
 
     if data:
-        module.fail_json(msg="{} keys is missing in {} file".format(data, module.params['source']))
+        path = module.params["source"] if "yml" in module.params["source"] else "secret"
+        module.fail_json(msg="{} keys is missing in {} file".format(data, path))
 
     module.exit_json(msg="Validate successfull")
 
