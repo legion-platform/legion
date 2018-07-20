@@ -38,13 +38,14 @@ import legion.k8s.utils
 import legion.k8s.services
 import legion.k8s.properties
 import legion.utils
-from legion.serving.pyserve import SERVE_HEALTH_CHECK
 
 LOGGER = logging.getLogger(__name__)
 
+SERVE_HEALTH_CHECK = '/healthcheck'
+
 
 class Enclave:
-    """l
+    """
     Contains overall information about enclave, its services and models
     """
 
