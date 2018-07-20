@@ -28,7 +28,7 @@
 
     - name: Validate secret yaml-file
       validator:
-        source: "{{ secrets_file }}"
+        source: hostvars[inventory_hostname]
         template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/secrets_template.yaml"
 
     - name: Include vars

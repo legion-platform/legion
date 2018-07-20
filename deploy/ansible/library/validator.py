@@ -37,7 +37,7 @@ import os
 
 import yaml
 from ansible.module_utils.basic import AnsibleModule
-from ansible_vault import Vault
+
 
 def validate(f, temp, key=""):
     """
@@ -82,25 +82,27 @@ def main():
         supports_check_mode=True
     )
 
-    vault = Vault(os.environ['vault'])
+    if isinstance(module.params['source'], str):
+        for path in (module.params['source'], module.params['template']):
+            if not os.path.exists(path):
+                module.fail_json(msg="{} file doesn't exist".format(path))
+            if not os.path.isfile(path):
+                module.fail_json(msg="{} is directory".format(path))
 
-    for path in (module.params['source'], module.params['template']):
-        if not os.path.exists(path):
-            module.fail_json(msg="{} file doesn't exist".format(path))
-        if not os.path.isfile(path):
-            module.fail_json(msg="{} is directory".format(path))
+        with open(module.params['source'], 'r') as stream:
+            if module.params['source'].endswith('yml'):
+                file = yaml.load(stream)
+            else:
+                file = yaml.load(vault.load(stream))
 
-    with open(module.params['source'], 'r') as stream:
-        if module.params['source'].endswith('yml'):
-            file = yaml.load(stream)
-        else:
-            file = yaml.load(vault.load(stream))
+        with open(module.params['template'], 'r') as stream:
+            template = yaml.load(stream)
 
-    with open(module.params['template'], 'r') as stream:
-        template = yaml.load(stream)
+        if not file:
+            module.fail_json(msg="{} file is empty".format(module.params['source']))
 
-    if not file:
-        module.fail_json(msg="{} file is empty".format(module.params['source']))
+    else:
+        file = module.params['source']
 
     data = validate(file, template)
 
