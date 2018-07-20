@@ -82,7 +82,7 @@ def main():
         supports_check_mode=True
     )
 
-    if isinstance(module.params['source'], str):
+    if module.params['source'].endswith('yml'):
         for path in (module.params['source'], module.params['template']):
             if not os.path.exists(path):
                 module.fail_json(msg="{} file doesn't exist".format(path))
@@ -90,10 +90,8 @@ def main():
                 module.fail_json(msg="{} is directory".format(path))
 
         with open(module.params['source'], 'r') as stream:
-            if module.params['source'].endswith('yml'):
-                file = yaml.load(stream)
-            else:
-                file = yaml.load(vault.load(stream))
+            file = yaml.load(stream)
+            
 
         with open(module.params['template'], 'r') as stream:
             template = yaml.load(stream)
@@ -102,7 +100,7 @@ def main():
             module.fail_json(msg="{} file is empty".format(module.params['source']))
 
     else:
-        file = module.params['source']
+        file = yaml.load(module.params['source'])
 
     data = validate(file, template)
 
