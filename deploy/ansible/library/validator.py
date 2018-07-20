@@ -91,7 +91,7 @@ def main():
 
         with open(module.params['source'], 'r') as stream:
             file = yaml.load(stream)
-            
+
 
         with open(module.params['template'], 'r') as stream:
             template = yaml.load(stream)
@@ -101,6 +101,9 @@ def main():
 
     else:
         file = yaml.load(module.params['source'])
+
+        with open(module.params['template'], 'r') as stream:
+            template = yaml.load(stream)
 
     data = validate(file, template)
 
