@@ -105,6 +105,9 @@ def main():
         with open(module.params['template'], 'r') as stream:
             template = yaml.load(stream)
 
+    if not isinstance(file, dict):
+        module.fail_json(msg="Can't load secrets file")
+
     data = validate(file, template)
 
     if data:
