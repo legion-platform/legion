@@ -66,9 +66,8 @@ def validate(f, temp, key=""):
                 elif isinstance(value, dict):
                     absent_keys.extend(validate(f[el], temp[el], key + "/" + el))
 
-        return absent_keys
-    else:
-        return None
+    return absent_keys
+
 
 
 
