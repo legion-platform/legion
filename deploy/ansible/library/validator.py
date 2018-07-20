@@ -92,7 +92,7 @@ def main():
     with open(module.params['template'], 'r') as stream:
         template = yaml.load(stream)
 
-    print()
+    print(file, template)
     data = validate(file, template)
 
     if data:
