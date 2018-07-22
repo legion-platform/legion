@@ -229,7 +229,7 @@ def deploy(Map deployParams=null, Closure body) {
 
     sh """
     legionctl undeploy --ignore-not-found ${env.MODEL_ID}
-    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --scale=count --timeout=timeout
+    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --scale=${count} --timeout=${timeout}
     legionctl inspect
     """
 }
