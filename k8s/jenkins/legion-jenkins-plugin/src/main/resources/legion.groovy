@@ -214,7 +214,7 @@ def build() {
     """
 
 }
-def deploy(Map deployParams=null) {
+def deploy(Map deployParams=null, Closure body) {
     if (deployParams == null)
     deployParams = [:]
 
