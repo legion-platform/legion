@@ -235,7 +235,7 @@ class S3Hook(BaseHook):
             by S3 and will be stored in an encrypted form while at rest in S3.
         :type encrypt: bool
         """
-        if not bucket_name:
+        if not bucket_name and not self.bucket_prefix:
             (bucket_name, key) = self.parse_s3_url(key)
 
         with self.open_file(bucket_name, key, 'w') as dist:
@@ -269,7 +269,7 @@ class S3Hook(BaseHook):
             by S3 and will be stored in an encrypted form while at rest in S3.
         :type encrypt: bool
         """
-        if not bucket_name:
+        if not bucket_name and not self.bucket_prefix:
             (bucket_name, key) = self.parse_s3_url(key)
 
         with self.open_file(bucket_name, key, 'w', encoding) as out:
@@ -295,7 +295,7 @@ class S3Hook(BaseHook):
         :param bucket_name: Name of the bucket in which the file is stored
         :type bucket_name: str
         """
-        if not bucket_name:
+        if not bucket_name and not self.bucket_prefix:
             (bucket_name, key) = self.parse_s3_url(key)
 
         if self.exists(bucket_name, key):
