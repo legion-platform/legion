@@ -89,6 +89,9 @@ COPY entrypoint.sh /home/airflow/init.sh
 RUN locale-gen en_CA.UTF-8
 COPY default_locale /etc/default/locale
 RUN chmod 0755 /etc/default/locale
+ENV LC_ALL=en_CA.UTF-8
+ENV LANG=en_CA.UTF-8
+ENV LANGUAGE=en_CA.UTF-8
 
 COPY requirements.txt /home/airflow/requirements.txt
 RUN pip install -r /home/airflow/requirements.txt && \
