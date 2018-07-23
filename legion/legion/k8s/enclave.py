@@ -299,7 +299,9 @@ class Enclave:
         }
 
         http_get_object = kubernetes.client.V1HTTPGetAction(
-            path='/healthcheck')
+            path='/healthcheck',
+            port=5000
+            )
 
         livenessprobe = kubernetes.client.V1Probe(
             failure_threshold=10,
