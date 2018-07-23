@@ -5,6 +5,7 @@
 import smart_open
 import json
 import boto3
+from six import BytesIO
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
@@ -193,6 +194,98 @@ class S3Hook(BaseHook):
                 self.logger.info('Copying from {}:{} to {}:{}'
                                  .format(self.bucket_prefix + src_bucket, key_from, dest_bucket, key_to))
                 dist_obj.copy(source)
+
+    def load_file(self,
+                  filename,
+                  key,
+                  bucket_name=None,
+                  replace=False,
+                  encrypt=False):
+        """
+        Loads a local file to S3
+
+        :param filename: name of the file to load.
+        :type filename: str
+        :param key: S3 key that will point to the file
+        :type key: str
+        :param bucket_name: Name of the bucket in which to store the file
+        :type bucket_name: str
+        :param replace: A flag to decide whether or not to overwrite the key
+            if it already exists. If replace is False and the key exists, an
+            error will be raised.
+        :type replace: bool
+        :param encrypt: If True, the file will be encrypted on the server-side
+            by S3 and will be stored in an encrypted form while at rest in S3.
+        :type encrypt: bool
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+
+        with self.open_file(bucket_name, key, 'w') as dist:
+            with open(filename, 'r') as source:
+                for line in source:
+                    dist.write(line)
+
+    def load_string(self,
+                    string_data,
+                    key,
+                    bucket_name=None,
+                    replace=False,
+                    encrypt=False,
+                    encoding='utf-8'):
+        """
+        Loads a string to S3
+
+        This is provided as a convenience to drop a string in S3. It uses the
+        boto infrastructure to ship a file to s3.
+
+        :param string_data: string to set as content for the key.
+        :type string_data: str
+        :param key: S3 key that will point to the file
+        :type key: str
+        :param bucket_name: Name of the bucket in which to store the file
+        :type bucket_name: str
+        :param replace: A flag to decide whether or not to overwrite the key
+            if it already exists
+        :type replace: bool
+        :param encrypt: If True, the file will be encrypted on the server-side
+            by S3 and will be stored in an encrypted form while at rest in S3.
+        :type encrypt: bool
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+
+        with self.open_file(bucket_name, key, 'w', encoding) as out:
+            out.write(string_data)
+
+    def get_key(self, key, bucket_name=None):
+        """
+        Checks if Key exists
+
+        :param key: the path to the key
+        :type key: str
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        """
+        return self.read_key(key, bucket_name)
+
+    def read_key(self, key, bucket_name=None):
+        """
+        Reads a key from S3
+
+        :param key: S3 key that will point to the file
+        :type key: str
+        :param bucket_name: Name of the bucket in which the file is stored
+        :type bucket_name: str
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+
+        if self.exists(bucket_name, key):
+            with self.open_file(bucket_name, key, 'r', 'utf-8') as out:
+                return out.read()
+        else:
+            return None
 
 
 class CsvReader:
