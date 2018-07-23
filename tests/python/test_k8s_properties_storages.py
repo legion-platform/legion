@@ -79,13 +79,15 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
 
-        storage_to_write.remove()
+        items = legion.k8s.K8SConfigMapStorage.list_storages(TEST_ENCLAVE_NAME)
+
+        storage_to_write.destroy()
 
         storage_to_write['abc'] = '123'
-        storage_to_write.write()
+        storage_to_write.save()
 
         storage_to_read = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
-        storage_to_read.read()
+        storage_to_read.load()
 
         self.assertEqual(storage_to_read['abc'], '123')
 
@@ -97,7 +99,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         :return: None
         """
         storage = legion.k8s.K8SConfigMapStorage('abc', TEST_ENCLAVE_NAME)
-        storage.read()
+        storage.load()
         storage['a'] = 'abc'
 
         print('YEP')
