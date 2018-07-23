@@ -121,7 +121,7 @@ Check EDI scale down procedure
     [Tags]  edi  cli  enclave   one_version
     ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
                     Should Be Equal As Integers    ${resp.rc}          0
-                    Sleep                          10  # because no way to control explicitly scaling the model inside
+                    Sleep                          10
     # TODO remove sleep
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -130,7 +130,7 @@ Check EDI scale down procedure
 
     ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    1
                     Should Be Equal As Integers    ${resp.rc}          0
-                    Sleep                          10  # because no way to control explicitly scaling the model inside
+                    Sleep                          10
     # TODO remove sleep
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
