@@ -70,7 +70,6 @@ class TestK8SModelOperations(unittest2.TestCase):
         legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
 
-    @attr('k8s', 'models')
     def _remove_model_if_exists(self, model_id, model_version=None):
         """
         Remove model if exists
@@ -96,7 +95,6 @@ class TestK8SModelOperations(unittest2.TestCase):
                 except Exception as remove_exception:
                     logging.error('Cannot remove model service: {}'.format(remove_exception))
 
-    @attr('k8s', 'models')
     def _get_test_enclave(self):
         """
         Get test enclave object

@@ -45,7 +45,6 @@ class TestK8SIntrospection(unittest2.TestCase):
         legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
 
-    @attr('k8s', 'inspection')
     def _get_test_enclave(self):
         """
         Get test enclave
