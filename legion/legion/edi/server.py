@@ -95,7 +95,7 @@ def root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, count=int)
+@legion.http.populate_fields(image=str, count=int, timeout=int)
 @legion.http.requested_fields('image')
 def deploy(image, count=1, timeout=10):
     """
