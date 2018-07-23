@@ -298,9 +298,12 @@ class Enclave:
             legion.config.STATSD_PORT[0]: str(self.graphite_service.internal_port)
         }
 
+        http_get_object = kubernetes.client.V1HTTPGetAction(
+            path='/healthcheck')
+
         livenessprobe = kubernetes.client.V1Probe(
             failure_threshold=10,
-            http_get=SERVE_HEALTH_CHECK,
+            http_get=http_get_object,
             initial_delay_seconds=timeout,
             period_seconds=10,
             timeout_seconds=2
@@ -308,7 +311,7 @@ class Enclave:
 
         readinessprobe = kubernetes.client.V1Probe(
             failure_threshold=5,
-            http_get=SERVE_HEALTH_CHECK,
+            http_get=http_get_object,
             initial_delay_seconds=timeout,
             period_seconds=10,
             timeout_seconds=2
