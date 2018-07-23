@@ -21,9 +21,9 @@ ENV AIRFLOW_HOME /home/airflow
 EXPOSE 8080
 
 RUN apt-get update && apt-get install -y \
-    cron libkrb5-dev libsasl2-dev libssl-dev libffi-dev \
-    build-essential libblas-dev liblapack-dev sshpass \
-    iputils-ping openssh-client libpq-dev redis-tools locales && \
+    cron libkrb5-dev libsasl2-dev libssl-dev libffi-dev  iputils-ping \
+    build-essential libblas-dev liblapack-dev libmysqlclient-dev sudo \
+    iputils-ping openssh-client libpq-dev sshpass redis-tools netcat && \
     apt-get clean && apt-get autoclean
 
 RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
