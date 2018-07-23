@@ -61,8 +61,6 @@ class TestK8S(unittest2.TestCase):
         except Exception as err:
             print('Can\'t push image to registry: {}'.format(err))
 
-        return image_url
-
     @staticmethod
     def _build_test_model_labels(model_id='id', model_version='1.0', container_type='model'):
         return {
