@@ -93,7 +93,7 @@ class TestK8S(unittest2.TestCase):
                 labels = self._build_test_model_labels()
                 image_name = 'legion/test-image'
                 self._build_bare_docker_image(image_name, labels)
-                self._push_docker_image_to_registry(image_name, 'localhost:{}'format(registry_container.host_port))
+                self._push_docker_image_to_registry(image_name, 'localhost:{}'.format(registry_container.host_port))
                 image_url = 'http://localhost:{}/{}'.format(registry_container.host_port, image_name)
                 legion.k8s.utils.get_docker_image_labels(image_url)
 
@@ -106,7 +106,7 @@ class TestK8S(unittest2.TestCase):
             labels = self._build_test_model_labels()
             image_name = 'legion/test-image'
             self._build_bare_docker_image(image_name, labels)
-            self._push_docker_image_to_registry(image_name, 'localhost:{}'format(registry_container.host_port))
+            self._push_docker_image_to_registry(image_name, 'localhost:{}'.format(registry_container.host_port))
             image_url = 'http://localhost:{}/{}'.format(registry_container.host_port, image_name)
             received_labels = legion.k8s.utils.get_docker_image_labels(image_url)
             self.assertDictEqual(received_labels, labels)
