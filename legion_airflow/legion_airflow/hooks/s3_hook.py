@@ -5,7 +5,9 @@
 import smart_open
 import json
 import boto3
-from six import BytesIO
+from urllib.parse import urlparse
+
+from airflow.exceptions import AirflowException
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
@@ -39,6 +41,21 @@ class S3Hook(BaseHook):
         self.aws_secret_access_key = self.extras.get('aws_secret_access_key', None)
         self.key_prefix = self.extras.get('key_prefix', conf.get('core', 's3_bucket_path'))
         self.bucket_prefix = self.extras.get('bucket_prefix', '')
+
+    @staticmethod
+    def parse_s3_url(s3url):
+        """
+        Parse S3 URL into bucket and key
+        :param s3url: S3 URL
+        :return: (bucket, key)
+        """
+        parsed_url = urlparse(s3url)
+        if not parsed_url.netloc:
+            raise AirflowException('Please provide a bucket_name')
+        else:
+            bucket_name = parsed_url.netloc
+            key = parsed_url.path.strip('/')
+            return (bucket_name, key)
 
     def open_file(self, bucket: str, key: str, mode: str = 'rb', encoding: str = 'utf-8'):
         """
@@ -202,7 +219,7 @@ class S3Hook(BaseHook):
                   replace=False,
                   encrypt=False):
         """
-        Loads a local file to S3
+        Load a local file to S3
 
         :param filename: name of the file to load.
         :type filename: str
@@ -234,7 +251,7 @@ class S3Hook(BaseHook):
                     encrypt=False,
                     encoding='utf-8'):
         """
-        Loads a string to S3
+        Load a string to S3
 
         This is provided as a convenience to drop a string in S3. It uses the
         boto infrastructure to ship a file to s3.
@@ -260,7 +277,7 @@ class S3Hook(BaseHook):
 
     def get_key(self, key, bucket_name=None):
         """
-        Checks if Key exists
+        Check if Key exists
 
         :param key: the path to the key
         :type key: str
@@ -271,7 +288,7 @@ class S3Hook(BaseHook):
 
     def read_key(self, key, bucket_name=None):
         """
-        Reads a key from S3
+        Read a key from S3
 
         :param key: S3 key that will point to the file
         :type key: str
