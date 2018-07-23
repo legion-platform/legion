@@ -29,23 +29,23 @@ Check EDI availability in all enclaves
 Check EDI deploy 2 models with different versions but the same id
     [Setup]         NONE
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
-                    Should Be Equal As Integers         ${resp_dict.rc}         0
+    ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers         ${resp.rc}         0
     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                      ${resp}                 "version": ${TEST_MODEL_1_VERSION}
-    ${resp_dict}=   Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
-                    Should Be Equal As Integers         ${resp_dict.rc}         0
+                    Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+    ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
+                    Should Be Equal As Integers         ${resp.rc}         0
     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
-                    Should contain                      ${resp}                 "version": ${TEST_MODEL_2_VERSION}
+                    Should contain                      ${resp}                 "model_version": "${TEST_MODEL_2_VERSION}"
 
 Check EDI undeploy 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should Be Equal As Integers     ${resp_dict.rc}         0
+    ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Should not contain              ${resp.output}          ${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp.output}          ${TEST_MODEL_2_VERSION}
+                    Should not contain              ${resp.stdout}          ${TEST_MODEL_1_VERSION}
+                    Should contain                  ${resp.stdout}          ${TEST_MODEL_2_VERSION}
 
 Check EDI undeploy all model instances by version
     [Tags]  edi  cli  enclave   multi_versions
@@ -61,24 +61,24 @@ Check EDI undeploy all model instances by version
                     Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
                     Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
 
-    ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should Be Equal As Integers     ${resp_dict.rc}         0
+    ${resp}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Should not contain              ${resp.output}          ${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp.output}          ${TEST_MODEL_2_VERSION}
+                    Should not contain              ${resp.stdout}          ${TEST_MODEL_1_VERSION}
+                    Should contain                  ${resp.stdout}          ${TEST_MODEL_2_VERSION}
 
 Check EDI undeploy 1 of 2 models by invalid version
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}test
-                    Should Be Equal As Integers     ${resp_dict.rc}         0
-                    Should contain                  ${resp_dict.output}     Cannot find any deployment - ignoring
+    ${resp}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers     ${resp.rc}         0
+                    Should contain                  ${resp.stderr}     Cannot find any deployment - ignoring
 
 Check EDI undeploy 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
-                    Should Be Equal As Integers        ${resp_dict.rc}         2
-                    Should contain                     ${resp_dict.output}     Please specify version of model
+    ${resp}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
+                    Should Be Equal As Integers        ${resp.rc}         2
+                    Should contain                     ${resp.stderr}     Please specify version of model
 
 Check EDI scale up 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
@@ -124,61 +124,61 @@ Check EDI scale up 1 of 2 models by invalid version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}121
                     Should Be Equal As Integers     ${resp.rc}              2
-                    Should contain                  ${resp.output}          No one model can be found
+                    Should contain                  ${resp.stderr}          No one model can be found
 
 Check EDI scale up 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale                   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2
                     Should Be Equal As Integers     ${resp.rc}              2
-                    Should contain                  ${resp.output}          Please specify version of model
+                    Should contain                  ${resp.stderr}          Please specify version of model
 
 Check EDI model inspect by model id return 2 models
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}
-                    Should Be Equal As Integers     ${resp_dict.rc}          0
-                    Should contain                  ${resp_dict.output}      ${TEST_MODEL_IMAGE_1}
-                    Should contain                  ${resp_dict.output}      ${TEST_MODEL_IMAGE_2}
+    ${resp}=   Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}
+                    Should Be Equal As Integers     ${resp.rc}          0
+                    Should contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_1}
+                    Should contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by model version return 1 model
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_1_VERSION}
-                    Should Be Equal As Integers         ${resp_dict.rc}          0
-                    Should contain                      ${resp_dict.output}      ${TEST_MODEL_IMAGE_1}
-                    Should not contain                  ${resp_dict.output}      ${TEST_MODEL_IMAGE_2}
+    ${resp}=   Run EDI inspect by model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers         ${resp.rc}          0
+                    Should contain                      ${resp.stdout}      ${TEST_MODEL_IMAGE_1}
+                    Should not contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by model id and version return 1 model
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}      ${TEST_MODEL_1_VERSION}
-                    Should Be Equal As Integers                      ${resp_dict.rc}         0
-                    Should contain                                   ${resp_dict.output}     ${TEST_MODEL_IMAGE_1}
-                    Should not contain                               ${resp_dict.output}     ${TEST_MODEL_IMAGE_2}
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}      ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers                      ${resp.rc}         0
+                    Should contain                                   ${resp.stdout}     ${TEST_MODEL_IMAGE_1}
+                    Should not contain                               ${resp.stdout}     ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by invalid model id
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test
-                    Should Be Equal As Integers     ${resp_dict.rc}          0
-                    Should be empty                 ${resp_dict.output}
+    ${resp}=   Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test
+                    Should Be Equal As Integers     ${resp.rc}          0
+                    Should be empty                 ${resp.stdout}
 
 Check EDI model inspect by invalid model version
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model version    ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_1_VERSION}test
-                    Should Be Equal As Integers         ${resp_dict.rc}        0
-                    Should be empty                     ${resp_dict.output}
+    ${resp}=   Run EDI inspect by model version    ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers         ${resp.rc}        0
+                    Should be empty                     ${resp.stdout}
 
 Check EDI model inspect by invalid model id and invalid version
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}test
-                    Should Be Equal As Integers                      ${resp_dict.rc}          0
-                    Should be empty                                  ${resp_dict.output}
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers                      ${resp.rc}          0
+                    Should be empty                                  ${resp.stdout}
 
 Check EDI model inspect by invalid model id and valid version
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}
-                    Should Be Equal As Integers                      ${resp_dict.rc}          0
-                    Should be empty                                  ${resp_dict.output}
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}
+                    Should Be Equal As Integers                      ${resp.rc}          0
+                    Should be empty                                  ${resp.stdout}
 
 Check EDI model inspect by valid model id and invalid version
     [Tags]  edi  cli  enclave   multi_versions
-    ${resp_dict}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}test
-                    Should Be Equal As Integers                      ${resp_dict.rc}          0
-                    Should be empty                                  ${resp_dict.output}
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}test
+                    Should Be Equal As Integers                      ${resp.rc}          0
+                    Should be empty                                  ${resp.stdout}
