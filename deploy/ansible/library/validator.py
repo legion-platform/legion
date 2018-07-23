@@ -49,7 +49,8 @@ def validate(f, temp, key=""):
     :type temp: dict
     :param key: yaml-file key
     :type key: str
-    :return: list
+    :return: list of asent keys
+    :rtype: list
     """
 
 

@@ -45,9 +45,9 @@
         state: absent
 
 
-#  roles:
-#    - k8s_create_cluster
-#    - helm
-#    - certificates
-#    - aws_resources
-#    - k8s_resources
+  roles:
+    - k8s_create_cluster
+    - helm
+    - certificates
+    - aws_resources
+    - k8s_resources
