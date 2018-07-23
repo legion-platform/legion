@@ -214,13 +214,7 @@ def build() {
     """
 
 }
-def deploy(Map deployParams=null, Closure body) {
-    if (deployParams == null)
-    deployParams = [:]
-
-    count = deployParams.get('count', 1)
-    timeout = deployParams.get('timeout', 10)
-
+def deploy(count=1, timeout=10) {
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
 
