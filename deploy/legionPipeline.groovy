@@ -71,7 +71,7 @@ def deployLegion() {
 
 def createjenkinsJobs(String commitID) {
     withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
 	    env.commitID = commitID
             sh '''
             cd legion_test
@@ -81,15 +81,20 @@ def createjenkinsJobs(String commitID) {
             cd ..
             
 	    cd .venv/bin
-            export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-deploy/profiles}/"
+            export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
             export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
             export CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+
+            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
+            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            PATH=./:$PATH DISPLAY=:99 \
-            PROFILE=${Profile} \
+            
+            export PATH=./:$PATH DISPLAY=:99
+            export PROFILE=${Profile}
             ./create_example_jobs \
             "https://jenkins.${Profile}" \
             ../../examples \
@@ -147,6 +152,10 @@ def runRobotTests(tags="") {
             CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
             CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+
+            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
+            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
