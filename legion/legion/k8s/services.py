@@ -321,7 +321,6 @@ class ModelService(Service):
         :type new_scale: int
         :return: None
         """
-
         if new_scale < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
 
