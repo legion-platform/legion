@@ -2,6 +2,7 @@ from legion.model.model_id import init
 import legion.io
 
 import legion.model
+import legion.k8s
 
 import legion.pymodel
 
@@ -18,6 +19,9 @@ py_model.on_property_change(lambda key: print(key))
 
 py_model.send_metrics('metric_a', 1.0)
 
+secret_storage = K8SPropertyStorage('NAMEPSPACE', 'NAME')
+
+download_from_s3(sk_id=secret_storage['key1'])
 
 def calculate(x):
     a = legion.model.properties['prop_1']

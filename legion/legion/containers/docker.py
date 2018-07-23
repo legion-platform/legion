@@ -24,7 +24,6 @@ import docker.errors
 import legion
 import legion.config
 import legion.containers.headers
-import legion.io
 import legion.utils
 
 LOGGER = logging.getLogger(__name__)

@@ -23,7 +23,6 @@ import legion.config
 import legion.k8s
 import legion.external.grafana
 import legion.http
-import legion.io
 import legion.model
 from flask import Flask, Blueprint
 from flask import current_app as app
