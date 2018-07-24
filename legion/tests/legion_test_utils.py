@@ -269,7 +269,7 @@ class ModelDockerBuilderContainerContext:
             self._setup_legion_wheel_in_docker_container()
         except Exception as container_prepare_exception:
             self._shutdown_docker_container()
-            log_docker_container_logs(self._docker_container)
+            print_docker_container_logs(self._docker_container)
             LOGGER.exception('Cannot start container', exc_info=container_prepare_exception)
             raise
 
