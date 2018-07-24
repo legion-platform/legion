@@ -40,6 +40,33 @@ LOGGER = logging.getLogger(__name__)
 RELOAD_TIMEOUT_SECONDS = 10
 
 
+class FieldDefinition:
+    """
+    Field information storage
+    """
+    def __init__(self, data_type=legion.model.float32, default=0.0):
+        self._data_type = data_type
+        self._default = default
+
+    @staticmethod
+    def build_from_dict(data_dict):
+        return FieldDefinition(
+            data_type=data_dict.get('type'),
+            default=data_dict.get('default')
+        )
+
+    def as_dict(self):
+        """
+        Serialize object to a dict
+
+        :return: dict[str, any] -- serialized object
+        """
+        return {
+            'type': self._data_type,
+            'default': self._default
+        }
+
+
 class K8SPropertyStorage:
     """
     K8S property storage
@@ -62,6 +89,7 @@ class K8SPropertyStorage:
         if not data:
             data = {}
         self._state = data
+        self._definitions = {}
 
         self._storage_name = storage_name
 
@@ -124,6 +152,14 @@ class K8SPropertyStorage:
         :return: str -- K8S namespace name
         """
         return self._k8s_namespace
+
+    def definitions(self):
+        """
+        Get definitions
+
+        :return: dict[str, :py:class:`legion.k8s.properties.FieldDefinition`] -- dict with field definitions
+        """
+        return self._definitions
 
     @property
     def data(self):
@@ -194,24 +230,49 @@ class K8SPropertyStorage:
         client = legion.k8s.utils.build_client()
         return kubernetes.client.CoreV1Api(client)
 
-    def _unserialize_data(self, value, field_description):
+    def _unserialize_data(self, value, field_definition=None):
         return value
 
-    def _serialize_data(self, value, field_description):
+    def _serialize_data(self, value, field_definition=None):
         return value
 
     def _read_data_from_dict(self, source_dict):
-        self._state = {
-            k[:-len(self.KEY_VALUE_POSTFIX)]: self._unserialize_data(v, None)
-            for (k, v) in source_dict.items()
+        # Populate and load definitions
+        type_keys = {
+            k[:-len(self.KEY_TYPE_POSTFIX)]: k
+            for k in source_dict.keys()
+            if k.endswith(self.KEY_TYPE_POSTFIX)
         }
-        return self._state
+
+        self._definitions = {
+            k: source_dict[field]
+            for (k, field) in type_keys.items()
+        }
+
+        # Populate and load values
+        value_keys = {
+            k[:-len(self.KEY_VALUE_POSTFIX)]: k
+            for k in source_dict.keys()
+            if k.endswith(self.KEY_VALUE_POSTFIX)
+        }
+
+        self._state = {
+            k: self._unserialize_data(source_dict[field], self._definitions.get(k))
+            for (k, field) in value_keys.items()
+        }
 
     def _write_data_to_dict(self):
+        # Firstly, save definitions
         data = {
-            k + self.KEY_VALUE_POSTFIX: self._serialize_data(v, None)
-            for (k, v) in self._state.items()
+            k + self.KEY_TYPE_POSTFIX: definition
+            for (k, definition) in self._definitions.items()
         }
+
+        # Then, save values
+        data.update({
+            k + self.KEY_VALUE_POSTFIX: self._serialize_data(v, self._definitions.get(k))
+            for (k, v) in self._state.items()
+        })
 
         return data
 
@@ -323,6 +384,18 @@ class K8SPropertyStorage:
 
         LOGGER.debug('Deleting {!r}'.format(self))
         self._remove_k8s_resource(delete_options)
+
+    def define(self, key, definition):
+        """
+        Set definition for a field
+
+        :param key: field (or property name)
+        :type key: str
+        :param definition: field definitions
+        :type definition: :py:class:`legion.k8s.properties.FieldDefinition`
+        :return: None
+        """
+        self._definitions[key] = definition
 
     def __repr__(self):
         """
