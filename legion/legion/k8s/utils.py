@@ -148,6 +148,7 @@ def get_docker_image_labels(image):
     :type image: str
     :return: dict[str, Any] -- image labels
     """
+    LOGGER.info('Getting labels for {} image'.format(image))
     image_attributes = parse_docker_image_url(image)
 
     try:
@@ -231,6 +232,8 @@ def parse_docker_image_url(image):
             repo=image_attrs_list.group[1],
             ref=image_attrs_list.group[2]
         )
+
+        LOGGER.info('Image attributes: {}'.format(image_attributes))
 
     except Exception as err:
         raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(

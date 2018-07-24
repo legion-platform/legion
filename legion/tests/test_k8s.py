@@ -20,6 +20,7 @@ import os.path
 
 import unittest2
 import docker.errors
+import logging
 
 import legion.k8s
 import legion.k8s.utils
@@ -31,6 +32,8 @@ try:
     from .legion_test_utils import LegionTestContainer
 except ImportError:
     from legion_test_utils import LegionTestContainer
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TestK8S(unittest2.TestCase):
@@ -56,10 +59,12 @@ class TestK8S(unittest2.TestCase):
         try:
             docker_client = legion.containers.docker.build_docker_client()
             image = docker_client.images.get(image)
-            image.tag('{}/{}'.format(registry, image))
-            docker_client.images.push('{}/{}'.format(registry, image))
+            image_tag = '{}/{}'.format(registry, image)
+            LOGGER.info('Pushing {} image to registry'.format(image_tag))
+            image.tag(image_tag)
+            docker_client.images.push(image_tag)
         except Exception as err:
-            print('Can\'t push image to registry: {}'.format(err))
+            print('Can\'t push image {} to registry: {}'.format(image, err))
 
     @staticmethod
     def _build_test_model_labels(model_id='id', model_version='1.0', container_type='model'):
