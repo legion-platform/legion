@@ -23,12 +23,12 @@ AUTHENTICATION_HOSTNAME = 'https://dex.{}/'
 PARAM_NAME_LOGIN = 'login'
 PARAM_NAME_PASSWORD = 'password'
 SESSION_ID_COOKIE_NAMES = ('_oauth2_proxy', 'JSESSION')
-AUTH_ENDPOINT_URLS = ('https://dashboard.{}/', 'https://jenkins.{}/securityRealm/commenceLogin?from=/',)
-JENKINS_API_TOKEN = None
-JENKINS_LOGIN = None
+AUTH_ENDPOINT_URLS = ('https://dashboard.{}/', 'https://jenkins.{}/securityRealm/commenceLogin',)
+JENKINS_PROFILE_URL = 'https://jenkins.{}/user/{}/configure'
+JENKINS_API_TOKEN_REGEX = re.compile('<input [^>]*id="apiToken"[^>]*value="([^"]+)"[^>]*>')
 
 _session_cookies = {}
-
+_jenkins_credentials = None
 
 def init_session_id(login: str, password: str, cluster_host: str) -> None:
     """Initialize Session ID value from a Cookie after authentication.
@@ -41,7 +41,7 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
     :type cluster_host: str
     :return: None
     """
-    global _session_cookies
+    global _session_cookies, _jenkins_credentials
     session = Session()
     for auth_endpoint_url in AUTH_ENDPOINT_URLS:
         response = session.get(auth_endpoint_url.format(cluster_host))
@@ -61,18 +61,18 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
                 raise IOError('Unable to authorise, got {} http code'
                               .format(response.status_code))
 
-            global JENKINS_API_TOKEN, JENKINS_LOGIN
-            regex = r'<input [^>]*id="apiToken"[^>]*value="([^"]+)"[^.]*>'
-            regex_output = re.match(regex, response.text)
-            if regex_output:
-                JENKINS_API_TOKEN = regex_output.group(1)
-                JENKINS_LOGIN = login
-
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):
                 _session_cookies[cookie_name]= session.cookies.get(cookie_name)
         if len(_session_cookies) == 0:
             raise ValueError('Cant find any session ID in Cookies')
+
+    response = session.get(JENKINS_PROFILE_URL.format(cluster_host, login))
+    if response.status_code == 200:
+
+        regex_output = JENKINS_API_TOKEN_REGEX.search(response.text)
+        if regex_output:
+            _jenkins_credentials = (login, regex_output.group(1))
 
 
 def get_session_cookies():
@@ -80,3 +80,9 @@ def get_session_cookies():
     :return: cookies dict or empty dict if Session ID wasn't found
     """
     return _session_cookies
+
+def get_jenkins_credentials():
+    """Get credentials (username and API Token) for Jenkins API,
+    if they are found.
+    :return: (username, password) or None"""
+    return _jenkins_credentials
