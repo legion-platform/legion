@@ -31,12 +31,22 @@ def get_context():
     """
     Get current model context
 
-    :return:
+    :return: object -- model context
     """
     return _context
 
 
-def init(model_id, model_version, model_type):
+def reset_context():
+    """
+    Drop current model context
+
+    :return: None
+    """
+    global _context
+    _context = None
+
+
+def init(model_id, model_version, model_type=legion.pymodel.model.Model.NAME):
     """
     Initialize new model context
 
@@ -46,7 +56,7 @@ def init(model_id, model_version, model_type):
     :type model_version: str
     :param model_type: type of model, one of MODEL_TYPES names
     :type model_type: str
-    :return: Model -- instance of Model class
+    :return: object -- instance of Model class
     """
     global _context
 
@@ -62,15 +72,19 @@ def init(model_id, model_version, model_type):
     if not builder:
         raise Exception('Cannot find model builder for type {}'.format(model_type))
 
-    if len(builder):
+    if len(builder) > 1:
         raise Exception('More then 1 builder have been found for type {}'.format(model_type))
 
-    _context = builder[0](model_id, model_version)
+    _context = builder[0]()
+    _context.init(model_id, model_version)
+
+    return _context
 
 
-properties = lambda *args, **kwargs: _context.properties(*args, **kwargs)
 define_property = lambda *args, **kwargs: _context.define_property(*args, **kwargs)
 on_property_change = lambda *args, **kwargs: _context.on_property_change(*args, **kwargs)
+
 send_metrics = lambda *args, **kwargs: _context.send_metrics(*args, **kwargs)
-# TODO: Add all methods
+
+# TODO: Add all methods proxying
 

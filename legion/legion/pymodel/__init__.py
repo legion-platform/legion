@@ -1,1 +1,1 @@
-from legion.pymodel.model import Model
+from legion.pymodel.model import Model, ModelEndpoint

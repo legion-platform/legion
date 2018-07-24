@@ -1,8 +1,7 @@
-from legion.model.model_id import init
-import legion.io
+import legion.model
 
 
-init('io model', '1.0')
+legion.model.init('io model', '1.0')
 
 FILE = 'dataset.txt'
 
@@ -25,4 +24,5 @@ def calculate(x):
     return int(x['value']) + value
 
 
-legion.io.PyModel().export_untyped(lambda x: {'result': int(calculate(x))}).save('io.model')
+legion.model.get_context()\
+    .export_untyped(lambda x: {'result': int(calculate(x))}).save('io.model')

@@ -15,13 +15,12 @@
 #
 from __future__ import print_function
 
-import legion.io
 import legion.model
 
 import pandas
 
 
-def create_simple_summation_model_by_df(path):
+def create_simple_summation_model_by_df(model_id, model_version, path):
     def apply(x):
         a = x.iloc[0]['a']
         b = x.iloc[0]['b']
@@ -32,10 +31,10 @@ def create_simple_summation_model_by_df(path):
         'b': 1,
     }])
 
-    return legion.io.PyModel().export_df(apply, df).save(path)
+    return legion.model.init(model_id, model_version).export_df(apply, df).save(path)
 
 
-def create_simple_summation_model_by_df_with_prepare(path):
+def create_simple_summation_model_by_df_with_prepare(model_id, model_version, path):
     def prepare(x):
         return {
             'a': x.iloc[0]['a'],
@@ -50,10 +49,10 @@ def create_simple_summation_model_by_df_with_prepare(path):
         'b': 1,
     }])
 
-    return legion.io.PyModel().export_df(apply, df).save(path)
+    return legion.model.init(model_id, model_version).export_df(apply, df).save(path)
 
 
-def create_simple_summation_model_by_types(path):
+def create_simple_summation_model_by_types(model_id, model_version, path):
     def apply(x):
         return {'x': int(x['a'] + x['b'])}
 
@@ -62,19 +61,19 @@ def create_simple_summation_model_by_types(path):
         'b': legion.model.int32,
     }
 
-    return legion.io.PyModel().export(apply, parameters).save(path)
+    return legion.model.init(model_id, model_version).export(apply, parameters).save(path)
 
 
-def create_simple_summation_model_untyped(path):
+def create_simple_summation_model_untyped(model_id, model_version, path):
     def apply(x):
         keys = sorted(tuple(x.keys()))
 
         return {'keys': ','.join(keys), 'sum': sum(int(val) for val in x.values())}
 
-    return legion.io.PyModel().export_untyped(apply).save(path)
+    return legion.model.init(model_id, model_version).export_untyped(apply).save(path)
 
 
-def create_simple_summation_model_lists(path):
+def create_simple_summation_model_lists(model_id, model_version, path):
     def apply(x):
         movie_matrix = dict(zip(x['movie'], x['rate']))
 
@@ -83,10 +82,10 @@ def create_simple_summation_model_lists(path):
 
         return {'best': best, 'worth': worth}
 
-    return legion.io.PyModel().export_untyped(apply).save(path)
+    return legion.model.init(model_id, model_version).export_untyped(apply).save(path)
 
 
-def create_simple_summation_model_lists_with_files_info(path):
+def create_simple_summation_model_lists_with_files_info(model_id, model_version, path):
     def apply(x):
         movie_matrix = {}
 
@@ -99,4 +98,4 @@ def create_simple_summation_model_lists_with_files_info(path):
 
         return {'best': best, 'worth': worth}
 
-    return legion.io.PyModel().export_untyped(apply).save(path)
+    return legion.model.init(model_id, model_version).export_untyped(apply).save(path)

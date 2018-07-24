@@ -62,7 +62,7 @@ class K8SPropertyStorage:
         self._cache_ttl = cache_ttl
 
         self._storage_name = legion.utils.normalize_name(storage_name, dns_1035=True)
-        
+
         self._last_load_time = None
         self._saved = False
 

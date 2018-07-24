@@ -156,6 +156,22 @@ class Model:
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
 
+    def init(self, model_id, model_version):
+        """
+        Initialize model with ID and VERSION
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :return: None
+        """
+        if self.PROPERTY_MODEL_ID in self._properties:
+            raise Exception('Model cannot be reinitialized')
+
+        self._properties[self.PROPERTY_MODEL_ID] = model_id
+        self._properties[self.PROPERTY_MODEL_VERSION] = model_version
+
     def load(self, path):
         """
         Populate model container with data from file
@@ -407,7 +423,7 @@ class Model:
         return self._properties.copy()
 
     @staticmethod
-    def _build_additional_lproperties():
+    def _build_additional_properties():
         """
         Get additional properties for container
 
