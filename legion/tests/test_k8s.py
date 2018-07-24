@@ -55,12 +55,14 @@ class TestK8S(unittest2.TestCase):
 
         return new_image[0]
 
-    def _push_docker_image_to_registry(self, image, registry):
+    def _push_docker_image_to_registry(self, image_name, ref, registry):
         try:
             docker_client = legion.containers.docker.build_docker_client()
-            image_tag = '{}/{}'.format(registry, image)
+            image = docker_client.images.get(image_name)
+            image_tag = '{}/{}:{}'.format(registry, image_name, ref)
             LOGGER.info('Pushing {} image to registry'.format(image_tag))
             image.tag(image_tag)
+            print(image_tag)
             docker_client.images.push(image_tag)
         except Exception as err:
             print('Can\'t push image {} to registry: {}'.format(image, err))
@@ -97,7 +99,7 @@ class TestK8S(unittest2.TestCase):
                 self._build_bare_docker_image(image_name, labels)
                 registry_url = 'localhost:{}'.format(registry_container.host_port)
 
-                self._push_docker_image_to_registry(image_name, )
+                self._push_docker_image_to_registry(image_name, registry_url)
                 image_url = 'localhost:{}/{}'.format(registry_container.host_port, image_name)
                 legion.k8s.utils.get_docker_image_labels(image_url)
 
@@ -108,10 +110,15 @@ class TestK8S(unittest2.TestCase):
 
         with LegionTestContainer(image='registry', port=5000) as registry_container:
             labels = self._build_test_model_labels()
-            image_name = 'legion/test-image:1.0-180713070916.1.bad661d'
+            image_name = 'legion/test-image'
+            image_ref = '1.0-123'
             self._build_bare_docker_image(image_name, labels)
-            self._push_docker_image_to_registry(image_name, 'localhost:{}'.format(registry_container.host_port))
-            image_url = 'localhost:{}/{}'.format(registry_container.host_port, image_name)
+            self._push_docker_image_to_registry(
+                image_name=image_name,
+                ref=image_ref,
+                registry='localhost:{}'.format(registry_container.host_port)
+            )
+            image_url = 'localhost:{}/{}:{}'.format(registry_container.host_port, image_name, image_ref)
             received_labels = legion.k8s.utils.get_docker_image_labels(image_url)
             self.assertDictEqual(received_labels, labels)
 
