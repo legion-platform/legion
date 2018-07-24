@@ -93,7 +93,7 @@ def createjenkinsJobs(String commitID) {
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-            def tags_list=tags.toString().split(',')
+            def tags_list=tags.toString().trim().split(',')
             def robot_tags= []
             def nose_tags = []
             for (item in tags_list) {
@@ -102,7 +102,7 @@ def runRobotTests(tags="") {
                     robot_tags.add(" -e ${item}")
                     nose_tags.add(" -a !${item}")
                     }
-                else {
+                else if (item?.trim()) {
                     robot_tags.add(" -i ${item}")
                     nose_tags.add(" -a ${item}")
                     }
