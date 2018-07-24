@@ -194,14 +194,14 @@ def work(options):
         import ssl
         ssl._create_default_https_context = ssl._create_unverified_context
 
+    jenkins_creds = (options.jenkins_user, options.jenkins_password)
+
     if options.auth_dex:
         profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
-        jenkins_creds = dex_client.get_jenkins_credentials()
-        if jenkins_creds:
-            options.jenkins_user = jenkins_creds[0]
-            options.jenkins_password = jenkins_creds[1]
+        if dex_client.get_jenkins_credentials():
+            jenkins_creds = dex_client.get_jenkins_credentials()
 
-    client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
+    client = jenkins.Jenkins(options.jenkins_url, username=jenkins_creds[0], password=jenkins_creds[1])
 
     if options.auth_dex:
         client.crumb = {'crumbRequestField': 'Cookie',
