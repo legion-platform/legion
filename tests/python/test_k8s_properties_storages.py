@@ -24,6 +24,7 @@ import unittest.mock
 import kubernetes
 import kubernetes.client.models.v1_namespace
 import kubernetes.client.models.v1_object_meta
+from nose.plugins.attrib import attr
 
 import legion.k8s
 import legion.k8s.utils
@@ -85,6 +86,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
             LOGGER.info('Cannot delete namespace {} that has been built for testing: {}'
                         .format(TEST_ENCLAVE_NAME, exception))
 
+    @attr('k8s', 'props')
     def test_overwrite_config_map_storage(self):
         """
         Overwrite config map storage on save
@@ -93,6 +95,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
+    @attr('k8s', 'props')
     def test_read_config_map_with_update_on_timeout(self):
         """
         Update config map on timeouts
@@ -101,6 +104,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
+    @attr('k8s', 'props')
     def test_write_and_listing_config_map(self):
         """
         Listing config map
@@ -116,6 +120,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         storage_to_write.destroy()
 
+    @attr('k8s', 'props')
     def test_retrive_config_map(self):
         """
         Retrive and load config map in one instruction
@@ -133,6 +138,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         storage_to_read.destroy()
 
+    @attr('k8s', 'props')
     def test_create_and_read_config_map_storage(self):
         """
         Create and read config map storage with defined fields
