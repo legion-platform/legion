@@ -191,6 +191,7 @@ class Model:
 
         self._container_properties[self.PROPERTY_MODEL_ID] = model_id
         self._container_properties[self.PROPERTY_MODEL_VERSION] = model_version
+        self._container_properties[self.PROPERTY_PARAMS] = []
 
     def load(self, path):
         """
@@ -436,6 +437,15 @@ class Model:
         return self._container_properties.get(self.PROPERTY_MODEL_VERSION)
 
     @property
+    def required_props(self):
+        """
+        Get model required props
+
+        :return: list[str] -- list of required property names
+        """
+        return self._container_properties[self.PROPERTY_PARAMS]
+
+    @property
     def container_properties(self):
         """
         Get copy of container properties
@@ -477,3 +487,22 @@ class Model:
         :return: None
         """
         return legion.metrics.send_metric(self.model_id, metric, value)
+
+    def define_property(self, name, initial_value):
+        """
+        Define model property
+
+        :param name: property name
+        :type name: str
+        :param initial_value: initial property value
+        :type initial_value: any
+        :return: model container
+        """
+        self._container_properties[self.PROPERTY_PARAMS].append(name)
+        if not self._property_storage:
+            raise Exception('Property storage has not been initialized')
+
+        self._property_storage[name] = initial_value
+
+        return self
+

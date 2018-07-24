@@ -2,10 +2,8 @@ import legion.model
 
 legion.model.init('test summation', '1.0')
 
-# py_model.define_property('prop_1', 0.5)
 # py_model.properties['prop_1'] = 0.6
 # py_model.on_property_change(lambda key: print(key))
-# py_model.send_metrics('metric_a', 1.0)
 
 
 def calculate(x):

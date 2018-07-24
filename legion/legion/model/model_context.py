@@ -166,3 +166,20 @@ def save(path):
         raise Exception('Context has not been defined')
 
     return _context.save(path)
+
+
+def define_property(name, initial_value):
+    """
+    Define model property
+
+    :param name: property name
+    :type name: str
+    :param initial_value: initial property value
+    :type initial_value: any
+    :return: model container
+    """
+    if not _context:
+        raise Exception('Context has not been defined')
+
+    return _context.define_property(name, initial_value)
+
