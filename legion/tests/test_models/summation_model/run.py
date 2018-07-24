@@ -14,7 +14,17 @@ legion.model.define_property('prop_1', default=0.5, type=legion.model.float32)  
 py_model = legion.pymodel.Model('test summation', '1.0')  # do the same shit as model.init does
                                                           # and set legion.model.context
 
-py_model.define_property('prop_1', default=0.5, type=legion.model.float32)  # by default float32, default value is 0.0
+import configparser
+cm = configparser.ConfigParser()
+
+
+get('key', cast=int)
+
+
+py_model.define_property('prop_1', 0.5)  # start-value is required
+# py_model.properties['prop_1'] = 0.5 ^^^^^^^^  (just initialization)
+
+
 py_model.on_property_change(lambda key: print(key))
 
 py_model.send_metrics('metric_a', 1.0)

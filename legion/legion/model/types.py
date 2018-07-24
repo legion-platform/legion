@@ -245,6 +245,7 @@ Bool = _Bool()
 Image = _Image()
 
 
+# TODO: Rename to LegionType
 class ColumnInformation:
     """
     Column information (type, numpy type)
@@ -465,9 +466,9 @@ uint32 = ColumnInformation(Integer, np.uint32)
 int64 = ColumnInformation(Integer, np.int64)
 uint64 = ColumnInformation(Integer, np.uint64)
 
-float16 = ColumnInformation(Integer, np.float16)
-float32 = ColumnInformation(Integer, np.float32)
-float64 = ColumnInformation(Integer, np.float64)
+float16 = ColumnInformation(Float, np.float16)
+float32 = ColumnInformation(Float, np.float32)
+float64 = ColumnInformation(Float, np.float64)
 
 string = ColumnInformation(String)
 boolean = ColumnInformation(Bool)

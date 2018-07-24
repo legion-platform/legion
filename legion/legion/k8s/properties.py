@@ -37,34 +37,6 @@ import legion.k8s.services
 import legion.utils
 
 LOGGER = logging.getLogger(__name__)
-RELOAD_TIMEOUT_SECONDS = 10
-
-
-class FieldDefinition:
-    """
-    Field information storage
-    """
-    def __init__(self, data_type=legion.model.float32, default=0.0):
-        self._data_type = data_type
-        self._default = default
-
-    @staticmethod
-    def build_from_dict(data_dict):
-        return FieldDefinition(
-            data_type=data_dict.get('type'),
-            default=data_dict.get('default')
-        )
-
-    def as_dict(self):
-        """
-        Serialize object to a dict
-
-        :return: dict[str, any] -- serialized object
-        """
-        return {
-            'type': self._data_type,
-            'default': self._default
-        }
 
 
 class K8SPropertyStorage:
@@ -72,10 +44,7 @@ class K8SPropertyStorage:
     K8S property storage
     """
 
-    KEY_VALUE_POSTFIX = '.value'
-    KEY_TYPE_POSTFIX = '.type'
-
-    def __init__(self, storage_name, k8s_namespace=None, data=None):
+    def __init__(self, storage_name, k8s_namespace=None, data=None, cache_ttl=None):
         """
         Build K8S properties storage
 
@@ -85,11 +54,14 @@ class K8SPropertyStorage:
         :type k8s_namespace: str or None
         :param data: start data or None
         :type data: dict[str, any]
+        :param cache_ttl: amount of lifetime of cache in seconds or None for disabling
+        :type cache_ttl: int
         """
         if not data:
             data = {}
         self._state = data
-        self._definitions = {}
+
+        self._cache_ttl = cache_ttl
 
         self._storage_name = storage_name
 
@@ -102,10 +74,10 @@ class K8SPropertyStorage:
 
         LOGGER.info('Initializing {!r}'.format(self))
 
-    @staticmethod
-    def initialize(cls, storage_name, k8s_namespace=None):
+    @classmethod
+    def retrive(cls, storage_name, k8s_namespace=None):
         """
-        Initialize K8S object and load
+        Initialize storage class from K8S object and load
 
         :param cls: linked class
         :type cls: :py:class:`legion.k8s.properties.K8SPropertyStorage`
@@ -120,15 +92,20 @@ class K8SPropertyStorage:
         return instance
 
     @classmethod
-    def list_storages(cls, namespace):
+    def list(cls, k8s_namespace=None):
         """
-        Get list of storages
+        Get list of storage names
 
         :param cls: linked class
         :type cls: :py:class:`legion.k8s.properties.K8SPropertyStorage`
+        :param k8s_namespace: target namespace or None for auto deducing (auto deducing works only in-cluster)
+        :type k8s_namespace: str
         :return: list[str] -- list of storages
         """
-        resources = cls._find_k8s_resources(namespace)
+        if not k8s_namespace:
+            k8s_namespace = legion.k8s.get_current_namespace()
+
+        resources = cls._find_k8s_resources(k8s_namespace)
         names = [
             resource.metadata.labels[legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE]
             for resource in resources
@@ -152,14 +129,6 @@ class K8SPropertyStorage:
         :return: str -- K8S namespace name
         """
         return self._k8s_namespace
-
-    def definitions(self):
-        """
-        Get definitions
-
-        :return: dict[str, :py:class:`legion.k8s.properties.FieldDefinition`] -- dict with field definitions
-        """
-        return self._definitions
 
     @property
     def data(self):
@@ -207,18 +176,32 @@ class K8SPropertyStorage:
         """
         self._last_load_time = None
         self._saved = False
-        self._state[key] = value
+        self._state[key] = str(value)
 
-    def __getitem__(self, item):
+    def __getitem__(self, key):
         """
         Get value of property
 
-        :param item: name of property field
-        :type item: str
+        :param key: name of property field
+        :type key: str
         :return: any -- property value or None
         """
         self._check_and_reload()
-        return self._state.get(item)
+        return self._state.get(key)
+
+    def get(self, key, cast):
+        """
+        Get value of property with cast to legion type
+
+        :param key: name of property field
+        :type key: str
+        :param cast:
+        :type cast: LegionType
+        :return:
+        """
+        value = self[key]
+        legion_base_type = cast.representation_type
+        return legion_base_type.parse(value)
 
     @property
     def _core_api(self):
@@ -230,53 +213,14 @@ class K8SPropertyStorage:
         client = legion.k8s.utils.build_client()
         return kubernetes.client.CoreV1Api(client)
 
-    def _unserialize_data(self, value, field_definition=None):
-        return value
-
-    def _serialize_data(self, value, field_definition=None):
-        return value
-
     def _read_data_from_dict(self, source_dict):
-        # Populate and load definitions
-        type_keys = {
-            k[:-len(self.KEY_TYPE_POSTFIX)]: k
-            for k in source_dict.keys()
-            if k.endswith(self.KEY_TYPE_POSTFIX)
-        }
-
-        self._definitions = {
-            k: source_dict[field]
-            for (k, field) in type_keys.items()
-        }
-
-        # Populate and load values
-        value_keys = {
-            k[:-len(self.KEY_VALUE_POSTFIX)]: k
-            for k in source_dict.keys()
-            if k.endswith(self.KEY_VALUE_POSTFIX)
-        }
-
-        self._state = {
-            k: self._unserialize_data(source_dict[field], self._definitions.get(k))
-            for (k, field) in value_keys.items()
-        }
+        self._state = source_dict
 
     def _write_data_to_dict(self):
-        # Firstly, save definitions
-        data = {
-            k + self.KEY_TYPE_POSTFIX: definition
-            for (k, definition) in self._definitions.items()
-        }
+        return self._state
 
-        # Then, save values
-        data.update({
-            k + self.KEY_VALUE_POSTFIX: self._serialize_data(v, self._definitions.get(k))
-            for (k, v) in self._state.items()
-        })
-
-        return data
-
-    def _find_k8s_resources(self):
+    @staticmethod
+    def _find_k8s_resources(k8s_namespace):
         """
         Virtual function. Find K8S
 
@@ -326,11 +270,14 @@ class K8SPropertyStorage:
 
         :return: None
         """
+        if not self._cache_ttl:
+            return
+
         if not self._last_load_time or not self._saved:
             return
 
         delta = time.time() - self._last_load_time
-        if delta > RELOAD_TIMEOUT_SECONDS:
+        if delta > self._cache_ttl:
             self.load()
 
     def _write_k8s_resource(self):
@@ -385,18 +332,6 @@ class K8SPropertyStorage:
         LOGGER.debug('Deleting {!r}'.format(self))
         self._remove_k8s_resource(delete_options)
 
-    def define(self, key, definition):
-        """
-        Set definition for a field
-
-        :param key: field (or property name)
-        :type key: str
-        :param definition: field definitions
-        :type definition: :py:class:`legion.k8s.properties.FieldDefinition`
-        :return: None
-        """
-        self._definitions[key] = definition
-
     def __repr__(self):
         """
         Get representation of object
@@ -413,7 +348,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
     """
 
     @staticmethod
-    def _find_k8s_resources(namespace):
+    def _find_k8s_resources(k8s_namespace):
         """
         Find K8S resources
 
@@ -421,7 +356,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         """
         client = legion.k8s.utils.build_client()
         core_api = kubernetes.client.CoreV1Api(client)
-        objects = core_api.list_namespaced_config_map(namespace).items
+        objects = core_api.list_namespaced_config_map(k8s_namespace).items
 
         objects = [
             obj
@@ -461,7 +396,13 @@ class K8SConfigMapStorage(K8SPropertyStorage):
             data=self._write_data_to_dict()
         )
 
-        self._core_api.create_namespaced_config_map(self._k8s_namespace, config_map_body)
+        try:
+            LOGGER.info('Overriding ConfigMap {!r} in {!r} namespace'.format(self._storage_name, self._k8s_namespace))
+            self._core_api.replace_namespaced_config_map(self._storage_name, self._k8s_namespace, config_map_body)
+        except kubernetes.client.rest.ApiException as invoke_exception:
+            if invoke_exception.status == 404:
+                LOGGER.info('Creating ConfigMap {!r} in {!r} namespace'.format(self._storage_name, self._k8s_namespace))
+                self._core_api.create_namespaced_config_map(self._k8s_namespace, config_map_body)
 
     def _write_k8s_resource_exception_handler(self, exception):
         raise Exception('Cannot write config map {!r} in namespace {!r}: {}'
@@ -485,62 +426,4 @@ class K8SSecretStorage(K8SPropertyStorage):
     Storage for properties that uses K8S config map for storing
     """
 
-    def read(self):
-        """
-        Read current state from K8S secret
-
-        :return: None
-        """
-        client = legion.k8s.utils.build_client()
-        core_api = kubernetes.client.CoreV1Api(client)
-
-        try:
-            LOGGER.debug('Reading secret {!r} in namespace {!r}'.format(self._storage_name, self._k8s_namespace))
-
-            secret_object = core_api.read_namespaced_secret(self._storage_name, self._k8s_namespace)
-        except Exception as load_exception:
-            raise Exception('Cannot load secret {!r} in namespace {!r}: {}'
-                            .format(self._storage_name, self._k8s_namespace, load_exception))
-
-        if self.DATA_FIELD not in secret_object.data:
-            raise Exception('Invalid Storage object')
-
-        self._read_from_text(secret_object.data[self.DATA_FIELD])
-
-    def write(self):
-        """
-        Write current state to K8S secret
-
-        :return: None
-        """
-        client = legion.k8s.utils.build_client()
-        core_api = kubernetes.client.CoreV1Api(client)
-
-        secret_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
-            name=self._storage_name
-        )
-
-        secret_body = kubernetes.client.models.v1_secret.V1Secret(
-            metadata=secret_metadata,
-            data={self.DATA_FIELD: self._write_to_text()}
-        )
-
-        try:
-            LOGGER.debug('Writing secret {!r} to namespace {!r}'.format(self._storage_name, self._k8s_namespace))
-
-            core_api.create_namespaced_secret(self._k8s_namespace, secret_body)
-        except Exception as load_exception:
-            raise Exception('Cannot write secret {!r} in namespace {!r}: {}'
-                            .format(self._storage_name, self._k8s_namespace, load_exception))
-
-    def _remove_k8s_resource(self, delete_options):
-        """
-        Remove secret from K8S
-
-        :param delete_options:
-        :type delete_options:
-        :return: None
-        """
-        self._core_api.delete_namespaced_secret(self._storage_name,
-                                                self._k8s_namespace,
-                                                body=delete_options)
+    pass
