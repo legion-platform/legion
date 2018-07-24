@@ -39,7 +39,7 @@ import legion_test.profiler_loader
 warnings.simplefilter('ignore', ResourceWarning)
 VARIABLES = legion_test.profiler_loader.get_variables()
 
-TEST_ENCLAVE_NAME = 'kirill-test'
+TEST_ENCLAVE_NAME = 'properties-storage'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -56,19 +56,34 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
 
+        client = legion.k8s.utils.build_client()
+        core_api = kubernetes.client.CoreV1Api(client)
+
+        current_namespace_name = VARIABLES['ENCLAVES'][0]
+        current_namespace = core_api.read_namespace(current_namespace_name)
+
         try:
-            pass
-            # legion.k8s.Enclave(TEST_ENCLAVE_NAME).delete()
-        except:
-            pass
+            new_namespace_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
+                name=TEST_ENCLAVE_NAME, labels={
+                    legion.k8s.definitions.ENCLAVE_NAMESPACE_LABEL: TEST_ENCLAVE_NAME
+                })
+            new_namespace = kubernetes.client.models.v1_namespace.V1Namespace(
+                spec=current_namespace.spec, metadata=new_namespace_metadata)
+
+            LOGGER.info('Creating namespace {}'.format(TEST_ENCLAVE_NAME))
+            core_api.create_namespace(new_namespace)
+        except Exception as exception:
+            LOGGER.info('Cannot create namespace {} that should be built for testing: {}'
+                        .format(TEST_ENCLAVE_NAME, exception))
 
     @classmethod
     def tearDownClass(cls):
         try:
-            pass
-            # legion.k8s.Enclave(TEST_ENCLAVE_NAME).delete()
-        except:
-            pass
+            LOGGER.info('Deleting namespace {}'.format(TEST_ENCLAVE_NAME))
+            legion.k8s.Enclave(TEST_ENCLAVE_NAME).delete()
+        except Exception as exception:
+            LOGGER.info('Cannot delete namespace {} that has been built for testing: {}'
+                        .format(TEST_ENCLAVE_NAME, exception))
 
     def test_overwrite_config_map_storage(self):
         """
