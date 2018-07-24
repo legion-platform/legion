@@ -7,6 +7,7 @@ import legion.config
 import legion.containers.headers
 import legion.model
 import legion.model.types
+import legion.metrics
 from legion.utils import send_header_to_stderr, extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
 
 
@@ -152,7 +153,7 @@ class Model:
         """
         Build empty model container
         """
-        self._properties = {}  # type: dict
+        self._container_properties = {}  # type: dict
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
 
@@ -166,11 +167,11 @@ class Model:
         :type model_version: str
         :return: None
         """
-        if self.PROPERTY_MODEL_ID in self._properties:
+        if self.PROPERTY_MODEL_ID in self._container_properties:
             raise Exception('Model cannot be reinitialized')
 
-        self._properties[self.PROPERTY_MODEL_ID] = model_id
-        self._properties[self.PROPERTY_MODEL_VERSION] = model_version
+        self._container_properties[self.PROPERTY_MODEL_ID] = model_id
+        self._container_properties[self.PROPERTY_MODEL_VERSION] = model_version
 
     def load(self, path):
         """
@@ -188,7 +189,7 @@ class Model:
 
         with extract_archive_item(self._path, self.ZIP_FILE_INFO) as manifest_path:
             with open(manifest_path, 'r') as manifest_file:
-                self._properties = json.load(manifest_file)
+                self._container_properties = json.load(manifest_file)
 
         return self
 
@@ -242,7 +243,7 @@ class Model:
         if self._endpoints is None:
             self._endpoints = {}
 
-            endpoint_names = self._properties.get(self.PROPERTY_ENDPOINT_NAMES)
+            endpoint_names = self._container_properties.get(self.PROPERTY_ENDPOINT_NAMES)
             if not endpoint_names:
                 raise Exception('PyModel does not contain {} field or field is empty'
                                 .format(self.PROPERTY_ENDPOINT_NAMES))
@@ -262,8 +263,8 @@ class Model:
         if not self.endpoints:
             raise ValueError('Cannot save empty model container (no one export function has been called)')
 
-        self._properties[self.PROPERTY_MODEL_ID] = self.model_id
-        self._properties[self.PROPERTY_MODEL_VERSION] = self.model_version
+        self._container_properties[self.PROPERTY_MODEL_ID] = self.model_id
+        self._container_properties[self.PROPERTY_MODEL_VERSION] = self.model_version
 
         self._path = path
 
@@ -271,15 +272,15 @@ class Model:
         if not self._path:
             self._path = deduce_model_file_name(self.model_id, self.model_version)
 
-        self._properties.update(self._build_additional_properties())
-        self._properties[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
+        self._container_properties.update(self._build_additional_container_properties())
+        self._container_properties[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
 
         with TemporaryFolder('legion-model-save') as temp_directory:
             temp_file = os.path.join(temp_directory.path, 'result.zip')
             with zipfile.ZipFile(temp_file, 'w', self.ZIP_COMPRESSION) as stream:
                 # Add manifest file
                 with open(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), 'w') as info_file:
-                    properties = self.properties
+                    properties = self.container_properties
                     json.dump(properties, info_file)
                 stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
 
@@ -402,7 +403,7 @@ class Model:
 
         :return: str or None -- model id
         """
-        return self._properties.get(self.PROPERTY_MODEL_ID)
+        return self._container_properties.get(self.PROPERTY_MODEL_ID)
 
     @property
     def model_version(self):
@@ -411,23 +412,23 @@ class Model:
 
         :return: str or None -- model version
         """
-        return self._properties.get(self.PROPERTY_MODEL_VERSION)
+        return self._container_properties.get(self.PROPERTY_MODEL_VERSION)
 
     @property
-    def properties(self):
+    def container_properties(self):
         """
-        Get copy of properties
+        Get copy of container properties
 
-        :return: dict -- copy of properties
+        :return: dict -- copy of container properties
         """
-        return self._properties.copy()
+        return self._container_properties.copy()
 
     @staticmethod
-    def _build_additional_properties():
+    def _build_additional_container_properties():
         """
-        Get additional properties for container
+        Get additional container properties for container
 
-        :return: dict -- additional properties
+        :return: dict -- additional container properties
         """
         return {
             'legion.version': legion.__version__,
@@ -451,5 +452,14 @@ class Model:
     def on_property_change(self, callback):
         raise NotImplementedError()
 
-    def send_metrics(self, metric_name, metric_value):
-        raise NotImplementedError()
+    def send_metric(self, metric, value):
+        """
+        Send build metric value
+
+        :param metric: metric type or metric name
+        :type metric: :py:class:`legion.metrics.Metric` or str
+        :param value: metric value
+        :type value: float or int
+        :return: None
+        """
+        return legion.metrics.send_metric(self.model_id, metric, value)

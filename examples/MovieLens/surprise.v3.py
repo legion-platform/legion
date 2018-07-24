@@ -7,9 +7,7 @@ import pandas as pd
 import numpy as np
 import os, io
 
-from legion.metrics import send_metric
 import legion.model
-import legion.io
 import time
 
 use_built_in = True
@@ -36,7 +34,7 @@ class Profiler(object):
     def __exit__(self, type, value, traceback):
         duration = time.time() - self._start_time
         print("Name: " + self._name + " Elapsed time: {:.3f} sec".format(duration))
-        send_metric(self._name, duration)
+        legion.model.get_context().send_metric(self._name, duration)
 
 
 # get item names for built-in 100k dataset
@@ -172,7 +170,7 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-legion.io.PyModel().export(
+legion.model.get_context().export(
     recommend,
     {
         'uid': legion.model.int32
