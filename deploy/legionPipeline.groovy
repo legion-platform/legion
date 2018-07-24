@@ -93,9 +93,17 @@ def createjenkinsJobs(String commitID) {
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-            env.tags=tags.toString().trim()
-            env.robot_tags= !env.tags.empty ? "-i " + env.tags.replaceAll(',',' -i ') : ""
-            env.nose_tags = !env.tags.empty ? "-a " + env.tags.replaceAll(',',' -a ') : ""
+            env.tags_list=tags.toString().split(',')
+            env.robot_tags = []
+            env.nose_tags = []
+            for(item in listOfTags) {
+                if (item.contains('-')) robotList.add(item)
+                else {
+                    robotList.add(" -i " + item)
+                    noseList.add(" -a " + item)
+                    }
+                }
+
             sh '''
             cd legion
             ../.venv/bin/pip install -r requirements/base.txt
@@ -121,14 +129,14 @@ def runRobotTests(tags="") {
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $robot_tags *.robot || true
+            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $robot_tags.join(" ") *.robot || true
 
             echo "Starting python tests"
             cd ../python
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/nosetests $nose_tags --with-xunit || true
+            ../../.venv/bin/nosetests $nose_tags.join(" ") --with-xunit || true
             '''
             step([
                 $class : 'RobotPublisher',
