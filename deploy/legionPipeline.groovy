@@ -97,8 +97,8 @@ def runRobotTests(tags="") {
             def robot_tags= []
             def nose_tags = []
             for (item in tags_list) {
-                if (item.contains('-')) {
-                    item = item.replaceAll("-","")
+                if (item.startsWith('-')) {
+                    item = item.replace("-","")
                     robot_tags.add(" -e ${item}")
                     nose_tags.add(" -a !${item}")
                     }

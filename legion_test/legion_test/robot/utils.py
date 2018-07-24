@@ -146,8 +146,9 @@ class Utils:
         :type url: str
         :return:  str -- response text
         """
+        tries = 6
         error = None
-        for i in range(6):
+        for i in range(tries):
             try:
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
