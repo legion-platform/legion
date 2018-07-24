@@ -24,5 +24,5 @@ def calculate(x):
     return int(x['value']) + value
 
 
-legion.model.get_context()\
-    .export_untyped(lambda x: {'result': int(calculate(x))}).save('io.model')
+legion.model.export_untyped(lambda x: {'result': int(calculate(x))})
+legion.model.save('io.model')

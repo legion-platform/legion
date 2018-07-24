@@ -18,5 +18,5 @@ def calculate(x):
     return info.returncode
 
 
-legion.model.get_context()\
-    .export_untyped(lambda x: {'code': calculate(x)}).save('native.model')
+legion.model.export_untyped(lambda x: {'code': calculate(x)})
+legion.model.save('native.model')

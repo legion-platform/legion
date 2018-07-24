@@ -80,4 +80,89 @@ def init(model_id, model_version, model_type=legion.pymodel.model.Model.NAME):
 
     return _context
 
-# TODO: Add all methods proxying
+
+def send_metric(metric, value):
+    """
+    Send build metric value
+
+    :param metric: metric type or metric name
+    :type metric: :py:class:`legion.metrics.Metric` or str
+    :param value: metric value
+    :type value: float or int
+    :return: None
+    """
+    if not _context:
+        raise Exception('Context has not been defined')
+
+    return _context.send_metric(metric, value)
+
+
+def export_df(apply_func, input_data_frame, *, prepare_func=None, endpoint='default'):
+    """
+    Export simple Pandas DF based model as a bundle
+
+    :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
+    :param input_data_frame: pandas DF
+    :type input_data_frame: :py:class:`pandas.DataFrame`
+    :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
+    :param endpoint: (Optional) endpoint name, default is 'default'
+    :type endpoint: str
+    :return: model container
+    """
+    if not _context:
+        raise Exception('Context has not been defined')
+
+    return _context.export_df(apply_func, input_data_frame, prepare_func=prepare_func, endpoint=endpoint)
+
+
+def export(apply_func, column_types, *, prepare_func=None, endpoint='default'):
+    """
+    Export simple parameters defined model as a bundle
+
+    :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
+    :param column_types: result of deduce_param_types or prepared column information
+    :type column_types: dict[str, :py:class:`legion.model.types.ColumnInformation`]
+    :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
+    :param endpoint: (Optional) endpoint name, default is 'default'
+    :type endpoint: str
+    :return: model container
+    """
+    if not _context:
+        raise Exception('Context has not been defined')
+
+    return _context.export(apply_func, column_types, prepare_func=prepare_func, endpoint=endpoint)
+
+
+def export_untyped(apply_func, *, prepare_func=None, endpoint='default'):
+    """
+    Export simple untyped model as a bundle
+
+    :param apply_func: an apply function DF->DF
+    :type apply_func: func(x) -> y
+    :param prepare_func: a function to prepare input DF->DF
+    :type prepare_func: func(x) -> y
+    :param endpoint: (Optional) endpoint name, default is 'default'
+    :type endpoint: str
+    :return: model container
+    """
+    if not _context:
+        raise Exception('Context has not been defined')
+
+    return _context.export_untyped(apply_func, prepare_func=prepare_func, endpoint=endpoint)
+
+
+def save(path):
+    """
+    Save model to path (or deduce path)
+
+    :param path: (Optional) target save name
+    :return: model container
+    """
+    if not _context:
+        raise Exception('Context has not been defined')
+
+    return _context.save(path)
