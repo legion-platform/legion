@@ -93,18 +93,18 @@ def createjenkinsJobs(String commitID) {
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-            env.tags_list=tags.toString().split(',')
-            env.robot_tags= []
-            env.nose_tags = []
-            for (item in env.tags_list) {
-                if (item.contains('-')) env.robot_tags.add(item)
+            def tags_list=tags.toString().split(',')
+            def robot_tags= []
+            def nose_tags = []
+            for (item in tags_list) {
+                if (item.contains('-')) robot_tags.add(item)
                 else {
-                    env.robot_tags.add(" -i " + item)
-                    env.nose_tags.add(" -a " + item)
+                    robot_tags.add(" -i ${item}")
+                    nose_tags.add(" -a ${item}")
                     }
                 }
-            env.robot_tags= env.robot_tags.join(" ")
-            env.nose_tags = env.nose_tags.join(" ")
+            env.robot_tags= robot_tags.join(" ")
+            env.nose_tags = nose_tags.join(" ")
 
             sh '''
             cd legion
