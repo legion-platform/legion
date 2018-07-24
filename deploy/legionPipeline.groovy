@@ -93,7 +93,9 @@ def createjenkinsJobs(String commitID) {
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-            env.tags=tags
+            env.tags=tags.toString().trim()
+            env.robot_tags= !env.tags.empty ? "-i " + env.tags.replaceAll(',',' -i ') : ""
+            env.nose_tags = !env.tags.empty ? "-a " + env.tags.replaceAll(',',' -a ') : ""
             sh '''
             cd legion
             ../.venv/bin/pip install -r requirements/base.txt
@@ -119,7 +121,7 @@ def runRobotTests(tags="") {
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
-            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $tags *.robot || true
+            ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $robot_tags *.robot || true
 
             echo "Starting python tests"
             cd ../python
