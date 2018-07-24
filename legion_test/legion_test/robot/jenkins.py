@@ -22,7 +22,7 @@ import json
 import jenkins
 from six.moves.urllib.request import Request
 from six.moves.urllib.error import HTTPError
-from legion_test.robot.dex_client import get_session_cookies
+from legion_test.robot.dex_client import get_session_cookies, JENKINS_LOGIN, JENKINS_API_TOKEN
 
 JOB_MODEL_ID = '%(folder_url)sjob/%(short_name)s/%(build_number)s/model/json'
 
@@ -83,6 +83,9 @@ class Jenkins:
         :type timeout: int or str
         :return: None
         """
+        if JENKINS_API_TOKEN and JENKINS_LOGIN:
+            user = JENKINS_LOGIN
+            password = JENKINS_API_TOKEN
         self._client = jenkins.Jenkins(domain,
                                        username=user,
                                        password=password,
