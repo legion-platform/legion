@@ -15,12 +15,9 @@
 #
 FROM {{DOCKER_BASE_IMAGE_ID}}
 
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-     python3.5 /usr/bin/add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
 RUN apt-get update && apt-get install -y \
     ca-certificates apt-transport-https nginx \
-    supervisor docker-ce
+    supervisor
 
 EXPOSE 5000
 
@@ -37,7 +34,9 @@ COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
+WORKDIR /app
 
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
