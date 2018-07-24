@@ -21,15 +21,29 @@
         dest: "{{ secrets_file }}"
         mode: get
 
+    - name: Validate profile yaml-file
+      validator:
+        source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
+        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/profiles_template.yaml"
+
+
     - name: Include vars
       include_vars:
         file: "{{ secrets_file }}"
+
+    - name: Validate secret yaml-file
+      validator:
+        source: "{{ vars }}"
+        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/secrets_template.yaml"
+
+
 
   post_tasks:
     - name: Delete secrets file
       file:
         name: "{{ secrets_file }}"
         state: absent
+
 
   roles:
     - k8s_create_cluster
