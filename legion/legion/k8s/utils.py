@@ -227,6 +227,8 @@ def parse_docker_image_url(image):
 
         image_attrs_list = re.search(image_attrs_regexp, image)
 
+        LOGGER.info(image_attrs_list)
+
         image_attributes = image_attributes(
             host=image_attrs_list.group[0],
             repo=image_attrs_list.group[1],
