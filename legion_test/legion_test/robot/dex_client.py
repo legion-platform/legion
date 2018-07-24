@@ -24,6 +24,8 @@ PARAM_NAME_LOGIN = 'login'
 PARAM_NAME_PASSWORD = 'password'
 SESSION_ID_COOKIE_NAMES = ('_oauth2_proxy', 'JSESSION')
 AUTH_ENDPOINT_URLS = ('https://dashboard.{}/', 'https://jenkins.{}/securityRealm/commenceLogin?from=/',)
+JENKINS_API_TOKEN = None
+JENKINS_LOGIN = None
 
 _session_cookies = {}
 
@@ -58,6 +60,14 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
             if response.status_code != 200:
                 raise IOError('Unable to authorise, got {} http code'
                               .format(response.status_code))
+
+            global JENKINS_API_TOKEN, JENKINS_LOGIN
+            regex = r'<input [^>]*id="apiToken"[^>]*value="([^"]+)"[^.]*>'
+            regex_output = re.match(regex, response.text)
+            if regex_output:
+                JENKINS_API_TOKEN = regex_output.group(1)
+                JENKINS_LOGIN = login
+
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):
                 _session_cookies[cookie_name]= session.cookies.get(cookie_name)
