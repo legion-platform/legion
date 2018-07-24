@@ -390,7 +390,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
 
     def _read_k8s_resource_exception_handler(self, exception):
         """
-        Handler for exceptions that can appear during reading K8S config map
+        Handle exceptions that can appear during reading K8S config map
 
         :param exception: appeared exception
         :type exception: :py:class:`Exception`
@@ -427,7 +427,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
 
     def _write_k8s_resource_exception_handler(self, exception):
         """
-        Handler for exceptions that can appear during creating K8S resource
+        Handle exceptions that can appear during creating K8S resource
 
         :param exception: appeared exception
         :type exception: :py:class:`Exception`
@@ -483,7 +483,7 @@ class K8SSecretStorage(K8SPropertyStorage):
 
     def _read_k8s_resource_exception_handler(self, exception):
         """
-        Handler for exceptions that can appear during reading K8S secret
+        Handle exceptions that can appear during reading K8S secret
 
         :param exception: appeared exception
         :type exception: :py:class:`Exception`
@@ -520,7 +520,7 @@ class K8SSecretStorage(K8SPropertyStorage):
 
     def _write_k8s_resource_exception_handler(self, exception):
         """
-        Handler for exceptions that can appear during creating K8S resource
+        Handle exceptions that can appear during creating K8S resource
 
         :param exception: appeared exception
         :type exception: :py:class:`Exception`

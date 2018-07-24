@@ -30,7 +30,8 @@ import legion.containers.headers
 import legion.k8s
 import legion.external.edi
 import legion.external.grafana
-import legion.io
+import legion.pymodel
+import legion.model
 import legion.utils
 from legion.utils import Colors, ExternalFileReader
 
@@ -55,7 +56,7 @@ def build_model(args):
         if not os.path.exists(external_reader.path):
             raise Exception('Cannot find model binary {}'.format(external_reader.path))
 
-        container = legion.io.PyModel().load(external_reader.path)
+        container = legion.pymodel.Model().load(external_reader.path)
         model_id = container.model_id
 
         image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)

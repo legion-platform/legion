@@ -80,11 +80,4 @@ def init(model_id, model_version, model_type=legion.pymodel.model.Model.NAME):
 
     return _context
 
-
-define_property = lambda *args, **kwargs: _context.define_property(*args, **kwargs)
-on_property_change = lambda *args, **kwargs: _context.on_property_change(*args, **kwargs)
-
-send_metrics = lambda *args, **kwargs: _context.send_metrics(*args, **kwargs)
-
 # TODO: Add all methods proxying
-

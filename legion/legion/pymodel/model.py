@@ -1,4 +1,23 @@
+#
+#    Copyright 2018 EPAM Systems
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+"""
+Python model
+"""
 import json
+import sys
 import os
 import zipfile
 
@@ -293,6 +312,8 @@ class Model:
 
             result_path = save_file(temp_file, self._path)
 
+        send_header_to_stderr(legion.containers.headers.MODEL_ID, self.model_id)
+        send_header_to_stderr(legion.containers.headers.MODEL_VERSION, self.model_version)
         send_header_to_stderr(legion.containers.headers.MODEL_PATH, result_path)
         send_header_to_stderr(legion.containers.headers.SAVE_STATUS, 'OK')
 
@@ -444,13 +465,6 @@ class Model:
             'jenkins.node_name': os.environ.get(*legion.config.NODE_NAME),
             'jenkins.job_name': os.environ.get(*legion.config.JOB_NAME)
         }
-
-    @property
-    def model_properties(self):
-        return {}
-
-    def on_property_change(self, callback):
-        raise NotImplementedError()
 
     def send_metric(self, metric, value):
         """

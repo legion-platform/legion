@@ -37,7 +37,6 @@ class TestDeploy(unittest2.TestCase):
         logging.basicConfig(level=logging.DEBUG)
         build_distribution()
 
-    @unittest2.skip
     def test_summation_model_build_and_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('summation_model')
@@ -73,7 +72,6 @@ class TestDeploy(unittest2.TestCase):
                 'invalid batch invocation result'
             )
 
-    @unittest2.skip
     def test_math_model_build_and_query_with_multiple_endpoints(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('math_model')
@@ -129,7 +127,6 @@ class TestDeploy(unittest2.TestCase):
                 'invalid batch invocation result'
             )
 
-    @unittest2.skip
     def test_complex_model_build_and_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('complex_model')
@@ -165,7 +162,6 @@ class TestDeploy(unittest2.TestCase):
                 'invalid batch invocation result'
             )
 
-    @unittest2.skip
     def test_io_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('model_with_io_operations')
@@ -189,7 +185,6 @@ class TestDeploy(unittest2.TestCase):
 
             self.assertEqual(context.client.invoke(value=20)['result'], 62, 'invalid invocation result')
 
-    @unittest2.skip
     def test_native_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('model_with_native')

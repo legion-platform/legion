@@ -22,6 +22,8 @@ import os
 import docker
 import docker.errors
 import legion
+import legion.model
+import legion.pymodel
 import legion.config
 import legion.containers.headers
 import legion.utils
@@ -188,7 +190,7 @@ def generate_docker_labels_for_image(model_file, model_id, args):
     :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
-    container = legion.io.PyModel().load(model_file)
+    container = legion.pymodel.Model().load(model_file)
 
     base = {
         legion.containers.headers.DOMAIN_MODEL_ID: model_id,
@@ -196,7 +198,7 @@ def generate_docker_labels_for_image(model_file, model_id, args):
         legion.containers.headers.DOMAIN_CLASS: 'pyserve',
         legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model'
     }
-    for key, value in container.properties.items():
+    for key, value in container.container_properties.items():
         if hasattr(value, '__iter__') and not isinstance(value, str):
             formatted_value = ', '.join(item for item in value)
         else:
