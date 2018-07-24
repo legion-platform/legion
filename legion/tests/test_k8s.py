@@ -62,7 +62,6 @@ class TestK8S(unittest2.TestCase):
             image_tag = '{}/{}:{}'.format(registry, image_name, ref)
             LOGGER.info('Pushing {} image to registry'.format(image_tag))
             image.tag(image_tag)
-            print(image_tag)
             docker_client.images.push(image_tag)
         except Exception as err:
             print('Can\'t push image {} to registry: {}'.format(image, err))

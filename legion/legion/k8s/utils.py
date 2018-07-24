@@ -163,7 +163,6 @@ def get_docker_image_labels(image):
             password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
             api_version=2
         )
-
         manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
         labels = json.loads(
             manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
@@ -215,29 +214,41 @@ def get_meta_from_docker_labels(labels):
     return normalize_name(k8s_name, dns_1035=True), compatible_labels, model_id, model_version
 
 
-def parse_docker_image_url(image):
+def parse_docker_image_url(image_url):
     """
     Get Repository host address, image name and version from image url
-    :param image: full docker image url
-    :type image: str
+    :param image_url: full docker image url
+    :type image_url: str
     :return: namedtuple[str, Any]
     """
+    image_attrs_regexp = '(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
     try:
-        image_attrs_regexp = '(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
+        image_attrs_list = re.search(image_attrs_regexp, image_url)
 
-        image_attrs_list = re.search(image_attrs_regexp, image)
+        try:
+            host = image_attrs_list.group(1)
+        except Exception as err:
+            raise LOGGER.error('Image url doesn\'t contain host pattern: {}'.format(err))
+        try:
+            repo = image_attrs_list.group(2)
+        except Exception as err:
+            raise LOGGER.error('Image url doesn\'t contain repo pattern: {}'.format(err))
+        try:
+            ref = image_attrs_list.group(3)
+        except Exception as err:
+            raise LOGGER.error('Image url doesn\'t contain ref pattern: {}'.format(err))
 
         image_attributes = ImageAttributes(
-            host=image_attrs_list.group(0),
-            repo=image_attrs_list.group(1),
-            ref=image_attrs_list.group(2)
+            host=host,
+            repo=repo,
+            ref=ref
         )
 
         LOGGER.info('Image attributes: {}'.format(image_attributes))
 
     except Exception as err:
         raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
-            image,
+            image_url,
             err))
 
     return image_attributes
