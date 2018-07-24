@@ -195,13 +195,13 @@ def work(options):
         ssl._create_default_https_context = ssl._create_unverified_context
 
     if options.auth_dex:
+        profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
         if dex_client.get_jenkins_credentials():
             options.jenkins_user, options.jenkins_password = dex_client.get_jenkins_credentials()
 
     client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
 
     if options.auth_dex:
-        profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
         client.crumb = {'crumbRequestField': 'Cookie',
                         'crumb': ';'.join(['{}={}'.format(k, v)
                                            for (k, v) in dex_client.get_session_cookies().items()])}
