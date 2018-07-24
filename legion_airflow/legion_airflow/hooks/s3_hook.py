@@ -16,8 +16,8 @@ from airflow.hooks.base_hook import BaseHook
 class S3Hook(BaseHook):
     """S3 hook."""
 
-    maintenance_file_postfix = '.STOP'
-    maintenance_file = 'STOP'
+    STOP_FILE_POSTFIX = '.STOP'
+    STOP_FILE_NAME = 'STOP'
 
     def __init__(self, conn_id: str, *args, **kwargs):
         """
@@ -43,7 +43,7 @@ class S3Hook(BaseHook):
         self.bucket_prefix = self.extras.get('bucket_prefix', '')
 
     @staticmethod
-    def parse_s3_url(s3url):
+    def _parse_s3_url(s3url):
         """
         Parse S3 URL into bucket and key
         :param s3url: S3 URL
@@ -173,12 +173,12 @@ class S3Hook(BaseHook):
         :raise RuntimeError: if loading is terminated
         :return: None
         """
-        if self.exists(bucket, self.maintenance_file):
+        if self.exists(bucket, self.STOP_FILE_NAME):
             raise RuntimeError('Loading is terminated, delete in s3 root "{}/{}" file to continue.'
-                               .format(bucket, self.maintenance_file))
-        elif self.exists(bucket, key + self.maintenance_file_postfix):
+                               .format(bucket, self.STOP_FILE_NAME))
+        elif self.exists(bucket, key + self.STOP_FILE_POSTFIX):
             raise RuntimeError('Loading is terminated, delete "{}/{}" file in data folder to continue.'
-                               .format(bucket, key + self.maintenance_file_postfix))
+                               .format(bucket, key + self.STOP_FILE_POSTFIX))
 
     def copy_folder(self, src_bucket: str, src_key: str, dest_bucket: str, dest_key: str):
         """
@@ -212,12 +212,7 @@ class S3Hook(BaseHook):
                                  .format(self.bucket_prefix + src_bucket, key_from, dest_bucket, key_to))
                 dist_obj.copy(source)
 
-    def load_file(self,
-                  filename,
-                  key,
-                  bucket_name=None,
-                  replace=False,
-                  encrypt=False):
+    def load_file(self, filename, key, bucket_name=None, replace=False, encrypt=False):
         """
         Load a local file to S3
 
@@ -236,20 +231,15 @@ class S3Hook(BaseHook):
         :type encrypt: bool
         """
         if not bucket_name and not self.bucket_prefix:
-            (bucket_name, key) = self.parse_s3_url(key)
+            (bucket_name, key) = self._parse_s3_url(key)
 
         with self.open_file(bucket_name, key, 'w') as dist:
             with open(filename, 'r') as source:
                 for line in source:
                     dist.write(line)
 
-    def load_string(self,
-                    string_data,
-                    key,
-                    bucket_name=None,
-                    replace=False,
-                    encrypt=False,
-                    encoding='utf-8'):
+    def load_string(self, string_data, key, bucket_name=None, replace=False,
+                    encrypt=False, encoding='utf-8'):
         """
         Load a string to S3
 
@@ -268,9 +258,11 @@ class S3Hook(BaseHook):
         :param encrypt: If True, the file will be encrypted on the server-side
             by S3 and will be stored in an encrypted form while at rest in S3.
         :type encrypt: bool
+        :param encoding: String encoding
+        :type encoding: str
         """
         if not bucket_name and not self.bucket_prefix:
-            (bucket_name, key) = self.parse_s3_url(key)
+            (bucket_name, key) = self._parse_s3_url(key)
 
         with self.open_file(bucket_name, key, 'w', encoding) as out:
             out.write(string_data)
@@ -296,7 +288,7 @@ class S3Hook(BaseHook):
         :type bucket_name: str
         """
         if not bucket_name and not self.bucket_prefix:
-            (bucket_name, key) = self.parse_s3_url(key)
+            (bucket_name, key) = self._parse_s3_url(key)
 
         if self.exists(bucket_name, key):
             with self.open_file(bucket_name, key, 'r', 'utf-8') as out:
@@ -366,7 +358,7 @@ class CsvReader:
         while row.count(self.quote) % 2 == 1:
             row = row + '\n' + self.reader.__next__()
         if row is not None:
-            return self.read_row(row, self.column_splitter, self.quote)
+            return self._read_row(row, self.column_splitter, self.quote)
         else:
             return None
 
@@ -381,7 +373,7 @@ class CsvReader:
         return getattr(self.reader, name)
 
     @staticmethod
-    def read_row(row: str, column_splitter: str = ',', quote: str = '"'):
+    def _read_row(row: str, column_splitter: str = ',', quote: str = '"'):
         """
         Read and return row.
 
@@ -464,7 +456,7 @@ class CsvWriter(object):
         :return: None
         """
         if cells is not None:
-            self.writer.write(self.format_row(cells, self.column_splitter, self.quote) + self.EOL)
+            self.writer.write(self._format_row(cells, self.column_splitter, self.quote) + self.EOL)
 
     def __getattr__(self, name: str):
         """
@@ -488,7 +480,7 @@ class CsvWriter(object):
             return 0
 
     @staticmethod
-    def format_row(cells: list, column_splitter: str = ',', quote: str = '"'):
+    def _format_row(cells: list, column_splitter: str = ',', quote: str = '"'):
         """
         Format row.
 
