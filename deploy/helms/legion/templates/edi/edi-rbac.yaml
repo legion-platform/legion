@@ -8,6 +8,9 @@ rules:
 - apiGroups: [""] # core API group
   resources: ["services"]
   verbs: ["watch", "list", "create", "delete"]
+- apiGroups: [""] # core API group
+  resources: ["configmaps", "secrets"]
+  verbs: ["list", "create", "get", "patch"]
 - apiGroups: ["extensions"]
   resources: ["deployments", "ingresses"]
   verbs:  ["list", "create", "patch"]

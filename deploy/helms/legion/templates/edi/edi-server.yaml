@@ -43,6 +43,8 @@ spec:
           value: "5000"
         - name: VERBOSE
           value: "1"
+        - name: MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
+          value: "{{ .Release.Name }}-model"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 
