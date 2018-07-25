@@ -16,6 +16,7 @@
 """
 legion k8s properties class
 """
+import base64
 import logging
 import time
 
@@ -469,6 +470,30 @@ class K8SSecretStorage(K8SPropertyStorage):
     """
     Storage for properties that uses K8S secret for storing
     """
+
+    def _read_data_from_dict(self, source_dict):
+        """
+        Update current state with values from dict
+
+        :param source_dict: dict with readed values
+        :type source_dict: dict[str, str]
+        :return: None
+        """
+        self._state = {
+            k: base64.b64decode(v.encode('ascii')).decode('utf-8')
+            for k, v in source_dict
+        }
+
+    def _write_data_to_dict(self):
+        """
+        Get dict of current state to be saved in K8S
+
+        :return: dict[str, str] -- dict with values to save
+        """
+        return {
+            k: base64.b64encode(v.encode('utf-8')).decode('ascii')  # encode string with base64
+            for k, v in self._state
+        }
 
     @staticmethod
     def _find_k8s_resources(k8s_namespace):
