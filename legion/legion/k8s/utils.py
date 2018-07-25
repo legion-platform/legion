@@ -156,9 +156,19 @@ def get_docker_image_labels(image):
     LOGGER.info('Getting labels for {} image'.format(image))
     image_attributes = parse_docker_image_url(image)
 
+    # Get nexus registry host from ENV or image url
+    try:
+        nexus_docker_registry = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
+        if nexus_docker_registry:
+            registry_host = nexus_docker_registry
+        else:
+            registry_host = 'http://{}'.format(image_attributes.host)
+    except Exception as err:
+        raise LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
+
     try:
         registry_client = DockerRegistryClient(
-            host='http://{}'.format(image_attributes.host),
+            host=registry_host,
             username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
             password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
             api_version=2

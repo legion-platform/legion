@@ -43,6 +43,12 @@ spec:
           value: "5000"
         - name: VERBOSE
           value: "1"
+        - name: NEXUS_DOCKER_REGISTRY
+          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
+        - name: DOCKER_REGISTRY_USER
+          value: "admin"
+        - name: DOCKER_REGISTRY_PASSWORD
+          value: "{{ .Values.secrets.nexus.admin }}"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 
