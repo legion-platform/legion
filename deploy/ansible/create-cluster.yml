@@ -24,7 +24,7 @@
     - name: Validate profile yaml-file
       validator:
         source: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
-        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/profiles_template.yaml"
+        template: "../profiles/profiles_template.yaml"
 
 
     - name: Include vars
@@ -34,7 +34,7 @@
     - name: Validate secret yaml-file
       validator:
         source: "{{ vars }}"
-        template: "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/secrets_template.yaml"
+        template: "../profiles/secrets_template.yaml"
 
 
 
