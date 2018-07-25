@@ -25,6 +25,7 @@ import logging
 import legion.config
 import legion.containers.headers
 import legion.model
+import legion.k8s.properties
 import legion.model.types
 import legion.metrics
 from legion.utils import send_header_to_stderr, extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
@@ -167,6 +168,7 @@ class Model:
     PROPERTY_MODEL_ID = 'model.id'
     PROPERTY_MODEL_VERSION = 'model.version'
     PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
+    PROPERTY_REQUIRED_PROPERTIES = 'model.required_properties'
 
     def __init__(self):
         """
@@ -175,6 +177,7 @@ class Model:
         self._container_properties = {}  # type: dict
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
+        self._property_storage = None  # type: legion.k8s.properties.K8SPropertyStorage or None
 
     def init(self, model_id, model_version):
         """
@@ -191,7 +194,7 @@ class Model:
 
         self._container_properties[self.PROPERTY_MODEL_ID] = model_id
         self._container_properties[self.PROPERTY_MODEL_VERSION] = model_version
-        self._container_properties[self.PROPERTY_PARAMS] = []
+        self._container_properties[self.PROPERTY_REQUIRED_PROPERTIES] = []
 
     def load(self, path):
         """
@@ -443,7 +446,7 @@ class Model:
 
         :return: list[str] -- list of required property names
         """
-        return self._container_properties[self.PROPERTY_PARAMS]
+        return self._container_properties[self.PROPERTY_REQUIRED_PROPERTIES]
 
     @property
     def container_properties(self):
@@ -490,7 +493,7 @@ class Model:
 
     def define_property(self, name, initial_value):
         """
-        Define model property
+        Define model property and set initial value
 
         :param name: property name
         :type name: str
@@ -498,7 +501,8 @@ class Model:
         :type initial_value: any
         :return: model container
         """
-        self._container_properties[self.PROPERTY_PARAMS].append(name)
+        self._container_properties[self.PROPERTY_REQUIRED_PROPERTIES].append(name)
+
         if not self._property_storage:
             raise Exception('Property storage has not been initialized')
 
