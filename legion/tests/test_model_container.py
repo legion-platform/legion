@@ -105,20 +105,21 @@ class TestModelContainer(unittest2.TestCase):
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
 
-        container = legion.pymodel.Model().load(MODEL_PATH)
+        container = legion.pymodel.Model.load(MODEL_PATH)
         invoke = container.endpoints['square'].invoke
         self.assertEqual(invoke({'value': 10, 'are_you_sure': 'of course'}), 100)
         self.assertEqual(invoke({'value': 10, 'are_you_sure': 'not sure'}), 10)
 
     def test_model_pack_native_multiple_endpoints(self):
         legion.model.init(MODEL_ID, MODEL_VERSION) \
+            .define_property('abc_prop', 12.41) \
             .export_untyped(apply_add, endpoint='add') \
             .export_untyped(apply_sub, endpoint='sub') \
             .save(MODEL_PATH)
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
 
-        container = legion.pymodel.Model().load(MODEL_PATH)
+        container = legion.pymodel.Model.load(MODEL_PATH)
 
         self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
         self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
@@ -146,7 +147,7 @@ class TestModelContainer(unittest2.TestCase):
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
 
-        container = legion.pymodel.Model().load(MODEL_PATH)
+        container = legion.pymodel.Model.load(MODEL_PATH)
 
         self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
         self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')

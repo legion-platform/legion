@@ -170,7 +170,6 @@ def build_docker_image(client, model_id, model_file, labels,
                 rm=True,
                 labels=labels
             )
-            LOGGER.debug('Image build log: {}', logs)
         except Exception as build_error:
             LOGGER.error('Cannot build image: {}. Build logs: {}'.format(build_error, logs))
             raise
@@ -190,15 +189,17 @@ def generate_docker_labels_for_image(model_file, model_id, args):
     :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
-    container = legion.pymodel.Model().load(model_file)
+    container = legion.pymodel.Model.load(model_file)
 
     base = {
         legion.containers.headers.DOMAIN_MODEL_ID: model_id,
         legion.containers.headers.DOMAIN_MODEL_VERSION: container.model_version,
         legion.containers.headers.DOMAIN_CLASS: 'pyserve',
-        legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model'
+        legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model',
+        legion.containers.headers.DOMAIN_CONTAINER_REQUIRED_PROPERTIES: ','.join(container.required_props)
     }
-    for key, value in container.container_properties.items():
+
+    for key, value in container.meta_information.items():
         if hasattr(value, '__iter__') and not isinstance(value, str):
             formatted_value = ', '.join(item for item in value)
         else:

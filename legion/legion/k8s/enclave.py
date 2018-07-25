@@ -35,6 +35,7 @@ from legion.k8s.definitions import \
 import legion.k8s.watch
 import legion.k8s.utils
 import legion.k8s.services
+import legion.k8s.properties
 import legion.utils
 
 LOGGER = logging.getLogger(__name__)
@@ -214,6 +215,50 @@ class Enclave:
 
         return model_services
 
+    @property
+    def config_map_storage_names(self):
+        """
+        Return list of names of existed config map storages
+
+        :return: list[str] -- list of existed config map storages
+        """
+        return legion.k8s.properties.K8SConfigMapStorage.list(self.namespace)
+
+    @property
+    def secret_storage_names(self):
+        """
+        Return list of names of existed config map storages
+
+        :return: list[str] -- list of existed config map storages
+        """
+        return legion.k8s.properties.K8SSecretStorage.list(self.namespace)
+
+    def _validate_model_properties_storage(self, model_id, required_properties):
+        """
+        Validate that model properties for model exists in a cluster and contains required properties
+
+        :param model_id: model ID
+        :type model_id: str
+        :param required_properties: required properties or None
+        :type required_properties: list[str] or None
+        :return: None
+        """
+        if not required_properties:  # if model does not require properties check can be omitted
+            return
+
+        registered_storages = self.config_map_storage_names
+        storage_name = model_id
+
+        if storage_name not in registered_storages:
+            raise Exception('Cannot find ConfigMap storage with name {}'.format(storage_name))
+
+        try:
+            storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
+            storage.load()
+
+        except Exception as storage_inspection_exception:
+            raise Exception('Cannot inspect ConfigMap {}: {}'.format(storage_name, storage_inspection_exception))
+
     def deploy_model(self, image, count=1):
         """
         Deploy new model
@@ -227,6 +272,11 @@ class Enclave:
         client = legion.k8s.utils.build_client()
         labels = legion.k8s.utils.get_docker_image_labels(image)
         k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
+
+        self._validate_model_properties_storage(
+            model_id,
+            labels.get(legion.containers.headers.DOMAIN_CONTAINER_REQUIRED_PROPERTIES).split(',')
+        )
 
         if self.get_models(model_id, model_version):
             raise Exception('Duplicating model id and version (id={}, version={})'.format(model_id, model_version))

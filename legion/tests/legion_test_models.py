@@ -49,7 +49,10 @@ def create_simple_summation_model_by_df_with_prepare(model_id, model_version, pa
         'b': 1,
     }])
 
-    return legion.model.init(model_id, model_version).export_df(apply, df).save(path)
+    legion.model.init(model_id, model_version)
+    legion.model.define_property('abc', 20.234)
+
+    return legion.model.export_df(apply, df).save(path)
 
 
 def create_simple_summation_model_by_types(model_id, model_version, path):

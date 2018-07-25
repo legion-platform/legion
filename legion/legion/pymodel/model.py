@@ -164,57 +164,86 @@ class Model:
     ZIP_COMPRESSION = zipfile.ZIP_STORED
     ZIP_FILE_MODEL = 'model'
     ZIP_FILE_INFO = 'manifest.json'
+    ZIP_FILE_PROPERTIES = 'properties'
 
     PROPERTY_MODEL_ID = 'model.id'
     PROPERTY_MODEL_VERSION = 'model.version'
     PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
     PROPERTY_REQUIRED_PROPERTIES = 'model.required_properties'
 
-    def __init__(self):
+    def __init__(self, model_id, model_version):
         """
         Build empty model container
-        """
-        self._container_properties = {}  # type: dict
-        self._endpoints = {}  # type: dict or None
-        self._path = None  # type: str or None
-        self._property_storage = None  # type: legion.k8s.properties.K8SPropertyStorage or None
-
-    def init(self, model_id, model_version):
-        """
-        Initialize model with ID and VERSION
 
         :param model_id: model ID
         :type model_id: str
         :param model_version: model version
         :type model_version: str
-        :return: None
         """
-        if self.PROPERTY_MODEL_ID in self._container_properties:
-            raise Exception('Model cannot be reinitialized')
+        self._meta_information = {}  # type: dict
 
-        self._container_properties[self.PROPERTY_MODEL_ID] = model_id
-        self._container_properties[self.PROPERTY_MODEL_VERSION] = model_version
-        self._container_properties[self.PROPERTY_REQUIRED_PROPERTIES] = []
+        self._model_id = model_id
+        self._model_version = model_version
 
-    def load(self, path):
+        self._required_properties = []
+
+        self._endpoints = {}  # type: dict or None
+        self._path = None  # type: str or None
+
+        self._properties = legion.k8s.K8SConfigMapStorage(self.model_id)
+
+        send_header_to_stderr(legion.containers.headers.MODEL_ID, self.model_id)
+        send_header_to_stderr(legion.containers.headers.MODEL_VERSION, self.model_version)
+
+    @property
+    def properties(self):
         """
-        Populate model container with data from file
+        Get model properties
+
+        :return:
+        """
+        return self._properties
+
+    def _load_from_archive(self, path):
+        """
+        Populate model container with data from file after initialization
 
         :param path: path to model binary
         :type path: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: None
+        """
+        self._path = path
+        self._endpoints = None
+
+        with extract_archive_item(path, Model.ZIP_FILE_INFO) as manifest_path:
+            with open(manifest_path, 'r') as manifest_file:
+                self._meta_information = json.load(manifest_file)
+
+                self._required_properties = self._meta_information[self.PROPERTY_REQUIRED_PROPERTIES]
+
+    @staticmethod
+    def load(path):
+        """
+        Populate model container with data from file and initialize
+
+        :param path: path to model binary
+        :type path: str
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         if not os.path.exists(path):
             raise Exception('File not existed: {}'.format(path))
 
-        self._path = path
-        self._endpoints = None
-
-        with extract_archive_item(self._path, self.ZIP_FILE_INFO) as manifest_path:
+        with extract_archive_item(path, Model.ZIP_FILE_INFO) as manifest_path:
             with open(manifest_path, 'r') as manifest_file:
-                self._container_properties = json.load(manifest_file)
+                manifest_data = json.load(manifest_file)
 
-        return self
+                model_id = manifest_data[Model.PROPERTY_MODEL_ID]
+                model_version = manifest_data[Model.PROPERTY_MODEL_VERSION]
+
+        instance = Model(model_id, model_version)
+        instance._load_from_archive(path)
+
+        return instance
 
     @staticmethod
     def _build_endpoint_file_name(endpoint_name):
@@ -235,7 +264,7 @@ class Model:
         :param endpoint_name: endpoint name
         :type endpoint_name: str
         :return: deserialized model endpoint
-        :rtype: :py:class:`legion.io.ModelEndpoint`
+        :rtype: :py:class:`legion.pymodel.model.ModelEndpoint`
         """
         with extract_archive_item(self._path, self._build_endpoint_file_name(endpoint_name)) as endpoint_path:
             with open(endpoint_path, 'rb') as endpoint_file:
@@ -246,7 +275,7 @@ class Model:
         """
         Get model container description
 
-        :return:
+        :return: dict[str, any] -- model description
         """
         return {
             'model_id': self.model_id,
@@ -266,7 +295,7 @@ class Model:
         if self._endpoints is None:
             self._endpoints = {}
 
-            endpoint_names = self._container_properties.get(self.PROPERTY_ENDPOINT_NAMES)
+            endpoint_names = self._meta_information.get(self.PROPERTY_ENDPOINT_NAMES)
             if not endpoint_names:
                 raise Exception('PyModel does not contain {} field or field is empty'
                                 .format(self.PROPERTY_ENDPOINT_NAMES))
@@ -281,13 +310,19 @@ class Model:
         Save model to path (or deduce path)
 
         :param path: (Optional) target save name
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         if not self.endpoints:
             raise ValueError('Cannot save empty model container (no one export function has been called)')
 
-        self._container_properties[self.PROPERTY_MODEL_ID] = self.model_id
-        self._container_properties[self.PROPERTY_MODEL_VERSION] = self.model_version
+        meta_information_to_save = self._meta_information.copy()
+        meta_information_to_save.update(self._collect_build_info())
+
+        # Add model id, model version, model endpoint
+        meta_information_to_save[self.PROPERTY_MODEL_ID] = self.model_id
+        meta_information_to_save[self.PROPERTY_MODEL_VERSION] = self.model_version
+        meta_information_to_save[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
+        meta_information_to_save[self.PROPERTY_REQUIRED_PROPERTIES] = list(self._required_properties)
 
         self._path = path
 
@@ -295,17 +330,19 @@ class Model:
         if not self._path:
             self._path = deduce_model_file_name(self.model_id, self.model_version)
 
-        self._container_properties.update(self._build_additional_container_properties())
-        self._container_properties[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
-
+        # Save
         with TemporaryFolder('legion-model-save') as temp_directory:
             temp_file = os.path.join(temp_directory.path, 'result.zip')
             with zipfile.ZipFile(temp_file, 'w', self.ZIP_COMPRESSION) as stream:
                 # Add manifest file
                 with open(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), 'w') as info_file:
-                    properties = self.container_properties
-                    json.dump(properties, info_file)
+                    json.dump(meta_information_to_save, info_file)
                 stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
+
+                # Add current properties state
+                with open(os.path.join(temp_directory.path, self.ZIP_FILE_PROPERTIES), 'w') as props_file:
+                    json.dump(legion.model.properties.data, props_file)
+                stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_PROPERTIES), self.ZIP_FILE_PROPERTIES)
 
                 # Add endpoints
                 for endpoint in self.endpoints.values():
@@ -316,8 +353,6 @@ class Model:
 
             result_path = save_file(temp_file, self._path)
 
-        send_header_to_stderr(legion.containers.headers.MODEL_ID, self.model_id)
-        send_header_to_stderr(legion.containers.headers.MODEL_VERSION, self.model_version)
         send_header_to_stderr(legion.containers.headers.MODEL_PATH, result_path)
         send_header_to_stderr(legion.containers.headers.SAVE_STATUS, 'OK')
 
@@ -383,7 +418,7 @@ class Model:
         :type prepare_func: func(x) -> y
         :param endpoint: (Optional) endpoint name, default is 'default'
         :type endpoint: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         column_types = legion.model.types.get_column_types(input_data_frame)
         self._export(apply_func, prepare_func, column_types, True, endpoint)
@@ -401,7 +436,7 @@ class Model:
         :type prepare_func: func(x) -> y
         :param endpoint: (Optional) endpoint name, default is 'default'
         :type endpoint: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         self._export(apply_func, prepare_func, column_types, False, endpoint)
         return self
@@ -416,7 +451,7 @@ class Model:
         :type prepare_func: func(x) -> y
         :param endpoint: (Optional) endpoint name, default is 'default'
         :type endpoint: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         self._export(apply_func, prepare_func, None, False, endpoint)
         return self
@@ -428,7 +463,7 @@ class Model:
 
         :return: str or None -- model id
         """
-        return self._container_properties.get(self.PROPERTY_MODEL_ID)
+        return self._model_id
 
     @property
     def model_version(self):
@@ -437,7 +472,7 @@ class Model:
 
         :return: str or None -- model version
         """
-        return self._container_properties.get(self.PROPERTY_MODEL_VERSION)
+        return self._model_version
 
     @property
     def required_props(self):
@@ -446,23 +481,22 @@ class Model:
 
         :return: list[str] -- list of required property names
         """
-        return self._container_properties[self.PROPERTY_REQUIRED_PROPERTIES]
+        return self._meta_information[self.PROPERTY_REQUIRED_PROPERTIES]
 
     @property
-    def container_properties(self):
+    def meta_information(self):
         """
-        Get copy of container properties
+        Get copy of meta information
 
-        :return: dict -- copy of container properties
+        :return: dict -- copy of meta information
         """
-        return self._container_properties.copy()
+        return self._meta_information.copy()
 
-    @staticmethod
-    def _build_additional_container_properties():
+    def _collect_build_info(self):
         """
         Get additional container properties for container
 
-        :return: dict -- additional container properties
+        :return: dict[str, any] -- additional container properties
         """
         return {
             'legion.version': legion.__version__,
@@ -499,14 +533,13 @@ class Model:
         :type name: str
         :param initial_value: initial property value
         :type initial_value: any
-        :return: model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
-        self._container_properties[self.PROPERTY_REQUIRED_PROPERTIES].append(name)
+        self._required_properties.append(name)
 
-        if not self._property_storage:
-            raise Exception('Property storage has not been initialized')
+        if not legion.model.properties:
+            raise Exception('Model properties has not been initialized')
 
-        self._property_storage[name] = initial_value
+        legion.model.properties[name] = initial_value
 
         return self
-

@@ -210,7 +210,7 @@ def init_model(application):
     model_file_path = application.config['MODEL_FILE']
     LOGGER.info("Loading model from {}".format(model_file_path))
 
-    model_container = legion.pymodel.Model().load(model_file_path)
+    model_container = legion.pymodel.Model.load(model_file_path)
     endpoints = model_container.endpoints  # force endpoints loading
     LOGGER.info("Loaded endpoints: {}".format(list(endpoints.keys())))
     return model_container
