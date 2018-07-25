@@ -18,6 +18,7 @@ legion k8s enclave class
 """
 import logging
 import os
+import json
 
 import kubernetes
 import kubernetes.client
@@ -233,14 +234,17 @@ class Enclave:
         """
         return legion.k8s.properties.K8SSecretStorage.list(self.namespace)
 
-    def _validate_model_properties_storage(self, model_id, required_properties):
+    def _validate_model_properties_storage(self, model_id, required_properties, default_values):
         """
         Validate that model properties for model exists in a cluster and contains required properties
+        If there are not properties storage in a cluster - create with default values
 
         :param model_id: model ID
         :type model_id: str
         :param required_properties: required properties or None
         :type required_properties: list[str] or None
+        :param default_values: default values for properties
+        :type default_values: dict[str, str]
         :return: None
         """
         if not required_properties:  # if model does not require properties check can be omitted
@@ -248,16 +252,19 @@ class Enclave:
 
         registered_storages = self.config_map_storage_names
         storage_name = model_id
+        storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
 
-        if storage_name not in registered_storages:
-            raise Exception('Cannot find ConfigMap storage with name {}'.format(storage_name))
-
-        try:
-            storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
+        if storage_name in registered_storages:
             storage.load()
 
-        except Exception as storage_inspection_exception:
-            raise Exception('Cannot inspect ConfigMap {}: {}'.format(storage_name, storage_inspection_exception))
+            missed_properties = set(required_properties) - set(storage.keys())
+
+            if missed_properties:
+                raise Exception('Cannot find properties: {}'.format(', '.join(missed_properties)))
+        else:
+            for k, v in default_values:
+                storage[k] = v
+                storage.save()
 
     def deploy_model(self, image, count=1):
         """
@@ -275,7 +282,8 @@ class Enclave:
 
         self._validate_model_properties_storage(
             model_id,
-            labels.get(legion.containers.headers.DOMAIN_CONTAINER_REQUIRED_PROPERTIES).split(',')
+            labels.get(legion.containers.headers.DOMAIN_CONTAINER_REQUIRED_PROPERTIES).split(','),
+            json.loads(labels.get(legion.containers.headers.DOMAIN_CONTAINER_DEFAULT_PROPERTY_VALUES))
         )
 
         if self.get_models(model_id, model_version):
@@ -299,7 +307,10 @@ class Enclave:
 
         pod_template = kubernetes.client.V1PodTemplateSpec(
             metadata=kubernetes.client.V1ObjectMeta(labels=compatible_labels),
-            spec=kubernetes.client.V1PodSpec(containers=[container]))
+            spec=kubernetes.client.V1PodSpec(
+                containers=[container],
+                service_account_name=os.getenv(*legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME)
+            ))
 
         deployment_spec = kubernetes.client.ExtensionsV1beta1DeploymentSpec(
             replicas=count,

@@ -219,7 +219,11 @@ class Model:
             with open(manifest_path, 'r') as manifest_file:
                 self._meta_information = json.load(manifest_file)
 
-                self._required_properties = self._meta_information[self.PROPERTY_REQUIRED_PROPERTIES]
+        self._required_properties = self._meta_information[self.PROPERTY_REQUIRED_PROPERTIES]
+
+        with extract_archive_item(path, Model.ZIP_FILE_PROPERTIES) as properties_path:
+            with open(properties_path, 'r') as properties_file:
+                self.properties.data = json.load(properties_file)
 
     @staticmethod
     def load(path):

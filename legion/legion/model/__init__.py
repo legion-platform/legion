@@ -36,7 +36,7 @@ _model = None
 
 # Global variable for storing properties for current model
 # This variable initializes by set_properties() function that calls on model init or before model deploy
-properties = None
+properties = None  # type: legion.k8s.properties.K8SPropertyStorage
 
 
 def get_context():

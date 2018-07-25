@@ -199,6 +199,15 @@ class K8SPropertyStorage:
         self._check_and_reload()
         return self._state.get(key)
 
+    def keys(self):
+        """
+        Get list of keys
+
+        :return: list[str] -- list of keys
+        """
+        self._check_and_reload()
+        return list(self._state.keys())
+
     def get(self, key, cast):
         """
         Get value of property with cast to legion type

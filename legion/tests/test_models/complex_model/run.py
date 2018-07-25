@@ -9,7 +9,7 @@ legion.model.define_property('prop_1', 0.5)
 
 
 def calculate(x):
-    print('A have property {}'.format(legion.model.properties['prop_1']))
+    print('I have a property {}'.format(legion.model.properties['prop_1']))
 
     return complex_package.submodule.add_42(int(x['value']))
 

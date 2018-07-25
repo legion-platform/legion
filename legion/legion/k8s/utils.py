@@ -44,6 +44,7 @@ from legion.k8s.definitions import \
 
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None
+KUBERNETES_SERVICE_ACCOUNT_NAMESPACE_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/namespace'
 
 
 def build_client():
@@ -70,10 +71,19 @@ def get_current_namespace():
     :return: str -- name of namespace
     """
     try:
-        with open('/var/run/secrets/kubernetes.io/serviceaccount/namespace', 'r') as namespace_file:
+        with open(KUBERNETES_SERVICE_ACCOUNT_NAMESPACE_PATH, 'r') as namespace_file:
             return namespace_file.read()
     except Exception as exception:
         raise Exception('Cannot get current namespace (it works only in cluster): {}'.format(exception))
+
+
+def is_code_run_in_cluster():
+    """
+    Is current code run in a cluster
+
+    :return: bool -- is code run in a cluster or not
+    """
+    return os.path.exists(KUBERNETES_SERVICE_ACCOUNT_NAMESPACE_PATH)
 
 
 def load_config(path_to_config):
