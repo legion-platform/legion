@@ -317,7 +317,7 @@ class Enclave:
             metadata=kubernetes.client.V1ObjectMeta(labels=compatible_labels),
             spec=kubernetes.client.V1PodSpec(
                 containers=[container],
-                service_account_name=os.getenv(*legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME)
+                service_account_name=legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
             ))
 
         deployment_spec = kubernetes.client.ExtensionsV1beta1DeploymentSpec(
