@@ -110,7 +110,7 @@ class K8SPropertyStorage:
         return names
 
     @property
-    def storage_name(self):
+    def k8s_name(self):
         """
         Get storage name (object name)
 
@@ -285,7 +285,7 @@ class K8SPropertyStorage:
         """
         try:
             LOGGER.debug('Reading {} {!r} in namespace {!r}'.format(self.__class__.__name__,
-                                                                    self.storage_name,
+                                                                    self.k8s_name,
                                                                     self.k8s_namespace_or_default))
 
             config_map_object = self._read_k8s_resource()
@@ -373,7 +373,7 @@ class K8SPropertyStorage:
 
         :return: str -- representation
         """
-        return '<{} storage_name={!r}, k8s_namespace={!r}, data={!r}>' \
+        return '<{} k8s_name={!r}, k8s_namespace={!r}, data={!r}>' \
             .format(self.__class__.__name__, self._storage_name, self._k8s_namespace, self._state)
 
 
@@ -407,7 +407,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
 
         :return: :py:class:`kubernetes.client.V1ConfigMap` -- K8S object
         """
-        return self._core_api.read_namespaced_config_map(self.storage_name, self.k8s_namespace_or_default)
+        return self._core_api.read_namespaced_config_map(self.k8s_name, self.k8s_namespace_or_default)
 
     def _read_k8s_resource_exception_handler(self, exception):
         """
@@ -418,7 +418,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         :return: None
         """
         raise Exception('Cannot read config map {!r} in namespace {!r}: {}'
-                        .format(self.storage_name, self.k8s_namespace_or_default, exception))
+                        .format(self.k8s_name, self.k8s_namespace_or_default, exception))
 
     def _write_k8s_resource(self):
         """
@@ -427,7 +427,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         :return: None
         """
         config_map_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
-            name=self.storage_name,
+            name=self.k8s_name,
             labels={
                 legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE: self._storage_name
             }
@@ -439,14 +439,14 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         )
 
         try:
-            LOGGER.info('Overriding ConfigMap {!r} in {!r} namespace'.format(self.storage_name,
+            LOGGER.info('Overriding ConfigMap {!r} in {!r} namespace'.format(self.k8s_name,
                                                                              self.k8s_namespace_or_default))
-            self._core_api.replace_namespaced_config_map(self.storage_name,
+            self._core_api.replace_namespaced_config_map(self.k8s_name,
                                                          self.k8s_namespace_or_default,
                                                          config_map_body)
         except kubernetes.client.rest.ApiException as invoke_exception:
             if invoke_exception.status == 404:
-                LOGGER.info('Creating ConfigMap {!r} in {!r} namespace'.format(self.storage_name,
+                LOGGER.info('Creating ConfigMap {!r} in {!r} namespace'.format(self.k8s_name,
                                                                                self.k8s_namespace_or_default))
                 self._core_api.create_namespaced_config_map(self.k8s_namespace_or_default,
                                                             config_map_body)
@@ -460,7 +460,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         :return: None
         """
         raise Exception('Cannot write config map {!r} in namespace {!r}: {}'
-                        .format(self.storage_name, self.k8s_namespace_or_default, exception))
+                        .format(self.k8s_name, self.k8s_namespace_or_default, exception))
 
     def _remove_k8s_resource(self, delete_options):
         """
@@ -470,7 +470,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         :type delete_options: :py:class:`kubernetes.client.V1DeleteOptions`
         :return: None
         """
-        self._core_api.delete_namespaced_config_map(self.storage_name,
+        self._core_api.delete_namespaced_config_map(self.k8s_name,
                                                     self.k8s_namespace_or_default,
                                                     body=delete_options)
 
@@ -529,7 +529,7 @@ class K8SSecretStorage(K8SPropertyStorage):
 
         :return: :py:class:`kubernetes.client.V1Secret` -- K8S object
         """
-        return self._core_api.read_namespaced_secret(self.storage_name, self.k8s_namespace_or_default)
+        return self._core_api.read_namespaced_secret(self.k8s_name, self.k8s_namespace_or_default)
 
     def _read_k8s_resource_exception_handler(self, exception):
         """
@@ -540,7 +540,7 @@ class K8SSecretStorage(K8SPropertyStorage):
         :return: None
         """
         raise Exception('Cannot read secret {!r} in namespace {!r}: {}'
-                        .format(self.storage_name, self.k8s_namespace_or_default, exception))
+                        .format(self.k8s_name, self.k8s_namespace_or_default, exception))
 
     def _write_k8s_resource(self):
         """
@@ -549,7 +549,7 @@ class K8SSecretStorage(K8SPropertyStorage):
         :return: None
         """
         secret_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
-            name=self.storage_name,
+            name=self.k8s_name,
             labels={
                 legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE: self._storage_name
             }
@@ -562,12 +562,12 @@ class K8SSecretStorage(K8SPropertyStorage):
 
         try:
             LOGGER.info(
-                'Overriding Secret {!r} in {!r} namespace'.format(self.storage_name, self.k8s_namespace_or_default))
-            self._core_api.replace_namespaced_secret(self.storage_name, self.k8s_namespace_or_default, secret_body)
+                'Overriding Secret {!r} in {!r} namespace'.format(self.k8s_name, self.k8s_namespace_or_default))
+            self._core_api.replace_namespaced_secret(self.k8s_name, self.k8s_namespace_or_default, secret_body)
         except kubernetes.client.rest.ApiException as invoke_exception:
             if invoke_exception.status == 404:
                 LOGGER.info(
-                    'Creating Secret {!r} in {!r} namespace'.format(self.storage_name, self.k8s_namespace_or_default))
+                    'Creating Secret {!r} in {!r} namespace'.format(self.k8s_name, self.k8s_namespace_or_default))
                 self._core_api.create_namespaced_secret(self.k8s_namespace_or_default, secret_body)
 
     def _write_k8s_resource_exception_handler(self, exception):
@@ -579,7 +579,7 @@ class K8SSecretStorage(K8SPropertyStorage):
         :return: None
         """
         raise Exception('Cannot write Secret {!r} in namespace {!r}: {}'
-                        .format(self.storage_name, self.k8s_namespace_or_default, exception))
+                        .format(self.k8s_name, self.k8s_namespace_or_default, exception))
 
     def _remove_k8s_resource(self, delete_options):
         """
@@ -589,6 +589,6 @@ class K8SSecretStorage(K8SPropertyStorage):
         :type delete_options: :py:class:`kubernetes.client.V1DeleteOptions`
         :return: None
         """
-        self._core_api.delete_namespaced_secret(self.storage_name,
+        self._core_api.delete_namespaced_secret(self.k8s_name,
                                                 self.k8s_namespace_or_default,
                                                 body=delete_options)
