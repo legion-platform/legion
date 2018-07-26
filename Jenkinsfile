@@ -1,19 +1,38 @@
 class Globals {
     static String rootCommit = null
-    static String baseVersion = null
-    static String localVersion = null
+    static String buildVersion = null
+}
+
+def UploadDockerImageLocal(imageName) {
+    sh """
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    """
+}
+
+def UploadDockerImagePublic(imageName) {
+    sh """
+    # Push stable image to local registry
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:latest
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerRegistry}/${imageName}:latest
+    # Push stable image to DockerHub
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerHubRegistry}/${imageName}:${Globals.buildVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
+    docker push ${params.DockerHubRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerHubRegistry}/${imageName}:latest
+    """
 }
 
 def UploadDockerImage(imageName) {
-    sh """
-    docker tag ${imageName} ${params.DockerRegistry}/${imageName}:latest
-    docker tag ${imageName} ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}
-    docker tag ${imageName} ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}-${Globals.localVersion}
-    docker push ${params.DockerRegistry}/${imageName}:latest
-    docker push ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}
-    docker push ${params.DockerRegistry}/${imageName}:${Globals.baseVersion}-${Globals.localVersion}
-    """
+    if (params.StableRelease) {
+         UploadDockerImagePublic(imageName)
+    } else {
+        UploadDockerImageLocal(imageName)
+    }
 }
+
 
 node {
     try {
@@ -32,71 +51,65 @@ node {
                 cd legion
                 ../.venv/bin/pip install -r requirements/base.txt
                 ../.venv/bin/pip install -r requirements/test.txt
+                cd -
+                cd legion_test
+                ../.venv/bin/python3.6 setup.py develop
                 '''
+            }
+
+            stage('Set Legion build version'){
+                if (params.StableRelease) {
+                    if (params.ReleaseVersion){
+                        Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py"
+                    } else {
+                        print('Error: ReleaseVersion parameter must be specified for stable release')
+                        exit 1
+                    }
+                } else {
+                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py"
+                }
+                Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
+
+                print("Build version " + Globals.buildVersion)
+                print('Building shared artifact')
+                envFile = 'file.env'
+                sh """
+                rm -f $envFile
+                touch $envFile
+                echo "LEGION_VERSION=${Globals.buildVersion}" >> $envFile
+                """
+                archiveArtifacts envFile
             }
 
             parallel (
                 'Build Python packages': {
-                    sh '''
-                    cd legion_test
-                    ../.venv/bin/python3.6 setup.py sdist
-                    ../.venv/bin/python3.6 setup.py bdist_wheel
-                    ../.venv/bin/python3.6 setup.py develop
-                    cd -
-                    '''
 
-                    def version = sh returnStdout: true, script: '.venv/bin/update_version_id --extended-output legion/legion/version.py'
-                    print("Detected legion version:\n" + version)
-
-                    version = version.split("\n")
-                    Globals.baseVersion = version[1]
-                    Globals.localVersion = version[2]
-
-                    currentBuild.description = "${Globals.baseVersion} ${Globals.localVersion} ${params.GitBranch}"
-                    print("Base version " + Globals.baseVersion + " local version " + Globals.localVersion)
-
-                    print('Building shared artifact')
-                    envFile = 'file.env'
-                    sh """
-                    rm -f $envFile
-                    touch $envFile
-                    echo "BASE_VERSION=${Globals.baseVersion}" >> $envFile
-                    echo "LOCAL_VERSION=${Globals.localVersion}" >> $envFile
-                    """
-                    archiveArtifacts envFile
-
-                    print('Build and distributing legion_test')
+                    print('Build legion_test')
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
                     cd legion_test
-                    ../.venv/bin/python3.6 setup.py sdist
-                    ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+                    ../.venv/bin/python3.6 setup.py sdist 
                     ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
-                    cd -
                     """
 
-                    print('Build and distributing legion')
+                    print('Build legion')
                     sh """
                     cd legion
-                    ../.venv/bin/python3.6 setup.py sdist
-                    ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+                    ../.venv/bin/python3.6 setup.py sdist 
                     ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
-                    cd -
                     """
 
-                    print('Build and distributing legion_airflow')
+                    print('Build legion_airflow')
                     sh """
                     cp legion/legion/version.py legion_airflow/legion_airflow/version.py
                     cd legion_airflow
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
-                    ../.venv/bin/python3.6 setup.py sdist
-                    ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
+                    ../.venv/bin/python3.6 setup.py sdist 
                     ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
-                    cd -
                     """
                 }, 'Build docs': {
                     fullBuildNumber = env.BUILD_NUMBER
@@ -176,7 +189,7 @@ node {
                 }, 'Build Jenkins plugin': {
                     sh """
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
-                    mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.baseVersion}-${Globals.localVersion}
+                    mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion}
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
                     """
                     archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
@@ -189,99 +202,84 @@ node {
                         sh """
                         curl -v -u $USERNAME:$PASSWORD \
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                        ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}-${Globals.localVersion}/legion-jenkins-plugin.hpi
-        
-                        curl -v -u $USERNAME:$PASSWORD \
-                        --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                        ${params.JenkinsPluginsRepositoryStore}/${Globals.baseVersion}/legion-jenkins-plugin.hpi
-        
-                        curl -v -u $USERNAME:$PASSWORD \
-                        --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                        ${params.JenkinsPluginsRepositoryStore}/latest/legion-jenkins-plugin.hpi
+                        ${params.JenkinsPluginsRepositoryStore}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
                         """
+        
+                        if (params.StableRelease){
+                            sh """
+                            curl -v -u $USERNAME:$PASSWORD \
+                            --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                            ${params.JenkinsPluginsRepositoryStore}/latest/legion-jenkins-plugin.hpi
+                            """
+                        }
                     }
                 }
             )
-            parallel (
-                'Build Base Docker image': {
-                    dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
+            
+            parallel(
+                'Build Base Docker image':{
                     sh """
                     cd base-python-image
-                    docker build $dockerCacheArg -t legion/base-python-image .
+                    docker build -t "legion/base-python-image:${Globals.buildVersion}" .
                     """
-                    UploadDockerImage('legion/base-python-image')
-                }, 'Build docs': {
-                    fullBuildNumber = env.BUILD_NUMBER
-                    fullBuildNumber.padLeft(4, '0')
-
-                    sh '''
-                    cd legion
-                    LEGION_VERSION="\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')"
-                    cd docs
-                    sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
-                    sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
-                    make html
-                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
-                    cd ../../
-                    '''
-
-                    sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3 -c 'import legion; print(legion.__version__);')/\""
+                    UploadDockerImage('base-python-image')
+                }, 'Upload Legion to local PyPi repo':{
+                    sh """
+                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion/dist/legion-${Globals.buildVersion}.*
+                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*
+                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion_test/dist/legion_test-${Globals.buildVersion}.*
+                    """
                 }
             )
+
             parallel (
                 'Build Grafana Docker image': {
                     sh """
                     cd k8s/grafana
-                    docker build $dockerCacheArg --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-grafana .
+                    docker build --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/k8s-grafana')
                 }, 'Build Edge Docker image': {
                     sh """
                     rm -rf k8s/edge/static/docs
                     cp -rf legion/docs/build/html/ k8s/edge/static/docs/
                     build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
-                    sed -i "s/{VERSION}/${Globals.baseVersion} ${Globals.localVersion}/" k8s/edge/static/index.html
+                    sed -i "s/{VERSION}/${Globals.buildVersion}/" k8s/edge/static/index.html
                     sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
                     sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
 
                     cd k8s/edge
-                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-edge .
+                    docker build --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/k8s-edge')
                 }, 'Build Jenkins Docker image': {
                     sh """
                     cd k8s/jenkins
-                    docker build $dockerCacheArg --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins .
+                    docker build --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/k8s-jenkins')
                 }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
-                    docker build $dockerCacheArg -t legion/test-bare-model-api-model-1 .
+                    docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/test-bare-model-api-model-1')
                 }, 'Build Bare model 2': {
                     sh """
                     cd k8s/test-bare-model-api/model-2
-                    docker build $dockerCacheArg -t legion/test-bare-model-api-model-2 .
+                    docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/test-bare-model-api-model-2')
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
-                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi .
+                    docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/k8s-edi')
+                    
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
-                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-airflow .
+                    docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} .
                     """
-                    UploadDockerImage('legion/k8s-airflow')
                 }, 'Run Python tests': {
                     sh """
                     cd legion
-                    VERBOSE=true ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
+                    VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
                     """
                     junit 'legion/nosetests.xml'
     
@@ -290,6 +288,73 @@ node {
                     """
                 }
             )
+            parallel (
+                'Upload Grafana Docker Image':{
+                    UploadDockerImage('k8s-grafana')
+                }, 'Upload Edge Docker Image':{
+                    UploadDockerImage('k8s-edge')
+                }, 'Upload Jenkins Docker image': {
+                    UploadDockerImage('k8s-jenkins')
+                }, 'Upload Bare model 1': {
+                    UploadDockerImage('test-bare-model-api-model-1')
+                }, 'Upload Bare model 2': {
+                    UploadDockerImage('test-bare-model-api-model-2')
+                }, 'Upload Edi Docker image': {
+                    UploadDockerImage('k8s-edi')
+                }, 'Upload Airflow Docker image': {
+                    UploadDockerImage('k8s-airflow')
+                }, 'Upload Legion to PyPi repo': {
+                    if (params.UploadLegionPackage){
+                        sh """
+                        twine upload -r ${params.PyPiDistributionTargetName} legion/dist/legion-${Globals.buildVersion}.*
+                        """
+                    } else {
+                        print("Skipping package upload")
+                    }
+                }
+            )
+
+            if (params.StableRelease) {
+                stage('Set GIT release Tag'){
+                    if (params.PushGitTag){
+                        print('Set Release tag')
+                        sh """
+                        if [ `git tag |grep ${params.ReleaseVersion}` ]; then
+                            echo 'Remove existing git tag'
+                            git tag -d ${params.ReleaseVersion}
+                            git push origin :refs/tags/${params.ReleaseVersion}
+                        fi
+                        git tag ${params.ReleaseVersion}
+                        git push origin ${params.ReleaseVersion}
+                        """
+                    } else {
+                        print("Skipping release git tag push")
+                    }
+                }
+                stage('Update Legion version string'){
+                    if (params.UpdateVersionString){
+                        print('Update Legion package version string')
+                        def nextVersion
+                        if (params.NextVersion){
+                            nextVersion = params.NextVersion
+                        } else {
+                            def ver_parsed = params.ReleaseVersion.split("\\.")
+                            ver_parsed[1] = ver_parsed[1].toInteger() + 1
+                            nextVersion = ver_parsed.join(".")
+                        }
+                        sh """
+                        git reset --hard
+                        git checkout -b feat/${nextVersion}-version-bump
+                        sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
+                        git commit -a -m "Update Legion version to ${nextVersion}" && git push -f origin feat/${nextVersion}-version-bump
+                        """
+                    }
+                    else {
+                        print("Skipping version string update")
+                    }
+                }
+            }
+
         }
     }
     catch (e) {
@@ -301,7 +366,7 @@ node {
         notifyBuild(currentBuild.result)
     }
 
-    print("Base version ${Globals.baseVersion} local version ${Globals.localVersion}")
+    print("Build version ${Globals.buildVersion}")
 }
 
 
@@ -333,7 +398,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
     @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
     branch *${params.GitBranch}*
     commit *${Globals.rootCommit}*
-    version *${Globals.baseVersion}  ${Globals.localVersion}*
+    version *${Globals.buildVersion}*
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 

@@ -1,18 +1,14 @@
-def baseVersion = null
-def localVersion = null
+def legionVersion = null
 
 node {
     try {
         stage('Build') {
             result = build job: params.BuildLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
-                    booleanParam(name: 'PushDockerImages', value: true),
-                    booleanParam(name: 'EnableDockerCache', value: true),
                     string(name: 'PyPiRepository', value: params.PyPiRepository),
                     string(name: 'PyPiDistributionTargetName', value: params.PyPiDistributionTargetName),
                     string(name: 'DockerRegistry', value: params.DockerRegistry),
                     string(name: 'JenkinsPluginsRepository', value: params.JenkinsPluginsRepository),
-                    string(name: 'JenkinsPluginsRepositoryPath', value: params.JenkinsPluginsRepositoryPath),
                     string(name: 'JenkinsPluginsRepositoryStore', value: params.JenkinsPluginsRepositoryStore),
                     string(name: 'LocalDocumentationStorage', value: params.LocalDocumentationStorage),
                     booleanParam(name: 'EnableSlackNotifications', value: params.EnableSlackNotifications)
@@ -45,14 +41,13 @@ node {
                 map[kv[0]] = kv[1]
             }
 
-            baseVersion = map["BASE_VERSION"]
-            localVersion = map["LOCAL_VERSION"]
+            legionVersion = map["LEGION_VERSION"]
 
-            print "Loaded version ${baseVersion} ${localVersion}"
+            print "Loaded version ${legionVersion}"
             // \ Load variables
 
-            if (!baseVersion || !localVersion) {
-                error 'Cannot gather base or local version number'
+            if (!legionVersion) {
+                error 'Cannot get legion release version number'
             }
         }
 
@@ -74,9 +69,7 @@ node {
         stage('Deploy Legion & run tests') {
             result = build job: params.DeployLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
-                    string(name: 'Profile', value: params.Profile),
-                    string(name: 'BaseVersion', value: baseVersion),
-                    string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'ReleaseVersion', value: legionVersion),
                     string(name: 'TestsTags', value: params.TestTags),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
@@ -88,8 +81,7 @@ node {
             result = build job: params.DeployLegionEnclaveJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
-                    string(name: 'BaseVersion', value: baseVersion),
-                    string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'ReleaseVersion', value: legionVersion),
                     string(name: 'EnclaveName', value: 'enclave-ci')
             ]
         }

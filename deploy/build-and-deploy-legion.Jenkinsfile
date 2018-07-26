@@ -45,18 +45,16 @@ node {
                 map[kv[0]] = kv[1]
             }
     
-            baseVersion = map["BASE_VERSION"]
-            localVersion = map["LOCAL_VERSION"]
-    
-            print "Loaded version ${baseVersion}${localVersion}"
+            legionVersion = map["LEGION_VERSION"]
+                
+            print "Loaded version ${legionVersion}"
         }
 
         stage('Deploy Legion & run tests') {
             result = build job: params.DeployLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
-                    string(name: 'BaseVersion', value: baseVersion),
-                    string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'LegionVersion', value: legionVersion),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
                     booleanParam(name: 'UseRegressionTests', value: params.UseRegressionTests),

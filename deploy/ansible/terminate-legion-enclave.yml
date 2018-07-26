@@ -6,8 +6,6 @@
 # NOTICE:
 # You Must specify the next variables as extra vars (--extra-vars "XXXX=YYYY") 
 # profile - unique cluster name
-# base_version - major legion version string
-# local_version - minor legion version string
 # enclave_name - enclave name to deploy
 
 - hosts: localhost

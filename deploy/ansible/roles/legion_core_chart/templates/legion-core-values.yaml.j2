@@ -5,12 +5,12 @@ localDomain: "cluster.local"
 addLocalDomain: true
 
 package:
-  version: "{{ base_version }}+{{ local_version }}"
-  repository: "{{ nexus_pypi_repo }}"
+  version: "{{ legion_version }}"
+  repository: "{{ pypi_repo }}"
 
   baseImage:
-    repository: "{{ nexus_docker_repo }}/legion/base-python-image"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/base-python-image"
+    tag: "{{ legion_version }}"
 
 secrets:
   nexus:
@@ -26,8 +26,8 @@ jenkins:
   dags_volume_pvc: "{{ airflow_dags_pvc }}"
   airflow_dags_directory: "{{ airflow_dags_dir }}"
   image:
-    repository: "{{ nexus_docker_repo }}/legion/k8s-jenkins"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/k8s-jenkins"
+    tag: "{{ legion_version }}"
 
   git_secret_name: "{{ git_secret_name }}"
 
@@ -67,8 +67,8 @@ graphite:
 grafana:
   enabled: true
   image:
-    repository: "{{ nexus_docker_repo }}/legion/k8s-grafana"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/k8s-grafana"
+    tag: "{{ legion_version }}"
 
   ingress:
     tls:

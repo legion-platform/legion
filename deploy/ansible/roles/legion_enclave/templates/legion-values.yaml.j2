@@ -3,17 +3,17 @@ enclaveName: "{{ enclave }}"
 namespace: default
 
 package:
-  version: "{{ base_version }}+{{ local_version }}"
-  repository: "{{ nexus_pypi_repo }}"
+  version: "{{ legion_version }}"
+  repository: "{{ pypi_repo }}"
 
   baseImage:
-    repository: "{{ nexus_docker_repo }}/legion/base-python-image"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/base-python-image"
+    tag: "{{ legion_version }}"
 
 grafana:
   image:
-    repository: "{{ nexus_docker_repo }}/legion/k8s-grafana"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/k8s-grafana"
+    tag: "{{ legion_version }}"
 
   ingress:
     tls:
@@ -29,8 +29,8 @@ edge:
   enabled: true
   replicas: 2
   image: 
-    repository: "{{ nexus_docker_repo }}/legion/k8s-edge"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/k8s-edge"
+    tag: "{{ legion_version }}"
 
   ingress:
     tls:
@@ -40,8 +40,8 @@ edi:
   enabled: true
   replicas: 2
   image:
-    repository: "{{ nexus_docker_repo }}/legion/k8s-edi"
-    tag: "{{ base_version }}-{{ local_version }}"
+    repository: "{{ docker_repo }}/k8s-edi"
+    tag: "{{ legion_version }}"
 
   ingress:
     tls:
