@@ -234,20 +234,20 @@ class Enclave:
         """
         return legion.k8s.properties.K8SSecretStorage.list(self.namespace)
 
-    def _validate_model_properties_storage(self, model_id, required_properties, default_values):
+    def _validate_model_properties_storage(self, model_id, properties, default_values):
         """
         Validate that model properties for model exists in a cluster and contains required properties
         If there are not properties storage in a cluster - create with default values
 
         :param model_id: model ID
         :type model_id: str
-        :param required_properties: required properties or None
-        :type required_properties: list[str] or None
+        :param properties: required properties or None
+        :type properties: list[str] or None
         :param default_values: default values for properties
         :type default_values: dict[str, str]
         :return: None
         """
-        if not required_properties:  # if model does not require properties check can be omitted
+        if not properties:  # if model does not require properties check can be omitted
             return
 
         registered_storages = self.config_map_storage_names
@@ -255,15 +255,23 @@ class Enclave:
         storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
 
         if storage_name in registered_storages:
+            LOGGER.info('Analyzing properties storage {!r} for model {!r}'.format(storage, model_id))
             storage.load()
 
-            missed_properties = set(required_properties) - set(storage.keys())
+            missed_properties = set(properties) - set(storage.keys())
 
-            if missed_properties:
-                raise Exception('Cannot find properties: {}'.format(', '.join(missed_properties)))
+            for missed_property in missed_properties:
+                if missed_property not in default_values:
+                    raise Exception('Cannot find default value for property {}'.format(missed_property))
+
+                storage[missed_property] = default_values[missed_property]
+                LOGGER.info('Property {!r} has been set to default value {!r}'.format(missed_property,
+                                                                                      default_values[missed_property]))
         else:
+            LOGGER.info('Creating properties storage {!r} for model {!r} with default values'.format(storage, model_id))
             for k, v in default_values.items():
                 storage[k] = v
+                LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
     def deploy_model(self, image, count=1):
@@ -282,8 +290,8 @@ class Enclave:
 
         self._validate_model_properties_storage(
             model_id,
-            labels.get(legion.containers.headers.DOMAIN_CONTAINER_REQUIRED_PROPERTIES).split(','),
-            json.loads(labels.get(legion.containers.headers.DOMAIN_CONTAINER_DEFAULT_PROPERTY_VALUES))
+            labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTIES).split(','),
+            json.loads(labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES))
         )
 
         if self.get_models(model_id, model_version):

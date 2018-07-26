@@ -198,8 +198,8 @@ def generate_docker_labels_for_image(model_file, model_id, args):
         legion.containers.headers.DOMAIN_MODEL_VERSION: container.model_version,
         legion.containers.headers.DOMAIN_CLASS: 'pyserve',
         legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model',
-        legion.containers.headers.DOMAIN_CONTAINER_REQUIRED_PROPERTIES: ','.join(container.required_props),
-        legion.containers.headers.DOMAIN_CONTAINER_DEFAULT_PROPERTY_VALUES: json.dumps(container.properties.data)
+        legion.containers.headers.DOMAIN_MODEL_PROPERTIES: ','.join(container.required_props),
+        legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES: json.dumps(container.properties.data)
     }
 
     for key, value in container.meta_information.items():
