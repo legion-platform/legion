@@ -165,6 +165,33 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string')
         self.assertEqual(storage_to_read['str_var'], 'Test string')
 
+    @attr('k8s', 'props')
+    def test_create_and_read_secret_storage(self):
+        """
+        Create and read secret storage with defined fields
+
+        :return: None
+        """
+        storage_name = 'rw-secret-storage'
+
+        storage_to_write = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
+
+        storage_to_write['int_var'] = 1233
+        storage_to_write['float_var'] = 52.2354
+        storage_to_write['str_var'] = 'Test string'
+        storage_to_write.save()
+
+        items = legion.k8s.K8SSecretStorage.list(TEST_ENCLAVE_NAME)
+        self.assertIn(storage_name, items)
+
+        storage_to_read = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
+        storage_to_read.load()
+
+        self.assertEqual(storage_to_read.get('int_var', cast=legion.model.int32), 1233)
+        self.assertAlmostEqual(storage_to_read.get('float_var', cast=legion.model.float32), 52.2354, 3)
+        self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string')
+        self.assertEqual(storage_to_read['str_var'], 'Test string')
+
         storage_to_read.destroy()
 
         items = legion.k8s.K8SConfigMapStorage.list(TEST_ENCLAVE_NAME)

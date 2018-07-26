@@ -490,7 +490,7 @@ class K8SSecretStorage(K8SPropertyStorage):
         """
         self._state = {
             k: base64.b64decode(v.encode('ascii')).decode('utf-8')
-            for k, v in source_dict
+            for k, v in source_dict.items()
         }
 
     def _write_data_to_dict(self):
@@ -501,7 +501,7 @@ class K8SSecretStorage(K8SPropertyStorage):
         """
         return {
             k: base64.b64encode(v.encode('utf-8')).decode('ascii')  # encode string with base64
-            for k, v in self._state
+            for k, v in self._state.items()
         }
 
     @staticmethod
