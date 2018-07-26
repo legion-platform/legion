@@ -72,7 +72,7 @@ class S3Hook(BaseHook):
         :return: s3 file
         """
         self.check_if_maintenance(bucket, key)
-        uri = 's3://{}{}/{}{}'.format(self.bucket_prefix, bucket, self.key_prefix, key)
+        uri = 's3://{}{}/{}{}'.format(self.bucket_prefix or '', bucket or '', self.key_prefix or '', key)
         return smart_open.smart_open(uri=uri, mode=mode,
                                      encoding=encoding,
                                      aws_access_key_id=self.aws_access_key_id,
