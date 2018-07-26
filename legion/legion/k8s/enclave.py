@@ -272,11 +272,14 @@ class Enclave:
         labels = legion.k8s.utils.get_docker_image_labels(image)
         k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
+        model_properties = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTIES)
+        model_properties_default_values = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
+
         self._validate_model_properties_storage(
             model_id,
             model_version,
-            labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTIES).split(','),
-            json.loads(labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES))
+            model_properties.split(',') if model_properties else [],
+            json.loads(model_properties_default_values) if model_properties_default_values else {}
         )
 
         if self.get_models(model_id, model_version):
