@@ -86,7 +86,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
             LOGGER.info('Cannot delete namespace {} that has been built for testing: {}'
                         .format(TEST_ENCLAVE_NAME, exception))
 
-    @attr('k8s', 'props')
+    @attr('k8s', 'props', 'props_config_map')
     def test_overwrite_config_map_storage(self):
         """
         Overwrite config map storage on save
@@ -95,7 +95,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
-    @attr('k8s', 'props')
+    @attr('k8s', 'props', 'props_config_map')
     def test_read_config_map_with_update_on_timeout(self):
         """
         Update config map on timeouts
@@ -104,7 +104,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
-    @attr('k8s', 'props')
+    @attr('k8s', 'props', 'props_config_map')
     def test_write_and_listing_config_map(self):
         """
         Listing config map
@@ -120,7 +120,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         storage_to_write.destroy()
 
-    @attr('k8s', 'props')
+    @attr('k8s', 'props', 'props_config_map')
     def test_retrive_config_map(self):
         """
         Retrive and load config map in one instruction
@@ -138,7 +138,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         storage_to_read.destroy()
 
-    @attr('k8s', 'props')
+    @attr('k8s', 'props', 'props_config_map')
     def test_create_and_read_config_map_storage(self):
         """
         Create and read config map storage with defined fields
@@ -165,7 +165,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string')
         self.assertEqual(storage_to_read['str_var'], 'Test string')
 
-    @attr('k8s', 'props')
+    @attr('k8s', 'props', 'props_secret')
     def test_create_and_read_secret_storage(self):
         """
         Create and read secret storage with defined fields
