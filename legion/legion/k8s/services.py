@@ -167,6 +167,15 @@ class Service:
         return 'http://{}:{}'.format(self.internal_domain, self._port)
 
     @property
+    def url_with_ip(self):
+        """
+        Get internal URL for service with IP instead of name
+
+        :return: str -- internal URL
+        """
+        return 'http://{}:{}'.format(self.k8s_service.spec.cluster_ip, self._port)
+
+    @property
     def namespace(self):
         """
         Get service namespace
