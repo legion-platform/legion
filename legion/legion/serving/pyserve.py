@@ -224,8 +224,8 @@ def init_model(application):
     # Load model properties
     legion.model.set_properties(model_container.properties)
 
-    # Force reload if code run in a cluster
-    if legion.k8s.utils.is_code_run_in_cluster():
+    # Force reload if code run in a cluster and model required any properties
+    if legion.k8s.utils.is_code_run_in_cluster() and model_container.required_props:
         legion.model.properties.load()
 
     return model_container

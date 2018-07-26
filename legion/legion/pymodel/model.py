@@ -485,7 +485,7 @@ class Model:
 
         :return: list[str] -- list of required property names
         """
-        return self._meta_information[self.PROPERTY_REQUIRED_PROPERTIES]
+        return self._required_properties
 
     @property
     def meta_information(self):
