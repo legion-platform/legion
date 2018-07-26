@@ -34,7 +34,7 @@ class Profiler(object):
     def __exit__(self, type, value, traceback):
         duration = time.time() - self._start_time
         print("Name: " + self._name + " Elapsed time: {:.3f} sec".format(duration))
-        legion.model.get_context().send_metric(self._name, duration)
+        legion.model.send_metric(self._name, duration)
 
 
 # get item names for built-in 100k dataset
@@ -170,11 +170,12 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-legion.model.get_context().export(
+legion.model.export(
     recommend,
     {
         'uid': legion.model.int32
     })
+legion.model.save()
 
 recommendation_example = recommend({'uid': 1})
 print(repr(recommendation_example))
