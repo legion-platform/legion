@@ -93,9 +93,23 @@ def createjenkinsJobs(String commitID) {
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
-            env.tags=tags.toString().trim()
-            env.robot_tags= !env.tags.empty ? "-i " + env.tags.replaceAll(',',' -i ') : ""
-            env.nose_tags = !env.tags.empty ? "-a " + env.tags.replaceAll(',',' -a ') : ""
+            def tags_list=tags.toString().trim().split(',')
+            def robot_tags= []
+            def nose_tags = []
+            for (item in tags_list) {
+                if (item.startsWith('-')) {
+                    item = item.replace("-","")
+                    robot_tags.add(" -e ${item}")
+                    nose_tags.add(" -a !${item}")
+                    }
+                else if (item?.trim()) {
+                    robot_tags.add(" -i ${item}")
+                    nose_tags.add(" -a ${item}")
+                    }
+                }
+            env.robot_tags= robot_tags.join(" ")
+            env.nose_tags = nose_tags.join(" ")
+
             sh '''
             cd legion
             ../.venv/bin/pip install -r requirements/base.txt
