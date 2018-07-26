@@ -216,24 +216,6 @@ class Enclave:
 
         return model_services
 
-    @property
-    def config_map_storage_names(self):
-        """
-        Return list of names of existed config map storages
-
-        :return: list[str] -- list of existed config map storages
-        """
-        return legion.k8s.properties.K8SConfigMapStorage.list(self.namespace)
-
-    @property
-    def secret_storage_names(self):
-        """
-        Return list of names of existed config map storages
-
-        :return: list[str] -- list of existed config map storages
-        """
-        return legion.k8s.properties.K8SSecretStorage.list(self.namespace)
-
     def _validate_model_properties_storage(self, model_id, model_version, properties, default_values):
         """
         Validate that model properties for model exists in a cluster and contains required properties
@@ -252,7 +234,7 @@ class Enclave:
         if not properties:  # if model does not require properties check can be omitted
             return
 
-        registered_storages = self.config_map_storage_names
+        registered_storages = legion.k8s.properties.K8SConfigMapStorage.list(self.namespace)
         storage_name = legion.utils.properties_storage_name(model_id, model_version)
         storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
 
