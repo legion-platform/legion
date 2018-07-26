@@ -189,7 +189,7 @@ def export_untyped(apply_func, *, prepare_func=None, endpoint='default'):
     return _model.export_untyped(apply_func, prepare_func=prepare_func, endpoint=endpoint)
 
 
-def save(path):
+def save(path=None):
     """
     Save model to path (or deduce path)
 
