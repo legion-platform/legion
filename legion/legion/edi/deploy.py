@@ -174,10 +174,17 @@ def undeploy_kubernetes(args):
         else:
             raise Exception('Cannot find any deployment')
 
+    if len(model_deployments) > 1:
+        raise Exception('Founded more then one deployment')
+
+    target_deployment = model_deployments[0]
+
     edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
 
     while True:
-        information = [info for info in edi_client.inspect() if info.model == args.model_id]
+        information = [info
+                       for info in edi_client.inspect()
+                       if info.model == target_deployment.model and info.version == target_deployment.version]
 
         if not information:
             break
