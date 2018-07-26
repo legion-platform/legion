@@ -516,6 +516,19 @@ def send_header_to_stderr(header, value):
     print(message, file=sys.__stderr__, flush=True)
 
 
+def model_properties_storage_name(model_id, model_version):
+    """
+    Construct properties storage name
+
+    :param model_id: model ID
+    :type model_id: str
+    :param model_version: model version
+    :type model_version: str
+    :return: str -- name of properties storage
+    """
+    return 'model-{}-{}'.format(model_id, model_version)
+
+
 def string_to_bool(value):
     """
     Convert string to bool

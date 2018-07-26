@@ -234,13 +234,15 @@ class Enclave:
         """
         return legion.k8s.properties.K8SSecretStorage.list(self.namespace)
 
-    def _validate_model_properties_storage(self, model_id, properties, default_values):
+    def _validate_model_properties_storage(self, model_id, model_version, properties, default_values):
         """
         Validate that model properties for model exists in a cluster and contains required properties
         If there are not properties storage in a cluster - create with default values
 
         :param model_id: model ID
         :type model_id: str
+        :param model_version: model version
+        :type model_version: str
         :param properties: required properties or None
         :type properties: list[str] or None
         :param default_values: default values for properties
@@ -251,7 +253,7 @@ class Enclave:
             return
 
         registered_storages = self.config_map_storage_names
-        storage_name = model_id
+        storage_name = legion.utils.properties_storage_name(model_id, model_version)
         storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
 
         if storage_name in registered_storages:
@@ -290,6 +292,7 @@ class Enclave:
 
         self._validate_model_properties_storage(
             model_id,
+            model_version,
             labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTIES).split(','),
             json.loads(labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES))
         )
