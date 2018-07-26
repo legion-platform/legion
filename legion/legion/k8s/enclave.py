@@ -262,7 +262,7 @@ class Enclave:
             if missed_properties:
                 raise Exception('Cannot find properties: {}'.format(', '.join(missed_properties)))
         else:
-            for k, v in default_values:
+            for k, v in default_values.items():
                 storage[k] = v
                 storage.save()
 
