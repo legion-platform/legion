@@ -10,7 +10,7 @@ rules:
   verbs: ["watch", "list", "create", "delete"]
 - apiGroups: [""] # core API group
   resources: ["configmaps", "secrets"]
-  verbs: ["list", "create", "get", "patch"]
+  verbs: ["list", "create", "get", "patch", "update"]
 - apiGroups: ["extensions"]
   resources: ["deployments", "ingresses"]
   verbs:  ["list", "create", "patch"]
