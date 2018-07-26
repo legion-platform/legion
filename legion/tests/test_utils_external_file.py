@@ -16,22 +16,22 @@
 from __future__ import print_function
 
 import os
+import sys
 import random
 import tempfile
 import logging
 from unittest.mock import patch
 
 import legion.config
-import legion.io
 import legion.utils as utils
 import legion.containers.docker
 import requests.auth
 import unittest2
 
-try:
-    from .legion_test_utils import LegionTestContainer
-except ImportError:
-    from legion_test_utils import LegionTestContainer
+# Extend PYTHONPATH in order to import test tools and models
+sys.path.extend(os.path.dirname(__file__))
+
+from legion_test_utils import LegionTestContainer
 
 
 LOGGER = logging.getLogger(__name__)

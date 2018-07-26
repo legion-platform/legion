@@ -16,11 +16,9 @@ import docker.errors
 import legion.config
 import legion.containers.docker
 import legion.containers.headers
-import legion.io
+from legion.model import ModelClient
 import legion.model.client
 import legion.serving.pyserve as pyserve
-import legion.model.model_id
-from legion.model import ModelClient
 from legion.utils import remove_directory
 
 LOGGER = logging.getLogger(__name__)
@@ -271,7 +269,7 @@ class ModelDockerBuilderContainerContext:
             self._setup_legion_wheel_in_docker_container()
         except Exception as container_prepare_exception:
             self._shutdown_docker_container()
-            log_docker_container_logs(self._docker_container)
+            print_docker_container_logs(self._docker_container)
             LOGGER.exception('Cannot start container', exc_info=container_prepare_exception)
             raise
 
@@ -461,9 +459,8 @@ class ModelServeTestBuild:
         """
         try:
             print('Building model file {} v {}'.format(self._model_id, self._model_version))
-            legion.model.model_id._model_id = self._model_id
-            legion.model.model_id._model_version = self._model_version
-            self._model_builder(self._model_path)
+            legion.model.reset_context()
+            self._model_builder(self._model_id, self._model_version, self._model_path)
             print('Model file has been built')
 
             print('Creating pyserve')

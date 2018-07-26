@@ -16,7 +16,7 @@
 import os
 import unittest2
 
-import legion.io
+import legion.utils
 
 
 class TestIOOperations(unittest2.TestCase):
@@ -26,12 +26,12 @@ class TestIOOperations(unittest2.TestCase):
         cls.sample_archive = os.path.join(cls.data_directory, 'sample-archive.zip')
 
     def test_archive_extractor_in_root_folder(self):
-        with legion.io.extract_archive_item(self.sample_archive, 'example.txt') as temp_file_path:
+        with legion.utils.extract_archive_item(self.sample_archive, 'example.txt') as temp_file_path:
             with open(temp_file_path, 'r') as temp_file:
                 self.assertEqual(temp_file.read(), '1')
 
     def test_archive_extractor_in_sub_folder(self):
-        with legion.io.extract_archive_item(self.sample_archive, 'subfolder/example2.txt') as temp_file_path:
+        with legion.utils.extract_archive_item(self.sample_archive, 'subfolder/example2.txt') as temp_file_path:
             with open(temp_file_path, 'r') as temp_file:
                 self.assertEqual(temp_file.read(), '2')
 

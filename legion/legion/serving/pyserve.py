@@ -24,7 +24,10 @@ import itertools
 import legion.config
 import legion.external.grafana
 import legion.http
-import legion.io
+import legion.model
+import legion.pymodel
+import legion.k8s.properties
+import legion.k8s.utils
 from flask import Flask, Blueprint, request, jsonify, redirect, render_template
 from flask import current_app as app
 
@@ -207,11 +210,24 @@ def init_model(application):
     if 'MODEL_FILE' not in application.config:
         raise Exception('No model file provided')
 
+    # Select model binary file path
     model_file_path = application.config['MODEL_FILE']
-    LOGGER.info("Loading model from {}".format(model_file_path))
-    model_container = legion.io.PyModel().load(model_file_path)
+    LOGGER.info('Loading model from {}'.format(model_file_path))
+
+    # Load model container
+    model_container = legion.pymodel.Model.load(model_file_path)
+
+    # Load model endpoints
     endpoints = model_container.endpoints  # force endpoints loading
-    LOGGER.info("Loaded endpoints: {}".format(list(endpoints.keys())))
+    LOGGER.info('Loaded endpoints: {}'.format(list(endpoints.keys())))
+
+    # Load model properties
+    legion.model.set_properties(model_container.properties)
+
+    # Force reload if code run in a cluster and model required any properties
+    if legion.k8s.utils.is_code_run_in_cluster() and model_container.required_props:
+        legion.model.properties.load()
+
     return model_container
 
 

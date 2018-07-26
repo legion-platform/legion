@@ -5,6 +5,7 @@ graft legion/external
 graft legion/k8s
 graft legion/http
 graft legion/model
+graft legion/pymodel
 graft legion/serving
 graft legion/static
 graft legion/template_plugins
