@@ -111,12 +111,12 @@ Run EDI deploy and check model started
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy by model version and check
     [Timeout]       2 min
-    [Arguments]           ${enclave}    ${model_id}    ${model_ver}
+    [Arguments]           ${enclave}    ${model_id}    ${model_ver}    ${model_image}
     ${resp_dict}=                Run EDI undeploy with version  ${enclave}   ${model_id}    ${model_ver}
     Should Be Equal As Integers  ${resp_dict.rc}        0
     ${resp_dict} =               Run EDI inspect        ${enclave}
     Should Be Equal As Integers  ${resp_dict.rc}        0
-    Should not contain           ${resp_dict.stdout}    ${model_ver}
+    Should not contain           ${resp_dict.stdout}    ${model_image}
 
 Run EDI undeploy model without version and check
     [Arguments]           ${enclave}    ${model_id}
