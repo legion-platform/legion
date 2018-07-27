@@ -20,6 +20,7 @@ Deploy logic for legion
 import logging
 import os
 import time
+import sys
 import re
 
 import docker
@@ -169,7 +170,7 @@ def undeploy_kubernetes(args):
 
     if not model_deployments:
         if args.ignore_not_found:
-            print('Cannot find any deployment - ignoring')
+            print('Cannot find any deployment - ignoring', file=sys.stderr)
             return
         else:
             raise Exception('Cannot find any deployment')
