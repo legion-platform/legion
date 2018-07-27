@@ -18,7 +18,7 @@ Check EDI availability in all enclaves
     [Tags]  edi  cli  enclave   one_version
     :FOR    ${enclave}      IN                            @{ENCLAVES}
     \       ${edi_state}=   Run EDI inspect               ${enclave}
-    \                       Should Be Equal As Integers   ${edi_state.rc}         0
+    \                       Should Be Equal As Integers   ${edi_state.rc}     0
     [Teardown]                    NONE
 
 Check EDI deploy procedure
