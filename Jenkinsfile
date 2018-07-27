@@ -230,7 +230,7 @@ node {
                     cd k8s/grafana
                     docker build $dockerCacheArg --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-grafana:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/k8s-grafana:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/k8s-grafana:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Build Edge Docker image': {
                     sh """
                     rm -rf k8s/edge/static/docs
@@ -243,37 +243,37 @@ node {
                     cd k8s/edge
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" -t legion/k8s-edge:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/k8s-edge:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/k8s-edge:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Build Jenkins Docker image': {
                     sh """
                     cd k8s/jenkins
                     docker build $dockerCacheArg --build-arg version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/k8s-jenkins:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/k8s-jenkins:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
                     docker build $dockerCacheArg --build-arg version="${Globals.baseVersion}-${Globals.localVersion}" -t legion/test-bare-model-api-model-1:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/test-bare-model-api-model-1:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/test-bare-model-api-model-1:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Build Bare model 2': {
                     sh """
                     cd k8s/test-bare-model-api/model-2
                     docker build $dockerCacheArg --build-arg version="${Globals.baseVersion}-${Globals.localVersion}" -t legion/test-bare-model-api-model-2:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/test-bare-model-api-model-2:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/test-bare-model-api-model-2:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
                     docker build $dockerCacheArg --build-arg version="${Globals.baseVersion}-${Globals.localVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/k8s-edi:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/k8s-edi:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.baseVersion}+${Globals.localVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-airflow:${Globals.baseVersion}-${Globals.localVersion} .
                     """
-                    UploadDockerImage('legion/k8s-airflow:${Globals.baseVersion}-${Globals.localVersion}')
+                    UploadDockerImage("legion/k8s-airflow:${Globals.baseVersion}-${Globals.localVersion}")
                 }, 'Run Python tests': {
                     sh """
                     cd legion
