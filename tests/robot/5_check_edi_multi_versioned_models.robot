@@ -68,12 +68,6 @@ Check EDI undeploy all model instances by version
                     Should not contain              ${resp.stdout}          ${TEST_MODEL_1_VERSION}
                     Should contain                  ${resp.stdout}          ${TEST_MODEL_2_VERSION}
 
-Check EDI undeploy 1 of 2 models by invalid version
-    [Tags]  edi  cli  enclave   multi_versions
-    ${resp}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}test
-                    Should Be Equal As Integers     ${resp.rc}         0
-                    Should contain                  ${resp.stderr}     Cannot find any deployment - ignoring
-
 Check EDI undeploy 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
