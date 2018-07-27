@@ -95,15 +95,6 @@ Check EDI undeploy procedure
                     Should Be Equal As Integers         ${resp.rc}         0
                     Should not contain                  ${resp.stdout}     ${model_id}
 
-Check EDI invalid undeploy procedure
-    [Setup]         NONE
-    [Documentation]  Try to undeploy invalid dummy model name through EDI console
-    [Tags]  edi  cli  enclave   one_version
-    ${resp}=        Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}test
-                    Should Be Equal As Integers       ${resp.rc}         0
-                    Should Contain                    ${resp.stdout}     Cannot find any deployment - ignoring
-    [Teardown]      NONE
-
 Check EDI scale up procedure
     [Documentation]  Try to scale up model through EDI console
     [Tags]  edi  cli  enclave   one_version
