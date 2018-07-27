@@ -88,6 +88,7 @@ def get_variables(arg=None):
     if 'dex' in data and data['dex']['enabled'] and 'staticPasswords' in data['dex']['config'] and \
             data['dex']['config']['staticPasswords']:
         static_user = data['dex']['config']['staticPasswords'][0]
+        print("Static user from secrets = " + static_user['email'])
         init_session_id(static_user['email'], static_user['password'], data.get('test_base_domain', data['base_domain']))
 
     return variables
