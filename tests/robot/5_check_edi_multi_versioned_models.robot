@@ -78,7 +78,7 @@ Check EDI undeploy 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers        ${resp.rc}         2
-                    Should contain                     ${resp.stderr}     Please specify version of model
+                    Should contain                     ${resp.stderr}     Founded more then one deployment
 
 Check EDI scale up 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
