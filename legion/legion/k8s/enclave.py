@@ -268,6 +268,9 @@ class Enclave:
         :type count: int
         :return: :py:class:`legion.k8s.services.ModelService` -- model service
         """
+        if count < 1:
+            raise Exception('Invalid scale parameter: should be greater then 0')
+
         client = legion.k8s.utils.build_client()
         labels = legion.k8s.utils.get_docker_image_labels(image)
         k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
