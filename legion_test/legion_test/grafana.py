@@ -20,6 +20,7 @@ Graphana API functional for working with models
 import json
 
 import requests
+from legion_test.robot.dex_client import get_session_cookies
 
 
 class GrafanaClient:
@@ -64,7 +65,7 @@ class GrafanaClient:
         if self._user and self._password:
             auth = (self._user, self._password)
 
-        response = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth)
+        response = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth, cookies=get_session_cookies())
 
         if response.status_code in (401, 403):
             raise Exception('Auth failed')
