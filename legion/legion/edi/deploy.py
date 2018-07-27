@@ -181,15 +181,22 @@ def undeploy_kubernetes(args):
 
     edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
 
-    while True:
-        information = [info
-                       for info in edi_client.inspect()
-                       if info.model == target_deployment.model and info.version == target_deployment.version]
+    if not args.no_wait:
+        start = time.time()
 
-        if not information:
-            break
+        while True:
+            elapsed = time.time() - start
+            if elapsed > args.wait_timeout and args.wait_timeout != 0:
+                raise Exception('Time out: model has not been undeployed')
 
-        time.sleep(1)
+            information = [info
+                           for info in edi_client.inspect()
+                           if info.model == target_deployment.model and info.version == target_deployment.version]
+
+            if not information:
+                break
+
+            time.sleep(1)
 
 
 def scale_kubernetes(args):
