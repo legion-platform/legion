@@ -122,7 +122,8 @@ class Jenkins:
             parameters = [x['defaultParameterValue'] for x in parameters[0]['parameterDefinitions']]
             parameters = {x['name']: x['value'] for x in parameters}
 
-        self._client.build_job(job_name, parameters=parameters)
+        response = self._client.build_job(job_name, parameters=parameters)
+        print('Result of Job run: {!r}'.format(response))
 
     def wait_jenkins_job(self, job_name, timeout=0, sleep=5):
         """
