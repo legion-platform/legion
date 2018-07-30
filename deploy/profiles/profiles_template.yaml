@@ -49,8 +49,8 @@ cert_dir: ~                 # folder for storing SSL certificates on host
 # Deploying and test configuration
 use_https: ~ # [?]
 use_https_for_tests: ~ # [?]
-nexus_pypi_repo: ~ # repository for Python packages
-nexus_docker_repo: ~ # docker registry with builded images
+pypi_repo: ~ # repository for Python packages
+docker_repo: ~ # docker registry with builded images
 namespace: ~      # namespace of core deployment
 deployment: ~      # name of deployment
 examples_to_test: ~      # which Jenkins examples will be executed in tests

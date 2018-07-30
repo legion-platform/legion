@@ -45,14 +45,13 @@ node {
                 map[kv[0]] = kv[1]
             }
 
-            baseVersion = map["BASE_VERSION"]
-            localVersion = map["LOCAL_VERSION"]
+            legionVersion = map["LEGION_VERSION"]
 
-            print "Loaded version ${baseVersion} ${localVersion}"
+            print "Loaded version ${legionVersion}"
             // \ Load variables
 
-            if (!baseVersion || !localVersion) {
-                error 'Cannot gather base or local version number'
+            if (!legionVersion) {
+                error 'Cannot get legion release version number'
             }
         }
 
@@ -88,8 +87,7 @@ node {
             result = build job: params.DeployLegionEnclaveJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
-                    string(name: 'BaseVersion', value: baseVersion),
-                    string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'LegionVersion', value: legionVersion),
                     string(name: 'EnclaveName', value: 'enclave-ci')
             ]
         }

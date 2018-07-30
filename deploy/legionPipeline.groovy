@@ -224,8 +224,8 @@ def notifyBuild(String buildStatus = 'STARTED') {
     if (params.Skip_kops != null) {
         arguments = arguments + "\nskip kops *${params.Skip_kops}*"
     }
-    if (params.BaseVersion && params.LocalVersion) {
-        arguments = arguments + "\nversion *${params.BaseVersion} ${params.LocalVersion}*"
+    if (params.LegionVersion) {
+        arguments = arguments + "\nversion *${params.LegionVersion}*"
     }
 
     if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
