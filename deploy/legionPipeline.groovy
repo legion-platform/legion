@@ -59,8 +59,7 @@ def deployLegion() {
                         playbook: 'deploy-legion.yml',
                         extras: '--vault-password-file=${vault} \
                                 --extra-vars "profile=${Profile} \
-                                base_version=${BaseVersion}  \
-                                local_version=${LocalVersion}"',
+                                legion_version=${LegionVersion}"',
                         colorized: true
                     )
                 }
@@ -169,8 +168,7 @@ def deployLegionEnclave() {
                         playbook: 'deploy-legion-enclave.yml',
                         extras: '--vault-password-file=${vault} \
                                 --extra-vars "profile=${Profile} \
-                                base_version=${BaseVersion}  \
-                                local_version=${LocalVersion} \
+                                legion_version=${LegionVersion} \
                                 enclave_name=${EnclaveName}"',
                         colorized: true
                     )
