@@ -140,7 +140,7 @@ class TestK8S(unittest2.TestCase):
             self.assertIsInstance(key, str, 'labels key is not a string')
             self.assertIsInstance(value, str, 'labels key is not a string')
 
-    def test_container_id_detection_kubernetes(self): 
+    def test_container_id_detection_kubernetes(self):
         self.assertEqual(legion.containers.docker.get_docker_container_id_from_cgroup_line(
             '9:perf_event:/kubepods/burstable/pod9aa3c2f1-8381-11e8-9508-0ae20568e616' +
             '/8383095d66a50d724da34073b512a468ee565042586a4a7a5bbc741aa426e012'
