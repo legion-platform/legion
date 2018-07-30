@@ -25,23 +25,16 @@ node {
     
     try{
 
-        stage('Checkout release revision'){
-            print("Checkout release revision ${release.Commit}")
-            sh'''
-            git checkout ${release.Commit}
-            '''
-
         stage('Upload Legion python package'){
-            print('Build and distributing legion')
+            print('Upload Legion package to Pypi repository')
             sh """
-            cd legion
-            ../.venv/bin/python3.6 setup.py sdist bdist_wheel
-            twine upload -r pypi-org dist/* 
-            cd -
+            wget https://nexus.cc.epm.kharlamov.biz/repository/pypi-hosted/packages/legion/${baseVersion}+${localVersion}/legion-${baseVersion}+${localVersion}.tar.gz -o legion-${baseVersion}.tar.gz
+            twine upload -r pypi-org legion-${baseVersion}.tar.gz && rm legion-${baseVersion}.tar.gz
             """
         }
     
         stage('Tag Docker images'){
+            print('Push Docker images to DockerHub repository')
             TagAndUploadDockerImage("base-python-image")
             TagAndUploadDockerImage("k8s-grafana")
             TagAndUploadDockerImage("k8s-edi")
@@ -52,14 +45,17 @@ node {
         }
 
         stage('Set GIT release Tag'){
+            print('Set Release tag')
+            checkout scm
             sh '''
-            git checkout ${Globals.releaseCommit}
+            git checkout ${release.Commit}
             git tag -a ${ReleaseTag}  -m "Release ${ReleaseTag}"
             git push origin ${ReleaseTag}
             '''
         }
 
         stage('Update Legion version'){
+            print('Update Legion package version string')
             def nextVersion
             if (${params.nextVersion})
                 nextVersino = (${params.nextVersion}
