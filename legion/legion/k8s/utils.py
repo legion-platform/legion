@@ -161,7 +161,10 @@ def get_docker_image_labels(image):
         if image_attributes.host == os.getenv('MODEL_IMAGES_REGISTRY_HOST'):
             registry_host = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
         else:
-            registry_host = 'http://{}'.format(image_attributes.host)
+            if '443' in image_attributes.host:
+                registry_host = 'https://{}'.format(image_attributes.host)
+            else:
+                registry_host = 'http://{}'.format(image_attributes.host)
     except Exception as err:
         raise LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
 
