@@ -158,9 +158,8 @@ def get_docker_image_labels(image):
 
     # Get nexus registry host from ENV or image url
     try:
-        nexus_docker_registry = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
-        if nexus_docker_registry:
-            registry_host = nexus_docker_registry
+        if image_attributes.host == os.getenv('MODEL_IMAGES_REGISTRY_HOST'):
+            registry_host = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
         else:
             registry_host = 'http://{}'.format(image_attributes.host)
     except Exception as err:

@@ -49,6 +49,8 @@ spec:
           value: "admin"
         - name: DOCKER_REGISTRY_PASSWORD
           value: "{{ .Values.secrets.nexus.admin }}"
+        - name: MODEL_IMAGES_REGISTRY_HOST
+          value: "localhost:31111"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 
