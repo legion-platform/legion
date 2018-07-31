@@ -28,7 +28,7 @@ spec:
   etcdClusters:
   - etcdMembers:
 {% for zone in cluster_zones %}
-{% if zone.create_k8s_master %}
+{% if zone in k8s_master_zones %}
     - instanceGroup: master-{{ zone.zone_name }}
       name: {{ zone.zone_name }}
 {% endif %}
@@ -36,7 +36,7 @@ spec:
     name: main
   - etcdMembers:
 {% for zone in cluster_zones %}
-{% if zone.create_k8s_master %}
+{% if zone in k8s_master_zones %}
     - instanceGroup: master-{{ zone.zone_name }}
       name: {{ zone.zone_name }}
 {% endif %}
@@ -78,7 +78,7 @@ spec:
 
 ---
 {% for zone in cluster_zones %}
-{% if zone.create_k8s_master %}
+{% if zone in k8s_master_zones %}
 
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
