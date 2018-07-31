@@ -45,16 +45,16 @@ cluster_zones:
   - zone_name: us-east-2a
     kops_cidr: "{{ private_network }}.118.0/24"
     kops_utility_cidr: "{{ private_network }}.119.0/24"
-    create_k8s_master: true
   - zone_name: us-east-2b
     kops_cidr: "{{ private_network }}.120.0/24"
     kops_utility_cidr: "{{ private_network }}.121.0/24"
-    create_k8s_master: true
   - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.122.0/24"
     kops_utility_cidr: "{{ private_network }}.123.0/24"
-    create_k8s_master: true
-
+k8s_master_zones:
+  - us-east-2a
+  - us-east-2b
+  - us-east-2c
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: Kirill_Makhonin@epam.com
