@@ -165,6 +165,12 @@ def runRobotTests(tags="") {
             cd ../python
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+
+            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+
+            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
+            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
+
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit || true
             '''

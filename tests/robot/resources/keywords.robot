@@ -181,7 +181,9 @@ Verify model info from edi
 
 Run and wait Jenkins job
     [Arguments]          ${model_name}                      ${enclave}
+    Log                  Start running model: ${model_name}
     Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
+    Log                  Waiting for running model: ${model_name}
     Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
 
 Test model pipeline
