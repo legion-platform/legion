@@ -1,39 +1,36 @@
 def TagAndUploadDockerImage(imageName) {
-    def releaseImage = "${params.DockerRegistry}/${imageName}:${baseVersion}-${localVersion}"
+    def releaseImage = "${params.DockerRegistry}/${imageName}:${params.ReleaseVersion}-${localVersion}"
     sh """
     # Make sure release image exists locally
     docker pull ${releaseImage}
     # Push stable image to local registry
-    docker tag ${releaseImage} ${params.DockerRegistry}/${imageName}:${baseVersion}
+    docker tag ${releaseImage} ${params.DockerRegistry}/${imageName}:${params.ReleaseVersion}
     docker tag ${releaseImage} ${params.DockerRegistry}/${imageName}:latest
-    docker push ${params.DockerRegistry}/${imageName}:${baseVersion}
+    docker push ${params.DockerRegistry}/${imageName}:${params.ReleaseVersion}
     docker push ${params.DockerRegistry}/${imageName}:latest
     # Push stable image to DockerHub
-    docker tag ${releaseImage} ${params.DockerHubRegistry}/${imageName}:${baseVersion}
+    docker tag ${releaseImage} ${params.DockerHubRegistry}/${imageName}:${params.ReleaseVersion}
     docker tag ${releaseImage} ${params.DockerHubRegistry}/${imageName}:latest
-    docker push ${params.DockerHubRegistry}/${imageName}:${baseVersion}
+    docker push ${params.DockerHubRegistry}/${imageName}:${params.ReleaseVersion}
     docker push ${params.DockerHubRegistry}/${imageName}:latest
     """
 }
 
 node {
 
-    baseVersion = params.BuildVersion.split("-").first()
-    localVersion = params.BuildVersion.split("-").last()
-    releaseCommit = localVersion.split("\\.").last()
-    
     try{
 
-        print("Propogate ${params.BuildVersion} as stable ${baseVersion} release")
+        print("Build and distribute ${params.ReleaseVersion}")
 
         stage('Upload Legion python package to PyPi'){
             print('Upload Legion package to Pypi repository')
-            checkout scm
             sh """
-            git checkout ${release.Commit}
-            sed -i -E "s/__version__.*/__version__ = \'${baseVersion}\'/g" legion/legion/version.py
+            echo "Replace version string for Legion package"
+            sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion/legion/version.py
+            echo "Build Legion package"
             ../.venv/bin/python3.6 setup.py sdist
-            twine upload -r ${params.PypiRepo} dist/legion-${baseVersion}.tar.gz && rm dist/legion-${baseVersion}.tar.gz
+            echo "Upload package to PyPi"
+            twine upload -r ${params.PypiRepo} dist/legion-${params.ReleaseVersion}.tar.gz && rm dist/legion-${params.ReleaseVersion}.tar.gz
             """
         }
     
@@ -50,13 +47,11 @@ node {
 
         stage('Set GIT release Tag'){
             print('Set Release tag')
-            checkout scm
             sh '''
-            git checkout ${release.Commit}
-            if [ `git tag |grep ${ReleaseTag}"` ]; then
-                git tag -d ${ReleaseTag} && git push origin :refs/tags/${ReleaseTag}
-            git tag -a ${ReleaseTag}  -m "Release ${ReleaseTag}"
-            git push origin :refs/tags/${ReleaseTag}
+            if [ `git tag |grep ${params.ReleaseVersion}"` ]; then
+                git tag -d ${params.ReleaseVersion} && git push origin :refs/tags/${params.ReleaseVersion}
+            git tag -a ${params.ReleaseVersion}  -m "Release ${params.ReleaseVersion}"
+            git push origin :refs/tags/${params.ReleaseVersion}
             '''
         }
         
@@ -67,12 +62,11 @@ node {
                 if (params.NextVersion){
                     nextVersion = params.NextVersion
                 } else {
-                    def ver_parsed = baseVersion.split("\\.")
+                    def ver_parsed = params.ReleaseVersion.split("\\.")
                     ver_parsed[1] = ver_parsed[1].toInteger() + 1
                     nextVersion = ver_parsed.join(".")
                 }
                 sh '''
-                git checkout develop && git pull -r origin develop
                 sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
                 git commit -a -m "Update Legion version to ${nextVersion}" && git push origin develop
                 '''
