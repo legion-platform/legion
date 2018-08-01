@@ -109,10 +109,7 @@ class Jenkins:
         """
         if not self._client:
             raise Exception('Jenkins client has not been initialized')
-        print('Job name to run is: {}'.format(job_name))
         job_info = self._client.get_job_info(job_name, 4)
-        print('Job info is: {}'.format(job_info))
-        print('Parameters are: {}'.format(parameters))
 
         if len(parameters) == 0:
             properties = job_info['property']
@@ -123,8 +120,8 @@ class Jenkins:
 
             parameters = [x['defaultParameterValue'] for x in parameters[0]['parameterDefinitions']]
             parameters = {x['name']: x['value'] for x in parameters}
-        print('Added parameters for build are: {}'.format(parameters))
-        response = self._client.build_job(job_name, parameters=parameters)
+        user, password = get_jenkins_credentials()
+        response = self._client.build_job(job_name, parameters=parameters, token=password)
         print('Result of Job run: {!r}'.format(response))
 
     def wait_jenkins_job(self, job_name, timeout=0, sleep=5):
