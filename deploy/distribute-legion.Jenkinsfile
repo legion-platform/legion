@@ -18,11 +18,13 @@ def TagAndUploadDockerImage(imageName) {
 
 node {
 
-    baseVersion = ${params.buildVersion}.split("-").first()
-    localVersion = ${params.buildVersion}.split("-").last()
+    baseVersion = ${params.BuildVersion}.split("-").first()
+    localVersion = ${params.BuildVersion}.split("-").last()
     releaseCommit = localVersion.split("\\.").last()
     
     try{
+
+        print("Propogate ${params.BuildVersion} as stable ${baseVersion} release")
 
         stage('Upload Legion python package to PyPi'){
             print('Upload Legion package to Pypi repository')
