@@ -73,9 +73,8 @@ node {
         stage('Deploy Legion & run tests') {
             result = build job: params.DeployLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
-                    string(name: 'Profile', value: params.Profile),
                     string(name: 'BaseVersion', value: baseVersion),
-                    string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'LegionVersion', value: legionVersion),
                     string(name: 'TestsTags', value: params.TestTags),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),

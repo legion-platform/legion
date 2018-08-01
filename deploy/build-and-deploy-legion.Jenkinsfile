@@ -46,7 +46,7 @@ node {
             }
     
             legionVersion = map["LEGION_VERSION"]
-    
+                
             print "Loaded version ${legionVersion}"
         }
 
