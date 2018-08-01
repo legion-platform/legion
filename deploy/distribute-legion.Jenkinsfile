@@ -58,16 +58,16 @@ node {
         }
         
         stage('Update Legion version string'){
-            if (params.UpdateVersionString){
+            if (${params.UpdateVersionString}){
                 print('Update Legion package version string')
                 def nextVersion
-                if (${params.NextVersion})
-                    nextVersion = (${params.NextVersion}
-                else:
+                if (${params.NextVersion}){
+                    nextVersion = ${params.NextVersion}
+                } else {
                     def ver_parsed = ${baseVersion}.split("\\.")
                     ver_parsed[1] = ver_parsed[1].toInteger() + 1
-                    def nextVersion = ver_parsed.join(".")
-
+                    nextVersion = ver_parsed.join(".")
+                }
                 sh '''
                 git checkout develop && git pull -r origin develop
                 sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
