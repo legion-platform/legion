@@ -215,4 +215,4 @@ Check if all enclave domains are registered
 Run, wait and check jenkins jobs for enclave
     [Arguments]             ${enclave}
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
-    \    Test model pipeline  ${model_name}  ${enclave}
+    \    Test model pipeline    ${model_name}    ${enclave}

@@ -109,7 +109,7 @@ class Jenkins:
         """
         if not self._client:
             raise Exception('Jenkins client has not been initialized')
-
+        print('Job name to run is: {}'.format(job_name))
         job_info = self._client.get_job_info(job_name, 4)
         print('Job info is: {}'.format(job_info))
         print('Parameters are: {}'.format(parameters))
@@ -124,7 +124,6 @@ class Jenkins:
             parameters = [x['defaultParameterValue'] for x in parameters[0]['parameterDefinitions']]
             parameters = {x['name']: x['value'] for x in parameters}
         print('Added parameters for build are: {}'.format(parameters))
-        time.sleep(2)
         response = self._client.build_job(job_name, parameters=parameters)
         print('Result of Job run: {!r}'.format(response))
 
@@ -141,6 +140,7 @@ class Jenkins:
         :raises: Exception
         :return: None
         """
+        print('Job name to wait is: {}'.format(job_name))
         if not self._client:
             raise Exception('Jenkins client has not been initialized')
 
