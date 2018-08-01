@@ -161,7 +161,7 @@ node {
                          passwordVariable: 'PASSWORD']]) {
                         sh """
                         curl -v -u $USERNAME:$PASSWORD \
-                        --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi 
+                        --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/${params.ReleaseVersion}/legion-jenkins-plugin.hpi
         
                         curl -v -u $USERNAME:$PASSWORD \
@@ -191,7 +191,7 @@ node {
                     cd base-python-image
                     docker build $dockerCacheArg -t "legion/base-python-image:${params.ReleaseVersion}" .
                     """
-                    UploadDockerImage("legion/base-python-image")
+                    TagAndUploadDockerImage("legion/base-python-image")
                 }, 'Build docs': {
                     fullBuildNumber = env.BUILD_NUMBER
                     fullBuildNumber.padLeft(4, '0')
@@ -216,7 +216,7 @@ node {
                     cd k8s/grafana
                     docker build $dockerCacheArg --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" -t legion/k8s-grafana:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/k8s-grafana")
+                    TagAndUploadDockerImage("legion/k8s-grafana")
                 }, 'Build Edge Docker image': {
                     sh """
                     rm -rf k8s/edge/static/docs
@@ -227,37 +227,37 @@ node {
                     cd k8s/edge
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" -t legion/k8s-edge:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/k8s-edge")
+                    TagAndUploadDockerImage("legion/k8s-edge")
                 }, 'Build Jenkins Docker image': {
                     sh """
                     cd k8s/jenkins
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" --build-arg jenkins_plugin_version="${params.ReleaseVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/k8s-jenkins")
+                    TagAndUploadDockerImage("legion/k8s-jenkins")
                 }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" -t legion/test-bare-model-api-model-1:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/test-bare-model-api-model-1")
+                    TagAndUploadDockerImage("legion/test-bare-model-api-model-1")
                 }, 'Build Bare model 2': {
                     sh """
                     cd k8s/test-bare-model-api/model-2
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" -t legion/test-bare-model-api-model-2:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/test-bare-model-api-model-2")
+                    TagAndUploadDockerImage("legion/test-bare-model-api-model-2")
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/k8s-edi")
+                    TagAndUploadDockerImage("legion/k8s-edi")
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" -t legion/k8s-airflow:${params.ReleaseVersion} .
                     """
-                    UploadDockerImage("legion/k8s-airflow")
+                    TagAndUploadDockerImage("legion/k8s-airflow")
                 }, 'Upload Legion package to PyPi': {
                     print('Upload Legion package to Pypi repository')
                     sh """
