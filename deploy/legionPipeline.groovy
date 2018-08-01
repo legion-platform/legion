@@ -51,15 +51,23 @@ def terminateCluster() {
 }
 
 def deployLegion() {
+    def ansible_default_extras = '--vault-password-file=${vault} \
+                          --extra-vars "profile=${Profile} \
+                          legion_version=${LegionVersion}" '
+    def repository_urls_extras = "pypi_repo=${params.PypiRepo} \
+                                  docker_repo=${params.DockerRepo}"
+    def ansible_extras = ansible_default_extras                            
+
+    if (params.PublicRelease){
+        ansible_extras =  ansible_default_extras +  repository_urls_extras
+
     dir('deploy/ansible'){
         withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     ansiblePlaybook(
                         playbook: 'deploy-legion.yml',
-                        extras: '--vault-password-file=${vault} \
-                                --extra-vars "profile=${Profile} \
-                                legion_version=${LegionVersion}"',
+                        extras: ansible_extras,
                         colorized: true
                     )
                 }

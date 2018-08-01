@@ -260,20 +260,30 @@ node {
                     TagAndUploadDockerImage("k8s-airflow")
                 }, 'Upload Legion package to PyPi': {
                     print('Upload Legion package to Pypi repository')
-                    sh """
-                    twine upload -r ${params.PypiRepo} legion/dist/legion-${params.ReleaseVersion}.tar.gz
-                    """
+                    if (params.UploadLegionPackage){
+                        sh """
+                        twine upload -r ${params.PyPiDistributionTargetName} legion/dist/legion-${params.ReleaseVersion}.tar.gz
+                        """
+                    } else {
+                        print("Skipping package upload")
+                    }
                 }
             )
 
             stage('Set GIT release Tag'){
+                if (params.PushTag){
                 print('Set Release tag')
-                sh '''
-                if [ `git tag |grep ${params.ReleaseVersion}"` ]; then
-                    git tag -d ${params.ReleaseVersion} && git push origin :refs/tags/${params.ReleaseVersion}
+                sh """
+                if [ `git tag |grep ${params.ReleaseVersion}` ]; then
+                    git tag -d ${params.ReleaseVersion}
+                    git push origin :refs/tags/${params.ReleaseVersion}
+                fi
                 git tag -a ${params.ReleaseVersion}  -m "Release ${params.ReleaseVersion}"
                 git push origin :refs/tags/${params.ReleaseVersion}
-                '''
+                """
+                } else {
+                    print("Skipping release git tag push")
+                }
             }
         
             stage('Update Legion version string'){
@@ -287,10 +297,10 @@ node {
                         ver_parsed[1] = ver_parsed[1].toInteger() + 1
                         nextVersion = ver_parsed.join(".")
                     }
-                    sh '''
+                    sh """
                     sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
                     git commit -a -m "Update Legion version to ${nextVersion}" && git push origin develop
-                    '''
+                    """
                 }
                 else {
                     print("Skipping version string update")
