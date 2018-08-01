@@ -304,48 +304,9 @@ node {
         throw e
     } finally {
         // Success or failure, always send notifications
-        notifyBuild(currentBuild.result)
+        print(currentBuild.result)
     }
 
     print("Release version ${params.ReleaseVersion}")
 }
 
-
-
-def notifyBuild(String buildStatus = 'STARTED') {
-    // build status of null means successful
-    buildStatus =  buildStatus ?: 'SUCCESSFUL'
-
-    def previousBuild = currentBuild.getPreviousBuild()
-    def previousBuildResult = previousBuild != null ? previousBuild.result : null
-
-    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
-    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
-
-    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
-
-    if (!masterOrDevelopBuild)
-        return
-
-    // Skip green -> green
-    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
-        return
-
-    // Default values
-    def colorCode = '#FF0000'
-    def summary = """\
-    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
-    """.stripIndent()
-
-    // Override default values based on build status
-    if (buildStatus == 'STARTED') {
-        colorCode = '#FFFF00'
-    } else if (buildStatus == 'SUCCESSFUL') {
-        colorCode = '#00FF00'
-    } else {
-        colorCode = '#FF0000'
-    }
-
-    slackSend (color: colorCode, message: summary)
-}
