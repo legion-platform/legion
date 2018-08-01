@@ -161,7 +161,7 @@ node {
                          passwordVariable: 'PASSWORD']]) {
                         sh """
                         curl -v -u $USERNAME:$PASSWORD \
-                        --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                        --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi 
                         ${params.JenkinsPluginsRepositoryStore}/${params.ReleaseVersion}/legion-jenkins-plugin.hpi
         
                         curl -v -u $USERNAME:$PASSWORD \
