@@ -18,8 +18,8 @@ def TagAndUploadDockerImage(imageName) {
 
 node {
 
-    baseVersion = ${params.BuildVersion}.split("-").first()
-    localVersion = ${params.BuildVersion}.split("-").last()
+    baseVersion = params.BuildVersion.split("-").first()
+    localVersion = params.BuildVersion.split("-").last()
     releaseCommit = localVersion.split("\\.").last()
     
     try{
@@ -28,9 +28,12 @@ node {
 
         stage('Upload Legion python package to PyPi'){
             print('Upload Legion package to Pypi repository')
+            checkout scm
             sh """
-            wget ${params.NexusPypiUrl}/repository/pypi-hosted/packages/legion/${baseVersion}+${localVersion}/legion-${baseVersion}+${localVersion}.tar.gz -o legion-${baseVersion}.tar.gz
-            twine upload -r ${params.PypiRepo} legion-${baseVersion}.tar.gz && rm legion-${baseVersion}.tar.gz
+            git checkout ${release.Commit}
+            sed -i -E "s/__version__.*/__version__ = \'${baseVersion}\'/g" legion/legion/version.py
+            ../.venv/bin/python3.6 setup.py sdist
+            twine upload -r ${params.PypiRepo} dist/legion-${baseVersion}.tar.gz && rm dist/legion-${baseVersion}.tar.gz
             """
         }
     
@@ -58,13 +61,13 @@ node {
         }
         
         stage('Update Legion version string'){
-            if (${params.UpdateVersionString}){
+            if (params.UpdateVersionString){
                 print('Update Legion package version string')
                 def nextVersion
-                if (${params.NextVersion}){
-                    nextVersion = ${params.NextVersion}
+                if (params.NextVersion){
+                    nextVersion = params.NextVersion
                 } else {
-                    def ver_parsed = ${baseVersion}.split("\\.")
+                    def ver_parsed = baseVersion.split("\\.")
                     ver_parsed[1] = ver_parsed[1].toInteger() + 1
                     nextVersion = ver_parsed.join(".")
                 }
@@ -87,6 +90,6 @@ node {
         throw e
     } finally {
         // Success or failure, always send notifications
-        legion.notifyBuild(currentBuild.result)
+        print(currentBuild.result)
     }
 }
