@@ -296,6 +296,7 @@ node {
                     print("Skipping version string update")
                 }
             }
+        }
     }
     catch (e) {
         // If there was an exception thrown, the build failed
