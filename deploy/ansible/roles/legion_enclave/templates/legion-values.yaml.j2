@@ -4,15 +4,15 @@ namespace: default
 
 package:
   version: "{{ legion_version }}"
-  repository: "{{ nexus_pypi_repo }}"
+  repository: "{{ pypi_repo }}"
 
   baseImage:
-    repository: "{{ docker_repo }}/legion/base-python-image"
+    repository: "{{ docker_repo }}/base-python-image"
     tag: "{{ legion_version }}"
 
 grafana:
   image:
-    repository: "{{ docker_repo }}/legion/k8s-grafana"
+    repository: "{{ docker_repo }}/k8s-grafana"
     tag: "{{ legion_version }}"
 
   ingress:
@@ -29,7 +29,7 @@ edge:
   enabled: true
   replicas: 2
   image: 
-    repository: "{{ docker_repo }}/legion/k8s-edge"
+    repository: "{{ docker_repo }}/k8s-edge"
     tag: "{{ legion_version }}"
 
   ingress:
@@ -40,7 +40,7 @@ edi:
   enabled: true
   replicas: 2
   image:
-    repository: "{{ docker_repo }}/legion/k8s-edi"
+    repository: "{{ docker_repo }}/k8s-edi"
     tag: "{{ legion_version }}"
 
   ingress:

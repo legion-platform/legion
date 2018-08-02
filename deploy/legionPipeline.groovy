@@ -60,19 +60,20 @@ def deployLegion() {
                             playbook: 'deploy-legion.yml',
                             extras: '--vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
-                                     legion_version=${LegionVersion}" ',
+                                     legion_version=${LegionVersion} \
+                                     pypi_repo=${PypiRepo} \
+                                     docker_repo=${DockerRepo}" ',
                             colorized: true
-                        )  
+                         )
                     } else {
                         ansiblePlaybook(
                             playbook: 'deploy-legion.yml',
                             extras: '--vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
-                                     legion_version=${LegionVersion} \
-                                     pypi_repo=${params.PypiRepo} \
-                                     docker_repo=${params.DockerRepo}" ',
+                                     legion_version=${LegionVersion}" ',
                             colorized: true
-                         )
+                        )
+                        
                     }
                 }
             }
@@ -145,14 +146,14 @@ def runRobotTests(tags="") {
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
-            PROFILE=$Profile BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+            PROFILE=$Profile LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/python3 -m robot.run --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $robot_tags *.robot || true
 
             echo "Starting python tests"
             cd ../python
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
+            PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit || true
             '''
             step([

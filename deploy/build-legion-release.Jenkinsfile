@@ -262,7 +262,7 @@ node {
                     print('Upload Legion package to Pypi repository')
                     if (params.UploadLegionPackage){
                         sh """
-                        twine upload -r ${params.PyPiDistributionTargetName} legion/dist/legion-${params.ReleaseVersion}.tar.gz
+                        twine upload -r ${params.PyPiDistributionTargetName} legion/dist/legion-${params.ReleaseVersion}.*
                         """
                     } else {
                         print("Skipping package upload")
@@ -271,7 +271,7 @@ node {
             )
 
             stage('Set GIT release Tag'){
-                if (params.PushTag){
+                if (params.PushGitTag){
                 print('Set Release tag')
                 sh """
                 if [ `git tag |grep ${params.ReleaseVersion}` ]; then
