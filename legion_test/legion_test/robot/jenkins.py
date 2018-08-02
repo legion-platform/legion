@@ -87,14 +87,17 @@ class Jenkins:
         """
         if get_jenkins_credentials():
             user, password = get_jenkins_credentials()
+            print('User: {!r}, password: {!r}'.format(user, password))
         self._client = jenkins.Jenkins(domain,
                                        username=user,
                                        password=password,
                                        timeout=int(timeout))
+        print('Jenkins cli before crumb: {!r}'.format(self._client))
         if add_dex_cookies:
             self._client.crumb = {'crumbRequestField': 'Cookie',
                             'crumb': ';'.join(['{}={}'.format(k,v)
                                           for (k,v) in get_session_cookies().items()])}
+        print('Jenkins cli after crumb added: {!r}'.format(self._client))
         self._client.get_all_jobs()
 
     def run_jenkins_job(self, job_name, **parameters):
@@ -120,8 +123,8 @@ class Jenkins:
 
             parameters = [x['defaultParameterValue'] for x in parameters[0]['parameterDefinitions']]
             parameters = {x['name']: x['value'] for x in parameters}
-        user, password = get_jenkins_credentials()
-        response = self._client.build_job(job_name, parameters=parameters, token=password)
+        print('Jenkins cli after before job build: {!r}'.format(self._client))
+        response = self._client.build_job(job_name, parameters=parameters)
         print('Result of Job run: {!r}'.format(response))
 
     def wait_jenkins_job(self, job_name, timeout=0, sleep=5):
@@ -137,7 +140,6 @@ class Jenkins:
         :raises: Exception
         :return: None
         """
-        print('Job name to wait is: {}'.format(job_name))
         if not self._client:
             raise Exception('Jenkins client has not been initialized')
 
