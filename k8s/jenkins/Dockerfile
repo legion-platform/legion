@@ -40,7 +40,7 @@ COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
 ARG jenkins_plugin_server="http://nexus-local.cc.epm.kharlamov.biz/jenkins"
 ENV JENKINS_UC_EXPERIMENTAL=$jenkins_plugin_server
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
-COPY slack.txt /usr/share/jenkins/ref/plugins.txt
+COPY slack.txt /usr/share/jenkins/ref/slack.txt
 
 ARG jenkins_plugin_version="latest"
 ENV JENKINS_PLUGIN_VERSION=$jenkins_plugin_version
@@ -48,8 +48,8 @@ RUN echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" >> /usr/sh
     echo "INSTALLING NEXT PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
     chmod +x /usr/local/bin/install-plugins.sh
+RUN /usr/local/bin/kubectl create secret generic slack --from-file=/usr/share/jenkins/ref/slack.txt
 
 # Install plugins
 USER jenkins
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
-RUN /usr/local/bin/kubectl create secret generic slack --from-file=/usr/share/jenkins/ref/plugins.txt
