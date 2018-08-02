@@ -166,14 +166,14 @@ def runScript(scriptPath){
     pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     export CONTAINER_DIR="`pwd`"
     cd ${env.ROOT_DIR}
-    python3.6 "${env.TARGET_SCRIPT_PATH}" > script-log.txt
+    python3.6 "${env.TARGET_SCRIPT_PATH}" | tee script-log.txt
 
     echo "<html><body><h2>Script output</h2><pre>" > notebook.html
     cat script-log.txt >> notebook.html
     echo "</pre></body></html>" >> notebook.html
 
-    cp script-log.txt "\$CONTAINER_DIR"
-    cp notebook.html "\$CONTAINER_DIR"
+    cp script-log.txt "\$CONTAINER_DIR" || true
+    cp notebook.html "\$CONTAINER_DIR" || true
     sleep 15
     """
 
