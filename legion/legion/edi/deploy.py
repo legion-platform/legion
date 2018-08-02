@@ -215,12 +215,12 @@ def deploy_kubernetes(args):
     """
     Deploy kubernetes model
 
-    :param args: command arguments with .model_id, .namespace , .timeout and .scale
+    :param args: command arguments with .model_id, .namespace , .livenesstimeout, .readinesstimeout and .scale
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    edi_client.deploy(args.image, args.scale, args.timeout)
+    edi_client.deploy(args.image, args.scale, args.livenesstimeout, args.readinesstimeout)
 
     # Start waiting of readiness of all PODs
     if not args.no_wait:

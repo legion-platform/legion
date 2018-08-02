@@ -260,7 +260,7 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
-    def deploy_model(self, image, count=1, timeout=10):
+    def deploy_model(self, image, count=1, livenesstimeout=10, readinesstimeout=10):
         """
         Deploy new model
 
@@ -268,8 +268,10 @@ class Enclave:
         :type image: str
         :param count: count of pods
         :type count: int
-        :param timeout: model pod startup timeout (used in liveness and readiness probes)
-        :type timeout: int
+        :param livenesstimeout: model pod startup timeout (used in liveness probe)
+        :type livenesstimeout: int
+        :param readinesstimeout: model pod startup timeout (used readiness probe)
+        :type readinesstimeout: int
         :return: :py:class:`legion.k8s.services.ModelService` -- model service
         """
         if count < 1:
@@ -306,7 +308,7 @@ class Enclave:
         livenessprobe = kubernetes.client.V1Probe(
             failure_threshold=10,
             http_get=http_get_object,
-            initial_delay_seconds=timeout,
+            initial_delay_seconds=livenesstimeout,
             period_seconds=10,
             timeout_seconds=2
         )
@@ -314,7 +316,7 @@ class Enclave:
         readinessprobe = kubernetes.client.V1Probe(
             failure_threshold=5,
             http_get=http_get_object,
-            initial_delay_seconds=timeout,
+            initial_delay_seconds=readinesstimeout,
             period_seconds=10,
             timeout_seconds=2
         )

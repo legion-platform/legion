@@ -95,9 +95,9 @@ def root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, count=int, timeout=int)
+@legion.http.populate_fields(image=str, count=int, livenesstimeout=int, readinesstimeout=int)
 @legion.http.requested_fields('image')
-def deploy(image, count=1, timeout=10):
+def deploy(image, count=1, livenesstimeout=10, readinesstimeout=10):
     """
     Deploy API endpoint
 
@@ -110,7 +110,7 @@ def deploy(image, count=1, timeout=10):
     :return: bool -- True
     """
     LOGGER.info('Command: deploy image {} with {} replicas'.format(image, count))
-    model_service = app.config['ENCLAVE'].deploy_model(image, count, timeout)
+    model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
 
     if app.config['REGISTER_ON_GRAFANA']:
         if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):

@@ -58,7 +58,10 @@ if __name__ == '__main__':
     deploy_k8s_parser.add_argument('--scale',
                                    default=1,
                                    type=int, help='count of instances')
-    deploy_k8s_parser.add_argument('--timeout',
+    deploy_k8s_parser.add_argument('--livenesstimeout',
+                                   default=10,
+                                   type=int, help='model startup timeout for liveness probe')
+    deploy_k8s_parser.add_argument('--readinesstimeout',
                                    default=10,
                                    type=int, help='model startup timeout for readiness probe')
     deploy_k8s_parser.add_argument('--no-wait',
