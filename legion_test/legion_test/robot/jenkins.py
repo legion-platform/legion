@@ -95,6 +95,11 @@ class Jenkins:
             self._client.crumb = {'crumbRequestField': 'Cookie',
                             'crumb': ';'.join(['{}={}'.format(k,v)
                                           for (k,v) in get_session_cookies().items()])}
+
+        user = self._client.get_whoami()
+        version = self._client.get_version()
+        print('Hello %s from Jenkins %s' % (user['fullName'], version))
+        self._client.wait_for_normal_op(10)
         self._client.get_all_jobs()
 
     def run_jenkins_job(self, job_name, **parameters):
