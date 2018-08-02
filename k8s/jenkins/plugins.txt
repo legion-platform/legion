@@ -89,6 +89,7 @@ resource-disposer:0.8
 run-condition:1.0
 scm-api:2.2.2
 script-security:1.34
+slack:2.3
 sse-gateway:1.15
 ssh-credentials:1.13
 ssh-slaves:1.21
