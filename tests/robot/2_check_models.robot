@@ -10,6 +10,7 @@ Running, waiting and checks jobs in Jenkins
     [Documentation]  Build and check every example in Jenkins
     [Tags]  jenkins  models  enclave
     Connect to Jenkins endpoint
+    Connect to Jenkins endpoint
     Run, wait and check jenkins jobs for enclave     ${MODEL_TEST_ENCLAVE}
 
 Check Vertical Scailing

@@ -87,17 +87,14 @@ class Jenkins:
         """
         if get_jenkins_credentials():
             user, password = get_jenkins_credentials()
-            print('User: {!r}, password: {!r}'.format(user, password))
         self._client = jenkins.Jenkins(domain,
                                        username=user,
                                        password=password,
                                        timeout=int(timeout))
-        print('Jenkins cli before crumb: {!r} crumb: {!r}'.format(self._client.auth, self._client.crumb))
         if add_dex_cookies:
             self._client.crumb = {'crumbRequestField': 'Cookie',
                             'crumb': ';'.join(['{}={}'.format(k,v)
                                           for (k,v) in get_session_cookies().items()])}
-        print('Jenkins cli after crumb added: {!r} crumb: {!r}'.format(self._client.auth, self._client.crumb))
         self._client.get_all_jobs()
 
     def run_jenkins_job(self, job_name, **parameters):
@@ -123,7 +120,6 @@ class Jenkins:
 
             parameters = [x['defaultParameterValue'] for x in parameters[0]['parameterDefinitions']]
             parameters = {x['name']: x['value'] for x in parameters}
-        print('Jenkins cli after before job build: {!r} crumb: {!r}'.format(self._client.auth, self._client.crumb))
         response = self._client.build_job(job_name, parameters=parameters)
         print('Result of Job run: {!r}'.format(response))
 
