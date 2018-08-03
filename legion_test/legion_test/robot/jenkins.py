@@ -147,6 +147,7 @@ class Jenkins:
         sleep = int(sleep)
 
         start = time.time()
+        time.sleep(sleep)
         while True:
             job_info = self._client.get_job_info(job_name)
             if not job_info['lastBuild'] and not job_info['inQueue']:
