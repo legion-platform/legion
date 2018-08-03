@@ -1,4 +1,4 @@
-def TagAndUploadDockerImage(imageName) {
+def UploadStableDockerImage(imageName) {
     sh """
     # Push stable image to local registry
     docker tag legion/${imageName}:${params.ReleaseVersion} ${params.DockerRegistry}/${imageName}:${params.ReleaseVersion}
@@ -12,6 +12,7 @@ def TagAndUploadDockerImage(imageName) {
     docker push ${params.DockerHubRegistry}/${imageName}:latest
     """
 }
+
 
 node {
     try {
@@ -35,12 +36,12 @@ node {
                 'Build Python packages': {
                     sh '''
                     cd legion_test
-                    ../.venv/bin/python3.6 setup.py sdist
+                    ../.venv/bin/python3.6 setup.py sdist bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     cd -
                     '''
 
-                    print('Build and distributing legion_test')
+                    print('Build and distribute legion_test')
                     sh """
                     sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion_test/legion_test/version.py
                     cd legion_test
@@ -50,7 +51,7 @@ node {
                     cd -
                     """
 
-                    print('Build and distributing legion')
+                    print('Build and distribute legion')
                     sh """
                     sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion/legion/version.py
                     cd legion
@@ -60,7 +61,7 @@ node {
                     cd -
                     """
 
-                    print('Build and distributing legion_airflow')
+                    print('Build and distribute legion_airflow')
                     sh """
                     sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion_airflow/legion_airflow/version.py
                     cd legion_airflow
@@ -191,7 +192,7 @@ node {
                     cd base-python-image
                     docker build $dockerCacheArg -t "legion/base-python-image:${params.ReleaseVersion}" .
                     """
-                    TagAndUploadDockerImage("base-python-image")
+                    UploadStableDockerImage("base-python-image")
                 }, 'Build docs': {
                     fullBuildNumber = env.BUILD_NUMBER
                     fullBuildNumber.padLeft(4, '0')
@@ -216,7 +217,7 @@ node {
                     cd k8s/grafana
                     docker build $dockerCacheArg --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" -t legion/k8s-grafana:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("k8s-grafana")
+                    UploadStableDockerImage("k8s-grafana")
                 }, 'Build Edge Docker image': {
                     sh """
                     rm -rf k8s/edge/static/docs
@@ -227,37 +228,37 @@ node {
                     cd k8s/edge
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" -t legion/k8s-edge:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("k8s-edge")
+                    UploadStableDockerImage("k8s-edge")
                 }, 'Build Jenkins Docker image': {
                     sh """
                     cd k8s/jenkins
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" --build-arg jenkins_plugin_version="${params.ReleaseVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("k8s-jenkins")
+                    UploadStableDockerImage("k8s-jenkins")
                 }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" -t legion/test-bare-model-api-model-1:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("test-bare-model-api-model-1")
+                    UploadStableDockerImage("test-bare-model-api-model-1")
                 }, 'Build Bare model 2': {
                     sh """
                     cd k8s/test-bare-model-api/model-2
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" -t legion/test-bare-model-api-model-2:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("test-bare-model-api-model-2")
+                    UploadStableDockerImage("test-bare-model-api-model-2")
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
                     docker build $dockerCacheArg --build-arg version="${params.ReleaseVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" --build-arg source_image="legion/base-python-image" -t legion/k8s-edi:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("k8s-edi")
+                    UploadStableDockerImage("k8s-edi")
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
                     docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${params.ReleaseVersion}" -t legion/k8s-airflow:${params.ReleaseVersion} .
                     """
-                    TagAndUploadDockerImage("k8s-airflow")
+                    UploadStableDockerImage("k8s-airflow")
                 }, 'Upload Legion package to PyPi': {
                     print('Upload Legion package to Pypi repository')
                     if (params.UploadLegionPackage){
@@ -272,15 +273,14 @@ node {
 
             stage('Set GIT release Tag'){
                 if (params.PushGitTag){
-                print('Set Release tag')
-                sh """
-                if [ `git tag |grep ${params.ReleaseVersion}` ]; then
-                    git tag -d ${params.ReleaseVersion}
-                    git push origin :refs/tags/${params.ReleaseVersion}
-                fi
-                git tag -a ${params.ReleaseVersion}  -m "Release ${params.ReleaseVersion}"
-                git push origin :refs/tags/${params.ReleaseVersion}
-                """
+                    print('Set Release tag')
+                    git {
+                        pushOnlyIfSuccess()
+                        tag(params.ReleaseVersion) {
+                            message("Release ${params.ReleaseVersion}")
+                        }
+                        create()
+                    }
                 } else {
                     print("Skipping release git tag push")
                 }
