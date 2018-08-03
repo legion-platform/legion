@@ -97,8 +97,7 @@ class Jenkins:
                                           for (k,v) in get_session_cookies().items()])}
 
         user = self._client.get_whoami()
-        version = self._client.get_version()
-        print('Hello %s from Jenkins %s' % (user['fullName'], version))
+        print('Hello %s from Jenkins' % (user['fullName']))
         self._client.wait_for_normal_op(10)
         self._client.get_all_jobs()
 
