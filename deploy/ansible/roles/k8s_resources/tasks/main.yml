@@ -8,7 +8,7 @@
 - include: dex.yaml
 - include: oauth2-proxy.yaml
 - include: cluster-groups.yaml
-- include: copy-ca-cert.yaml
+- include: k8s-authenticator.yaml
 - include: dashboard.yaml
 - include: autoscaler.yaml
 - include: prometheus.yaml
