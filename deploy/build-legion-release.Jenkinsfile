@@ -43,7 +43,7 @@ node {
 
                     print('Build and distribute legion_test')
                     sh """
-                    sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion_test/legion_test/version.py
+                    cp legion/legion/version.py legion_test/legion_test/version.py
                     cd legion_test
                     ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py sdist upload -r ${params.LocalPyPiDistributionTargetName}
@@ -53,7 +53,6 @@ node {
 
                     print('Build and distribute legion')
                     sh """
-                    sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion/legion/version.py
                     cd legion
                     ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py sdist upload -r ${params.LocalPyPiDistributionTargetName}
@@ -63,7 +62,7 @@ node {
 
                     print('Build and distribute legion_airflow')
                     sh """
-                    sed -i -E "s/__version__.*/__version__ = \'${params.ReleaseVersion}\'/g" legion_airflow/legion_airflow/version.py
+                    cp legion/legion/version.py legion_airflow/legion_airflow/version.py
                     cd legion_airflow
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
