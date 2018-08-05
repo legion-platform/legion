@@ -1,0 +1,25 @@
+{{- $servicePort := .Values.service.port -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "k8s-authenticator.fullname" . }}
+  labels:
+    app: {{ template "k8s-authenticator.name" . }}
+    chart: {{ template "k8s-authenticator.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  config.yaml: |-
+    {{- with .Values.config }}
+    listen: http://0.0.0.0:{{ default "5555" $servicePort }}
+    debug: {{ default "false" .debug }}
+    {{- if .logoUrl }}
+    logo_uri: {{ .logoUrl }}
+    {{- end }}
+    {{- if and .tlsCert .tlsKey }} 
+    tls_cert: "{{ .tlsCert }}"
+    tls_key: "{{ .tlsKey }}"
+    {{- end }}
+    clusters:
+{{ toYaml .clusters | indent 4 }}
+    {{- end }}

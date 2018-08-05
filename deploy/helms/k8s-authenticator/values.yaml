@@ -1,0 +1,58 @@
+# Default values for k8s-authenticator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+ca: []
+#- name: ca.crt
+#  value: b64-ca
+
+config:
+  debug: false
+  clusters:
+  - name: my-cluster
+    short_description: "My Cluster"
+    description: "Example Cluster Long Description..."
+    client_secret: pUBnBOY80SnXgjibTYM9ZWNzY2xreNGQok
+    issuer: https://dex.example.com
+    k8s_master_uri: https://my-cluster.example.com
+    client_id: my-cluster
+    redirect_uri: https://login.example.com/callback/my-cluster
+    k8s_ca_uri: https://url-to-your-ca.crt
+
+image:
+  repository: mintel/dex-k8s-authenticator
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 5555
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - chart-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 64Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
