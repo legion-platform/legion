@@ -17,7 +17,6 @@
 legion k8s utils functions
 """
 import os
-import os.path
 import logging
 
 import docker
@@ -29,6 +28,8 @@ import kubernetes.config.config_exception
 import urllib3
 import urllib3.exceptions
 import yaml
+import json
+import re
 
 import legion
 import legion.containers.docker
@@ -41,10 +42,18 @@ import legion.k8s.enclave
 from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE
+from docker_registry_client import DockerRegistryClient
+from typing import NamedTuple
+
 
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None
 KUBERNETES_SERVICE_ACCOUNT_NAMESPACE_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/namespace'
+ImageAttributes = NamedTuple('ImageAttributes', [
+    ('host', str),
+    ('repo', str),
+    ('ref', str)
+])
 
 
 def build_client():
@@ -140,19 +149,38 @@ def load_secrets(path_to_secrets):
 def get_docker_image_labels(image):
     """
     Get labels from docker image
-
     :param image: docker image
     :type image: str
     :return: dict[str, Any] -- image labels
     """
-    docker_client = legion.containers.docker.build_docker_client(None)
+    LOGGER.info('Getting labels for {} image'.format(image))
+    image_attributes = parse_docker_image_url(image)
+
+    # Get nexus registry host from ENV or image url
     try:
-        try:
-            docker_image = docker_client.images.get(image)
-        except docker.errors.ImageNotFound:
-            docker_image = docker_client.images.pull(image)
-    except Exception as docker_pull_exception:
-        raise Exception('Cannot pull docker image {}: {}'.format(image, docker_pull_exception))
+        if image_attributes.host == os.getenv('MODEL_IMAGES_REGISTRY_HOST'):
+            registry_host = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
+        else:
+            if '443' in image_attributes.host:
+                registry_host = 'https://{}'.format(image_attributes.host)
+            else:
+                registry_host = 'http://{}'.format(image_attributes.host)
+    except Exception as err:
+        raise LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
+
+    try:
+        registry_client = DockerRegistryClient(
+            host=registry_host,
+            username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
+            password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
+            api_version=2
+        )
+        manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
+        labels = json.loads(
+            manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+
+    except Exception as err:
+        raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
@@ -160,13 +188,13 @@ def get_docker_image_labels(image):
         legion.containers.headers.DOMAIN_CONTAINER_TYPE
     ]
 
-    if any(header not in docker_image.labels for header in required_headers):
+    if any(header not in labels for header in required_headers):
         raise Exception('Missed one of %s labels. Available labels: %s' % (
             ', '.join(required_headers),
-            ', '.join(tuple(docker_image.labels.keys()))
+            ', '.join(tuple(labels.keys()))
         ))
 
-    return docker_image.labels
+    return labels
 
 
 def get_meta_from_docker_labels(labels):
@@ -196,3 +224,43 @@ def get_meta_from_docker_labels(labels):
     compatible_labels[LEGION_SYSTEM_LABEL] = LEGION_SYSTEM_VALUE
 
     return normalize_name(k8s_name, dns_1035=True), compatible_labels, model_id, model_version
+
+
+def parse_docker_image_url(image_url):
+    """
+    Get Repository host address, image name and version from image url
+    :param image_url: full docker image url
+    :type image_url: str
+    :return: namedtuple[str, Any]
+    """
+    image_attrs_regexp = '(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
+    try:
+        image_attrs_list = re.search(image_attrs_regexp, image_url)
+
+        try:
+            host = image_attrs_list.group(1)
+        except Exception as err:
+            raise LOGGER.error('Image url doesn\'t contain host pattern: {}'.format(err))
+        try:
+            repo = image_attrs_list.group(2)
+        except Exception as err:
+            raise LOGGER.error('Image url doesn\'t contain repo pattern: {}'.format(err))
+        try:
+            ref = image_attrs_list.group(3)
+        except Exception as err:
+            raise LOGGER.error('Image url doesn\'t contain ref pattern: {}'.format(err))
+
+        image_attributes = ImageAttributes(
+            host=host,
+            repo=repo,
+            ref=ref
+        )
+
+        LOGGER.info('Image attributes: {}'.format(image_attributes))
+
+    except Exception as err:
+        raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
+            image_url,
+            err))
+
+    return image_attributes

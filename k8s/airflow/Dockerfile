@@ -45,7 +45,10 @@ RUN apt-get update && apt-get install -y \
  libmysqlclient-dev \
  sshpass \
  sudo \
- redis-tools
+ redis-tools \
+ locales
+
+RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
 
 RUN service cron stop \
  && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow
@@ -81,6 +84,14 @@ RUN rm -rf \
 
 
 COPY entrypoint.sh /home/airflow/init.sh
+
+# setup locale
+RUN locale-gen en_CA.UTF-8
+COPY default_locale /etc/default/locale
+RUN chmod 0755 /etc/default/locale
+ENV LC_ALL=en_CA.UTF-8
+ENV LANG=en_CA.UTF-8
+ENV LANGUAGE=en_CA.UTF-8
 
 COPY requirements.txt /home/airflow/requirements.txt
 RUN pip install -r /home/airflow/requirements.txt && \
