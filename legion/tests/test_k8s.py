@@ -20,12 +20,20 @@ import os.path
 
 import unittest2
 import docker.errors
+import logging
 
 import legion.k8s
 import legion.k8s.utils
 import legion.config
 import legion.containers.docker
 import legion.containers.headers
+
+try:
+    from .legion_test_utils import LegionTestContainer
+except ImportError:
+    from legion_test_utils import LegionTestContainer
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TestK8S(unittest2.TestCase):
@@ -46,6 +54,17 @@ class TestK8S(unittest2.TestCase):
         )
 
         return new_image[0]
+
+    def _push_docker_image_to_registry(self, image_name, ref, registry):
+        try:
+            docker_client = legion.containers.docker.build_docker_client()
+            image = docker_client.images.get(image_name)
+            image_tag = '{}/{}:{}'.format(registry, image_name, ref)
+            LOGGER.info('Pushing {} image to registry'.format(image_tag))
+            image.tag(image_tag)
+            docker_client.images.push(image_tag)
+        except Exception as err:
+            print('Can\'t push image {} to registry: {}'.format(image, err))
 
     @staticmethod
     def _build_test_model_labels(model_id='id', model_version='1.0', container_type='model'):
@@ -72,22 +91,35 @@ class TestK8S(unittest2.TestCase):
             'abc': 'def',
             'efg': 'ghk'
         }
-        image_name = 'legion/test-image'
-        self._build_bare_docker_image(image_name, labels)
         with self.assertRaises(Exception) as raised_exception:
-            legion.k8s.utils.get_docker_image_labels(image_name)
+            with LegionTestContainer(image='registry', port=5000) as registry_container:
+                labels = self._build_test_model_labels()
+                image_name = 'legion/test-image:1.0-180713070916.1.bad661d'
+                self._build_bare_docker_image(image_name, labels)
+                registry_url = 'localhost:{}'.format(registry_container.host_port)
 
-        self.assertEqual(len(raised_exception.exception.args), 1, 'exception doesnt contain arguments')
-        self.assertTrue(raised_exception.exception.args[0].startswith('Missed one of '), 'wrong exception text')
+                self._push_docker_image_to_registry(image_name, registry_url)
+                image_url = 'localhost:{}/{}'.format(registry_container.host_port, image_name)
+                legion.k8s.utils.get_docker_image_labels(image_url)
+
+                self.assertEqual(len(raised_exception.exception.args), 1, 'exception doesn\'t contain arguments')
+                self.assertTrue(raised_exception.exception.args[0].startswith('Missed one of '), 'wrong exception text')
 
     def test_get_labels_from_docker_image_exception(self):
 
-        labels = self._build_test_model_labels()
-        image_name = 'legion/test-image'
-        self._build_bare_docker_image(image_name, labels)
-
-        received_labels = legion.k8s.utils.get_docker_image_labels(image_name)
-        self.assertDictEqual(received_labels, labels)
+        with LegionTestContainer(image='registry', port=5000) as registry_container:
+            labels = self._build_test_model_labels()
+            image_name = 'legion/test-image'
+            image_ref = '1.0-123'
+            self._build_bare_docker_image(image_name, labels)
+            self._push_docker_image_to_registry(
+                image_name=image_name,
+                ref=image_ref,
+                registry='localhost:{}'.format(registry_container.host_port)
+            )
+            image_url = 'localhost:{}/{}:{}'.format(registry_container.host_port, image_name, image_ref)
+            received_labels = legion.k8s.utils.get_docker_image_labels(image_url)
+            self.assertDictEqual(received_labels, labels)
 
     def test_get_meta_from_docker_labels(self):
         source_model_id = 'abc'
