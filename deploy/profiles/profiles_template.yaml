@@ -40,8 +40,7 @@ cluster_zones:                    # configuration of cluster zones
   - zone_name: ~
     kops_cidr: ~
     kops_utility_cidr: ~
-
-
+k8s_master_zones: ~      #list of zones where to create k8s master
 
 # TLS sertificates issuing configuration (via Let's Encrypt)
 certificate_email: ~      # Let's Encrypt notification email
