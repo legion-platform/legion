@@ -6,18 +6,6 @@
 
 - name: Download Kops binaries
   get_url:
-    url: "{{ kops_darwin_download_path }}"
-    dest: /usr/local/bin/kops
-    owner: root
-    group: admin
-    mode: 0755
-    force: yes
-    sha256sum: "{{ kops_sha256sum }}"
-  when: ansible_os_family == 'Darwin'
-  become: true
-
-- name: Download Kops binaries
-  get_url:
     url: "{{ kops_download_path }}"
     dest: /usr/local/bin/kops
     owner: root
@@ -25,5 +13,4 @@
     mode: 0755
     force: yes
     sha256sum: "{{ kops_sha256sum }}"
-  when: ansible_os_family != 'Darwin'
   become: true
