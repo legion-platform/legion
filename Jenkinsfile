@@ -5,22 +5,22 @@ class Globals {
 
 def UploadDockerImageLocal(imageName) {
     sh """
-    docker tag ${imageName} ${params.DockerRegistry}/${imageName}
-    docker push ${params.DockerRegistry}/${imageName}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
     """
 }
 
 def UploadDockerImagePublic(imageName) {
     sh """
     # Push stable image to local registry
-    docker tag legion/${imageName}:${params.ReleaseVersion} ${params.DockerRegistry}/${imageName}:${params.ReleaseVersion}
-    docker tag legion/${imageName}:${params.ReleaseVersion} ${params.DockerRegistry}/${imageName}:latest
-    docker push ${params.DockerRegistry}/${imageName}:${params.ReleaseVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:latest
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
     docker push ${params.DockerRegistry}/${imageName}:latest
     # Push stable image to DockerHub
-    docker tag legion/${imageName}:${params.ReleaseVersion} ${params.DockerHubRegistry}/${imageName}:${params.ReleaseVersion}
-    docker tag legion/${imageName}:${params.ReleaseVersion} ${params.DockerHubRegistry}/${imageName}:latest
-    docker push ${params.DockerHubRegistry}/${imageName}:${params.ReleaseVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerHubRegistry}/${imageName}:${Globals.buildVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
+    docker push ${params.DockerHubRegistry}/${imageName}:${Globals.buildVersion}
     docker push ${params.DockerHubRegistry}/${imageName}:latest
     """
 }
@@ -66,7 +66,7 @@ node {
                         exit 1
                     }
                 } else {
-                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --use-local-version legion/legion/version.py"
+                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py"
                 }
                 Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
@@ -315,13 +315,15 @@ node {
                 stage('Set GIT release Tag'){
                     if (params.PushGitTag){
                         print('Set Release tag')
-                        git {
-                            pushOnlyIfSuccess()
-                            tag(params.ReleaseVersion) {
-                                message("Release ${params.ReleaseVersion}")
-                            }
-                            create()
-                        }
+                        sh """
+                        if [ `git tag |grep ${params.ReleaseVersion}` ]; then
+                            echo 'Remove existing git tag'
+                            git tag -d ${params.ReleaseVersion}
+                            git push origin :refs/tags/${params.ReleaseVersion}
+                        fi
+                        git tag ${params.ReleaseVersion}
+                        git push origin ${params.ReleaseVersion}
+                        """
                     } else {
                         print("Skipping release git tag push")
                     }

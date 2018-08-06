@@ -75,6 +75,7 @@ def patch_version_file(file, build_version):
     with open(file, 'w') as stream:
         stream.write(content)
 
+
 def get_base_version(file):
     """
     Update local version for file
@@ -84,13 +85,13 @@ def get_base_version(file):
     :return: str - base version
     """
     with open(file, 'r') as stream:
-        content = stream.read()
-        if isinstance(content, bytes):
-            content = content.decode('utf-8')
+        try:
+            content = stream.read()
             base_version = re.search(SEARCH_PATTERN, content, flags=re.MULTILINE)
-            
-    if not base_version or not base_version.group(1):
-        raise Exception('Cannot find version string')
+        except Exception as err:
+            raise Exception('Can\'t get version from version string')
+
+    return base_version.group(1)
 
 
 def work(args):
@@ -135,7 +136,6 @@ if __name__ == '__main__':
     parser.add_argument('--build-id', type=int, help='Override build id. Default from env.BUILD_NUMBER')
     parser.add_argument('--build-version', type=str, help='Explicitly specify new Legion build version')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')
-    parser.add_argument('--use-local-version', action='store_true', help='Use local version for dev builds')
 
     args = parser.parse_args()
 
