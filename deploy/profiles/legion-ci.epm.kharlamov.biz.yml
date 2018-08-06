@@ -49,6 +49,8 @@ cluster_zones:
   - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.110.0/24"
     kops_utility_cidr: "{{ private_network }}.111.0/24"
+k8s_master_zones:
+  - us-east-2a
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: legion@epam.com
