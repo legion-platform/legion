@@ -24,7 +24,7 @@ import re
 import subprocess
 
 
-SEARCH_PATTERN = r'''^__version__\s+=\s+'([0-9\.]+)(\+.*)?'$'''
+SEARCH_PATTERN = r'''^__version__\s+=\s+'([0-9\.]+\w*?)(\+.*)?'$'''
 
 
 def get_git_revision(file, use_short_hash=True):
@@ -70,13 +70,10 @@ def patch_version_file(file, build_version):
         if isinstance(content, bytes):
             content = content.decode('utf-8')
 
-    content = re.sub(SEARCH_PATTERN, '__version__ = \'\\%s\'' % build_version, flags=re.MULTILINE)
+    content = re.sub(SEARCH_PATTERN, '__version__ = \'{}\''.format(build_version), content, flags=re.MULTILINE)
 
     with open(file, 'w') as stream:
         stream.write(content)
-
-    return base_version.group(1)
-
 
 def get_base_version(file):
     """
