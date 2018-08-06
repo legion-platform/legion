@@ -9,7 +9,8 @@ import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
  
-File token = new File('/var/jenkins_home/slack_notifier')
+File file = new File('/var/jenkins_home/slack_notifier')
+def token = file.getText()
 
 // parameters
 def slackCredentialParameters = [
