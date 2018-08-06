@@ -155,3 +155,7 @@ nexus:
 connections:
   docker:
     type: proxy
+
+secrets:
+  nexus:
+    admin: "jonny"

@@ -72,7 +72,7 @@ Check EDI invalid model name deploy procedure
     [Tags]  edi  cli  enclave   one_version
     ${resp}=        Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}test
                     Should Be Equal As Integers   ${resp.rc}         2
-                    Should Contain                ${resp.stderr}     Cannot pull docker image ${TEST_MODEL_IMAGE_1}test
+                    Should Contain                ${resp.stderr}     Can't get image labels for  ${TEST_MODEL_IMAGE_1}test
 
 Check EDI double deploy procedure for the same model
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}

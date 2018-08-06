@@ -16,7 +16,7 @@
 FROM legion/base-python-image
 
 RUN apk add --update \
-    ca-certificates curl openrc docker \
+    ca-certificates curl openrc \
     nginx pcre pcre-dev supervisor
 
 EXPOSE 5000
@@ -36,11 +36,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 ENV UWSGI_INI /usr/lib/python3.6/site-packages/legion/uwsgi.ini
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
-
-COPY chmod-docker-and-run-edi.sh /usr/local/bin/chmod-docker-and-run-edi.sh
-RUN chmod a+rwx /usr/local/bin/chmod-docker-and-run-edi.sh
-ENTRYPOINT ["/usr/local/bin/chmod-docker-and-run-edi.sh"]
+ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
