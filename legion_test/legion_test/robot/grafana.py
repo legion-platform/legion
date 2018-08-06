@@ -55,6 +55,7 @@ class Grafana:
         self._user = user
         self._password = password
         self._client = GrafanaClient(self._url, self._user, self._password)
+        self._client.set_cookies(get_session_cookies())
 
     def dashboard_should_exists(self, model_id):
         """

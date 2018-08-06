@@ -139,7 +139,7 @@ class EdiClient:
         payload = {
             'image': image
         }
-        if count:
+        if count is not None:
             payload['count'] = count
 
         return self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']

@@ -23,6 +23,7 @@ import yaml
 from legion_test.robot.dex_client import init_session_id
 
 PROFILE_ENVIRON_KEY = 'PROFILE'
+PATH_TO_PROFILES_DIR = 'PATH_TO_PROFILES_DIR'
 CREDENTIAL_SECRETS_ENVIRONMENT_KEY = 'CREDENTIAL_SECRETS'
 
 
@@ -36,7 +37,9 @@ def get_variables(arg=None):
     """
     # Build default path to profiles directory
     if not arg:
-        arg = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'deploy', 'profiles'))
+        arg = os.getenv(PATH_TO_PROFILES_DIR)
+        if not arg:
+            arg = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'deploy', 'profiles'))
 
     # load Profile
     profile = os.getenv(PROFILE_ENVIRON_KEY)

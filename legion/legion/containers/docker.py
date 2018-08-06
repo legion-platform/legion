@@ -18,13 +18,16 @@ legion k8s functions
 """
 import logging
 import os
+import json
 
 import docker
 import docker.errors
+
 import legion
+import legion.model
+import legion.pymodel
 import legion.config
 import legion.containers.headers
-import legion.io
 import legion.utils
 
 LOGGER = logging.getLogger(__name__)
@@ -169,7 +172,6 @@ def build_docker_image(client, model_id, model_file, labels,
                 rm=True,
                 labels=labels
             )
-            LOGGER.debug('Image build log: {}', logs)
         except Exception as build_error:
             LOGGER.error('Cannot build image: {}. Build logs: {}'.format(build_error, logs))
             raise
@@ -189,15 +191,18 @@ def generate_docker_labels_for_image(model_file, model_id, args):
     :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
-    container = legion.io.PyModel().load(model_file)
+    container = legion.pymodel.Model.load(model_file)
 
     base = {
         legion.containers.headers.DOMAIN_MODEL_ID: model_id,
         legion.containers.headers.DOMAIN_MODEL_VERSION: container.model_version,
         legion.containers.headers.DOMAIN_CLASS: 'pyserve',
-        legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model'
+        legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model',
+        legion.containers.headers.DOMAIN_MODEL_PROPERTIES: ','.join(container.required_props),
+        legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES: json.dumps(container.properties.data)
     }
-    for key, value in container.properties.items():
+
+    for key, value in container.meta_information.items():
         if hasattr(value, '__iter__') and not isinstance(value, str):
             formatted_value = ', '.join(item for item in value)
         else:
@@ -264,4 +269,5 @@ def push_image_to_registry(client, image, external_image_name):
     client.images.push(image_and_registry, tag=version, auth_config=auth_config)
     LOGGER.info('Successfully pushed image {}:{}'.format(image_and_registry, version))
 
-    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_and_registry)
+    image_with_version = '{}/{}:{}'.format(registry, image_name, version)
+    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)

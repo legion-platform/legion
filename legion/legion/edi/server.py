@@ -23,7 +23,6 @@ import legion.config
 import legion.k8s
 import legion.external.grafana
 import legion.http
-import legion.io
 import legion.model
 from flask import Flask, Blueprint
 from flask import current_app as app
@@ -195,7 +194,7 @@ def inspect(model=None, version=None):
         model_client = legion.model.ModelClient(
             model_id=model_service.id,
             model_version=model_service.version,
-            host=model_service.url,
+            host=model_service.url_with_ip,
             timeout=3
         )
         LOGGER.info('Building model client: {!r}'.format(model_client))

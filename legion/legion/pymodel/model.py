@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2018 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,58 +14,28 @@
 #    limitations under the License.
 #
 """
-legion model export / load
+Python model
 """
-
-import datetime
-import getpass
 import json
-import os
-import os.path
 import sys
-import logging
+import os
 import zipfile
-import contextlib
+
+import logging
+import legion.config
+import legion.containers.headers
+import legion.model
+import legion.k8s.properties
+import legion.model.types
+import legion.metrics
+from legion.utils import model_properties_storage_name, send_header_to_stderr, \
+    extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
+
 
 import dill
-from pandas import DataFrame
 
-import legion
-from legion.model.types import build_df
-import legion.containers.headers
-import legion.config
-import legion.model.types
-from legion.model.model_id import get_model_id, get_model_version
-from legion.model.types import ColumnInformation
-from legion.model.types import deduct_types_on_pandas_df
-from legion.utils import TemporaryFolder, send_header_to_stderr, save_file, get_git_revision, string_to_bool
 
 LOGGER = logging.getLogger(__name__)
-
-
-def _get_column_types(param_types):
-    """
-    Build dict with ColumnInformation from param_types argument for export function
-
-    :param param_types: pandas DF with custom dict or pandas DF.
-    Custom dict contains of column_name => legion.BaseType
-    :type param_types tuple(:py:class:`pandas.DataFrame`, dict) or :py:class:`pandas.DataFrame`
-    :return: dict[str, :py:class:`legion.types.ColumnInformation`] -- column name => column information
-    """
-    custom_props = None
-
-    if isinstance(param_types, tuple) and len(param_types) == 2 \
-            and isinstance(param_types[0], DataFrame) \
-            and isinstance(param_types[1], dict):
-
-        pandas_df_sample = param_types[0]
-        custom_props = param_types[1]
-    elif isinstance(param_types, DataFrame):
-        pandas_df_sample = param_types
-    else:
-        raise Exception('Provided invalid param types: not tuple[DataFrame, dict] or DataFrame')
-
-    return deduct_types_on_pandas_df(data_frame=pandas_df_sample, extra_columns=custom_props)
 
 
 class ModelEndpoint:
@@ -122,7 +92,7 @@ class ModelEndpoint:
         :return: dict -- output data
         """
         LOGGER.info('Input vector: %r' % input_vector)
-        data_frame = build_df(self.column_types, input_vector, not self.use_df)
+        data_frame = legion.model.types.build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
         data_frame = self.prepare(data_frame)
@@ -189,68 +159,98 @@ class ModelEndpoint:
     __repr__ = __str__
 
 
-@contextlib.contextmanager
-def extract_archive_item(path, subpath):
-    """
-    Extract item from archive using context manager to temporary directory
-
-    :param path: path to archive
-    :type path: str
-    :param subpath: path to file in archive
-    :type subpath: str
-    :return: str -- path to temporary extracted file
-    """
-    with TemporaryFolder('legion-model-save') as temp_directory:
-        try:
-            with zipfile.ZipFile(path, 'r') as stream:
-                target_path = os.path.join(temp_directory.path, subpath)
-                extracted_path = stream.extract(subpath, target_path)
-
-                yield extracted_path
-        except zipfile.BadZipFile:
-            raise Exception('File {} is not a archive'.format(path))
-
-
-class PyModel:
-    """
-    Archive representation of model with meta information (properties, str => str)
-    """
+class Model:
+    NAME = 'pymodel'
 
     ZIP_COMPRESSION = zipfile.ZIP_STORED
     ZIP_FILE_MODEL = 'model'
     ZIP_FILE_INFO = 'manifest.json'
+    ZIP_FILE_PROPERTIES = 'properties'
 
     PROPERTY_MODEL_ID = 'model.id'
     PROPERTY_MODEL_VERSION = 'model.version'
     PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
+    PROPERTY_REQUIRED_PROPERTIES = 'model.required_properties'
 
-    def __init__(self):
+    def __init__(self, model_id, model_version):
         """
         Build empty model container
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
         """
-        self._properties = {}  # type: dict
+        self._meta_information = {}  # type: dict
+
+        self._model_id = model_id
+        self._model_version = model_version
+
+        self._required_properties = []
+
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
 
-    def load(self, path):
+        storage_name = model_properties_storage_name(self.model_id, self.model_version)
+        self._properties = legion.k8s.K8SConfigMapStorage(storage_name,
+                                                          cache_ttl=legion.config.MODEL_PROPERTIES_CACHE_TTL)
+
+        send_header_to_stderr(legion.containers.headers.MODEL_ID, self.model_id)
+        send_header_to_stderr(legion.containers.headers.MODEL_VERSION, self.model_version)
+
+    @property
+    def properties(self):
         """
-        Populate model container with data from file
+        Get model properties
+
+        :return:
+        """
+        return self._properties
+
+    def _load_from_archive(self, path):
+        """
+        Populate model container with data from file after initialization
 
         :param path: path to model binary
         :type path: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: None
+        """
+        self._path = path
+        self._endpoints = None
+
+        with extract_archive_item(path, Model.ZIP_FILE_INFO) as manifest_path:
+            with open(manifest_path, 'r') as manifest_file:
+                self._meta_information = json.load(manifest_file)
+
+        self._required_properties = self._meta_information[self.PROPERTY_REQUIRED_PROPERTIES]
+
+        with extract_archive_item(path, Model.ZIP_FILE_PROPERTIES) as properties_path:
+            with open(properties_path, 'r') as properties_file:
+                self.properties.data = json.load(properties_file)
+
+    @staticmethod
+    def load(path):
+        """
+        Populate model container with data from file and initialize
+
+        :param path: path to model binary
+        :type path: str
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         if not os.path.exists(path):
             raise Exception('File not existed: {}'.format(path))
 
-        self._path = path
-        self._endpoints = None
-
-        with extract_archive_item(self._path, self.ZIP_FILE_INFO) as manifest_path:
+        with extract_archive_item(path, Model.ZIP_FILE_INFO) as manifest_path:
             with open(manifest_path, 'r') as manifest_file:
-                self._properties = json.load(manifest_file)
+                manifest_data = json.load(manifest_file)
 
-        return self
+                model_id = manifest_data[Model.PROPERTY_MODEL_ID]
+                model_version = manifest_data[Model.PROPERTY_MODEL_VERSION]
+
+        instance = Model(model_id, model_version)
+        instance._load_from_archive(path)
+
+        return instance
 
     @staticmethod
     def _build_endpoint_file_name(endpoint_name):
@@ -271,7 +271,7 @@ class PyModel:
         :param endpoint_name: endpoint name
         :type endpoint_name: str
         :return: deserialized model endpoint
-        :rtype: :py:class:`legion.io.ModelEndpoint`
+        :rtype: :py:class:`legion.pymodel.model.ModelEndpoint`
         """
         with extract_archive_item(self._path, self._build_endpoint_file_name(endpoint_name)) as endpoint_path:
             with open(endpoint_path, 'rb') as endpoint_file:
@@ -282,7 +282,7 @@ class PyModel:
         """
         Get model container description
 
-        :return:
+        :return: dict[str, any] -- model description
         """
         return {
             'model_id': self.model_id,
@@ -302,7 +302,7 @@ class PyModel:
         if self._endpoints is None:
             self._endpoints = {}
 
-            endpoint_names = self._properties.get(self.PROPERTY_ENDPOINT_NAMES)
+            endpoint_names = self._meta_information.get(self.PROPERTY_ENDPOINT_NAMES)
             if not endpoint_names:
                 raise Exception('PyModel does not contain {} field or field is empty'
                                 .format(self.PROPERTY_ENDPOINT_NAMES))
@@ -317,38 +317,39 @@ class PyModel:
         Save model to path (or deduce path)
 
         :param path: (Optional) target save name
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         if not self.endpoints:
             raise ValueError('Cannot save empty model container (no one export function has been called)')
 
-        if not self.model_id:
-            model_id = get_model_id()
-            model_version = get_model_version()
+        meta_information_to_save = self._meta_information.copy()
+        meta_information_to_save.update(self._collect_build_info())
 
-            if not model_id:
-                raise Exception('Cannot get model_id. Please set using legion.init_model(<id>, <version>)')
-
-            self._properties[self.PROPERTY_MODEL_ID] = model_id
-            self._properties[self.PROPERTY_MODEL_VERSION] = model_version
+        # Add model id, model version, model endpoint
+        meta_information_to_save[self.PROPERTY_MODEL_ID] = self.model_id
+        meta_information_to_save[self.PROPERTY_MODEL_VERSION] = self.model_version
+        meta_information_to_save[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
+        meta_information_to_save[self.PROPERTY_REQUIRED_PROPERTIES] = list(self._required_properties)
 
         self._path = path
 
         file_name_has_been_deduced = False
         if not self._path:
-            self._path = deduce_model_file_name(self.model_version)
+            self._path = deduce_model_file_name(self.model_id, self.model_version)
 
-        self._properties.update(self._build_additional_properties())
-        self._properties[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
-
+        # Save
         with TemporaryFolder('legion-model-save') as temp_directory:
             temp_file = os.path.join(temp_directory.path, 'result.zip')
             with zipfile.ZipFile(temp_file, 'w', self.ZIP_COMPRESSION) as stream:
                 # Add manifest file
                 with open(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), 'w') as info_file:
-                    properties = self.properties
-                    json.dump(properties, info_file)
+                    json.dump(meta_information_to_save, info_file)
                 stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_INFO), self.ZIP_FILE_INFO)
+
+                # Add current properties state
+                with open(os.path.join(temp_directory.path, self.ZIP_FILE_PROPERTIES), 'w') as props_file:
+                    json.dump(legion.model.properties.data, props_file)
+                stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_PROPERTIES), self.ZIP_FILE_PROPERTIES)
 
                 # Add endpoints
                 for endpoint in self.endpoints.values():
@@ -389,7 +390,7 @@ class PyModel:
         if column_types:
             if not isinstance(column_types, dict) \
                     or not column_types.keys() \
-                    or not isinstance(list(column_types.values())[0], ColumnInformation):
+                    or not isinstance(list(column_types.values())[0], legion.model.types.ColumnInformation):
                 raise Exception('Bad param_types / input_data_frame provided')
 
         if prepare_func is None:
@@ -424,9 +425,9 @@ class PyModel:
         :type prepare_func: func(x) -> y
         :param endpoint: (Optional) endpoint name, default is 'default'
         :type endpoint: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
-        column_types = _get_column_types(input_data_frame)
+        column_types = legion.model.types.get_column_types(input_data_frame)
         self._export(apply_func, prepare_func, column_types, True, endpoint)
         return self
 
@@ -442,7 +443,7 @@ class PyModel:
         :type prepare_func: func(x) -> y
         :param endpoint: (Optional) endpoint name, default is 'default'
         :type endpoint: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         self._export(apply_func, prepare_func, column_types, False, endpoint)
         return self
@@ -457,7 +458,7 @@ class PyModel:
         :type prepare_func: func(x) -> y
         :param endpoint: (Optional) endpoint name, default is 'default'
         :type endpoint: str
-        :return: :py:class:`legion.io.PyModel` -- model container
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
         """
         self._export(apply_func, prepare_func, None, False, endpoint)
         return self
@@ -469,7 +470,7 @@ class PyModel:
 
         :return: str or None -- model id
         """
-        return self._properties.get(self.PROPERTY_MODEL_ID)
+        return self._model_id
 
     @property
     def model_version(self):
@@ -478,23 +479,31 @@ class PyModel:
 
         :return: str or None -- model version
         """
-        return self._properties.get(self.PROPERTY_MODEL_VERSION)
+        return self._model_version
 
     @property
-    def properties(self):
+    def required_props(self):
         """
-        Get copy of properties
+        Get model required props
 
-        :return: dict -- copy of properties
+        :return: list[str] -- list of required property names
         """
-        return self._properties.copy()
+        return self._required_properties
 
-    @staticmethod
-    def _build_additional_properties():
+    @property
+    def meta_information(self):
         """
-        Get additional properties for container
+        Get copy of meta information
 
-        :return: dict -- additional properties
+        :return: dict -- copy of meta information
+        """
+        return self._meta_information.copy()
+
+    def _collect_build_info(self):
+        """
+        Get additional container properties for container
+
+        :return: dict[str, any] -- additional container properties
         """
         return {
             'legion.version': legion.__version__,
@@ -511,54 +520,33 @@ class PyModel:
             'jenkins.job_name': os.environ.get(*legion.config.JOB_NAME)
         }
 
+    def send_metric(self, metric, value):
+        """
+        Send build metric value
 
-def deduce_param_types(data_frame, optional_dictionary=None):
-    """
-    Deduce param types of pandas DF. Optionally overwrite to custom legion.BaseType
+        :param metric: metric type or metric name
+        :type metric: :py:class:`legion.metrics.Metric` or str
+        :param value: metric value
+        :type value: float or int
+        :return: None
+        """
+        return legion.metrics.send_metric(self.model_id, metric, value)
 
-    :param data_frame: pandas DF
-    :type data_frame: :py:class:`pandas.DataFrame`
-    :param optional_dictionary: custom dict contains of column_name => legion.types.BaseType
-    :type optional_dictionary: dict[str, :py:class:`legion.types.BaseType`]
-    :return: dict[str, :py:class:`legion.types.ColumnInformation`]
-    """
-    if optional_dictionary:
-        return _get_column_types((data_frame, optional_dictionary))
+    def define_property(self, name, initial_value):
+        """
+        Define model property and set initial value
 
-    return _get_column_types(data_frame)
+        :param name: property name
+        :type name: str
+        :param initial_value: initial property value
+        :type initial_value: any
+        :return: :py:class:`legion.pymodel.model.Model` -- model container
+        """
+        self._required_properties.append(name)
 
+        if not legion.model.properties:
+            raise Exception('Model properties has not been initialized')
 
-def deduce_model_file_name(version=None):
-    """
-    Get model file name
+        legion.model.properties[name] = initial_value
 
-    :param version: version of model
-    :type version: str or None
-    :return: str -- auto deduced file name
-    """
-    if not version:
-        version = '0.0'
-
-    model_id = get_model_id()
-    if not model_id:
-        raise Exception('Cannot get model_id. Please set using legion.init_model(<name>)')
-
-    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
-
-    valid_user_names = [os.getenv(env) for env in legion.config.MODEL_NAMING_UID_ENV if os.getenv(env)]
-    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
-
-    commit_id = get_git_revision(os.getcwd())
-    if not commit_id:
-        commit_id = '0000'
-
-    file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(version), date_string, user_id, commit_id)
-
-    if string_to_bool(os.getenv(*legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
-        return '///%s' % file_name
-
-    default_prefix = os.getenv(*legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX)
-    if default_prefix:
-        return os.path.join(default_prefix, file_name)
-
-    return file_name
+        return self

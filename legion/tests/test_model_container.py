@@ -22,10 +22,8 @@ import unittest2
 import numpy
 import pandas
 
-import legion.io
 import legion.model
-import legion.model.model_id
-import legion.model.types
+import legion.pymodel.model
 
 
 LOGGER = logging.getLogger(__name__)
@@ -88,19 +86,17 @@ df = pandas.DataFrame([{
 }])
 
 
-class TestPyModel(unittest2.TestCase):
+class TestModelContainer(unittest2.TestCase):
     @classmethod
     def tearDown(cls):
         if os.path.exists(MODEL_PATH):
             logging.info('Removing {}'.format(MODEL_PATH))
             os.unlink(MODEL_PATH)
 
-        legion.model.model_id._model_id = None
-        legion.model.model_id._model_version = None
+        legion.model.reset_context()
 
     def test_square_with_cast(self):
-        legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
-        legion.io.PyModel() \
+        legion.model.init(MODEL_ID, MODEL_VERSION) \
             .export(make_square, {
                     'value': legion.model.int32,
                     'are_you_sure': legion.model.types.ColumnInformation(CustomBoolObject())
@@ -109,22 +105,21 @@ class TestPyModel(unittest2.TestCase):
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
 
-        container = legion.io.PyModel().load(MODEL_PATH)
+        container = legion.pymodel.Model.load(MODEL_PATH)
         invoke = container.endpoints['square'].invoke
         self.assertEqual(invoke({'value': 10, 'are_you_sure': 'of course'}), 100)
         self.assertEqual(invoke({'value': 10, 'are_you_sure': 'not sure'}), 10)
 
     def test_model_pack_native_multiple_endpoints(self):
-
-        legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
-        legion.io.PyModel() \
+        legion.model.init(MODEL_ID, MODEL_VERSION) \
+            .define_property('abc_prop', 12.41) \
             .export_untyped(apply_add, endpoint='add') \
             .export_untyped(apply_sub, endpoint='sub') \
             .save(MODEL_PATH)
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
 
-        container = legion.io.PyModel().load(MODEL_PATH)
+        container = legion.pymodel.Model.load(MODEL_PATH)
 
         self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
         self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
@@ -134,27 +129,25 @@ class TestPyModel(unittest2.TestCase):
         self.assertSetEqual({'add', 'sub'}, endpoint_names)
 
         add_endpoint = endpoints['add']
-        self.assertIsInstance(add_endpoint, legion.io.ModelEndpoint)
+        self.assertIsInstance(add_endpoint, legion.pymodel.ModelEndpoint)
         self.assertEqual(add_endpoint.name, 'add')
         self.assertEqual(add_endpoint.use_df, False)
         self.assertEqual(add_endpoint.apply({'a': 10, 'b': 32}), 42)
 
         sub_endpoint = endpoints['sub']
-        self.assertIsInstance(sub_endpoint, legion.io.ModelEndpoint)
+        self.assertIsInstance(sub_endpoint, legion.pymodel.ModelEndpoint)
         self.assertEqual(sub_endpoint.name, 'sub')
         self.assertEqual(sub_endpoint.use_df, False)
         self.assertEqual(sub_endpoint.apply({'a': 80, 'b': 32}), 48)
 
     def test_model_pack_with_df_single_endpoint(self):
-
-        legion.model.model_id.init(MODEL_ID, MODEL_VERSION)
-        legion.io.PyModel() \
+        legion.model.init(MODEL_ID, MODEL_VERSION) \
             .export_df(apply_pd, df, prepare_func=prepare_pd) \
             .save(MODEL_PATH)
 
         self.assertTrue(os.path.exists(MODEL_PATH), 'File not exists')
 
-        container = legion.io.PyModel().load(MODEL_PATH)
+        container = legion.pymodel.Model.load(MODEL_PATH)
 
         self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
         self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
@@ -164,7 +157,7 @@ class TestPyModel(unittest2.TestCase):
 
         endpoint = endpoints['default']
 
-        self.assertIsInstance(endpoint, legion.io.ModelEndpoint)
+        self.assertIsInstance(endpoint, legion.pymodel.ModelEndpoint)
         self.assertEqual(endpoint.name, 'default')
         self.assertEqual(endpoint.use_df, True)
 

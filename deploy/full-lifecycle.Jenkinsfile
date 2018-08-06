@@ -77,6 +77,7 @@ node {
                     string(name: 'Profile', value: params.Profile),
                     string(name: 'BaseVersion', value: baseVersion),
                     string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'TestsTags', value: params.TestTags),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
                     booleanParam(name: 'UseRegressionTests', value: true),

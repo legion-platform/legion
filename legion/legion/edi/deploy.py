@@ -30,7 +30,8 @@ import legion.containers.headers
 import legion.k8s
 import legion.external.edi
 import legion.external.grafana
-import legion.io
+import legion.pymodel
+import legion.model
 import legion.utils
 from legion.utils import Colors, ExternalFileReader
 
@@ -55,7 +56,7 @@ def build_model(args):
         if not os.path.exists(external_reader.path):
             raise Exception('Cannot find model binary {}'.format(external_reader.path))
 
-        container = legion.io.PyModel().load(external_reader.path)
+        container = legion.pymodel.Model.load(external_reader.path)
         model_id = container.model_id
 
         image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
@@ -173,15 +174,29 @@ def undeploy_kubernetes(args):
         else:
             raise Exception('Cannot find any deployment')
 
+    if len(model_deployments) > 1:
+        raise Exception('Founded more then one deployment')
+
+    target_deployment = model_deployments[0]
+
     edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
 
-    while True:
-        information = [info for info in edi_client.inspect() if info.model == args.model_id]
+    if not args.no_wait:
+        start = time.time()
 
-        if not information:
-            break
+        while True:
+            elapsed = time.time() - start
+            if elapsed > args.wait_timeout and args.wait_timeout != 0:
+                raise Exception('Time out: model has not been undeployed')
 
-        time.sleep(1)
+            information = [info
+                           for info in edi_client.inspect()
+                           if info.model == target_deployment.model and info.version == target_deployment.version]
+
+            if not information:
+                break
+
+            time.sleep(1)
 
 
 def scale_kubernetes(args):

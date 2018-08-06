@@ -13,126 +13,64 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from __future__ import print_function
-
 import os
+import sys
 import time
 from unittest.mock import patch
 
 import legion.config as env
 import legion.metrics as metrics
-import legion.model.model_id
+import legion.model
 import unittest2
 
+# Extend PYTHONPATH in order to import test tools and models
+sys.path.extend(os.path.dirname(__file__))
+from legion_test_utils import patch_environ
 
-def _reset_model_id():
-    legion.model.model_id._model_id = None
-    legion.model.model_id._model_initialized_from_function = False
-    if env.MODEL_ID[0] in os.environ:
-        os.unsetenv(env.MODEL_ID[0])
-        del os.environ[env.MODEL_ID[0]]
-
-
-class MetricContent:
-    def __init__(self, model, version, build):
-        self._model = model
-        self._version = version
-        self._build = build
-        self._old_build_number_env = os.getenv(*env.BUILD_NUMBER)
-
-    def __enter__(self):
-        legion.model.model_id.init(self._model, self._version)
-        os.environ[env.BUILD_NUMBER[0]] = str(self._build)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        _reset_model_id()
-        os.environ[env.BUILD_NUMBER[0]] = str(self._old_build_number_env)
+MODEL_ID = 'test-model'
 
 
 class TestMetrics(unittest2.TestCase):
-    def setUp(self):
-        _reset_model_id()
-
-    def tearDown(self):
-        _reset_model_id()
-
     def test_metrics_name_building(self):
-        model_id = 'demo'
-        model_version = '1.0'
-        build_number = 3
         metric = metrics.Metric.TEST_ACCURACY
-        with MetricContent(model_id, model_version, build_number):
-            metrics_name = metrics.get_metric_name(metric)
-            self.assertEqual(metrics_name, '%s.metrics.%s' % (model_id, metric.value))
+        model_id = 'test-model'
+        metrics_name = metrics.get_metric_name(metric, model_id)
+        self.assertEqual(metrics_name, '{}.metrics.{}'.format(model_id, metric.value))
 
     def test_metrics_get_build_number(self):
-        model_id = 'demo'
-        model_version = '1.0'
         build_number = 10
-        with MetricContent(model_id, model_version, build_number):
+        with patch_environ({env.BUILD_NUMBER[0]: build_number}):
             self.assertEqual(metrics.get_build_number(), build_number)
-
-    def test_model_id_deduction_exception(self):
-        self.assertEqual(legion.model.model_id._model_id, None, 'Model ID not empty')
-        self.assertEqual(os.getenv(*env.MODEL_ID), None, 'Model ID ENV not empty')
-        with self.assertRaises(Exception) as context:
-            metrics.send_metric(metrics.Metric.TEST_ACCURACY, 30.0)
 
     def test_metrics_send(self):
         model_id = 'demo'
-        model_version = '1.0'
         build_number = 10
         metric = metrics.Metric.TEST_ACCURACY
         value = 30.0
         host, port, namespace = metrics.get_metric_endpoint()
-        os.environ[env.MODEL_ID[0]] = str(model_id)
-        with patch('legion.model.model_id.send_model_information_to_stderr') as send_model_id_mock:
-            with MetricContent(model_id, model_version, build_number):
-                self.assertEqual(len(send_model_id_mock.call_args_list), 1)
-                with patch('legion.metrics.send_tcp') as send_tcp_mock:
-                    timestamp = int(time.time())
-                    metrics.send_metric(metric, value)
 
-                    self.assertEqual(len(send_model_id_mock.call_args_list), 1)
-                    del os.environ[env.MODEL_ID[0]]
+        with patch_environ({env.BUILD_NUMBER[0]: build_number}):
+            with patch('legion.metrics.send_tcp') as send_tcp_mock:
+                timestamp = int(time.time())
+                metrics.send_metric(model_id, metric, value)
 
-                    self.assertTrue(len(send_tcp_mock.call_args_list) == 2, '2 calls founded')
-                    for call in send_tcp_mock.call_args_list:
-                        self.assertEqual(call[0][0], host)
-                        self.assertEqual(call[0][1], port)
+                self.assertTrue(len(send_tcp_mock.call_args_list) == 2, '2 calls founded')
+                for call in send_tcp_mock.call_args_list:
+                    self.assertEqual(call[0][0], host)
+                    self.assertEqual(call[0][1], port)
 
-                    delimiter = ' '
+                delimiter = ' '
 
-                    call_with_metric = send_tcp_mock.call_args_list[0][0][2].strip().split(delimiter)
-                    call_with_build_number = send_tcp_mock.call_args_list[1][0][2].strip().split(delimiter)
+                call_with_metric = send_tcp_mock.call_args_list[0][0][2].strip().split(delimiter)
+                call_with_build_number = send_tcp_mock.call_args_list[1][0][2].strip().split(delimiter)
 
-                    self.assertEqual(call_with_metric[0], '%s.%s.metrics.%s' % (namespace, model_id, metric.value))
-                    self.assertEqual(float(call_with_metric[1]), value)
-                    self.assertEqual(call_with_metric[2], str(timestamp))
+                self.assertEqual(call_with_metric[0], '{}.{}.metrics.{}'.format(namespace, model_id, metric.value))
+                self.assertEqual(float(call_with_metric[1]), value)
+                self.assertEqual(call_with_metric[2], str(timestamp))
 
-                    self.assertEqual(call_with_build_number[0], '%s.%s.metrics.build' % (namespace, model_id))
-                    self.assertEqual(int(float(call_with_build_number[1])), build_number)
-                    self.assertEqual(call_with_build_number[2], str(timestamp))
-
-    def test_set_model_id_and_reset_metrics(self):
-        model_id = 'demo'
-        build_number = 10
-        old_build_number_env = os.getenv(*env.BUILD_NUMBER)
-
-        _reset_model_id()
-
-        legion.model.model_id.init(model_id)
-        os.environ[env.BUILD_NUMBER[0]] = str(build_number)
-
-        self.assertEqual(metrics.get_model_id(), model_id)
-        self.assertEqual(metrics.get_build_number(), build_number)
-
-        _reset_model_id()
-
-        self.assertIsNone(metrics.get_model_id())
-
-        os.environ[env.BUILD_NUMBER[0]] = str(old_build_number_env)
+                self.assertEqual(call_with_build_number[0], '{}.{}.metrics.build'.format(namespace, model_id))
+                self.assertEqual(int(float(call_with_build_number[1])), build_number)
+                self.assertEqual(call_with_build_number[2], str(timestamp))
 
     def test_default_endpoint_detection(self):
         host, port, namespace = metrics.get_metric_endpoint()
@@ -145,33 +83,16 @@ class TestMetrics(unittest2.TestCase):
         new_port = 1000
         new_namespace = 'tes'
 
-        old_host = os.getenv(*env.GRAPHITE_HOST)
-        old_port = os.getenv(*env.GRAPHITE_PORT)
-        old_namespace = os.getenv(*env.GRAPHITE_NAMESPACE)
-
-        os.environ[env.GRAPHITE_HOST[0]] = new_host
-        os.environ[env.GRAPHITE_PORT[0]] = str(new_port)
-        os.environ[env.GRAPHITE_NAMESPACE[0]] = new_namespace
-
-        host, port, namespace = metrics.get_metric_endpoint()
-        self.assertEqual(host, new_host)
-        self.assertEqual(port, new_port)
-        self.assertEqual(namespace, new_namespace)
-
-        if old_host:
-            os.environ[env.GRAPHITE_HOST[0]] = old_host
-        else:
-            os.unsetenv(env.GRAPHITE_HOST[0])
-
-        if old_port:
-            os.environ[env.GRAPHITE_PORT[0]] = str(old_port)
-        else:
-            os.unsetenv(env.GRAPHITE_PORT[0])
-
-        if old_namespace:
-            os.environ[env.GRAPHITE_NAMESPACE[0]] = old_namespace
-        else:
-            os.unsetenv(env.GRAPHITE_NAMESPACE[0])
+        additional_environment = {
+            legion.config.GRAPHITE_HOST[0]: new_host,
+            legion.config.GRAPHITE_PORT[0]: str(new_port),
+            legion.config.GRAPHITE_NAMESPACE[0]: new_namespace
+        }
+        with patch_environ(additional_environment):
+            host, port, namespace = metrics.get_metric_endpoint()
+            self.assertEqual(host, new_host)
+            self.assertEqual(port, new_port)
+            self.assertEqual(namespace, new_namespace)
 
 
 if __name__ == '__main__':
