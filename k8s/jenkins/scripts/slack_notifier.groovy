@@ -16,7 +16,6 @@ def slackCredentialParameters = [
   description:  'Slack Jenkins integration token',
   id:           'slack-token',
   secret:       "${token}"
-  // "StwyNcPTPi565H4BtFaLeInq"
 ]
  
 def slackParameters = [
