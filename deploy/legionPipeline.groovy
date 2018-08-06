@@ -81,7 +81,7 @@ def createjenkinsJobs(String commitID) {
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def output = sh(script:'''
-	        cd ../.venv/bin
+	        cd .venv/bin
             export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
             export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
@@ -101,9 +101,13 @@ def createjenkinsJobs(String commitID) {
             ./dex_client
             ''', returnStdout: true)
             creds = output.split('----')[1].split('\n')
+            env.jenkins_user = creds[1]
+            env.jenkins_pass = creds[2]
+            env.jenkins_token = creds[3]
         }
 	}
 	sh '''
+	cd .venv/bin
     ./create_example_jobs \
     "https://jenkins.${Profile}" \
     ../../examples \
@@ -114,9 +118,9 @@ def createjenkinsJobs(String commitID) {
     --git-root-key "legion-root-key" \
     --model-host "" \
     --dynamic-model-prefix "DYNAMIC MODEL" \
-    --jenkins_user "${creds[0]}" \
-    --jenkins_password "${creds[1]}" \
-    --jenkins_cookies "${creds[2]}" \
+    --jenkins-user "${jenkins_user}" \
+    --jenkins-password "${jenkins_pass}" \
+    --jenkins-cookies "${jenkins_token}" \
     '''
 }
 
