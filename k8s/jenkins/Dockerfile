@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install --yes docker-ce
 # Copy bootstrap scripts
 COPY scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
 COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
+COPY scripts/slack_notifier.groovy /usr/share/jenkins/ref/init.groovy.d/slack_notifier.groovy
 
 # Copy plugins installation script
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
@@ -47,7 +48,6 @@ RUN echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" >> /usr/sh
     echo "INSTALLING NEXT PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
     chmod +x /usr/local/bin/install-plugins.sh
-RUN /usr/local/bin/kubectl create secret generic slack --from-file=/usr/share/jenkins/ref/slack.txt
 
 # Install plugins
 USER jenkins
