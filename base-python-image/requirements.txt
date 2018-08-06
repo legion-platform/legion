@@ -24,3 +24,4 @@ PyYAML==3.12
 kubernetes==5.0.0
 surprise==0.1
 aionotify==0.2.0
+docker-registry-client==0.5.2
