@@ -37,6 +37,8 @@ COPY scripts/slack_notifier.groovy /usr/share/jenkins/ref/init.groovy.d/slack_no
 # Copy plugins installation script
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
 
+COPY slack.yaml /usr/share/jenkins
+
 # Prepare plugins
 ARG jenkins_plugin_server="http://nexus-local.cc.epm.kharlamov.biz/jenkins"
 ENV JENKINS_UC_EXPERIMENTAL=$jenkins_plugin_server
