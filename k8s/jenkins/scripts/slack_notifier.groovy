@@ -9,11 +9,13 @@ import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
  
+File token = new File('/var/jenkins_home/slack_notifier')
+
 // parameters
 def slackCredentialParameters = [
   description:  'Slack Jenkins integration token',
   id:           'slack-token',
-  secret:       "${slack.token}"
+  secret:       "${token}"
   // "StwyNcPTPi565H4BtFaLeInq"
 ]
  
