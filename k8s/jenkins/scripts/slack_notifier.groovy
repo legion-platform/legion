@@ -22,7 +22,7 @@ def slackCredentialParameters = [
 def slackParameters = [
   slackBaseUrl:             'https://ims-dev.slack.com/services/hooks/jenkins-ci/',
   slackBotUser:             'false',
-  slackBuildServerUrl:      'https://jenkins.mycompany.com:8083/',
+  // slackBuildServerUrl:      'https://jenkins.mycompany.com:8083/',
   slackRoom:                '#general',
 //   slackSendAs:              'Jenkins',
   slackTeamDomain:          'ims-dev.slack.com',
