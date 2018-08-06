@@ -8,11 +8,16 @@ def root():
     return jsonify(demo=True)
 
 
-@app.route('/api/model/<model>/info', methods=['GET', 'POST'])
-def model_info(model):
+@app.route('/healthcheck')
+def healthcheck():
+    return jsonify(demo=True)
+
+
+@app.route('/api/model/<model>/<version>/info', methods=['GET', 'POST'])
+def model_info(model, version):
     return jsonify(
+        model_version=version,
         model_id=model,
-        model_version=1.1,
         endpoints={
             'default': {
                 'name': 'default',
@@ -25,9 +30,10 @@ def model_info(model):
     )
 
 
-@app.route('/api/model/<model>/invoke', methods=['GET', 'POST'])
-def model_invoke(model):
-    return jsonify(result=44.0)
+@app.route('/api/model/<model>/<version>/invoke', methods=['GET', 'POST'])
+@app.route('/api/model/<model>/<version>/invoke/<endpoint>', methods=['GET', 'POST'])
+def model_invoke(model, version, endpoint=None):
+    return jsonify(result=42.0)
 
 
 if __name__ == '__main__':

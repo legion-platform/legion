@@ -12,8 +12,8 @@ Test Setup          Run Keywords
 ...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}   AND
 ...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
 Test Teardown       Run Keywords
-...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   AND
-...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}    AND
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}   ${TEST_MODEL_IMAGE_2}
 
 *** Test Cases ***
 Check EDI availability in all enclaves
@@ -44,8 +44,8 @@ Check EDI undeploy 1 of 2 models with different versions but the same id
                     Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Should not contain              ${resp.stdout}          ${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp.stdout}          ${TEST_MODEL_2_VERSION}
+                    Should not contain              ${resp.stdout}          ${TEST_MODEL_IMAGE_1}
+                    Should contain                  ${resp.stdout}          ${TEST_MODEL_IMAGE_2}
 
 Check EDI undeploy all model instances by version
     [Tags]  edi  cli  enclave   multi_versions
@@ -68,17 +68,11 @@ Check EDI undeploy all model instances by version
                     Should not contain              ${resp.stdout}          ${TEST_MODEL_1_VERSION}
                     Should contain                  ${resp.stdout}          ${TEST_MODEL_2_VERSION}
 
-Check EDI undeploy 1 of 2 models by invalid version
-    [Tags]  edi  cli  enclave   multi_versions
-    ${resp}=   Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}test
-                    Should Be Equal As Integers     ${resp.rc}         0
-                    Should contain                  ${resp.stderr}     Cannot find any deployment - ignoring
-
 Check EDI undeploy 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers        ${resp.rc}         2
-                    Should contain                     ${resp.stderr}     Please specify version of model
+                    Should contain                     ${resp.stderr}     Founded more then one deployment
 
 Check EDI scale up 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
