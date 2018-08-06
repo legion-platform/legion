@@ -70,17 +70,18 @@ def deployLegion() {
 }
 
 def createjenkinsJobs(String commitID) {
+    env.commitID = commitID
+    def creds
+    sh '''
+    cd legion_test
+    ../.venv/bin/pip install -r requirements/base.txt
+    ../.venv/bin/pip install -r requirements/test.txt
+    ../.venv/bin/python setup.py develop
+    '''
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-	    env.commitID = commitID
-            sh '''
-            cd legion_test
-            ../.venv/bin/pip install -r requirements/base.txt
-            ../.venv/bin/pip install -r requirements/test.txt
-            ../.venv/bin/python setup.py develop
-            cd ..
-            
-	    cd .venv/bin
+            def output = sh(script:'''
+	        cd ../.venv/bin
             export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
             export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
@@ -95,20 +96,28 @@ def createjenkinsJobs(String commitID) {
             
             export PATH=./:$PATH DISPLAY=:99
             export PROFILE=${Profile}
-            ./create_example_jobs \
-            "https://jenkins.${Profile}" \
-            ../../examples \
-            ../../ \
-            "git@github.com:epam/legion.git" \
-            ${commitID} \
-            --connection-timeout 600 \
-            --git-root-key "legion-root-key" \
-            --model-host "" \
-            --dynamic-model-prefix "DYNAMIC MODEL" \
-            --auth-dex
-            '''
+
+            echo ----
+            ./dex_client
+            ''', returnStdout: true)
+            creds = output.split('----')[1].split('\n')
         }
 	}
+	sh '''
+    ./create_example_jobs \
+    "https://jenkins.${Profile}" \
+    ../../examples \
+    ../../ \
+    "git@github.com:epam/legion.git" \
+    ${commitID} \
+    --connection-timeout 600 \
+    --git-root-key "legion-root-key" \
+    --model-host "" \
+    --dynamic-model-prefix "DYNAMIC MODEL" \
+    --jenkins_user "${creds[0]}" \
+    --jenkins_password "${creds[1]}" \
+    --jenkins_cookies "${creds[2]}" \
+    '''
 }
 
 def runRobotTests(tags="") {

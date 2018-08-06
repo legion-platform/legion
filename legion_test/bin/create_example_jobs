@@ -23,8 +23,6 @@ import os
 import time
 from typing import NamedTuple
 from urllib.parse import quote
-from legion_test.robot import dex_client
-from legion_test import profiler_loader
 
 from legion_test.template import render_template
 
@@ -40,12 +38,12 @@ Options = NamedTuple('Options', [
     ('model_host', str),
     ('jenkins_user', str),
     ('jenkins_password', str),
+    ('jenkins_cookies', str),
     ('dynamic_model_prefix', str),
     ('perf_test_prefix', str),
     ('connection_timeout', str),
     ('socket_reconnect_sleep', int),
     ('plain_tasks', bool),
-    ('auth_dex', bool),
 ])
 
 
@@ -194,19 +192,11 @@ def work(options):
         import ssl
         ssl._create_default_https_context = ssl._create_unverified_context
 
-    jenkins_creds = (options.jenkins_user, options.jenkins_password)
+    client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user
+                             , password=options.jenkins_password)
 
-    if options.auth_dex:
-        profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
-        if dex_client.get_jenkins_credentials():
-            jenkins_creds = dex_client.get_jenkins_credentials()
-
-    client = jenkins.Jenkins(options.jenkins_url, username=jenkins_creds[0], password=jenkins_creds[1])
-
-    if options.auth_dex:
-        client.crumb = {'crumbRequestField': 'Cookie',
-                        'crumb': ';'.join(['{}={}'.format(k, v)
-                                           for (k, v) in dex_client.get_session_cookies().items()])}
+    if options.jenkins_cookies:
+        client.crumb = {'crumbRequestField': 'Cookie', 'crumb': options.jenkins_cookies}
 
     start = time.time()
 
@@ -247,13 +237,13 @@ if __name__ == '__main__':
     parser.add_argument('--model-host', type=str, help='Host with model', default='http://edge:80')
     parser.add_argument('--jenkins-user', type=str, help='Jenkins server user')
     parser.add_argument('--jenkins-password', type=str, help='Jenkins server password')
+    parser.add_argument('--jenkins-cookies', type=str, help='Jenkins server Cookies')
     parser.add_argument('--dynamic-model-prefix', type=str, help='Dynamic model job prefix', default='DYNAMIC MODEL')
     parser.add_argument('--perf-test-prefix', type=str, help='Performance test prefix', default='PERF TEST')
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     parser.add_argument('--plain-tasks', action='store_true', help='Create plain jenkins tasks '
                                                                    '(not for dynamic model using founded template)')
-    parser.add_argument('--auth-dex', action='store_true', help='Perform authentication in Dex')
 
     args = parser.parse_args()
     arguments = Options(
@@ -266,11 +256,11 @@ if __name__ == '__main__':
         model_host=args.model_host,
         jenkins_user=args.jenkins_user,
         jenkins_password=args.jenkins_password,
+        jenkins_cookies=args.jenkins_cookies,
         dynamic_model_prefix=args.dynamic_model_prefix,
         perf_test_prefix=args.perf_test_prefix,
         connection_timeout=args.connection_timeout,
         socket_reconnect_sleep=args.socket_reconnect_sleep,
         plain_tasks=args.plain_tasks,
-        auth_dex=args.auth_dex,
     )
     work(arguments)
