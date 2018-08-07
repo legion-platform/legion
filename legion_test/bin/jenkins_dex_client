@@ -31,7 +31,10 @@ def work():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Dex client')
+    parser = argparse.ArgumentParser(prog='Jenkins Dex client',
+                                     description='Jenkins Dex client authorizes in Jenkins via Dex and '
+                                                 'grabs Cookies and API Token from Jenkins UI, that are '
+                                                 'required for testing.')
 
     args = parser.parse_args()
 

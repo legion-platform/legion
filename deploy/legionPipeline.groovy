@@ -98,7 +98,7 @@ def createjenkinsJobs(String commitID) {
             export PROFILE=${Profile}
 
             echo ----
-            ./dex_client
+            ./jenkins_dex_client
             ''', returnStdout: true)
             creds = output.split('----')[1].split('\n')
             env.jenkins_user = creds[1]
