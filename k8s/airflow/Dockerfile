@@ -52,6 +52,8 @@ RUN rm -rf \
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
+COPY entrypoint.sh /home/airflow/init.sh
+
 COPY requirements.txt /home/airflow/requirements.txt
 RUN pip3 install -r /home/airflow/requirements.txt
 RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string && \

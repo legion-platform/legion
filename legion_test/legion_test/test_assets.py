@@ -30,7 +30,7 @@ def get_k8s_repository(variables):
     :type variables: dict
     :return: str -- k8s images repository
     """
-    return '{}/legion'.format(variables['NEXUS_DOCKER_REPO'])
+    return '{}'.format(variables['NEXUS_DOCKER_REPO'])
 
 
 def get_k8s_version():

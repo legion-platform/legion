@@ -88,14 +88,16 @@ node {
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
                     cd legion_test
-                    ../.venv/bin/python3.6 setup.py sdist bdist_wheel
+                    ../.venv/bin/python3.6 setup.py sdist 
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     """
 
                     print('Build legion')
                     sh """
                     cd legion
-                    ../.venv/bin/python3.6 setup.py sdist bdist_wheel
+                    ../.venv/bin/python3.6 setup.py sdist 
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     """
 
@@ -105,7 +107,8 @@ node {
                     cd legion_airflow
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
-                    ../.venv/bin/python3.6 setup.py sdist bdist_wheel
+                    ../.venv/bin/python3.6 setup.py sdist 
+                    ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     """
                 }, 'Build docs': {
@@ -210,16 +213,6 @@ node {
                             """
                         }
                     }
-                }, 'Run Python tests': {
-                    sh """
-                    cd legion
-                    VERBOSE=true ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
-                    """
-                    junit 'legion/nosetests.xml'
-    
-                    sh """
-                    cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')-cover/\"
-                    """
                 }
             )
             
@@ -282,6 +275,16 @@ node {
                     sh """
                     cd k8s/airflow
                     docker build --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} .
+                    """
+                }, 'Run Python tests': {
+                    sh """
+                    cd legion
+                    VERBOSE=true ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
+                    """
+                    junit 'legion/nosetests.xml'
+    
+                    sh """
+                    cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')-cover/\"
                     """
                 }
             )
