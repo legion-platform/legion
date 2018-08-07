@@ -1,0 +1,23 @@
+{{- define "airflow-connections" }}
+{
+  "conn_id": "test_conn",
+  "conn_type": "",
+  "host": "google.com",
+  "schema": "",
+  "login": "me",
+  "password": "pass",
+  "port": "",
+  "extra": "{\"security_token\": \"sec_token\"}"
+}
+{{- end }}
+
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: "airflow-connections"
+  labels:
+    com.epam.legion.property: "airflow-connections"
+data:
+  test_conn: |-
+    {{ include "airflow-connections" . | b64enc }}
