@@ -8,24 +8,19 @@ import java.nio.file.Files
 import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
- 
-File file = new File('/var/jenkins_home/slack_notifier')
-def token = file.getText()
 
 // parameters
 def slackCredentialParameters = [
   description:  'Slack Jenkins integration token',
   id:           'slack-token',
-  secret:       "${token}"
+  secret:       "${jenkins.slack.token}"
 ]
  
 def slackParameters = [
-  slackBaseUrl:             'https://ims-dev.slack.com/services/hooks/jenkins-ci/',
+  slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
   slackBotUser:             'false',
-  // slackBuildServerUrl:      'https://jenkins.mycompany.com:8083/',
-  slackRoom:                '#general',
-//   slackSendAs:              'Jenkins',
-  slackTeamDomain:          'ims-dev.slack.com',
+  slackRoom:                '#DYNmodels',
+  slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
   slackToken:               '',
   slackTokenCredentialId:   'slack-token'
 ]
