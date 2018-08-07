@@ -28,14 +28,18 @@ spec:
   etcdClusters:
   - etcdMembers:
 {% for zone in cluster_zones %}
+{% if zone.zone_name in k8s_master_zones %}
     - instanceGroup: master-{{ zone.zone_name }}
       name: {{ zone.zone_name }}
+{% endif %}
 {% endfor %}
     name: main
   - etcdMembers:
 {% for zone in cluster_zones %}
+{% if zone.zone_name in k8s_master_zones %}
     - instanceGroup: master-{{ zone.zone_name }}
       name: {{ zone.zone_name }}
+{% endif %}
 {% endfor %}
     name: events
   iam:
@@ -74,6 +78,8 @@ spec:
 
 ---
 {% for zone in cluster_zones %}
+{% if zone.zone_name in k8s_master_zones %}
+
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
 metadata:
@@ -101,6 +107,7 @@ spec:
   - {{ zone.zone_name }}
 
 ---
+{% endif %}
 {% endfor %}
 
 apiVersion: kops/v1alpha2

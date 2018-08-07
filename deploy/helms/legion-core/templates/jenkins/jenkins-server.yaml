@@ -83,8 +83,12 @@ spec:
         - name: EXTERNAL_RESOURCE_PASSWORD
           value: "{{ .Values.secrets.nexus.admin }}"
         # Storage of docker images with models
+        - name: MODEL_IMAGES_REGISTRY_HOST
+          value: "localhost:31111"
         - name: MODEL_IMAGES_REGISTRY
           value: "localhost:31111/legion_model/"
+        - name: NEXUS_DOCKER_REGISTRY
+          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
         - name: DOCKER_REGISTRY_USER
           value: "admin"
         - name: DOCKER_REGISTRY_PASSWORD
