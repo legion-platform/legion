@@ -32,9 +32,13 @@ RUN apt-get update && apt-get install --yes docker-ce
 # Copy bootstrap scripts
 COPY scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
 COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
+COPY scripts/slack_notifier.groovy /usr/share/jenkins/ref/init.groovy.d/slack_notifier.groovy
 
 # Copy plugins installation script
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
+
+RUN mkdir -p /var/jenkins_home/slack_notifier 
+COPY slack.yaml /var/jenkins_home/slack_notifier
 
 # Prepare plugins
 ARG jenkins_plugin_server="http://nexus-local.cc.epm.kharlamov.biz/jenkins"
