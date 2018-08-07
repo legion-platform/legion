@@ -15,7 +15,7 @@
 #
 FROM legion/base-python-image
 
-RUN apt-get update && apt-get install \
+RUN apt-get update && apt-get install -y \
     ca-certificates curl apt-transport-https nginx \
     libpcre3 libpcre3-dev supervisor
 
