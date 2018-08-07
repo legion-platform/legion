@@ -340,8 +340,10 @@ node {
                             nextVersion = ver_parsed.join(".")
                         }
                         sh """
+                        git reset --hard
+                        git checkout -b feat/${nextVersion}-version-bump
                         sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
-                        git commit -a -m "Update Legion version to ${nextVersion}" && git push origin develop
+                        git commit -a -m "Update Legion version to ${nextVersion}" && git push -f origin feat/${nextVersion}-version-bump
                         """
                     }
                     else {
