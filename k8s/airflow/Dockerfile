@@ -49,6 +49,14 @@ RUN rm -rf \
     /usr/share/doc \
     /usr/share/doc-base
 
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
+
+COPY requirements.txt /home/airflow/requirements.txt
+RUN pip3 install -r /home/airflow/requirements.txt
+RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string && \
+    pip3 install $pip_extra_index_params legion_airflow$pip_legion_version_string
+
 COPY create_secrets.py /home/airflow/create_secrets.py
 COPY entrypoint.sh /home/airflow/init.sh
 
@@ -60,10 +68,4 @@ WORKDIR ${AIRFLOW_HOME}
 
 ENTRYPOINT ["sh", "/home/airflow/init.sh"]
 
-ARG pip_extra_index_params=""
-ARG pip_legion_version_string=""
 
-COPY requirements.txt /home/airflow/requirements.txt
-RUN pip3 install -r /home/airflow/requirements.txt --user 
-RUN sudo pip3 install $pip_extra_index_params legion$pip_legion_version_string && \
-    pip3 install $pip_extra_index_params legion_airflow$pip_legion_version_string
