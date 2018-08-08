@@ -200,10 +200,10 @@ def build_environ_for_test_environments():
 
 class ModelDockerBuilderContainerContext:
     def __init__(self,
-                 docker_tag='legion/base-python-image:latest',
                  python_wheel_path=None):
         # Base python Docker image
-        self._docker_tag = docker_tag
+        self._docker_image_version = os.environ.get('BASE_IMAGE_VERSION', 'latest')
+        self._docker_tag = 'legion/base-python-image:{}'.format(self._docker_image_version)
         self._docker_base_image = None
         self._docker_container = None
         self._docker_client = legion.containers.docker.build_docker_client(None)
