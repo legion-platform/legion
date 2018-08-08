@@ -274,7 +274,7 @@ node {
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
-                    docker build --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} .
+                    docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} .
                     """
                 }, 'Run Python tests': {
                     sh """

@@ -13,8 +13,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-#Airflow Image
-FROM legion/base-python-image
+ARG version=latest
+FROM legion/base-python-image:${version}
 
 ENV AIRFLOW_HOME /home/airflow
 
