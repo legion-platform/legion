@@ -18,6 +18,8 @@ statsd==3.2.2
 locustio==0.8.1
 uwsgi==2.0.17
 aiohttp==2.3.10
+numpy==1.14.3
+scipy==1.0.0
 cchardet==2.1.1
 aiohttp_wsgi==0.7.1
 PyYAML==3.12

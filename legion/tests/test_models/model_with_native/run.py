@@ -5,7 +5,7 @@ import legion.model
 
 legion.model.init('native model', '1.0')
 
-installation_result = subprocess.run('apk add --update --no-cache mc',
+installation_result = subprocess.run('apt update && apt install -y mc',
                                      cwd='/', shell=True,
                                      stdout=subprocess.PIPE)
 if installation_result.returncode != 0:

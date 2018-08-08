@@ -15,9 +15,9 @@
 #
 FROM legion/base-python-image
 
-RUN apk add --update \
-    ca-certificates curl openrc \
-    nginx pcre pcre-dev supervisor
+RUN apt-get update && apt-get install -y \
+    ca-certificates curl apt-transport-https nginx \
+    libpcre3 libpcre3-dev supervisor
 
 EXPOSE 5000
 
@@ -28,17 +28,17 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 # Make NGINX run on the foreground
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
-RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
-COPY app_uwsgi.ini /usr/lib/python3.6/site-packages/legion/uwsgi.ini
+COPY app_uwsgi.ini /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
+ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-ENV UWSGI_INI /usr/lib/python3.6/site-packages/legion/uwsgi.ini
+ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
+# Install Legion
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
-
-RUN pip install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
+RUN pip3 install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
