@@ -8,6 +8,9 @@
 # profile - unique cluster name
 # legion_version - Legion version to deploy
 # enclave_name - enclave name to deploy
+# Optional arguments:
+# pypi_repo - rewrite pypi repo endpoint
+# docker_repo - rewrite docker registry endpoint
 
 - hosts: localhost
   connection: local

@@ -177,14 +177,27 @@ def deployLegionEnclave() {
             file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    ansiblePlaybook(
-                        playbook: 'deploy-legion-enclave.yml',
-                        extras: '--vault-password-file=${vault} \
-                                --extra-vars "profile=${Profile} \
-                                legion_version=${LegionVersion} \
-                                enclave_name=${EnclaveName}"',
-                        colorized: true
-                    )
+                    if (params.PublicRelease){
+                        ansiblePlaybook(
+                            playbook: 'deploy-legion-enclave.yml',
+                            extras: '--vault-password-file=${vault} \
+                                     --extra-vars "profile=${Profile} \
+                                     legion_version=${LegionVersion} \
+                                     pypi_repo=${PypiRepo} \
+                                     docker_repo=${DockerRepo}" \
+                                     enclave_name=${EnclaveName}"',
+                            colorized: true
+                         )
+                    } else {
+                        ansiblePlaybook(
+                            playbook: 'deploy-legion-enclave.yml',
+                            extras: '--vault-password-file=${vault} \
+                                     --extra-vars "profile=${Profile} \
+                                     legion_version=${LegionVersion}" \
+                                     enclave_name=${EnclaveName}" ',
+                            colorized: true
+                        )
+                    }
                 }
             }
         }
@@ -203,7 +216,7 @@ def terminateLegionEnclave() {
                                     --extra-vars "profile=${Profile} \
                                     enclave_name=${EnclaveName}"',
                             colorized: true
-                        )
+                    )
                 }
             }
         }
