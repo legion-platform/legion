@@ -22,10 +22,14 @@ RUN gem install fluent-plugin-s3 -v '~>1.0.0' && \
       g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
       libtiff5-dev libjpeg62-turbo-dev zlib1g-dev \
       libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-      tcl8.6-dev tk8.6-dev python-tk python3-tk \
-      procps && \
-    pip3 install "numpy>=1.11.2" && \
-    rm -rf /var/lib/apt/lists/*
+      tcl8.6-dev tk8.6-dev python-tk python3-tk procps locales && \
+      apt-get clean && apt-get autoclean
+
+# setup locale
+RUN echo "en_CA.UTF-8 UTF-8" >> /etc/locale.gen
+RUN locale-gen en_CA.UTF-8
+
+RUN pip3 install --disable-pip-version-check --no-cache-dir "numpy==1.14.3"
 
 # Copy bootstrap script
 COPY run.sh /run.sh
