@@ -16,6 +16,9 @@
 
 FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
 
+# Add testing repo for python3.6
+RUN echo "deb http://http.us.debian.org/debian/ testing main" >> /etc/apt/sources.list
+
 # Install fluentd-s3 plugin, legion requirements and clean up apt cache
 RUN gem install fluent-plugin-s3 -v '~>1.0.0' && \
     apt-get update && apt-get install -y --no-install-recommends python3 \
@@ -26,8 +29,10 @@ RUN gem install fluent-plugin-s3 -v '~>1.0.0' && \
       apt-get clean && apt-get autoclean
 
 # setup locale
-RUN echo "en_CA.UTF-8 UTF-8" >> /etc/locale.gen
-RUN locale-gen en_CA.UTF-8
+RUN sed --in-place '/en_US.UTF-8/s/^#//' /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8 
+ENV LANGUAGE en_US:en 
+ENV LC_ALL en_US.UTF-8
 
 RUN pip3 install --disable-pip-version-check --no-cache-dir "numpy==1.14.3"
 
