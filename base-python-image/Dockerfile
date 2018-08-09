@@ -13,20 +13,34 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM alpine:3.7
+FROM ubuntu:16.04
 
-RUN apk add --update --no-cache \
-    python3 g++ python3-dev py-pip py-setuptools file wget git fribidi\
-    tiff-dev jpeg-dev zlib-dev tcl-dev tk-dev python2-tkinter \
-    python3-tkinter-tests freetype-dev lcms2-dev libwebp harfbuzz \
-    libstdc++ musl-dev linux-headers build-base pcre pcre-dev\
-    openblas-dev freetype-dev pkgconfig \
-    && ln -s locale.h /usr/include/xlocale.h
+ENV DEBIAN_FRONTEND=noninteractive
 
-ADD requirements.txt /root/requirements.txt
+# Add Python3.6 repository
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa 
+
+RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
+    g++ apt-utils build-essential python3.6-dev python3-pip python3-setuptools libpython3.6-dev \
+    apt-transport-https file wget curl git libtiff5-dev libjpeg8-dev zlib1g-dev \
+    tcl8.6-dev tk8.6-dev python-tk python3-tk libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev \
+    libfribidi-dev tcl8.6-dev tk8.6-dev python-tk python3-tk libpcre3 libpcre3-dev locales && \
+    apt-get clean && apt-get autoclean
+
+# setup locale
+RUN locale-gen en_CA.UTF-8 && update-locale LANG=en_CA.UTF-8
+COPY default_locale /etc/default/locale
+RUN chmod 0755 /etc/default/locale
+ENV LC_ALL=en_CA.UTF-8
+ENV LANG=en_CA.UTF-8
+ENV LANGUAGE=en_CA.UTF-8
+
+RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
+
+COPY requirements.txt /root/requirements.txt
 
 RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 numpy==1.14.3
-RUN pip3 install --disable-pip-version-check --upgrade scipy==1.0.0
-RUN pip3 install --disable-pip-version-check  --no-cache-dir -r /root/requirements.txt
+RUN pip3 install --disable-pip-version-check --no-cache-dir -r /root/requirements.txt
 
 WORKDIR /app

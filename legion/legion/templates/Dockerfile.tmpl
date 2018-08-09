@@ -15,18 +15,20 @@
 #
 FROM {{DOCKER_BASE_IMAGE_ID}}
 
-# install requirements
-# forward request and error logs to docker log collector
-# and make NGINX run on the foreground
-RUN apk add --update \
-    ca-certificates curl openrc \
-    nginx pcre pcre-dev supervisor \
-    && ln -sf /dev/stdout /var/log/nginx/access.log \
-	&& ln -sf /dev/stderr /var/log/nginx/error.log \
-	&& echo "daemon off;" >> /etc/nginx/nginx.conf \
-	&& rm /etc/nginx/conf.d/default.conf
+RUN apt-get update && apt-get install -y \
+    ca-certificates apt-transport-https nginx \
+    supervisor
 
 EXPOSE 5000
+
+RUN pip3 install --disable-pip-version-check --upgrade uwsgi
+
+# forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log
+
+# Make NGINX run on the foreground
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
@@ -39,7 +41,7 @@ WORKDIR /app
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
-RUN pip install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
+RUN pip3 install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
 
 ENV MODEL_FILE="{{MODEL_FILE}}" \
     MODEL_ID="{{MODEL_ID}}" \
