@@ -126,6 +126,7 @@
     dest: "{{ tmp_dir }}/{{ item }}.{{ enclave }}.{{ cluster_name }}.yaml"
   with_items:
     - airflow_s3_access_policy
+    - event_collector_s3_access_policy
 
 - name: Create Airflow IAM role
   iam:
@@ -140,4 +141,19 @@
     iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
     policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
     policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Create Event Collector IAM role
+  iam:
+    iam_type: role
+    name: "{{ cluster_name }}-{{ enclave }}-event-collector-role"
+    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Attach Event Collector S3 accesse policy to the role
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-event-collector-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-event-collector-s3-access-policy"
+    policy_document: "{{ tmp_dir }}/event_collector_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
     state: present
