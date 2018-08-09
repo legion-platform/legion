@@ -29,7 +29,7 @@ node {
             archiveArtifacts 'build-log.txt'
     
             // Copy artifacts
-            copyArtifacts filter: '*', flatten: true, fingerprintArtifacts: true, projectName: 'Build_Legion', selector: specific(buildNumber.toString()), target: ''
+            copyArtifacts filter: '*', flatten: true, fingerprintArtifacts: true, projectName: 'Build_Legion_Artifacts', selector: specific(buildNumber.toString()), target: ''
             sh 'ls -lah'
             
             //sh 'cp pylint.log python-lint-log.txt'

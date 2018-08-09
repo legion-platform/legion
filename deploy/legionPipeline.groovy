@@ -227,7 +227,7 @@ def deployLegionEnclave() {
                                      --extra-vars "profile=${Profile} \
                                      legion_version=${LegionVersion} \
                                      pypi_repo=${PypiRepo} \
-                                     docker_repo=${DockerRepo}" \
+                                     docker_repo=${DockerRepo} \
                                      enclave_name=${EnclaveName}"',
                             colorized: true
                          )
@@ -236,7 +236,7 @@ def deployLegionEnclave() {
                             playbook: 'deploy-legion-enclave.yml',
                             extras: '--vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
-                                     legion_version=${LegionVersion}" \
+                                     legion_version=${LegionVersion} \
                                      enclave_name=${EnclaveName}" ',
                             colorized: true
                         )

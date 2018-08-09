@@ -25,7 +25,7 @@ node {
             archiveArtifacts 'build-log.txt'
 
             // Copy artifacts
-            copyArtifacts filter: '*', flatten: true, fingerprintArtifacts: true, projectName: 'Build_Legion', selector: specific(buildNumber.toString()), target: ''
+            copyArtifacts filter: '*', flatten: true, fingerprintArtifacts: true, projectName: 'Build_Legion_Artifacts', selector: specific(buildNumber.toString()), target: ''
             sh 'ls -lah'
             
             //sh 'cp pylint.log python-lint-log.txt'
@@ -69,6 +69,7 @@ node {
         stage('Deploy Legion & run tests') {
             result = build job: params.DeployLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
+                    string(name: 'Profile', value: params.Profile),
                     string(name: 'ReleaseVersion', value: legionVersion),
                     string(name: 'TestsTags', value: params.TestTags),
                     booleanParam(name: 'DeployLegion', value: true),
