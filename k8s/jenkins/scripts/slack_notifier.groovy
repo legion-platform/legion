@@ -13,7 +13,7 @@ import org.jenkinsci.plugins.plaincredentials.impl.*
 def slackCredentialParameters = [
   description:  'Slack Jenkins integration token',
   id:           'slack-token',
-  secret:       "${jenkins.slack.token}"
+  secret:       'dd02c7c2232759874e1c205587017bed'
 ]
  
 def slackParameters = [
@@ -21,7 +21,7 @@ def slackParameters = [
   slackBotUser:             'false',
   slackRoom:                '#dynmodels',
   slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
-  slackToken:               '',
+  slackToken:               "${jenkins.slack.token}",
   slackTokenCredentialId:   'slack-token'
 ]
  
