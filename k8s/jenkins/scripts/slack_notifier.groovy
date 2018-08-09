@@ -19,7 +19,7 @@ def slackCredentialParameters = [
 def slackParameters = [
   slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
   slackBotUser:             'false',
-  slackRoom:                '#DYNmodels',
+  slackRoom:                '#dynmodels',
   slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
   slackToken:               '',
   slackTokenCredentialId:   'slack-token'
