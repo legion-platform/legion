@@ -16,7 +16,7 @@ Connect to enclave Grafana
     Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}                      ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
 
 Connect to Jenkins endpoint
-    Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}                                 ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
+    Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}
 
 Connect to enclave Airflow
     [Arguments]           ${enclave}
@@ -181,7 +181,9 @@ Verify model info from edi
 
 Run and wait Jenkins job
     [Arguments]          ${model_name}                      ${enclave}
+    Log                  Start running model: ${model_name}
     Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
+    Log                  Waiting for running model: ${model_name}
     Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
 
 Test model pipeline
@@ -213,4 +215,4 @@ Check if all enclave domains are registered
 Run, wait and check jenkins jobs for enclave
     [Arguments]             ${enclave}
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
-    \    Test model pipeline  ${model_name}  ${enclave}
+    \    Test model pipeline    ${model_name}    ${enclave}
