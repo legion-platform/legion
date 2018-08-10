@@ -30,15 +30,10 @@ spec:
         volumeMounts:
         - name: fluentd-config-values
           mountPath: /opt/config
-        - name: fluentd-aws-credentials
-          mountPath: /opt/secrets
       volumes:
       - name: fluentd-config-values
         configMap:
           name: "{{ .Release.Name }}-fluentd-config-values"
-      - name: fluentd-aws-credentials
-        secret:
-          secretName: "{{ .Release.Name }}-fluentd-aws-credentials"
 ---
 apiVersion: v1
 kind: Service

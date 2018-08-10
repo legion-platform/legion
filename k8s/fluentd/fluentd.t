@@ -1,9 +1,6 @@
 # Load values
 {{ load_module('legion.template_plugins.file_change_monitor', filepath='/opt/config/values.yaml', is_yaml=True, var_name='cfg') }}
 
-# Load secrets
-{{ load_module('legion.template_plugins.file_change_monitor', filepath='/opt/secrets/aws.yaml', is_yaml=True, var_name='aws_secrets') }}
-
 # Receive
 <source>
   @type http
@@ -18,9 +15,6 @@
 <match *>
   @type s3
   # Connection
-  aws_key_id {{ aws_secrets.aws_key_id }}
-  aws_sec_key {{ aws_secrets.aws_sec_key }}
-
   s3_bucket {{ cfg.common.bucket }}
   s3_region {{ cfg.common.region }}
 
@@ -51,9 +45,6 @@
 <match *>
   @type s3
   # Connection
-  aws_key_id {{ aws_secrets.aws_key_id }}
-  aws_sec_key {{ aws_secrets.aws_sec_key }}
-
   s3_bucket {{ cfg.common.bucket }}
   s3_region {{ cfg.common.region }}
 
