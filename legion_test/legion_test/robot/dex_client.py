@@ -19,13 +19,16 @@ import re
 
 REQUEST_ID_REGEXP = re.compile('/auth/local\?req=([^"]+)')
 AUTHENTICATION_PATH = 'https://dex.{}/auth/local?req={}'
+AUTHENTICATION_HOSTNAME = 'https://dex.{}/'
 PARAM_NAME_LOGIN = 'login'
 PARAM_NAME_PASSWORD = 'password'
-SESSION_ID_COOKIE_NAME = '_oauth2_proxy'
-AUTH_ENDPOINT_URL = 'https://auth.{}'
+SESSION_ID_COOKIE_NAMES = ('_oauth2_proxy', 'JSESSION')
+AUTH_ENDPOINT_URLS = ('https://dashboard.{}/', 'https://jenkins.{}/securityRealm/commenceLogin',)
+JENKINS_PROFILE_URL = 'https://jenkins.{}/user/{}/configure'
+JENKINS_API_TOKEN_REGEX = re.compile('<input [^>]*id="apiToken"[^>]*value="([^"]+)"[^>]*>')
 
-_session_id = None
-
+_session_cookies = {}
+_jenkins_credentials = None
 
 def init_session_id(login: str, password: str, cluster_host: str) -> None:
     """Initialize Session ID value from a Cookie after authentication.
@@ -38,43 +41,48 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
     :type cluster_host: str
     :return: None
     """
-    global _session_id
+    global _session_cookies, _jenkins_credentials
     session = Session()
-    response = session.get(AUTH_ENDPOINT_URL.format(cluster_host))
-    if response.status_code != 200:
-        raise IOError('Authentication endpoint is unavailable, got {} http code'
-                      .format(response.status_code))
-    match = re.search(REQUEST_ID_REGEXP, response.text)
-    if match:
-        request_id = match.group(1)
-    else:
-        raise ValueError('Request ID was not found on page')
+    for auth_endpoint_url in AUTH_ENDPOINT_URLS:
+        response = session.get(auth_endpoint_url.format(cluster_host))
+        if response.status_code != 200:
+            raise IOError('Authentication endpoint is unavailable, got {} http code'
+                          .format(response.status_code))
+        if response.url.startswith(AUTHENTICATION_HOSTNAME.format(cluster_host)): # if auth form is opened
+            match = re.search(REQUEST_ID_REGEXP, response.text)
+            if match:
+                request_id = match.group(1)
+            else:
+                raise ValueError('Request ID was not found on page')
 
-    session.post(AUTHENTICATION_PATH.format(cluster_host, request_id),
-                            {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password})
-    if SESSION_ID_COOKIE_NAME in session.cookies:
-        _session_id = session.cookies.get(SESSION_ID_COOKIE_NAME)
-    else:
-        raise ValueError('Cant find session ID in Cookies')
+            response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id),
+                                {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password})
+            if response.status_code != 200:
+                raise IOError('Unable to authorise, got {} http code'
+                              .format(response.status_code))
 
+        for cookie_name in session.cookies.keys():
+            if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):
+                _session_cookies[cookie_name]= session.cookies.get(cookie_name)
+        if len(_session_cookies) == 0:
+            raise ValueError('Cant find any session ID in Cookies')
 
-def get_session_id():
-    """Get stored Session ID value.
+    response = session.get(JENKINS_PROFILE_URL.format(cluster_host, login))
+    if response.status_code == 200:
 
-    :return: session ID value
-    """
-    if _session_id:
-        return _session_id
-    else:
-        raise ValueError('Session ID is not inited')
+        regex_output = JENKINS_API_TOKEN_REGEX.search(response.text)
+        if regex_output:
+            _jenkins_credentials = (login, regex_output.group(1))
 
 
 def get_session_cookies():
     """Get session cookies that can be used inside Request.
-    :return: cookies dict or None if Session ID wasn't found
+    :return: cookies dict or empty dict if Session ID wasn't found
     """
-    if _session_id:
-        return {SESSION_ID_COOKIE_NAME: _session_id}
-    else:
-        # Dex is disabled or Session ID wasn't found
-        return
+    return _session_cookies
+
+def get_jenkins_credentials():
+    """Get credentials (username and API Token) for Jenkins API,
+    if they are found.
+    :return: (username, password) or None"""
+    return _jenkins_credentials
