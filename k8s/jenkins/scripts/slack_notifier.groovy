@@ -9,55 +9,46 @@ import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
 
-// File file = new File("/tmp/vault/${params.Profile}")
-// def token = file.getText()
+// File file = new File("/tmp/vault/${slack_s3_filename}")
+// def decryptToken = file.getText()
 
-// parameters
 def slackCredentialParameters = [
   description:  'Slack Jenkins integration token',
   id:           'slack-token',
-  secret:       'dd02c7c2232759874e1c205587017bed'
+  secret:       "StwyNcPTPi565H4BtFaLeInq"
 ]
  
 def slackParameters = [
-  slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
+  // slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
+  slackBaseUrl:             'https://ims-dev.slack.com/services/hooks/jenkins-ci/',
   slackBotUser:             'false',
   slackRoom:                '#dynmodels',
-  slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
-  slackToken:               "${jenkins.slack.token}",
+  slackTeamDomain:          'https://ims-dev.slack.com',
+  // slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
+  // slackToken:               "${jenkins.slack.token}",
+  slackToken:               '',
   slackTokenCredentialId:   'slack-token'
 ]
  
-// get Jenkins instance
+// get Jenkins instance, domain and store
 Jenkins jenkins = Jenkins.getInstance()
- 
-// get credentials domain
 def domain = Domain.global()
- 
-// get credentials store
 def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
- 
-// get Slack plugin
 def slack = jenkins.getExtensionList(jenkins.plugins.slack.SlackNotifier.DescriptorImpl.class)[0]
- 
-// define secret
+
 def secretText = new StringCredentialsImpl(
   CredentialsScope.GLOBAL,
   slackCredentialParameters.id,
   slackCredentialParameters.description,
   Secret.fromString(slackCredentialParameters.secret)
 )
- 
-// define form and request
+
 JSONObject formData = ['slack': ['tokenCredentialId': 'slack-token']] as JSONObject
 def request = [getParameter: { name -> slackParameters[name] }] as org.kohsuke.stapler.StaplerRequest
- 
-// add credential to Jenkins credentials store
+
 store.addCredentials(domain, secretText)
- 
-// add Slack configuration to Jenkins
 slack.configure(request, formData)
- 
-// save to disk
+
 slack.save()
 jenkins.save()
+println 'Slack global settings configured.'

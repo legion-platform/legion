@@ -80,6 +80,8 @@ airflow_s3_url: "s3://{{ airflow_s3_bucket_name }}/{{ enclave }}/"
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
 
+# slack_s3_filename: 'slack_secret'
+
 # Addons
 dashboard:
   version: "1.8.3"
@@ -117,3 +119,4 @@ dex:
 # Secrets
 secrets_bucket: "legion-cluster"
 secrets_file: "/tmp/vault/{{ cluster_name }}"
+# slack_file: "/tmp/vault/{{ slack_s3_filename }}"

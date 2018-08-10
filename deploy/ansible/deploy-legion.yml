@@ -37,9 +37,36 @@
     - charts_common
     - legion_core_chart
 
-  tasks:
-    - include_role:
-        name: legion_enclave
-      with_items: "{{ enclaves }}"
-      loop_control:
-        loop_var: enclave
+  # tasks:
+  #   - include_role:
+  #       name: legion_enclave
+  #     with_items: "{{ enclaves }}"
+  #     loop_control:
+  #       loop_var: enclave
+
+  # pre_tasks:
+  #   - name: Download secrets from S3
+  #     aws_s3:
+  #       bucket: "{{ secrets_bucket }}"
+  #       object: "vault/{{ profile }}"
+  #       dest: "{{ secrets_file }}"
+  #       mode: get
+  #   - name: download slack secret from s3
+  #     aws_s3:
+  #       bucket: "{{ secrets_bucket }}"
+  #       object: "vault/{{ slack_s3_filename }}"
+  #       dest: "{{ slack_file }}"
+
+
+  #   - name: Include vars
+  #     include_vars:
+  #       file: "{{ secrets_file }}"
+
+  # post_tasks:
+  #   - name: Delete secrets file
+  #     file:
+  #       name: "{{ item }}"
+  #       state: absent
+  #     loop:
+  #       - "{{ secrets_file }}"
+  #       - "{{ slack_file }}"          
