@@ -26,6 +26,11 @@ jenkins:
 
   git_secret_name: "{{ git_secret_name }}"
 
+  slack:
+    token: "{{ jenkins.slack.token }}"
+    sdfsd
+    sef
+
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}

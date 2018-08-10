@@ -23,6 +23,16 @@ data:
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
 ---
+
+kind: Secret
+metadata:
+  name: "{{  }}"
+data:
+  config: |-
+    
+
+---
+
 apiVersion: v1
 kind: ReplicationController
 metadata:
@@ -129,6 +139,9 @@ spec:
         - mountPath: /var/jenkins.ssh
           name: git-secret
           readOnly: true
+        - mountPath: /slack.config
+          name: slack-secret
+          subPath: config
         {{- end }}
         livenessProbe:
           httpGet:

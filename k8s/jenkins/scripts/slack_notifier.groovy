@@ -13,7 +13,7 @@ import org.jenkinsci.plugins.plaincredentials.impl.*
 // def decryptToken = file.getText()
 
 def slackCredentialParameters = [
-  description:  'Slack Jenkins integration token',
+  description:  'Slack integration token',
   id:           'slack-token',
   secret:       "StwyNcPTPi565H4BtFaLeInq"
 ]
