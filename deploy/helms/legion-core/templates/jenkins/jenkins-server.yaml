@@ -26,10 +26,12 @@ data:
 
 kind: Secret
 metadata:
-  name: "{{  }}"
+  name: "{{ slack-creds }}"
 data:
   config: |-
-    
+    token: "{{ jenkins.slack.token }}"
+    slackTeamDomain: "{{ jenkins.slack.slackTeamDomain }}"
+    slackBaseUrl: "{{ jenkins.slack.slackBaseUrl }}"
 
 ---
 
@@ -57,7 +59,7 @@ spec:
       securityContext:
         fsGroup: 1000
       containers:
-      - name: jenkins
+      - name: jenkinsjenkins
         image: "{{ .Values.jenkins.image.repository }}:{{ .Values.jenkins.image.tag }}"
         imagePullPolicy: "{{ .Values.jenkins.image.pullPolicy }}"
         env:
@@ -160,6 +162,9 @@ spec:
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
+      - name: slack-secret
+        secret:
+          secretName: "{{ slack-creds }}"
       {{- end }}
 ---
 apiVersion: v1

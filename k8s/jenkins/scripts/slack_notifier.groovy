@@ -12,30 +12,27 @@ import org.jenkinsci.plugins.plaincredentials.impl.*
 // File file = new File("/tmp/vault/${slack_s3_filename}")
 // def decryptToken = file.getText()
 
+// parameters
 def slackCredentialParameters = [
-  description:  'Slack integration token',
+  description:  'Slack Jenkins integration token',
   id:           'slack-token',
-  secret:       "StwyNcPTPi565H4BtFaLeInq"
+  secret:       "${decryptToken}"
 ]
  
 def slackParameters = [
-  // slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
-  slackBaseUrl:             'https://ims-dev.slack.com/services/hooks/jenkins-ci/',
+  slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
   slackBotUser:             'false',
-  slackRoom:                '#dynmodels',
-  slackTeamDomain:          'https://ims-dev.slack.com',
-  // slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
-  // slackToken:               "${jenkins.slack.token}",
-  slackToken:               '',
+  slackRoom:                '#ada_nbcustomer_algo',
+  slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
+  slackToken:               "${jenkins.slack.token}",
   slackTokenCredentialId:   'slack-token'
 ]
  
-// get Jenkins instance, domain and store
 Jenkins jenkins = Jenkins.getInstance()
 def domain = Domain.global()
 def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
 def slack = jenkins.getExtensionList(jenkins.plugins.slack.SlackNotifier.DescriptorImpl.class)[0]
-
+ 
 def secretText = new StringCredentialsImpl(
   CredentialsScope.GLOBAL,
   slackCredentialParameters.id,
@@ -51,4 +48,3 @@ slack.configure(request, formData)
 
 slack.save()
 jenkins.save()
-println 'Slack global settings configured.'
