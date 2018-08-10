@@ -39,5 +39,6 @@
     zone: "{{ route53_zone }}"
     record: "*.{{ base_domain }}"
     type: CNAME
+    ttl: 60
     value: "{{ ingress_elb_endpoint.stdout }}"
     overwrite: true

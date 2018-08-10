@@ -24,7 +24,7 @@ import unittest2
 
 class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID))
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.0')
 
     def test_random_sum(self):
         a = random.randint(0, 100)

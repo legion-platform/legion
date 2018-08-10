@@ -15,13 +15,12 @@
 #
 from __future__ import print_function
 
-import legion.io
 import legion.model
 
 import pandas
 
 
-def create_simple_summation_model_by_df(path, version):
+def create_simple_summation_model_by_df(model_id, model_version, path):
     def apply(x):
         a = x.iloc[0]['a']
         b = x.iloc[0]['b']
@@ -32,13 +31,10 @@ def create_simple_summation_model_by_df(path, version):
         'b': 1,
     }])
 
-    return legion.io.export_df(apply,
-                               df,
-                               filename=path,
-                               version=version)
+    return legion.model.init(model_id, model_version).export_df(apply, df).save(path)
 
 
-def create_simple_summation_model_by_df_with_prepare(path, version):
+def create_simple_summation_model_by_df_with_prepare(model_id, model_version, path):
     def prepare(x):
         return {
             'a': x.iloc[0]['a'],
@@ -53,13 +49,13 @@ def create_simple_summation_model_by_df_with_prepare(path, version):
         'b': 1,
     }])
 
-    return legion.io.export_df(apply,
-                               df,
-                               filename=path,
-                               version=version)
+    legion.model.init(model_id, model_version)
+    legion.model.define_property('abc', 20.234)
+
+    return legion.model.export_df(apply, df).save(path)
 
 
-def create_simple_summation_model_by_types(path, version):
+def create_simple_summation_model_by_types(model_id, model_version, path):
     def apply(x):
         return {'x': int(x['a'] + x['b'])}
 
@@ -68,24 +64,19 @@ def create_simple_summation_model_by_types(path, version):
         'b': legion.model.int32,
     }
 
-    return legion.io.export(apply,
-                            parameters,
-                            filename=path,
-                            version=version)
+    return legion.model.init(model_id, model_version).export(apply, parameters).save(path)
 
 
-def create_simple_summation_model_untyped(path, version):
+def create_simple_summation_model_untyped(model_id, model_version, path):
     def apply(x):
         keys = sorted(tuple(x.keys()))
 
         return {'keys': ','.join(keys), 'sum': sum(int(val) for val in x.values())}
 
-    return legion.io.export_untyped(apply,
-                                    filename=path,
-                                    version=version)
+    return legion.model.init(model_id, model_version).export_untyped(apply).save(path)
 
 
-def create_simple_summation_model_lists(path, version):
+def create_simple_summation_model_lists(model_id, model_version, path):
     def apply(x):
         movie_matrix = dict(zip(x['movie'], x['rate']))
 
@@ -94,12 +85,10 @@ def create_simple_summation_model_lists(path, version):
 
         return {'best': best, 'worth': worth}
 
-    return legion.io.export_untyped(apply,
-                                    filename=path,
-                                    version=version)
+    return legion.model.init(model_id, model_version).export_untyped(apply).save(path)
 
 
-def create_simple_summation_model_lists_with_files_info(path, version):
+def create_simple_summation_model_lists_with_files_info(model_id, model_version, path):
     def apply(x):
         movie_matrix = {}
 
@@ -112,6 +101,4 @@ def create_simple_summation_model_lists_with_files_info(path, version):
 
         return {'best': best, 'worth': worth}
 
-    return legion.io.export_untyped(apply,
-                                    filename=path,
-                                    version=version)
+    return legion.model.init(model_id, model_version).export_untyped(apply).save(path)

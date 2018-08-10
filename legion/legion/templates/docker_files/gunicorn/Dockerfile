@@ -1,1 +1,0 @@
-CMD /usr/local/bin/gunicorn -p /legion/gunicorn.pid -w ${GUNICORN_WORKER_COUNT} -k ${GUNICORN_WORKER_CLASS} -n legion -b 0.0.0.0:5000 ${GUNICORN_WORKER_PATH}

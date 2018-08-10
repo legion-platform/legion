@@ -38,6 +38,8 @@ spec:
     component: "{{ .Release.Name }}-jenkins"
   template:
     metadata:
+      annotations:
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-jenkins-role"
       labels:
         component: "{{ .Release.Name }}-jenkins"
     spec:
@@ -81,8 +83,12 @@ spec:
         - name: EXTERNAL_RESOURCE_PASSWORD
           value: "{{ .Values.secrets.nexus.admin }}"
         # Storage of docker images with models
+        - name: MODEL_IMAGES_REGISTRY_HOST
+          value: "localhost:31111"
         - name: MODEL_IMAGES_REGISTRY
           value: "localhost:31111/legion_model/"
+        - name: NEXUS_DOCKER_REGISTRY
+          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
         - name: DOCKER_REGISTRY_USER
           value: "admin"
         - name: DOCKER_REGISTRY_PASSWORD
@@ -94,10 +100,6 @@ spec:
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
           value: "8125"
-        - name: CONSUL_ADDR
-          value: "{{ .Release.Name }}-consul.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
-        - name: CONSUL_PORT
-          value: "8500"
         {{- if .Values.jenkins.airflow.enabled }}
         - name: DAGS_VOLUME_PVC
           value: {{ .Values.jenkins.dags_volume_pvc }}
@@ -109,6 +111,40 @@ spec:
           value: "{{ .Values.jenkins.airflow.expected_output }}"
         - name: AIRFLOW_S3_URL
           value: "{{ .Values.jenkins.airflow.s3_url }}"
+        {{- end }}
+        {{- if .Values.jenkins.openId.enable }}
+        - name: OPENID_ENABLE
+          value: "{{ .Values.jenkins.openId.enable }}"
+        - name: OPENID_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: clientId
+        - name: OPENID_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: clientSecret
+        - name: OPENID_TOKEN_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: tokenServerUrl
+        - name: OPENID_AUTH_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: authServerUrl
+        - name: OPENID_ADMIN_GROUPS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: adminGroups
+        - name: OPENID_READ_ONLY_GROUPS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: readOnlyGroups
         {{- end }}
         ports:
         - containerPort: 8080
@@ -153,6 +189,9 @@ metadata:
   name: "{{ .Release.Name }}-jenkins"
   labels:
     component: "{{ .Release.Name }}-jenkins"
+    legion.system: "yes"
+    legion.component: "jenkins"
+    legion.port: "80"
 spec:
   selector:
     component: "{{ .Release.Name }}-jenkins"
@@ -179,6 +218,7 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-jenkins"
+    legion.component: "jenkins"
   name: "{{ .Release.Name }}-jenkins"
 spec:
   rules:

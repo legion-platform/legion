@@ -24,7 +24,7 @@ class ModelTaskSet(TaskSet):
         self._model_client.invoke(uid=1)
 
     def on_start(self):
-        self._model_client = ModelClient('movie-lens', use_relative_url=True, http_client=self.client)
+        self._model_client = ModelClient('movie-lens', '1.0', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):

@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+            "arn:aws:iam::{{ aws.account_id }}:role/nodes.{{ cluster_name }}",
+            "arn:aws:iam::{{ aws.account_id }}:role/masters.{{ cluster_name }}"
+        ]
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}

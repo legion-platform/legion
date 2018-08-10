@@ -12,10 +12,27 @@
 
 - hosts: localhost
   connection: local
-  gather_facts: False
+  gather_facts: True
   vars_files:
-    - "../profiles/{{ profile }}.yml"
-    - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
+    - "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
+
+  pre_tasks:
+    - name: Download secrets from S3
+      aws_s3:
+        bucket: "{{ secrets_bucket }}"
+        object: "vault/{{ profile }}"
+        dest: "{{ secrets_file }}"
+        mode: get
+
+    - name: Include vars
+      include_vars:
+        file: "{{ secrets_file }}"
+
+  post_tasks:
+    - name: Delete secrets file
+      file:
+        name: "{{ secrets_file }}"
+        state: absent
 
   tasks:
   - name: Configure kubectl using kops
@@ -42,3 +59,15 @@
   
   - name: WORKAROUND delete pods in phase terminating
     shell: kubectl --context {{ cluster_name }} --namespace {{ enclave_name }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
+
+  - name: Remove Airflow S3 access policy
+    iam_policy:
+      iam_type: role
+      iam_name: "{{ cluster_name }}-{{ enclave_name }}-airflow-role"
+      policy_name: "{{ cluster_name }}-{{ enclave_name }}-airflow-s3-access-policy"
+      state: absent
+ 
+  - name: Remove enclave Airflow IAM role
+    iam_role:
+      name: "{{ cluster_name }}-{{ enclave_name }}-airflow-role"
+      state: absent

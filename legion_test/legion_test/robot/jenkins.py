@@ -22,6 +22,7 @@ import json
 import jenkins
 from six.moves.urllib.request import Request
 from six.moves.urllib.error import HTTPError
+from legion_test.robot.dex_client import get_session_cookies, get_jenkins_credentials
 
 JOB_MODEL_ID = '%(folder_url)sjob/%(short_name)s/%(build_number)s/model/json'
 
@@ -68,7 +69,7 @@ class Jenkins:
         """
         self._client = None  # type: jenkins.Jenkins
 
-    def connect_to_jenkins(self, domain, user, password, timeout=10):
+    def connect_to_jenkins(self, domain, user=None, password=None, add_dex_cookies=True, timeout=10):
         """
         Connect to Jenkins server
 
@@ -80,13 +81,24 @@ class Jenkins:
         :type password: str
         :param timeout: timeout for connection process in seconds
         :type timeout: int or str
+        :param add_dex_cookies: if Dex Cookies should be added to request
+        :type add_dex_cookies: bool
         :return: None
         """
+        if get_jenkins_credentials():
+            user, password = get_jenkins_credentials()
         self._client = jenkins.Jenkins(domain,
                                        username=user,
                                        password=password,
                                        timeout=int(timeout))
+        if add_dex_cookies:
+            self._client.crumb = {'crumbRequestField': 'Cookie',
+                            'crumb': ';'.join(['{}={}'.format(k,v)
+                                          for (k,v) in get_session_cookies().items()])}
 
+        user = self._client.get_whoami()
+        print('Hello %s from Jenkins' % (user['fullName']))
+        self._client.wait_for_normal_op(10)
         self._client.get_all_jobs()
 
     def run_jenkins_job(self, job_name, **parameters):
@@ -101,7 +113,6 @@ class Jenkins:
         """
         if not self._client:
             raise Exception('Jenkins client has not been initialized')
-
         job_info = self._client.get_job_info(job_name, 4)
 
         if len(parameters) == 0:
@@ -113,8 +124,8 @@ class Jenkins:
 
             parameters = [x['defaultParameterValue'] for x in parameters[0]['parameterDefinitions']]
             parameters = {x['name']: x['value'] for x in parameters}
-
-        self._client.build_job(job_name, parameters=parameters)
+        response = self._client.build_job(job_name, parameters=parameters)
+        print('Result of Job run: {!r}'.format(response))
 
     def wait_jenkins_job(self, job_name, timeout=0, sleep=5):
         """
@@ -136,6 +147,7 @@ class Jenkins:
         sleep = int(sleep)
 
         start = time.time()
+        time.sleep(sleep)
         while True:
             job_info = self._client.get_job_info(job_name)
             if not job_info['lastBuild'] and not job_info['inQueue']:

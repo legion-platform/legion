@@ -22,7 +22,6 @@ import time
 from enum import Enum
 
 import legion.config
-from legion.model.model_id import get_model_id, init
 from legion.utils import normalize_name
 
 
@@ -34,18 +33,6 @@ class Metric(Enum):
     TRAINING_ACCURACY = 'training-accuracy'
     TEST_ACCURACY = 'test-accuracy'
     TRAINING_LOSS = 'training-loss'
-
-
-def get_model_id_for_metrics():
-    """
-    Get model name for metrics
-
-    :return: srt -- model name
-    """
-    if not get_model_id():
-        init()
-
-    return get_model_id()
 
 
 def get_metric_endpoint():
@@ -72,25 +59,29 @@ def get_build_number():
         raise Exception('Cannot parse build number as integer')
 
 
-def get_metric_name(metric):
+def get_metric_name(metric, model_id):
     """
     Get metric name on stats server
 
     :param metric: instance of Metric or custom name
     :type metric: :py:class:`legion.metrics.Metric` or str
+    :param model_id: model ID
+    :type model_id: str
     :return: str -- metric name on stats server
     """
     name = metric.value if isinstance(metric, Metric) else str(metric)
-    return normalize_name('%s.metrics.%s' % (get_model_id_for_metrics(), name))
+    return normalize_name('{}.metrics.{}'.format(model_id, name))
 
 
-def get_build_metric_name():
+def get_build_metric_name(model_id):
     """
     Get build # name on stats server
 
+    :param model_id: model ID
+    :type model_id: str
     :return: str -- build # name on stats server
     """
-    return '%s.metrics.build' % get_model_id_for_metrics()
+    return '{}.metrics.build'.format(model_id)
 
 
 def send_udp(host, port, message):
@@ -135,10 +126,12 @@ def send_tcp(host, port, message):
     sock.close()
 
 
-def send_metric(metric, value):
+def send_metric(model_id, metric, value):
     """
-    Send metric value
+    Send build metric value
 
+    :param model_id: model ID
+    :type model_id: str
     :param metric: metric type or metric name
     :type metric: :py:class:`legion.metrics.Metric` or str
     :param value: metric value
@@ -147,11 +140,11 @@ def send_metric(metric, value):
     """
     host, port, namespace = get_metric_endpoint()
 
-    metric_name = '%s.%s' % (namespace, get_metric_name(metric))
+    metric_name = '%s.%s' % (namespace, get_metric_name(metric, model_id))
     message = "%s %f %d\n" % (metric_name, float(value), int(time.time()))
     send_tcp(host, port, message)
 
     build_no = get_build_number()
-    metric_name = '%s.%s' % (namespace, get_metric_name('build'))
+    metric_name = '%s.%s' % (namespace, get_metric_name('build', model_id))
     message = "%s %f %d\n" % (metric_name, build_no, int(time.time()))
     send_tcp(host, port, message)

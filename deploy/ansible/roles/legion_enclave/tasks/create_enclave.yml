@@ -104,3 +104,40 @@
 
 - name: Apply new PVC
   shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
+
+# Create S3 resources
+- name: Create S3 storage for Airflow
+  aws_s3:
+    bucket: "{{ airflow_s3_bucket_name }}"
+    object: "/{{ enclave }}"
+    mode: create
+
+# Create IAM roles
+- name: Generate Trust policy documents
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ cluster_name }}.yaml"
+  with_items:
+    - trust_policy
+
+- name: Generate S3 access policy documents
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ tmp_dir }}/{{ item }}.{{ enclave }}.{{ cluster_name }}.yaml"
+  with_items:
+    - airflow_s3_access_policy
+
+- name: Create Airflow IAM role
+  iam:
+    iam_type: role
+    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Attach Airflow S3 accesse policy to the role
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
+    policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
+    state: present

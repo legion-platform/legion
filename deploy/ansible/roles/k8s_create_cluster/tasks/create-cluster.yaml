@@ -21,6 +21,6 @@
 - name: Verify that all Kubernetes nodes are ready
   shell: kubectl --context {{ cluster_name }} get nodes | grep master | wc -l
   register: cmd_result
-  until: cmd_result.stdout == "{{ cluster_zones|length }}"
+  until: cmd_result.stdout == "{{ k8s_master_zones|length }}"
   retries: 20
   delay: 60
