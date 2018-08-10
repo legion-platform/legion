@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa 
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
-    g++ apt-utils build-essential python3.6-dev python3-pip python3-setuptools wheel libpython3.6-dev \
+    g++ apt-utils build-essential python3.6-dev python3-pip python3-setuptools libpython3.6-dev \
     apt-transport-https file wget curl git libtiff5-dev libjpeg8-dev zlib1g-dev \
     tcl8.6-dev tk8.6-dev python-tk python3-tk libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev \
     libfribidi-dev tcl8.6-dev tk8.6-dev python-tk python3-tk libpcre3 libpcre3-dev locales && \
