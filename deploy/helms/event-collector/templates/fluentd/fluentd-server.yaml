@@ -1,4 +1,4 @@
-apiVersion: v1/v1beta1
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-fluentd"
@@ -9,10 +9,9 @@ metadata:
     component: "{{ .Release.Name }}-fluentd"
 spec:
   replicas: {{ .Values.replicas }}
-  labels:
-    app: "{{ .Release.Name }}-fluentd"
   selector:
-    component: "{{ .Release.Name }}-fluentd"
+    matchLabels:
+      component: "{{ .Release.Name }}-fluentd"
   template:
     metadata:
       annotations:
