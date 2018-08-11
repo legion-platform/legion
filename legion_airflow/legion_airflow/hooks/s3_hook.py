@@ -48,7 +48,13 @@ class S3Hook(BaseHook):
         except AirflowConfigException:
             self.bucket_path = ''
 
-    def get_uri(self, bucket, key):
+    def _get_uri(self, bucket, key):
+        """
+        Creates an URI based on passed bucket, key and Airflow configuration.
+        :param bucket: S3 Bucket name
+        :param key: Path inside S3 bucket
+        :return: URI, that contains protocol, bucket, path, e.g. s3://bucket/k1/k2/k3_file
+        """
         if key.startswith('s3://'):
             key = key[5:]
         path = [
@@ -72,7 +78,7 @@ class S3Hook(BaseHook):
         :return: s3 file
         """
         self.check_if_maintenance(bucket, key)
-        uri = self.get_uri(bucket, key)
+        uri = self._get_uri(bucket, key)
         return smart_open.smart_open(uri=uri, mode=mode,
                                      encoding=encoding,
                                      aws_access_key_id=self.aws_access_key_id,
@@ -154,7 +160,7 @@ class S3Hook(BaseHook):
         :return: bool -- True if file exist, False otherwise
         """
         try:
-            smart_open.smart_open(self.get_uri(bucket, key),
+            smart_open.smart_open(self._get_uri(bucket, key),
                                   mode='rb',
                                   aws_access_key_id=self.aws_access_key_id,
                                   aws_secret_access_key=self.aws_secret_access_key).close()
