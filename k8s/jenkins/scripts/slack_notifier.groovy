@@ -8,23 +8,24 @@ import java.nio.file.Files
 import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
+import groovy.json.JsonSlurper
 
-// File file = new File("/tmp/vault/${slack_s3_filename}")
-// def decryptToken = file.getText()
+// def file = new File("/slack.config/${params.Profile}")
+// def decryptToken = new JsonSlurper().parseText(file)
 
 // parameters
 def slackCredentialParameters = [
-  description:  'Slack Jenkins integration token',
+  description:  'Slack integration token',
   id:           'slack-token',
-  secret:       "${decryptToken}"
+  secret:       "${decryptToken.jenkins.slack.token}"
 ]
  
 def slackParameters = [
-  slackBaseUrl:             "${jenkins.slack.slackBaseUrl}",
+  slackBaseUrl:             "${decryptToken.jenkins.slack.slackBaseUrl}",
   slackBotUser:             'false',
   slackRoom:                '#ada_nbcustomer_algo',
-  slackTeamDomain:          "${jenkins.slack.slackTeamDomain}",
-  slackToken:               "${jenkins.slack.token}",
+  slackTeamDomain:          "${decryptToken.jenkins.slack.slackTeamDomain}",
+  slackToken:               "",
   slackTokenCredentialId:   'slack-token'
 ]
  
