@@ -14,6 +14,12 @@ jenkins:
     tag: "latest"
     pullPolicy: "Always"
 
+  slack:
+    token: ""
+    slackTeamDomain: ""
+    slackBaseUrl: ""
+
+
   rbac: true
   
   ingress:
