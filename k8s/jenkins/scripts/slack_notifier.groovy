@@ -10,10 +10,9 @@ import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
 import groovy.json.JsonSlurper
 
-def file = new File("/slack.config/${params.Profile}")
+def file = new File("/slack.config")
 def decryptToken = new JsonSlurper().parseText(file)
 
-// parameters
 def slackCredentialParameters = [
   description:  'Slack integration token',
   id:           'slack-token',
