@@ -26,7 +26,7 @@ data:
 
 kind: Secret
 metadata:
-  name: "{{ slack_creds }}"
+  name: "{{ jenkins.slack }}"
 data:
   config: |-
     token: "{{ jenkins.slack.token }}"
@@ -164,7 +164,7 @@ spec:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
       - name: slack-secret
         secret:
-          secretName: "{{ slack_creds }}"
+          secretName: "{{ slack.slack }}"
       {{- end }}
 ---
 apiVersion: v1
