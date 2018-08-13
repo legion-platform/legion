@@ -26,12 +26,12 @@ data:
 
 kind: Secret
 metadata:
-  name: "{{ jenkins.slack }}"
+  name: slack-secret
 data:
   config: |-
-    token: "{{ jenkins.slack.token }}"
-    slackTeamDomain: "{{ jenkins.slack.slackTeamDomain }}"
-    slackBaseUrl: "{{ jenkins.slack.slackBaseUrl }}"
+    token: "{{ .Values.jenkins.slack.token }}"
+    slackTeamDomain: "{{ .Values.jenkins.slack.slackTeamDomain }}"
+    slackBaseUrl: "{{ .Values.jenkins.slack.slackBaseUrl }}"
 
 ---
 
@@ -142,7 +142,7 @@ spec:
           name: git-secret
           readOnly: true
         - mountPath: /slack.config
-          name: slack-secret
+          name: slack-secrets
           subPath: config
         {{- end }}
         livenessProbe:
@@ -162,9 +162,8 @@ spec:
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
-      - name: slack-secret
-        secret:
-          secretName: "{{ slack.slack }}"
+      - name: slack-secrets
+          secretName: slack-secret
       {{- end }}
 ---
 apiVersion: v1
