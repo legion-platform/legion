@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       annotations:
-        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-event-collector-role"
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclaveName }}-event-collector-role"
       labels:
         component: "{{ .Release.Name }}-fluentd"
     spec:
