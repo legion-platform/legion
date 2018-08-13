@@ -23,7 +23,7 @@ if (line.trim().size() == 0) {
 
 } else {
 
-  text = line.split(":")
+  text = line.split(": ")
   key=text[0] 
   value=text[1]
   dataList[key]=value
