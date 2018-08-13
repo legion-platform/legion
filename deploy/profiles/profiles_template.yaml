@@ -62,7 +62,7 @@ enclaves: ~ # list of enclaves which will be automatically deployed after Legion
 # Airflow specific configuration
 airflow_dags_dir: ~                                        # Name of Aitflow DAGs directory
 airflow_dags_pvc: ~                                    # Name of Airflow DAGs PVC which will be created in Cluster
-airflow_s3_log_url: ~                     # S3 url for storing Airflow logs, it shouldn't contain bucket name, only key. E.g.: airflow_s3_log_url: "s3://airflow-logs/"
+airflow_s3_log_url: ~                             # S3 url for storing Airflow logs, it should contain bucket name and key. E.g.: airflow_s3_log_url: "s3://bucket/airflow-logs/"
 airflow_pvc: ~                                                        # Airflow PVC size (for storing DAGs code)
 
 # Airflow RDS configuration

@@ -56,7 +56,7 @@ class S3Hook(BaseHook):
         :return: URI, that contains protocol, bucket, path, e.g. s3://bucket/k1/k2/k3_file
         """
         if key.startswith('s3://'):
-            key = key[5:]
+            return key
         path = [
             self.bucket_prefix, bucket,
             self.key_prefix, self.bucket_path, key
