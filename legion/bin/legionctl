@@ -59,10 +59,10 @@ if __name__ == '__main__':
                                    default=1,
                                    type=int, help='count of instances')
     deploy_k8s_parser.add_argument('--livenesstimeout',
-                                   default=10,
+                                   default=2,
                                    type=int, help='model startup timeout for liveness probe')
     deploy_k8s_parser.add_argument('--readinesstimeout',
-                                   default=10,
+                                   default=2,
                                    type=int, help='model startup timeout for readiness probe')
     deploy_k8s_parser.add_argument('--no-wait',
                                    action='store_true', help='no wait until pods will be ready')

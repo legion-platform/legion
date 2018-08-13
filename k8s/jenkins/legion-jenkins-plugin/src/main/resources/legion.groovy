@@ -219,8 +219,8 @@ def deploy(Map deployParams=null) {
     deployParams = [:]
 
     count = deployParams.get('count', 1)
-    livenesstimeout = deployParams.get('livenesstimeout', 10)
-    readinesstimeout = deployParams.get('readinesstimeout', 10)
+    livenesstimeout = deployParams.get('livenesstimeout', 2)
+    readinesstimeout = deployParams.get('readinesstimeout', 2)
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
 

@@ -260,7 +260,7 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
-    def deploy_model(self, image, count=1, livenesstimeout=30, readinesstimeout=30):
+    def deploy_model(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy new model
 

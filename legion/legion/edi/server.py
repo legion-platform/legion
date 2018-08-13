@@ -97,7 +97,7 @@ def root():
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(image=str, count=int, livenesstimeout=int, readinesstimeout=int)
 @legion.http.requested_fields('image')
-def deploy(image, count=1, livenesstimeout=30, readinesstimeout=30):
+def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     """
     Deploy API endpoint
 

@@ -126,7 +126,7 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, count=1, livenesstimeout=30, readinesstimeout=30):
+    def deploy(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy API endpoint
 
