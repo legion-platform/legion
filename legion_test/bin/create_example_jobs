@@ -38,6 +38,7 @@ Options = NamedTuple('Options', [
     ('model_host', str),
     ('jenkins_user', str),
     ('jenkins_password', str),
+    ('jenkins_cookies', str),
     ('dynamic_model_prefix', str),
     ('perf_test_prefix', str),
     ('connection_timeout', str),
@@ -191,7 +192,11 @@ def work(options):
         import ssl
         ssl._create_default_https_context = ssl._create_unverified_context
 
-    client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user, password=options.jenkins_password)
+    client = jenkins.Jenkins(options.jenkins_url, username=options.jenkins_user
+                             , password=options.jenkins_password)
+
+    if options.jenkins_cookies:
+        client.crumb = {'crumbRequestField': 'Cookie', 'crumb': options.jenkins_cookies}
 
     start = time.time()
 
@@ -230,14 +235,16 @@ if __name__ == '__main__':
     parser.add_argument('git_branch', type=str, help='Default GIT branch')
     parser.add_argument('--git-root-key', type=str, help='Git credentials ID', default='legion-root-key')
     parser.add_argument('--model-host', type=str, help='Host with model', default='http://edge:80')
-    parser.add_argument('--jenkins-user', type=str, help='Jenkins server user', default='admin')
-    parser.add_argument('--jenkins-password', type=str, help='Jenkins server password', default='admin')
+    parser.add_argument('--jenkins-user', type=str, help='Jenkins server user')
+    parser.add_argument('--jenkins-password', type=str, help='Jenkins server password')
+    parser.add_argument('--jenkins-cookies', type=str, help='Jenkins server Cookies')
     parser.add_argument('--dynamic-model-prefix', type=str, help='Dynamic model job prefix', default='DYNAMIC MODEL')
     parser.add_argument('--perf-test-prefix', type=str, help='Performance test prefix', default='PERF TEST')
     parser.add_argument('--connection-timeout', type=int, default=120)
     parser.add_argument('--socket-reconnect-sleep', type=int, default=10)
     parser.add_argument('--plain-tasks', action='store_true', help='Create plain jenkins tasks '
                                                                    '(not for dynamic model using founded template)')
+
     args = parser.parse_args()
     arguments = Options(
         jenkins_url=args.jenkins_url,
@@ -249,6 +256,7 @@ if __name__ == '__main__':
         model_host=args.model_host,
         jenkins_user=args.jenkins_user,
         jenkins_password=args.jenkins_password,
+        jenkins_cookies=args.jenkins_cookies,
         dynamic_model_prefix=args.dynamic_model_prefix,
         perf_test_prefix=args.perf_test_prefix,
         connection_timeout=args.connection_timeout,

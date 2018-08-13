@@ -83,8 +83,12 @@ spec:
         - name: EXTERNAL_RESOURCE_PASSWORD
           value: "{{ .Values.secrets.nexus.admin }}"
         # Storage of docker images with models
+        - name: MODEL_IMAGES_REGISTRY_HOST
+          value: "localhost:31111"
         - name: MODEL_IMAGES_REGISTRY
           value: "localhost:31111/legion_model/"
+        - name: NEXUS_DOCKER_REGISTRY
+          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
         - name: DOCKER_REGISTRY_USER
           value: "admin"
         - name: DOCKER_REGISTRY_PASSWORD
@@ -107,6 +111,40 @@ spec:
           value: "{{ .Values.jenkins.airflow.expected_output }}"
         - name: AIRFLOW_S3_URL
           value: "{{ .Values.jenkins.airflow.s3_url }}"
+        {{- end }}
+        {{- if .Values.jenkins.openId.enable }}
+        - name: OPENID_ENABLE
+          value: "{{ .Values.jenkins.openId.enable }}"
+        - name: OPENID_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: clientId
+        - name: OPENID_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: clientSecret
+        - name: OPENID_TOKEN_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: tokenServerUrl
+        - name: OPENID_AUTH_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: authServerUrl
+        - name: OPENID_ADMIN_GROUPS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: adminGroups
+        - name: OPENID_READ_ONLY_GROUPS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: readOnlyGroups
         {{- end }}
         ports:
         - containerPort: 8080
