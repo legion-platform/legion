@@ -15,9 +15,9 @@ jenkins:
     pullPolicy: "Always"
 
   slack:
-    token: "{{ jenkins.slack.token }}"
-    slackTeamDomain: "{{ jenkins.slack.slackTeamDomain }}"
-    slackBaseUrl: "{{ jenkins.slack.slackBaseUrl }}"
+    slackTeamDomain: ''
+    slackBaseUrl: ''
+    token: ''
 
   rbac: true
   
