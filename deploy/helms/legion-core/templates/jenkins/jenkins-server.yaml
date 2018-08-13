@@ -161,6 +161,7 @@ spec:
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
       - name: slack-secrets
+        secret:
           secretName: slack-secret
       {{- end }}
 ---
