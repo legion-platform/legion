@@ -23,7 +23,6 @@ data:
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
 ---
-
 kind: Secret
 metadata:
   name: slack-secret
@@ -32,9 +31,7 @@ data:
     token: "{{ .Values.jenkins.slack.token }}"
     slackTeamDomain: "{{ .Values.jenkins.slack.slackTeamDomain }}"
     slackBaseUrl: "{{ .Values.jenkins.slack.slackBaseUrl }}"
-
 ---
-
 apiVersion: v1
 kind: ReplicationController
 metadata:
