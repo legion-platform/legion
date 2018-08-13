@@ -50,7 +50,7 @@ class S3Hook(BaseHook):
 
     def _get_uri(self, bucket, key):
         """
-        Creates an URI based on passed bucket, key and Airflow configuration.
+        Create an URI based on passed bucket, key and Airflow configuration.
         :param bucket: S3 Bucket name
         :param key: Path inside S3 bucket
         :return: URI, that contains protocol, bucket, path, e.g. s3://bucket/k1/k2/k3_file
@@ -239,7 +239,6 @@ class S3Hook(BaseHook):
             by S3 and will be stored in an encrypted form while at rest in S3.
         :type encrypt: bool
         """
-
         with self.open_file(bucket_name, key, 'w') as dist:
             with open(filename, 'r') as source:
                 for line in source:
@@ -268,7 +267,6 @@ class S3Hook(BaseHook):
         :param encoding: String encoding
         :type encoding: str
         """
-
         with self.open_file(bucket_name, key, 'w', encoding) as out:
             out.write(string_data)
 
@@ -292,7 +290,6 @@ class S3Hook(BaseHook):
         :param bucket_name: Name of the bucket in which the file is stored
         :type bucket_name: str
         """
-
         if self.exists(bucket_name, key):
             with self.open_file(bucket_name, key, 'r', 'utf-8') as out:
                 return out.read()
