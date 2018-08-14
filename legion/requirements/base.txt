@@ -1,5 +1,5 @@
 urllib3==1.22
-dill==0.2.7.1
+dill-legion-fork==0.2.9.dev0
 python-interface==1.4.0
 numpy==1.14.3
 pandas==0.23.0

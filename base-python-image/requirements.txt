@@ -2,7 +2,7 @@ nose==1.3.7
 pydot-ng==1.0.0
 cython==0.28.1
 requests==2.18.4
-dill==0.2.7.1
+dill-legion-fork==0.2.9.dev0
 python-interface==1.4.0
 pandas==0.23.0
 unittest2==1.1.0
