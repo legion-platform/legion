@@ -1,9 +1,9 @@
 {{- if .Values.jenkins.enabled }}
-# {{- define "config-cred-slack" }}
-# token="{{ .Values.jenkins.slack.token }}"
-# slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
-# slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
-# {{- end }}
+{{- define "config-cred-slack" }}
+token="{{ .Values.jenkins.slack.token }}"
+slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
+slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
+{{- end }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -28,15 +28,15 @@ data:
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
 ---
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: slack-secret
-# type: Opaque
-# data:
-#   config.slack: |-
-#     {{ include "config-cred-slack" . | b64enc }}
-# ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: slack-secret
+type: Opaque
+data:
+  config: |-
+    {{ include "config-cred-slack" . | b64enc }}
+---
 apiVersion: v1
 kind: ReplicationController
 metadata:
@@ -143,9 +143,9 @@ spec:
         - mountPath: /var/jenkins.ssh
           name: git-secret
           readOnly: true
-        - mountPath: /config.slack
+        - mountPath: /slack.config
           name: config-cred-slack
-          subPath: config.slack
+          subPath: config
           readOnly: true
         {{- end }}
         livenessProbe:

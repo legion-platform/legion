@@ -9,26 +9,26 @@ import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
 
-// def dataList = [:]
-// def file = new File("/config")
+def dataList = [:]
+def file = new File("/config")
 
-// def text
-// def key
-// def value
+def text
+def key
+def value
 
-// file.eachLine { line ->
+file.eachLine { line ->
 
-// if (line.trim().size() == 0) {
-//   return null
+if (line.trim().size() == 0) {
+  return null
 
-// } else {
+} else {
 
-//   text = line.split(":")
-//   key=text[0] 
-//   value=text[1]
-//   dataList[key]=value
-//   }
-// }
+  text = line.split(":")
+  key=text[0] 
+  value=text[1]
+  dataList[key]=value
+  }
+}
 
 def slackCredentialParameters = [
   description:  'Slack integration token',
