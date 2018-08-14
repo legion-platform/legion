@@ -207,7 +207,7 @@ node {
                     dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
                     sh """
                     cd base-python-image
-                    docker build $dockerCacheArg --extra-index-url ${params.PyPiRepository} -t legion/base-python-image .
+                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" -t legion/base-python-image .
                     """
                     UploadDockerImage('legion/base-python-image')
                 }, 'Build docs': {
