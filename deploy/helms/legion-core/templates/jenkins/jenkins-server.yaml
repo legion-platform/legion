@@ -1,9 +1,4 @@
 {{- if .Values.jenkins.enabled }}
-{{- define "config-cred-slack" }}
-token="{{ .Values.jenkins.slack.token }}"
-slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
-slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
-{{- end }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -35,7 +30,9 @@ metadata:
 type: Opaque
 data:
   slack.config: |-
-    {{ include "config-cred-slack" . | b64enc }}
+    token: {{ .Values.jenkins.slack.token | b64enc }}
+    slackTeamDomain: {{ .Values.jenkins.slack.slackTeamDomain | b64enc }}
+    slackBaseUrl: {{ .Values.jenkins.slack.slackBaseUrl | b64enc }}
 ---
 apiVersion: v1
 kind: ReplicationController
