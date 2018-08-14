@@ -1,4 +1,9 @@
 {{- if .Values.jenkins.enabled }}
+{{ - define "config-cred-slack" }}
+token="{{ .Values.jenkins.slack.token }}"
+slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
+slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
+{{- end }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -27,11 +32,10 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: slack-secret
+type: Opaque
 data:
   config: |-
-    token: "{{ .Values.jenkins.slack.token }}"
-    slackTeamDomain: "{{ .Values.jenkins.slack.slackTeamDomain }}"
-    slackBaseUrl: "{{ .Values.jenkins.slack.slackBaseUrl }}"
+    {{ include "config-cred-slack" . | b64enc }}
 ---
 apiVersion: v1
 kind: ReplicationController
@@ -140,8 +144,9 @@ spec:
           name: git-secret
           readOnly: true
         - mountPath: /slack.config
-          name: slack-secrets
+          name: config-cred-slack
           subPath: config
+          readOnly: true
         {{- end }}
         livenessProbe:
           httpGet:
@@ -160,7 +165,7 @@ spec:
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
-      - name: slack-secrets
+      - name: config-cred-slack
         secret:
           secretName: slack-secret
       {{- end }}
