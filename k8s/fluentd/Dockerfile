@@ -21,6 +21,7 @@ RUN echo "deb http://http.us.debian.org/debian/ testing main" >> /etc/apt/source
 
 # Install fluentd-s3 plugin, legion requirements and clean up apt cache
 RUN gem install fluent-plugin-s3 -v '~>1.1.4' && \
+    gem install aws-sdk && \
     apt-get update && apt-get install -y --no-install-recommends python3 \
       g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
       libtiff5-dev libjpeg62-turbo-dev zlib1g-dev \
@@ -41,12 +42,13 @@ COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 
 # Copy template
-COPY fluentd.t /etc/fluent/fluentd.t
+#COPY fluentd.t /etc/fluent/fluentd.t
+COPY fluent.conf /etc/fluent/fluent.conf
 
 # Install legion
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
-RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string
+#RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string
 
 CMD /run.sh $FLUENTD_ARGS

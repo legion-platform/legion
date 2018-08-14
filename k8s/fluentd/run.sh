@@ -20,6 +20,6 @@
 # For systems without journald
 mkdir -p /var/log/journal
 
-legion-template "/etc/fluent/fluentd.t" "/etc/fluent/fluent.conf" -c "pkill -HUP fluentd" &
+#legion-template "/etc/fluent/fluentd.t" "/etc/fluent/fluent.conf" -c "pkill -HUP fluentd" &
 
 exec /usr/local/bin/fluentd $@
