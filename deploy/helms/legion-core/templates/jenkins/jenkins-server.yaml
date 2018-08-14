@@ -1,8 +1,9 @@
-{{- define "config-cred-slack" }}
-token="{{ .Values.jenkins.slack.token }}"
-slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
-slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
 {{- if .Values.jenkins.enabled }}
+# {{- define "config-cred-slack" }}
+# token="{{ .Values.jenkins.slack.token }}"
+# slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
+# slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
+# {{- end }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -27,15 +28,15 @@ data:
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: slack-secret
-type: Opaque
-data:
-  config.slack: |-
-    {{ include "config-cred-slack" . | b64enc }}
----
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: slack-secret
+# type: Opaque
+# data:
+#   config.slack: |-
+#     {{ include "config-cred-slack" . | b64enc }}
+# ---
 apiVersion: v1
 kind: ReplicationController
 metadata:
@@ -245,6 +246,5 @@ spec:
     secretName: {{ .Values.jenkins.ingress.tls.secretName  }}
     {{- end }}
   {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
