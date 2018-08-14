@@ -20,7 +20,7 @@ FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
 RUN echo "deb http://http.us.debian.org/debian/ testing main" >> /etc/apt/sources.list
 
 # Install fluentd-s3 plugin, legion requirements and clean up apt cache
-RUN gem install fluent-plugin-s3 -v '~>1.0.0' && \
+RUN gem install fluent-plugin-s3 -v '~>1.1.4' && \
     apt-get update && apt-get install -y --no-install-recommends python3 \
       g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
       libtiff5-dev libjpeg62-turbo-dev zlib1g-dev \
