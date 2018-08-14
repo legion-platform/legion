@@ -1,9 +1,4 @@
 {{- if .Values.jenkins.enabled }}
-{{- define "config-cred-slack" }}
-token="{{ .Values.jenkins.slack.token }}"
-slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
-slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
-{{- end }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -28,6 +23,11 @@ data:
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
 ---
+{{- define "config-cred-slack" }}
+token="{{ .Values.jenkins.slack.token }}"
+slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
+slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
+{{- end }}  
 apiVersion: v1
 kind: Secret
 metadata:
