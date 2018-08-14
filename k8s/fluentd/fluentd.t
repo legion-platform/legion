@@ -19,6 +19,8 @@
   s3_region {{ cfg.common.region }}
 
   # Storing
+  <instance_profile_credentials>
+  </instance_profile_credentials>
   path {{ cfg.specific[tag].path }}
   time_slice_format {{ cfg.specific[tag].time_slice_format }}
   time_slice_wait {{ cfg.specific[tag].time_slice_wait }}
@@ -45,6 +47,9 @@
 <match *>
   @type s3
   # Connection
+
+  <instance_profile_credentials>
+  </instance_profile_credentials>
   s3_bucket {{ cfg.common.bucket }}
   s3_region {{ cfg.common.region }}
 
