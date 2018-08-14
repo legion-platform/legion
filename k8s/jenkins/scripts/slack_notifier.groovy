@@ -10,7 +10,7 @@ import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
 
 def dataList = [:]
-def file = new File("/config")
+def file = new File("/slack.config")
 
 def text
 def key
@@ -23,7 +23,7 @@ if (line.trim().size() == 0) {
 
 } else {
 
-  text = line.split(":")
+  text = line.split("=")
   key=text[0] 
   value=text[1]
   dataList[key]=value
@@ -33,14 +33,14 @@ if (line.trim().size() == 0) {
 def slackCredentialParameters = [
   description:  'Slack integration token',
   id:           'slack-token',
-  secret:       "StwyNcPTPi565H4BtFaLeInq"
+  secret:       "${dataList.token}"
 ]
  
 def slackParameters = [
-  slackBaseUrl:             "https://ims-dev.slack.com/services/hooks/jenkins-ci/",
+  slackBaseUrl:             "${dataList.slackBaseUrl}",
   slackBotUser:             'false',
   slackRoom:                '#ada_nbcustomer_algo',
-  slackTeamDomain:          "ims-dev.slack.com",
+  slackTeamDomain:          "${dataList.slackTeamDomain}",
   slackToken:               "",
   slackTokenCredentialId:   'slack-token'
 ]

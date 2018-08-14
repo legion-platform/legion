@@ -34,7 +34,7 @@ metadata:
   name: slack-secret
 type: Opaque
 data:
-  config: |-
+  slack.config: |-
     {{ include "config-cred-slack" . | b64enc }}
 ---
 apiVersion: v1
@@ -139,13 +139,13 @@ spec:
           name: dynamic-scripts
         - mountPath: /var/jenkins_home
           name: jenkins-home
+        - mountPath: /slack.config
+          name: config-cred-slack
+          subPath: slack.config
+          readOnly: true
         {{- if .Values.jenkins.git_secret_name }}
         - mountPath: /var/jenkins.ssh
           name: git-secret
-          readOnly: true
-        - mountPath: /slack.config
-          name: config-cred-slack
-          subPath: config
           readOnly: true
         {{- end }}
         livenessProbe:
@@ -161,13 +161,13 @@ spec:
       - name: dynamic-scripts
         configMap:
           name: "{{ .Release.Name }}-jenkins-dynamic-scripts"
+      - name: config-cred-slack
+        secret:
+          secretName: slack-secret          
       {{- if .Values.jenkins.git_secret_name }}
       - name: git-secret
         secret:
           secretName: "{{ .Values.jenkins.git_secret_name }}"
-      - name: config-cred-slack
-        secret:
-          secretName: slack-secret
       {{- end }}
 ---
 apiVersion: v1
