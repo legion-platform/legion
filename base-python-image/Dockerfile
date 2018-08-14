@@ -40,7 +40,9 @@ RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
 
 COPY requirements.txt /root/requirements.txt
 
+ARG pip_extra_index_params=""
+
 RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 numpy==1.14.3
-RUN pip3 install --disable-pip-version-check --no-cache-dir -r /root/requirements.txt
+RUN pip3 install --disable-pip-version-check $pip_extra_index_params --no-cache-dir -r /root/requirements.txt
 
 WORKDIR /app
