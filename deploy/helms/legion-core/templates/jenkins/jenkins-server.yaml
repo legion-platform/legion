@@ -28,7 +28,10 @@ kind: Secret
 metadata:
   name: slack-secret
 data:
-  config: token: "{{ .Values.jenkins.slack.token }}" slackTeamDomain: "{{ .Values.jenkins.slack.slackTeamDomain }}" slackBaseUrl: "{{ .Values.jenkins.slack.slackBaseUrl }}"
+  config: |-
+    token: "{{ .Values.jenkins.slack.token }}"
+    slackTeamDomain: "{{ .Values.jenkins.slack.slackTeamDomain }}"
+    slackBaseUrl: "{{ .Values.jenkins.slack.slackBaseUrl }}"
 ---
 apiVersion: v1
 kind: ReplicationController
