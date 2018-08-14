@@ -1,5 +1,5 @@
 {{- if .Values.jenkins.enabled }}
-{{- define "config-cred-slack" -}}
+{{- define "config-cred-slack" }}
 token="{{ .Values.jenkins.slack.token }}"
 slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
 slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
