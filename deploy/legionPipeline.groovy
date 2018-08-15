@@ -70,29 +70,63 @@ def deployLegion() {
 }
 
 def createjenkinsJobs(String commitID) {
-    sh """
+    env.commitID = commitID
+    def creds
+    sh '''
     cd legion_test
     ../.venv/bin/pip install -r requirements/base.txt
     ../.venv/bin/pip install -r requirements/test.txt
     ../.venv/bin/python setup.py develop
-    cd ..
+    '''
+    withAWS(credentials: 'kops') {
+    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+            def output = sh(script:'''
+	        cd .venv/bin
+            export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
+            export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
+            export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
+            export CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
+            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
 
-    .venv/bin/create_example_jobs \
-    "https://jenkins.${params.Profile}" \
-    examples \
-    . \
+            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
+            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
+
+            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            
+            export PATH=./:$PATH DISPLAY=:99
+            export PROFILE=${Profile}
+
+            echo ----
+            ./jenkins_dex_client
+            ''', returnStdout: true)
+            creds = output.split('----')[1].split('\n')
+            env.jenkins_user = creds[1]
+            env.jenkins_pass = creds[2]
+            env.jenkins_token = creds[3]
+        }
+	}
+	sh '''
+	cd .venv/bin
+    ./create_example_jobs \
+    "https://jenkins.${Profile}" \
+    ../../examples \
+    ../../ \
     "git@github.com:epam/legion.git" \
     ${commitID} \
     --connection-timeout 600 \
     --git-root-key "legion-root-key" \
     --model-host "" \
-    --dynamic-model-prefix "DYNAMIC MODEL"
-    """
+    --dynamic-model-prefix "DYNAMIC MODEL" \
+    --jenkins-user "${jenkins_user}" \
+    --jenkins-password "${jenkins_pass}" \
+    --jenkins-cookies "${jenkins_token}" \
+    '''
 }
 
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: params.Profile, variable: 'CREDENTIAL_SECRETS')]) {
+    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def tags_list=tags.toString().trim().split(',')
             def robot_tags= []
             def nose_tags = []
@@ -109,7 +143,6 @@ def runRobotTests(tags="") {
                 }
             env.robot_tags= robot_tags.join(" ")
             env.nose_tags = nose_tags.join(" ")
-
             sh '''
             cd legion
             ../.venv/bin/pip install -r requirements/base.txt
@@ -131,6 +164,10 @@ def runRobotTests(tags="") {
             CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
             CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
+            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+
+            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
+            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
@@ -141,6 +178,12 @@ def runRobotTests(tags="") {
             cd ../python
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+
+            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+
+            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
+            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
+
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR BASE_VERSION=$BaseVersion LOCAL_VERSION=$LocalVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit || true
             '''

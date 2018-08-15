@@ -1,0 +1,57 @@
+---
+
+- name: Remove k8s-authenticator
+  command: "helm --kube-context {{ cluster_name }} del --purge k8s-authenticator"
+  ignore_errors: true
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: Kops bucket name
+  set_fact: state_store_name="{{ state_store.split('s3://').1 }}"
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: List cluster ca certificate
+  aws_s3:
+    bucket: "{{ state_store_name }}"
+    mode: list
+    prefix: "{{ cluster_name }}/pki/issued/ca/"
+  register: ca_list
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: Get cluster CA certificate
+  aws_s3:
+    mode: get
+    bucket: "{{ state_store_name }}"
+    object: "{{ ca_list.s3_keys.0 }}"
+    dest: "{{ tmp_dir }}/{{ cluster_name }}.ca.crt"
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: Register cluster CA content
+  command: "cat {{ tmp_dir }}/{{ cluster_name }}.ca.crt"
+  register: cluster_ca_cmd_result
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: Set cluster CA b64
+  set_fact:
+    cluster_ca_b64: "{{ cluster_ca_cmd_result.stdout | b64encode }}"
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: Create k8s-authenticator configuration (values) file
+  template:
+    src: k8s-authenticator.yml.j2
+    dest: "{{ tmp_dir }}/k8s-authenticator.{{ cluster_name }}.yml"
+    mode: 0644
+  when: dex.enabled
+  tags: k8s-authenticator
+
+- name: Install k8s-authenticator
+  command: "helm --kube-context {{ cluster_name }} install k8s-authenticator --name k8s-authenticator --namespace kube-system -f {{ tmp_dir }}/k8s-authenticator.{{ cluster_name }}.yml"
+  args:
+    chdir: ../helms
+  when: dex.enabled
+  tags: k8s-authenticator
