@@ -1,0 +1,39 @@
+global:
+  deployEnv: {{ env_name }}
+
+config:
+  port: 5555
+  debug: false
+  clusters:
+  - name: {{ env_name }}
+    short_description: "{{ env_name }}"
+    description: "{{ env_name }} Cluster"
+    client_secret: {{ dex.config.client_secret }}
+    issuer: https://dex.{{ cluster_name }}
+    k8s_master_uri: https://api.{{ cluster_name }}
+    client_id: {{ dex.config.client_id }}
+    redirect_uri: https://auth.{{ cluster_name }}/callback/{{ env_name }}
+    k8s_ca_uri: https://auth.{{ cluster_name }}/certs/ca.crt
+
+ingress:
+  enabled: true
+  path: /
+  hosts:
+  - auth.{{ cluster_name }}
+  tls:
+  - secretName: {{ cluster_name }}-tls
+    hosts:
+    - auth.{{ cluster_name }}
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+ca:
+- name: ca
+  filename: ca.crt
+  value: "{{ cluster_ca_b64 }}"
