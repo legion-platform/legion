@@ -1,3 +1,8 @@
+{{- define "config-cred-slack" }}
+token="{{ .Values.jenkins.slack.token }}"
+slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
+slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
+{{- end }}
 {{- if .Values.jenkins.enabled }}
 kind: ConfigMap
 apiVersion: v1
@@ -30,9 +35,7 @@ metadata:
 type: Opaque
 data:
   slack.config: |-
-    token: {{ .Values.jenkins.slack.token | b64enc }}
-    slackTeamDomain: {{ .Values.jenkins.slack.slackTeamDomain | b64enc }}
-    slackBaseUrl: {{ .Values.jenkins.slack.slackBaseUrl | b64enc }}
+    {{ include "config-cred-slack" . | b64enc }}
 ---
 apiVersion: v1
 kind: ReplicationController
@@ -58,7 +61,7 @@ spec:
       securityContext:
         fsGroup: 1000
       containers:
-      - name: jenkinsjenkins
+      - name: jenkins
         image: "{{ .Values.jenkins.image.repository }}:{{ .Values.jenkins.image.tag }}"
         imagePullPolicy: "{{ .Values.jenkins.image.pullPolicy }}"
         env:
@@ -123,6 +126,40 @@ spec:
         - name: AIRFLOW_S3_URL
           value: "{{ .Values.jenkins.airflow.s3_url }}"
         {{- end }}
+        {{- if .Values.jenkins.openId.enable }}
+        - name: OPENID_ENABLE
+          value: "{{ .Values.jenkins.openId.enable }}"
+        - name: OPENID_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: clientId
+        - name: OPENID_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: clientSecret
+        - name: OPENID_TOKEN_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: tokenServerUrl
+        - name: OPENID_AUTH_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: authServerUrl
+        - name: OPENID_ADMIN_GROUPS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: adminGroups
+        - name: OPENID_READ_ONLY_GROUPS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins-openid
+              key: readOnlyGroups
+        {{- end }}
         ports:
         - containerPort: 8080
           name: http
@@ -139,7 +176,7 @@ spec:
         - mountPath: /slack.config
           name: config-cred-slack
           subPath: slack.config
-          readOnly: true
+          readOnly: true          
         {{- if .Values.jenkins.git_secret_name }}
         - mountPath: /var/jenkins.ssh
           name: git-secret
@@ -155,12 +192,12 @@ spec:
       - name: jenkins-home
         persistentVolumeClaim:
           claimName: "{{ .Release.Name }}-jenkins-master-home"
-      - name: dynamic-scripts
-        configMap:
-          name: "{{ .Release.Name }}-jenkins-dynamic-scripts"
       - name: config-cred-slack
         secret:
           secretName: slack-secret          
+      - name: dynamic-scripts
+        configMap:
+          name: "{{ .Release.Name }}-jenkins-dynamic-scripts"
       {{- if .Values.jenkins.git_secret_name }}
       - name: git-secret
         secret:
