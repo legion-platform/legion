@@ -19,7 +19,7 @@
   s3_region {{ cfg.common.region }}
 
   # Storing
-  path {{ cfg.specific[tag].path }}
+  path company-a/{{ cfg.specific[tag].path }}
   time_slice_format {{ cfg.specific[tag].time_slice_format }}
   time_slice_wait {{ cfg.specific[tag].time_slice_wait }}
   s3_object_key_format {{ cfg.specific[tag].s3_object_key_format }}

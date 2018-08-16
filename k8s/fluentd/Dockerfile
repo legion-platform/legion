@@ -42,13 +42,12 @@ COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 
 # Copy template
-#COPY fluentd.t /etc/fluent/fluentd.t
-COPY fluent.conf /etc/fluent/fluent.conf
+COPY fluentd.t /etc/fluent/fluentd.t
 
 # Install legion
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 
-#RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string
+RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string
 
 CMD /run.sh $FLUENTD_ARGS
