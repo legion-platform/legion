@@ -10,10 +10,10 @@ from urllib.parse import urlparse
 from airflow.exceptions import AirflowException
 
 from airflow import configuration as conf
-from airflow.hooks.base_hook import BaseHook
+from .conn_from_k8s_hook import ConnFromK8SHook
 
 
-class S3Hook(BaseHook):
+class S3Hook(ConnFromK8SHook):
     """S3 hook."""
 
     STOP_FILE_POSTFIX = '.STOP'
