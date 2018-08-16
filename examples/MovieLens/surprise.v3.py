@@ -7,13 +7,11 @@ import pandas as pd
 import numpy as np
 import os, io
 
-from legion.metrics import send_metric
 import legion.model
-import legion.io
 import time
 
 use_built_in = True
-legion.model.init('movie-lens')
+legion.model.init('movie-lens', '1.0')
 
 
 class Profiler(object):
@@ -36,7 +34,7 @@ class Profiler(object):
     def __exit__(self, type, value, traceback):
         duration = time.time() - self._start_time
         print("Name: " + self._name + " Elapsed time: {:.3f} sec".format(duration))
-        send_metric(self._name, duration)
+        legion.model.send_metric(self._name, duration)
 
 
 # get item names for built-in 100k dataset
@@ -172,13 +170,12 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-legion.io.export(
+legion.model.export(
     recommend,
     {
-        'uid': legion.model.types.ColumnInformation(legion.model.types.Integer, legion.model.int32)
-    },
-    version='1.0'
-)
+        'uid': legion.model.int32
+    })
+legion.model.save()
 
 recommendation_example = recommend({'uid': 1})
 print(repr(recommendation_example))

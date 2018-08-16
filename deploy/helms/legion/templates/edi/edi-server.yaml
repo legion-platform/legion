@@ -17,7 +17,7 @@ spec:
       labels:
         component: "{{ .Release.Name }}-edi"
     spec:
-      serviceAccountName: edi
+      serviceAccountName: "{{ .Release.Name }}-edi"
       volumes:
       - name: docker-socket
         hostPath:
@@ -40,7 +40,17 @@ spec:
         - name: LEGION_API_ADDR 
           value: "0.0.0.0"
         - name: LEGION_API_PORT
-          value: "80"
+          value: "5000"
+        - name: VERBOSE
+          value: "1"
+        - name: NEXUS_DOCKER_REGISTRY
+          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
+        - name: DOCKER_REGISTRY_USER
+          value: "admin"
+        - name: DOCKER_REGISTRY_PASSWORD
+          value: "{{ .Values.secrets.nexus.admin }}"
+        - name: MODEL_IMAGES_REGISTRY_HOST
+          value: "localhost:31111"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 
@@ -51,13 +61,13 @@ spec:
           name: cluster-state
           readOnly: true
         ports:
-        - containerPort: 80
-          name: http
+        - containerPort: 5000
+          name: api
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 5000
           initialDelaySeconds: 120
           timeoutSeconds: 8
           failureThreshold: 5
@@ -69,12 +79,14 @@ metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
     component: "{{ .Release.Name }}-edi"
+    legion.system: "yes"
     legion.component: "edi"
 spec:
   selector:
     component: "{{ .Release.Name }}-edi"
   ports:
-  - name: http
+  - name: api
+    targetPort: 5000
     port: 80
     protocol: TCP
 ---
@@ -91,6 +103,8 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-edi"
+    legion.system: "yes"
+    legion.component: "edi"
   name: "{{ .Release.Name }}-edi"
 spec:
   rules:

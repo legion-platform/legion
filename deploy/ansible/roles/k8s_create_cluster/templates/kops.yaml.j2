@@ -4,6 +4,8 @@ metadata:
   creationTimestamp: null
   name: {{ cluster_name }}
 spec:
+  cloudLabels:
+    vendor: {{ vendor }}
   api:
     loadBalancer:
       type: Public
@@ -12,20 +14,32 @@ spec:
     rbac: {}
   kubeAPIServer:
     authorizationRbacSuperUser: admin
+{% if dex.enabled == true %}
+    oidcClientID: {{ dex.config.client_id }}
+    oidcGroupsClaim: groups
+    oidcIssuerURL: https://dex.{{ cluster_name }}
+    oidcUsernameClaim: email
+    runtimeConfig:
+      rbac.authorization.k8s.io/v1alpha1: "true"
+{% endif %}
   channel: stable
   cloudProvider: aws
   configBase: {{ state_store }}/{{ cluster_name }}
   etcdClusters:
   - etcdMembers:
 {% for zone in cluster_zones %}
+{% if zone.zone_name in k8s_master_zones %}
     - instanceGroup: master-{{ zone.zone_name }}
       name: {{ zone.zone_name }}
+{% endif %}
 {% endfor %}
     name: main
   - etcdMembers:
 {% for zone in cluster_zones %}
+{% if zone.zone_name in k8s_master_zones %}
     - instanceGroup: master-{{ zone.zone_name }}
       name: {{ zone.zone_name }}
+{% endif %}
 {% endfor %}
     name: events
   iam:
@@ -64,6 +78,8 @@ spec:
 
 ---
 {% for zone in cluster_zones %}
+{% if zone.zone_name in k8s_master_zones %}
+
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
 metadata:
@@ -75,6 +91,8 @@ metadata:
     kops.k8s.io/cluster: {{ cluster_name }}
   name: master-{{ zone.zone_name }}
 spec:
+  cloudLabels:
+    vendor: {{ vendor }}
   image: {{ aws_image }}
   machineType: {{ master_shape }}
   maxSize: 1
@@ -89,6 +107,7 @@ spec:
   - {{ zone.zone_name }}
 
 ---
+{% endif %}
 {% endfor %}
 
 apiVersion: kops/v1alpha2
@@ -112,6 +131,7 @@ spec:
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes
   cloudLabels:
+    vendor: {{ vendor }}
     k8s.io/cluster-autoscaler/enabled: "yes"
     kubernetes.io/cluster/{{ cluster_name }}: "true"
   role: Node
@@ -145,6 +165,7 @@ spec:
     kops.k8s.io/instancegroup: nodes.{{ shape }}
     dedicated: jenkins-slave
   cloudLabels:
+    vendor: {{ vendor }}
     k8s.io/cluster-autoscaler/enabled: "yes"
     kubernetes.io/cluster/{{ cluster_name }}: "true"
   role: Node
@@ -178,6 +199,8 @@ spec:
     env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: bastions
+  cloudLabels:
+    vendor: {{ vendor }}
   role: Bastion
   subnets:
   {% for zone in cluster_zones %}

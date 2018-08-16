@@ -12,10 +12,27 @@
 
 - hosts: localhost
   connection: local
-  gather_facts: False
+  gather_facts: True
   vars_files:
-    - "../profiles/{{ profile }}.yml"
-    - "{{ lookup('env', 'CREDENTIAL_SECRETS') }}"
+    - "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
+
+  pre_tasks:
+    - name: Download secrets from S3
+      aws_s3:
+        bucket: "{{ secrets_bucket }}"
+        object: "vault/{{ profile }}"
+        dest: "{{ secrets_file }}"
+        mode: get
+
+    - name: Include vars
+      include_vars:
+        file: "{{ secrets_file }}"
+
+  post_tasks:
+    - name: Delete secrets file
+      file:
+        name: "{{ secrets_file }}"
+        state: absent
 
   tasks:
   - name: Install charts common dependencies

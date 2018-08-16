@@ -16,25 +16,23 @@
 from __future__ import print_function
 
 import unittest2
+import unittest.mock
 import json
 from random import randint
 import urllib.parse
 from io import BytesIO
+import sys
+import os
+
 from werkzeug.datastructures import FileMultiDict
 
+sys.path.extend(os.path.dirname(__file__))
 
-try:
-    from .legion_test_utils import patch_environ, ModelServeTestBuild
-    from .legion_test_models import create_simple_summation_model_by_df, \
-        create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
-        create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
-        create_simple_summation_model_lists_with_files_info
-except ImportError:
-    from legion_test_utils import patch_environ, ModelServeTestBuild
-    from legion_test_models import create_simple_summation_model_by_df, \
-        create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
-        create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
-        create_simple_summation_model_lists_with_files_info
+from legion_test_utils import patch_environ, ModelServeTestBuild
+from legion_test_models import create_simple_summation_model_by_df, \
+    create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
+    create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
+    create_simple_summation_model_lists_with_files_info
 
 import legion.serving.pyserve as pyserve
 
@@ -69,53 +67,77 @@ class TestModelApiEndpoints(unittest2.TestCase):
     def test_model_info_with_df(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
-            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID))
+            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID,
+                                                                  model_version=self.MODEL_VERSION))
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertTrue('version' in data, 'Cannot find version field')
-            self.assertTrue('use_df' in data, 'Cannot find use_df field')
-            self.assertTrue('input_params' in data, 'Cannot find input_params field')
+            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_version', data, 'Cannot find version field')
+            self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
-            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
-            self.assertEqual(data['use_df'], True, 'Incorrect model use_df field')
-            self.assertDictEqual(data['input_params'],
-                                 {'b': {'numpy_type': 'int64', 'type': 'Integer'},
-                                  'a': {'numpy_type': 'int64', 'type': 'Integer'}},
-                                 'Incorrect model input_params')
+            self.assertIn('endpoints', data, 'Cannot find endpoints info field')
+            self.assertIn('default', data['endpoints'], 'Cannot find default endpoint')
+
+            endpoint = data['endpoints']['default']
+
+            self.assertIn('use_df', endpoint, 'Cannot find use_df field')
+            self.assertIn('input_params', endpoint, 'Cannot find input_params field')
+
+            self.assertEqual(endpoint['use_df'], True, 'Incorrect model use_df field')
+            self.assertEqual(endpoint['input_params'],
+                             {'b': {'numpy_type': 'int64', 'type': 'Integer'},
+                              'a': {'numpy_type': 'int64', 'type': 'Integer'}},
+                             'Incorrect model input_params')
 
     def test_model_info_with_typed_columns(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_by_types) as model:
-            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID))
+            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID,
+                                                                  model_version=self.MODEL_VERSION))
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertTrue('version' in data, 'Cannot find version field')
-            self.assertTrue('use_df' in data, 'Cannot find use_df field')
-            self.assertTrue('input_params' in data, 'Cannot find input_params field')
+            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_version', data, 'Cannot find version field')
+            self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
-            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
-            self.assertEqual(data['use_df'], False, 'Incorrect model use_df field')
-            self.assertDictEqual(data['input_params'],
-                                 {'b': {'numpy_type': 'int32', 'type': 'Integer'},
-                                  'a': {'numpy_type': 'int32', 'type': 'Integer'}},
-                                 'Incorrect model input_params')
+            self.assertIn('endpoints', data, 'Cannot find endpoints info field')
+            self.assertIn('default', data['endpoints'], 'Cannot find default endpoint')
+
+            endpoint = data['endpoints']['default']
+
+            self.assertIn('use_df', endpoint, 'Cannot find use_df field')
+            self.assertIn('input_params', endpoint, 'Cannot find input_params field')
+
+            self.assertEqual(endpoint['use_df'], False, 'Incorrect model use_df field')
+            self.assertEqual(endpoint['input_params'],
+                             {'b': {'numpy_type': 'int32', 'type': 'Integer'},
+                              'a': {'numpy_type': 'int32', 'type': 'Integer'}},
+                             'Incorrect model input_params')
 
     def test_model_info_with_untyped_columns(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_untyped) as model:
-            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID))
+            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID,
+                                                                  model_version=self.MODEL_VERSION))
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertTrue('version' in data, 'Cannot find version field')
-            self.assertTrue('use_df' in data, 'Cannot find use_df field')
-            self.assertTrue('input_params' in data, 'Cannot find input_params field')
+            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_version', data, 'Cannot find version field')
+            self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
-            self.assertEqual(data['version'], self.MODEL_VERSION, 'Incorrect model version')
-            self.assertEqual(data['use_df'], False, 'Incorrect model use_df field')
-            self.assertEqual(data['input_params'], False, 'Incorrect model input_params')
+            self.assertIn('endpoints', data, 'Cannot find endpoints info field')
+            self.assertIn('default', data['endpoints'], 'Cannot find default endpoint')
+
+            endpoint = data['endpoints']['default']
+
+            self.assertIn('use_df', endpoint, 'Cannot find use_df field')
+            self.assertIn('input_params', endpoint, 'Cannot find input_params field')
+
+            self.assertEqual(endpoint['use_df'], False, 'Incorrect model use_df field')
+            self.assertEqual(endpoint['input_params'], False, 'Incorrect model input_params')
 
     def test_model_invoke_summation_with_df(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
@@ -123,7 +145,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.get(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID) + '?a={}&b={}'.format(a, b))
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                      model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
+            response = model.client.get(url)
             result = self._parse_json_response(response)
 
             self.assertIsInstance(result, dict, 'Result not a dict')
@@ -135,12 +159,36 @@ class TestModelApiEndpoints(unittest2.TestCase):
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.post(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID) + '?a={}'.format(a),
-                                         data={'b': b})
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                      model_version=self.MODEL_VERSION) + '?a={}'.format(a)
+            response = model.client.post(url, data={'b': b})
             result = self._parse_json_response(response)
 
             self.assertIsInstance(result, dict, 'Result not a dict')
             self.assertDictEqual(result, {'x': a + b})
+
+    def test_model_not_found_page(self):
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+
+            with unittest.mock.patch('legion.model.client.ModelClient.info_url',
+                                     new_callable=unittest.mock.PropertyMock) as mock:
+                with self.assertRaises(Exception) as raised_exception:
+                    mock.return_value = 'wrong_url'
+                    model.model_client.info()
+
+            self.assertIn('not found', str(raised_exception.exception))
+
+    def test_model_invoke_summation_in_batch_mode(self):
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            parameters = [{'a': randint(1, 20), 'b': randint(2, 50)} for _ in range(10)]
+            expected_answer = [{'x': pair['a'] + pair['b']} for pair in parameters]
+
+            response = model.model_client.batch(parameters)
+
+            self.assertIsInstance(response, list, 'Result is not a list')
+            self.assertListEqual(response, expected_answer, 'Invalid answer')
 
     def test_model_invoke_summation_with_df_and_files(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
@@ -148,7 +196,8 @@ class TestModelApiEndpoints(unittest2.TestCase):
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.post(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID),
+            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                                             model_version=self.MODEL_VERSION),
                                          data={
                                              'a': (BytesIO(str(a).encode('utf-8')), 'random file name a.txt'),
                                              'b': (BytesIO(str(b).encode('utf-8')), 'random file name b.txt')
@@ -164,7 +213,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.get(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID) + '?a={}&b={}'.format(a, b))
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                      model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
+            response = model.client.get(url)
             result = self._parse_json_response(response)
 
             self.assertIsInstance(result, dict, 'Result not a dict')
@@ -176,7 +227,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.get(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID) + '?a={}&b={}'.format(a, b))
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                      model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
+            response = model.client.get(url)
             result = self._parse_json_response(response)
 
             self.assertIsInstance(result, dict, 'Result not a dict')
@@ -193,17 +246,41 @@ class TestModelApiEndpoints(unittest2.TestCase):
             }
 
             payload_string = '?' + urllib.parse.urlencode(payload)
-            response = model.client.get(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID)
+            response = model.client.get(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                                            model_version=self.MODEL_VERSION)
                                         + payload_string)
             result = self._parse_json_response(response)
 
-            self.assertIsInstance(result, dict, 'Result not a dict')
+            self.assertIsInstance(result, dict, 'Result is not a dict')
             self.assertDictEqual(result, {'keys': 'var_a,var_b,var_c', 'sum': sum(payload.values())})
+
+    def test_model_invoke_summation_with_untyped_columns_and_lists_in_batch_mode(self):
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_lists) as model:
+            payloads = [
+                {
+                    'movie': ['Titanic', 'Avatar', 'Pulp_Fiction'],
+                    'rate': [4, 3, 5]
+                },
+                {
+                    'movie': ['Titanic', 'Avatar', 'Pulp_Fiction'],
+                    'rate': [3, 2, 1]
+                }
+            ]
+
+            expected_result = [
+                {'worth': 'Avatar', 'best': 'Pulp_Fiction'},
+                {'worth': 'Pulp_Fiction', 'best': 'Titanic'}
+            ]
+
+            result = model.model_client.batch(payloads)
+
+            self.assertIsInstance(result, list, 'Result not a list')
+            self.assertListEqual(result, expected_result)
 
     def test_model_invoke_summation_with_untyped_columns_and_lists(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_lists) as model:
-
             payload = {
                 'movies': ['Titanic', 'Avatar', 'Pulp_Fiction'],
                 'ratings': [4, 3, 5]
@@ -213,7 +290,8 @@ class TestModelApiEndpoints(unittest2.TestCase):
             payload_string += '&'.join('movie[]=' + str(value) for value in payload['movies'])
             payload_string += '&' + '&'.join('rate[]=' + str(value) for value in payload['ratings'])
 
-            response = model.client.get(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID)
+            response = model.client.get(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                                            model_version=self.MODEL_VERSION)
                                         + payload_string)
             result = self._parse_json_response(response)
 
@@ -237,7 +315,9 @@ class TestModelApiEndpoints(unittest2.TestCase):
 
                 files.add('file[]', (BytesIO(str(content).encode('utf-8')), file_name))
 
-            response = model.client.post(pyserve.SERVE_INVOKE.format(model_id=self.MODEL_ID), data=files)
+            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                                             model_version=self.MODEL_VERSION),
+                                         data=files)
             result = self._parse_json_response(response)
 
             self.assertIsInstance(result, dict, 'Result not a dict')

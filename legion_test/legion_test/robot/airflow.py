@@ -19,7 +19,9 @@ Robot test library - airflow
 import re
 import requests
 from requests.exceptions import RequestException
-
+import logging
+import time
+from legion_test.robot.dex_client import get_session_cookies
 
 class Airflow:
     """
@@ -34,27 +36,43 @@ class Airflow:
 
     _TIMEOUT_SEC = 10
 
+    logger = logging.getLogger(__name__)
+
     def __init__(self):
         """
         Init client
         """
         self.root_url = None  # Airflow Rest API Base url, type: str
 
-    def connect_to_airflow(self, root_url):
+    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3):
         """
         Connect to Airflow Rest API
 
         :param root_url: Airflow Web root url.
         :type root_url: str
+        :param num_attempts: Number of attempts to connect to Rest API.
+        :type num_attempts: int
+        :param pause_sec: Pause length in seconds between attempts to connect to Rest API.
+        :type pause_sec: int
+        :raise RequestException: on unavailable Rest API: if HTTP code 200 is not received
         :return None
         """
         if not root_url:
             raise Exception('"domain" parameter is required')
 
         self.root_url = root_url
-
-        if self.get_airflow_version().get('status', '-') != 'OK':
-            raise RequestException('Rest API is not available %s' % self.base_url)
+        e = None
+        for i in range(num_attempts):
+            try:
+                response = self.get_airflow_version()
+            except RequestException as _e:
+                self.logger.debug("Caught exception while checking Rest API: %s", _e)
+                e = _e
+            else:
+                if response.get('status', '-') == 'OK':
+                    return response
+            time.sleep(pause_sec)
+        raise RequestException('Rest API is not available %s' % root_url, e)
 
     def _get(self, path, params=None, use_rest_api_root=True, **kwargs):
         """Sends a GET request.
@@ -69,11 +87,11 @@ class Airflow:
             url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
         else:
             url = (self.BASE_URL_TEMPLATE % self.root_url) + path
-        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, **kwargs)
+        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
         if response.status_code == 200:
             return response.json()
         else:
-            raise RequestException('HTTP Code %d for "GET %s "' % (response.status_code, path))
+            raise RequestException('HTTP Code %d for "GET %s "' % (response.status_code, url))
 
     def get_airflow_version(self):
         """Displays the version of Airflow you're using

@@ -67,6 +67,7 @@ matrix-project:1.11
 maven-plugin:2.17
 mercurial:2.1
 momentjs:1.1.1
+oic-auth:1.4
 pam-auth:1.3
 parameterized-trigger:2.35.2
 pipeline-build-step:2.5.1

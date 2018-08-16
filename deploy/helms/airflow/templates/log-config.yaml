@@ -95,14 +95,14 @@ data:
     REMOTE_HANDLERS = {
         's3': {
             'task': {
-                'class': 'airflow.utils.log.s3_task_handler.S3TaskHandler',
+                'class': 'legion_airflow.hooks.s3_handler.S3TaskHandlerWithIAM',
                 'formatter': 'airflow',
                 'base_log_folder': os.path.expanduser(BASE_LOG_FOLDER),
                 's3_log_folder': REMOTE_BASE_LOG_FOLDER,
                 'filename_template': FILENAME_TEMPLATE,
             },
             'processor': {
-                'class': 'airflow.utils.log.s3_task_handler.S3TaskHandler',
+                'class': 'legion_airflow.hooks.s3_handler.S3TaskHandlerWithIAM',
                 'formatter': 'airflow',
                 'base_log_folder': os.path.expanduser(PROCESSOR_LOG_FOLDER),
                 's3_log_folder': REMOTE_BASE_LOG_FOLDER,

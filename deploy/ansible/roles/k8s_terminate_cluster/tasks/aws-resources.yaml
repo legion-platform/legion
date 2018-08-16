@@ -1,0 +1,54 @@
+---
+#######################
+# Delete AWS resources
+#######################
+
+# Delete Airflow RDS 
+- name: Get RDS instance status
+  shell: "aws --region {{ aws_region }} rds  describe-db-instances --db-instance-identifier {{ env_name }}-airflow-rds"
+  register: rds_instance_status
+  changed_when: "rds_instance_status.rc != 255"
+  ignore_errors: true
+
+- name: Delete Airflow RDS instance
+  rds:
+    command: delete
+    instance_name: "{{ env_name }}-airflow-rds"
+    region: "{{ aws_region }}"
+    wait: yes
+    wait_timeout: 600
+  when: rds_instance_status.changed
+
+- name: Ensure RDS instance is deleted
+  pause:
+    seconds: 5
+  when: rds_instance_status.changed
+
+- name: Delete Airflow RDS subnet group
+  rds_subnet_group:
+    name: "{{env_name}}-airflow-rds-subnets"
+    state: absent
+    region: "{{ aws_region }}"
+
+- name: Delete Airflow RDS Security Group
+  ec2_group:
+    region: "{{ aws_region }}"
+    name: "{{env_name}}-airflow-rds-sg"
+    state: absent
+
+# Delete Airflow EFS
+- name: Delete Airflow EFS
+  efs:
+    state: absent
+    name:  "{{env_name}}-airflow-efs"
+    region: "{{ aws_region }}"
+
+- name: Ensure EFS is deleted
+  pause:
+    seconds: 5
+
+- name: Delete Airflow EFS Security Group
+  ec2_group:
+    region: "{{ aws_region }}"
+    name: "{{env_name}}-airflow-efs-sg"
+    state: absent

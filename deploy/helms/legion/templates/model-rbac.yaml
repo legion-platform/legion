@@ -1,0 +1,29 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "model"
+rules:
+- apiGroups: [""] # core API group
+  resources: ["configmaps", "secrets"]
+  verbs: ["watch", "get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "model"
+subjects:
+- kind: ServiceAccount
+  namespace: {{ .Release.Namespace }}
+  name: "model"
+roleRef:
+  kind: Role
+  name: "model"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "model"
+
+
+

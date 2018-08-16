@@ -7,7 +7,7 @@ node {
             result = build job: params.BuildLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     booleanParam(name: 'PushDockerImages', value: true),
-                    booleanParam(name: 'EnableDockerCache', value: false),
+                    booleanParam(name: 'EnableDockerCache', value: true),
                     string(name: 'PyPiRepository', value: params.PyPiRepository),
                     string(name: 'PyPiDistributionTargetName', value: params.PyPiDistributionTargetName),
                     string(name: 'DockerRegistry', value: params.DockerRegistry),
@@ -77,6 +77,7 @@ node {
                     string(name: 'Profile', value: params.Profile),
                     string(name: 'BaseVersion', value: baseVersion),
                     string(name: 'LocalVersion', value: localVersion),
+                    string(name: 'TestsTags', value: params.TestTags),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
                     booleanParam(name: 'UseRegressionTests', value: true),
@@ -115,8 +116,4 @@ node {
         throw e
     }
 
-    finally {
-        // Success or failure, always send notifications
-        currentBuild.result = "FAILED"
-    }
 }

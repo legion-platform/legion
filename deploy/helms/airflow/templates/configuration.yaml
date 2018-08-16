@@ -15,6 +15,9 @@ filename_template = {{ .Values.core.logging_filename_template }}
 # The folder where airflow should store its log files. This location
 base_log_folder = /home/airflow/logs
 
+# S3 bucket path for data storage
+s3_bucket_path = {{ .Values.storage.s3_bucket_path }}
+
 # Airflow can store logs remotely in AWS S3 or Google Cloud Storage. Users
 # must supply a remote location URL (starting with either 's3://...' or
 # 'gs://...') and an Airflow connection id that provides access to the storage
@@ -98,6 +101,9 @@ web_server_port = 8080
 # The time the gunicorn webserver waits before timing out on a worker
 web_server_worker_timeout = {{ .Values.webserver.web_server_worker_timeout }}
 
+# Number of seconds to wait before refreshing a batch of workers.
+worker_refresh_interval = {{ .Values.webserver.worker_refresh_interval }}
+
 # Secret key used to run your flask app
 secret_key = {{ .Values.secrets.flask }}
 
@@ -113,6 +119,18 @@ expose_config = {{ .Values.webserver.expose_config }}
 
 # Set to true to turn on authentication : http://pythonhosted.org/airflow/installation.html#web-authentication
 authenticate = {{ .Values.webserver.authenticate }}
+
+# Authentication backend (python module), should be non-empty if authentication is On
+auth_backend = {{ .Values.webserver.auth_backend }}
+
+# Group name in Dex, which indicates Super Admin user.
+dex_group_admin = {{ .Values.webserver.dex_group_admin }}
+
+# Group name in Dex, which indicates Data Profiler user.
+dex_group_profiler = {{ .Values.webserver.dex_group_profiler }}
+
+# Email of an user, that is defined in Dex as Static user and used for service purposes.
+dex_admin_email = {{ .Values.webserver.dex_admin_email }}
 
 # Filter the list of dags by owner name (requires authentication to be enabled)
 filter_by_owner = {{ .Values.webserver.filter_by_owner }}
@@ -131,6 +149,12 @@ smtp_user = {{ .Values.smtp.smtp_user }}
 smtp_port = {{ .Values.smtp.smtp_port }}
 smtp_password = {{ .Values.smtp.smtp_password }}
 smtp_mail_from = {{ .Values.smtp.smtp_mail_from }}
+
+[slack]
+# This section only applies if you are using slack as an email_backend to receive notifications
+channel = {{ .Values.slack.channel }}
+username = {{ .Values.slack.username }}
+token = {{ .Values.slack.token }}
 
 [celery]
 # This section only applies if you are using the CeleryExecutor in
@@ -241,4 +265,3 @@ type: Opaque
 data:
   airflow.cfg: |-
     {{ include "airflow-config" . | b64enc }}
-

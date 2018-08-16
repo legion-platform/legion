@@ -19,6 +19,7 @@ Robot test library - utils
 
 import socket
 import requests
+import time
 
 
 class Utils:
@@ -101,3 +102,66 @@ class Utils:
         for value in values:
             result -= value
         return result
+
+    @staticmethod
+    def parse_edi_inspect_columns_info(edi_output):
+        """
+        Parse EDI inspect output
+
+        :param edi_output: EDI stdout
+        :type edi_output: str
+        :return: list[list[str]] -- parsed EDI output
+        """
+        lines = edi_output.splitlines()
+        if len(lines) < 2:
+            return []
+
+        return [[item.strip() for item in line.split('|')] for line in lines[1:]]
+
+    @staticmethod
+    def find_model_information_in_edi(parsed_edi_output, model_id, model_version=None):
+        """
+        Get specific model EDI output
+
+        :param parsed_edi_output: parsed EDI output
+        :type parsed_edi_output: list[list[str]]
+        :param model_id: model id
+        :type model_id: str
+        :param model_version: (Optional) model version
+        :type model_version: str
+        :return: list[str] -- parsed EDI output for specific model
+        """
+        founded = [info for info in parsed_edi_output if info[0] == model_id and model_version in (None, info[2])]
+        if not founded:
+            raise Exception('Info about model {!r} v {!r} not found'.format(model_id, model_version))
+
+        return founded[0]
+
+    @staticmethod
+    def check_valid_http_response(url):
+        """
+        Check if model return valid code for get request
+
+        :param url: url with model_id for checking
+        :type url: str
+        :return:  str -- response text
+        """
+        tries = 6
+        error = None
+        for i in range(tries):
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    return response.text
+                elif i >= 5:
+                    raise Exception('Returned wrong status code: {}'.format(response.status_code))
+                elif response.status_code >= 400 or response.status_code < 200:
+                    print('Response code = {}, sleep and try again'.format(response.status_code))
+                    time.sleep(3)
+            except requests.exceptions.Timeout as e:
+                error = e
+                time.sleep(3)
+        if error:
+            raise error
+        else:
+            raise Exception('Unexpected case happen!')
