@@ -6,7 +6,7 @@ import smart_open
 import json
 import boto3
 
-from airflow.exceptions import AirflowException, AirflowConfigException
+from airflow.exceptions import AirflowConfigException
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
@@ -38,30 +38,25 @@ class S3Hook(BaseHook):
         self.extras = self.connection.extra_dejson
         self.aws_access_key_id = self.extras.get('aws_access_key_id', None)
         self.aws_secret_access_key = self.extras.get('aws_secret_access_key', None)
-        self.key_prefix = self.extras.get('key_prefix', '')
         try:
-            self.bucket_prefix = self.extras['bucket_prefix']
-        except KeyError:
-            raise AirflowException('Connection provides no bucket_prefix')
-        try:
-            self.bucket_path = conf.get('core', 's3_bucket_path')
+            self.s3_root_path = conf.get('core', 's3_root_path')
         except AirflowConfigException:
-            self.bucket_path = ''
+            self.s3_root_path = ''
+        if self.s3_root_path.startswith('s3://'):
+            self.s3_root_path = self.s3_root_path[5:]
 
     def _get_uri(self, bucket, key):
         """
         Create an URI based on passed bucket, key and Airflow configuration.
-        :param bucket: S3 Bucket name
-        :param key: Path inside S3 bucket
+        :param bucket: S3 folder
+        :param key: Path inside S3 bucket (
+            if key is a full path it is simply returned)
         :return: URI, that contains protocol, bucket, path, e.g. s3://bucket/k1/k2/k3_file
         """
         if key.startswith('s3://'):
             return key
-        path = [
-            self.bucket_prefix, bucket,
-            self.key_prefix, self.bucket_path, key
-        ]
-        return 's3://' + '/'.join(name.strip('/') for name in path if name)
+        path = [self.s3_root_path or bucket, key]
+        return 's3://' + '/'.join(name.strip('/') for name in path)
 
     def open_file(self, bucket: str, key: str, mode: str = 'rb', encoding: str = 'utf-8'):
         """
@@ -206,19 +201,22 @@ class S3Hook(BaseHook):
         s3 = session.resource(service_name='s3',
                               aws_access_key_id=self.aws_access_key_id,
                               aws_secret_access_key=self.aws_secret_access_key)
-        bucket_from = s3.Bucket(self.bucket_prefix + src_bucket)
-        bucket_to = s3.Bucket(self.bucket_prefix + dest_bucket)
+        bucket_from = s3.Bucket(src_bucket)
+        bucket_to = s3.Bucket(dest_bucket)
         for obj in bucket_from.objects.filter():
             key_from = obj.key
-            if key_from.startswith(self.key_prefix + self.bucket_path + src_key):
-                source = {'Bucket': self.bucket_prefix + src_bucket, 'Key': key_from}
-                key_to = key_from.replace(
-                    self.key_prefix + self.bucket_path + src_key,
-                    self.key_prefix + self.bucket_path + dest_key
-                )
+            if key_from.startswith(src_key):
+                source = {'Bucket': src_bucket, 'Key': key_from}
+                key_to = key_from.replace(src_key, dest_key)
                 dist_obj = bucket_to.Object(key_to)
-                self.logger.info('Copying from {}:{} to {}:{}'
-                                 .format(self.bucket_prefix + src_bucket, key_from, dest_bucket, key_to))
+                print('Copying from {}:{} to {}:{}'.format(
+                    src_bucket, key_from, dest_bucket, key_to
+                ))
+                self.logger.info(
+                    'Copying from {}:{} to {}:{}'.format(
+                        src_bucket, key_from, dest_bucket, key_to
+                    )
+                )
                 dist_obj.copy(source)
 
     def load_file(self, filename, key, bucket_name=None, replace=False, encrypt=False):

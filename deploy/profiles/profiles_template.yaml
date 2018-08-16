@@ -70,7 +70,7 @@ airflow_rds_shape: ~                                        # shape for Airflow 
 airflow_rds_size: ~                                                   # size of Airflow RDS in GB
 
 # Airflow DAGs configuration [?]
-airflow_s3_url: ~                              # Airflow storage location at S3
+airflow_s3_url: ~                              # S3 root url for storing/reading Airflow data, it should contain bucket name and key. E.g.: airflow_s3_url: "s3://bucket/data/"
 airflow_expected_output: ~                                # Configuration for Airflow DAGs
 
 # Addons configuration

@@ -64,7 +64,7 @@ storage:
   dags_volume_pvc: "{{ airflow_dags_pvc }}"
   airflow_dags_directory: "{{ airflow_dags_dir }}"
   pvc_name: "{{ airflow_dags_pvc }}"
-  s3_bucket_path: "{{ enclave }}/"
+  s3_root_path: "{{ airflow_s3_url }}"
 
 ingress:
   enabled: true
