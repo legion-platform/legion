@@ -61,7 +61,7 @@ class S3Hook(BaseHook):
 
     def _parse_s3_url(self, s3url):
         """
-        Parses any passed s3url into bucket and key pair
+        Parse any passed s3url into bucket and key pair
         :param s3url: s3 storage absolute path
         :return: tuple (bucket, key)
         """

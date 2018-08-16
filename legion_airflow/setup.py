@@ -22,7 +22,7 @@ PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def extract_requirements(filename):
     """
-    Extracts requirements from a pip formatted requirements file.
+    Extract requirements from a pip formatted requirements file.
     :param filename: str path to file
     :return: list of package names as strings
     """
@@ -49,7 +49,7 @@ def extract_version(filename):
 
 setup(name='legion_airflow',
       version=extract_version(
-          os.path.join(PACKAGE_ROOT_PATH, 'legion_airflow','version.py')),
+          os.path.join(PACKAGE_ROOT_PATH, 'legion_airflow', 'version.py')),
       description='External library for airflow',
       url='https://github.com/legion-platform/legion',
       author='Legion team',
