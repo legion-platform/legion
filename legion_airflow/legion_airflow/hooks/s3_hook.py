@@ -10,6 +10,7 @@ from airflow.exceptions import AirflowConfigException
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
+from urllib.parse import urlparse
 
 
 class S3Hook(BaseHook):
@@ -57,6 +58,17 @@ class S3Hook(BaseHook):
             return key
         path = [self.s3_root_path or bucket, key]
         return 's3://' + '/'.join(name.strip('/') for name in path)
+
+    def _parse_s3_url(self, s3url):
+        """
+        Parses any passed s3url into bucket and key pair
+        :param s3url: s3 storage absolute path
+        :return: tuple (bucket, key)
+        """
+        parsed_url = urlparse(s3url)
+        bucket_name = parsed_url.netloc
+        key = parsed_url.path.strip('/')
+        return bucket_name, key
 
     def open_file(self, bucket: str, key: str, mode: str = 'rb', encoding: str = 'utf-8'):
         """
@@ -195,6 +207,11 @@ class S3Hook(BaseHook):
         :type dest_key: str
         :return: None
         """
+        src_bucket, src_key = self._parse_s3_url(
+            self._get_uri(src_bucket, src_key))
+        dest_bucket, dest_key = self._parse_s3_url(
+            self._get_uri(dest_bucket, dest_key))
+
         session = boto3.Session(profile_name=None,
                                 aws_access_key_id=self.aws_access_key_id,
                                 aws_secret_access_key=self.aws_secret_access_key)
@@ -209,9 +226,6 @@ class S3Hook(BaseHook):
                 source = {'Bucket': src_bucket, 'Key': key_from}
                 key_to = key_from.replace(src_key, dest_key)
                 dist_obj = bucket_to.Object(key_to)
-                print('Copying from {}:{} to {}:{}'.format(
-                    src_bucket, key_from, dest_bucket, key_to
-                ))
                 self.logger.info(
                     'Copying from {}:{} to {}:{}'.format(
                         src_bucket, key_from, dest_bucket, key_to
