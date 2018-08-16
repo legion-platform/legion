@@ -19,6 +19,27 @@ import unittest2
 
 
 class TestUtilsTextOperations(unittest2.TestCase):
+    def test_name_normalization(self):
+        examples = (
+            ('Test name!', 'Test-name'),
+            ('Test-)1+name!', 'Test-1-name'),
+            ('abc-_ .', 'abc---.'),
+        )
+
+        for example, valid_answer in examples:
+            self.assertEqual(utils.normalize_name(example), valid_answer)
+
+    def test_name_normalization_dns_1035(self):
+        examples = (
+            ('Test name!', 'Test-name'),
+            ('Test-)1+name!', 'Test-1-name'),
+            ('abc-_ .', 'abc----'),
+        )
+
+        for example, valid_answer in examples:
+            self.assertEqual(utils.normalize_name(example, dns_1035=True),
+                             valid_answer)
+
     def test_string_to_bool(self):
         examples = (
             ('true', True),

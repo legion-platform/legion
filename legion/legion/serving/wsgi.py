@@ -16,13 +16,7 @@
 #
 """
 Entry point for WSGI server
-Example of usage: gunicorn legion.wsgi:application -k sync
 """
-
-try:
-    import docker_bootup
-except ImportError:
-    pass
 
 from legion.logging import redirect_to_stdout, set_log_level
 from legion.serving.pyserve import init_application

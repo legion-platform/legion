@@ -16,21 +16,29 @@
 """
 legion utils functional
 """
-
+import datetime
+import contextlib
 import os
+import getpass
+import distutils.dir_util
 import re
 import shutil
 import socket
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 import legion.config
+import legion.containers.headers
 
 import docker
 import requests
 import requests.auth
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+
+KUBERNETES_STRING_LENGTH_LIMIT = 63
 
 
 def render_template(template_name, values=None):
@@ -203,17 +211,32 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 
-def normalize_name(name):
+def normalize_name(name, dns_1035=False, kubernetes_compatible=False):
     """
     Normalize name
 
     :param name: name to normalize
     :type name: str
+    :param dns_1035: (Optional) use DNS-1035 format, by default False
+    :type dns_1035: bool
+    :param kubernetes_compatible: (Optional) fit into kubernetes length limitations
+    :type kubernetes_compatible: bool
     :return: str -- normalized name
     """
-    for char in ' ', '_', '+':
+    invalid_delimiters = ' ', '_', '+'
+    invalid_chars = '[^a-zA-Z0-9\-\.]'
+    if dns_1035:
+        invalid_chars = '[^a-zA-Z0-9\-]'
+        invalid_delimiters = ' ', '_', '+', '.'
+
+    for char in invalid_delimiters:
         name = name.replace(char, '-')
-    return re.sub('[^a-zA-Z0-9\-\.]', '', name)
+
+    value = re.sub(invalid_chars, '', name)
+    if kubernetes_compatible:
+        value = value[:KUBERNETES_STRING_LENGTH_LIMIT]
+
+    return value
 
 
 def is_local_resource(path):
@@ -275,6 +298,32 @@ def _get_auth_credentials_for_external_resource():
     return None
 
 
+def copy_file(source_file, target_file):
+    """
+    Copy file from one location to another
+
+    :param source_file: source file location
+    :type source_file: str
+    :param target_file: target file location
+    :type target_file: str
+    :return: None
+    """
+    shutil.copyfile(source_file, target_file)
+
+
+def copy_directory_contents(source_directory, target_directory):
+    """
+    Copy all files from source directory to targer directory
+
+    :param source_directory: source directory
+    :type source_directory: str
+    :param target_directory: target directory
+    :type target_directory: str
+    :return: None
+    """
+    distutils.dir_util.copy_tree(source_directory, target_directory)
+
+
 def save_file(temp_file, target_file, remove_after_delete=False):
     """
     Upload local file to external resource
@@ -291,7 +340,7 @@ def save_file(temp_file, target_file, remove_after_delete=False):
         if is_local_resource(target_file):
             if os.path.abspath(temp_file) != os.path.abspath(target_file):
                 shutil.copy2(temp_file, target_file)
-            result_path = target_file
+            result_path = os.path.abspath(target_file)
         else:
             url = normalize_external_resource_path(target_file)
 
@@ -342,6 +391,28 @@ def download_file(target_file):
                 file.write(chunk)
 
     return os.path.abspath(temp_file)
+
+
+@contextlib.contextmanager
+def extract_archive_item(path, subpath):
+    """
+    Extract item from archive using context manager to temporary directory
+
+    :param path: path to archive
+    :type path: str
+    :param subpath: path to file in archive
+    :type subpath: str
+    :return: str -- path to temporary extracted file
+    """
+    with TemporaryFolder() as temp_directory:
+        try:
+            with zipfile.ZipFile(path, 'r') as stream:
+                target_path = os.path.join(temp_directory.path, subpath)
+                extracted_path = stream.extract(subpath, target_path)
+
+                yield extracted_path
+        except zipfile.BadZipFile:
+            raise Exception('File {} is not a archive'.format(path))
 
 
 class ExternalFileReader:
@@ -441,8 +512,21 @@ def send_header_to_stderr(header, value):
     :type value: str
     :return: None
     """
-    message = 'X-Legion-%s:%s' % (header, value)
+    message = '{}{}:{}'.format(legion.containers.headers.STDERR_PREFIX, header, value)
     print(message, file=sys.__stderr__, flush=True)
+
+
+def model_properties_storage_name(model_id, model_version):
+    """
+    Construct properties storage name
+
+    :param model_id: model ID
+    :type model_id: str
+    :param model_version: model version
+    :type model_version: str
+    :return: str -- name of properties storage
+    """
+    return 'model-{}-{}'.format(model_id, model_version)
 
 
 def string_to_bool(value):
@@ -457,3 +541,34 @@ def string_to_bool(value):
         return value
 
     return value.lower() in ['true', '1', 't', 'y', 'yes']
+
+
+def deduce_model_file_name(model_id, model_version):
+    """
+    Get model file name
+
+    :param model_id: ID of model
+    :type model_id: str
+    :param model_version: version of model
+    :type model_version: str
+    :return: str -- auto deduced file name
+    """
+    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+
+    valid_user_names = [os.getenv(env) for env in legion.config.MODEL_NAMING_UID_ENV if os.getenv(env)]
+    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
+
+    commit_id = get_git_revision(os.getcwd())
+    if not commit_id:
+        commit_id = '0000'
+
+    file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(model_version), date_string, user_id, commit_id)
+
+    if string_to_bool(os.getenv(*legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
+        return '///%s' % file_name
+
+    default_prefix = os.getenv(*legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX)
+    if default_prefix:
+        return os.path.join(default_prefix, file_name)
+
+    return file_name

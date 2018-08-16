@@ -13,21 +13,36 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM library/ubuntu:16.04
+FROM ubuntu:16.04
 
-ADD requirements.txt /root/requirements.txt
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Theano requires C++ compiler to produce effective code
-RUN apt-get update && apt-get install -y --no-install-recommends python3 \
-    g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
-    libtiff5-dev libjpeg8-dev zlib1g-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk \
-    libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-    tcl8.6-dev tk8.6-dev python-tk python3-tk
+# Add Python3.6 repository
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa 
 
-RUN pip3 install "numpy>=1.11.2"
+RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
+    g++ apt-utils build-essential python3.6-dev python3-pip python3-setuptools libpython3.6-dev \
+    apt-transport-https file wget curl git libtiff5-dev libjpeg8-dev zlib1g-dev \
+    tcl8.6-dev tk8.6-dev python-tk python3-tk libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev \
+    libfribidi-dev tcl8.6-dev tk8.6-dev python-tk python3-tk libpcre3 libpcre3-dev locales && \
+    apt-get clean && apt-get autoclean
 
-RUN pip3 install --upgrade pip==9.0.3 \
-    && pip3 install -r /root/requirements.txt
+# setup locale
+RUN locale-gen en_CA.UTF-8 && update-locale LANG=en_CA.UTF-8
+COPY default_locale /etc/default/locale
+RUN chmod 0755 /etc/default/locale
+ENV LC_ALL=en_CA.UTF-8
+ENV LANG=en_CA.UTF-8
+ENV LANGUAGE=en_CA.UTF-8
+
+RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
+
+COPY requirements.txt /root/requirements.txt
+
+ARG pip_extra_index_params=""
+
+RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 numpy==1.14.3
+RUN pip3 install --disable-pip-version-check $pip_extra_index_params --no-cache-dir -r /root/requirements.txt
 
 WORKDIR /app

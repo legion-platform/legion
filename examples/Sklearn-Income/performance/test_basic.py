@@ -38,7 +38,7 @@ class ModelTaskSet(TaskSet):
         self._model_client.invoke(**dataset)
 
     def on_start(self):
-        self._model_client = ModelClient('income', use_relative_url=True, http_client=self.client)
+        self._model_client = ModelClient('income', '1.1', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):

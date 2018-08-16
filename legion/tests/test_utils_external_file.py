@@ -16,15 +16,25 @@
 from __future__ import print_function
 
 import os
+import sys
 import random
 import tempfile
+import logging
 from unittest.mock import patch
 
 import legion.config
-import legion.io
 import legion.utils as utils
+import legion.containers.docker
 import requests.auth
 import unittest2
+
+# Extend PYTHONPATH in order to import test tools and models
+sys.path.extend(os.path.dirname(__file__))
+
+from legion_test_utils import LegionTestContainer
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def patch_env_host_user_password(host='localhost', protocol='http', user='', password=''):
@@ -136,11 +146,14 @@ class TestUtilsExternalFile(unittest2.TestCase):
         self.assertTrue(os.path.exists(target_file_path))
 
     def test_external_file_save_http_bin(self):
-        target_resource = 'https://httpbin.org/put'
+        httpbin_image = "kennethreitz/httpbin"
+        LOGGER.info('Starting httpbin container from {} image...'.format(httpbin_image))
 
-        result_path = utils.save_file(self._temp_file_path, target_resource)
+        with LegionTestContainer(image=httpbin_image, port=80) as httpbin_container:
+            target_resource = 'http://localhost:{}/put'.format(httpbin_container.host_port)
+            result_path = utils.save_file(self._temp_file_path, target_resource)
 
-        self.assertEqual(target_resource, result_path)
+            self.assertEqual(target_resource, result_path)
 
     def test_external_file_save_by_env(self):
         target_resource = os.getenv('TEST_SAVE_URL')

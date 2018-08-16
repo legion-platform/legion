@@ -1,0 +1,6 @@
+data:
+  key: value
+
+kv:
+  key1:
+    name: value1

@@ -1,9 +1,5 @@
 namespace: "default"
 deployment: "aaa"
-consul:
-  public: ""
-  domain: "legion-consul.default.svc.cluster.local"
-  port: 8500
 graphite:
   domain: "legion-graphite.default.svc.cluster.local"
   port: 8125

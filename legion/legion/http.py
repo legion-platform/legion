@@ -18,11 +18,40 @@ Flask package
 """
 import functools
 import os
+import logging
+import urllib
 
 import legion.config
 import legion.utils
 
 import flask
+from requests.compat import urlencode
+from requests.utils import to_key_val_list
+from urllib.parse import parse_qs
+
+LOGGER = logging.getLogger(__name__)
+
+
+def encode_http_params(data):
+    """
+    Encode HTTP parameters to URL query string
+
+    :param data: data as text or tuple/list
+    :type data: str or bytes or tuple or list
+    :return: str -- encoded data
+    """
+    if isinstance(data, (str, bytes)):
+        return urlencode(data)
+    elif hasattr(data, '__iter__'):
+        result = []
+        for k, vs in to_key_val_list(data):
+            if vs is not None:
+                result.append(
+                    (k.encode('utf-8') if isinstance(k, str) else k,
+                     vs.encode('utf-8') if isinstance(vs, str) else vs))
+        return urlencode(result, doseq=True)
+    else:
+        raise ValueError('Invalid argument')
 
 
 def parse_multi_dict(multi_dict, map=None):
@@ -51,6 +80,40 @@ def parse_multi_dict(multi_dict, map=None):
     return result
 
 
+def parse_url_querystring(querystring_dict):
+    """
+    Parse URL query strings dictionaries like {'a': ['123'], 'b[]': ['one', 'two']}
+    to appropriate dictionaries ({'a': '123', 'b': ['one', 'two']})
+
+    :param querystring_dict: querystring dictionary
+    :type querystring_dict: dict
+    :return: dict -- parsed and flatted querystring dictionary
+    """
+    result = {}
+    for k in querystring_dict:
+        if k.endswith('[]'):
+            key = k[:-2]
+            result[key] = querystring_dict[k]
+        else:
+            result[k] = querystring_dict[k][0]
+    return result
+
+
+def parse_batch_request(input_request):
+    """
+    Parse request in batch mode with payload encoded in body
+
+    :param input_request: request object
+    :type input_request: :py:class:`Flask.request`
+    :return: list[dict] -- list of dicts with requested fields
+    """
+    if not input_request.data:
+        raise Exception('Request does not contain any data')
+
+    return [parse_url_querystring(parse_qs(line))
+            for line in input_request.data.decode('utf-8').split('\n')]
+
+
 def parse_request(input_request):
     """
     Produce a input dictionary from HTTP request (GET/POST fields, and Files)
@@ -75,10 +138,10 @@ def parse_request(input_request):
 
 def prepare_response(response):
     """
-    Produce an HTTP response from dict
+    Produce an HTTP response from dict/list
 
-    :param response: dict with data
-    :type response: dict[str, any]
+    :param response: dict/list with data
+    :type response: dict[str, any] or list[any]
     :return: bytes
     """
     return flask.jsonify(response)
@@ -93,19 +156,20 @@ def provide_json_response(method):
     """
     @functools.wraps(method)
     def decorated_function(*args, **kwargs):
+        code = 200
         try:
             response = method(*args, **kwargs)
-            code = 200
             if isinstance(response, bool):
                 response = {'status': response}
             elif not isinstance(response, dict) and not isinstance(response, list):
-                raise Exception('Unknown type returned from api call handler: %s' % type(response))
-        except legion.utils.EdiHTTPException as edi_http_exception:
-            response = {'error': True, 'message': edi_http_exception.message}
-            code = edi_http_exception.http_code
+                raise Exception('Wrong value returned from API handler')
         except Exception as exception:
-            response = {'error': True, 'message': str(exception)}
             code = 500
+            response = {'error': True,
+                        'exception': str(exception)}
+            LOGGER.exception('Exception during processing request for {}: {}'
+                             .format(method.__name__, exception),
+                             exc_info=exception)
 
         response = prepare_response(response)
         return flask.make_response(response, code)
@@ -243,17 +307,13 @@ def apply_env_args(application):
     apply_env_argument(application, legion.config.MODEL_ID[0])
     apply_env_argument(application, legion.config.MODEL_FILE[0])
 
-    apply_env_argument(application, legion.config.CONSUL_ADDR[0])
-    apply_env_argument(application, legion.config.CONSUL_PORT[0], cast=int)
-
     apply_env_argument(application, legion.config.LEGION_ADDR[0])
     apply_env_argument(application, legion.config.LEGION_PORT[0], cast=int)
-    apply_env_argument(application, legion.config.IP_AUTODISCOVER[0], legion.utils.string_to_bool)
 
     apply_env_argument(application, legion.config.DEBUG[0], legion.utils.string_to_bool)
-    apply_env_argument(application, legion.config.REGISTER_ON_CONSUL[0], legion.utils.string_to_bool)
 
-    apply_env_argument(application, legion.config.DEPLOYMENT[0])
+    apply_env_argument(application, legion.config.REGISTER_ON_GRAFANA[0], legion.utils.string_to_bool)
+
     apply_env_argument(application, legion.config.NAMESPACE[0])
 
     apply_env_argument(application, legion.config.LEGION_API_ADDR[0])

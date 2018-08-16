@@ -245,6 +245,7 @@ Bool = _Bool()
 Image = _Image()
 
 
+# TODO: Rename to LegionType
 class ColumnInformation:
     """
     Column information (type, numpy type)
@@ -415,6 +416,47 @@ def build_df(columns_map, input_values, return_dict=False):
     return data_frame
 
 
+def get_column_types(param_types):
+    """
+    Build dict with ColumnInformation from param_types argument for export function
+
+    :param param_types: pandas DF with custom dict or pandas DF.
+    Custom dict contains of column_name => legion.BaseType
+    :type param_types tuple(:py:class:`pandas.DataFrame`, dict) or :py:class:`pandas.DataFrame`
+    :return: dict[str, :py:class:`legion.types.ColumnInformation`] -- column name => column information
+    """
+    custom_props = None
+
+    if isinstance(param_types, tuple) and len(param_types) == 2 \
+            and isinstance(param_types[0], pd.DataFrame) \
+            and isinstance(param_types[1], dict):
+
+        pandas_df_sample = param_types[0]
+        custom_props = param_types[1]
+    elif isinstance(param_types, pd.DataFrame):
+        pandas_df_sample = param_types
+    else:
+        raise Exception('Provided invalid param types: not tuple[DataFrame, dict] or DataFrame')
+
+    return deduct_types_on_pandas_df(data_frame=pandas_df_sample, extra_columns=custom_props)
+
+
+def deduce_param_types(data_frame, optional_dictionary=None):
+    """
+    Deduce param types of pandas DF. Optionally overwrite to custom legion.BaseType
+
+    :param data_frame: pandas DF
+    :type data_frame: :py:class:`pandas.DataFrame`
+    :param optional_dictionary: custom dict contains of column_name => legion.types.BaseType
+    :type optional_dictionary: dict[str, :py:class:`legion.types.BaseType`]
+    :return: dict[str, :py:class:`legion.types.ColumnInformation`]
+    """
+    if optional_dictionary:
+        return _get_column_types((data_frame, optional_dictionary))
+
+    return _get_column_types(data_frame)
+
+
 int8 = ColumnInformation(Integer, np.int8)
 uint8 = ColumnInformation(Integer, np.uint8)
 int16 = ColumnInformation(Integer, np.int16)
@@ -424,9 +466,9 @@ uint32 = ColumnInformation(Integer, np.uint32)
 int64 = ColumnInformation(Integer, np.int64)
 uint64 = ColumnInformation(Integer, np.uint64)
 
-float16 = ColumnInformation(Integer, np.float16)
-float32 = ColumnInformation(Integer, np.float32)
-float64 = ColumnInformation(Integer, np.float64)
+float16 = ColumnInformation(Float, np.float16)
+float32 = ColumnInformation(Float, np.float32)
+float64 = ColumnInformation(Float, np.float64)
 
 string = ColumnInformation(String)
 boolean = ColumnInformation(Bool)

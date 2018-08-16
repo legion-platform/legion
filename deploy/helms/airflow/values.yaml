@@ -25,7 +25,7 @@ postgres:
   port: 5432
 
 core:
-  logging_level: warning
+  logging_level: debug
   logging_format: '[%%(asctime)s] {{%%(filename)s:%%(lineno)d}} %%(levelname)s - %%(message)s'
   logging_simple_format: '%%(asctime)s %%(levelname)s - %%(message)s'
   logging_filename_template: '{{ ti.dag_id }}/{{ ti.task_id }}/{{ ts }}/{{ try_number }}.log'
@@ -53,17 +53,29 @@ core:
 webserver:
   web_server_worker_timeout: 120
 
+  worker_refresh_interval: 30
+
   workers: 4
 
   worker_class: sync
 
   expose_config: true
 
-  authenticate: false
+  authenticate: true
 
   filter_by_owner: false
 
   email_backend: airflow.utils.email.send_email_smtp
+
+  authenticate: false
+
+  auth_backend: legion_airflow.auth.dex_auth
+
+  dex_group_admin: ~
+
+  dex_group_profiler: ~
+
+  dex_admin_email: tests@legion.com
 
 smtp:
   smtp_host: localhost
@@ -73,6 +85,11 @@ smtp:
   smtp_port: 25
   smtp_password: airflow
   smtp_mail_from: airflow@airflow.local
+
+slack:
+  username: ~
+  channel: ~
+  token: ~
 
 celery:
   celery_app_name: airflow.executors.celery_executor
@@ -123,3 +140,5 @@ ingress:
   tls:
     enabled: false
     autoSecretNameDeduction: true
+
+legion_release: ~

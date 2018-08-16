@@ -10,16 +10,6 @@ package:
     repository: "{{ nexus_docker_repo }}/legion/base-python-image"
     tag: "{{ base_version }}-{{ local_version }}"
 
-consul:
-  uiIngress:
-    enabled: true
-    hosts:
-    - consul{{ domain_delimiter }}{{ root_domain }}
-    tls:
-    - hosts:
-      - consul{{ domain_delimiter }}{{ root_domain }}
-      secretName: {{ root_domain }}-tls
-
 grafana:
   image:
     repository: "{{ nexus_docker_repo }}/legion/k8s-grafana"
@@ -28,6 +18,12 @@ grafana:
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+{% if dex.enabled == true %}
+
+    annotations:
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+      nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+{% endif %}
 
 edge:
   enabled: true

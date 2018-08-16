@@ -24,7 +24,7 @@ class ModelTaskSet(TaskSet):
         self._model_client.invoke(a=10, b=20)
 
     def on_start(self):
-        self._model_client = ModelClient('test_summation', use_relative_url=True, http_client=self.client)
+        self._model_client = ModelClient('test_summation', '1.0', use_relative_url=True, http_client=self.client)
 
 
 class TestLocust(HttpLocust):

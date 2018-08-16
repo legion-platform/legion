@@ -50,7 +50,8 @@ cluster_zones:
   - zone_name: us-east-2c
     kops_cidr: "{{ private_network }}.102.0/24"
     kops_utility_cidr: "{{ private_network }}.105.0/24"
-
+k8s_master_zones:
+  - us-east-2a
 # Legion specific variables
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: legion@epam.com
@@ -67,15 +68,16 @@ service_account:
   password: admin
 examples_to_test:
   - Test-Summation
-  - Sklearn-Income
   - Digit-Recognition
+model_id_to_test: income
 enclaves:
   - company-a
 storageclass: efs
 airflow_dags_dir: '/airflow-dags'
 airflow_dags_pvc: legion-airflow-dags
-airflow_s3_log_url: 's3://epm-legion-data-dev/airflow-logs/'
-airflow_s3_url: 's3://epm-legion-data-dev/'
+airflow_s3_bucket_name: 'epm-legion-data-dev'
+airflow_s3_log_url: "s3://{{ airflow_s3_bucket_name }}/{{ enclave }}/airflow-logs/"
+airflow_s3_url: "s3://{{ airflow_s3_bucket_name }}/{{ enclave }}/"
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
 
@@ -83,3 +85,36 @@ airflow_pvc: 200m
 dashboard:
   version: "1.8.3"
   insecure: true
+
+# Dex
+dex:
+  enabled: false
+  # replicas: 1
+  # config:
+  #   client_id: client_id
+  #   client_secret: client_secret
+  #   connectors:
+  #   - type: gitlab
+  #     id: gitlab
+  #     name: Some GitLab
+  #     config:
+  #       baseURL: https://gitlab.domain.com
+  #       clientID: clientID
+  #       clientSecret: clientSecret
+  #       redirectURI: https://dex.domain.com/callback
+  #   staticPasswords:
+  #   - email: "admin@example.com"
+  #     # bcrypt hash of the string "password"
+  #     password: password
+  #     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+  #     username: "admin"
+  #     userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  # groups:
+  # - clusterrolebinding: cluster-admin
+  #   group: some-admin-group
+  # - clusterrolebinding: view
+  #   group: some-view-group
+
+# Secrets
+secrets_bucket: "legion-cluster"
+secrets_file: "/tmp/vault/{{ cluster_name }}"

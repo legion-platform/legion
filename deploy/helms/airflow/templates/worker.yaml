@@ -11,6 +11,8 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
         app: "{{ .Release.Name }}-airflow-worker"
     spec:
@@ -31,6 +33,8 @@ spec:
           value: "{{ .Release.Name }}-redis"
         - name: AIRFLOW_HOME
           value: "/home/airflow"
+        - name: MODEL_SERVER_URL
+          value: "http://{{ .Values.legion_release }}-edge"
         volumeMounts:
         - name: airflow-config
           mountPath: /home/airflow/airflow.cfg

@@ -15,30 +15,30 @@
 #
 FROM legion/base-python-image
 
-RUN apt-get update && apt-get install --yes \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    software-properties-common
+RUN apt-get update && apt-get install -y \
+    ca-certificates curl apt-transport-https nginx \
+    libpcre3 libpcre3-dev supervisor
 
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+EXPOSE 5000
 
-RUN add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/debian jessie stable"
+# forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
-RUN apt-get update && apt-get install --yes docker-ce
+# Make NGINX run on the foreground
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
+COPY nginx.conf /etc/nginx/conf.d/
+COPY uwsgi.ini /etc/uwsgi/
+COPY app_uwsgi.ini /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
+ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+ENV UWSGI_INI /usr/local/lib/python3.6/dist-packages/legion/edi/uwsgi.ini
+
+ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+# Install Legion
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
-
-RUN pip install $pip_extra_index_params legion$pip_legion_version_string
-
-ENV TINI_VERSION v0.16.1
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--"]
-
-COPY chmod-docker-and-run-edi.sh /usr/local/bin/chmod-docker-and-run-edi.sh
-RUN chmod a+rwx /usr/local/bin/chmod-docker-and-run-edi.sh
-CMD ["/usr/local/bin/chmod-docker-and-run-edi.sh"]
+RUN pip3 install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string

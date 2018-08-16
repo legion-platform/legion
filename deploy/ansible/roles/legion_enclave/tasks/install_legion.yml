@@ -20,17 +20,12 @@
   args:
     chdir: ../helms/legion
 
-- name: Generate jupyter hub proxy secret
-  command: python -c 'import os, binascii; print(binascii.b2a_hex(os.urandom(60))[:32])'
-  register: jupyter_hub_proxy_secret_output
-
 - name: Create legion configuration (values) file
   template:
     src: legion-values.yaml.j2
     dest: "{{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
     mode: 0644
   vars:
-    jupyter_hub_proxy_secret: "{{ jupyter_hub_proxy_secret_output.stdout }}"
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping

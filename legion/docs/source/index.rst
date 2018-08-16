@@ -21,6 +21,7 @@ Welcome to legion's documentation!
    jenkins
    edge
    consul
+   rbac
 
 .. toctree::
    :maxdepth: 4

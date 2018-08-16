@@ -18,7 +18,7 @@ Robot test library - flower
 """
 import requests
 from requests.exceptions import RequestException
-
+from legion_test.robot.dex_client import get_session_cookies
 
 class Flower:
     """
@@ -59,7 +59,7 @@ class Flower:
             :type parse_json: bool
             :rtype: dict or str
             """
-        response = requests.get(self.base_url + path, params, timeout = self._TIMEOUT_SEC, **kwargs)
+        response = requests.get(self.base_url + path, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
         if response.status_code == 200:
             if parse_json:
                 return response.json()
