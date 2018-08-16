@@ -15,6 +15,7 @@ config:
   client_id: {{ dex.config.client_id }}
 
 ingress:
+  path: /oauth2
   enabled: true
   hosts:
     - auth.{{ cluster_name }}
