@@ -43,6 +43,31 @@ node {
                 Globals.rootCommit = Globals.rootCommit.trim()
             }
 
+            if (params.StableRelease) {
+                stage('Set GIT release Tag'){
+                    if (params.PushGitTag){
+                        print('Set Release tag')
+                        sh """
+                        if [ `git tag |grep ${params.ReleaseVersion}` ]; then
+                            if [ ${params.ForceTagPush} ]; then
+                                echo 'Remove existing git tag'
+                                git tag -d ${params.ReleaseVersion}
+                                git push origin :refs/tags/${params.ReleaseVersion}
+                            else
+                                echo 'Specified tag already exists!'
+                                exit 1
+                            fi
+                        fi
+                        git tag ${params.ReleaseVersion}
+                        git push origin ${params.ReleaseVersion}
+                        fi
+                        """
+                    } else {
+                        print("Skipping release git tag push")
+                    }
+                }
+            }
+
             stage('Install build dependencies'){
                 sh '''
                 sudo rm -rf .venv
@@ -187,13 +212,14 @@ node {
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
 
                 }, 'Build Jenkins plugin': {
+                /// Jenkins plugin to be used in Jenkins Docker container only
                     sh """
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion}
                     mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
                     """
                     archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-    
+
                     withCredentials([[
                          $class: 'UsernamePasswordMultiBinding',
                          credentialsId: 'nexus-local-repository',
@@ -204,7 +230,7 @@ node {
                         --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                         ${params.JenkinsPluginsRepositoryStore}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
                         """
-        
+
                         if (params.StableRelease){
                             sh """
                             curl -v -u $USERNAME:$PASSWORD \
@@ -344,9 +370,8 @@ node {
                         }
                         sh """
                         git reset --hard
-                        git checkout -b feat/${nextVersion}-version-bump
                         sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
-                        git commit -a -m "Update Legion version to ${nextVersion}" && git push -f origin feat/${nextVersion}-version-bump
+                        git commit -a -m "Bump Legion version to ${nextVersion}" && git push origin develop
                         """
                     }
                     else {
@@ -354,7 +379,6 @@ node {
                     }
                 }
             }
-
         }
     }
     catch (e) {
