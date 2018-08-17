@@ -1,0 +1,15 @@
+{{- range .Values.ca }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "k8s-authenticator.fullname" $ }}-{{ .name }}
+  labels:
+    app: {{ template "k8s-authenticator.name" $ }}
+    chart: {{ template "k8s-authenticator.chart" $ }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+type: Opaque
+data:
+  {{ .name }}: {{ .value }}
+---
+{{- end }}
