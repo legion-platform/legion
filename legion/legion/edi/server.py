@@ -95,20 +95,22 @@ def root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, count=int)
+@legion.http.populate_fields(image=str, count=int, livenesstimeout=int, readinesstimeout=int)
 @legion.http.requested_fields('image')
-def deploy(image, count=1):
+def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     """
     Deploy API endpoint
 
-    :param image: Docker image for deploy (for jybernetes deployment and local pull)
+    :param image: Docker image for deploy (for kubernetes deployment and local pull)
     :type image: str
     :param count: count of pods to create
     :type count: int
+    :param timeout: model pod startup timeout (used in liveness and readiness probes)
+    :type timeout: int
     :return: bool -- True
     """
     LOGGER.info('Command: deploy image {} with {} replicas'.format(image, count))
-    model_service = app.config['ENCLAVE'].deploy_model(image, count)
+    model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
 
     if app.config['REGISTER_ON_GRAFANA']:
         if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):

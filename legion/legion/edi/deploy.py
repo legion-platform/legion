@@ -215,12 +215,12 @@ def deploy_kubernetes(args):
     """
     Deploy kubernetes model
 
-    :param args: command arguments with .model_id, .namespace and .scale
+    :param args: command arguments with .model_id, .namespace , .livenesstimeout, .readinesstimeout and .scale
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    edi_client.deploy(args.image, args.scale)
+    edi_client.deploy(args.image, args.scale, args.livenesstimeout, args.readinesstimeout)
 
     # Start waiting of readiness of all PODs
     if not args.no_wait:
@@ -234,7 +234,7 @@ def deploy_kubernetes(args):
             information = [info for info in edi_client.inspect() if info.image == args.image]
 
             if not information:
-                raise Exception('Cannot find model deployment after deploy for image {}'.format(args.image))
+                raise Exception('Can\'t find model deployment after deploy for image {}'.format(args.image))
 
             deployment = information[0]
 

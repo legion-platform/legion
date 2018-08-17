@@ -214,7 +214,13 @@ def build() {
     """
 
 }
-def deploy() {
+def deploy(Map deployParams=null) {
+    if (deployParams == null)
+    deployParams = [:]
+
+    count = deployParams.get('count', 1)
+    livenesstimeout = deployParams.get('livenesstimeout', 2)
+    readinesstimeout = deployParams.get('readinesstimeout', 2)
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
 
@@ -223,7 +229,7 @@ def deploy() {
 
     sh """
     legionctl undeploy --ignore-not-found ${env.MODEL_ID}
-    legionctl deploy ${env.EXTERNAL_IMAGE_NAME}
+    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout}
     legionctl inspect
     """
 }

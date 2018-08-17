@@ -41,9 +41,11 @@ import legion.utils
 
 LOGGER = logging.getLogger(__name__)
 
+SERVE_HEALTH_CHECK = '/healthcheck'
+
 
 class Enclave:
-    """l
+    """
     Contains overall information about enclave, its services and models
     """
 
@@ -258,7 +260,7 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
-    def deploy_model(self, image, count=1):
+    def deploy_model(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy new model
 
@@ -266,6 +268,10 @@ class Enclave:
         :type image: str
         :param count: count of pods
         :type count: int
+        :param livenesstimeout: model pod startup timeout (used in liveness probe)
+        :type livenesstimeout: int
+        :param readinesstimeout: model pod startup timeout (used readiness probe)
+        :type readinesstimeout: int
         :return: :py:class:`legion.k8s.services.ModelService` -- model service
         """
         if count < 1:
@@ -294,6 +300,27 @@ class Enclave:
             legion.config.STATSD_PORT[0]: str(self.graphite_service.internal_port)
         }
 
+        http_get_object = kubernetes.client.V1HTTPGetAction(
+            path='/healthcheck',
+            port=5000
+            )
+
+        livenessprobe = kubernetes.client.V1Probe(
+            failure_threshold=10,
+            http_get=http_get_object,
+            initial_delay_seconds=livenesstimeout,
+            period_seconds=10,
+            timeout_seconds=2
+        )
+
+        readinessprobe = kubernetes.client.V1Probe(
+            failure_threshold=5,
+            http_get=http_get_object,
+            initial_delay_seconds=readinesstimeout,
+            period_seconds=10,
+            timeout_seconds=2
+        )
+
         container = kubernetes.client.V1Container(
             name='model',
             image=image,
@@ -302,6 +329,8 @@ class Enclave:
                 kubernetes.client.V1EnvVar(name=k, value=str(v))
                 for k, v in container_env_variables.items()
             ],
+            liveness_probe=livenessprobe,
+            readiness_probe=readinessprobe,
             ports=[kubernetes.client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
 
         pod_template = kubernetes.client.V1PodTemplateSpec(

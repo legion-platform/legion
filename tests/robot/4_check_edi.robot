@@ -100,7 +100,7 @@ Check EDI scale up procedure
     [Tags]  edi  cli  enclave   one_version
     ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
                     Should Be Equal As Integers    ${resp.rc}           0
-                    Sleep                          10  # because no way to control explicitly scaling the model inside
+                    Sleep                          20  # because no way to control explicitly scaling the model inside
     # TODO remove sleep
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -112,7 +112,7 @@ Check EDI scale down procedure
     [Tags]  edi  cli  enclave   one_version
     ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
                     Should Be Equal As Integers    ${resp.rc}          0
-                    Sleep                          10
+                    Sleep                          20
     # TODO remove sleep
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -121,7 +121,7 @@ Check EDI scale down procedure
 
     ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    1
                     Should Be Equal As Integers    ${resp.rc}          0
-                    Sleep                          10
+                    Sleep                          20
     # TODO remove sleep
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_ID}
@@ -132,6 +132,8 @@ Check EDI scale to 0 procedure
     [Documentation]  Try to scale to 0 model through EDI console
     [Tags]  edi  cli  enclave one_version
     ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    0
+                    Sleep                          20
+    # TODO remove sleep
                     Should Be Equal As Integers    ${resp.rc}          2
                     Should contain                 ${resp.stderr}      Invalid scale parameter: should be greater then 0
 
@@ -139,6 +141,8 @@ Check EDI invalid model id scale up procedure
     [Documentation]  Try to scale up dummy model with invalid name through EDI console
     [Tags]  edi  cli  enclave   one_version
     ${resp}=        Run EDI scale                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}test   2
+                    Sleep                          20
+    # TODO remove sleep
                     Should Be Equal As Integers  ${resp.rc}         2
                     Should contain               ${resp.stderr}     No one model can be found
 
