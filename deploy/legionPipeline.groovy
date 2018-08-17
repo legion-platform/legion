@@ -112,7 +112,7 @@ def createjenkinsJobs(String commitID) {
     "https://jenkins.${Profile}" \
     ../../examples \
     ../../ \
-    "git@github.com:epam/legion.git" \
+    "https://github.com/legion-platform/legion.git" \
     ${commitID} \
     --connection-timeout 600 \
     --git-root-key "legion-root-key" \
