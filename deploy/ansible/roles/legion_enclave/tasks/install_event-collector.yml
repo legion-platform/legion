@@ -14,11 +14,11 @@
 - name: Create event-collector configuration (values) file
   template:
     src: event-collector-values.yaml.j2
-    dest: ~/event-collector-values.yaml
+    dest: "{{ tmp_dir }}/event-collector-values.yaml"
     mode: 0644
 
 - name: Pre run with dumping
-  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  ~/event-collector-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/event-collector-values.yaml"
   register: helm_event_collector_install_output
   args:
     chdir: ../helms
@@ -29,7 +29,7 @@
     dest: ./helm.event-collector_{{ enclave }}.debug
 
 - name: Install event collector chart
-  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  ~/event-collector-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/event-collector-values.yaml"
   args:
     chdir: ../helms
 

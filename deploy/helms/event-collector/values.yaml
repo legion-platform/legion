@@ -21,7 +21,6 @@ s3:
   bucket: "none"
   region: "us-east-2"
 
-  path: "{{ enclave }}/events/${tag}/year=%Y/month=%m/day=%d/"
   time_slice_format: "%Y%m%d%H"
   time_slice_wait: "5m"
 

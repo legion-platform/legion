@@ -12,7 +12,7 @@ Library             legion_test.robot.Utils
 Check feedback gathering
     [Documentation]  Checking that feedback gathering works
     [Tags]  feedback  fluentd
-    Send feedback data      ${HOST_PROTOCOL}://feedback-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}   ${feedback_tag}  a=0
+    Send feedback data      ${HOST_PROTOCOL}://feedback-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}   ${FEEDBACK_TAG}  a=0
 
 Check feedback processing
     [Documentation]  Checking that feedback process works normally
@@ -21,10 +21,10 @@ Check feedback processing
 
     ${a_value} =            Generate Random String   4                  [NUMBERS]
     ${event_time} =         Wait up to second        20                 year=%Y/month=%m/day=%d/%Y%m%d%H
-    Send feedback data      ${HOST_PROTOCOL}://feedback-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}   ${feedback_tag}  a=${a_value}
+    Send feedback data      ${HOST_PROTOCOL}://feedback-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}   ${FEEDBACK_TAG}  a=${a_value}
     Wait up to second       19
 
-    ${file_prefix} =        Join bucket paths        ${feedback_prefix}    ${feedback_tag}    ${event_time}
+    ${file_prefix} =        Join bucket paths        ${FEEDBACK_PREFIX}    ${FEEDBACK_TAG}    ${event_time}
 
     ${files} =              Get files in bucket      ${file_prefix}
     Log list                ${files}
