@@ -117,7 +117,7 @@ dex:
 
 # Secrets
 secrets_bucket: "legion-secrets"               # S3 bucket with secrets
-secrets_file: "/tmp/vault/{{ cluster_name }}"  # path for temporary storage
+secrets_file: "/tmp/{{ cluster_name }}-secrets"  # path for temporary storage
 ```
 
 ## Secrets 

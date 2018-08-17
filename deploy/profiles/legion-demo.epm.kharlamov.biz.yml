@@ -121,4 +121,4 @@ dex:
 
 # Secrets
 secrets_bucket: "legion-cluster"
-secrets_file: "/tmp/vault/{{ cluster_name }}"
+secrets_file: "/tmp/{{ cluster_name }}-secrets"
