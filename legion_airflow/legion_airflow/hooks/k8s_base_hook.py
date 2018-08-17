@@ -2,7 +2,7 @@
 #    Copyright 2018 IQVIA. All Rights Reserved.
 #
 """
-K8SSecretHook module
+K8SBaseHook module
 """
 import os
 from airflow.hooks.base_hook import BaseHook
@@ -11,12 +11,13 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from legion.k8s import K8SSecretStorage
 
 
-class ConnFromK8SHook(BaseHook):
+class K8SBaseHook(BaseHook):
     """
     A hook to work with k8s secret storage as a first default source
     of connections. Retrieves connection via BaseHook parent method
     upon failure to retrieve from k8s.
     """
+
     STORAGE_NAME_PREFIX = 'airflow-credentials-'
 
     @classmethod
