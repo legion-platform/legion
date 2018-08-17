@@ -99,6 +99,26 @@ def commit_image(client, container_id=None):
     return image.id
 
 
+def get_docker_log_line_content(log_line):
+    """
+    Get string from Docker log line object
+
+    :param log_line: docker log line object
+    :type log_line: str or dict
+    :return: str -- log line
+    """
+    str_line = ''
+    if isinstance(log_line, str):
+        str_line = log_line
+    elif isinstance(log_line, dict):
+        if 'stream' in log_line and isinstance(log_line['stream'], str):
+            str_line = log_line['stream']
+        else:
+            str_line = repr(log_line)
+
+    return str_line.rstrip('\n')
+
+
 def build_docker_image(client, model_id, model_file, labels,
                        docker_image_tag):
     """
@@ -172,8 +192,10 @@ def build_docker_image(client, model_id, model_file, labels,
                 rm=True,
                 labels=labels
             )
-        except Exception as build_error:
-            LOGGER.error('Cannot build image: {}. Build logs: {}'.format(build_error, logs))
+        except docker.errors.BuildError as build_error:
+            LOGGER.error('Cannot build image: {}. Build logs: '.format(build_error))
+            for log_line in build_error.build_log:
+                LOGGER.error(get_docker_log_line_content(log_line))
             raise
 
         return image
