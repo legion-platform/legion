@@ -30,7 +30,7 @@
   shell: "kubectl --context {{ cluster_name }} label ns {{ enclave }} enclave={{ enclave }} --overwrite"
 
 - name: Copy TLS secret
-  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create -f  -"
+  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create --context {{ cluster_name }} -f -"
 
 # Create Airflow RDS resources
 - name: Install ansible dependencies
