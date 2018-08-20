@@ -92,6 +92,11 @@ if __name__ == '__main__':
                                   type=int, help='new count of replicas')
     scale_k8s_parser.add_argument('--model-version',
                                   type=str, help='model version')
+    scale_k8s_parser.add_argument('--no-wait',
+                                  action='store_true', help='no wait until scale will be finished')
+    scale_k8s_parser.add_argument('--wait-timeout',
+                                  default=120,
+                                  type=int, help='timeout in s. for wait (if no-wait is off). Infinite if 0')
     add_edi_arguments(scale_k8s_parser)
     scale_k8s_parser.set_defaults(func=scale_kubernetes)
 

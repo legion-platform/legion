@@ -196,7 +196,7 @@ class Enclave:
             if model_id in (id_and_version.id, '*', None) and model_version in (id_and_version.version, None, '*')
         ]
 
-    def get_models_strict(self, model_id, model_version=None):
+    def get_models_strict(self, model_id, model_version=None, ignore_not_found=False):
         """
         Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
         If more that one model would be found with unstrict criterion - exception would be raised
@@ -206,6 +206,8 @@ class Enclave:
         :type model_id: str
         :param model_version: (Optional) model version
         :type model_version: str
+        :param ignore_not_found: (Optional) ignore exception if cannot find any model
+        :type ignore_not_found: bool
         :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
         """
         model_services = self.get_models(model_id, model_version)
@@ -214,7 +216,10 @@ class Enclave:
             raise Exception('Please specify version of model')
 
         if not model_services:
-            raise Exception('No one model can be found')
+            if not ignore_not_found:
+                raise Exception('No one model can be found')
+            else:
+                LOGGER.info('Cannot find any model - ignoring due to ignore-not-found parameter')
 
         return model_services
 
