@@ -34,7 +34,7 @@ postgres:
 core:
   logging_level: debug
   remote_logging: true
-  remote_base_log_folder: {{ airflow_s3_log_url }}
+  remote_base_log_folder: "{{ airflow_s3_logs_url }}"
   remote_log_conn_id: s3_conn
 
 webserver:
@@ -64,7 +64,7 @@ storage:
   dags_volume_pvc: "{{ airflow_dags_pvc }}"
   airflow_dags_directory: "{{ airflow_dags_dir }}"
   pvc_name: "{{ airflow_dags_pvc }}"
-  s3_root_path: "{{ airflow_s3_url }}"
+  s3_root_path: "s3://{{airflow_s3_bucket_name}}/"
 
 ingress:
   enabled: true
