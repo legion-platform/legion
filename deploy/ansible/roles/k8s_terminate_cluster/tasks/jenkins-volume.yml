@@ -2,7 +2,7 @@
 
 - name: Get jenkins volume info
   ec2_vol:
-    state: list
+    state: present
     region: "{{ aws_region }}"
     name: "jenkins_home_{{ profile }}"
     zone: "{{ cluster_zones.0.zone_name }}"
@@ -10,6 +10,7 @@
       App: "jenkins_home_{{ cluster_name }}"
   register: ec2_jenkins_vol
   tags: jenkins_volume_untag
+  when: keep_jenkins_volume and (keep_jenkins_volume.find('false') == -1)
 
 - name: Remove Kubernetes cluster tag for jenkins volume
   ec2_tag:
