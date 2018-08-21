@@ -56,6 +56,7 @@ k8s_master_zones:
   - us-east-2b
   - us-east-2c
 # Legion specific variables
+persistent_jenkins_volume: true
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: Kirill_Makhonin@epam.com
 git_key: "/home/jenkins/deploy.cert"

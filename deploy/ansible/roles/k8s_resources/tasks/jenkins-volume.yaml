@@ -1,0 +1,12 @@
+---
+
+- name: Generate Jenkins volume persistant volume template
+  template:
+    src: jenkins-volume.yaml.j2
+    dest: "{{ tmp_dir }}/jenkins-volume.{{ cluster_name }}.yaml"
+    mode: 0644
+  when: persistent_jenkins_volume
+
+- name: Create Jenkins volume persistant volume
+  command: "kubectl --context {{ cluster_name }} apply -f {{ tmp_dir }}/jenkins-volume.{{ cluster_name }}.yaml"
+  when: persistent_jenkins_volume

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    failure-domain.beta.kubernetes.io/region: {{ aws_region }}
+    failure-domain.beta.kubernetes.io/zone: {{ cluster_zones.0.zone_name }}
+    app: legion-volume
+  name: pvc-legion-volume
+spec:
+  accessModes:
+  - ReadWriteOnce
+  awsElasticBlockStore:
+    fsType: ext4
+    volumeID: aws://{{ cluster_zones.0.zone_name }}/{{ ec2_jenkins_vol.volume_id }}
+  capacity:
+    storage: {{ jenkins_volume_size | default('20') }}Gi
+  storageClassName: jenkins-volume

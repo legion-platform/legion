@@ -1,0 +1,30 @@
+---
+
+- name: Create jenkins volume
+  ec2_vol:
+    volume_size: "{{ jenkins_volume_size | default('20') }}"
+    state: present
+    region: "{{ aws_region }}"
+    name: "jenkins_home_{{ profile }}"
+    zone: "{{ cluster_zones.0.zone_name }}"
+    tags:
+      App: "jenkins_home_{{ cluster_name }}"
+  register: ec2_jenkins_vol
+  tags: jenkins_volume
+  when: persistent_jenkins_volume
+
+- name: Add Kubernetes cluster tag for jenkins volume
+  ec2_tag:
+    region: "{{ aws_region }}"
+    resource: "{{ ec2_jenkins_vol.volume_id }}"
+    state: present
+    tags:
+      KubernetesCluster: "{{ cluster_name }}"
+  tags: jenkins_volume
+  when: persistent_jenkins_volume
+
+- name: Debug Volume
+  debug:
+    msg: "{{ ec2_jenkins_vol.volume_id }}"
+  tags: jenkins_volume
+  when: persistent_jenkins_volume

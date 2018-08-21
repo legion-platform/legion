@@ -25,6 +25,18 @@
     state: present
 
 # Install Legion core chart
+- name: Get jenkins volume info
+  ec2_vol:
+    state: list
+    region: "{{ aws_region }}"
+    name: "jenkins_home_{{ profile }}"
+    zone: "{{ cluster_zones.0.zone_name }}"
+    tags:
+      App: "jenkins_home_{{ cluster_name }}"
+  register: ec2_jenkins_vol
+  tags: jenkins_volume
+  when: persistent_jenkins_volume
+
 - name: Get legion-core chart status
   shell: helm --kube-context {{ cluster_name }} ls --all legion-core
   register: legion_core_deployment_status
