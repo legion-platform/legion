@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from airflow.exceptions import AirflowException
 
 from airflow import configuration as conf
-from .k8s_base_hook import K8SBaseHook
+from legion_airflow.hooks.k8s_base_hook.py import K8SBaseHook
 
 
 class S3Hook(K8SBaseHook):
