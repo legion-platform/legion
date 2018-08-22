@@ -11,7 +11,7 @@
       App: "jenkins_home_{{ cluster_name }}"
   register: ec2_jenkins_vol
   tags: jenkins_volume_untag
-  when: keep_jenkins_volume and (keep_jenkins_volume.find('false') == -1)
+  when: keep_jenkins_volume and persistent_jenkins_volume and (keep_jenkins_volume.find('false') == -1)
 
 - name: Remove Kubernetes cluster tag for jenkins volume
   ec2_tag:
@@ -22,4 +22,4 @@
       KubernetesCluster: "{{ cluster_name }}"
   tags: jenkins_volume_untag
   ignore_errors: true
-  when: keep_jenkins_volume.find('false') == -1
+  when: persistent_jenkins_volume and (keep_jenkins_volume.find('false') == -1)
