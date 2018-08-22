@@ -25,7 +25,7 @@ postgres:
   port: 5432
 
 core:
-  logging_level: debug
+  logging_level: info
   logging_format: '[%%(asctime)s] {{%%(filename)s:%%(lineno)d}} %%(levelname)s - %%(message)s'
   logging_simple_format: '%%(asctime)s %%(levelname)s - %%(message)s'
   logging_filename_template: '{{ ti.dag_id }}/{{ ti.task_id }}/{{ ts }}/{{ try_number }}.log'

@@ -32,7 +32,7 @@ postgres:
   port: 5432
 
 core:
-  logging_level: debug
+  logging_level: info
   remote_logging: true
   remote_base_log_folder: "{{ airflow_s3_logs_url }}"
   remote_log_conn_id: s3_conn
