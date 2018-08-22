@@ -17,7 +17,6 @@ Checking if all core domains have been registered
     :FOR    ${subdomain}    IN    @{SUBDOMAINS}
     \  Check domain exists  ${subdomain}.${HOST_BASE_DOMAIN}
 
-
 Checking if all enclave domains have been registered
     [Documentation]  Check that all required enclave DNS A records has been registered
     [Tags]  core  dns
