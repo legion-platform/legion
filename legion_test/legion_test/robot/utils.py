@@ -165,3 +165,75 @@ class Utils:
             raise error
         else:
             raise Exception('Unexpected case happen!')
+
+    @staticmethod
+    def get_component_auth_page(url):
+        """
+        Get component main auth page
+
+        :param url: component url
+        :type url: str
+        :return:  response_code and response_text
+        :rtype: dict
+        """
+        response = requests.get(url, timeout=10)
+        return {"response_code": response.status_code, "response_text": response.text}
+
+    @staticmethod
+    def post_credentials_to_auth(component_url, cluster_host, creds):
+        """
+        Send post request with credentials to authorize
+
+        :param str component_url: legion core component url
+        :param str cluster_host: cluster host name
+        :param dict creds: dict with login and password
+        :return: response_code and response_text after auth try
+        :rtype: dict
+        """
+        from legion_test.robot.dex_client import REQUEST_ID_REGEXP, AUTHENTICATION_PATH
+        import re
+
+        session = requests.Session()
+        response = session.get("{}.{}/securityRealm/commenceLogin".format(component_url, cluster_host))
+        if response.status_code != 200:
+            raise IOError('Authentication endpoint is unavailable, got {} http code'
+                          .format(response.status_code))
+        match = re.search(REQUEST_ID_REGEXP, response.text)
+
+        if match:
+            request_id = match.group(1)
+        else:
+            raise ValueError('Request ID was not found on page')
+
+        if creds["login"] == "admin":
+            response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
+        else:
+            session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
+            response = session.get("{}.{}".format(component_url, cluster_host))
+        return {"response_code": response.status_code, "response_text": response.text}
+
+    @staticmethod
+    def get_static_user_data():
+        """
+        Get static user email and password form secrets
+
+        :return: user email and password
+        :rtype: dict
+        """
+        import os
+
+        import yaml
+        from legion_test.profiler_loader import CREDENTIAL_SECRETS_ENVIRONMENT_KEY
+        secrets = os.getenv(CREDENTIAL_SECRETS_ENVIRONMENT_KEY)
+        if not secrets:
+            raise Exception(
+                'Cannot get secrets - {} env variable is not set'.format(CREDENTIAL_SECRETS_ENVIRONMENT_KEY))
+
+        if not os.path.exists(secrets):
+            raise Exception('Cannot get secrets - file not found {}'.format(secrets))
+
+        with open(secrets, 'r') as stream:
+            data = yaml.load(stream)
+
+        static_user = data['dex']['config']['staticPasswords'][0]
+        return {"login": static_user['email'], "password": static_user['password']}
