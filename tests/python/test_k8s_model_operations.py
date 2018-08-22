@@ -41,6 +41,7 @@ VARIABLES = legion_test.profiler_loader.get_variables()
 LOGGER = logging.getLogger(__name__)
 
 TEST_MODEL_ID = 'demo-abc-model'
+TEST_MODEL_VERSION = '1.0'
 TEST_IMAGE = legion_test.test_assets.get_test_bare_model_api_image(VARIABLES)
 
 

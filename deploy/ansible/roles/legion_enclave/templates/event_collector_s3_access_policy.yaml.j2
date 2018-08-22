@@ -5,13 +5,8 @@
       "Effect": "Allow",
       "Action": ["s3:*"],
       "Resource": [
-        "arn:aws:s3:::{{ collector.bucket }}/{{ enclave }}",
-        "arn:aws:s3:::{{ collector.bucket }}/{{ enclave }}/*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["s3:ListBucket"],
-      "Resource": "arn:aws:s3:::{{ collector.bucket }}"
+        "arn:aws:s3:::{{ collector.bucket }}",
+        "arn:aws:s3:::{{ collector.bucket }}/*"]
     }
   ]
 }
