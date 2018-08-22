@@ -341,22 +341,6 @@ node {
             )
 
             if (params.StableRelease) {
-                stage('Set GIT release Tag'){
-                    if (params.PushGitTag){
-                        print('Set Release tag')
-                        sh """
-                        if [ `git tag |grep ${params.ReleaseVersion}` ]; then
-                            echo 'Remove existing git tag'
-                            git tag -d ${params.ReleaseVersion}
-                            git push origin :refs/tags/${params.ReleaseVersion}
-                        fi
-                        git tag ${params.ReleaseVersion}
-                        git push origin ${params.ReleaseVersion}
-                        """
-                    } else {
-                        print("Skipping release git tag push")
-                    }
-                }
                 stage('Update Legion version string'){
                     if (params.UpdateVersionString){
                         print('Update Legion package version string')
@@ -376,6 +360,20 @@ node {
                     }
                     else {
                         print("Skipping version string update")
+                    }
+                }
+
+                stage('Update Master branch'){
+                    if (params.UpdateMaster){
+                        sh """
+                        git reset --hard
+                        git co master && git pull -r origin master
+                        git pull -r origin develop
+                        git push origin master
+                        """
+                    }
+                    else {
+                        print("Skipping Master branch update")
                     }
                 }
             }
