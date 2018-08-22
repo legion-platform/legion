@@ -2,6 +2,7 @@
 
 - name: Get jenkins volume info
   ec2_vol:
+    volume_size: "{{ jenkins_volume_size | default('20') }}"
     state: present
     region: "{{ aws_region }}"
     name: "jenkins_home_{{ profile }}"
