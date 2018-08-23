@@ -48,7 +48,7 @@ node {
 
             def dateFormat = new SimpleDateFormat("yyyyMMddHHmm")
             def date = new Date()
-            Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${BUILD_USER} --label build_date=dateFormat.format(date)"
+            Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=jenkins --label build_date=dateFormat.format(date)"
             println(Globals.dockerLabels)
 
             if (params.StableRelease) {
@@ -93,13 +93,13 @@ node {
             stage('Set Legion build version'){
                 if (params.StableRelease) {
                     if (params.ReleaseVersion){
-                        Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} ${BUILD_USER}"
+                        Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} Jenkins"
                     } else {
                         print('Error: ReleaseVersion parameter must be specified for stable release')
                         exit 1
                     }
                 } else {
-                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${BUILD_USER}"
+                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} Jenkins"
                 }
                 Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
