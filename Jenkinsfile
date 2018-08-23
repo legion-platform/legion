@@ -46,9 +46,11 @@ node {
                 Globals.rootCommit = Globals.rootCommit.trim()
             }
 
-            def dateFormat = new SimpleDateFormat("yyyyMMddHHmm")
+            def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
             def date = new Date()
-            Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=jenkins --label build_date=dateFormat.format(date)"
+            def buildDate = dateFormat.format(date)
+
+            Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=jenkins --label build_date=${buildDate}"
             println(Globals.dockerLabels)
 
             if (params.StableRelease) {
