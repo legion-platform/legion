@@ -16,6 +16,7 @@ spec:
       labels:
         app: "{{ .Release.Name }}-airflow-worker"
     spec:
+      serviceAccountName: "{{ .Release.Name }}-airflow-worker"
       restartPolicy: Always
       containers:
       - name: worker
@@ -35,6 +36,8 @@ spec:
           value: "/home/airflow"
         - name: MODEL_SERVER_URL
           value: "http://{{ .Values.legion_release }}-edge"
+        - name: NAMESPACE
+          value: "{{ .Release.Namespace }}"
         volumeMounts:
         - name: airflow-config
           mountPath: /home/airflow/airflow.cfg
