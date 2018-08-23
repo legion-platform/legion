@@ -5,13 +5,8 @@
       "Effect": "Allow",
       "Action": ["s3:*"],
       "Resource": [
-        "arn:aws:s3:::{{ airflow_s3_bucket_name }}/{{ enclave }}",
-        "arn:aws:s3:::{{ airflow_s3_bucket_name }}/{{ enclave }}/*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["s3:ListBucket"],
-      "Resource": "arn:aws:s3:::{{ airflow_s3_bucket_name }}"
+        "arn:aws:s3:::{{ airflow_s3_bucket_name }}",
+        "arn:aws:s3:::{{ airflow_s3_bucket_name }}/*"]
     }
   ]
 }

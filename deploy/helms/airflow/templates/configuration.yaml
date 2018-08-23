@@ -16,7 +16,7 @@ filename_template = {{ .Values.core.logging_filename_template }}
 base_log_folder = /home/airflow/logs
 
 # S3 bucket path for data storage
-s3_bucket_path = {{ .Values.storage.s3_bucket_path }}
+s3_root_path = {{ .Values.storage.s3_root_path }}
 
 # Airflow can store logs remotely in AWS S3 or Google Cloud Storage. Users
 # must supply a remote location URL (starting with either 's3://...' or

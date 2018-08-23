@@ -109,7 +109,7 @@
 - name: Create S3 storage for Airflow
   aws_s3:
     bucket: "{{ airflow_s3_bucket_name }}"
-    object: "/{{ enclave }}"
+    object: "/{{ airflow_s3_logs_path }}"
     mode: create
 
 # Create IAM roles

@@ -5,12 +5,12 @@
 import smart_open
 import json
 import boto3
-from urllib.parse import urlparse
 
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowConfigException
 
 from airflow import configuration as conf
 from airflow.hooks.base_hook import BaseHook
+from urllib.parse import urlparse
 
 
 class S3Hook(BaseHook):
@@ -39,23 +39,36 @@ class S3Hook(BaseHook):
         self.extras = self.connection.extra_dejson
         self.aws_access_key_id = self.extras.get('aws_access_key_id', None)
         self.aws_secret_access_key = self.extras.get('aws_secret_access_key', None)
-        self.key_prefix = self.extras.get('key_prefix', conf.get('core', 's3_bucket_path'))
-        self.bucket_prefix = self.extras.get('bucket_prefix', '')
+        try:
+            self.s3_root_path = conf.get('core', 's3_root_path')
+        except AirflowConfigException:
+            self.s3_root_path = ''
+        if self.s3_root_path.startswith('s3://'):
+            self.s3_root_path = self.s3_root_path[5:]
 
-    @staticmethod
-    def _parse_s3_url(s3url):
+    def _get_uri(self, bucket, key):
         """
-        Parse S3 URL into bucket and key
-        :param s3url: S3 URL
-        :return: (bucket, key)
+        Create an URI based on passed bucket, key and Airflow configuration.
+        :param bucket: S3 folder
+        :param key: Path inside S3 bucket (
+            if key is a full path it is simply returned)
+        :return: URI, that contains protocol, bucket, path, e.g. s3://bucket/k1/k2/k3_file
+        """
+        if key.startswith('s3://'):
+            return key
+        path = [self.s3_root_path or bucket, key]
+        return 's3://' + '/'.join(name.strip('/') for name in path)
+
+    def _parse_s3_url(self, s3url):
+        """
+        Parse any passed s3url into bucket and key pair
+        :param s3url: s3 storage absolute path
+        :return: tuple (bucket, key)
         """
         parsed_url = urlparse(s3url)
-        if not parsed_url.netloc:
-            raise AirflowException('Please provide a bucket_name')
-        else:
-            bucket_name = parsed_url.netloc
-            key = parsed_url.path.strip('/')
-            return (bucket_name, key)
+        bucket_name = parsed_url.netloc
+        key = parsed_url.path.strip('/')
+        return bucket_name, key
 
     def open_file(self, bucket: str, key: str, mode: str = 'rb', encoding: str = 'utf-8'):
         """
@@ -72,7 +85,7 @@ class S3Hook(BaseHook):
         :return: s3 file
         """
         self.check_if_maintenance(bucket, key)
-        uri = 's3://{}{}/{}{}'.format(self.bucket_prefix, bucket, self.key_prefix, key)
+        uri = self._get_uri(bucket, key)
         return smart_open.smart_open(uri=uri, mode=mode,
                                      encoding=encoding,
                                      aws_access_key_id=self.aws_access_key_id,
@@ -154,7 +167,7 @@ class S3Hook(BaseHook):
         :return: bool -- True if file exist, False otherwise
         """
         try:
-            smart_open.smart_open('s3://{}{}/{}{}'.format(self.bucket_prefix, bucket, self.key_prefix, key),
+            smart_open.smart_open(self._get_uri(bucket, key),
                                   mode='rb',
                                   aws_access_key_id=self.aws_access_key_id,
                                   aws_secret_access_key=self.aws_secret_access_key).close()
@@ -194,22 +207,30 @@ class S3Hook(BaseHook):
         :type dest_key: str
         :return: None
         """
+        src_bucket, src_key = self._parse_s3_url(
+            self._get_uri(src_bucket, src_key))
+        dest_bucket, dest_key = self._parse_s3_url(
+            self._get_uri(dest_bucket, dest_key))
+
         session = boto3.Session(profile_name=None,
                                 aws_access_key_id=self.aws_access_key_id,
                                 aws_secret_access_key=self.aws_secret_access_key)
         s3 = session.resource(service_name='s3',
                               aws_access_key_id=self.aws_access_key_id,
                               aws_secret_access_key=self.aws_secret_access_key)
-        bucket_from = s3.Bucket(self.bucket_prefix + src_bucket)
-        bucket_to = s3.Bucket(self.bucket_prefix + dest_bucket)
+        bucket_from = s3.Bucket(src_bucket)
+        bucket_to = s3.Bucket(dest_bucket)
         for obj in bucket_from.objects.filter():
             key_from = obj.key
-            if key_from.startswith(self.key_prefix + src_key):
-                source = {'Bucket': self.bucket_prefix + src_bucket, 'Key': key_from}
-                key_to = key_from.replace(self.key_prefix + src_key, self.key_prefix + dest_key)
+            if key_from.startswith(src_key):
+                source = {'Bucket': src_bucket, 'Key': key_from}
+                key_to = key_from.replace(src_key, dest_key)
                 dist_obj = bucket_to.Object(key_to)
-                self.logger.info('Copying from {}:{} to {}:{}'
-                                 .format(self.bucket_prefix + src_bucket, key_from, dest_bucket, key_to))
+                self.logger.info(
+                    'Copying from {}:{} to {}:{}'.format(
+                        src_bucket, key_from, dest_bucket, key_to
+                    )
+                )
                 dist_obj.copy(source)
 
     def load_file(self, filename, key, bucket_name=None, replace=False, encrypt=False):
@@ -230,9 +251,6 @@ class S3Hook(BaseHook):
             by S3 and will be stored in an encrypted form while at rest in S3.
         :type encrypt: bool
         """
-        if not bucket_name and not self.bucket_prefix:
-            (bucket_name, key) = self._parse_s3_url(key)
-
         with self.open_file(bucket_name, key, 'w') as dist:
             with open(filename, 'r') as source:
                 for line in source:
@@ -261,9 +279,6 @@ class S3Hook(BaseHook):
         :param encoding: String encoding
         :type encoding: str
         """
-        if not bucket_name and not self.bucket_prefix:
-            (bucket_name, key) = self._parse_s3_url(key)
-
         with self.open_file(bucket_name, key, 'w', encoding) as out:
             out.write(string_data)
 
@@ -287,9 +302,6 @@ class S3Hook(BaseHook):
         :param bucket_name: Name of the bucket in which the file is stored
         :type bucket_name: str
         """
-        if not bucket_name and not self.bucket_prefix:
-            (bucket_name, key) = self._parse_s3_url(key)
-
         if self.exists(bucket_name, key):
             with self.open_file(bucket_name, key, 'r', 'utf-8') as out:
                 return out.read()

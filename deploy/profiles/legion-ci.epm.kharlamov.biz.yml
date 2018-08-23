@@ -74,9 +74,9 @@ enclaves:
 storageclass: efs
 airflow_dags_dir: '/airflow-dags'
 airflow_dags_pvc: legion-airflow-dags
-airflow_s3_bucket_name: 'epm-legion-data-ci'
-airflow_s3_log_url: "s3://{{ airflow_s3_bucket_name }}/{{ enclave }}/airflow-logs/"
-airflow_s3_url: "s3://{{ airflow_s3_bucket_name }}/{{ enclave }}/"
+airflow_s3_bucket_name: 'epm-legion-data-{{ env_type }}-{{ enclave }}'
+airflow_s3_logs_path: 'airflow-logs/'
+airflow_s3_logs_url: "s3://{{ airflow_s3_bucket_name }}/{{ airflow_s3_logs_path }}"
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
 

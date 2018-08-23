@@ -94,7 +94,6 @@ enclaves:  # list of enclaves which will be automatically deployed after Legion 
 # Airflow specific configuration
 airflow_dags_dir: '/airflow-dags'                                        # Name of Aitflow DAGs directory
 airflow_dags_pvc: legion-airflow-dags                                    # Name of Airflow DAGs PVC which will be created in Cluster
-airflow_s3_log_url: 's3://epm-legion-data-dev/logs/'                     # S3 url for storing Airflow logs
 airflow_pvc: 200m                                                        # Airflow PVC size (for storing DAGs code)
 
 # Airflow RDS configuration
@@ -102,7 +101,7 @@ airflow_rds_shape: "db.t2.medium"                                        # shape
 airflow_rds_size: "50"                                                   # size of Airflow RDS in GB
 
 # Airflow DAGs configuration [?]
-airflow_s3_url: 's3://epm-legion-data-dev/'                              # Airflow storage location at S3             
+airflow_s3_bucket_name: "epm-legion-data-{{ env_type }}-{{ enclave }}"                              # Airflow storage location at S3             
 airflow_expected_output: 'expected-data/'                                # Configuration for Airflow DAGs
 
 # Addons configuration
