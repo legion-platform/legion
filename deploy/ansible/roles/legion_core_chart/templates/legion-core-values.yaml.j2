@@ -31,6 +31,11 @@ jenkins:
 
   git_secret_name: "{{ git_secret_name }}"
 
+  slack:
+    slackTeamDomain: "{{ jenkins.slack.slackTeamDomain }}"
+    slackBaseUrl: "{{ jenkins.slack.slackBaseUrl }}"
+    token: "{{ jenkins.slack.token }}"
+
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}

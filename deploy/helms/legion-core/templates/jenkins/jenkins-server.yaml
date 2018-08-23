@@ -1,3 +1,8 @@
+{{- define "config-cred-slack" }}
+slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
+slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
+token="{{ .Values.jenkins.slack.token }}"
+{{- end }}
 {{- if .Values.jenkins.enabled }}
 kind: ConfigMap
 apiVersion: v1
@@ -22,6 +27,15 @@ data:
 
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: slack-secret
+type: Opaque
+data:
+  slack.config: |-
+    {{ include "config-cred-slack" . | b64enc }}
 ---
 apiVersion: v1
 kind: ReplicationController
@@ -159,6 +173,9 @@ spec:
           name: dynamic-scripts
         - mountPath: /var/jenkins_home
           name: jenkins-home
+        - mountPath: /usr/share/jenkins/ref/init.groovy.d/slack.config
+          name: config-cred-slack
+          subPath: slack.config
         {{- if .Values.jenkins.git_secret_name }}
         - mountPath: /var/jenkins.ssh
           name: git-secret
@@ -174,6 +191,9 @@ spec:
       - name: jenkins-home
         persistentVolumeClaim:
           claimName: "{{ .Release.Name }}-jenkins-master-home"
+      - name: config-cred-slack
+        secret:
+          secretName: slack-secret
       - name: dynamic-scripts
         configMap:
           name: "{{ .Release.Name }}-jenkins-dynamic-scripts"
