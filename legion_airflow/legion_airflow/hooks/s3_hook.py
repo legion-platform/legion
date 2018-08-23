@@ -13,7 +13,6 @@ from legion_airflow.hooks.k8s_base_hook import K8SBaseHook
 from urllib.parse import urlparse
 
 
-
 class S3Hook(K8SBaseHook):
     """S3 hook."""
 
