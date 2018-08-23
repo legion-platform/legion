@@ -11,7 +11,7 @@ import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
 
 def dataList = [:]
-def file = new File("slack.config")
+def file = new File("/usr/share/jenkins/ref/init.groovy.d/slack.config")
 
 def text
 def key
