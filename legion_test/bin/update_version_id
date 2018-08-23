@@ -96,11 +96,11 @@ def patch_version_file(file, build_version, git_revision, build_id, build_user, 
             content = content.decode('utf-8')
 
     content = re.sub(SEARCH_PATTERN, '__version__ = \'{}\''.format(build_version), content, flags=re.MULTILINE)
-    content = '\n'.join((content,
-        '__git_revision__ = \'{}\''.format(git_revision),
-        '__build_id__ = \'{}\''.format(build_id),
-        '__build_user__ = \'{}\''.format(build_user),
-        '__build_date__ = \'{}\''.format(date_string)))
+    content = ''.join((content,
+        '__git_revision__ = \'{}\'\n'.format(git_revision),
+        '__build_id__ = \'{}\'\n'.format(build_id),
+        '__build_user__ = \'{}\'\n'.format(build_user),
+        '__build_date__ = \'{}\'\n'.format(date_string)))
 
     with open(file, 'w') as stream:
         stream.write(content)
@@ -118,7 +118,7 @@ def work(args):
     if not os.path.exists(args.version_file) or not os.path.isfile(args.version_file):
         raise Exception('Cannot find version file: %s' % args.version_file)
 
-    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
     git_revision = get_git_revision(args.version_file, not args.use_full_commit_id)
     if not git_revision:
