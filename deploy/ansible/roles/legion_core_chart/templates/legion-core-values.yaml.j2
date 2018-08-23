@@ -18,6 +18,11 @@ secrets:
 
 jenkins:
   enabled: true
+  persistence:
+    storageClass: {% if persistent_jenkins_volume %}"jenkins-volume"{% else %}""{% endif %}
+    
+    size: {{ jenkins_volume_size | default('20') }}Gi
+
   dags_volume_pvc: "{{ airflow_dags_pvc }}"
   airflow_dags_directory: "{{ airflow_dags_dir }}"
   image:

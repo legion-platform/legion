@@ -13,6 +13,7 @@ env_name: ~    # short name of env, will be added in resource tags
 tmp_dir: ~                          # directory for storing temporary files (on host during deploy)
 git_key: ~    # SSH Git access key which will be copied to Jenkins in cluster
 ssh_public_key: ~       # public key which will be copied to cluster
+persistent_jenkins_volume: ~    # true/false to keep jenkins volume or not on terminate cluster phase
 
 
 # AWS configuration

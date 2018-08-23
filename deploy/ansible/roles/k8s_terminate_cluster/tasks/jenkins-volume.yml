@@ -1,0 +1,25 @@
+---
+
+- name: Get jenkins volume info
+  ec2_vol:
+    volume_size: "{{ jenkins_volume_size | default('20') }}"
+    state: present
+    region: "{{ aws_region }}"
+    name: "jenkins_home_{{ profile }}"
+    zone: "{{ cluster_zones.0.zone_name }}"
+    tags:
+      App: "jenkins_home_{{ cluster_name }}"
+  register: ec2_jenkins_vol
+  tags: jenkins_volume_untag
+  when: keep_jenkins_volume and persistent_jenkins_volume and (keep_jenkins_volume.find('false') == -1)
+
+- name: Remove Kubernetes cluster tag for jenkins volume
+  ec2_tag:
+    region: "{{ aws_region }}"
+    resource: "{{ ec2_jenkins_vol.volume_id }}"
+    state: absent
+    tags:
+      KubernetesCluster: "{{ cluster_name }}"
+  tags: jenkins_volume_untag
+  ignore_errors: true
+  when: persistent_jenkins_volume and (keep_jenkins_volume.find('false') == -1)

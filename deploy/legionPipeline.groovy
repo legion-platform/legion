@@ -42,7 +42,7 @@ def terminateCluster() {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                 ansiblePlaybook(
                     playbook: 'terminate-cluster.yml',
-                    extras: ' --extra-vars "profile=${Profile}"',
+                    extras: ' --extra-vars "profile=${Profile} keep_jenkins_volume=${keepJenkinsVolume}"',
                     colorized: true
                 )
             }
