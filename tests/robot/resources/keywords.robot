@@ -229,7 +229,6 @@ Check if component domain has been secured
     ${auth_page} =   Get From Dictionary   ${response}    response_text
     Should contain   ${auth_page}    Log in to dex
     Should contain   ${auth_page}    Log in with Email
-    Should contain   ${auth_page}    Log in with IQVIA GitLab
 
 Secured component domain should not be accessible by invalid credentials
     [Arguments]     ${component}    ${enclave}
