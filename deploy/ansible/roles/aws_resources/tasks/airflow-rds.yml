@@ -45,7 +45,8 @@
   rds:
     command: create
     instance_name: "{{ env_name }}-airflow-rds"
-    db_engine: "postgres"
+    db_engine: "{{ airflow_rds_engine }}"
+    engine_version: "{{ airflow_rds_engine_version }}"
     region: "{{ aws_region }}"
     size: "{{ airflow_rds_size }}"
     subnet: "{{env_name}}-airflow-rds-subnets"
