@@ -156,6 +156,82 @@ def inspect_kubernetes(args):
                                for col_idx, column in enumerate(item)))
 
 
+def get_related_model_deployments(client, affected_deployments):
+    """
+    Get actual status of model deployments
+
+    :param client: EDI client
+    :type client: :py:class:`legion.external.edi.EdiClient`
+    :param affected_deployments: affected by main operation (e.g. deploy) model deployments
+    :type affected_deployments: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+    :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- actual status of model deployments
+    """
+    affected_deployment_ids = {
+        deployment.id_and_version
+        for deployment
+        in affected_deployments
+    }
+    actual_deployments_status = client.inspect()
+    return [deploy
+            for deploy in actual_deployments_status
+            if deploy.id_and_version in affected_deployment_ids]
+
+
+def wait_operation_finish(args, edi_client, model_deployments, wait_callback):
+    """
+    Wait operation to finish according command line arguments. Uses wait_callback for checking status
+
+    :param args: command arguments with .model_id, .namespace
+    :type args: :py:class:`argparse.Namespace`
+    :param edi_client: EDI client instance
+    :type edi_client: :py:class:`legion.external.edi.EdiClient`
+    :param model_deployments: models that have been affected during operation call
+    :type model_deployments: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+    :param wait_callback: function that will be called to ensure that operation completed (should return True)
+    :type wait_callback: py:class:`Callable[[list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]],
+                                            typing.Optional[bool]]`
+    :return: None
+    """
+    if not args.no_wait:
+        start = time.time()
+        if args.timeout <= 0:
+            raise Exception('Invalid --timeout argument: should be positive integer')
+
+        while True:
+            elapsed = time.time() - start
+            if elapsed > args.timeout:
+                raise Exception('Time out: operation has not been confirmed')
+
+            affected_deployments_status = get_related_model_deployments(edi_client, model_deployments)
+
+            result = wait_callback(affected_deployments_status)
+            if result:
+                break
+
+            time.sleep(1)
+
+
+def check_all_scaled(deployments_status, expected_scale, expected_count):
+    """
+    Check that all model finished scale process and now are OK
+
+    :param deployments_status: actual deployment status
+    :type deployments_status: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+    :param expected_scale: expected scale
+    :type expected_scale: int
+    :param expected_count: expected count of models
+    :type expected_count: int
+    :return: bool -- result of validation
+    """
+    # Get fully deployed models
+    finally_deployed_models = [deployment
+                               for deployment in deployments_status
+                               if deployment.ready_replicas == expected_scale and deployment.model_api_ok]
+
+    # Wait until all modes will be scaled
+    return len(finally_deployed_models) == expected_count
+
+
 def undeploy_kubernetes(args):
     """
     Undeploy model to kubernetes
@@ -165,38 +241,14 @@ def undeploy_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    model_deployments = edi_client.inspect(args.model_id, args.model_version)
+    model_deployments = edi_client.undeploy(args.model_id,
+                                            args.grace_period,
+                                            args.model_version,
+                                            args.ignore_not_found)
 
-    if not model_deployments:
-        if args.ignore_not_found:
-            print('Cannot find any deployment - ignoring')
-            return
-        else:
-            raise Exception('Cannot find any deployment')
-
-    if len(model_deployments) > 1:
-        raise Exception('Founded more then one deployment')
-
-    target_deployment = model_deployments[0]
-
-    edi_client.undeploy(args.model_id, args.grace_period, args.model_version)
-
-    if not args.no_wait:
-        start = time.time()
-
-        while True:
-            elapsed = time.time() - start
-            if elapsed > args.wait_timeout and args.wait_timeout != 0:
-                raise Exception('Time out: model has not been undeployed')
-
-            information = [info
-                           for info in edi_client.inspect()
-                           if info.model == target_deployment.model and info.version == target_deployment.version]
-
-            if not information:
-                break
-
-            time.sleep(1)
+    wait_operation_finish(args, edi_client,
+                          model_deployments,
+                          lambda affected_deployments_status: not affected_deployments_status)
 
 
 def scale_kubernetes(args):
@@ -208,7 +260,13 @@ def scale_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    edi_client.scale(args.model_id, args.scale, args.model_version)
+    model_deployments = edi_client.scale(args.model_id, args.scale, args.model_version)
+
+    wait_operation_finish(args, edi_client,
+                          model_deployments,
+                          lambda affected_deployments_status: check_all_scaled(affected_deployments_status,
+                                                                               args.scale,
+                                                                               len(model_deployments)))
 
 
 def deploy_kubernetes(args):
@@ -220,25 +278,10 @@ def deploy_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
-    edi_client.deploy(args.image, args.scale, args.livenesstimeout, args.readinesstimeout)
+    model_deployments = edi_client.deploy(args.image, args.scale, args.livenesstimeout, args.readinesstimeout)
 
-    # Start waiting of readiness of all PODs
-    if not args.no_wait:
-        start = time.time()
-
-        while True:
-            elapsed = time.time() - start
-            if elapsed > args.wait_timeout and args.wait_timeout != 0:
-                break
-
-            information = [info for info in edi_client.inspect() if info.image == args.image]
-
-            if not information:
-                raise Exception('Can\'t find model deployment after deploy for image {}'.format(args.image))
-
-            deployment = information[0]
-
-            if deployment.ready_replicas >= deployment.scale and deployment.model_api_ok:
-                break
-
-            time.sleep(1)
+    wait_operation_finish(args, edi_client,
+                          model_deployments,
+                          lambda affected_deployments_status: check_all_scaled(affected_deployments_status,
+                                                                               args.scale,
+                                                                               len(model_deployments)))

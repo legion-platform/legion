@@ -76,6 +76,17 @@ def authenticate(user, password):
     return False
 
 
+def return_model_deployments(model_deployments):
+    """
+    Return JSON serializable information about deployments
+
+    :param model_deployments: list of model deployment descriptions to return
+    :type model_deployments: list[:py:class:`legion.k8s.definitions.ModelDeploymentDescription`]
+    :return:
+    """
+    return [deployment.as_dict() for deployment in model_deployments]
+
+
 @blueprint.route(build_blueprint_url(EDI_ROOT), methods=['GET'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
@@ -115,15 +126,18 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     if app.config['REGISTER_ON_GRAFANA']:
         if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
             app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
-    return True
+
+    model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
+
+    return return_model_deployments([model_deployment])
 
 
 @blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model=str, version=str, grace_period=int)
+@legion.http.populate_fields(model=str, version=str, grace_period=int, ignore_not_found=bool)
 @legion.http.requested_fields('model')
-def undeploy(model, version=None, grace_period=0):
+def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     """
     Undeploy API endpoint
 
@@ -133,21 +147,27 @@ def undeploy(model, version=None, grace_period=0):
     :type version: str or None
     :param grace_period: grace period for removing
     :type grace_period: int
+    :param ignore_not_found: (Optional) ignore exception if cannot find models
+    :type ignore_not_found: bool
     :return: bool -- True
     """
-    # TODO: Add tests for multiple versions (parallel models)
     LOGGER.info('Command: undeploy model with id={}, version={} with grace period {}s'
                 .format(model, version, grace_period))
-    model_services = app.config['ENCLAVE'].get_models_strict(model, version)
+    model_deployments = []
+    model_services = app.config['ENCLAVE'].get_models_strict(model, version, ignore_not_found)
 
     for model_service in model_services:
         if app.config['REGISTER_ON_GRAFANA']:
             if app.config['GRAFANA_CLIENT'].is_dashboard_exists(model, model_service.version):
                 app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model, model_service.version)
 
+        model_deployments.append(
+            legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
+        )
+
         model_service.delete(grace_period)
 
-    return True
+    return return_model_deployments(model_deployments)
 
 
 @blueprint.route(build_blueprint_url(EDI_SCALE), methods=['POST'])
@@ -168,12 +188,17 @@ def scale(model, count, version=None):
     :return: bool -- True
     """
     LOGGER.info('Command: scale model with id={}, version={} to {} replicas'.format(model, version, count))
+    model_deployments = []
     model_services = app.config['ENCLAVE'].get_models_strict(model, version)
 
     for model_service in model_services:
         model_service.scale = count
 
-    return True
+        model_deployments.append(
+            legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
+        )
+
+    return return_model_deployments(model_deployments)
 
 
 @blueprint.route(build_blueprint_url(EDI_INSPECT), methods=['GET'])
@@ -210,21 +235,12 @@ def inspect(model=None, version=None):
             model_api_info['exception'] = str(model_api_exception)
             model_api_ok = False
 
-        model_deployments.append(
-            legion.k8s.ModelDeploymentDescription(
-                status=model_service.status,
-                model=model_service.id,
-                version=model_service.version,
-                image=model_service.image,
-                scale=model_service.desired_scale,
-                ready_replicas=model_service.scale,
-                namespace=model_service.namespace,
-                model_api_ok=model_api_ok,
-                model_api_info=model_api_info,
-            )
-        )
+        model_deployments.append(legion.k8s.ModelDeploymentDescription.build_from_model_service(
+            model_service,
+            model_api_ok, model_api_info
+        ))
 
-    return [x._asdict() for x in model_deployments]
+    return return_model_deployments(model_deployments)
 
 
 @blueprint.route(build_blueprint_url(EDI_INFO), methods=['GET'])

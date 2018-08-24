@@ -66,9 +66,9 @@ if __name__ == '__main__':
                                    type=int, help='model startup timeout for readiness probe')
     deploy_k8s_parser.add_argument('--no-wait',
                                    action='store_true', help='no wait until pods will be ready')
-    deploy_k8s_parser.add_argument('--wait-timeout',
+    deploy_k8s_parser.add_argument('--timeout',
                                    default=120,
-                                   type=int, help='timeout in s. for wait (if no-wait is off). Infinite if 0')
+                                   type=int, help='timeout in s. for wait (if no-wait is off)')
     add_edi_arguments(deploy_k8s_parser)
     deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
 
@@ -92,6 +92,11 @@ if __name__ == '__main__':
                                   type=int, help='new count of replicas')
     scale_k8s_parser.add_argument('--model-version',
                                   type=str, help='model version')
+    scale_k8s_parser.add_argument('--no-wait',
+                                  action='store_true', help='no wait until scale will be finished')
+    scale_k8s_parser.add_argument('--timeout',
+                                  default=120,
+                                  type=int, help='timeout in s. for wait (if no-wait is off)')
     add_edi_arguments(scale_k8s_parser)
     scale_k8s_parser.set_defaults(func=scale_kubernetes)
 
@@ -108,9 +113,9 @@ if __name__ == '__main__':
                                      action='store_true', help='ignore if cannot found pod')
     undeploy_k8s_parser.add_argument('--no-wait',
                                      action='store_true', help='no wait until pods will be removed')
-    undeploy_k8s_parser.add_argument('--wait-timeout',
+    undeploy_k8s_parser.add_argument('--timeout',
                                      default=120,
-                                     type=int, help='timeout in s. for wait (if no-wait is off). Infinite if 0')
+                                     type=int, help='timeout in s. for wait (if no-wait is off)')
     add_edi_arguments(undeploy_k8s_parser)
     undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
 

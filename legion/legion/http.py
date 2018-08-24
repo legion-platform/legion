@@ -196,7 +196,7 @@ def populate_fields(**fields):
                     raise Exception('Unknown parameter: %s' % field)
 
                 try:
-                    casted_parameters[field] = fields[field](value)
+                    casted_parameters[field] = legion.utils.parse_value_to_type(value, fields[field])
                 except ValueError as cast_value_exception:
                     raise Exception('Cannot cast field %s to %s: %s' % (field, fields[field], cast_value_exception))
 

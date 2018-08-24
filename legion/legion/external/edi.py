@@ -99,6 +99,17 @@ class EdiClient:
 
         return answer
 
+    @staticmethod
+    def parse_deployments(response):
+        """
+        Parse model deployments from response
+
+        :param response: EDI server response
+        :type response: list[dict[str, any]]
+        :return: list[:py:class:`legion.k8s.ModelDeploymentDescription`] -- parsed model deployments
+        """
+        return [legion.k8s.ModelDeploymentDescription(**x) for x in response]
+
     def inspect(self, model=None, version=None):
         """
         Perform inspect query on EDI server
@@ -115,8 +126,7 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        answer = self._query(legion.edi.server.EDI_INSPECT, payload=payload)
-        return [legion.k8s.ModelDeploymentDescription(**x) for x in answer]
+        return self.parse_deployments(self._query(legion.edi.server.EDI_INSPECT, payload=payload))
 
     def info(self):
         """
@@ -138,7 +148,7 @@ class EdiClient:
         :type livenesstimeout: int
         :param readinesstimeout: model pod startup timeout (used readiness probe)
         :type readinesstimeout: int
-        :return: bool -- True
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
             'image': image
@@ -150,9 +160,9 @@ class EdiClient:
         if readinesstimeout:
             payload['readinesstimeout'] = readinesstimeout
 
-        return self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload)['status']
+        return self.parse_deployments(self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload))
 
-    def undeploy(self, model, grace_period=0, version=None):
+    def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
         """
         Undeploy API endpoint
 
@@ -162,10 +172,13 @@ class EdiClient:
         :type grace_period: int
         :param version: (Optional) model version
         :type version: str
-        :return: bool -- True
+        :param ignore_not_found: (Optional) ignore if cannot find models
+        :type ignore_not_found: bool
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
-            'model': model
+            'model': model,
+            'ignore_not_found': ignore_not_found
         }
 
         if grace_period:
@@ -174,7 +187,7 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        return self._query(legion.edi.server.EDI_UNDEPLOY, action='POST', payload=payload)['status']
+        return self.parse_deployments(self._query(legion.edi.server.EDI_UNDEPLOY, action='POST', payload=payload))
 
     def scale(self, model, count, version=None):
         """
@@ -186,7 +199,7 @@ class EdiClient:
         :type count: int
         :param version: (Optional) model version
         :type version: str
-        :return: bool -- True
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
             'model': model,
@@ -195,7 +208,7 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        return self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload)['status']
+        return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
 
 
 def add_edi_arguments(parser):

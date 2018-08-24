@@ -31,8 +31,6 @@ Check EDI deploy 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers         ${resp.rc}         0
-                    Sleep                           10  # because no way to control explicitly scaling the model inside
-    # TODO remove sleep
     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
                     Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
@@ -53,8 +51,6 @@ Check EDI undeploy all model instances by version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Sleep                           20  # because no way to control explicitly scaling the model inside
-    # TODO remove sleep
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
     ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
                     Log                             ${model_1}
@@ -74,14 +70,12 @@ Check EDI undeploy 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=   Run EDI undeploy without version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers        ${resp.rc}         2
-                    Should contain                     ${resp.stderr}     Founded more then one deployment
+                    Should contain                     ${resp.stderr}     Please specify version of model
 
 Check EDI scale up 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Sleep                           20  # because no way to control explicitly scaling the model inside
-    # TODO remove sleep
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
     ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
                     Log                             ${model_1}
@@ -94,8 +88,6 @@ Check EDI scale down 1 of 2 models with different versions but the same id
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Sleep                           20  # because no way to control explicitly scaling the model inside
-    # TODO remove sleep
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
     ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
                     Log                             ${model_1}
@@ -106,8 +98,6 @@ Check EDI scale down 1 of 2 models with different versions but the same id
 
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    1   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Sleep                           20  # because no way to control explicitly scaling the model inside
-    # TODO remove sleep
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
     ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
                     Log                             ${model_1}
@@ -119,16 +109,12 @@ Check EDI scale down 1 of 2 models with different versions but the same id
 Check EDI scale up 1 of 2 models by invalid version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}121
-                    Sleep                          20
-    # TODO remove sleep
                     Should Be Equal As Integers     ${resp.rc}              2
                     Should contain                  ${resp.stderr}          No one model can be found
 
 Check EDI scale up 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
     ${resp}=        Run EDI scale                   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2
-                    Sleep                          20
-    # TODO remove sleep
                     Should Be Equal As Integers     ${resp.rc}              2
                     Should contain                  ${resp.stderr}          Please specify version of model
 

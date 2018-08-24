@@ -543,6 +543,22 @@ def string_to_bool(value):
     return value.lower() in ['true', '1', 't', 'y', 'yes']
 
 
+def parse_value_to_type(value, target_type):
+    """
+    Parse string value to target type
+
+    :param value: value to parse
+    :type value: any
+    :param target_type: target python type
+    :type target_type: :py:class:`type`
+    :return: :py:class:`type`() -- target instance
+    """
+    if target_type == bool:
+        return string_to_bool(str(value))
+    else:
+        return target_type(value)
+
+
 def deduce_model_file_name(model_id, model_version):
     """
     Get model file name
