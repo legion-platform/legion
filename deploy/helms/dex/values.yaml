@@ -11,7 +11,7 @@ image:
 
 issuer: https://dex.domain.com
 
-connectors: []
+#connectors: []
 #- type: github
 #  id: github
 #  name: GitHub
