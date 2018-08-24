@@ -41,7 +41,7 @@ node {
                     cd legion_test
                     ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py bdist_wheel
-                    ../.venv/bin/python3.6 setup.py develop
+                    ../.venv/bin/python3.6 -m pip install -e ./
                     cd -
                     '''
 
@@ -72,7 +72,7 @@ node {
                     ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
                     ../.venv/bin/python3.6 setup.py bdist_wheel
-                    ../.venv/bin/python3.6 setup.py develop
+                    ../.venv/bin/python3.6 -m pip install -e ./
                     cd -
                     """
 
@@ -82,7 +82,7 @@ node {
                     ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
                     ../.venv/bin/python3.6 setup.py bdist_wheel
-                    ../.venv/bin/python3.6 setup.py develop
+                    ../.venv/bin/python3.6 -m pip install -e ./
                     cd -
                     """
 
@@ -95,7 +95,7 @@ node {
                     ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py sdist upload -r ${params.PyPiDistributionTargetName}
                     ../.venv/bin/python3.6 setup.py bdist_wheel
-                    ../.venv/bin/python3.6 setup.py develop
+                    ../.venv/bin/python3.6 -m pip install -e ./
                     cd -
                     """
                 }, 'Build docs': {
