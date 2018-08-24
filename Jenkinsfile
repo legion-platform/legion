@@ -50,7 +50,7 @@ node {
             def date = new Date()
             def buildDate = dateFormat.format(date)
 
-            Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=jenkins --label build_date=${buildDate}"
+            Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${BUILD_USER} --label build_date=${buildDate}"
             println(Globals.dockerLabels)
 
             if (params.StableRelease) {
