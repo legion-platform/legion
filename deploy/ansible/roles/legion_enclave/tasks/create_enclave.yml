@@ -69,6 +69,7 @@
     state: present
     name: "{{ airflow_db_enclave_user }}"
     password: "{{ airflow_db_enclave_pass.stdout }}"
+    encrypted: yes
 
 - name: "Set Postgres user privileges "
   postgresql_privs: 

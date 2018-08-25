@@ -1,0 +1,3 @@
+---
+airflow_rds_engine: "postgres"
+airflow_rds_engine_version: "10.4"
