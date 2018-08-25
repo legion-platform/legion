@@ -2,11 +2,9 @@ replicaCount: {{ dex.replicas | default('1') }}
 
 issuer: https://dex.{{ cluster_name }}
 
-{#
 connectors: []
 
-{{ dex.config.connectors|to_yaml }}
-#}
+{{ dex.config.connectors }}
 
 staticClients:
 - id: {{ dex.config.client_id }}
