@@ -91,7 +91,7 @@ run-condition:1.0
 scm-api:2.2.7
 script-security:1.44
 sse-gateway:1.15
-ssh-credentials:1.14
+ssh-credentials:1.13
 ssh-slaves:1.26
 structs:1.14
 subversion:2.11.1
