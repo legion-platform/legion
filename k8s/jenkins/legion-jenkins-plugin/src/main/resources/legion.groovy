@@ -59,6 +59,12 @@ def getDefaultImageName(){
 def pod(Map podParams=null, Closure body) {
     if (podParams == null)
         podParams = [:]
+    
+    if ( params.Enclave == "" ) {
+        echo '[FAILURE] Parameter Enclave not defined!'
+        currentBuild.result = 'FAILURE'
+        return
+    }
 
     image = podParams.get('image', getDefaultImageName())
     cpu = podParams.get('cpu', '330m')
