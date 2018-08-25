@@ -6,6 +6,7 @@ issuer: https://dex.{{ cluster_name }}
 connectors: []
 
 {{ dex.config.connectors|to_yaml }}
+#}
 
 staticClients:
 - id: {{ dex.config.client_id }}
@@ -15,7 +16,6 @@ staticClients:
   - 'https://jenkins.{{ cluster_name }}/securityRealm/finishLogin'
   - 'https://auth.{{ cluster_name }}/callback/{{ env_name }}'
   name: '{{ cluster_name }} Cluster'
-#}
 staticPasswords:
 {{ dex.config.staticPasswords|to_yaml }}
 
