@@ -2,9 +2,7 @@ replicaCount: {{ dex.replicas | default('1') }}
 
 issuer: https://dex.{{ cluster_name }}
 
-{#
-connectors: []
-
+connectors:
 {{ dex.config.connectors|to_yaml }}
 
 staticClients:
@@ -15,7 +13,7 @@ staticClients:
   - 'https://jenkins.{{ cluster_name }}/securityRealm/finishLogin'
   - 'https://auth.{{ cluster_name }}/callback/{{ env_name }}'
   name: '{{ cluster_name }} Cluster'
-#}
+
 staticPasswords:
 {{ dex.config.staticPasswords|to_yaml }}
 
