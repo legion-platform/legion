@@ -285,7 +285,9 @@ class Enclave:
         image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
         model_properties_default_values_str = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
-        model_properties_default_values = legion.k8s.properties.K8SPropertyStorage.parse_data_from_string(model_properties_default_values_str)
+        model_properties_default_values = legion.k8s.properties.K8SPropertyStorage.parse_data_from_string(
+            model_properties_default_values_str
+        )
 
         self._validate_model_properties_storage(
             image_meta_information.model_id,

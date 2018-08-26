@@ -179,7 +179,7 @@ class K8SPropertyStorage:
         """
         Serialize data to string
 
-        :return: str -- serialized data        
+        :return: str -- serialized data
         """
         return json.dumps(self.data)
 
@@ -187,7 +187,7 @@ class K8SPropertyStorage:
     def parse_data_from_string(string_value):
         """
         Parse data from string value
-        
+
         :param string_value: string representation of value
         :type string_value: str
         :return: dict[str, str] -- parsed values
@@ -195,7 +195,6 @@ class K8SPropertyStorage:
         if not string_value:
             return {}
         return json.loads(string_value)
-
 
     def __setitem__(self, key, value):
         """
