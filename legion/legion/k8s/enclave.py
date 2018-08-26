@@ -18,7 +18,6 @@ legion k8s enclave class
 """
 import logging
 import os
-import json
 
 import kubernetes
 import kubernetes.client
@@ -223,7 +222,7 @@ class Enclave:
 
         return model_services
 
-    def _validate_model_properties_storage(self, model_id, model_version, properties, default_values):
+    def _validate_model_properties_storage(self, model_id, model_version, default_values):
         """
         Validate that model properties for model exists in a cluster and contains required properties
         If there are not properties storage in a cluster - create with default values
@@ -232,12 +231,11 @@ class Enclave:
         :type model_id: str
         :param model_version: model version
         :type model_version: str
-        :param properties: required properties or None
-        :type properties: list[str] or None
         :param default_values: default values for properties
         :type default_values: dict[str, str]
         :return: None
         """
+        properties = default_values.keys()
         if not properties:  # if model does not require properties check can be omitted
             return
 
@@ -286,14 +284,13 @@ class Enclave:
         labels = legion.k8s.utils.get_docker_image_labels(image)
         image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
-        model_properties = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTIES)
-        model_properties_default_values = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
+        model_properties_default_values_str = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
+        model_properties_default_values = legion.k8s.properties.K8SPropertyStorage.parse_data_from_string(model_properties_default_values_str)
 
         self._validate_model_properties_storage(
             image_meta_information.model_id,
             image_meta_information.model_version,
-            model_properties.split(',') if model_properties else [],
-            json.loads(model_properties_default_values) if model_properties_default_values else {}
+            model_properties_default_values
         )
 
         if self.get_models(image_meta_information.model_id, image_meta_information.model_version):

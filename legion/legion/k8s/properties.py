@@ -19,6 +19,7 @@ legion k8s properties class
 import base64
 import logging
 import time
+import json
 
 import kubernetes
 import kubernetes.client
@@ -173,6 +174,28 @@ class K8SPropertyStorage:
         self._last_load_time = None
         self._saved = False
         self._state = {}
+
+    def serialize_data_to_string(self):
+        """
+        Serialize data to string
+
+        :return: str -- serialized data        
+        """
+        return json.dumps(self.data)
+
+    @staticmethod
+    def parse_data_from_string(string_value):
+        """
+        Parse data from string value
+        
+        :param string_value: string representation of value
+        :type string_value: str
+        :return: dict[str, str] -- parsed values
+        """
+        if not string_value:
+            return {}
+        return json.loads(string_value)
+
 
     def __setitem__(self, key, value):
         """
