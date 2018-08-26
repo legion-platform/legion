@@ -16,6 +16,8 @@
 """
 legion k8s definitions functions
 """
+import typing
+
 LEGION_SYSTEM_LABEL = 'legion.system'
 LEGION_SYSTEM_VALUE = 'yes'
 LEGION_COMPONENT_LABEL = 'legion.component'
@@ -39,6 +41,14 @@ STATUS_WARN = 'warning'
 EVENT_ADDED = 'ADDED'
 EVENT_MODIFIED = 'MODIFIED'
 EVENT_DELETED = 'DELETED'
+
+ModelContainerMetaInformation = typing.NamedTuple('ModelContainerMetaInformation', [
+    ('k8s_name', str),
+    ('model_id', str),
+    ('model_version', str),
+    ('kubernetes_labels', typing.Dict[str, str]),
+    ('kubernetes_annotations', typing.Dict[str, str]),
+])
 
 
 class ModelIdVersion:

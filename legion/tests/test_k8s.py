@@ -27,6 +27,7 @@ import legion.k8s.utils
 import legion.config
 import legion.containers.docker
 import legion.containers.headers
+import legion.utils
 
 try:
     from .legion_test_utils import LegionTestContainer
@@ -127,18 +128,27 @@ class TestK8S(unittest2.TestCase):
         expected_model_version = '1-2'
 
         labels = self._build_test_model_labels(source_model_id, source_model_version)
-        k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
+        image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
-        self.assertEqual(model_id, source_model_id)
-        self.assertEqual(model_version, source_model_version)
+        self.assertEqual(image_meta_information.model_id, source_model_id)
+        self.assertEqual(image_meta_information.model_version, source_model_version)
 
-        self.assertEqual(k8s_name, 'model-{}-{}'.format(model_id, expected_model_version))
+        expected_k8s_name = legion.utils.normalize_name('model-{}-{}'.format(image_meta_information.model_id,
+                                                                             image_meta_information.model_version),
+                                                        dns_1035=True)
+        self.assertEqual(image_meta_information.k8s_name, expected_k8s_name)
 
-        self.assertIsInstance(compatible_labels, dict, 'labels is not a dict')
-        self.assertTrue(compatible_labels, 'empty labels')
-        for key, value in compatible_labels.items():
+        self.assertIsInstance(image_meta_information.kubernetes_labels, dict, 'labels is not a dict')
+        self.assertTrue(image_meta_information.kubernetes_labels, 'empty labels')
+        for key, value in image_meta_information.kubernetes_labels.items():
             self.assertIsInstance(key, str, 'labels key is not a string')
             self.assertIsInstance(value, str, 'labels key is not a string')
+
+        self.assertIsInstance(image_meta_information.kubernetes_annotations, dict, 'annotations is not a dict')
+        self.assertTrue(image_meta_information.kubernetes_annotations, 'empty annotations')
+        for key, value in image_meta_information.kubernetes_annotations.items():
+            self.assertIsInstance(key, str, 'annotations key is not a string')
+            self.assertIsInstance(value, str, 'annotations key is not a string')
 
     def test_container_id_detection_kubernetes(self):
         self.assertEqual(legion.containers.docker.get_docker_container_id_from_cgroup_line(
