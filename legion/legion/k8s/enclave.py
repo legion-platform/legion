@@ -18,7 +18,6 @@ legion k8s enclave class
 """
 import logging
 import os
-import json
 
 import kubernetes
 import kubernetes.client
@@ -223,7 +222,7 @@ class Enclave:
 
         return model_services
 
-    def _validate_model_properties_storage(self, model_id, model_version, properties, default_values):
+    def _validate_model_properties_storage(self, model_id, model_version, default_values):
         """
         Validate that model properties for model exists in a cluster and contains required properties
         If there are not properties storage in a cluster - create with default values
@@ -232,12 +231,11 @@ class Enclave:
         :type model_id: str
         :param model_version: model version
         :type model_version: str
-        :param properties: required properties or None
-        :type properties: list[str] or None
         :param default_values: default values for properties
         :type default_values: dict[str, str]
         :return: None
         """
+        properties = default_values.keys()
         if not properties:  # if model does not require properties check can be omitted
             return
 
@@ -284,20 +282,22 @@ class Enclave:
 
         client = legion.k8s.utils.build_client()
         labels = legion.k8s.utils.get_docker_image_labels(image)
-        k8s_name, compatible_labels, model_id, model_version = legion.k8s.utils.get_meta_from_docker_labels(labels)
+        image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
 
-        model_properties = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTIES)
-        model_properties_default_values = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
-
-        self._validate_model_properties_storage(
-            model_id,
-            model_version,
-            model_properties.split(',') if model_properties else [],
-            json.loads(model_properties_default_values) if model_properties_default_values else {}
+        model_properties_default_values_str = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
+        model_properties_default_values = legion.k8s.properties.K8SPropertyStorage.parse_data_from_string(
+            model_properties_default_values_str
         )
 
-        if self.get_models(model_id, model_version):
-            raise Exception('Duplicating model id and version (id={}, version={})'.format(model_id, model_version))
+        self._validate_model_properties_storage(
+            image_meta_information.model_id,
+            image_meta_information.model_version,
+            model_properties_default_values
+        )
+
+        if self.get_models(image_meta_information.model_id, image_meta_information.model_version):
+            raise Exception('Duplicating model id and version (id={}, version={})'
+                            .format(image_meta_information.model_id, image_meta_information.model_version))
 
         # REFACTOR, maybe we should remove that
         container_env_variables = {
@@ -339,7 +339,8 @@ class Enclave:
             ports=[kubernetes.client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
 
         pod_template = kubernetes.client.V1PodTemplateSpec(
-            metadata=kubernetes.client.V1ObjectMeta(labels=compatible_labels),
+            metadata=kubernetes.client.V1ObjectMeta(annotations=image_meta_information.kubernetes_annotations,
+                                                    labels=image_meta_information.kubernetes_labels),
             spec=kubernetes.client.V1PodSpec(
                 containers=[container],
                 service_account_name=legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
@@ -352,43 +353,47 @@ class Enclave:
         deployment = kubernetes.client.ExtensionsV1beta1Deployment(
             api_version="extensions/v1beta1",
             kind="Deployment",
-            metadata=kubernetes.client.V1ObjectMeta(name=k8s_name, labels=compatible_labels),
+            metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
+                                                    annotations=image_meta_information.kubernetes_annotations,
+                                                    labels=image_meta_information.kubernetes_labels),
             spec=deployment_spec)
 
         extensions_v1beta1 = kubernetes.client.ExtensionsV1beta1Api(client)
 
-        LOGGER.info('Creating deployment {} in namespace {}'.format(k8s_name, self.namespace))
+        LOGGER.info('Creating deployment {} in namespace {}'.format(image_meta_information.k8s_name,
+                                                                    self.namespace))
         extensions_v1beta1.create_namespaced_deployment(
             body=deployment,
             namespace=self.namespace)
 
         # Creating a service
-        service_selector = {k: v for k, v in compatible_labels.items()
-                            if k in [legion.containers.headers.DOMAIN_MODEL_ID,
-                                     legion.containers.headers.DOMAIN_MODEL_VERSION]}
-
         service_spec = kubernetes.client.V1ServiceSpec(
-            selector=service_selector,
+            selector=image_meta_information.kubernetes_labels,
             ports=[kubernetes.client.V1ServicePort(name='api', protocol='TCP', port=5000, target_port='api')])
 
         service = kubernetes.client.V1Service(
             api_version='v1',
             kind='Service',
-            metadata=kubernetes.client.V1ObjectMeta(name=k8s_name, labels=compatible_labels),
+            metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
+                                                    annotations=image_meta_information.kubernetes_annotations,
+                                                    labels=image_meta_information.kubernetes_labels),
             spec=service_spec)
 
         core_v1api = kubernetes.client.CoreV1Api(client)
 
-        LOGGER.info('Creating service {} in namespace {}'.format(k8s_name, self.namespace))
+        LOGGER.info('Creating service {} in namespace {}'.format(image_meta_information.k8s_name,
+                                                                 self.namespace))
         core_v1api.create_namespaced_service(
             body=service,
             namespace=self.namespace)
 
-        model_services = self.get_models(model_id, model_version)
+        model_services = self.get_models(image_meta_information.model_id,
+                                         image_meta_information.model_version)
         if model_services:
             return model_services[0]
         else:
-            raise Exception('Cannot find created model service for model {} id {}'.format(model_id, model_version))
+            raise Exception('Cannot find created model service for model {} id {}'
+                            .format(image_meta_information.model_id, image_meta_information.model_version))
 
     def watch_models(self):
         """
