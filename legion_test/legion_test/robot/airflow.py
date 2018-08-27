@@ -22,6 +22,7 @@ from requests.exceptions import RequestException
 import logging
 import time
 from legion_test.robot.dex_client import get_session_cookies
+import json
 
 class Airflow:
     """
@@ -127,12 +128,11 @@ class Airflow:
         return self._get('api?api=rest_api_plugin_version')
 
     def find_airflow_dags(self, subdir=None, report=None):
-        """ List all the DAGs
-            GET /api?api=list_dags&subdir=value&report
+        """ List all the DAGs names
+            GET /airflow/dag_stats
             :param subdir: (Optional) File location or directory from which to look for the dag
             :param report: (Optional) Boolean, Show DagBag loading report"""
-        return self._find_lines_in_stdout(self._get('api?api=list_dags'
-                                                    , params={'subdir': subdir, 'report': report}))[3:]
+        return json.loads(self._get('airflow/dag_stats', use_rest_api_root=False))
 
     def get_failed_airflow_dags(self):
         """
