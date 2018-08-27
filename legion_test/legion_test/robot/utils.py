@@ -17,6 +17,7 @@
 Robot test library - utils
 """
 
+import datetime
 import socket
 import requests
 import time
@@ -165,3 +166,28 @@ class Utils:
             raise error
         else:
             raise Exception('Unexpected case happen!')
+
+    def wait_up_to_second(second, time_template=None):
+        """
+        Wait up to second then generate time from template
+
+        :param second: target second (0..59)
+        :type second: int
+        :param time_template: (Optional) time template
+        :type time_template: str
+        :return: None or str -- time from template
+        """
+        current_second = datetime.datetime.now().second
+        target_second = int(second)
+
+        if current_second > target_second:
+            sleep_time = 60 - (current_second - target_second)
+        else:
+            sleep_time = target_second - current_second
+
+        if sleep_time:
+            print('Waiting {} second(s)'.format(sleep_time))
+            time.sleep(sleep_time)
+
+        if time_template:
+            return datetime.datetime.utcnow().strftime(time_template)
