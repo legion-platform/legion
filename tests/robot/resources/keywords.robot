@@ -222,8 +222,8 @@ Run, wait and check jenkins jobs for enclave
 Check if component domain has been secured
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a legion component is secured by auth
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}/securityRealm/commenceLogin?from=/
-    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}/securityRealm/commenceLogin?from=/
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}
+    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}
     Log              Auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text

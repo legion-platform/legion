@@ -176,13 +176,16 @@ class Utils:
         :return:  response_code and response_text
         :rtype: dict
         """
-        response = requests.get(url, timeout=10)
+        if "jenkins" in url:
+            response = requests.get('{}/securityRealm/commenceLogin'.format(url), timeout=10)
+        else:
+            response = requests.get(url, timeout=10)
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
     def post_credentials_to_auth(component_url, cluster_host, creds):
         """
-        Send post request with credentials to authorize
+        Get session id and send post request with credentials to authorize
 
         :param str component_url: legion core component url
         :param str cluster_host: cluster host name
@@ -194,7 +197,11 @@ class Utils:
         import re
 
         session = requests.Session()
-        response = session.get("{}.{}/securityRealm/commenceLogin".format(component_url, cluster_host))
+        if "jenkins" in component_url:
+            response = session.get("{}.{}/securityRealm/commenceLogin".format(component_url, cluster_host))
+        else:
+            response = session.get("{}.{}".format(component_url, cluster_host))
+
         if response.status_code != 200:
             raise IOError('Authentication endpoint is unavailable, got {} http code'
                           .format(response.status_code))
@@ -208,8 +215,7 @@ class Utils:
         if creds["login"] == "admin":
             response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
         else:
-            session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
-            response = session.get("{}.{}".format(component_url, cluster_host))
+            response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
