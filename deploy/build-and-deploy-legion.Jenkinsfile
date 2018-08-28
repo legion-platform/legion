@@ -51,7 +51,7 @@ node {
             result = build job: params.DeployLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
-                    string(name: 'LegionVersion', value: legionVersion),
+                    string(name: 'ReleaseVersion', value: legionVersion),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
                     booleanParam(name: 'UseRegressionTests', value: params.UseRegressionTests),
