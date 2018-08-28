@@ -89,7 +89,7 @@ Check EDI double deploy procedure for the same model
 Check EDI undeploy procedure
     [Documentation]  Try to undeploy dummy valid model through EDI console
     [Tags]  edi  cli  enclave   one_version
-    ${resp}=        Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+    ${resp}=        Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers         ${resp.rc}         0
     ${resp}=        Run EDI inspect                     ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers         ${resp.rc}         0
