@@ -126,21 +126,30 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     """
     LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r}'
                 .format(image, count, livenesstimeout, readinesstimeout))
-    model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
-    LOGGER.info('Model (id={}, version={}) has been deployed'
-                .format(model_service.id, model_service.version))
 
-    if app.config['REGISTER_ON_GRAFANA']:
-        LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
-                    .format(model_service.id, model_service.version))
-        if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
-            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
-        else:
-            LOGGER.info('Registration on Grafana has been skipped - dashboard exists')
+    # Build dictionary with information about deployed models
+    deployed_models = app.config['ENCLAVE'].get_models()
+    deployed_models_by_image = {service.image: service for service in deployed_models}
+
+    if image in deployed_models_by_image.keys():  # if model already deployed - return its deployment information
+        LOGGER.info('Same model already has been deployed - skipping')
+        model_deployment = deployed_models_by_image[image]
     else:
-        LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
+        model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
+        LOGGER.info('Model (id={}, version={}) has been deployed'
+                    .format(model_service.id, model_service.version))
 
-    model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
+        if app.config['REGISTER_ON_GRAFANA']:
+            LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
+                        .format(model_service.id, model_service.version))
+            if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
+                app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
+            else:
+                LOGGER.info('Registration on Grafana has been skipped - dashboard exists')
+        else:
+            LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
+
+        model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
 
     return return_model_deployments([model_deployment])
 
