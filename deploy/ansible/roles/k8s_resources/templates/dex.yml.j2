@@ -4,7 +4,7 @@ issuer: https://dex.{{ cluster_name }}
 
 {{ if dex.config.connectors }}
 connectors:
-{{ dex.config.connectors|to_yaml }}
+  {{ - dex.config.connectors|to_yaml }}
 {{ else }}
 connectors: []
 {{ end }}
