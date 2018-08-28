@@ -59,8 +59,8 @@ node {
                         print('Set Release tag')
                         sh """
                         if [ `git tag |grep ${params.ReleaseVersion}` ]; then
-                            if [ ${params.ForceTagPush} ]; then
-                                echo 'Remove existing git tag'
+                            if [ ${params.ForceTagPush} = "true" ]; then
+                                echo 'Removing existing git tag'
                                 git tag -d ${params.ReleaseVersion}
                                 git push origin :refs/tags/${params.ReleaseVersion}
                             else
@@ -70,7 +70,6 @@ node {
                         fi
                         git tag ${params.ReleaseVersion}
                         git push origin ${params.ReleaseVersion}
-                        fi
                         """
                     } else {
                         print("Skipping release git tag push")
