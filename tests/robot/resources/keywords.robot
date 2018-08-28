@@ -216,3 +216,41 @@ Run, wait and check jenkins jobs for enclave
     [Arguments]             ${enclave}
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
     \    Test model pipeline    ${model_name}    ${enclave}
+
+    # --------- TEMPLATE KEYWORDS SECTION -----------
+
+Check if component domain has been secured
+    [Arguments]     ${component}    ${enclave}
+    [Documentation]  Check that a legion component is secured by auth
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}/securityRealm/commenceLogin?from=/
+    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}/securityRealm/commenceLogin?from=/
+    Log              Auth page for ${component} is ${response}
+    Dictionary Should Contain Item    ${response}    response_code    200
+    ${auth_page} =   Get From Dictionary   ${response}    response_text
+    Should contain   ${auth_page}    Log in to dex
+    Should contain   ${auth_page}    Log in with Email
+
+Secured component domain should not be accessible by invalid credentials
+    [Arguments]     ${component}    ${enclave}
+    [Documentation]  Check that a secured legion component does not provide access by invalid credentials
+    &{creds} =       Create Dictionary 	login=admin   password=admin
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
+    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
+    Log              Bad auth page for ${component} is ${response}
+    Dictionary Should Contain Item    ${response}    response_code    200
+    ${auth_page} =   Get From Dictionary   ${response}    response_text
+    Should contain   ${auth_page}    Log in to Your Account
+    Should contain   ${auth_page}    Invalid Email Address and password
+
+
+Secured component domain should be accessible by valid credentials
+    [Arguments]     ${component}    ${enclave}
+    [Documentation]  Check that a secured legion component does not provide access by invalid credentials
+    &{creds} =       Get static user data
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
+    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
+    Log              Bad auth page for ${component} is ${response}
+    Dictionary Should Contain Item    ${response}    response_code    200
+    ${auth_page} =   Get From Dictionary   ${response}    response_text
+    Should contain   ${auth_page}    ${component}
+    Should not contain   ${auth_page}    Invalid Email Address and password
