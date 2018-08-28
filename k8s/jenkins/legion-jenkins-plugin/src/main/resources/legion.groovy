@@ -273,4 +273,61 @@ def runPerformanceTests(testScript) {
     archiveArtifacts rootDir() + '/performance/locust.log'
 }
 
+def notifyBuild(String buildStatus = 'STARTED') {
+    // build status of null means successful
+    buildStatus =  buildStatus ?: 'SUCCESSFUL'
+
+    def previousBuild = currentBuild.getPreviousBuild()
+    def previousBuildResult = previousBuild != null ? previousBuild.result : null
+
+    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
+    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
+
+    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
+
+    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
+
+    if (!masterOrDevelopBuild)
+        return
+
+    // Skip green -> green
+    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
+        return
+
+    // Default values
+    def colorCode = '#FF0000'
+    def arguments = ""
+    if (params.Skip_kops != null) {
+        arguments = arguments + "\nskip kops *${params.Skip_kops}*"
+    }
+    if (params.BaseVersion && params.LocalVersion) {
+        arguments = arguments + "\nversion *${params.BaseVersion} ${params.LocalVersion}*"
+    }
+
+    if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
+        arguments = arguments + "\nDeploy *${params.DeployLegion}*, Create Jenkins tests *${params.CreateJenkinsTests}*, Use regression tests *${params.UseRegressionTests}*"
+    }
+    if (params.EnclaveName) {
+        arguments = arguments + "\nEnclave *${params.EnclaveName}*"
+    }
+    def summary = """\
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
+    branch *${GitBranch}*
+    profile *<https://${env.Profile}|${env.Profile}>*
+    ${arguments}
+    Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
+    """.stripIndent()
+
+    // Override default values based on build status
+    if (buildStatus == 'STARTED') {
+        colorCode = '#FFFF00'
+    } else if (buildStatus == 'SUCCESSFUL') {
+        colorCode = '#00FF00' 
+    } else {
+        colorCode = '#FF0000'
+    }
+
+    slackSend (color: colorCode, message: summary)
+}
+
 return this
