@@ -1,6 +1,3 @@
-def baseVersion = null
-def localVersion = null
-
 node {
     try {
         stage('Build') {
