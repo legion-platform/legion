@@ -306,8 +306,10 @@ def generate_token():
 
     :return: dict -- state of cluster
     """
-    expiration = (datetime.now() + timedelta(hours=12)).utcnow()
-    return {'token': jwt.encode({'exp': expiration}, app.config['JWT_SECRET'], algorithm='HS256'),
+    jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
+    jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
+    expiration = (datetime.now() + jwt_life_length).utcnow()
+    return {'token': jwt.encode({'exp': expiration}, jwt_secret, algorithm='HS256'),
             'exp': expiration}
 
 
@@ -345,6 +347,7 @@ def load_cluster_config(application):
                                                            application.config['CLUSTER_SECRETS']['grafana.user'],
                                                            application.config['CLUSTER_SECRETS']['grafana.password'])
     application.config['GRAFANA_CLIENT'] = grafana_client
+    application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 
 
 def init_application(args=None):
