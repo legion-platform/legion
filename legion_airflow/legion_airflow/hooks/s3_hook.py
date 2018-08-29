@@ -9,11 +9,11 @@ import boto3
 from airflow.exceptions import AirflowConfigException
 
 from airflow import configuration as conf
-from airflow.hooks.base_hook import BaseHook
+from legion_airflow.hooks.k8s_base_hook import K8SBaseHook
 from urllib.parse import urlparse
 
 
-class S3Hook(BaseHook):
+class S3Hook(K8SBaseHook):
     """S3 hook."""
 
     STOP_FILE_POSTFIX = '.STOP'
