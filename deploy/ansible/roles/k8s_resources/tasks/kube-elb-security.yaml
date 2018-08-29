@@ -1,7 +1,7 @@
 ---
 
 - name: Get Kube-elb-security chart status
-  shell: helm --kube-context {{ cluster_name }} status dex
+  shell: helm --kube-context {{ cluster_name }} status kube-elb-security
   register: helm_kube_elb_security_status
   ignore_errors: true
   when: dex.enabled
