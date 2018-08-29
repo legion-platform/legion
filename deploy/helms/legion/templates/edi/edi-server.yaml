@@ -51,6 +51,8 @@ spec:
           value: "{{ .Values.secrets.nexus.admin }}"
         - name: MODEL_IMAGES_REGISTRY_HOST
           value: "localhost:31111"
+        - name: JWT_SECRET
+          value: "{{ .Values.secrets.tokenSecret }}"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 

@@ -159,3 +159,4 @@ connections:
 secrets:
   nexus:
     admin: "jonny"
+  tokenSecret: 'legion-secret'
