@@ -26,6 +26,8 @@ import legion.http
 import legion.model
 from flask import Flask, Blueprint
 from flask import current_app as app
+import jwt
+from datetime import datetime, timedelta
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
@@ -37,6 +39,7 @@ EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
 EDI_INSPECT = '/api/{version}/inspect'
 EDI_INFO = '/api/{version}/info'
+EDI_GENERATE_TOKEN = '/api/{version}/token'
 
 ALL_EDI_API_ENDPOINTS = EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, EDI_INFO
 
@@ -292,6 +295,20 @@ def info():
     :return: dict -- state of cluster
     """
     return app.config['CLUSTER_STATE']
+
+
+@blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['GET'])
+@legion.http.provide_json_response
+@legion.http.authenticate(authenticate)
+def generate_token():
+    """
+    Generate JWT token
+
+    :return: dict -- state of cluster
+    """
+    expiration = (datetime.now() + timedelta(hours=12)).utcnow()
+    return {'token': jwt.encode({'exp': expiration}, app.config['JWT_SECRET'], algorithm='HS256'),
+            'exp': expiration}
 
 
 def create_application():
