@@ -43,4 +43,3 @@ ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.co
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
 RUN pip3 install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
-RUN pip3 install --disable-pip-version-check "PyJWT==1.6.4"
