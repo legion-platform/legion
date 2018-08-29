@@ -1,0 +1,125 @@
+# Common
+vendor: legion
+env_type: live
+env_name: legion-live
+base_domain: legion-live.epm.kharlamov.biz
+route53_zone: epm.kharlamov.biz
+
+
+# System vars
+tmp_dir: /tmp/
+
+# AWS 
+aws_region: us-east-2
+node_autoscaler_min: 3
+node_autoscaler_max: 5
+bastion_shape: t2.micro
+master_shape: t2.large
+node_shape: t2.large
+
+# Ohio high memory instances
+node_extra_shapes:
+  - r4.large    # 2 cpu   / 15.25Gb / $0.133 ph
+  - r4.xlarge   # 4 cpu   / 30.5Gb  / $0.266 ph
+  - r4.2xlarge  # 8 cpu   / 61Gb    / $0.532 ph
+  - r4.4xlarge  # 16 cpu  / 122Gb   / $1.064 ph
+  - r4.8xlarge  # 32 cpu  / 244Gb   / $2.128 ph
+  - r4.16xlarge # 64 cpu  / 488Gb   / $4.256 ph
+  - x1.16xlarge # 64 cpu  / 976Gb   / $6.669 ph
+  - x1.32xlarge # 128 cpu / 1952Gb  / $13.338 ph
+
+node_extra_min: 0
+node_extra_max: 2
+
+vpc_id: vpc-5729c13e
+airflow_rds_shape: "db.t2.medium"
+airflow_rds_size: "50"
+
+# Kops
+cluster_name: legion-live.epm.kharlamov.biz
+state_store: s3://legion-cluster
+aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
+kubernetes_version: 1.9.3
+private_network: '172.31'
+cluster_zones:
+  - zone_name: us-east-2a
+    kops_cidr: "{{ private_network }}.112.0/24"
+    kops_utility_cidr: "{{ private_network }}.113.0/24"
+  - zone_name: us-east-2b
+    kops_cidr: "{{ private_network }}.114.0/24"
+    kops_utility_cidr: "{{ private_network }}.115.0/24"
+  - zone_name: us-east-2c
+    kops_cidr: "{{ private_network }}.116.0/24"
+    kops_utility_cidr: "{{ private_network }}.117.0/24"
+k8s_master_zones:
+  - us-east-2a
+  - us-east-2b
+  - us-east-2c
+# Legion specific variables
+persistent_jenkins_volume: true
+ssh_public_key: ~/.ssh/id_rsa.pub
+certificate_email: Kirill_Makhonin@epam.com
+git_key: "/home/jenkins/deploy.cert"
+cert_dir: "/etc/dynssl"
+use_https: "yes"
+use_https_for_tests: "yes"
+pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
+docker_repo: "nexus-local.cc.epm.kharlamov.biz:443/legion"
+namespace: default
+deployment: legion
+service_account:
+  login:  admin
+  password: admin
+examples_to_test:
+  - Test-Summation
+  - Digit-Recognition
+model_id_to_test: income
+enclaves:
+  - company-a
+  - company-b
+storageclass: efs
+airflow_dags_dir: '/airflow-dags'
+airflow_dags_pvc: legion-airflow-dags
+airflow_s3_bucket_name: 'epm-legion-data-{{ env_type }}-{{ enclave }}'
+airflow_s3_logs_path: 'airflow-logs/'
+airflow_s3_logs_url: "s3://{{ airflow_s3_bucket_name }}/{{ airflow_s3_logs_path }}"
+airflow_expected_output: 'expected-data/'
+airflow_pvc: 200m
+
+# Addons
+dashboard:
+  version: "1.8.3"
+  insecure: true
+
+# Dex
+dex:
+  enabled: false
+  # replicas: 1
+  # config:
+  #   client_id: client_id
+  #   client_secret: client_secret
+  #   connectors:
+  #   - type: gitlab
+  #     id: gitlab
+  #     name: Some GitLab
+  #     config:
+  #       baseURL: https://gitlab.domain.com
+  #       clientID: clientID
+  #       clientSecret: clientSecret
+  #       redirectURI: https://dex.domain.com/callback
+  #   staticPasswords:
+  #   - email: "admin@example.com"
+  #     # bcrypt hash of the string "password"
+  #     password: password
+  #     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+  #     username: "admin"
+  #     userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  # groups:
+  # - clusterrolebinding: cluster-admin
+  #   group: some-admin-group
+  # - clusterrolebinding: view
+  #   group: some-view-group
+
+# Secrets
+secrets_bucket: "legion-cluster"
+secrets_file: "/tmp/{{ cluster_name }}-secrets"
