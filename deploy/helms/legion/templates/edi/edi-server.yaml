@@ -28,6 +28,9 @@ spec:
       - name: cluster-state
         configMap:
           name: "{{ .Release.Name }}-cluster-state"
+      - name: jwt-config
+        secret:
+          secretName: "{{ .Release.Name }}-jwt-config"
       containers:
       - name: edi
         image: "{{ .Values.edi.image.repository }}:{{ .Values.edi.image.tag }}"
@@ -51,8 +54,6 @@ spec:
           value: "{{ .Values.secrets.nexus.admin }}"
         - name: MODEL_IMAGES_REGISTRY_HOST
           value: "localhost:31111"
-        - name: JWT_SECRET
-          value: "{{ .Values.secrets.tokenSecret }}"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket 
@@ -61,6 +62,9 @@ spec:
           readOnly: true
         - mountPath: /opt/legion/state
           name: cluster-state
+          readOnly: true
+        - mountPath: /opt/legion/jwtconf
+          name: jwt-config
           readOnly: true
         ports:
         - containerPort: 5000
