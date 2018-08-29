@@ -24,12 +24,12 @@ import re
 import subprocess
 
 
-SEARCH_PATTERN = r'''^__version__\s+=\s+'([0-9\.]+)(\+.*)?'$'''
+SEARCH_PATTERN = r'''^__version__\s+=\s+'([0-9\.]+\w*?)(\+.*)?'$'''
 
 
 def get_git_revision(file, use_short_hash=True):
     """
-    Get current GIR revision of file
+    Get current GIT revision of file
 
     :param file: path to file for check
     :type file: str
@@ -55,36 +55,60 @@ def get_git_revision(file, use_short_hash=True):
     return revision.strip()
 
 
-def patch_version_file(file, local_version):
+def get_base_version(file):
     """
     Update local version for file
 
     :param file: path to version file
     :type file: str
-    :param local_version: local version string
-    :type local_version: str
     :return: str - base version
+    """
+    with open(file, 'r') as stream:
+        try:
+            content = stream.read()
+            base_version = re.search(SEARCH_PATTERN, content, flags=re.MULTILINE)
+        except Exception as err:
+            raise Exception('Can\'t get version from version string')
+
+    return base_version.group(1)
+
+
+def patch_version_file(file, build_version, git_revision, build_id, build_user, date_string):
+    """
+    Update local version for file
+
+    :param file: path to version file
+    :type file: str
+    :param build_version: build version string
+    :type build_version: str
+    :param git_revision: build version string
+    :type git_revision: str
+    :param build_id: build id
+    :type build_id: str
+    :param build_user: build user id
+    :type build_user: str
+    :param date_string: build time
+    :type date_string: str
     """
     with open(file, 'r') as stream:
         content = stream.read()
         if isinstance(content, bytes):
             content = content.decode('utf-8')
 
-    base_version = re.search(SEARCH_PATTERN, content, flags=re.MULTILINE)
-    if not base_version or not base_version.group(1):
-        raise Exception('Cannot find version string')
-
-    content = re.sub(SEARCH_PATTERN, '__version__ = \'\\1+%s\'' % local_version, content, flags=re.MULTILINE)
+    content = re.sub(SEARCH_PATTERN, '__version__ = \'{}\''.format(build_version), content, flags=re.MULTILINE)
+    content = ''.join((content,
+        '__git_revision__ = \'{}\'\n'.format(git_revision),
+        '__build_id__ = \'{}\'\n'.format(build_id),
+        '__build_user__ = \'{}\'\n'.format(build_user),
+        '__build_date__ = \'{}\'\n'.format(date_string)))
 
     with open(file, 'w') as stream:
         stream.write(content)
 
-    return base_version.group(1)
-
 
 def work(args):
     """
-    Perform work with version file: add local version (datetime, build, git commit sha)
+    Set version and build metadata to version file
 
     :param args: arguments
     :type args: :py:class:`argparse.Namespace`
@@ -94,36 +118,33 @@ def work(args):
     if not os.path.exists(args.version_file) or not os.path.isfile(args.version_file):
         raise Exception('Cannot find version file: %s' % args.version_file)
 
-    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
     git_revision = get_git_revision(args.version_file, not args.use_full_commit_id)
     if not git_revision:
         git_revision = '0000'
 
-    build_id = os.getenv('BUILD_NUMBER', None)
-    if args.build_id:
-        build_id = args.build_id
+    build_id = args.build_id
+    build_user = args.build_user
 
-    if not build_id:
-        build_id = 0
+    if not args.build_version:
+        local_version_string = '%s.%s.%s' % (date_string, str(build_id), git_revision)
+        build_version = '{}-{}'.format(get_base_version(args.version_file), local_version_string)
+    else:
+        build_version = args.build_version
 
-    local_version_string = '%s.%s.%s' % (date_string, str(build_id), git_revision)
+    patch_version_file(args.version_file, build_version, git_revision, build_id, build_user, date_string)
 
-    base_version = patch_version_file(args.version_file, local_version_string)
-
-    print('%s+%s' % (base_version, local_version_string))
-
-    if args.extended_output:
-        print(base_version)
-        print(local_version_string)
+    print(build_version)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Version file updater (adds time, build id, commit id to version)')
     parser.add_argument('version_file', type=str, help='Path to version file')
-    parser.add_argument('--build-id', type=int, help='Override build id. Default from env.BUILD_NUMBER')
+    parser.add_argument('build_id', type=int, help='Set build id')
+    parser.add_argument('build_user', type=str, help='Set build user')
+    parser.add_argument('--build-version', type=str, help='Explicitly specify new Legion build version')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')
-    parser.add_argument('--extended-output', action='store_true', help='Output to stdout extended information')
 
     args = parser.parse_args()
 

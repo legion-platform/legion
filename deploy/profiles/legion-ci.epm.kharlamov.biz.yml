@@ -59,8 +59,8 @@ git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
 use_https_for_tests: "yes"
-nexus_pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
-nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443"
+pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
+docker_repo: "nexus-local.cc.epm.kharlamov.biz:443/legion"
 namespace: default
 deployment: legion
 service_account:

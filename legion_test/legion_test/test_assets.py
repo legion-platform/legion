@@ -19,8 +19,7 @@ Docker image loader
 import os
 
 
-BASE_VERSION_ENVIRON_KEY = 'BASE_VERSION'
-LOCAL_VERSION_ENVIRON_KEY = 'LOCAL_VERSION'
+LEGION_VERSION_ENVIRON_KEY = 'LEGION_VERSION'
 
 
 def get_k8s_repository(variables):
@@ -31,7 +30,7 @@ def get_k8s_repository(variables):
     :type variables: dict
     :return: str -- k8s images repository
     """
-    return '{}/legion'.format(variables['NEXUS_DOCKER_REPO'])
+    return '{}'.format(variables['NEXUS_DOCKER_REPO'])
 
 
 def get_k8s_version():
@@ -40,14 +39,13 @@ def get_k8s_version():
 
     :return: str -- k8s image version
     """
-    base_version = os.getenv(BASE_VERSION_ENVIRON_KEY)
-    local_version = os.getenv(LOCAL_VERSION_ENVIRON_KEY)
+    legion_version = os.getenv(LEGION_VERSION_ENVIRON_KEY)
 
-    if not base_version or not local_version:
-        raise Exception('Cannot get version info: {} or {} undefined'
-                        .format(BASE_VERSION_ENVIRON_KEY, LOCAL_VERSION_ENVIRON_KEY))
+    if not legion_version:
+        raise Exception('Can\'t get version info: {} undefined'
+                        .format(LEGION_VERSION_ENVIRON_KEY))
 
-    return '{}-{}'.format(base_version, local_version)
+    return '{}'.format(legion_version)
 
 
 def get_test_bare_model_api_image(variables, model_num=1):

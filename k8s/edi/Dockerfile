@@ -13,7 +13,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM legion/base-python-image
+ARG version=latest
+FROM legion/base-python-image:${version}
 
 RUN apt-get update && apt-get install -y \
     ca-certificates curl apt-transport-https nginx \

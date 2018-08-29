@@ -6,7 +6,7 @@ rootDomain: {{ root_domain }}
 localDomain: "cluster.local"
 
 
-image: "{{ nexus_docker_repo }}/legion/k8s-airflow:{{ base_version }}-{{ local_version }}"
+image: "{{ docker_repo }}/k8s-airflow:{{ legion_version }}"
 
 secrets:
   postgres:
