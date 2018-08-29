@@ -64,10 +64,3 @@
     module: copy
     content: "{{ helm_airflow_status_output.stdout }}"
     dest: "{{ tmp_dir }}/helm.airflow.{{ cluster_name }}.status"
-
-- name: "Make sure Airflow started successfully"
-  shell: "curl -LsI https://airflow-{{ enclave }}.{{ cluster_name }}/admin/airflow/dag_stats"
-  register: airflow_check
-  until: ada_web_check.stdout.find('200') != -1 or ada_web_check.stdout.find('302') != -1
-  retries: 60
-  delay: 10
