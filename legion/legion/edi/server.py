@@ -133,7 +133,8 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
 
     if image in deployed_models_by_image.keys():  # if model already deployed - return its deployment information
         LOGGER.info('Same model already has been deployed - skipping')
-        model_deployment = deployed_models_by_image[image]
+        model_service = deployed_models_by_image[image]
+        model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
     else:
         model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
         LOGGER.info('Model (id={}, version={}) has been deployed'
