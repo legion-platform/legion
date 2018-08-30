@@ -160,14 +160,25 @@ Run EDI scale with version
     [Return]              ${result}
 
     # --------- OTHER KEYWORDS SECTION -----------
+
+Get token from EDI
+    [Documentation]  get token for the EDGE session
+    [Arguments]         ${enclave}
+    ${resp} =       Check valid http response    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/token
+    Log                   ${resp}
+    Should not be empty   ${resp}
+    ${token} =      Convert To Dictionary    ${resp}
+    Log                   ${token}
+                    Set Test Variable     ${TOKEN}    ${token['token']}
+
 Check model started
     [Documentation]  check if model run in container by http request
     [Arguments]           ${enclave}   ${model_id}  ${model_ver}
     Log                   request url is ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
-    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
+                          Get token from EDI    ${enclave}
+    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info    ${TOKEN}
     Log                   ${resp}
     Should not be empty   ${resp}
-    Log                   ${resp}
     [Return]              ${resp}
 
 Verify model info from edi

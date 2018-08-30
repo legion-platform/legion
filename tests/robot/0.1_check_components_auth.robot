@@ -118,3 +118,10 @@ Check if K8S dashboard domain can auth with valid creds
 #    [Tags]  core  security   auth
 #    [Template]    Secured component domain should be accessible by valid credentials
 #    component=grafana    enclave=${EMPTY}
+
+Check if EDGE has been secured by token
+     [Tags]  core  security  auth
+     &{response}=     Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info
+     Dictionary Should Contain Item    ${response}    response_code    401
+     ${auth_page} =   Get From Dictionary   ${response}    response_text
+     Should contain   ${auth_page}    401 Authorization Required
