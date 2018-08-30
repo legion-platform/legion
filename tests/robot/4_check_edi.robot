@@ -89,11 +89,11 @@ Check EDI double deploy procedure for the same model
 Check EDI undeploy procedure
     [Documentation]  Try to undeploy dummy valid model through EDI console
     [Tags]  edi  cli  enclave   one_version
-    ${resp}=        Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+    ${resp}=        Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers         ${resp.rc}         0
     ${resp}=        Run EDI inspect                     ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers         ${resp.rc}         0
-                    Should not contain                  ${resp.stdout}     ${model_id}
+                    Should not contain                  ${resp.stdout}     ${TEST_MODEL_ID}
 
 Check EDI scale up procedure
     [Documentation]  Try to scale up model through EDI console
@@ -156,5 +156,5 @@ Check EDI enclave inspect procedure without deployed model
     [Tags]  edi  cli  enclave   one_version
     ${resp}=        Run EDI inspect                ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers    ${resp.rc}          0
-                    Should Not Contain             ${resp.stdout}      ${model_id}
+                    Should Not Contain             ${resp.stdout}      ${TEST_MODEL_ID}
     [Teardown]      NONE
