@@ -30,7 +30,7 @@ Connect to enclave Flower
 Run EDI inspect enclave and check result
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${expected_rc}   ${expected_output}
-    ${result}=            Run Process   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stdout}
     Should Be Equal As Integers  ${result.rc}        ${expected_rc}
@@ -39,7 +39,7 @@ Run EDI inspect enclave and check result
 Run EDI inspect
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}
-    ${result}=            Run Process   legionctl inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -47,7 +47,7 @@ Run EDI inspect
 Run EDI inspect by model id
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_id}
-    ${result}=            Run Process   legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -55,7 +55,7 @@ Run EDI inspect by model id
 Run EDI inspect by model version
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_ver}
-    ${result}=            Run Process   legionctl inspect --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose inspect --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -63,7 +63,7 @@ Run EDI inspect by model version
 Run EDI inspect by model id and model version
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_id}     ${model_ver}
-    ${result}=            Run Process   legionctl inspect --model-id ${model_id} --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose inspect --model-id ${model_id} --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -88,7 +88,7 @@ Run EDI inspect with parse by model id
 Run EDI deploy
     [Documentation]  run legionctl 'deploy command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${image}
-    ${result}=            Run Process   legionctl deploy ${image} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose deploy ${image} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -96,7 +96,7 @@ Run EDI deploy
 Run EDI deploy with scale
     [Documentation]  run legionctl 'deploy command with scale option', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${image}    ${scale_count}
-    ${result}=            Run Process   legionctl deploy ${image} --scale ${scale_count} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose deploy ${image} --scale ${scale_count} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -129,7 +129,7 @@ Run EDI undeploy model without version and check
 
 Run EDI undeploy with version
     [Arguments]           ${enclave}    ${model_id}  ${model_version}
-    ${result}=            Run Process   legionctl undeploy ${model_id} --model-version ${model_version} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}     shell=True
+    ${result}=            Run Process   legionctl --verbose undeploy ${model_id} --model-version ${model_version} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}     shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -137,7 +137,7 @@ Run EDI undeploy with version
 Run EDI undeploy without version
     [Documentation]  run legionctl 'undeploy command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${model_id}
-    ${result}=            Run Process   legionctl undeploy ${model_id} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose undeploy ${model_id} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -146,7 +146,7 @@ Run EDI undeploy without version
 Run EDI scale
     [Documentation]  run legionctl 'scale command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${model_id}     ${new_scale}
-    ${result}=            Run Process   legionctl scale ${model_id} ${new_scale} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}   shell=True
+    ${result}=            Run Process   legionctl --verbose scale ${model_id} ${new_scale} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}   shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -154,7 +154,7 @@ Run EDI scale
 Run EDI scale with version
     [Documentation]  run legionctl 'scale command', logs result and return dict with return code and output(for exceptions)
     [Arguments]           ${enclave}    ${model_id}     ${new_scale}    ${model_ver}
-    ${result}=            Run Process   legionctl scale ${model_id} ${new_scale} --model-version ${model_ver} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
+    ${result}=            Run Process   legionctl --verbose scale ${model_id} ${new_scale} --model-version ${model_ver} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --user ${SERVICE_ACCOUNT} --password ${SERVICE_PASSWORD}    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
