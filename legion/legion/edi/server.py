@@ -176,7 +176,7 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
             LOGGER.info('Removing model\'s dashboard from Grafana (id={}, version={})'
                         .format(model_service.id, model_service.version))
             if app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
-                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id, 
+                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id,
                                                                         model_service.version)
             else:
                 LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - \
