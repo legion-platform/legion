@@ -3,6 +3,7 @@ Documentation       Legion robot resources
 Resource            variables.robot
 Library             String
 Library             OperatingSystem
+Library             Process
 Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Jenkins
@@ -167,7 +168,7 @@ Get token from EDI
     ${resp} =       Check valid http response    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/token
     Log                   ${resp}
     Should not be empty   ${resp}
-    ${token} =      Convert To Dictionary    ${resp}
+    &{token} =      Evaluate    json.loads('''${resp}''')    json
     Log                   ${token}
                     Set Test Variable     ${TOKEN}    ${token['token']}
 
