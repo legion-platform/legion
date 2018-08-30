@@ -292,3 +292,18 @@ class ModelDeploymentDescription:
             'model_api_ok': self._model_api_ok,
             'model_api_info': self._model_api_info
         }
+
+    def __repr__(self):
+        """
+        Get string representation of object
+        
+        :return: str -- string representation
+        """
+        args = ",".join(repr(arg) for arg in [
+            self.status, self.model, self.version, self.image, 
+            self.scale, self.ready_replicas, self.namespace, 
+            self.model_api_ok, self.model_api_info
+        ])
+        return "ModelDeploymentDescription({})".format(args)
+
+    __str__ = __repr__

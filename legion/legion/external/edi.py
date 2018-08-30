@@ -82,11 +82,10 @@ class EdiClient:
         except requests.exceptions.ConnectionError as exception:
             raise Exception('Failed to connect to {}: {}'.format(self._base, exception))
 
-        LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
-                     .format(response.text, response.status_code, full_url))
-
         try:
             answer = json.loads(response.text)
+            LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
+                        .format(answer, response.status_code, full_url))
         except ValueError as json_decode_exception:
             raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
@@ -209,6 +208,16 @@ class EdiClient:
             payload['version'] = version
 
         return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
+
+    def __repr__(self):
+        """
+        Get string representation of object
+        
+        :return: str -- string representation
+        """
+        return "EdiClient({!r})".format(self._base)
+
+    __str__ = __repr__
 
 
 def add_edi_arguments(parser):

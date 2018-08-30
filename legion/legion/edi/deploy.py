@@ -89,6 +89,7 @@ def inspect_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
+    LOGGER.info('Sending inspect request to {!r}'.format(edi_client))
     model_deployments = edi_client.inspect(args.model_id, args.model_version)
 
     data = []
@@ -197,17 +198,26 @@ def wait_operation_finish(args, edi_client, model_deployments, wait_callback):
         if args.timeout <= 0:
             raise Exception('Invalid --timeout argument: should be positive integer')
 
+        LOGGER.debug('Starting checking cycle limited to {} s.'.format(args.timeout))
+
         while True:
             elapsed = time.time() - start
             if elapsed > args.timeout:
                 raise Exception('Time out: operation has not been confirmed')
 
+            LOGGER.info('Requesting actual status of affected deployments')
             affected_deployments_status = get_related_model_deployments(edi_client, model_deployments)
+            LOGGER.debug('Server returned list of actual affected deployment statuses: {!r}'
+                        .format(affected_deployments_status))
 
             result = wait_callback(affected_deployments_status)
             if result:
+                LOGGER.info('Callback have confirmed completion of the operation')
                 break
+            else:
+                LOGGER.info('Callback have not confirmed completion of the operation')
 
+            LOGGER.debug('Sleep before next request')
             time.sleep(1)
 
 
@@ -241,10 +251,12 @@ def undeploy_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
+    LOGGER.info('Sending undeploy request to {!r}'.format(edi_client))
     model_deployments = edi_client.undeploy(args.model_id,
                                             args.grace_period,
                                             args.model_version,
                                             args.ignore_not_found)
+    LOGGER.info('Server returned list of affected deployments: {!r}'.format(model_deployments))
 
     wait_operation_finish(args, edi_client,
                           model_deployments,
@@ -260,7 +272,9 @@ def scale_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
+    LOGGER.info('Sending scale request to {!r}'.format(edi_client))
     model_deployments = edi_client.scale(args.model_id, args.scale, args.model_version)
+    LOGGER.info('Server returned list of affected deployments: {!r}'.format(model_deployments))
 
     wait_operation_finish(args, edi_client,
                           model_deployments,
@@ -278,7 +292,9 @@ def deploy_kubernetes(args):
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
+    LOGGER.info('Sending deploy request to {!r}'.format(edi_client))
     model_deployments = edi_client.deploy(args.image, args.scale, args.livenesstimeout, args.readinesstimeout)
+    LOGGER.info('Server returned list of affected deployments: {!r}'.format(model_deployments))
 
     wait_operation_finish(args, edi_client,
                           model_deployments,
