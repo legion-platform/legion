@@ -101,7 +101,7 @@ class ModelClient:
 
         if token:
             self._token = token
-        elif self._edi_host is not None:
+        elif self._edi_host:
             self._token = None
             self._token = self._get_token()
         else:
@@ -137,7 +137,7 @@ class ModelClient:
 
         :return: str -- token refresh url
         """
-        if self._edi_host is not None:
+        if self._edi_host:
             return '{edi_url}/api/1.0/token'.format(edi_url=self._edi_host)
         else:
             raise ValueError('Edi host is empty')
