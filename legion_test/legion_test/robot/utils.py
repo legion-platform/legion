@@ -138,7 +138,7 @@ class Utils:
         return founded[0]
 
     @staticmethod
-    def check_valid_http_response(url):
+    def check_valid_http_response(url, token=None):
         """
         Check if model return valid code for get request
 
@@ -150,7 +150,12 @@ class Utils:
         error = None
         for i in range(tries):
             try:
-                response = requests.get(url, timeout=10)
+                if token:
+                    headers = {"Authorization": "Bearer {}".format(token)}
+                    response = requests.get(url, timeout=10, headers=headers)
+                else:
+                    response = requests.get(url, timeout=10)
+
                 if response.status_code == 200:
                     return response.text
                 elif i >= 5:
