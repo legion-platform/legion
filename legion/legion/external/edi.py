@@ -107,7 +107,7 @@ class EdiClient:
         :type response: list[dict[str, any]]
         :return: list[:py:class:`legion.k8s.ModelDeploymentDescription`] -- parsed model deployments
         """
-        return [legion.k8s.ModelDeploymentDescription(**x) for x in response]
+        return [legion.k8s.ModelDeploymentDescription.build_from_json(x) for x in response]
 
     def inspect(self, model=None, version=None):
         """
