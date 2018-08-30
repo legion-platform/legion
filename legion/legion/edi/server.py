@@ -307,10 +307,10 @@ def generate_token():
     :return: dict -- state of cluster
     """
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
-    jwt_life_length = timedelta(minutes=120)
+    jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
     expiration = (datetime.now() + jwt_life_length).utcnow()
-    return {'token': jwt.encode({'exp': expiration}, jwt_secret, algorithm='HS256'),
-            'exp': expiration}
+    token = jwt.encode({'exp': expiration}, jwt_secret, algorithm='HS256').decode('utf-8')
+    return {'token': token, 'exp': expiration}
 
 
 def create_application():
