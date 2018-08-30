@@ -102,6 +102,7 @@ class ModelClient:
         if token:
             self._token = token
         elif self._edi_host is not None:
+            self._token = None
             self._token = self._get_token()
         else:
             self._token = None
