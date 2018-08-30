@@ -49,7 +49,8 @@ class ModelClient:
     Model HTTP client
     """
 
-    def __init__(self, model_id, model_version, host=None, http_client=None, use_relative_url=False, timeout=None):
+    def __init__(self, model_id, model_version, host=None, http_client=None, use_relative_url=False, timeout=None,
+                 edi_host=None, token=None):
         """
         Build client
 
@@ -65,6 +66,10 @@ class ModelClient:
         :type use_relative_url: bool
         :param timeout: timeout for connections
         :type timeout: int
+        :param edi_host: host of Edi server, used for token request (optional)
+        :type edi_host: str
+        :param token: API token value to use (optional)
+        :type token: str
         """
         self._model_id = normalize_name(model_id)
         self._model_version = model_version
@@ -86,6 +91,20 @@ class ModelClient:
             self._host = self._host.rstrip('/')
 
         self._timeout = timeout
+
+        if edi_host:
+            self._edi_host = edi_host
+        elif legion.config.MODEL_SERVER_URL[0] in os.environ:
+            self._edi_host = os.environ.get(*legion.config.EDI_URL)
+        else:
+            self._edi_host = None
+
+        if token:
+            self._token = token
+        elif self._edi_host is not None:
+            self._token = self._get_token()
+        else:
+            self._token = None
 
     def __repr__(self):
         """
@@ -109,6 +128,18 @@ class ModelClient:
         return '{host}/api/model/{model_id}/{model_version}'.format(host=self._host,
                                                                     model_id=self._model_id,
                                                                     model_version=self._model_version)
+
+    @property
+    def token_url(self):
+        """
+        Build Token refresh URL
+
+        :return: str -- token refresh url
+        """
+        if self._edi_host is not None:
+            return '{edi_url}/api/1.0/token'.format(edi_url=self._edi_host)
+        else:
+            raise ValueError('Edi host is empty')
 
     def build_invoke_url(self, endpoint=None):
         """
@@ -200,6 +231,8 @@ class ModelClient:
         kwargs = {}
         if self._timeout is not None:
             kwargs['timeout'] = self._timeout
+        if self._token is not None:
+            kwargs['headers'] = 'Authorization: Bearer {token}'.format(token=self._token)
         return kwargs
 
     def batch(self, invoke_parameters, endpoint=None):
@@ -255,3 +288,14 @@ class ModelClient:
                                          **self._additional_kwargs)
 
         return self._parse_response(response)
+
+    def _get_token(self):
+        """
+        Get fresh API token from Edi service
+
+        :return: str -- parsed model info
+        """
+        response = self._http_client.get(self.token_url,
+                                         **self._additional_kwargs)
+
+        return self._parse_response(response).get('token')

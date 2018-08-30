@@ -36,6 +36,8 @@ spec:
           value: "/home/airflow"
         - name: MODEL_SERVER_URL
           value: "http://{{ .Values.legion_release }}-edge"
+        - name: EDI_URL
+          value: "http://{{ .Values.legion_release }}-edi"
         - name: NAMESPACE
           value: "{{ .Release.Namespace }}"
         volumeMounts:
