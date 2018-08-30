@@ -308,7 +308,7 @@ def generate_token():
     """
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
     jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
-    expiration = datetime.now() + jwt_life_length
+    expiration = datetime.utcnow() + jwt_life_length
     token = jwt.encode({'exp': expiration}, jwt_secret, algorithm='HS256').decode('utf-8')
     return {'token': token, 'exp': expiration}
 
