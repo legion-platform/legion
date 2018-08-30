@@ -1,8 +1,8 @@
 # Common
 vendor: legion
-env_type: live
-env_name: legion-live
-base_domain: legion-live.epm.kharlamov.biz
+env_type: test
+env_name: legion-test
+base_domain: legion-test.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
 
@@ -36,7 +36,7 @@ airflow_rds_shape: "db.t2.medium"
 airflow_rds_size: "50"
 
 # Kops
-cluster_name: legion-live.epm.kharlamov.biz
+cluster_name: legion-test.epm.kharlamov.biz
 state_store: s3://legion-cluster
 aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
 kubernetes_version: 1.9.3
