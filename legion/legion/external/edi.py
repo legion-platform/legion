@@ -85,7 +85,7 @@ class EdiClient:
         try:
             answer = json.loads(response.text)
             LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
-                        .format(answer, response.status_code, full_url))
+                         .format(answer, response.status_code, full_url))
         except ValueError as json_decode_exception:
             raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
@@ -212,7 +212,7 @@ class EdiClient:
     def __repr__(self):
         """
         Get string representation of object
-        
+
         :return: str -- string representation
         """
         return "EdiClient({!r})".format(self._base)

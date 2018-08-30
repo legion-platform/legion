@@ -208,7 +208,7 @@ def wait_operation_finish(args, edi_client, model_deployments, wait_callback):
             LOGGER.info('Requesting actual status of affected deployments')
             affected_deployments_status = get_related_model_deployments(edi_client, model_deployments)
             LOGGER.debug('Server returned list of actual affected deployment statuses: {!r}'
-                        .format(affected_deployments_status))
+                         .format(affected_deployments_status))
 
             result = wait_callback(affected_deployments_status)
             if result:

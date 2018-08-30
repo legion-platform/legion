@@ -297,8 +297,8 @@ class ModelDeploymentDescription:
     def build_from_json(json_dict):
         """
         Build ModelDeploymentDescription from JSON dict
-        
-        :param json_dict: result of deserialization serialized .as_dict response 
+
+        :param json_dict: result of deserialization serialized .as_dict response
         :type json_dict: dict[str, Any]
         :return: :py:class:`legion.k8s.definitions.ModelDeploymentDescription` -- built model deployment
         """
@@ -309,12 +309,12 @@ class ModelDeploymentDescription:
     def __repr__(self):
         """
         Get string representation of object
-        
+
         :return: str -- string representation
         """
         args = ",".join(repr(arg) for arg in [
-            self.status, self.model, self.version, self.image, 
-            self.scale, self.ready_replicas, self.namespace, 
+            self.status, self.model, self.version, self.image,
+            self.scale, self.ready_replicas, self.namespace,
             self.model_api_ok, self.model_api_info
         ])
         return "ModelDeploymentDescription({})".format(args)
