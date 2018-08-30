@@ -83,8 +83,9 @@ Check EDI double deploy procedure for the same model
     ${response}=    Check model started           ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
                     Should contain                ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
     ${resp}=        Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
-                    Should Be Equal As Integers   ${resp.rc}         2
-                    Should Contain                ${resp.stderr}     Duplicating model id and version (id=${TEST_MODEL_ID}, version=${TEST_MODEL_1_VERSION})
+                    Should Be Equal As Integers   ${resp.rc}         0
+    ${response}=    Check model started           ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                ${response}             "model_version": "${TEST_MODEL_1_VERSION}"
 
 Check EDI undeploy procedure
     [Documentation]  Try to undeploy dummy valid model through EDI console
