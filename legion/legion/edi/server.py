@@ -131,7 +131,7 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
                 .format(model_service.id, model_service.version))
 
     if app.config['REGISTER_ON_GRAFANA']:
-        LOGGER.info('Registering model on Grafana for model (id={}, version={})'
+        LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
                     .format(model_service.id, model_service.version))
         if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
             app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
