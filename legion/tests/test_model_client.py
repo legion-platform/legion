@@ -23,7 +23,7 @@ import sys
 sys.path.extend(os.path.dirname(__file__))
 
 from legion_test_utils import patch_environ
-from legion.external.edi import build_client
+from legion.external.edi import build_client_from_env
 import legion.config
 import legion.model.client
 
@@ -44,7 +44,7 @@ class TestModelClient(unittest2.TestCase):
 
     def test_client_building(self):
         client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION,
-                                                 build_client().get_token('1.0'), 'localhost')
+                                                 build_client_from_env().get_token('1.0'), 'localhost')
         root_url = 'localhost/api/model/{}/{}'.format(self.MODEL_ID, self.MODEL_VERSION)
         self.assertEqual(client.api_url, root_url)
         self.assertEqual(client.info_url, root_url + '/info')
@@ -55,7 +55,7 @@ class TestModelClient(unittest2.TestCase):
 
     def test_client_building_relative(self):
         client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION,
-                                                 build_client().get_token('1.0'), use_relative_url=True)
+                                                 build_client_from_env().get_token('1.0'), use_relative_url=True)
         root_url = '/api/model/{}/{}'.format(self.MODEL_ID, self.MODEL_VERSION)
         self.assertEqual(client.api_url, root_url)
         self.assertEqual(client.info_url, root_url + '/info')
@@ -64,7 +64,8 @@ class TestModelClient(unittest2.TestCase):
 
     def test_client_building_from_env(self):
         with patch_environ({legion.config.MODEL_SERVER_URL[0]: 'test:10'}):
-            client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION, build_client().get_token('1.0'))
+            client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION,
+                                                     build_client_from_env().get_token('1.0'))
             root_url = 'test:10/api/model/{}/{}'.format(self.MODEL_ID, self.MODEL_VERSION)
             self.assertEqual(client.api_url, root_url)
             self.assertEqual(client.info_url, root_url + '/info')
