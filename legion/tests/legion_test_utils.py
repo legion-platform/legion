@@ -476,8 +476,7 @@ class ModelServeTestBuild:
                 self.client = self.application.test_client()
                 self.model_client = legion.model.ModelClient(self._model_id,
                                                              self._model_version,
-                                                             build_client_from_env().get_token('1.0'),
-                                                             http_client=self.client,
+                                                             '', http_client=self.client,
                                                              use_relative_url=True)
 
             return self
