@@ -290,3 +290,17 @@ def build_client(args):
 
     client = EdiClient(host, user, password, token)
     return client
+
+def build_client_from_env():
+    """
+    Build EDI client from ENV
+
+    :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
+    """
+    host = os.environ.get(*legion.config.EDI_URL)
+    user = os.environ.get(*legion.config.EDI_USER)
+    password = os.environ.get(*legion.config.EDI_PASSWORD)
+    token = os.environ.get(*legion.config.EDI_TOKEN)
+
+    client = EdiClient(host, user, password, token)
+    return client
