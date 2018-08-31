@@ -94,7 +94,7 @@ class ModelClient:
 
         if edi_host:
             self._edi_host = edi_host
-        elif legion.config.MODEL_SERVER_URL[0] in os.environ:
+        elif legion.config.EDI_URL[0] in os.environ:
             self._edi_host = os.environ.get(*legion.config.EDI_URL)
         else:
             self._edi_host = None
