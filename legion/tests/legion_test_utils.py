@@ -21,6 +21,7 @@ from legion.model import ModelClient
 import legion.model.client
 import legion.serving.pyserve as pyserve
 from legion.utils import remove_directory
+from legion.external.edi import build_client
 
 LOGGER = logging.getLogger(__name__)
 TEST_MODELS_LOCATION = os.path.join(os.path.dirname(__file__), 'test_models')
@@ -481,9 +482,9 @@ class ModelServeTestBuild:
                 self.application = pyserve.init_application(None)
                 self.application.testing = True
                 self.client = self.application.test_client()
-                edi_client = EdiClient(os.environ.get(*legion.config.EDI_URL))
                 self.model_client = legion.model.ModelClient(self._model_id,
                                                              self._model_version,
+                                                             build_client().get_token('1.0'),
                                                              http_client=self.client,
                                                              use_relative_url=True)
 
