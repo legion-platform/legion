@@ -173,7 +173,9 @@ def build_docker_image(client, model_id, model_file, labels,
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
-            'MODEL_FILE': target_model_file
+            'MODEL_FILE': target_model_file,
+            'OLD_WORKSPACE': workspace_path,
+            'NEW_WORKSPACE': target_workspace
         })
 
         labels = {k: str(v) if v else None
