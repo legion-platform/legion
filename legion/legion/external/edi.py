@@ -35,7 +35,7 @@ class EdiClient:
     EDI client
     """
 
-    def __init__(self, base, user=None, password=None, token=None):
+    def __init__(self, base, user=None, password=None, token=None, retries=3):
         """
         Build client
 
@@ -47,12 +47,15 @@ class EdiClient:
         :type password: str or None
         :param token: token for token based auth
         :type token: str or None
+        :param retries: command retries or less then 2 if disabled
+        :type retries: int
         """
         self._base = base
         self._user = user
         self._password = password
         self._token = token
         self._version = legion.edi.server.EDI_VERSION
+        self._retries = retries
 
     def _query(self, url_template, payload=None, action='GET'):
         """
@@ -77,10 +80,18 @@ class EdiClient:
         elif self._token:
             auth = ('token', self._token)
 
-        try:
-            response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
-        except requests.exceptions.ConnectionError as exception:
-            raise Exception('Failed to connect to {}: {}'.format(self._base, exception))
+        left_retries = self._retries if self._retries > 0 else 1
+        while True:
+            left_retries -= 1
+            try:
+                response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
+            except requests.exceptions.ConnectionError as exception:
+                if not left_retries:
+                    raise Exception('Failed to connect to {}: {}'.format(self._base, exception))
+                else:
+                    LOGGER.warning('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
+            else:
+                break
 
         try:
             answer = json.loads(response.text)
