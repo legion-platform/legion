@@ -222,8 +222,11 @@ Run, wait and check jenkins jobs for enclave
 Check if component domain has been secured
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a legion component is secured by auth
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}
-    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}
+    ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
+    ...    ELSE      Set Variable    False
+    ${boolean} =     Convert To Boolean    ${jenkins}
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}    ${boolean}
+    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}    ${boolean}
     Log              Auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text
@@ -233,9 +236,12 @@ Check if component domain has been secured
 Secured component domain should not be accessible by invalid credentials
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a secured legion component does not provide access by invalid credentials
+    ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
+    ...    ELSE      Set Variable    False
+    ${boolean} =     Convert To Boolean    ${jenkins}
     &{creds} =       Create Dictionary 	login=admin   password=admin
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
-    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
+    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
     Log              Bad auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text
@@ -246,9 +252,12 @@ Secured component domain should not be accessible by invalid credentials
 Secured component domain should be accessible by valid credentials
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a secured legion component does not provide access by invalid credentials
+    ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
+    ...    ELSE      Set Variable    False
+    ${boolean} =     Convert To Boolean    ${jenkins}
     &{creds} =       Get static user data
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
-    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
+    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
     Log              Bad auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text

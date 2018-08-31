@@ -167,26 +167,27 @@ class Utils:
             raise Exception('Unexpected case happen!')
 
     @staticmethod
-    def get_component_auth_page(url):
+    def get_component_auth_page(url, jenkins=False):
         """
         Get component main auth page
 
-        :param url: component url
-        :type url: str
+        :param boolean jenkins: if jenkins service is under test
+        :param str url: component url
         :return:  response_code and response_text
         :rtype: dict
         """
-        if "jenkins" in url:
+        if jenkins:
             response = requests.get('{}/securityRealm/commenceLogin'.format(url), timeout=10)
         else:
             response = requests.get(url, timeout=10)
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
-    def post_credentials_to_auth(component_url, cluster_host, creds):
+    def post_credentials_to_auth(component_url, cluster_host, creds, jenkins=False):
         """
         Get session id and send post request with credentials to authorize
 
+        :param boolean jenkins: if jenkins service is under test
         :param str component_url: legion core component url
         :param str cluster_host: cluster host name
         :param dict creds: dict with login and password
@@ -197,7 +198,7 @@ class Utils:
         import re
 
         session = requests.Session()
-        if "jenkins" in component_url:
+        if jenkins:
             response = session.get("{}.{}/securityRealm/commenceLogin".format(component_url, cluster_host))
         else:
             response = session.get("{}.{}".format(component_url, cluster_host))
