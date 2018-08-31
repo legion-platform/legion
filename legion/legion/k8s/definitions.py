@@ -171,7 +171,7 @@ class ModelDeploymentDescription:
         :type model_api_ok: bool or None
         :param model_api_info: (Optional) model API info from EDGE invocation
         :type model_api_info: dict or None
-        :return: :py:class:`legion.k8s.definitions.ModelDeploymentDescription` -- build model deployment
+        :return: :py:class:`legion.k8s.definitions.ModelDeploymentDescription` -- built model deployment
         """
         return ModelDeploymentDescription(
             status=model_service.status,
@@ -292,3 +292,31 @@ class ModelDeploymentDescription:
             'model_api_ok': self._model_api_ok,
             'model_api_info': self._model_api_info
         }
+
+    @staticmethod
+    def build_from_json(json_dict):
+        """
+        Build ModelDeploymentDescription from JSON dict
+
+        :param json_dict: result of deserialization serialized .as_dict response
+        :type json_dict: dict[str, Any]
+        :return: :py:class:`legion.k8s.definitions.ModelDeploymentDescription` -- built model deployment
+        """
+        if isinstance(json_dict['model_api_info'], bytes):
+            json_dict['model_api_info'] = json.loads(json_dict['model_api_info'])
+        return ModelDeploymentDescription(**json_dict)
+
+    def __repr__(self):
+        """
+        Get string representation of object
+
+        :return: str -- string representation
+        """
+        args = ",".join(repr(arg) for arg in [
+            self.status, self.model, self.version, self.image,
+            self.scale, self.ready_replicas, self.namespace,
+            self.model_api_ok, self.model_api_info
+        ])
+        return "ModelDeploymentDescription({})".format(args)
+
+    __str__ = __repr__

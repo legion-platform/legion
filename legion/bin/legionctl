@@ -143,7 +143,9 @@ if __name__ == '__main__':
     else:
         log_level = logging.ERROR
 
-    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=log_level, 
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        stream=sys.stderr)
 
     try:
         if 'func' in v:
