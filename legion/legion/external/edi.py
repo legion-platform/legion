@@ -299,6 +299,7 @@ def build_client(args):
     client = EdiClient(host, user, password, token)
     return client
 
+
 def build_client_from_env():
     """
     Build EDI client from ENV
