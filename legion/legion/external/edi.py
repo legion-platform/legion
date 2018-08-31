@@ -232,7 +232,9 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='GET', payload=payload))
+        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='GET', payload=payload)
+        if response and 'token' in response:
+            return response['token']
 
     def __repr__(self):
         """
