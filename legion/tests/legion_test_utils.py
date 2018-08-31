@@ -481,6 +481,7 @@ class ModelServeTestBuild:
                 self.application = pyserve.init_application(None)
                 self.application.testing = True
                 self.client = self.application.test_client()
+                edi_client = EdiClient(os.environ.get(*legion.config.EDI_URL))
                 self.model_client = legion.model.ModelClient(self._model_id,
                                                              self._model_version,
                                                              http_client=self.client,
