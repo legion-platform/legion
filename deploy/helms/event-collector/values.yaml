@@ -11,11 +11,8 @@ ingress:
       enabled: true
       autoSecretNameDeduction: true
 
-image:
-  repository: ""
-  name: "legion/k8s-fluentd"
-  tag: "latest"
-  pullPolicy: "Always"
+image: "legion/k8s-fluentd:latest"
+PullPolicy: "Always"
 
 s3:
   bucket: "none"

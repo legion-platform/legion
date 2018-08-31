@@ -6,9 +6,7 @@ domainDelimiter: "{{ domain_delimiter }}"
 
 replicas: "{{ collector.replicas }}"
 
-image:
-  repository: "{{ docker_repo }}/fluentd"
-  tag: "{{ legion_version }}"
+image: "{{ docker_repo }}/k8s-fluentd:{{ legion_version }}"
 
 s3:
   key_id: "{{ fluentd.aws.access_key_id }}"

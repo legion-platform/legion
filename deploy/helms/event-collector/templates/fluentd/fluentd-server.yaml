@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
       - name: fluentd
-        image: "{{ .Values.image.repository }}{{ .Values.image.name }}:{{ .Values.image.tag }}"
-        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        image: "{{ .Values.image }}"
+        PullPolicy: "{{ .Values.pullPolicy }}"
         ports:
         - containerPort: 80
           name: input

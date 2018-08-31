@@ -80,8 +80,7 @@ def get_variables(arg=None):
 
         'CLUSTER_NAME': data['cluster_name'],
         'NEXUS_DOCKER_REPO': data['docker_repo'],
-        'TEMP_DIRECTORY': data['tmp_dir']
-        'NEXUS_DOCKER_REPO': data['docker_repo']
+        'TEMP_DIRECTORY': data['tmp_dir'],
         'FEEDBACK__BUCKET': data['collector']['bucket'],
         'FEEDBACK__REGION': data['collector']['region']
     }
