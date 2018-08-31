@@ -118,14 +118,27 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     :type count: int
     :param timeout: model pod startup timeout (used in liveness and readiness probes)
     :type timeout: int
+    :param livenesstimeout: time in seconds for liveness check
+    :type livenesstimeout: int
+    :param readinesstimeout: time in seconds for readiness check
+    :type readinesstimeout: int
     :return: bool -- True
     """
-    LOGGER.info('Command: deploy image {} with {} replicas'.format(image, count))
+    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r}'
+                .format(image, count, livenesstimeout, readinesstimeout))
     model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
+    LOGGER.info('Model (id={}, version={}) has been deployed'
+                .format(model_service.id, model_service.version))
 
     if app.config['REGISTER_ON_GRAFANA']:
+        LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
+                    .format(model_service.id, model_service.version))
         if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
             app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
+        else:
+            LOGGER.info('Registration on Grafana has been skipped - dashboard exists')
+    else:
+        LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
 
     model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
 
@@ -154,12 +167,22 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     LOGGER.info('Command: undeploy model with id={}, version={} with grace period {}s'
                 .format(model, version, grace_period))
     model_deployments = []
+    LOGGER.info('Gathering information about models with id={} version={}'
+                .format(model, version))
     model_services = app.config['ENCLAVE'].get_models_strict(model, version, ignore_not_found)
 
     for model_service in model_services:
         if app.config['REGISTER_ON_GRAFANA']:
-            if app.config['GRAFANA_CLIENT'].is_dashboard_exists(model, model_service.version):
-                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model, model_service.version)
+            LOGGER.info('Removing model\'s dashboard from Grafana (id={}, version={})'
+                        .format(model_service.id, model_service.version))
+            if app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
+                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id,
+                                                                        model_service.version)
+            else:
+                LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - \
+                             dashboard does not exist')
+        else:
+            LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - disabled in configuration')
 
         model_deployments.append(
             legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
@@ -189,9 +212,13 @@ def scale(model, count, version=None):
     """
     LOGGER.info('Command: scale model with id={}, version={} to {} replicas'.format(model, version, count))
     model_deployments = []
+    LOGGER.info('Gathering information about models with id={} version={}'
+                .format(model, version))
     model_services = app.config['ENCLAVE'].get_models_strict(model, version)
 
     for model_service in model_services:
+        LOGGER.info('Changing scale for model (id={}, version={}) from {} to {}'
+                    .format(model_service.id, model_service.version, model_service.scale, count))
         model_service.scale = count
 
         model_deployments.append(
@@ -213,6 +240,8 @@ def inspect(model=None, version=None):
     """
     LOGGER.info('Command: inspect with model={}, version={}'.format(model, version))
     model_deployments = []
+    LOGGER.info('Gathering information about models with id={} version={}'
+                .format(model, version))
     model_services = app.config['ENCLAVE'].get_models(model, version)
 
     for model_service in model_services:

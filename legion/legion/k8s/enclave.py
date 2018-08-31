@@ -237,6 +237,7 @@ class Enclave:
         """
         properties = default_values.keys()
         if not properties:  # if model does not require properties check can be omitted
+            LOGGER.info('Skipping model {!r} properties analyzing due they are not presented')
             return
 
         registered_storages = legion.k8s.properties.K8SConfigMapStorage.list(self.namespace)
@@ -281,8 +282,10 @@ class Enclave:
             raise Exception('Invalid scale parameter: should be greater then 0')
 
         client = legion.k8s.utils.build_client()
+        LOGGER.info('Gathering docker labels from image {}'.format(image))
         labels = legion.k8s.utils.get_docker_image_labels(image)
         image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
+        LOGGER.info('{} has been gathered from image {}'.format(image_meta_information, image))
 
         model_properties_default_values_str = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
         model_properties_default_values = legion.k8s.properties.K8SPropertyStorage.parse_data_from_string(
@@ -387,12 +390,17 @@ class Enclave:
             body=service,
             namespace=self.namespace)
 
+        LOGGER.info('Requesting information about deployed model (id={}, version={})'
+                    .format(image_meta_information.model_id, image_meta_information.model_version))
         model_services = self.get_models(image_meta_information.model_id,
                                          image_meta_information.model_version)
         if model_services:
-            return model_services[0]
+            model_service = model_services[0]
+            LOGGER.info('Model service {!r} has been found'.format(model_service))
+            return model_service
         else:
-            raise Exception('Cannot find created model service for model {} id {}'
+            LOGGER.error('Cannot find information about model pod after service creation')
+            raise Exception('Cannot find created model service for model (id={}, version={})'
                             .format(image_meta_information.model_id, image_meta_information.model_version))
 
     def watch_models(self):
