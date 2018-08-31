@@ -7,8 +7,8 @@ domainDelimiter: "{{ domain_delimiter }}"
 replicas: "{{ collector.replicas }}"
 
 image:
-  repository: "{{ nexus_docker_repo }}/"
-  tag: "{{ base_version }}-{{ local_version }}"
+  repository: "{{ docker_repo }}/fluentd"
+  tag: "{{ legion_version }}"
 
 s3:
   key_id: "{{ fluentd.aws.access_key_id }}"
