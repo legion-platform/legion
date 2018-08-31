@@ -16,7 +16,7 @@
 import os
 
 from legion.model import ModelClient, load_image
-from legion.external.edi import build_client
+from legion.external.edi import build_client_from_env
 import legion.config
 
 import unittest2
@@ -24,7 +24,8 @@ import unittest2
 
 class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.0', build_client().get_token('1.0'))
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.0',
+                                   build_client_from_env().get_token('1.0'))
 
     def test_nine_decode(self):
         image = load_image(os.path.join('files', 'nine.png'))
