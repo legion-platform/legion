@@ -23,7 +23,7 @@ import unittest2
 
 class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.0')
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.1')
 
     def test_model(self):
         example_data = {'age': 31,
