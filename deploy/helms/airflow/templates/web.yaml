@@ -71,14 +71,14 @@ spec:
         args: ["airflow", "webserver"]
         livenessProbe:
           httpGet:
-            path: /
+            path: /admin/airflow/dag_stats
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 3
         readinessProbe:
           httpGet:
-            path: /admin/airflow/dag_stats
+            path: /admin/rest_api/api?api=rest_api_plugin_version
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 5
