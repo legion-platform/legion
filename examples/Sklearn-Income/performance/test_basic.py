@@ -16,6 +16,7 @@
 from legion.model import ModelClient
 
 from locust import HttpLocust, task, TaskSet
+from legion.external.edi import build_client_from_env
 
 
 class ModelTaskSet(TaskSet):
@@ -38,7 +39,8 @@ class ModelTaskSet(TaskSet):
         self._model_client.invoke(**dataset)
 
     def on_start(self):
-        self._model_client = ModelClient('income', '1.1', use_relative_url=True, http_client=self.client)
+        self._model_client = ModelClient('income', '1.1', use_relative_url=True, http_client=self.client
+                                         , token=build_client_from_env().get_token('1.0'))
 
 
 class TestLocust(HttpLocust):
