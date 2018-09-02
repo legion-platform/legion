@@ -170,12 +170,24 @@ def build_docker_image(client, model_id, model_file, labels,
         captured_image_id = commit_image(client)
         LOGGER.info('Image {} has been captured'.format(captured_image_id))
 
+        if target_workspace.count(os.path.sep) > 1:
+            symlink_holder = os.path.abspath(os.path.join(target_workspace, os.path.pardir))
+        else:
+            symlink_holder = '/'
+
+        # Remove old workspace (if exists), create path to old workspace's parent, create symlink
+        symlink_create_command = 'rm -rf "{}" && mkdir -p "{}" && ln -s "{}" "{}"'.format(
+            workspace_path,
+            symlink_holder,
+            target_workspace,
+            workspace_path
+        )
+
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
             'MODEL_FILE': target_model_file,
-            'OLD_WORKSPACE': workspace_path,
-            'NEW_WORKSPACE': target_workspace
+            'CREATE_SYMLINK_COMMAND': symlink_create_command
         })
 
         labels = {k: str(v) if v else None

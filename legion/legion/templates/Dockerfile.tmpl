@@ -38,7 +38,7 @@ ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 WORKDIR /app
 
-RUN rm -rf "{{OLD_WORKSPACE}}" && ln -s "{{NEW_WORKSPACE}}" "{{OLD_WORKSPACE}}"
+RUN {{CREATE_SYMLINK_COMMAND}}
 
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""
