@@ -26,24 +26,23 @@ class BasicTest(unittest2.TestCase):
         self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.1')
 
     def test_model(self):
-        example_data = {'age': 31,
-                        'capital-gain': 14084,
-                        'capital-loss': 0,
-                        'education': 'Bachelors',
-                        'education-num': 13,
-                        'fnlwgt': 77516,
-                        'hours-per-week': 40,
-                        'marital-status': 'Married-civ-spouse',
-                        'native-country': 'United-States',
-                        'occupation': 'Exec-managerial',
-                        'race': 'White',
-                        'relationship': 'Husband',
-                        'sex': 'Male',
-                        'workclass': 'Private'}
+        response = self._client.invoke(**{"age": "31",
+                                          "capital-gain": "14084",
+                                          "capital-loss": 0,
+                                          "education": "Bachelors",
+                                          "education-num": "13",
+                                          "fnlwgt": "77516",
+                                          "hours-per-week": "40",
+                                          "marital-status": "Married-civ-spouse",
+                                          "native-country": "United-States",
+                                          "occupation": "Exec-managerial",
+                                          "race": "White",
+                                          "relationship": "Husband",
+                                          "sex": "Male",
+                                          "workclass": "Private"
+                                          })
 
-        response = self._client.invoke(data=example_data)
-
-        self.assertEqual(response['result'], '1')
+        self.assertEqual(response['result'], 1)
 
 
 if __name__ == '__main__':
