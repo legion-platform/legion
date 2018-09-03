@@ -296,25 +296,9 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
     // Default values
     def colorCode = '#FF0000'
-    def arguments = ""
-    if (params.Skip_kops != null) {
-        arguments = arguments + "\nskip kops *${params.Skip_kops}*"
-    }
-    if (params.BaseVersion && params.LocalVersion) {
-        arguments = arguments + "\nversion *${params.BaseVersion} ${params.LocalVersion}*"
-    }
-
-    if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
-        arguments = arguments + "\nDeploy *${params.DeployLegion}*, Create Jenkins tests *${params.CreateJenkinsTests}*, Use regression tests *${params.UseRegressionTests}*"
-    }
-    if (params.EnclaveName) {
-        arguments = arguments + "\nEnclave *${params.EnclaveName}*"
-    }
     def summary = """\
-    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    branch *${GitBranch}*
-    profile *<https://${env.Profile}|${env.Profile}>*
-    ${arguments}
+    @here Job ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${buildStatus} (previous: ${previousBuildResult})
+    branch ${params.GitBranch} repository ${params.GitRepository} enclave ${params.Enclave}
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 
