@@ -1,0 +1,15 @@
+---
+
+- name: Get Kube-elb-security chart status
+  shell: helm --kube-context {{ cluster_name }} status kube-elb-security
+  register: helm_kube_elb_security_status
+  ignore_errors: true
+  when: dex.enabled
+  tags: dex
+
+- name: Install Kube-elb-security
+  command: "helm --kube-context {{ cluster_name }} install kube-elb-security --name kube-elb-security --namespace kube-system --set image.repository={{ docker_repo }}/kube-elb-security --wait"
+  args:
+    chdir: ../helms
+  when: dex.enabled and helm_kube_elb_security_status.stdout.find("DEPLOYED") == -1
+  tags: dex
