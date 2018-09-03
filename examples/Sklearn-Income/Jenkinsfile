@@ -17,5 +17,9 @@ node {
         stage('deploy'){
             legion.deploy()
         }
+
+        stage('run tests') {
+            legion.runTests()
+        }
     }
 }

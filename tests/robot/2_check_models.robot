@@ -9,14 +9,12 @@ Library             legion_test.robot.Jenkins
 Running, waiting and checks jobs in Jenkins
     [Documentation]  Build and check every example in Jenkins
     [Tags]  jenkins  models  enclave
-    Sleep    120s
     Connect to Jenkins endpoint
     Run, wait and check jenkins jobs for enclave     ${MODEL_TEST_ENCLAVE}
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
     [Tags]  jenkins model
-    
     :FOR  ${enclave}    IN    @{ENCLAVES}
     \  Connect to Jenkins endpoint
         Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
