@@ -49,4 +49,4 @@ edi:
 
 secrets:
   tokenSecret: "{{ api.jwt_secret }}"
-  jwtExpirationMinutes: "{{ api.jwt_ttl_minutes | default('120') | base64encode }}"
+  jwtExpirationMinutes: "{{ api.jwt_ttl_minutes | default('120') | b64encode }}"
