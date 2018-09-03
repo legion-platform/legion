@@ -2,6 +2,12 @@ grafana:
   ingress:
     enabled: true
     fqdn: kube-grafana.{{ base_domain }}
+{% if dex.enabled == true %}
+
+    annotations:
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+      nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+{% endif %}
     tls:
     - secretName: {{ base_domain }}-tls
       hosts:
@@ -11,6 +17,12 @@ prometheus:
   ingress:
     enabled: true
     fqdn: prometheus.{{ base_domain }}
+{% if dex.enabled == true %}
+
+    annotations:
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+      nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+{% endif %}
     tls:
     - secretName: {{ base_domain }}-tls
       hosts:
@@ -20,6 +32,12 @@ alertmanager:
   ingress:
     enabled: true
     fqdn: alertmanager.{{ base_domain }}
+{% if dex.enabled == true %}
+
+    annotations:
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+      nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+{% endif %}
     tls:
     - secretName: {{ base_domain }}-tls
       hosts:
