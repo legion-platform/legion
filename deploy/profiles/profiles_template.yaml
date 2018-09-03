@@ -81,10 +81,5 @@ dashboard:                     # Kubernetes dashboard configuration
   version: ~             # Dashboard version
   insecure: ~               # Allow insecure access
 
-
-dex:
-  enabled: ~   # by default Dex is disabled in profiles (but enabled in secrets)
-
-
 secrets_bucket: ~               # S3 bucket with secrets
 secrets_file: ~  # path for temporary storage
