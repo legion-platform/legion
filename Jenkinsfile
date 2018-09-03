@@ -104,6 +104,7 @@ node {
                 }
                 Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
+                currentBuild.description = "${Globals.buildVersion} ${params.GitBranch}"
                 print("Build version " + Globals.buildVersion)
                 print('Building shared artifact')
                 envFile = 'file.env'
