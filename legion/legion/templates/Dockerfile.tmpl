@@ -38,7 +38,7 @@ ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 WORKDIR /app
 
-RUN {{CREATE_SYMLINK_COMMAND}}
+RUN {{CREATE_SYMLINK_COMMAND|safe}}
 
 ARG pip_extra_index_params=""
 ARG pip_legion_version_string=""

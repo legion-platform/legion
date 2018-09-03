@@ -170,8 +170,8 @@ def build_docker_image(client, model_id, model_file, labels,
         captured_image_id = commit_image(client)
         LOGGER.info('Image {} has been captured'.format(captured_image_id))
 
-        if target_workspace.count(os.path.sep) > 1:
-            symlink_holder = os.path.abspath(os.path.join(target_workspace, os.path.pardir))
+        if workspace_path.count(os.path.sep) > 1:
+            symlink_holder = os.path.abspath(os.path.join(workspace_path, os.path.pardir))
         else:
             symlink_holder = '/'
 
