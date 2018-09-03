@@ -109,13 +109,15 @@ def load_user_from_header(auth_header):
     email = jwt_obj.get('email', '')
     groups = jwt_obj.get('groups', [])
 
-    admin_group = None
-    if conf.has_option('webserver', 'dex_group_admin'):
-        admin_group = conf.get('webserver', 'dex_group_admin')
+    admin_groups = []
+    if conf.has_option('webserver', 'dex_group_admin') and \
+            conf.get('webserver', 'dex_group_admin'):
+        admin_groups = conf.get('webserver', 'dex_group_admin').split(' ')
 
-    profiler_group = None
-    if conf.has_option('webserver', 'dex_group_profiler'):
-        profiler_group = conf.get('webserver', 'dex_group_profiler')
+    profiler_groups = []
+    if conf.has_option('webserver', 'dex_group_profiler') and \
+            conf.get('webserver', 'dex_group_profiler'):
+        profiler_groups = conf.get('webserver', 'dex_group_profiler').split(' ')
 
     admin_email = None
     if conf.has_option('webserver', 'dex_admin_email'):
@@ -124,16 +126,16 @@ def load_user_from_header(auth_header):
     is_superuser = False
     is_data_profiler = False
 
-    if admin_group or profiler_group:
+    if admin_groups or profiler_groups:
         if admin_email and admin_email == email:  # if the user is a Admin
             is_superuser = True
             is_data_profiler = True
-        elif admin_group and admin_group in groups:
-            is_superuser = True
-        elif profiler_group and profiler_group in groups:
-            is_data_profiler = True
         else:
-            return None
+            for group in groups:
+                if group in admin_groups:
+                    is_superuser = True
+                if group in profiler_groups:
+                    is_data_profiler = True
     else:
         is_superuser = True
         is_data_profiler = True
