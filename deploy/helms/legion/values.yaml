@@ -159,4 +159,5 @@ connections:
 secrets:
   nexus:
     admin: "jonny"
-  tokenSecret: 'legion-secret'
+  token_secret: "bGVnaW9uLXNlY3JldAo=" # "legion-secret" is default value
+  token_ttl_minutes: "MTIw" # 120 minutes is default TTL
