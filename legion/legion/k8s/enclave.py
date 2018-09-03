@@ -386,22 +386,12 @@ class Enclave:
 
         LOGGER.info('Creating service {} in namespace {}'.format(image_meta_information.k8s_name,
                                                                  self.namespace))
-        core_v1api.create_namespaced_service(
+        k8s_service = core_v1api.create_namespaced_service(
             body=service,
             namespace=self.namespace)
 
-        LOGGER.info('Requesting information about deployed model (id={}, version={})'
-                    .format(image_meta_information.model_id, image_meta_information.model_version))
-        model_services = self.get_models(image_meta_information.model_id,
-                                         image_meta_information.model_version)
-        if model_services:
-            model_service = model_services[0]
-            LOGGER.info('Model service {!r} has been found'.format(model_service))
-            return model_service
-        else:
-            LOGGER.error('Cannot find information about model pod after service creation')
-            raise Exception('Cannot find created model service for model (id={}, version={})'
-                            .format(image_meta_information.model_id, image_meta_information.model_version))
+        LOGGER.info('Building model service object')
+        return legion.k8s.services.ModelService(k8s_service)
 
     def watch_models(self):
         """
