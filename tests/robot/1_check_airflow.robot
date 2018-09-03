@@ -6,7 +6,7 @@ Library             legion_test.robot.Utils
 
 *** Test Cases ***
 Check test dags should not fail
-    [Documentation]  Connect to Airflow and check the status of test dags is not failed
+    [Documentation]  Connect to Airflow and check the status of test dags are not failed
     [Tags]  airflow  airflow-api
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Airflow     ${enclave}
