@@ -45,9 +45,9 @@ COPY start.sh /start.sh
 COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 COPY static /static
 COPY nginx.conf.ltmpl /nginx.conf.ltmpl
-COPY nginx-jwt/basexx.lua /usr/local/share/lua/5.3/basexx.lua
+COPY nginx-jwt/lib/basexx.lua /usr/local/share/lua/5.3/basexx.lua
 COPY nginx-jwt/nginx-jwt.lua /usr/local/share/lua/5.3/nginx-jwt.lua
-COPY nginx-jwt/resty /usr/local/share/lua/5.3/resty
+COPY nginx-jwt/lib/resty /usr/local/share/lua/5.3/resty
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]

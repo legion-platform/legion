@@ -277,6 +277,8 @@ node {
                 }, 'Build Edge Docker image': {
                     sh """
                     rm -rf k8s/edge/static/docs
+                    git submodule init
+                    git submodule update
                     cp -rf legion/docs/build/html/ k8s/edge/static/docs/
                     build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
                     sed -i "s/{VERSION}/${Globals.buildVersion}/" k8s/edge/static/index.html
