@@ -299,5 +299,9 @@ def build_client(args=None):
         if args.token:
             token = args.token
 
+    if not host:
+        enclaves = legion.k8s.find_enclaves()
+        host = enclaves[0].edi_service.url
+
     client = EdiClient(host, user, password, token)
     return client
