@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation       Legion's EDI operational check
-Test Timeout        5 minutes
+Test Timeout        6 minutes
 Resource            resources/keywords.robot
 Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
