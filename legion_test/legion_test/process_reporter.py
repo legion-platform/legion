@@ -27,6 +27,7 @@ import robot.running
 
 ROBOT_LISTENER_API_VERSION = 3
 TARGET_STREAM = sys.__stderr__
+KILL_SIGNAL = signal.SIGKILL
 
 
 def get_imported_library_instance(name):
@@ -74,7 +75,7 @@ def kill_and_report_process(popen_object):
     :return: None
     """
     try:
-        os.kill(popen_object.pid, signal.SIGTERM)
+        os.kill(popen_object.pid, KILL_SIGNAL)
     except ProcessLookupError:
         print('Cannot find process by id #{}'.format(popen_object.pid), file=TARGET_STREAM)
     except Exception as kill_exception:
@@ -98,15 +99,20 @@ def end_test(test, result):
     if not result.passed:
         process_lib = get_imported_library_instance('Process')
         if process_lib:
-            active_connections = process_lib._processes._connections
-            if active_connections:
+            all_processes = process_lib._processes._connections
+            all_results = process_lib._results
+
+            active_processes = [process for process in all_processes if all_results[process].rc is None]
+
+            if active_processes:
                 print('Some hanging processes have been detected for failed test {!r}'.format(
                     result.name
                 ), file=TARGET_STREAM)
-            for connection in active_connections:
-                print('Killing active process {!r} for test {!r} because of {!r}'.format(
-                    connection.args,
-                    result.name,
-                    result.message
-                ), file=TARGET_STREAM)
-                kill_and_report_process(connection)
+
+                for process in active_processes:
+                    print('Killing active process {!r} for test {!r} because of {!r}'.format(
+                        process.args,
+                        result.name,
+                        result.message
+                    ), file=TARGET_STREAM)
+                    kill_and_report_process(process)
