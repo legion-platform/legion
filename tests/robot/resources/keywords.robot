@@ -165,7 +165,7 @@ Run EDI scale with version
 Get token from EDI
     [Documentation]  get token for the EDGE session
     [Arguments]         ${enclave}
-    ${resp} =       Check valid http response    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/token
+    ${resp} =       Check valid http response    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token
     Log                   ${resp}
     Should not be empty   ${resp}
     &{token} =      Evaluate    json.loads('''${resp}''')    json

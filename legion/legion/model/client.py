@@ -49,7 +49,7 @@ class ModelClient:
     Model HTTP client
     """
 
-    def __init__(self, model_id, model_version, token, host=None, http_client=None, use_relative_url=False,
+    def __init__(self, model_id, model_version, token=None, host=None, http_client=None, use_relative_url=False,
                  timeout=None):
         """
         Build client
@@ -58,7 +58,7 @@ class ModelClient:
         :type model_id: str
         :param model_version: model version
         :type model_version: str
-        :param token: API token value to use (optional)
+        :param token: API token value to use (default: None)
         :type token: str
         :param host: host that server model HTTP requests (default: from ENV)
         :type host: str or None
@@ -202,9 +202,10 @@ class ModelClient:
         :return: dict -- additional kwargs
         """
         kwargs = {}
-        if self._timeout is not None:
-            kwargs['timeout'] = self._timeout
-        kwargs['headers'] = {'Authorization': 'Bearer {token}'.format(token=self._token)}
+        if self._token:
+            if self._timeout is not None:
+                kwargs['timeout'] = self._timeout
+            kwargs['headers'] = {'Authorization': 'Bearer {token}'.format(token=self._token)}
         return kwargs
 
     def batch(self, invoke_parameters, endpoint=None):

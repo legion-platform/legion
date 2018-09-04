@@ -39,7 +39,7 @@ EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
 EDI_INSPECT = '/api/{version}/inspect'
 EDI_INFO = '/api/{version}/info'
-EDI_GENERATE_TOKEN = '/api/{version}/token'
+EDI_GENERATE_TOKEN = '/api/{version}/generate_token'
 
 ALL_EDI_API_ENDPOINTS = EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, EDI_INFO
 

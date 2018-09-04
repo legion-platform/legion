@@ -484,7 +484,7 @@ class ModelServeTestBuild:
                 self.client = self.application.test_client()
                 self.model_client = legion.model.ModelClient(self._model_id,
                                                              self._model_version,
-                                                             token='', http_client=self.client,
+                                                             http_client=self.client,
                                                              use_relative_url=True)
 
             return self
@@ -587,8 +587,7 @@ class ModelLocalContainerExecutionContext:
             LOGGER.info('Building client')
             url = 'http://{}:{}'.format('localhost', self.model_port)
             LOGGER.info('Target URI is {}'.format(url))
-            self.client = ModelClient(self._model_id, self._model_version,
-                                      token='', host=url)
+            self.client = ModelClient(self._model_id, self._model_version, host=url)
 
             LOGGER.info('Getting model information')
             self.model_information = self.client.info()

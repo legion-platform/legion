@@ -273,11 +273,11 @@ def add_edi_arguments(parser):
                         type=str, help='EDI server token')
 
 
-def build_client(args):
+def build_client(args=None):
     """
     Build EDI client from from ENV and from command line arguments
 
-    :param args: command arguments with .namespace
+    :param args: (optional) command arguments with .namespace
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
@@ -286,32 +286,18 @@ def build_client(args):
     password = os.environ.get(*legion.config.EDI_PASSWORD)
     token = os.environ.get(*legion.config.EDI_TOKEN)
 
-    if args.edi:
-        host = args.edi
+    if args:
+        if args.edi:
+            host = args.edi
 
-    if args.user:
-        user = args.user
+        if args.user:
+            user = args.user
 
-    if args.password:
-        password = args.password
+        if args.password:
+            password = args.password
 
-    if args.token:
-        token = args.token
-
-    client = EdiClient(host, user, password, token)
-    return client
-
-
-def build_client_from_env():
-    """
-    Build EDI client from ENV
-
-    :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
-    """
-    host = os.environ.get(*legion.config.EDI_URL)
-    user = os.environ.get(*legion.config.EDI_USER)
-    password = os.environ.get(*legion.config.EDI_PASSWORD)
-    token = os.environ.get(*legion.config.EDI_TOKEN)
+        if args.token:
+            token = args.token
 
     client = EdiClient(host, user, password, token)
     return client
