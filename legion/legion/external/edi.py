@@ -300,8 +300,10 @@ def build_client(args=None):
             token = args.token
 
     if not host:
-        enclaves = legion.k8s.find_enclaves()
-        host = enclaves[0].edi_service.url
+        try:
+            host = legion.k8s.Enclave(os.environ.get("NAMESPACE")).edi_service.url
+        except Exception as e:
+            raise Exception('No available Edi url.')
 
     client = EdiClient(host, user, password, token)
     return client
