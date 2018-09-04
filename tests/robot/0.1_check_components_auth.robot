@@ -139,7 +139,7 @@ Check if EDGE does not authorize with invalid token
                      Should Be Equal As Integers         ${resp.rc}         0
      ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
                      Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
-     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info     ${invalid_token}
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info     token=${invalid_token}
      Dictionary Should Contain Item    ${response}    response_code    401
      ${auth_page} =  Get From Dictionary   ${response}    response_text
      Should contain   ${auth_page}    401 Authorization Required
@@ -152,7 +152,7 @@ Check if EDGE authorize with valid token
                      Should Be Equal As Integers         ${resp.rc}         0
      ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
                      Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
-     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info     ${TOKEN}
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info     token=${TOKEN}
      Dictionary Should Contain Item    ${response}    response_code    200
      ${auth_page} =  Get From Dictionary   ${response}    response_text
      Should not contain   ${auth_page}    401 Authorization Required
