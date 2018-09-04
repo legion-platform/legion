@@ -48,13 +48,21 @@ jenkins:
     tokenServerUrl: https://dex.{{ cluster_name }}/token
     authServerUrl: https://dex.{{ cluster_name }}/auth
     adminGroups: "
-    {%- for item in dex.groups -%}
-    {%- if item.clusterrolebinding == "cluster-admin" %} {{ item.group }}
+    {%- for item in dex.groups_binding.kubernetes -%}
+    {%- if item.clusterrolebinding == "cluster-admin" %} {{ item.name }}
+    {%- endif -%}
+    {% endfor %}
+    {%- for item in dex.groups_binding.jenkins -%}
+    {%- if item.role == "admin" %} {{ item.name }}
     {%- endif -%}
     {% endfor %}"
     readOnlyGroups: "
-    {%- for item in dex.groups -%}
-    {%- if item.clusterrolebinding == "view" %} {{ item.group }}
+    {%- for item in dex.groups_binding.kubernetes -%}
+    {%- if item.clusterrolebinding == "view" %} {{ item.name }}
+    {%- endif -%}
+    {% endfor %}
+    {%- for item in dex.groups_binding.jenkins -%}
+    {%- if item.role == "view" %} {{ item.name }}
     {%- endif -%}
     {% endfor %}"
 

@@ -6,6 +6,6 @@
   when: dex.enabled
 
 - name: Bind user groups to clusterrolebindings
-  command: "kubectl --context {{ cluster_name }} set subject clusterrolebinding {{ item.clusterrolebinding }} --group={{ item.group }}"
-  with_items: "{{ dex.groups }}"
+  command: "kubectl --context {{ cluster_name }} set subject clusterrolebinding {{ item.clusterrolebinding }} --{{ item.kind }}={{ item.name }}"
+  with_items: "{{ dex.groups_binding.kubernetes }}"
   when: dex.enabled
