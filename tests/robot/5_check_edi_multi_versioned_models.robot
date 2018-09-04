@@ -63,8 +63,8 @@ Check EDI undeploy all model instances by version
                     Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Should not contain              ${resp.stdout}          ${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp.stdout}          ${TEST_MODEL_2_VERSION}
+                    Should not contain              ${resp.stdout}          |${TEST_MODEL_1_VERSION}
+                    Should contain                  ${resp.stdout}          |${TEST_MODEL_2_VERSION}
 
 Check EDI undeploy 1 of 2 models without version
     [Tags]  edi  cli  enclave   multi_versions
