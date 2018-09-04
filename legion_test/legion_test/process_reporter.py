@@ -75,6 +75,8 @@ def kill_and_report_process(popen_object):
     """
     try:
         os.kill(popen_object.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        print('Cannot find process by id #{}'.format(popen_object.pid), file=TARGET_STREAM)
     except Exception as kill_exception:
         print('Cannot kill process: {!r}'.format(kill_exception), file=TARGET_STREAM)
 
@@ -82,15 +84,15 @@ def kill_and_report_process(popen_object):
         report_process_output(popen_object.args, 'stdout', popen_object.stdout.read())
         report_process_output(popen_object.args, 'stderr', popen_object.stderr.read())
     except Exception as gather_exception:
-        print('Cannot gather process logs: {!r}'.format(gather_exception), file=TARGET_STREAM)
+        print('Cannot gather process #{} logs: {!r}'.format(popen_object.pid, gather_exception), file=TARGET_STREAM)
 
 
-def end_test(data, result):
+def end_test(test, result):
     """
     Listener for Robot's "end of test" event
 
-    :param data: robot's argument
-    :param result: robot's argument
+    :param test: test
+    :param result: test result
     :return: None
     """
     if not result.passed:
