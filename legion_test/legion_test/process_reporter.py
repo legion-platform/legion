@@ -76,13 +76,13 @@ def kill_and_report_process(popen_object):
     try:
         os.kill(popen_object.pid, signal.SIGTERM)
     except Exception as kill_exception:
-        print('Cannot kill process: {!r}'.format(kill_exception))
+        print('Cannot kill process: {!r}'.format(kill_exception), file=TARGET_STREAM)
 
     try:
         report_process_output(popen_object.args, 'stdout', popen_object.stdout.read())
         report_process_output(popen_object.args, 'stderr', popen_object.stderr.read())
     except Exception as gather_exception:
-        print('Cannot gather process logs: {!r}'.format(gather_exception))
+        print('Cannot gather process logs: {!r}'.format(gather_exception), file=TARGET_STREAM)
 
 
 def end_test(data, result):
