@@ -102,7 +102,8 @@ def end_test(test, result):
             all_processes = process_lib._processes._connections
             all_results = process_lib._results
 
-            active_processes = [process for process in all_processes if all_results[process].rc is None]
+            active_processes = [process for process in all_processes
+                                if process in all_results and all_results[process].rc is None]
 
             if active_processes:
                 print('Some hanging processes have been detected for failed test {!r}'.format(
