@@ -97,6 +97,10 @@ def end_test(data, result):
         process_lib = get_imported_library_instance('Process')
         if process_lib:
             active_connections = process_lib._processes._connections
+            if active_connections:
+                print('Some hanging processes have been detected for failed test {!r}'.format(
+                    result.name
+                ), file=TARGET_STREAM)
             for connection in active_connections:
                 print('Killing active process {!r} for test {!r} because of {!r}'.format(
                     connection.args,
