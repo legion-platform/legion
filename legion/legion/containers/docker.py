@@ -183,6 +183,8 @@ def build_docker_image(client, model_id, model_file, labels,
             workspace_path
         )
 
+        print('Executing {!r}'.format(symlink_create_command))
+
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
