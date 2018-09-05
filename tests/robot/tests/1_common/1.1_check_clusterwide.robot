@@ -38,14 +38,18 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
 Check Nexus availability
     [Documentation]  Check Nexus UI availability
     [Tags]  nexus  ui
-    Sleep  60
-    Open Nexus                              /
+    #Sleep  60
+    Start browser    ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}
+    Login with dex
+    Go To            ${NEXUS_HOST}/
     Wait Nexus componens in menu
 
 Check Nexus Components available
     [Documentation]  Check that Nexus storages (components) are ready
     [Tags]  nexus  ui
-    Open Nexus                              /#browse/browse/components
+    Start browser    ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}
+    Login with dex
+    Go To            ${NEXUS_HOST}/#browse/browse/components
     ${componentNames}=                      Get Nexus components table
 #    List Should Contain Value               ${componentNames}           docker-hosted
 #    List Should Contain Value               ${componentNames}           raw
