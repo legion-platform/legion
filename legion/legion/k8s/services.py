@@ -289,7 +289,11 @@ class ModelService(Service):
                              if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
                              and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
 
-        self._deployment = model_deployments[0] if model_deployments else None
+        if model_deployments:
+            self._deployment = model_deployments[0]
+        else:
+            self._deployment = None
+            LOGGER.error('Cannot load model deployment: no one has been found')
 
         self._deployment_data_loaded = True
 
@@ -310,7 +314,10 @@ class ModelService(Service):
         :return: int -- current model scale
         """
         self._load_deployment_data()
-        return self.deployment.status.available_replicas if self.deployment.status.available_replicas else 0
+        if self.deployment and self.deployment.status.available_replicas:
+            return self.deployment.status.available_replicas
+        else:
+            return 0
 
     @scale.setter
     def scale(self, new_scale):
@@ -329,15 +336,18 @@ class ModelService(Service):
 
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
 
-        old_scale = self._deployment.spec.replicas
-        self._deployment.spec.replicas = new_scale
+        if not self.deployment:
+            raise Exception('Cannot get model deployment: deployment is unknown')
+
+        old_scale = self.deployment.spec.replicas
+        self.deployment.spec.replicas = new_scale
 
         LOGGER.info('Scaling service {} in namespace {} from {} to {} replicas'
-                    .format(self._deployment.metadata.name, self._deployment.metadata.namespace, old_scale, new_scale))
+                    .format(self.deployment.metadata.name, self.deployment.metadata.namespace, old_scale, new_scale))
 
-        extension_api.patch_namespaced_deployment(self._deployment.metadata.name,
-                                                  self._deployment.metadata.namespace,
-                                                  self._deployment)
+        extension_api.patch_namespaced_deployment(self.deployment.metadata.name,
+                                                  self.deployment.metadata.namespace,
+                                                  self.deployment)
 
         self.reload_cache()
 
