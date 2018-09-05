@@ -177,7 +177,7 @@ Check model started
     [Arguments]           ${enclave}   ${model_id}  ${model_ver}
     Log                   request url is ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
                           Get token from EDI    ${enclave}
-    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info    ${TOKEN}
+    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info    token=${TOKEN}
     Log                   ${resp}
     Should not be empty   ${resp}
     [Return]              ${resp}
