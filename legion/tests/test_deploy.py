@@ -26,7 +26,6 @@ from legion_test_utils import ModelLocalContainerExecutionContext, build_distrib
     ModelDockerBuilderContainerContext
 
 
-# @unittest2.skip('TEMP')
 class TestDeploy(unittest2.TestCase):
     @classmethod
     def setUpClass(cls):

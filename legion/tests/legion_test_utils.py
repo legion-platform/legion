@@ -12,6 +12,7 @@ from unittest.mock import patch
 import docker
 import docker.types
 import docker.errors
+import docker.client
 
 import legion.config
 import legion.containers.docker
@@ -207,6 +208,7 @@ class ModelDockerBuilderContainerContext:
         self._docker_base_image = None
         self._docker_container = None
         self._docker_client = legion.containers.docker.build_docker_client(None)
+        self._docker_volume = None
 
         # Legion python package
         self._python_wheel_path = python_wheel_path
@@ -228,6 +230,9 @@ class ModelDockerBuilderContainerContext:
 
         docker_socket_mount = docker.types.Mount('/var/run/docker.sock', '/var/run/docker.sock', 'bind')
 
+        self._docker_volume = self._docker_client.volumes.create(driver='local')
+        workspace_mount = docker.types.Mount(self.workspace, self._docker_volume.id)
+
         self._docker_container = self._docker_client.containers.run(
             self._docker_base_image.id,
             command='sleep 99999',  # keep container running for 99999 seconds
@@ -235,7 +240,10 @@ class ModelDockerBuilderContainerContext:
             remove=True,  # remove automatically after kill
             environment=build_environ_for_test_environments(),  # pass required environment variables from host machine
             network_mode='host',  # host network is required because we need to connect to pydevd server
-            mounts=[docker_socket_mount]
+            mounts=[
+                docker_socket_mount,
+                workspace_mount
+            ]
         )
 
     def _setup_legion_wheel_in_docker_container(self):
