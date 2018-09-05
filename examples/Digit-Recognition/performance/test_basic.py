@@ -16,7 +16,7 @@
 import os
 
 from legion.model import load_image, ModelClient
-from legion.external.edi import build_client_from_env
+from legion.external.edi import build_client
 from locust import HttpLocust, task, TaskSet
 
 
@@ -28,7 +28,7 @@ class ModelTaskSet(TaskSet):
 
     def on_start(self):
         self._model_client = ModelClient('recognize_digits', '1.0',
-                                         token=build_client_from_env().get_token('1.0'),
+                                         token=build_client().get_token('1.0'),
                                          use_relative_url=True, http_client=self.client)
 
 
