@@ -281,7 +281,6 @@ def build_client(args=None):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
-
     host, user, password, token = None, None, None, None
 
     if args:
