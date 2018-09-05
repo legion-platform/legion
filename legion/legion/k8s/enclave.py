@@ -211,8 +211,13 @@ class Enclave:
         """
         model_services = self.get_models(model_id, model_version)
 
-        if len(model_services) > 1 and not model_version:
-            raise Exception('Please specify version of model')
+        ignore_strictness = model_id == '*' or model_version == '*'
+
+        if len(model_services) > 1:
+            LOGGER.info('More than one model was found for filter: id={!r} version={!r}'
+                        .format(model_id, model_version))
+            if not ignore_strictness and not model_version:
+                raise Exception('Please specify version of model')
 
         if not model_services:
             if not ignore_not_found:
