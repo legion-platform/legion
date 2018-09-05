@@ -264,8 +264,7 @@ def inspect(model=None, version=None):
             model_id=model_service.id,
             model_version=model_service.version,
             host=model_service.url_with_ip,
-            timeout=3,
-            token=''
+            timeout=3
         )
         LOGGER.info('Building model client: {!r}'.format(model_client))
 
