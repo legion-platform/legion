@@ -45,7 +45,7 @@ RUN git clone https://github.com/auth0/nginx-jwt.git
 WORKDIR /nginx-jwt
 RUN git checkout v1.0.0
 CMD ./scripts/build_deps.sh
-
+WORKDIR /
 ADD start.sh /start.sh
 ADD statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
 ADD static /static
