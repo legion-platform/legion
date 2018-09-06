@@ -88,7 +88,7 @@ class EdiClient:
                 LOGGER.debug('Requesting {}'.format(full_url))
                 response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
             except requests.exceptions.ConnectionError as exception:
-                LOGGER.warning('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
+                LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
             else:
                 LOGGER.debug('Got response. Breaking')
@@ -96,7 +96,9 @@ class EdiClient:
 
             left_retries -= 1
         else:
-            raise Exception('No one retry left. Exception: {}'.format(raised_exception))
+            raise Exception('Failed to connect to {}. No one retry left. Exception: {}'.format(
+                self._base, raised_exception
+            ))
 
         try:
             answer = json.loads(response.text)
