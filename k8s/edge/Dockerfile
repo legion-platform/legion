@@ -41,18 +41,18 @@ ARG pip_legion_version_string=""
 RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
 
 # Staff
-COPY start.sh /start.sh
-COPY statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
-COPY static /static
 RUN git clone https://github.com/auth0/nginx-jwt.git
-WORKDIR nginx-jwt
+WORKDIR /nginx-jwt
 RUN git checkout v1.0.0
-RUN ./scripts/build_deps.sh
-WORKDIR ..
-COPY nginx.conf.ltmpl /nginx.conf.ltmpl
-COPY nginx-jwt/lib/basexx.lua /usr/local/share/lua/5.3/basexx.lua
-COPY nginx-jwt/nginx-jwt.lua /usr/local/share/lua/5.3/nginx-jwt.lua
-COPY nginx-jwt/lib/resty /usr/local/share/lua/5.3/resty
+CMD ./scripts/build_deps.sh
+
+ADD start.sh /start.sh
+ADD statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
+ADD static /static
+ADD nginx-jwt/lib/basexx.lua /usr/local/share/lua/5.3/basexx.lua
+ADD nginx-jwt/nginx-jwt.lua /usr/local/share/lua/5.3/nginx-jwt.lua
+ADD nginx-jwt/lib/resty /usr/local/share/lua/5.3/resty
+ADD nginx.conf.ltmpl /nginx.conf.ltmpl
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]
