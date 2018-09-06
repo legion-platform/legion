@@ -81,17 +81,24 @@ class EdiClient:
             auth = ('token', self._token)
 
         left_retries = self._retries if self._retries > 0 else 1
-        while True:
-            left_retries -= 1
+        raised_exception = None
+
+        while left_retries > 0:
             try:
+                LOGGER.debug('Requesting {}'.format(full_url))
                 response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
             except requests.exceptions.ConnectionError as exception:
-                if not left_retries:
-                    raise Exception('Failed to connect to {}: {}'.format(self._base, exception))
-                else:
-                    LOGGER.warning('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
+                LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
+                raised_exception = exception
             else:
+                LOGGER.debug('Got response. Breaking')
                 break
+
+            left_retries -= 1
+        else:
+            raise Exception('Failed to connect to {}. No one retry left. Exception: {}'.format(
+                self._base, raised_exception
+            ))
 
         try:
             answer = json.loads(response.text)
@@ -107,6 +114,7 @@ class EdiClient:
         if response.status_code != 200:
             raise Exception('Server returned wrong HTTP code (not 200) without error flag')
 
+        LOGGER.debug('Query has been completed, parsed and validated')
         return answer
 
     @staticmethod

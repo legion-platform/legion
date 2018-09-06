@@ -173,6 +173,7 @@ def get_related_model_deployments(client, affected_deployments):
         in affected_deployments
     }
     actual_deployments_status = client.inspect()
+    LOGGER.debug('Filtering all models using affected deployment list')
     return [deploy
             for deploy in actual_deployments_status
             if deploy.id_and_version in affected_deployment_ids]
