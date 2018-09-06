@@ -1,3 +1,0 @@
-[submodule "k8s/edge/nginx-jwt"]
-	path = k8s/edge/nginx-jwt
-	url = https://github.com/auth0/nginx-jwt
