@@ -203,9 +203,9 @@ class ModelClient:
         """
         kwargs = {}
         if self._token:
-            if self._timeout is not None:
-                kwargs['timeout'] = self._timeout
             kwargs['headers'] = {'Authorization': 'Bearer {token}'.format(token=self._token)}
+        if self._timeout is not None:
+            kwargs['timeout'] = self._timeout
         return kwargs
 
     def batch(self, invoke_parameters, endpoint=None):
