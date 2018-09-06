@@ -13,8 +13,8 @@ aws_region: us-east-2
 node_autoscaler_min: 3
 node_autoscaler_max: 5
 bastion_shape: t2.micro
-master_shape: t2.large
-node_shape: t2.large
+master_shape: m4.large
+node_shape: m4.large
 
 # Ohio high memory instances
 node_extra_shapes:
