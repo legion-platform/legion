@@ -277,23 +277,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
     // build status of null means successful
     buildStatus =  buildStatus ?: 'SUCCESSFUL'
 
-    def previousBuild = currentBuild.getPreviousBuild()
-    def previousBuildResult = previousBuild != null ? previousBuild.result : null
-
-    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
-    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
-
-    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
-
-    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
-
-    if (!masterOrDevelopBuild)
-        return
-
-    // Skip green -> green
-    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
-        return
-
     // Default values
     def colorCode = '#FF0000'
     def summary = """\
