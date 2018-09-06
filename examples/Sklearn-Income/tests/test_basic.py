@@ -16,6 +16,7 @@
 import os
 
 from legion.model import ModelClient
+from legion.external.edi import build_client
 import legion.config
 
 import unittest2
@@ -23,7 +24,8 @@ import unittest2
 
 class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.1')
+        self._client = ModelClient(os.environ.get(*legion.config.MODEL_ID), '1.1',
+                                   token=build_client().get_token('1.0'))
 
     def test_model(self):
         response = self._client.invoke(**{"age": "31",
