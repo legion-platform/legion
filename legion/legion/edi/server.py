@@ -119,8 +119,6 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     :type image: str
     :param count: count of pods to create
     :type count: int
-    :param timeout: model pod startup timeout (used in liveness and readiness probes)
-    :type timeout: int
     :param livenesstimeout: time in seconds for liveness check
     :type livenesstimeout: int
     :param readinesstimeout: time in seconds for readiness check
@@ -307,10 +305,18 @@ def generate_token():
     :return: dict -- state of cluster
     """
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
-    jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
-    expiration = datetime.utcnow() + jwt_life_length
-    token = jwt.encode({'exp': expiration}, jwt_secret, algorithm='HS256').decode('utf-8')
-    return {'token': token, 'exp': expiration}
+    jwt_exp_date = None
+    if 'jwt.exp.datetime' in app.config['JWT_CONFIG']:
+        try:
+            jwt_exp_date = datetime.strptime(app.config['JWT_CONFIG']['jwt.exp.datetime'], "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            pass
+    if not jwt_exp_date or jwt_exp_date < datetime.now():
+        jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
+        jwt_exp_date = datetime.utcnow() + jwt_life_length
+
+    token = jwt.encode({'exp': jwt_exp_date}, jwt_secret, algorithm='HS256').decode('utf-8')
+    return {'token': token, 'exp': jwt_exp_date}
 
 
 def create_application():
