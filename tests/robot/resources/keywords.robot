@@ -260,7 +260,6 @@ Secured component domain should not be accessible by invalid credentials
     Should contain   ${auth_page}    Log in to Your Account
     Should contain   ${auth_page}    Invalid Email Address and password
 
-
 Secured component domain should be accessible by valid credentials
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a secured legion component does not provide access by invalid credentials
