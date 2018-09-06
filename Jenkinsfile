@@ -283,6 +283,7 @@ node {
                     sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
                     sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
                     cd k8s/edge/
+                    rm -rf nginx-jwt/
                     git clone https://github.com/auth0/nginx-jwt.git
                     cd nginx-jwt
                     git checkout v1.0.0
