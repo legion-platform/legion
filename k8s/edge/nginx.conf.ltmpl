@@ -15,6 +15,8 @@
 #
 {{ load_module('legion.template_plugins.enclave_models_monitor') }}
 
+env JWT_SECRET;
+
 worker_processes  1;
 
 events {
@@ -31,7 +33,7 @@ http{
 
   resolver 127.0.0.1:53 ipv6=off;
 
-  lua_package_path "/usr/local/share/lua/5.3/?.lua";
+  lua_package_path "/usr/local/share/lua/5.3/?.lua;/usr/local/share/lua/5.3/resty/?.lua;;";
 
   init_by_lua_block {
     local os = require("os")
@@ -67,6 +69,11 @@ http{
     # Models API
     {% for model_endpoint in models %}
     location /api/model/{{ model_endpoint.url }} {
+        access_by_lua '
+            local jwt = require("nginx-jwt")
+            jwt.auth()
+        ';
+
         proxy_pass {{ model_endpoint.model_service.url_with_ip }}/api/model/{{ model_endpoint.model_service.id }}/{{ model_endpoint.model_service.version }};
 
         expires -1;

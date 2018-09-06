@@ -138,19 +138,24 @@ class Utils:
         return founded[0]
 
     @staticmethod
-    def check_valid_http_response(url):
+    def check_valid_http_response(url, token=None):
         """
         Check if model return valid code for get request
 
-        :param url: url with model_id for checking
-        :type url: str
+        :param str url: url with model_id for checking
+        :param str token: token for the authorization
         :return:  str -- response text
         """
         tries = 6
         error = None
         for i in range(tries):
             try:
-                response = requests.get(url, timeout=10)
+                if token:
+                    headers = {"Authorization": "Bearer {}".format(token)}
+                    response = requests.get(url, timeout=10, headers=headers)
+                else:
+                    response = requests.get(url, timeout=10)
+
                 if response.status_code == 200:
                     return response.text
                 elif i >= 5:
@@ -167,17 +172,21 @@ class Utils:
             raise Exception('Unexpected case happen!')
 
     @staticmethod
-    def get_component_auth_page(url, jenkins=False):
+    def get_component_auth_page(url, jenkins=False, token=None):
         """
         Get component main auth page
 
         :param boolean jenkins: if jenkins service is under test
         :param str url: component url
+        :param str token: token for the authorization
         :return:  response_code and response_text
         :rtype: dict
         """
         if jenkins:
             response = requests.get('{}/securityRealm/commenceLogin'.format(url), timeout=10)
+        elif token:
+            headers = {"Authorization": "Bearer {}".format(token)}
+            response = requests.get(url, timeout=10, headers=headers)
         else:
             response = requests.get(url, timeout=10)
         return {"response_code": response.status_code, "response_text": response.text}

@@ -46,3 +46,7 @@ edi:
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+
+secrets:
+  token_secret: "{{ api.jwt_secret }}"
+  token_ttl_minutes: "{{ api.jwt_ttl_minutes | default('120') }}"

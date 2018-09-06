@@ -159,3 +159,4 @@ connections:
 secrets:
   nexus:
     admin: "jonny"
+  token_ttl_minutes: "120"

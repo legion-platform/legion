@@ -26,6 +26,8 @@ import legion.http
 import legion.model
 from flask import Flask, Blueprint
 from flask import current_app as app
+import jwt
+from datetime import datetime, timedelta
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
@@ -37,6 +39,7 @@ EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
 EDI_INSPECT = '/api/{version}/inspect'
 EDI_INFO = '/api/{version}/info'
+EDI_GENERATE_TOKEN = '/api/{version}/token'
 
 ALL_EDI_API_ENDPOINTS = EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, EDI_INFO
 
@@ -261,7 +264,8 @@ def inspect(model=None, version=None):
             model_id=model_service.id,
             model_version=model_service.version,
             host=model_service.url_with_ip,
-            timeout=3
+            timeout=3,
+            token=''
         )
         LOGGER.info('Building model client: {!r}'.format(model_client))
 
@@ -292,6 +296,22 @@ def info():
     :return: dict -- state of cluster
     """
     return app.config['CLUSTER_STATE']
+
+
+@blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['GET'])
+@legion.http.provide_json_response
+@legion.http.authenticate(authenticate)
+def generate_token():
+    """
+    Generate JWT token
+
+    :return: dict -- state of cluster
+    """
+    jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
+    jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
+    expiration = datetime.utcnow() + jwt_life_length
+    token = jwt.encode({'exp': expiration}, jwt_secret, algorithm='HS256').decode('utf-8')
+    return {'token': token, 'exp': expiration}
 
 
 def create_application():
@@ -328,6 +348,7 @@ def load_cluster_config(application):
                                                            application.config['CLUSTER_SECRETS']['grafana.user'],
                                                            application.config['CLUSTER_SECRETS']['grafana.password'])
     application.config['GRAFANA_CLIENT'] = grafana_client
+    application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 
 
 def init_application(args=None):
