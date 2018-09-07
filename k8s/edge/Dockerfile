@@ -19,7 +19,7 @@ ENV DUMB_INIT_VERSION 1.2.0
 
 # Dumb-init, python3, lua
 RUN set -ex \
-  && apk add --no-cache --virtual .install-deps openssl \
+  && apk add --no-cache --virtual .install-deps openssl libffi-dev openssl-dev \
        python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
        ca-certificates gnupg openssl git curl luarocks5.3 \
   && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
