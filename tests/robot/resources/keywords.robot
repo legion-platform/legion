@@ -170,7 +170,7 @@ Get token from EDI
     Should not be empty   ${resp}
     &{token} =      Evaluate    json.loads('''${resp}''')    json
     Log                   ${token}
-    Set Test Variable     ${TOKEN}    ${token['token']}
+    Set Suite Variable     ${TOKEN}    ${token['token']}
 
 Check model started
     [Documentation]  check if model run in container by http request
