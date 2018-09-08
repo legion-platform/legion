@@ -280,7 +280,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
     // Default values
     def colorCode = '#FF0000'
     def summary = """\
-    @here Job ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${buildStatus} (previous: ${previousBuildResult})
+    @here Job ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${buildStatus}
     branch ${params.GitBranch} repository ${params.GitRepository} enclave ${params.Enclave}
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
