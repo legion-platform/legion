@@ -28,7 +28,10 @@ spec:
         - name: STATSD_PORT
           value: "8125"
         - name: JWT_SECRET
-          value: "{{ .Values.secrets.token_secret }}"
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-jwt-config"
+              key: "jwt.secret"
         ports:
         - containerPort: 80
           name: api
