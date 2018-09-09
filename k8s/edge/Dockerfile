@@ -40,6 +40,13 @@ ARG pip_legion_version_string=""
 
 RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
 
+# Checkout nginx-jwt v.1.0.0
+RUN git clone https://github.com/auth0/nginx-jwt.git
+WORKDIR nginx-jwt
+RUN git checkout v1.0.0
+RUN ./scripts/build_deps.sh
+WORKDIR /
+
 # Staff
 ADD start.sh /start.sh
 ADD statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua

@@ -282,13 +282,8 @@ node {
                     sed -i "s/{VERSION}/${Globals.buildVersion}/" k8s/edge/static/index.html
                     sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
                     sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
-                    cd k8s/edge/
-                    rm -rf nginx-jwt/
-                    git clone https://github.com/auth0/nginx-jwt.git
-                    cd nginx-jwt
-                    git checkout v1.0.0
-                    ./scripts/build_deps.sh
-                    cd ..
+
+                    cd k8s/edge
                     docker build --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Jenkins Docker image': {
