@@ -343,9 +343,6 @@ class ModelService(Service):
 
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
 
-        if not self.deployment:
-            raise Exception('Cannot get model deployment: deployment is unknown')
-
         old_scale = self.deployment.spec.replicas
         self.deployment.spec.replicas = new_scale
 
