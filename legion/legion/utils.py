@@ -595,26 +595,26 @@ def deduce_model_file_name(model_id, model_version):
 
 def retry_function_call(function_to_call, retries, timeout):
     """
-    Try to call function till it will return True-able object.
+    Try to call function till it will return not None object.
     Raise if there are no retries left
 
     :param function_to_call: function to be called
-    :type function_to_call: Callable[[], bool]
+    :type function_to_call: Callable[[], any]
     :param retries: count of retries
     :type retries: int
     :param timeout: timeout between retries
     :type timeout: int
-    :return: None
+    :return: Any -- result of successful function call
     """
     for no in range(retries):
         result = function_to_call()
-        if result:
-            break
+        if result is not None:
+            return result
 
         if no < retries - 1:
             LOGGER.debug('Retry {}/{} was failed. Waiting {}s before next retry analysis'.format(no + 1,
                                                                                                  retries,
                                                                                                  timeout))
             time.sleep(timeout)
-    else:
-        raise Exception('No retries left')
+
+    raise Exception('No retries left')

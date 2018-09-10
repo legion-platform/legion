@@ -289,11 +289,9 @@ class ModelService(Service):
                              and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
 
         if model_deployments:
-            self._deployment = model_deployments[0]
-            self._deployment_data_loaded = True
-            return True
+            return model_deployments[0]
         else:
-            return False
+            return None
 
     def _load_deployment_data(self):
         """
@@ -304,7 +302,9 @@ class ModelService(Service):
         if self._deployment_data_loaded:
             return
 
-        retry_function_call(self._load_deployment_data_logic, LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
+        self._deployment = retry_function_call(self._load_deployment_data_logic,
+                                               LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
+        self._deployment_data_loaded = True
 
     def reload_cache(self):
         """
