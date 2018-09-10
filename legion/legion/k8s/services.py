@@ -17,7 +17,6 @@
 legion k8s services classes
 """
 import logging
-import time
 
 import kubernetes
 import kubernetes.client
@@ -33,7 +32,7 @@ from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, 
 from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
 from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 import legion.k8s.utils
-from legion.utils import normalize_name
+from legion.utils import normalize_name, retry_function_call
 
 LOGGER = logging.getLogger(__name__)
 
@@ -274,6 +273,28 @@ class ModelService(Service):
         self._load_deployment_data()
         return self._deployment
 
+    def _load_deployment_data_logic(self):
+        """
+        Logic (is called with retries) to load model service deployment
+
+        :return: bool
+        """
+        client = legion.k8s.utils.build_client()
+
+        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+
+        all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
+        model_deployments = [deployment for deployment in all_deployments.items
+                             if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
+                             and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
+
+        if model_deployments:
+            self._deployment = model_deployments[0]
+            self._deployment_data_loaded = True
+            return True
+        else:
+            return False
+
     def _load_deployment_data(self):
         """
         Load deployment data (lazy loading)
@@ -283,26 +304,7 @@ class ModelService(Service):
         if self._deployment_data_loaded:
             return
 
-        client = legion.k8s.utils.build_client()
-
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-
-        for _ in range(LOAD_DATA_ITERATIONS):
-            all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
-            model_deployments = [deployment for deployment in all_deployments.items
-                                 if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
-                                 and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
-
-            if model_deployments:
-                self._deployment = model_deployments[0]
-                break
-
-            LOGGER.debug('Waiting before next deployment analysis')
-            time.sleep(LOAD_DATA_TIMEOUT)
-        else:
-            raise Exception('Cannot load model deployment: no one has been found')
-
-        self._deployment_data_loaded = True
+        retry_function_call(self._load_deployment_data_logic, LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
 
     def reload_cache(self):
         """

@@ -22,10 +22,12 @@ import os
 import getpass
 import distutils.dir_util
 import re
+import logging
 import shutil
 import socket
 import subprocess
 import sys
+import time
 import tempfile
 import zipfile
 
@@ -39,6 +41,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 KUBERNETES_STRING_LENGTH_LIMIT = 63
+LOGGER = logging.getLogger(__name__)
 
 
 def render_template(template_name, values=None):
@@ -588,3 +591,30 @@ def deduce_model_file_name(model_id, model_version):
         return os.path.join(default_prefix, file_name)
 
     return file_name
+
+
+def retry_function_call(function_to_call, retries, timeout):
+    """
+    Try to call function till it will return True-able object.
+    Raise if there are no retries left
+
+    :param function_to_call: function to be called
+    :type function_to_call: Callable[[], bool]
+    :param retries: count of retries
+    :type retries: int
+    :param timeout: timeout between retries
+    :type timeout: int
+    :return: None
+    """
+    for no in range(retries):
+        result = function_to_call()
+        if result:
+            break
+
+        if no < retries - 1:
+            LOGGER.debug('Retry {}/{} was failed. Waiting {}s before next retry analysis'.format(no + 1,
+                                                                                                 retries,
+                                                                                                 timeout))
+            time.sleep(timeout)
+    else:
+        raise Exception('No retries left')
