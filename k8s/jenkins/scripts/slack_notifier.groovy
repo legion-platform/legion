@@ -9,6 +9,11 @@ import java.nio.file.Files
 import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
+import hudson.model.*
+
+def build = Thread.currentThread().executable
+def pa = new ParametersAction([new StringParameterValue("slackRoom", slackRoom)])
+def slackChannel = build.addAction(pa)
 
 def dataList = [:]
 def file = new File("/usr/share/jenkins/ref/init.groovy.d/slack.config")
@@ -41,7 +46,7 @@ def slackCredentialParameters = [
 def slackParameters = [
   slackBaseUrl:             "${dataList.slackBaseUrl}",
   slackBotUser:             'false',
-  slackRoom:                '#ada_nbcustomer_algo',
+  slackRoom:                "${slackChannel}",
   slackTeamDomain:          "${dataList.slackTeamDomain}",
   slackToken:               "",
   slackTokenCredentialId:   'slack-token'
