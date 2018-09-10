@@ -17,6 +17,7 @@
 legion k8s services classes
 """
 import logging
+import time
 
 import kubernetes
 import kubernetes.client
@@ -30,6 +31,7 @@ import legion.containers.headers
 from legion.k8s.definitions import ModelIdVersion
 from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
 from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
+from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 import legion.k8s.utils
 from legion.utils import normalize_name
 
@@ -284,16 +286,21 @@ class ModelService(Service):
         client = legion.k8s.utils.build_client()
 
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
-        model_deployments = [deployment for deployment in all_deployments.items
-                             if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
-                             and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
 
-        if model_deployments:
-            self._deployment = model_deployments[0]
+        for _ in range(LOAD_DATA_ITERATIONS):
+            all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
+            model_deployments = [deployment for deployment in all_deployments.items
+                                if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
+                                and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
+
+            if model_deployments:
+                self._deployment = model_deployments[0]
+                break
+
+            LOGGER.debug('Waiting before next deployment analysis')
+            time.sleep(LOAD_DATA_TIMEOUT)
         else:
-            self._deployment = None
-            LOGGER.error('Cannot load model deployment: no one has been found')
+            raise Exception('Cannot load model deployment: no one has been found')
 
         self._deployment_data_loaded = True
 
@@ -314,7 +321,7 @@ class ModelService(Service):
         :return: int -- current model scale
         """
         self._load_deployment_data()
-        if self.deployment and self.deployment.status.available_replicas:
+        if self.deployment.status.available_replicas:
             return self.deployment.status.available_replicas
         else:
             return 0
