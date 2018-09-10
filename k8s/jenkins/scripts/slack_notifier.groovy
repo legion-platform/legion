@@ -9,11 +9,6 @@ import java.nio.file.Files
 import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.plaincredentials.impl.*
-import hudson.model.*
-
-def build = Thread.currentThread().executable
-def pa = new ParametersAction([new StringParameterValue("slackRoom", slackRoom)])
-def slackChannel = build.addAction(pa)
 
 def dataList = [:]
 def file = new File("/usr/share/jenkins/ref/init.groovy.d/slack.config")
@@ -22,53 +17,58 @@ def text
 def key
 def value
 
-file.eachLine { line ->
+try {
 
-if (line.trim().size() == 0) {
-  return null
+    file.eachLine { line ->
 
-} else {
+    if (line.trim().size() == 0) {
+      return null
 
-  text = line.split("=")
-  key=text[0] 
-  value=text[1]
-  valueSub=value.substring(1,value.length()-1)
-  dataList[key]=valueSub
+    } else {
+
+      text = line.split("=",2)
+      key=text[0] 
+      value=text[1]
+      dataList[key]=value
+    }
   }
-}
 
-def slackCredentialParameters = [
+  def slackCredentialParameters = [
   description:  'Slack integration token',
   id:           'slack-token',
   secret:       "${dataList.token}"
-]
+  ]
  
-def slackParameters = [
-  slackBaseUrl:             "${dataList.slackBaseUrl}",
-  slackBotUser:             'false',
-  slackRoom:                "${slackChannel}",
-  slackTeamDomain:          "${dataList.slackTeamDomain}",
-  slackToken:               "",
-  slackTokenCredentialId:   'slack-token'
-]
+  def slackParameters = [
+    slackBaseUrl:             "${dataList.slackBaseUrl}",
+    slackBotUser:             "${dataList.slackBotUser}",
+    slackRoom:                "${dataList.slackRoom}",
+    slackTeamDomain:          "${dataList.slackTeamDomain}",
+    slackToken:               "",
+    slackTokenCredentialId:   'slack-token'
+  ]
  
-Jenkins jenkins = Jenkins.getInstance()
-def domain = Domain.global()
-def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
-def slack = jenkins.getExtensionList(jenkins.plugins.slack.SlackNotifier.DescriptorImpl.class)[0]
+  Jenkins jenkins = Jenkins.getInstance()
+  def domain = Domain.global()
+  def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+  def slack = jenkins.getExtensionList(jenkins.plugins.slack.SlackNotifier.DescriptorImpl.class)[0]
  
-def secretText = new StringCredentialsImpl(
-  CredentialsScope.GLOBAL,
-  slackCredentialParameters.id,
-  slackCredentialParameters.description,
-  Secret.fromString(slackCredentialParameters.secret)
-)
+  def secretText = new StringCredentialsImpl(
+    CredentialsScope.GLOBAL,
+    slackCredentialParameters.id,
+    slackCredentialParameters.description,
+    Secret.fromString(slackCredentialParameters.secret)
+  )
 
-JSONObject formData = ['slack': ['tokenCredentialId': 'slack-token']] as JSONObject
-def request = [getParameter: { name -> slackParameters[name].toString() }] as org.kohsuke.stapler.StaplerRequest
+  JSONObject formData = ['slack': ['tokenCredentialId': 'slack-token']] as JSONObject
+  def request = [getParameter: { name -> slackParameters[name].toString() }] as org.kohsuke.stapler.StaplerRequest
 
-store.addCredentials(domain, secretText)
-slack.configure(request, formData)
+  store.addCredentials(domain, secretText)
+  slack.configure(request, formData)
+  slack.save()
+  jenkins.save()
 
-slack.save()
-jenkins.save()
+} catch (ex) {
+    println "ERROR: Can not configure Slack Notifier. Check parameters or secrets file"
+    return
+}

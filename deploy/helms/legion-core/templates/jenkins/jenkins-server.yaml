@@ -1,7 +1,9 @@
 {{- define "config-cred-slack" }}
-slackTeamDomain="{{ .Values.jenkins.slack.slackTeamDomain }}"
-slackBaseUrl="{{ .Values.jenkins.slack.slackBaseUrl }}"
-token="{{ .Values.jenkins.slack.token }}"
+slackTeamDomain={{ .Values.jenkins.slack.slackTeamDomain }}
+slackBaseUrl={{ .Values.jenkins.slack.slackBaseUrl }}
+token={{ .Values.jenkins.slack.token }}
+slackBotUser={{ .Values.jenkins.slack.slackBotUser }}
+slackRoom={{ .Values.jenkins.slack.slackRoom }}
 {{- end }}
 {{- if .Values.jenkins.enabled }}
 kind: ConfigMap
