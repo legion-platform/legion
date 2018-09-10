@@ -290,8 +290,8 @@ class ModelService(Service):
         for _ in range(LOAD_DATA_ITERATIONS):
             all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
             model_deployments = [deployment for deployment in all_deployments.items
-                                if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
-                                and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
+                                 if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
+                                 and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
 
             if model_deployments:
                 self._deployment = model_deployments[0]
