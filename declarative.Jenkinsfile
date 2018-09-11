@@ -7,19 +7,19 @@ class Globals {
 }
 
 pipeline {
-	agent { 
-		dockerfile {
-			filename 'pipeline.Dockerfile'
-		}
-	}
+    agent { 
+        dockerfile {
+            filename 'pipeline.Dockerfile'
+        }
+    }
 
-	stages {
-		stage('Checkout') {
-			steps {
-				checkout scm
-				Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
-				Globals.rootCommit = Globals.rootCommit.trim()
-			}
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+            Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
+            Globals.rootCommit = Globals.rootCommit.trim()
             def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
             def date = new Date()
             def buildDate = dateFormat.format(date)
@@ -50,32 +50,30 @@ pipeline {
                     }
                 }
             }
-		}
-		stage('Set Legion build version') {
-			steps {
-                if (params.StableRelease) {
-                    if (params.ReleaseVersion){
-                        Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
-                    } else {
-                        print('Error: ReleaseVersion parameter must be specified for stable release')
-                        exit 1
-                    }
+        }
+        stage('Set Legion build version') {
+            if (params.StableRelease) {
+                if (params.ReleaseVersion){
+                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                 } else {
-                    Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                    print('Error: ReleaseVersion parameter must be specified for stable release')
+                    exit 1
                 }
-                Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
+            } else {
+                Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+            }
+            Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
-                currentBuild.description = "${Globals.buildVersion} ${params.GitBranch}"
-                print("Build version " + Globals.buildVersion)
-                print('Building shared artifact')
-                envFile = 'file.env'
-                sh """
-                rm -f $envFile
-                touch $envFile
-                echo "LEGION_VERSION=${Globals.buildVersion}" >> $envFile
-                """
-                archiveArtifacts envFile
-			}
+            currentBuild.description = "${Globals.buildVersion} ${params.GitBranch}"
+            print("Build version " + Globals.buildVersion)
+            print('Building shared artifact')
+            envFile = 'file.env'
+            sh """
+            rm -f $envFile
+            touch $envFile
+            echo "LEGION_VERSION=${Globals.buildVersion}" >> $envFile
+            """
+            archiveArtifacts envFile
 		}
 	}
 }
