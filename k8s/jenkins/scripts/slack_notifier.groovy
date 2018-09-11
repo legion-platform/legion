@@ -19,13 +19,11 @@ def value
 
 try {
 
-    file.eachLine { line ->
+  file.eachLine { line ->
 
     if (line.trim().size() == 0) {
       return null
-
     } else {
-
       text = line.split("=",2)
       key=text[0] 
       value=text[1]
@@ -34,9 +32,9 @@ try {
   }
 
   def slackCredentialParameters = [
-  description:  'Slack integration token',
-  id:           'slack-token',
-  secret:       "${dataList.token}"
+    description:  'Slack integration token',
+    id:           'slack-token',
+    secret:       "${dataList.token}"
   ]
  
   def slackParameters = [
@@ -69,6 +67,6 @@ try {
   jenkins.save()
 
 } catch (ex) {
-    println "ERROR: Can not configure Slack Notifier. Check parameters or secrets file"
-    return
+  println "ERROR: Can not configure Slack Notifier. Check parameters or secrets file"
+  return
 }
