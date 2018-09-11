@@ -586,7 +586,7 @@ class ModelLocalContainerExecutionContext:
             LOGGER.info('Building client')
             url = 'http://{}:{}'.format('localhost', self.model_port)
             LOGGER.info('Target URI is {}'.format(url))
-            self.client = ModelClient(self._model_id, self._model_version, url)
+            self.client = ModelClient(self._model_id, self._model_version, host=url)
 
             LOGGER.info('Getting model information')
             self.model_information = self.client.info()

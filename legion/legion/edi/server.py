@@ -26,6 +26,8 @@ import legion.http
 import legion.model
 from flask import Flask, Blueprint
 from flask import current_app as app
+import jwt
+from datetime import datetime, timedelta
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
@@ -37,6 +39,7 @@ EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
 EDI_INSPECT = '/api/{version}/inspect'
 EDI_INFO = '/api/{version}/info'
+EDI_GENERATE_TOKEN = '/api/{version}/generate_token'
 
 ALL_EDI_API_ENDPOINTS = EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, EDI_INFO
 
@@ -116,8 +119,6 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     :type image: str
     :param count: count of pods to create
     :type count: int
-    :param timeout: model pod startup timeout (used in liveness and readiness probes)
-    :type timeout: int
     :param livenesstimeout: time in seconds for liveness check
     :type livenesstimeout: int
     :param readinesstimeout: time in seconds for readiness check
@@ -294,6 +295,30 @@ def info():
     return app.config['CLUSTER_STATE']
 
 
+@blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['GET'])
+@legion.http.provide_json_response
+@legion.http.authenticate(authenticate)
+def generate_token():
+    """
+    Generate JWT token
+
+    :return: dict -- state of cluster
+    """
+    jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
+    jwt_exp_date = None
+    if 'jwt.exp.datetime' in app.config['JWT_CONFIG']:
+        try:
+            jwt_exp_date = datetime.strptime(app.config['JWT_CONFIG']['jwt.exp.datetime'], "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            pass
+    if not jwt_exp_date or jwt_exp_date < datetime.now():
+        jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
+        jwt_exp_date = datetime.utcnow() + jwt_life_length
+
+    token = jwt.encode({'exp': jwt_exp_date}, jwt_secret, algorithm='HS256').decode('utf-8')
+    return {'token': token, 'exp': jwt_exp_date}
+
+
 def create_application():
     """
     Create Flask application and register blueprints
@@ -328,6 +353,7 @@ def load_cluster_config(application):
                                                            application.config['CLUSTER_SECRETS']['grafana.user'],
                                                            application.config['CLUSTER_SECRETS']['grafana.password'])
     application.config['GRAFANA_CLIENT'] = grafana_client
+    application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 
 
 def init_application(args=None):

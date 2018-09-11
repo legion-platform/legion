@@ -8,7 +8,6 @@ Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
 Test Setup          Choose cluster context            ${CLUSTER_NAME}
-Test Teardown       Close All Browsers
 
 *** Test Cases ***
 Check if K8S dashboard domain has been secured
@@ -118,3 +117,43 @@ Check if K8S dashboard domain can auth with valid creds
 #    [Tags]  core  security   auth
 #    [Template]    Secured component domain should be accessible by valid credentials
 #    component=grafana    enclave=${EMPTY}
+
+Check if EDGE has been secured by token
+     [Tags]  core  security  auth
+     [Documentation]  Deploy one model, and try to get model info without token
+     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                     Should Be Equal As Integers         ${resp.rc}         0
+     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                     Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info
+     Dictionary Should Contain Item    ${response}    response_code    401
+     ${auth_page} =  Get From Dictionary   ${response}    response_text
+     Should contain   ${auth_page}    401 Authorization Required
+     [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}
+
+Check if EDGE does not authorize with invalid token
+     [Tags]  core  security  auth
+     [Documentation]  Deploy one model, and try to get model info with invalid token
+     ${invalid_token} =   Set Variable    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MzU2NDA5MDd9.-LIIJjF-Gf37eFbFl0Q_PpQyYWW_A-D9xNW7hsr4Efk
+     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                     Should Be Equal As Integers         ${resp.rc}         0
+     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                     Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info     ${EMPTY}    ${invalid_token}
+     Dictionary Should Contain Item    ${response}    response_code    401
+     ${auth_page} =  Get From Dictionary   ${response}    response_text
+     Should contain   ${auth_page}    401 Authorization Required
+     [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}
+
+Check if EDGE authorize with valid token
+     [Tags]  core  security  auth
+     [Documentation]  Deploy one model, and try to get model info with valid token
+     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                     Should Be Equal As Integers         ${resp.rc}         0
+     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                     Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_1_VERSION}/info     ${EMPTY}    ${TOKEN}
+     Dictionary Should Contain Item    ${response}    response_code    200
+     ${auth_page} =  Get From Dictionary   ${response}    response_text
+     Should not contain   ${auth_page}    401 Authorization Required
+     [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}

@@ -3,6 +3,7 @@ Documentation       Legion robot resources
 Resource            variables.robot
 Library             String
 Library             OperatingSystem
+Library             Process
 Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Jenkins
@@ -160,14 +161,25 @@ Run EDI scale with version
     [Return]              ${result}
 
     # --------- OTHER KEYWORDS SECTION -----------
+
+Get token from EDI
+    [Documentation]  get token for the EDGE session
+    [Arguments]         ${enclave}
+    ${resp} =       Check valid http response    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token
+    Log                   ${resp}
+    Should not be empty   ${resp}
+    &{token} =      Evaluate    json.loads('''${resp}''')    json
+    Log                   ${token}
+    Set Suite Variable     ${TOKEN}    ${token['token']}
+
 Check model started
     [Documentation]  check if model run in container by http request
     [Arguments]           ${enclave}   ${model_id}  ${model_ver}
     Log                   request url is ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
-    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
+                          Get token from EDI    ${enclave}
+    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info    token=${TOKEN}
     Log                   ${resp}
     Should not be empty   ${resp}
-    Log                   ${resp}
     [Return]              ${resp}
 
 Verify model info from edi
@@ -247,7 +259,6 @@ Secured component domain should not be accessible by invalid credentials
     ${auth_page} =   Get From Dictionary   ${response}    response_text
     Should contain   ${auth_page}    Log in to Your Account
     Should contain   ${auth_page}    Invalid Email Address and password
-
 
 Secured component domain should be accessible by valid credentials
     [Arguments]     ${component}    ${enclave}

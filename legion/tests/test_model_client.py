@@ -42,7 +42,7 @@ class TestModelClient(unittest2.TestCase):
             result = legion.model.client.load_image(image)
 
     def test_client_building(self):
-        client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION, 'localhost')
+        client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION, host='localhost')
         root_url = 'localhost/api/model/{}/{}'.format(self.MODEL_ID, self.MODEL_VERSION)
         self.assertEqual(client.api_url, root_url)
         self.assertEqual(client.info_url, root_url + '/info')

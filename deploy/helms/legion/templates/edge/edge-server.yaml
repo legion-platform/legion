@@ -27,6 +27,11 @@ spec:
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
           value: "8125"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-jwt-config"
+              key: "jwt.secret"
         ports:
         - containerPort: 80
           name: api

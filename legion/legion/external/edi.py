@@ -228,6 +228,22 @@ class EdiClient:
 
         return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
 
+    def get_token(self, version=None):
+        """
+        Get API token
+
+        :param version: (Optional) model version
+        :type version: str
+        :return: str -- return API Token
+        """
+        payload = {}
+        if version:
+            payload['version'] = version
+
+        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='GET', payload=payload)
+        if response and 'token' in response:
+            return response['token']
+
     def __repr__(self):
         """
         Get string representation of object
@@ -257,30 +273,41 @@ def add_edi_arguments(parser):
                         type=str, help='EDI server token')
 
 
-def build_client(args):
+def build_client(args=None):
     """
     Build EDI client from from ENV and from command line arguments
 
-    :param args: command arguments with .namespace
+    :param args: (optional) command arguments with .namespace
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
-    host = os.environ.get(*legion.config.EDI_URL)
-    user = os.environ.get(*legion.config.EDI_USER)
-    password = os.environ.get(*legion.config.EDI_PASSWORD)
-    token = os.environ.get(*legion.config.EDI_TOKEN)
+    host, user, password, token = None, None, None, None
 
-    if args.edi:
-        host = args.edi
+    if args:
+        if args.edi:
+            host = args.edi
 
-    if args.user:
-        user = args.user
+        if args.user:
+            user = args.user
 
-    if args.password:
-        password = args.password
+        if args.password:
+            password = args.password
 
-    if args.token:
-        token = args.token
+        if args.token:
+            token = args.token
+
+    if not host:
+        try:
+            host = legion.k8s.Enclave(os.environ.get("NAMESPACE")).edi_service.url
+        except Exception:
+            host = os.environ.get(*legion.config.EDI_URL)
+
+    if not user or not password:
+        user = os.environ.get(*legion.config.EDI_USER)
+        password = os.environ.get(*legion.config.EDI_PASSWORD)
+
+    if not token:
+        token = os.environ.get(*legion.config.EDI_TOKEN)
 
     client = EdiClient(host, user, password, token)
     return client

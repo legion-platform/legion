@@ -13,3 +13,4 @@ kubernetes==5.0.0
 PyYAML==3.12
 aionotify==0.2.0
 docker-registry-client==0.5.2
+PyJWT==1.6.4
