@@ -1,3 +1,11 @@
+import java.text.SimpleDateFormat
+
+class Globals {
+    static String rootCommit = null
+    static String buildVersion = null
+    static String dockerLabels = null
+}
+
 pipeline {
 	agent { 
 		dockerfile {
@@ -70,4 +78,77 @@ pipeline {
 			}
 		}
 	}
+}
+
+def UploadDockerImageLocal(imageName) {
+    sh """
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    """
+}
+
+def UploadDockerImagePublic(imageName) {
+    sh """
+    # Push stable image to local registry
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerRegistry}/${imageName}:latest
+    docker push ${params.DockerRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerRegistry}/${imageName}:latest
+    # Push stable image to DockerHub
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerHubRegistry}/${imageName}:${Globals.buildVersion}
+    docker tag legion/${imageName}:${Globals.buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
+    docker push ${params.DockerHubRegistry}/${imageName}:${Globals.buildVersion}
+    docker push ${params.DockerHubRegistry}/${imageName}:latest
+    """
+}
+
+def UploadDockerImage(imageName) {
+    if (params.StableRelease) {
+         UploadDockerImagePublic(imageName)
+    } else {
+        UploadDockerImageLocal(imageName)
+    }
+}
+
+def notifyBuild(String buildStatus = 'STARTED') {
+    // build status of null means successful
+    buildStatus =  buildStatus ?: 'SUCCESSFUL'
+
+    def previousBuild = currentBuild.getPreviousBuild()
+    def previousBuildResult = previousBuild != null ? previousBuild.result : null
+
+    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
+    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
+
+    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
+
+    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
+
+    if (!masterOrDevelopBuild)
+        return
+
+    // Skip green -> green
+    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
+        return
+
+    // Default values
+    def colorCode = '#FF0000'
+    def summary = """\
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
+    branch *${params.GitBranch}*
+    commit *${Globals.rootCommit}*
+    version *${Globals.buildVersion}*
+    Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
+    """.stripIndent()
+
+    // Override default values based on build status
+    if (buildStatus == 'STARTED') {
+        colorCode = '#FFFF00'
+    } else if (buildStatus == 'SUCCESSFUL') {
+        colorCode = '#00FF00'
+    } else {
+        colorCode = '#FF0000'
+    }
+
+    slackSend (color: colorCode, message: summary)
 }
