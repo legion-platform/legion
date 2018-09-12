@@ -36,7 +36,7 @@ airflow_rds_size: "50"
 # Kops
 cluster_name: legion-ci.epm.kharlamov.biz
 state_store: s3://legion-cluster
-aws_image: kope.io/k8s-1.8-debian-jessie-amd64-hvm-ebs-2018-02-08
+aws_image: kope.io/k8s-1.9-debian-stretch-amd64-hvm-ebs-2018-05-27
 kubernetes_version: 1.9.3
 private_network: '172.31'
 cluster_zones:
