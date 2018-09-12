@@ -48,6 +48,5 @@ Check Vertical Scailing
     [Tags]  jenkins  model  scaling
     :FOR  ${enclave}    IN    @{ENCLAVES}
     \  Connect to Jenkins endpoint
-        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
-        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
-        Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+        Wait Jenkins job                  PERF TEST Vertical-Scaling   600
+        Last Jenkins job is successful    PERF TEST Vertical-Scaling
