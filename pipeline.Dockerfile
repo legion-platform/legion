@@ -2,7 +2,7 @@ FROM python:3.6-alpine
 
 RUN apk add --update docker alpine-sdk libressl-dev libffi-dev zlib-dev jpeg-dev maven git ansible nodejs npm
 
-RUN pip install Sphinx sphinx_rtd_theme sphinx-autobuild recommonmark pydocstyle twine boto boto3 awscli \
+RUN pip install Sphinx sphinx_rtd_theme sphinx-autobuild recommonmark pydocstyle twine boto boto3 awscli
 
 ADD legion /src/legion
 RUN cd /src/legion \
