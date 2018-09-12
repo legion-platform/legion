@@ -1,6 +1,3 @@
-*** Settings ***
-Variables           ../load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
-
 *** Variables ***
 @{SUBDOMAINS}                       jenkins  nexus
 @{ENCLAVE_SUBDOMAINS}               edi  edge  airflow  flower
