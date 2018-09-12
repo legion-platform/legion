@@ -20,7 +20,7 @@ RUN cp /src/legion/legion/version.py /src/legion_test/legion_test/version.py \
 	&& python setup.py develop
 
 ADD legion_airflow /src/legion_airflow
-RUN cd /src/legion_airflow
+RUN cd /src/legion_airflow \
 	&& cp /src/legion/legion/version.py /src/legion_airflow/legion_airflow/version.py \
 	&& pip install -r requirements/base.txt \
 	&& pip install -r requirements/test.txt \
