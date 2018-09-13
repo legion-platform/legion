@@ -7,12 +7,7 @@ class Globals {
 }
 
 pipeline {
-    agent { 
-        dockerfile {
-            filename 'pipeline.Dockerfile'
-            args "-v /var/run/docker.sock:/var/run/docker.sock -v ${LocalDocumentationStorage}:${LocalDocumentationStorage} -v \$HOME/.m2:\$HOME/.m2"
-        }
-    }
+    agent any
 
     stages {
         stage('Checkout') {
@@ -55,6 +50,11 @@ pipeline {
             }
         }
         stage('Set Legion build version') {
+            agent { 
+                dockerfile {
+                    filename 'pipeline.Dockerfile'
+                }
+            }
             steps {
                 script {
                     if (params.StableRelease) {
@@ -79,18 +79,26 @@ pipeline {
                     echo "LEGION_VERSION=${Globals.buildVersion}" >> $envFile
                     """
                     archiveArtifacts envFile
+                    sh "rm -f $envFile"
                 }
             }
 		}
         stage('Build dependencies') {
             parallel {
                 stage('Build Jenkins plugin') {
+                    agent {
+                        docker {
+                            image 'maven:3'
+                            args '-v $HOME/.m2:/tmp/.m2 -e HOME=/tmp'
+                        }
+                    }
                     steps {
                         /// Jenkins plugin to be used in Jenkins Docker container only
                         sh """
-                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
-                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion}
-                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
+                        export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
+                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
+                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
+                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
                         """
                         archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
 
@@ -117,6 +125,12 @@ pipeline {
                     }
                 }
                 stage('Build docs') {
+                    agent { 
+                        dockerfile {
+                            filename 'pipeline.Dockerfile'
+                            args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage}"
+                        }
+                    }
                     steps {
                         script {
                             fullBuildNumber = env.BUILD_NUMBER
@@ -138,6 +152,11 @@ pipeline {
                     }
                 }
                 stage('Run Python code analyzers') {
+                    agent { 
+                        dockerfile {
+                            filename 'pipeline.Dockerfile'
+                        }
+                    }
                     steps {
                         sh '''
                         cd legion
@@ -198,14 +217,124 @@ pipeline {
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
                     }
                 }
+                stage("Build Base Docker image") {
+                    steps {
+                        sh """
+                        cd base-python-image
+                        docker build -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
+                        """
+                    }
+                }
             }
-            post { 
-                cleanup { 
-                    deleteDir()
+        }
+        stage("Upload dependencies") {
+            parallel {
+                stage("Upload Base Docker Image") {
+                    script {
+                        UploadDockerImage('base-python-image')
+                    }
+                }
+                stage("Upload Legion") {
+                    // TODO Generate pypirc with credentials
+                    sh """
+                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion/dist/legion-${Globals.buildVersion}.*
+                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*
+                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion_test/dist/legion_test-${Globals.buildVersion}.*
+                    """
+                }
+            }
+        }
+        stage("Build Docker Images") {
+            parallel {
+                stage("Build Grafana Docker image") {
+                    steps {
+                        sh """
+                        cd k8s/grafana
+                        docker build --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Build Edge Docker image") {
+                    steps {
+                        sh """
+                        rm -rf k8s/edge/static/docs
+                        cp -rf legion/docs/build/html/ k8s/edge/static/docs/
+                        build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
+                        sed -i "s/{VERSION}/${Globals.buildVersion}/" k8s/edge/static/index.html
+                        sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
+                        sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
+
+                        cd k8s/edge
+                        docker build --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Build Jenkins Docker image") {
+                    steps {
+                        sh """
+                        cd k8s/jenkins
+                        docker build --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Build Bare model 1") {
+                    steps {
+                        sh """
+                        cd k8s/test-bare-model-api/model-1
+                        docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Build Bare model 2") {
+                    steps {
+                        sh """
+                        cd k8s/test-bare-model-api/model-2
+                        docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Build Edi Docker image") {
+                    steps {
+                        sh """
+                        cd k8s/edi
+                        docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Build Airflow Docker image") {
+                    steps {
+                        sh """
+                        cd k8s/airflow
+                        docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
+                stage("Run Python tests") {
+                    agent { 
+                        dockerfile {
+                            filename 'pipeline.Dockerfile'
+                        }
+                    }
+                    steps {
+                        sh """
+                        cd legion
+                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
+                        """
+                        junit 'legion/nosetests.xml'
+        
+                        sh """
+                        cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')-cover/\"
+                        """
+                    }
                 }
             }
         }
 	}
+    post { 
+        cleanup { 
+            deleteDir()
+        }
+    }
 }
 
 def UploadDockerImageLocal(imageName) {
