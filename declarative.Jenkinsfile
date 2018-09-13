@@ -10,6 +10,7 @@ pipeline {
     agent { 
         dockerfile {
             filename 'pipeline.Dockerfile'
+            args "-v /var/run/docker.sock:/var/run/docker.sock -v ${LocalDocumentationStorage}:${LocalDocumentationStorage} -v \$HOME/.m2:\$HOME/.m2"
         }
     }
 
@@ -58,13 +59,13 @@ pipeline {
                 script {
                     if (params.StableRelease) {
                         if (params.ReleaseVersion){
-                            Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                            Globals.buildVersion = sh returnStdout: true, script: "update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
                             exit 1
                         }
                     } else {
-                        Globals.buildVersion = sh returnStdout: true, script: ".venv/bin/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                        Globals.buildVersion = sh returnStdout: true, script: "update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                     }
                     Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
@@ -81,6 +82,129 @@ pipeline {
                 }
             }
 		}
+        stage('Build dependencies') {
+            parallel {
+                stage('Build Jenkins plugin') {
+                    steps {
+                        /// Jenkins plugin to be used in Jenkins Docker container only
+                        sh """
+                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean
+                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion}
+                        mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install
+                        """
+                        archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
+
+                        withCredentials([[
+                             $class: 'UsernamePasswordMultiBinding',
+                             credentialsId: 'nexus-local-repository',
+                             usernameVariable: 'USERNAME',
+                             passwordVariable: 'PASSWORD']]) {
+                            sh """
+                            curl -v -u $USERNAME:$PASSWORD \
+                            --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                            ${params.JenkinsPluginsRepositoryStore}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
+                            """
+                            script {
+                                if (params.StableRelease){
+                                    sh """
+                                    curl -v -u $USERNAME:$PASSWORD \
+                                    --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                    ${params.JenkinsPluginsRepositoryStore}/latest/legion-jenkins-plugin.hpi
+                                    """
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Build docs') {
+                    steps {
+                        script {
+                            fullBuildNumber = env.BUILD_NUMBER
+                            fullBuildNumber.padLeft(4, '0')
+
+                            sh '''
+                            cd legion
+                            LEGION_VERSION="\$(python -c 'import legion; print(legion.__version__);')"
+                            cd docs
+                            sphinx-apidoc -f --private -o source/ ../legion/ -V "\$LEGION_VERSION"
+                            sed -i "s/'1.0'/'\$LEGION_VERSION'/" source/conf.py
+                            make html
+                            find build/html -type f -name '*.html' | xargs sed -i -r 's/href="(.*)\\.md"/href="\\1.html"/'
+                            cd ../../
+                            '''
+
+                            sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(python -c 'import legion; print(legion.__version__);')/\""
+                        }
+                    }
+                }
+                stage('Run Python code analyzers') {
+                    steps {
+                        sh '''
+                        cd legion
+                        pycodestyle --show-source --show-pep8 legion
+                        pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503
+                        pydocstyle --source legion
+
+                        export TERM="linux"
+                        rm -f pylint.log
+                        pylint legion >> pylint.log || exit 0
+                        pylint tests >> pylint.log || exit 0
+                        cd ..
+                        '''
+
+                        archiveArtifacts 'legion/pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                        sh '''
+                        cd legion_airflow
+                        pycodestyle legion_airflow
+                        pycodestyle tests
+                        pydocstyle legion_airflow
+
+                        pylint legion_airflow >> pylint.log || exit 0
+                        pylint tests >> pylint.log || exit 0
+                        cd ..
+                        '''
+        
+                        archiveArtifacts 'legion/pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                        sh '''
+                        cd legion_airflow
+                        pycodestyle legion_airflow
+                        pycodestyle tests
+                        pydocstyle legion_airflow
+
+                        pylint legion_airflow >> pylint.log || exit 0
+                        pylint tests >> pylint.log || exit 0
+                        cd ..
+                        '''
+
+                        archiveArtifacts 'legion/pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                        sh '''
+                        cd legion_airflow
+                        pycodestyle legion_airflow
+                        pycodestyle tests
+                        pydocstyle legion_airflow
+
+                        pylint legion_airflow >> pylint.log || exit 0
+                        pylint tests >> pylint.log || exit 0
+                        cd ..
+                        '''
+
+                        archiveArtifacts 'legion_airflow/pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
+                    }
+                }
+            }
+            post { 
+                cleanup { 
+                    deleteDir()
+                }
+            }
+        }
 	}
 }
 

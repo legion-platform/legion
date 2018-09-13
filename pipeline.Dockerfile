@@ -1,6 +1,19 @@
-FROM python:3.6-alpine
+FROM python:3.6
 
-RUN apk add --update docker alpine-sdk libressl-dev libffi-dev zlib-dev jpeg-dev maven git ansible nodejs npm
+ENV DOCKERVERSION=18.03.1-ce
+
+RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKERVERSION}.tgz \
+  && tar xzvf docker-${DOCKERVERSION}.tgz --strip 1 \
+                 -C /usr/local/bin docker/docker \
+  && rm docker-${DOCKERVERSION}.tgz
+
+RUN apt-get update && apt-get install -y software-properties-common \
+	&& echo 'deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main' >> /etc/apt/sources.list \
+	&& apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367 \
+	&& apt-get update \
+	&& curl -sL https://deb.nodesource.com/setup_8.x | bash - \
+	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev maven git ansible nodejs \
+	&& apt-get clean all
 
 RUN pip install Sphinx sphinx_rtd_theme sphinx-autobuild recommonmark pydocstyle twine boto boto3 awscli
 
