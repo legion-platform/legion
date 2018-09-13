@@ -230,17 +230,21 @@ pipeline {
         stage("Upload dependencies") {
             parallel {
                 stage("Upload Base Docker Image") {
-                    script {
-                        UploadDockerImage('base-python-image')
+                    steps {
+                        script {
+                            UploadDockerImage('base-python-image')
+                        }
                     }
                 }
                 stage("Upload Legion") {
+                    steps {
+                        sh """
+                        twine upload -r ${params.LocalPyPiDistributionTargetName} legion/dist/legion-${Globals.buildVersion}.*
+                        twine upload -r ${params.LocalPyPiDistributionTargetName} legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*
+                        twine upload -r ${params.LocalPyPiDistributionTargetName} legion_test/dist/legion_test-${Globals.buildVersion}.*
+                        """
+                    }
                     // TODO Generate pypirc with credentials
-                    sh """
-                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion/dist/legion-${Globals.buildVersion}.*
-                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*
-                    twine upload -r ${params.LocalPyPiDistributionTargetName} legion_test/dist/legion_test-${Globals.buildVersion}.*
-                    """
                 }
             }
         }
