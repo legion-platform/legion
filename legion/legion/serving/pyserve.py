@@ -22,7 +22,6 @@ import os
 import itertools
 
 import legion.config
-import legion.external.grafana
 import legion.http
 import legion.model
 import legion.pymodel
@@ -243,23 +242,6 @@ def create_application():
     application.register_blueprint(blueprint)
 
     return application
-
-
-def register_dashboard(application):
-    """
-    Register application in Grafana (create dashboard)
-
-    :param application: Flask application instance
-    :type application: :py:class:`Flask.app`
-    :return: None
-    """
-    host = os.environ.get(*legion.config.GRAFANA_URL)
-    user = os.environ.get(*legion.config.GRAFANA_USER)
-    password = os.environ.get(*legion.config.GRAFANA_PASSWORD)
-
-    print('Creating Grafana client for host: %s, user: %s, password: %s' % (host, user, '*' * len(password)))
-    client = legion.external.grafana.GrafanaClient(host, user, password)
-    client.create_dashboard_for_model(application.config['MODEL_ID'])
 
 
 def init_application(args=None):
