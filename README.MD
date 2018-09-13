@@ -2,7 +2,7 @@
 
 ## Overview
 
-Legion is a resilent and resilent AI Runtime platform to run AI Learning models in production.
+Legion is a resilient AI Runtime platform to run AI Learning models in production.
 It was build around the idea of having flexible unified environment for research and production as well as streamlined process of 
 delivering those models into production, monitoring their performance, identifying possible mistakes and tracing them back to the source code.
 
