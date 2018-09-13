@@ -189,6 +189,7 @@ def runRobotTests(tags="") {
 
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion \
+            ./jenkins_dex_client > $PATH_TO_COOKIES
             ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 4 --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter $robot_tags --outputdir . tests/**/*.robot || true
 
             echo "Starting python tests"
