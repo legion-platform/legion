@@ -50,6 +50,13 @@ try {
   def domain = Domain.global()
   def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
   def slack = jenkins.getExtensionList(jenkins.plugins.slack.SlackNotifier.DescriptorImpl.class)[0]
+
+  for(BaseStandardCredentials cred: store.getCredentials()) {
+    if(cred!=null && "slack-token".equals(cred.getId())) {
+        println "INFO: Credentials with a name 'slack-token' has been already created, Skipping."
+        return
+    }
+  }
  
   def secretText = new StringCredentialsImpl(
     CredentialsScope.GLOBAL,
