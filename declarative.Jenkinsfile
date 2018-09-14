@@ -355,11 +355,13 @@ EOL
                         sh """
                         cd /src/legion
                         VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
+                        cd -
+                        cp /src/legion/nosetests.xml legion/nosetests.xml
                         """
                         junit 'legion/nosetests.xml'
         
                         sh """
-                        cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}/${Globals.buildVersion}-cover/\"
+                        cp -rf /src/legion/cover \"${params.LocalDocumentationStorage}/${Globals.buildVersion}-cover\"
                         """
                     }
                 }
