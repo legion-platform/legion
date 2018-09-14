@@ -273,7 +273,7 @@ Secured component domain should be accessible by valid credentials
     ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
     ...    ELSE      Set Variable    False
     ${boolean} =     Convert To Boolean    ${jenkins}
-    &{creds} =       Get static user data
+    &{creds} =       Create Dictionary    login=${STATIC_USER_EMAIL}    password=${STATIC_USER_PASS}
     &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
     ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
     Log              Bad auth page for ${component} is ${response}
