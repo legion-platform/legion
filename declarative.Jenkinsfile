@@ -352,7 +352,7 @@ EOL
                     }
                     steps {
                         sh """
-                        cd legion
+                        cd /src/legion
                         VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
                         """
                         junit 'legion/nosetests.xml'
