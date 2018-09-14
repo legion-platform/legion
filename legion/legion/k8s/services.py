@@ -32,7 +32,7 @@ from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, 
 from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
 from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 import legion.k8s.utils
-from legion.utils import normalize_name, retry_function_call
+from legion.utils import normalize_name, ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
 
@@ -302,8 +302,8 @@ class ModelService(Service):
         if self._deployment_data_loaded:
             return
 
-        self._deployment = retry_function_call(self._load_deployment_data_logic,
-                                               LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
+        self._deployment = ensure_function_succeed(self._load_deployment_data_logic,
+                                                   LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
         self._deployment_data_loaded = True
 
     def reload_cache(self):
