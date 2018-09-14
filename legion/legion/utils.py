@@ -30,6 +30,7 @@ import sys
 import time
 import tempfile
 import zipfile
+import inspect
 
 import legion.config
 import legion.containers.headers
@@ -593,7 +594,24 @@ def deduce_model_file_name(model_id, model_version):
     return file_name
 
 
-def retry_function_call(function_to_call, retries, timeout):
+def get_function_description(callable_object):
+    """
+    Gather information about callable object to string
+
+    :param callable_object: callable object to analyze
+    :type callable_object: Callable[[], any]
+    :return: str -- object description
+    """
+    object_class_name = callable_object.__class__.__name__
+    if not callable(callable_object):
+        return '<not callable object: {}>'.format(object_class_name)
+
+    object_name = callable_object.__name__
+    module_name = inspect.getmodule(callable_object)
+    return '<{} {} in {}>'.format(object_class_name, object_name, module_name)
+
+
+def ensure_function_succeed(function_to_call, retries, timeout):
     """
     Try to call function till it will return not None object.
     Raise if there are no retries left
@@ -604,17 +622,20 @@ def retry_function_call(function_to_call, retries, timeout):
     :type retries: int
     :param timeout: timeout between retries
     :type timeout: int
-    :return: Any -- result of successful function call
+    :return: Any -- result of successful function call or None if no retries left
     """
+    function_description = get_function_description(function_to_call)
     for no in range(retries):
+        LOGGER.debug('Calling {}'.format(function_description))
         result = function_to_call()
         if result is not None:
             return result
 
+        if no < retries:
+            LOGGER.debug('Retry {}/{} was failed'.format(no + 1, retries))
         if no < retries - 1:
-            LOGGER.debug('Retry {}/{} was failed. Waiting {}s before next retry analysis'.format(no + 1,
-                                                                                                 retries,
-                                                                                                 timeout))
+            LOGGER.debug('Waiting {}s before next retry analysis'.format(timeout))
             time.sleep(timeout)
 
-    raise Exception('No retries left')
+    LOGGER.error('No retries left for function {}'.format(function_description))
+    return None
