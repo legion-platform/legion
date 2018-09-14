@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-FROM jenkins/jenkins:lts
+FROM jenkins/jenkins:2.121.3
 
 USER root
 RUN apt-get update && apt-get install --yes \
