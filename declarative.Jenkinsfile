@@ -348,7 +348,7 @@ EOL
                     agent { 
                         docker {
                             image "legion-docker-agent:${env.BUILD_NUMBER}"
-                            args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root"
+                            args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
                         }
                     }
                     steps {
@@ -363,6 +363,56 @@ EOL
                         sh """
                         cp -rf /src/legion/cover \"${params.LocalDocumentationStorage}/${Globals.buildVersion}-cover\"
                         """
+                    }
+                }
+            }
+        }
+        stage("Docker login") {
+            steps {
+                withCredentials([[
+                 $class: 'UsernamePasswordMultiBinding',
+                 credentialsId: 'nexus-local-repository',
+                 usernameVariable: 'USERNAME',
+                 passwordVariable: 'PASSWORD']]) {
+                    sh "docker login -u ${USERNAME} -p ${PASSWORD} ${params.DockerRegistry}"
+                }
+            }
+        }
+        stage("Push Docker Images") {
+            parallel {
+                stage('Upload Grafana Docker Image') {
+                    steps {
+                        UploadDockerImage('k8s-grafana')
+                    }
+                }
+                stage('Upload Edge Docker Image') {
+                    steps {
+                        UploadDockerImage('k8s-edge')
+                    }
+                }
+                stage('Upload Jenkins Docker image') {
+                    steps {
+                        UploadDockerImage('k8s-jenkins')
+                    }
+                }
+                stage('Upload Bare model 1') {
+                    steps {
+                        UploadDockerImage('test-bare-model-api-model-1')
+                    }
+                }
+                stage('Upload Bare model 2') {
+                    steps {
+                        UploadDockerImage('test-bare-model-api-model-2')
+                    }
+                }
+                stage('Upload Edi Docker image') {
+                    steps {
+                        UploadDockerImage('k8s-edi')
+                    }
+                }
+                stage('Upload Airflow Docker image') {
+                    steps {
+                        UploadDockerImage('k8s-airflow')
                     }
                 }
             }
