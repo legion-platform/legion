@@ -40,12 +40,8 @@ def init_session_id_from_data(data: dict):
     """
 
     global _session_cookies, _jenkins_credentials
-    print('Cookies:{}'.format(_session_cookies))
-    print('Jenkins_creds:{}'.format(_jenkins_credentials))
-    print('Cookies in data: {}'.format(data['cookies']))
     if not _session_cookies and not _jenkins_credentials:
         cookies = data['cookies'].split(';')
-        print('Cookies inside: {}'.format(cookies))
         for cookie in cookies:
             if len(cookie.split('=')) > 2:
                 _session_cookies[cookie.split('=')[0]] = '{}='.format(cookie.split('=')[1])
