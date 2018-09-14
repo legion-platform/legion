@@ -20,8 +20,8 @@ import unittest2
 
 class TestUtilsOther(unittest2.TestCase):
     def test_lambda_analyzing(self):
-        l = lambda x: x**2
-        description = utils.get_function_description(l)
+        lamb = lambda x: x**2  # pylint: disable=E731
+        description = utils.get_function_description(lamb)
         self.assertIn('function <lambda>', description)
         self.assertIn(__file__, description)
 
