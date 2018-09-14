@@ -44,10 +44,10 @@ RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_str
 RUN git clone https://github.com/auth0/nginx-jwt.git \
     && cd nginx-jwt \
     && git checkout v1.0.0 \
-    && ./scripts/build_deps.sh \
+    && ./scripts/build_deps.sh; ./scripts/build_deps.sh \
     && cp lib/basexx.lua /usr/local/share/lua/5.3/basexx.lua \
     && cp nginx-jwt.lua /usr/local/share/lua/5.3/nginx-jwt.lua \
-    && cp lib/resty /usr/local/share/lua/5.3/resty \
+    && cp -r lib/resty /usr/local/share/lua/5.3/resty \
     && cd - && rm -rf nginx-jwt
 
 WORKDIR /
