@@ -49,10 +49,15 @@ pipeline {
                 }
             }
         }
+        stage('Build Agent Docker Image') {
+            steps {
+                sh "docker build -t legion-docker-agent:${env.BUILD_NUMBER} -f pipeline.Dockerfile ."
+            }
+        }
         stage('Set Legion build version') {
             agent { 
-                dockerfile {
-                    filename 'pipeline.Dockerfile'
+                docker {
+                    image "legion-docker-agent:${env.BUILD_NUMBER}"
                 }
             }
             steps {
@@ -126,8 +131,8 @@ pipeline {
                 }
                 stage('Build docs') {
                     agent { 
-                        dockerfile {
-                            filename 'pipeline.Dockerfile'
+                        docker {
+                            image "legion-docker-agent:${env.BUILD_NUMBER}"
                             args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage}"
                         }
                     }
@@ -147,14 +152,14 @@ pipeline {
                             cd ../../
                             '''
 
-                            sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}\$(python -c 'import legion; print(legion.__version__);')/\""
+                            sh "cd legion && cp -rf docs/build/html/ \"${params.LocalDocumentationStorage}/${Globals.buildVersion}/\""
                         }
                     }
                 }
                 stage('Run Python code analyzers') {
                     agent { 
-                        dockerfile {
-                            filename 'pipeline.Dockerfile'
+                        docker {
+                            image "legion-docker-agent:${env.BUILD_NUMBER}"
                         }
                     }
                     steps {
@@ -237,14 +242,39 @@ pipeline {
                     }
                 }
                 stage("Upload Legion") {
+                    agent {
+                        docker {
+                            image "legion-docker-agent:${env.BUILD_NUMBER}"
+                            args "-e HOME=/tmp"
+                        }
+                    }
                     steps {
+                        withCredentials([[
+                         $class: 'UsernamePasswordMultiBinding',
+                         credentialsId: 'nexus-local-repository',
+                         usernameVariable: 'USERNAME',
+                         passwordVariable: 'PASSWORD']]) {
+                            sh """cat > /tmp/.pypirc << EOL
+[distutils]
+index-servers =
+  ${params.LocalPyPiDistributionTargetName}
+
+[${params.LocalPyPiDistributionTargetName}]
+repository=https://nexus.cc.mldev.ada.iqvia.com/repository/pypi-hosted/
+username=${env.USERNAME}
+password=${env.PASSWORD}
+EOL
+"""
+                        }
                         sh """
-                        twine upload -r ${params.LocalPyPiDistributionTargetName} legion/dist/legion-${Globals.buildVersion}.*
-                        twine upload -r ${params.LocalPyPiDistributionTargetName} legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*
-                        twine upload -r ${params.LocalPyPiDistributionTargetName} legion_test/dist/legion_test-${Globals.buildVersion}.*
+                        ln -s /src/legion/dist/legion-*.tar.gz ./legion-${Globals.buildVersion}.tar.gz
+                        ln -s /src/legion_airflow/dist/legion_airflow-*.tar.gz ./legion_airflow-${Globals.buildVersion}.tar.gz
+                        ln -s /src/legion_test/dist/legion_test*.tar.gz ./legion_test-${Globals.buildVersion}.tar.gz
+                        twine upload -r ${params.LocalPyPiDistributionTargetName} ./legion-${Globals.buildVersion}.*
+                        twine upload -r ${params.LocalPyPiDistributionTargetName} ./legion_airflow-${Globals.buildVersion}.*
+                        twine upload -r ${params.LocalPyPiDistributionTargetName} ./legion_test-${Globals.buildVersion}.*
                         """
                     }
-                    // TODO Generate pypirc with credentials
                 }
             }
         }
@@ -262,7 +292,7 @@ pipeline {
                     steps {
                         sh """
                         rm -rf k8s/edge/static/docs
-                        cp -rf legion/docs/build/html/ k8s/edge/static/docs/
+                        cp -rf ${params.LocalDocumentationStorage}/${Globals.buildVersion}/ k8s/edge/static/docs/
                         build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
                         sed -i "s/{VERSION}/${Globals.buildVersion}/" k8s/edge/static/index.html
                         sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
@@ -315,19 +345,20 @@ pipeline {
                 }
                 stage("Run Python tests") {
                     agent { 
-                        dockerfile {
-                            filename 'pipeline.Dockerfile'
+                        docker {
+                            image "legion-docker-agent:${env.BUILD_NUMBER}"
+                            args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root"
                         }
                     }
                     steps {
                         sh """
                         cd legion
-                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
+                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
                         """
                         junit 'legion/nosetests.xml'
         
                         sh """
-                        cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')-cover/\"
+                        cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}/${Globals.buildVersion}-cover/\"
                         """
                     }
                 }
