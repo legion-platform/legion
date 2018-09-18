@@ -34,6 +34,7 @@ RUN set -ex \
   && python3 -m pip install "Pillow==5.0.0" \
   && python3 -m pip install "numpy==1.14.3" \
   && python3 -m pip install "pandas==0.23.0"
+# TODO: Remove Pillow, and pandas installation after toolchan system merge
 
 # Install Legion
 ARG pip_extra_index_params=""
