@@ -42,6 +42,9 @@ EVENT_ADDED = 'ADDED'
 EVENT_MODIFIED = 'MODIFIED'
 EVENT_DELETED = 'DELETED'
 
+LOAD_DATA_ITERATIONS = 5
+LOAD_DATA_TIMEOUT = 2
+
 ModelContainerMetaInformation = typing.NamedTuple('ModelContainerMetaInformation', [
     ('k8s_name', str),
     ('model_id', str),

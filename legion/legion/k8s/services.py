@@ -30,8 +30,9 @@ import legion.containers.headers
 from legion.k8s.definitions import ModelIdVersion
 from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
 from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
+from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 import legion.k8s.utils
-from legion.utils import normalize_name
+from legion.utils import normalize_name, ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
 
@@ -272,6 +273,21 @@ class ModelService(Service):
         self._load_deployment_data()
         return self._deployment
 
+    def _load_deployment_data_logic(self):
+        """
+        Logic (is called with retries) to load model service deployment
+
+        :return: bool
+        """
+        client = legion.k8s.utils.build_client()
+
+        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+
+        all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
+        return next((deployment for deployment in all_deployments.items
+                     if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
+                     and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version), None)
+
     def _load_deployment_data(self):
         """
         Load deployment data (lazy loading)
@@ -281,15 +297,10 @@ class ModelService(Service):
         if self._deployment_data_loaded:
             return
 
-        client = legion.k8s.utils.build_client()
-
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
-        model_deployments = [deployment for deployment in all_deployments.items
-                             if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
-                             and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version]
-
-        self._deployment = model_deployments[0] if model_deployments else None
+        self._deployment = ensure_function_succeed(self._load_deployment_data_logic,
+                                                   LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
+        if not self._deployment:
+            raise Exception('Failed to load deployment for {!r}'.format(self))
 
         self._deployment_data_loaded = True
 
@@ -310,7 +321,10 @@ class ModelService(Service):
         :return: int -- current model scale
         """
         self._load_deployment_data()
-        return self.deployment.status.available_replicas if self.deployment.status.available_replicas else 0
+        if self.deployment.status.available_replicas:
+            return self.deployment.status.available_replicas
+        else:
+            return 0
 
     @scale.setter
     def scale(self, new_scale):
@@ -329,15 +343,15 @@ class ModelService(Service):
 
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
 
-        old_scale = self._deployment.spec.replicas
-        self._deployment.spec.replicas = new_scale
+        old_scale = self.deployment.spec.replicas
+        self.deployment.spec.replicas = new_scale
 
         LOGGER.info('Scaling service {} in namespace {} from {} to {} replicas'
-                    .format(self._deployment.metadata.name, self._deployment.metadata.namespace, old_scale, new_scale))
+                    .format(self.deployment.metadata.name, self.deployment.metadata.namespace, old_scale, new_scale))
 
-        extension_api.patch_namespaced_deployment(self._deployment.metadata.name,
-                                                  self._deployment.metadata.namespace,
-                                                  self._deployment)
+        extension_api.patch_namespaced_deployment(self.deployment.metadata.name,
+                                                  self.deployment.metadata.namespace,
+                                                  self.deployment)
 
         self.reload_cache()
 

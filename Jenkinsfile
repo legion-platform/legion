@@ -166,7 +166,7 @@ node {
                     sh '''
                     cd legion
                     ../.venv/bin/pycodestyle --show-source --show-pep8 legion
-                    ../.venv/bin/pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503
+                    ../.venv/bin/pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503,E731
                     ../.venv/bin/pydocstyle --source legion
 
                     export TERM="linux"
