@@ -142,6 +142,11 @@ class TestDeploy(unittest2.TestCase):
                         'input_params': False,
                         'name': 'default',
                         'use_df': False,
+                    },
+                    'time': {
+                        'input_params': False,
+                        'name': 'time',
+                        'use_df': False,
                     }
                 },
                 'model_id': model_id,
@@ -161,6 +166,16 @@ class TestDeploy(unittest2.TestCase):
                 ],
                 'invalid batch invocation result'
             )
+            # Get first call result
+            first_time_call_result = context.client.invoke('time')
+            # Emit properties update callback to update properties manually (emulate ConfigMap update)
+            emit_update_url = '{}/emit-properties-update'.format(context.client.api_url)
+            result = requests.get(emit_update_url)
+            self.assertEqual(result.status_code, 200)
+            # Get response after update and compare 5 times
+            for _ in range(5):
+                second_time_call_result = context.client.invoke('time')
+                self.assertGreater(second_time_call_result['result'], first_time_call_result['result'])
 
     def test_io_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
