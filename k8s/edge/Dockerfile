@@ -30,6 +30,8 @@ RUN set -ex \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
   && chmod +x /usr/bin/dumb-init
 
+# Line below is a temporal approach to decrease build time and the source of requirements.txt - legion/requirements/base.txt that is copied here during Jenkins pipeline execution (Jenkinsfile)
+# This workaround should be removed as soon as #226 is done
 COPY requirements.txt /root/requirements.txt
 RUN python3 -m pip install --disable-pip-version-check --no-cache-dir -r /root/requirements.txt
 
