@@ -28,13 +28,10 @@ RUN set -ex \
   && grep "dumb-init_${DUMB_INIT_VERSION}_amd64$" sha256sums | sha256sum -c \
   && rm sha256sums \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
-  && chmod +x /usr/bin/dumb-init \
-  && python3 -m pip install argparse jinja2 kubernetes urllib3 aionotify==0.2.0 \
-  && python3 -m pip install --upgrade pip==9.0.3 \
-  && python3 -m pip install "Pillow==5.0.0" \
-  && python3 -m pip install "numpy==1.14.3" \
-  && python3 -m pip install "pandas==0.23.0"
-# TODO: Remove Pillow, and pandas installation after toolchan system merge
+  && chmod +x /usr/bin/dumb-init
+
+COPY requirements.txt /root/requirements.txt
+RUN python3 -m pip install --disable-pip-version-check --no-cache-dir -r /root/requirements.txt
 
 # Install Legion
 ARG pip_extra_index_params=""
