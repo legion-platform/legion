@@ -284,12 +284,9 @@ class ModelService(Service):
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
 
         all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
-        try:
-            return next(deployment for deployment in all_deployments.items
-                        if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
-                        and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version)
-        except StopIteration:
-            return None
+        return next((deployment for deployment in all_deployments.items
+                     if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
+                     and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version), None)
 
     def _load_deployment_data(self):
         """
