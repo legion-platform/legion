@@ -530,7 +530,7 @@ def model_properties_storage_name(model_id, model_version):
     :type model_version: str
     :return: str -- name of properties storage
     """
-    return 'model-{}-{}'.format(model_id, model_version)
+    return normalize_name('model-{}-{}'.format(model_id, model_version), dns_1035=True)
 
 
 def string_to_bool(value):

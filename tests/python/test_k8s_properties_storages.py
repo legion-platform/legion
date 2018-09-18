@@ -95,6 +95,78 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
+    @attr('k8s', 'props', 'watch')
+    def test_config_map_storage_watch(self):
+        """
+        Test config map storage watching
+
+        :return:
+        """
+        storage_name = 'rw-storage-watch-1'
+        events = []
+        key = 'test_str'
+        first_value = 'abc'
+        second_value = 'abc-dgfa'
+
+        storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
+        storage_to_write[key] = first_value
+        storage_to_write.save()
+
+        storage_to_read = legion.k8s.K8SConfigMapStorage.retrive(storage_name, TEST_ENCLAVE_NAME)
+
+        def listener():
+            for event, new_data in storage_to_read.watch():
+                LOGGER.info('Got new event: type={}, new_data={}'.format(event, new_data))
+                events.append((event, new_data))
+
+        with legion_test.utils.ContextThread(listener):
+            LOGGER.debug('Waiting before updating')
+
+            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 0, 1, 5))
+            self.assertTupleEqual(events[0], (legion.k8s.EVENT_ADDED, {key: first_value}))
+
+            storage_to_write[key] = second_value
+            storage_to_write.save()
+
+            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 1, 1, 5))
+            self.assertTupleEqual(events[1], (legion.k8s.EVENT_MODIFIED, {key: second_value}))
+
+    @attr('k8s', 'props', 'watch')
+    def test_secret_storage_watch(self):
+        """
+        Test config map storage watching
+
+        :return:
+        """
+        storage_name = 'rw-storage-watch-2'
+        events = []
+        key = 'test_str'
+        first_value = 'abc'
+        second_value = 'abc-dgfa'
+
+        storage_to_write = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
+        storage_to_write[key] = first_value
+        storage_to_write.save()
+
+        storage_to_read = legion.k8s.K8SSecretStorage.retrive(storage_name, TEST_ENCLAVE_NAME)
+
+        def listener():
+            for event, new_data in storage_to_read.watch():
+                LOGGER.info('Got new event: type={}, new_data={}'.format(event, new_data))
+                events.append((event, new_data))
+
+        with legion_test.utils.ContextThread(listener):
+            LOGGER.debug('Waiting before updating')
+
+            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 0, 1, 5))
+            self.assertTupleEqual(events[0], (legion.k8s.EVENT_ADDED, {key: first_value}))
+
+            storage_to_write[key] = second_value
+            storage_to_write.save()
+
+            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 1, 1, 5))
+            self.assertTupleEqual(events[1], (legion.k8s.EVENT_MODIFIED, {key: second_value}))
+
     @attr('k8s', 'props', 'props_config_map')
     def test_read_config_map_with_update_on_timeout(self):
         """
@@ -111,7 +183,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         :return:
         """
-        storage_name = 'rw-storage'
+        storage_name = 'rw-storage-3'
 
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write.save()
@@ -127,7 +199,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         :return:
         """
-        storage_name = 'rw-retrive-storage'
+        storage_name = 'rw-retrive-storage-4'
 
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write['test_str'] = 'abc'
@@ -145,7 +217,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         :return: None
         """
-        storage_name = 'rw-map-storage'
+        storage_name = 'rw-map-storage-5'
 
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
 
@@ -172,7 +244,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
         :return: None
         """
-        storage_name = 'rw-secret-storage'
+        storage_name = 'rw-secret-storage-6'
 
         storage_to_write = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
 

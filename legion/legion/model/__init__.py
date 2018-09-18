@@ -216,3 +216,17 @@ def define_property(name, initial_value):
         raise Exception('Context has not been defined')
 
     return _model.define_property(name, initial_value)
+
+
+def on_property_update(callback):
+    """
+    Set callback that will be called on each property update
+
+    :param callback: callback on each model property update
+    :type callback: :py:class:`Callable[[], None]`
+    :return: None
+    """
+    if not _model:
+        raise Exception('Context has not been defined')
+
+    return _model.on_property_update(callback)

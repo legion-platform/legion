@@ -20,6 +20,8 @@ import base64
 import logging
 import time
 import json
+import threading
+import typing
 
 import kubernetes
 import kubernetes.client
@@ -59,16 +61,23 @@ class K8SPropertyStorage:
         """
         if not data:
             data = {}
-        self._state = data
+        self._state = data  # type: dict
 
-        self._cache_ttl = cache_ttl
+        self._cache_ttl = cache_ttl  # type: int or None
 
-        self._storage_name = legion.utils.normalize_name(storage_name, dns_1035=True)
+        self._storage_name = legion.utils.normalize_name(storage_name, dns_1035=True)  # type: str
+        if self._storage_name != storage_name:
+            LOGGER.warning('Name of storage has been normalized from {!r} to {!r}'.format(
+                storage_name, self._storage_name
+            ))
 
-        self._last_load_time = None
-        self._saved = False
+        self._last_load_time = None  # type: float or None
+        self._saved = False  # type: bool
 
-        self._k8s_namespace = k8s_namespace
+        self._k8s_namespace = k8s_namespace  # type: str
+
+        self._properties_update_thread = None  # type: threading.Thread or None
+        self._on_property_update_callback_getter = None  # type: typing.Callable[[], typing.Callable[[], None]] or None
 
         LOGGER.info('Initializing {!r}'.format(self))
 
@@ -107,8 +116,19 @@ class K8SPropertyStorage:
         names = [
             resource.metadata.labels[legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE]
             for resource in resources
+            if K8SPropertyStorage.is_valid_object(resource)
         ]
         return names
+
+    @staticmethod
+    def is_valid_object(obj):
+        """
+        Check that obj is valid K8S object
+
+        :param obj: kubernetes object
+        :return: bool -- is valid K8S object or not
+        """
+        return obj.metadata.labels and legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE in obj.metadata.labels
 
     @property
     def k8s_name(self):
@@ -140,6 +160,15 @@ class K8SPropertyStorage:
             self._k8s_namespace = legion.k8s.utils.get_current_namespace()
 
         return self._k8s_namespace
+
+    @property
+    def last_load_time(self):
+        """
+        Get last load time if it exists
+
+        :return: float or None -- last load time
+        """
+        return self._last_load_time
 
     @property
     def data(self):
@@ -398,6 +427,101 @@ class K8SPropertyStorage:
         return '<{} k8s_name={!r}, k8s_namespace={!r}, data={!r}>' \
             .format(self.__class__.__name__, self._storage_name, self._k8s_namespace, self._state)
 
+    def is_watched_object(self, obj):
+        """
+        Check if K8S object is a target watch item
+
+        :param obj: kubernetes object
+        :return: bool -- is target or not
+        """
+        return self.is_valid_object(obj) and obj.metadata.name == self._storage_name
+
+    def watch(self):
+        """
+        Get generator that watches for storage updates and yields EVENT and new data as dict
+
+        :return: None
+        """
+        LOGGER.info('Creating watch for object {!r}'.format(self))
+        with self._build_k8s_resource_watch() as watch:
+            for (event_type, event_object) in watch.stream:
+                LOGGER.info('Watch got new event. Type = {}'.format(event_type))
+                self.load()
+                yield (event_type, self.data)
+
+    def emit_update_signal(self):
+        """
+        Emit signal of properties update to model
+
+        :return: None
+        """
+        try:
+            callback = self._on_property_update_callback_getter()
+            LOGGER.debug('Invoking callback {!r} (id: {})...'.format(callback, id(callback)))
+            invoke_result = callback()
+            LOGGER.debug('Result of invocation: {!r}'.format(invoke_result))
+        except Exception as property_update_callback_invoke_exception:
+            LOGGER.exception('Cannot invoke model update callback',
+                             exc_info=property_update_callback_invoke_exception)
+
+    def update_thread(self):
+        """
+        Process update callback logic
+
+        :return: None
+        """
+        LOGGER.info('Properties watch thread has been started')
+        for event, new_data in self.watch():
+            LOGGER.info('Model have got information that properties storage had got update: {}'.format(event))
+            self.emit_update_signal()
+
+    def set_update_callback(self, callback_getter):
+        """
+        Set update callback getter and start thread (thread starts only once)
+
+        :param callback_getter: callback getter result of which will be called on each property update
+        :type callback_getter: :py:class:`Callable[[], typing.Callable[[], None]]`
+        :return: None
+        """
+        if not callable(callback_getter):
+            raise Exception('Invalid argument: object should be callable')
+
+        LOGGER.debug('Setting new property update callback getter for {!r} to {!r} (id: {})'
+                     .format(self, callback_getter, id(callback_getter)))
+
+        self._on_property_update_callback_getter = callback_getter
+
+    def start_update_watcher(self):
+        """
+        Start update watcher
+
+        :return: None
+        """
+        if not self.last_load_time:
+            LOGGER.info('Properties has not been loaded, so watch thread will not be started')
+            return
+
+        if self._properties_update_thread:
+            LOGGER.debug('Thread already has been started')
+            return
+
+        self._properties_update_thread = threading.Thread(name='model-properties-update',
+                                                          daemon=True,
+                                                          target=self.update_thread)
+
+        self._properties_update_thread.daemon = True
+        LOGGER.info('Starting thread')
+        self._properties_update_thread.start()
+        LOGGER.info('Thread has been started')
+
+    def _build_k8s_resource_watch(self):
+        """
+        Get K8S resource watch object
+
+        :return: :py:class:`legion.k8s.watch.ResourceWatch` -- resource watch
+        """
+        pass
+
 
 class K8SConfigMapStorage(K8SPropertyStorage):
     """
@@ -409,19 +533,23 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         """
         Find K8S resources
 
-        :return: :py:class:`kubernetes.client.V1ConfigMap` -- K8S object
+        :return: list[:py:class:`kubernetes.client.V1ConfigMap`] -- K8S objects
         """
         client = legion.k8s.utils.build_client()
         core_api = kubernetes.client.CoreV1Api(client)
         objects = core_api.list_namespaced_config_map(k8s_namespace).items
 
-        objects = [
-            obj
-            for obj in objects
-            if obj.metadata.labels and legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE in obj.metadata.labels
-        ]
-
         return objects
+
+    def _build_k8s_resource_watch(self):
+        """
+        Get K8S resource watch object
+
+        :return: :py:class:`legion.k8s.watch.ResourceWatch` -- resource watch
+        """
+        return legion.k8s.watch.ResourceWatch(self._core_api.list_namespaced_config_map,
+                                              namespace=self.k8s_namespace_or_default,
+                                              filter_callable=self.is_watched_object)
 
     def _read_k8s_resource(self):
         """
@@ -531,19 +659,23 @@ class K8SSecretStorage(K8SPropertyStorage):
         """
         Find K8S resources
 
-        :return: :py:class:`kubernetes.client.V1Secret` -- K8S object
+        :return: list[:py:class:`kubernetes.client.V1Secret`] -- K8S objects
         """
         client = legion.k8s.utils.build_client()
         core_api = kubernetes.client.CoreV1Api(client)
         objects = core_api.list_namespaced_secret(k8s_namespace).items
 
-        objects = [
-            obj
-            for obj in objects
-            if obj.metadata.labels and legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE in obj.metadata.labels
-        ]
-
         return objects
+
+    def _build_k8s_resource_watch(self):
+        """
+        Get K8S resource watch object
+
+        :return: :py:class:`legion.k8s.watch.ResourceWatch` -- resource watch
+        """
+        return legion.k8s.watch.ResourceWatch(self._core_api.list_namespaced_secret,
+                                              namespace=self.k8s_namespace_or_default,
+                                              filter_callable=self.is_watched_object)
 
     def _read_k8s_resource(self):
         """

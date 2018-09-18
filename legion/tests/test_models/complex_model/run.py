@@ -15,6 +15,13 @@ with open(FILE_PATH, 'w') as fstream:
     fstream.write('10')
 
 
+def on_property_update():
+    print('I have got an update!')
+
+
+legion.model.on_property_update(on_property_update)
+
+
 def calculate(x):
     # check file availability on execution phase
     assert os.path.exists(FILE_PATH), 'file not exists: {}'.format(FILE_PATH)

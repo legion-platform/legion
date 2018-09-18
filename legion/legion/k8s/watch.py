@@ -19,6 +19,7 @@ legion k8s watch context manager
 import logging
 
 import kubernetes
+import kubernetes.client.rest
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
@@ -109,6 +110,11 @@ class ResourceWatch:
             except urllib3.exceptions.ProtocolError:
                 LOGGER.info('Connection to K8S API has been lost, reconnecting..')
                 reconnect = True
+            except kubernetes.client.rest.ApiException as kube_api_exception:
+                LOGGER.info('Got kubernetes API exception: {}'.format(kube_api_exception))
+                if kube_api_exception.status == 500:
+                    LOGGER.info('Got kubernetes error 500, ignoring')
+                    reconnect = True
 
         LOGGER.debug('Watch stream has been ended')
 
