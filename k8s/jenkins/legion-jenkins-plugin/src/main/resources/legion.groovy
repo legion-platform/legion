@@ -254,14 +254,11 @@ def build() {
      */
     Globals.envVars.ROOT_DIR = rootDir()
     Globals.envVars.MODEL_ID = modelId()
+    Globals.envVars.MODEL_VERSION = modelVersion()
     Globals.envVars.MODEL_FILE_NAME = modelFileName()
 
-    baseDockerImage = getDefaultImageName()
-    modelVersion = modelVersion()
-
-    modelImageVersion = modelVersion
-    Globals.envVars.TEMPORARY_DOCKER_IMAGE_NAME = generateModelTemporaryImageName(Globals.envVars.MODEL_ID, modelVersion)
-    Globals.envVars.EXTERNAL_IMAGE_NAME = "${System.getenv('MODEL_IMAGES_REGISTRY')}${Globals.envVars.MODEL_ID}:${modelImageVersion}"
+    Globals.envVars.TEMPORARY_DOCKER_IMAGE_NAME = generateModelTemporaryImageName(Globals.envVars.MODEL_ID, Globals.envVars.MODEL_VERSION)
+    Globals.envVars.EXTERNAL_IMAGE_NAME = "${System.getenv('MODEL_IMAGES_REGISTRY')}${Globals.envVars.MODEL_ID}:${Globals.envVars.MODEL_VERSION}"
 
     sh """
     cd ${Globals.envVars.ROOT_DIR}
