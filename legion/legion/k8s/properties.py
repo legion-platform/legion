@@ -444,11 +444,11 @@ class K8SPropertyStorage:
         :return: None
         """
         LOGGER.info('Creating watch for object {!r}'.format(self))
-        with self._build_k8s_resource_watch() as watch:
-            for (event_type, event_object) in watch.stream:
-                LOGGER.info('Watch got new event. Type = {}'.format(event_type))
-                self.load()
-                yield (event_type, self.data)
+        watch = self._build_k8s_resource_watch()
+        for (event_type, event_object) in watch.stream:
+            LOGGER.info('Watch got new event. Type = {}'.format(event_type))
+            self.load()
+            yield (event_type, self.data)
 
     def _call_callback(self):
         """

@@ -469,12 +469,12 @@ class Enclave:
 
         core_api = kubernetes.client.CoreV1Api(client)
 
-        with legion.k8s.watch.ResourceWatch(core_api.list_namespaced_service,
-                                            namespace=self.namespace,
-                                            filter_callable=legion.k8s.services.Service.is_legion_service,
-                                            object_constructor=legion.k8s.services.Service) as watch:
-            for (event_type, event_object) in watch.stream:
-                yield (event_type, event_object)
+        watch = legion.k8s.watch.ResourceWatch(core_api.list_namespaced_service,
+                                               namespace=self.namespace,
+                                               filter_callable=legion.k8s.services.Service.is_legion_service,
+                                               object_constructor=legion.k8s.services.Service)
+        for (event_type, event_object) in watch.stream:
+            yield (event_type, event_object)
 
     @staticmethod
     def watch_enclaves():
@@ -488,11 +488,12 @@ class Enclave:
 
         core_api = kubernetes.client.CoreV1Api(client)
 
-        with legion.k8s.watch.ResourceWatch(core_api.list_namespace,
-                                            filter_callable=Enclave.is_enclave,
-                                            object_constructor=Enclave.build_from_namespace_object) as watch:
-            for (event_type, event_object) in watch.stream:
-                yield (event_type, event_object)
+        watch = legion.k8s.watch.ResourceWatch(core_api.list_namespace,
+                                               filter_callable=Enclave.is_enclave,
+                                               object_constructor=Enclave.build_from_namespace_object)
+
+        for (event_type, event_object) in watch.stream:
+            yield (event_type, event_object)
 
     def delete(self, grace_period_seconds=0):
         """
