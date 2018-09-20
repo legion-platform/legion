@@ -30,8 +30,10 @@ JENKINS_API_TOKEN_REGEX = re.compile('<input [^>]*id="apiToken"[^>]*value="([^"]
 _session_cookies = {}
 _jenkins_credentials = None
 
+
 def init_session_id(login: str, password: str, cluster_host: str) -> None:
-    """Initialize Session ID value from a Cookie after authentication.
+    """
+    Initialize Session ID value from a Cookie after authentication.
 
     :param login: Login of a Static Dex user
     :type login: str
@@ -76,13 +78,18 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
 
 
 def get_session_cookies():
-    """Get session cookies that can be used inside Request.
+    """
+    Get session cookies that can be used inside Request.
+
     :return: cookies dict or empty dict if Session ID wasn't found
     """
     return _session_cookies
 
+
 def get_jenkins_credentials():
-    """Get credentials (username and API Token) for Jenkins API,
-    if they are found.
-    :return: (username, password) or None"""
+    """
+    Get credentials (username and API Token) for Jenkins API, if they are found.
+
+    :return: (username, password) or None
+    """
     return _jenkins_credentials
