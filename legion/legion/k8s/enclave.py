@@ -315,7 +315,7 @@ class Enclave:
 
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
-            port=5000
+            port=legion.config.LEGION_PORT[1]
             )
 
         livenessprobe = kubernetes.client.V1Probe(
@@ -345,8 +345,7 @@ class Enclave:
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,
             ports=[
-                kubernetes.client.V1ContainerPort(container_port=5000, name='api', protocol='TCP'),
-                kubernetes.client.V1ContainerPort(container_port=5090, name='stats', protocol='TCP'),
+                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1], name='api', protocol='TCP')
             ])
 
         pod_template = kubernetes.client.V1PodTemplateSpec(

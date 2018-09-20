@@ -33,7 +33,6 @@ class TestStore(unittest2.TestCase):
         """
         logging.basicConfig(level=logging.DEBUG)
 
-    @unittest2.skip
     def test_base_store(self):
         store = legion.pymodel.store.SharedStore()
         store.a = 415616

@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates apt-transport-https nginx \
     supervisor
 
-EXPOSE 5000
+EXPOSE {{MODEL_PORT}}
 
 RUN pip3 install --disable-pip-version-check --upgrade uwsgi
 
@@ -39,7 +39,6 @@ CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 WORKDIR /app
 
 RUN {{CREATE_SYMLINK_COMMAND|safe}}
-RUN touch /app/store && chmod a+rw /app/store
 
 ENV MODEL_FILE="{{MODEL_FILE}}" \
     MODEL_ID="{{MODEL_ID}}" \

@@ -521,7 +521,7 @@ class K8SPropertyStorage:
 
         :return: :py:class:`legion.k8s.watch.ResourceWatch` -- resource watch
         """
-        pass
+        raise NotImplementedError('This function is not implemented in this class')
 
 
 class K8SConfigMapStorage(K8SPropertyStorage):

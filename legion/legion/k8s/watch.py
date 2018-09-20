@@ -105,13 +105,13 @@ class ResourceWatch:
                             event_object = self._object_constructor(event_object)
 
                         yield (event_type, event_object)
-            except urllib3.exceptions.ProtocolError:
-                LOGGER.info('Connection to K8S API has been lost, reconnecting..')
+            except urllib3.exceptions.ProtocolError as protocol_error:
+                LOGGER.warning('Connection to K8S API has been lost: {}. Reconnecting...'.format(protocol_error))
                 continue
             except kubernetes.client.rest.ApiException as kube_api_exception:
-                LOGGER.warning('Got kubernetes API exception: {}'.format(kube_api_exception))
+                LOGGER.warning('Got Kubernetes API exception: {}'.format(kube_api_exception))
                 if kube_api_exception.status == 500:
-                    LOGGER.info('Got kubernetes error 500, ignoring')
+                    LOGGER.warning('Got Kubernetes error 500. Reconnecting...')
                     continue
                 else:
                     LOGGER.warning('Got wrong error code. Breaking...')
