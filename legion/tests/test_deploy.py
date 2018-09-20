@@ -20,6 +20,8 @@ import requests
 
 import unittest2
 
+import legion.utils
+
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
 
@@ -173,7 +175,9 @@ class TestDeploy(unittest2.TestCase):
             emit_update_url = '{}/emit-properties-update'.format(context.client.api_url)
             result = requests.get(emit_update_url)
             self.assertEqual(result.status_code, 200)
-            # Get response after update and compare 5 times
+            # Check properties has been updated
+            # TODO: Add retries to check
+            # Get response after checked update and compare 5 times
             for _ in range(5):
                 second_time_call_result = context.client.invoke('time')
                 self.assertGreater(second_time_call_result['result'], first_time_call_result['result'])
