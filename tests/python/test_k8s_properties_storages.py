@@ -269,6 +269,66 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         items = legion.k8s.K8SConfigMapStorage.list(TEST_ENCLAVE_NAME)
         self.assertNotIn(storage_name, items)
 
+    @attr('k8s', 'props', 'props_config_map', 'props_ttl')
+    def test_config_map_with_ttl(self):
+        """
+        Check config map TTL algorithm - positive test
+
+        :return: None
+        """
+        storage_name = 'config-map-with-ttl'
+        ttl = 1
+
+        # Init storage
+        storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
+        storage_to_write['test_str'] = 'abc'
+        storage_to_write.save()
+
+        # Build storage object with ttl
+        storage_to_read = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME, cache_ttl=ttl)
+        storage_to_read.load()
+        self.assertEqual(storage_to_read['test_str'], 'abc')
+
+        # Update storage
+        storage_to_write['test_str'] = 'def'
+        storage_to_write.save()
+
+        # Sleep TTL plus one seconds
+        time.sleep(ttl + 1)
+
+        # Check that data has been reloaded without forcing
+        self.assertEqual(storage_to_read['test_str'], 'def')
+
+        storage_to_read.destroy()
+
+    @attr('k8s', 'props', 'props_config_map', 'props_ttl')
+    def test_config_map_without_ttl(self):
+        """
+        Check config map TTL algorithm - negative test
+
+        :return: None
+        """
+        storage_name = 'config-map-without-ttl'
+
+        # Init storage
+        storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
+        storage_to_write['test_str'] = 'abc'
+        storage_to_write.save()
+
+        # Build storage object without ttl
+        storage_to_read = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
+        storage_to_read.load()
+        self.assertEqual(storage_to_read['test_str'], 'abc')
+
+        # Update storage
+        storage_to_write['test_str'] = 'def'
+        storage_to_write.save()
+
+        # Check that data has not been reloaded without forcing
+        self.assertEqual(storage_to_read['test_str'], 'abc')
+
+        storage_to_read.destroy()
+
 
 if __name__ == '__main__':
     unittest2.main()

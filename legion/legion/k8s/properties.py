@@ -73,6 +73,7 @@ class K8SPropertyStorage:
 
         self._last_load_time = None  # type: float or None
         self._saved = False  # type: bool
+        self._callback_invoking_thread = None  # type: threading.Thread or None
 
         self._k8s_namespace = k8s_namespace  # type: str
 
@@ -449,20 +450,37 @@ class K8SPropertyStorage:
                 self.load()
                 yield (event_type, self.data)
 
+    def _call_callback(self):
+        """
+        Update callback logic
+
+        :return: None
+        """
+        try:
+            callback = self._on_property_update_callback_getter()
+            LOGGER.debug('Invoking callback {!r} (id: {}) in dedicated thread...'.format(callback, id(callback)))
+            invoke_result = callback()
+            LOGGER.debug('Result of callback invocation: {!r}'.format(invoke_result))
+        except Exception as property_update_callback_invoke_exception:
+            LOGGER.exception('Cannot invoke model update callback',
+                             exc_info=property_update_callback_invoke_exception)
+
     def emit_update_signal(self):
         """
         Emit signal of properties update to model
 
         :return: None
         """
-        try:
-            callback = self._on_property_update_callback_getter()
-            LOGGER.debug('Invoking callback {!r} (id: {})...'.format(callback, id(callback)))
-            invoke_result = callback()
-            LOGGER.debug('Result of invocation: {!r}'.format(invoke_result))
-        except Exception as property_update_callback_invoke_exception:
-            LOGGER.exception('Cannot invoke model update callback',
-                             exc_info=property_update_callback_invoke_exception)
+        if self._callback_invoking_thread and self._callback_invoking_thread.is_alive():
+            LOGGER.warning('Ignoring update callback: another is working')
+        else:
+            self._callback_invoking_thread = threading.Thread(name='invoke-model-properties-update',
+                                                              daemon=True,
+                                                              target=self._call_callback)
+
+            self._callback_invoking_thread.daemon = True
+            LOGGER.info('Starting thread {}'.format(self._callback_invoking_thread.name))
+            self._callback_invoking_thread.start()
 
     def update_thread(self):
         """
@@ -506,7 +524,7 @@ class K8SPropertyStorage:
             LOGGER.debug('Thread already has been started')
             return
 
-        self._properties_update_thread = threading.Thread(name='model-properties-update',
+        self._properties_update_thread = threading.Thread(name='watch-model-properties-update',
                                                           daemon=True,
                                                           target=self.update_thread)
 
