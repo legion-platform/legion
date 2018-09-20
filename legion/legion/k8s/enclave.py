@@ -259,9 +259,6 @@ class Enclave:
                 LOGGER.info('Storage has missed properties: {!r}'.format(missed_properties))
 
                 for missed_property in missed_properties:
-                    if missed_property not in default_values:
-                        raise Exception('Cannot find default value for property {}'.format(missed_property))
-
                     storage[missed_property] = default_values[missed_property]
                     LOGGER.info('Property {!r} has been set to default value {!r}'
                                 .format(missed_property, default_values[missed_property]))
