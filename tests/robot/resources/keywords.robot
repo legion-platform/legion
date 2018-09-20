@@ -195,16 +195,9 @@ Verify model info from edi
     Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
 #    Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
 
-Run and wait Jenkins job
-    [Arguments]          ${model_name}                      ${enclave}
-    Log                  Start running model: ${model_name}
-    Run Jenkins job                                         DYNAMIC MODEL ${model_name}   Enclave=${enclave}
-    Log                  Waiting for running model: ${model_name}
-    Wait Jenkins job                                        DYNAMIC MODEL ${model_name}   600
-
 Test model pipeline
     [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
-    Run and wait Jenkins job                                ${model_name}        ${enclave}
+    Run and wait Jenkins job                                DYNAMIC MODEL ${model_name}   Enclave=${enclave}
     Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
     Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
     ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
@@ -213,6 +206,10 @@ Test model pipeline
     ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
     ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
     ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
+    ${edge}=             Build enclave EDGE URL             ${enclave}
+    Get token from EDI   ${enclave}
+    ${model_info} =      Get model info       ${model_id}  ${model_version}  ${edge}  ${TOKEN}
+    Log                  Model info is ${model_info}
     ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
     Log                  External model URL is ${model_url}
     Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny

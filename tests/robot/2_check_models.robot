@@ -26,21 +26,18 @@ Checking property update callback
     ${edge}=        Build enclave EDGE URL  ${MODEL_TEST_ENCLAVE}
                     Get token from EDI    ${MODEL_TEST_ENCLAVE}
 
+    Log             Resetting property to wrong value
+    Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  0
     Log             Updating property to start value and invoking model with check
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  1
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  1
-
-    ${response}=    Invoke model API  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  a=1  b=2
-    Should Be Equal As Integers     ${response['result']}  30
+    Ensure model API call result field is correct  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  result  30   a=1  b=2
 
     Log             Updating property to another value and invoking model with check
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  2
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  2
-
-    ${response}=    Invoke model API  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  a=1  b=2
-    Should Be Equal As Integers     ${response['result']}  300
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
@@ -50,3 +47,4 @@ Check Vertical Scailing
         Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
         Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
         Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+    Ensure model API call result field is correct  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  result  300  a=1  b=2
