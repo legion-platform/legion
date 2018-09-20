@@ -175,8 +175,11 @@ class TestDeploy(unittest2.TestCase):
             emit_update_url = '{}/emit-properties-update'.format(context.client.api_url)
             result = requests.get(emit_update_url)
             self.assertEqual(result.status_code, 200)
-            # Check properties has been updated
-            # TODO: Add retries to check
+            # Check state has been updated and model returns another data
+            legion.utils.ensure_function_succeed(
+                lambda: context.client.invoke('time')['result'] != first_time_call_result,
+                5, 1
+            )
             # Get response after checked update and compare 5 times
             for _ in range(5):
                 second_time_call_result = context.client.invoke('time')
