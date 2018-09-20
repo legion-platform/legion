@@ -345,7 +345,8 @@ class Enclave:
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,
             ports=[
-                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1], name='api', protocol='TCP')
+                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1],
+                                                  name='api', protocol='TCP')
             ])
 
         pod_template = kubernetes.client.V1PodTemplateSpec(
