@@ -89,10 +89,8 @@ class ResourceWatch:
         """
         LOGGER.debug('Starting watch stream')
 
-        reconnect = True
-        while reconnect:
-            reconnect = False
-
+        while True:
+            LOGGER.debug('Entering event loop')
             try:
                 for event in self._stream:
                     event_type = event['type']
@@ -109,12 +107,18 @@ class ResourceWatch:
                         yield (event_type, event_object)
             except urllib3.exceptions.ProtocolError:
                 LOGGER.info('Connection to K8S API has been lost, reconnecting..')
-                reconnect = True
+                continue
             except kubernetes.client.rest.ApiException as kube_api_exception:
-                LOGGER.info('Got kubernetes API exception: {}'.format(kube_api_exception))
+                LOGGER.warning('Got kubernetes API exception: {}'.format(kube_api_exception))
                 if kube_api_exception.status == 500:
                     LOGGER.info('Got kubernetes error 500, ignoring')
-                    reconnect = True
+                    continue
+                else:
+                    LOGGER.warning('Got wrong error code. Breaking...')
+                    break
+            except Exception as general_exception:
+                LOGGER.exception('Got general exception: {}. Breaking...'.format(general_exception))
+                break
 
         LOGGER.debug('Watch stream has been ended')
 
