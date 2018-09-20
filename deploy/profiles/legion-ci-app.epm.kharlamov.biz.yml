@@ -41,14 +41,14 @@ kubernetes_version: 1.9.3
 private_network: '172.31'
 cluster_zones:
   - zone_name: us-east-2a
-    kops_cidr: "{{ private_network }}.112.0/24"
-    kops_utility_cidr: "{{ private_network }}.111.0/24"
+    kops_cidr: "{{ private_network }}.130.0/24"
+    kops_utility_cidr: "{{ private_network }}.131.0/24"
   - zone_name: us-east-2b
-    kops_cidr: "{{ private_network }}.114.0/24"
-    kops_utility_cidr: "{{ private_network }}.113.0/24"
+    kops_cidr: "{{ private_network }}.132.0/24"
+    kops_utility_cidr: "{{ private_network }}.133.0/24"
   - zone_name: us-east-2c
-    kops_cidr: "{{ private_network }}.116.0/24"
-    kops_utility_cidr: "{{ private_network }}.115.0/24"
+    kops_cidr: "{{ private_network }}.134.0/24"
+    kops_utility_cidr: "{{ private_network }}.135.0/24"
 k8s_master_zones:
   - us-east-2a
 # Legion specific variables
