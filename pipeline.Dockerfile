@@ -2,11 +2,6 @@ FROM python:3.6
 
 ENV DOCKERVERSION=18.03.1-ce
 
-RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKERVERSION}.tgz \
-  && tar xzvf docker-${DOCKERVERSION}.tgz --strip 1 \
-                 -C /usr/local/bin docker/docker \
-  && rm docker-${DOCKERVERSION}.tgz
-
 RUN apt-get update && apt-get install -y software-properties-common \
 	&& echo 'deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main' >> /etc/apt/sources.list \
 	&& apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367 \
@@ -14,7 +9,7 @@ RUN apt-get update && apt-get install -y software-properties-common \
 	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev maven git ansible \
 	&& apt-get clean all
 
-RUN pip install Sphinx sphinx_rtd_theme sphinx-autobuild recommonmark pydocstyle twine boto boto3 awscli
+RUN pip install Sphinx==1.8.0 sphinx_rtd_theme==0.4.1 sphinx-autobuild==0.7.1 recommonmark==0.4.0 pydocstyle==2.3.1 twine==1.11.0 boto==2.49.0 boto3==1.7.28 awscli
 
 ADD legion /src/legion
 RUN cd /src/legion \
