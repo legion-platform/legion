@@ -11,8 +11,7 @@ Check test dags should not fail
     [Tags]  airflow  airflow-api
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Airflow     ${enclave}
-        ${dags} =                   Find Airflow DAGs
-        :FOR    ${dag}   IN   @{dags}
+        :FOR    ${dag}   IN   @{TEST_DAGS}
         \   ${tasks} =              Find Airflow Tasks  ${dag}
             :FOR    ${task}     IN      @{tasks}
             \   ${date_time} =  Get Current Date  result_format='%Y-%m-%d %H:%M:%S'

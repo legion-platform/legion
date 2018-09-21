@@ -126,13 +126,13 @@ class Airflow:
 
         return self._get('api?api=rest_api_plugin_version')
 
-    def find_airflow_dags(self, subdir=None, report=None):
-        """ List all the DAGs
-            GET /api?api=list_dags&subdir=value&report
-            :param subdir: (Optional) File location or directory from which to look for the dag
-            :param report: (Optional) Boolean, Show DagBag loading report"""
-        return self._find_lines_in_stdout(self._get('api?api=list_dags',
-                                                    params={'subdir': subdir, 'report': report}))[3:]
+    # def find_airflow_dags(self, subdir=None, report=None):
+    #     """ List all the DAGs
+    #         GET /api?api=list_dags&subdir=value&report
+    #         :param subdir: (Optional) File location or directory from which to look for the dag
+    #         :param report: (Optional) Boolean, Show DagBag loading report"""
+    #     return self._find_lines_in_stdout(self._get('api?api=list_dags',
+    #                                                 params={'subdir': subdir, 'report': report}))[3:]
 
     def find_airflow_tasks(self, dag_id, tree=None, subdir=None):
         """ List the tasks within a DAG

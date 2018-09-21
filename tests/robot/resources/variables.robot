@@ -1,6 +1,7 @@
 *** Variables ***
 @{SUBDOMAINS}                       jenkins  nexus
 @{ENCLAVE_SUBDOMAINS}               edi  edge  airflow  flower
+@{TEST_DAGS}                        example_python_work  s3_connection_test
 ${MODEL_WITH_PROPS}                 Test-Summation
 ${MODEL_WITH_PROPS_ENDPOINT}        sum_and_pow
 ${MODEL_WITH_PROPS_PROP}            number.pow_of_ten
