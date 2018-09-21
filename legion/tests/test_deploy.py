@@ -177,7 +177,7 @@ class TestDeploy(unittest2.TestCase):
             self.assertEqual(result.status_code, 200)
             # Check state has been updated and model returns another data
             legion.utils.ensure_function_succeed(
-                lambda: context.client.invoke('time')['result'] != first_time_call_result,
+                lambda: context.client.invoke('time')['result'] != first_time_call_result['result'],
                 10, 2
             )
             # Get response after checked update and compare 5 times
