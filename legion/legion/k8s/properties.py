@@ -78,7 +78,7 @@ class K8SPropertyStorage:
         self._k8s_namespace = k8s_namespace  # type: str
 
         self._properties_update_thread = None  # type: threading.Thread or None
-        self._on_property_update_callback_getter = None  # type: typing.Callable[[], typing.Callable[[], None]] or None
+        self._on_property_change_callback_getter = None  # type: typing.Callable[[], typing.Callable[[], None]] or None
 
         LOGGER.info('Initializing {!r}'.format(self))
 
@@ -457,7 +457,7 @@ class K8SPropertyStorage:
         :return: None
         """
         try:
-            callback = self._on_property_update_callback_getter()
+            callback = self._on_property_change_callback_getter()
             LOGGER.debug('Invoking callback {!r} (id: {}) in dedicated thread...'.format(callback, id(callback)))
             invoke_result = callback()
             LOGGER.debug('Result of callback invocation: {!r}'.format(invoke_result))
@@ -494,9 +494,9 @@ class K8SPropertyStorage:
             self.emit_update_signal()
         LOGGER.error('Update thread has been finished')
 
-    def set_update_callback(self, callback_getter):
+    def set_change_callback(self, callback_getter):
         """
-        Set update callback getter and start thread (thread starts only once)
+        Set change callback getter and start thread (thread starts only once)
 
         :param callback_getter: callback getter result of which will be called on each property update
         :type callback_getter: :py:class:`Callable[[], typing.Callable[[], None]]`
@@ -505,10 +505,10 @@ class K8SPropertyStorage:
         if not callable(callback_getter):
             raise Exception('Invalid argument: object should be callable')
 
-        LOGGER.debug('Setting new property update callback getter for {!r} to {!r} (id: {})'
+        LOGGER.debug('Setting new property change callback getter for {!r} to {!r} (id: {})'
                      .format(self, callback_getter, id(callback_getter)))
 
-        self._on_property_update_callback_getter = callback_getter
+        self._on_property_change_callback_getter = callback_getter
 
     def start_update_watcher(self):
         """

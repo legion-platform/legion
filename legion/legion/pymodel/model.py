@@ -194,19 +194,19 @@ class Model:
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
 
-        self._on_property_update_callback = None  # type: typing.Callable[[], None] or None
-        self._on_property_update_callback_loaded = False  # type: bool
+        self._on_property_change_callback = None  # type: typing.Callable[[], None] or None
+        self._on_property_change_callback_loaded = False  # type: bool
 
         storage_name = model_properties_storage_name(self.model_id, self.model_version)
         self._properties = legion.k8s.K8SConfigMapStorage(storage_name,
                                                           cache_ttl=legion.config.MODEL_PROPERTIES_CACHE_TTL)
 
-        LOGGER.info('Setting properties update callback getter to local function {!r} (id: {})'.format(
-            self.get_on_property_update_callback,
-            id(self.get_on_property_update_callback)
+        LOGGER.info('Setting properties change callback getter to local function {!r} (id: {})'.format(
+            self.get_on_property_change_callback,
+            id(self.get_on_property_change_callback)
         ))
 
-        self._properties.set_update_callback(self.get_on_property_update_callback)
+        self._properties.set_change_callback(self.get_on_property_change_callback)
 
         send_header_to_stderr(legion.containers.headers.MODEL_ID, self.model_id)
         send_header_to_stderr(legion.containers.headers.MODEL_VERSION, self.model_version)
@@ -230,7 +230,7 @@ class Model:
         """
         self._path = path
         self._endpoints = None
-        self._on_property_update_callback_loaded = False
+        self._on_property_change_callback_loaded = False
         LOGGER.info('Loading model from {}'.format(path))
 
         LOGGER.debug('Loading metadata from {}'.format(Model.ZIP_FILE_INFO))
@@ -283,14 +283,14 @@ class Model:
         """
         return endpoint_name
 
-    def load_properties_update_callback(self):
+    def load_properties_change_callback(self):
         """
-        Load properties update callback from binary
+        Load properties change callback from binary
 
-        :return: deserialized model properties update callback
+        :return: deserialized model properties change callback
         :rtype: :py:class:`typing.Callable[[], None]`
         """
-        LOGGER.debug('Loading properties update callback')
+        LOGGER.debug('Loading properties change callback')
         with extract_archive_item(self._path, self.ZIP_FILE_CALLBACK) as callback_path:
             with open(callback_path, 'rb') as callback_file:
                 return dill.load(callback_file)
@@ -353,7 +353,7 @@ class Model:
         """
         if not self.endpoints:
             raise ValueError('Cannot save empty model container (no one export function has been called)')
-        properties_update_callback_exists = self.get_on_property_update_callback() is not None
+        properties_change_callback_exists = self.get_on_property_change_callback() is not None
 
         meta_information_to_save = self._meta_information.copy()
         meta_information_to_save.update(self._collect_build_info())
@@ -363,7 +363,7 @@ class Model:
         meta_information_to_save[self.PROPERTY_MODEL_VERSION] = self.model_version
         meta_information_to_save[self.PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
         meta_information_to_save[self.PROPERTY_REQUIRED_PROPERTIES] = list(self._required_properties)
-        meta_information_to_save[self.PROPERTY_PROPERTIES_CALLBACK_EXISTS] = properties_update_callback_exists
+        meta_information_to_save[self.PROPERTY_PROPERTIES_CALLBACK_EXISTS] = properties_change_callback_exists
 
         self._path = path
 
@@ -390,10 +390,10 @@ class Model:
                 stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_PROPERTIES), self.ZIP_FILE_PROPERTIES)
 
                 # Add callback file
-                if properties_update_callback_exists:
-                    LOGGER.debug('Saving property update callback to {}'.format(self.ZIP_FILE_CALLBACK))
+                if properties_change_callback_exists:
+                    LOGGER.debug('Saving property change callback to {}'.format(self.ZIP_FILE_CALLBACK))
                     with open(os.path.join(temp_directory.path, self.ZIP_FILE_CALLBACK), 'wb') as callback_file:
-                        dill.dump(self.get_on_property_update_callback(), callback_file, recurse=True)
+                        dill.dump(self.get_on_property_change_callback(), callback_file, recurse=True)
                     stream.write(os.path.join(temp_directory.path, self.ZIP_FILE_CALLBACK), self.ZIP_FILE_CALLBACK)
 
                 # Add endpoints
@@ -509,35 +509,35 @@ class Model:
         self._export(apply_func, prepare_func, None, False, endpoint)
         return self
 
-    def get_on_property_update_callback(self):
+    def get_on_property_change_callback(self):
         """
         Get or lazy load registered callback or empty callback
 
         :return: :py:class:`Callable[[], None]` -- callback function
         """
-        # If property update callback loaded - return
-        if not self._on_property_update_callback_loaded:
+        # If property change callback loaded - return
+        if not self._on_property_change_callback_loaded:
             callback_exists = self._meta_information.get(self.PROPERTY_PROPERTIES_CALLBACK_EXISTS)
 
             if not callback_exists:
-                LOGGER.warning('Property update callback is empty - using lambda')
-                self._on_property_update_callback = lambda: None
+                LOGGER.warning('Property change callback is empty - using lambda')
+                self._on_property_change_callback = lambda: None
             else:
-                self._on_property_update_callback = self.load_properties_update_callback()
-            self._on_property_update_callback_loaded = True
+                self._on_property_change_callback = self.load_properties_change_callback()
+            self._on_property_change_callback_loaded = True
 
-        return self._on_property_update_callback
+        return self._on_property_change_callback
 
-    def on_property_update(self, callable):
+    def on_property_change(self, callable):
         """
-        Set property update callback
+        Set property change callback
 
-        :param callback: callback which will be called on each property update
+        :param callback: callback which will be called on each property change
         :type callback: :py:class:`Callable[[], None]`
         :return: None
         """
-        self._on_property_update_callback = callable
-        self._on_property_update_callback_loaded = True
+        self._on_property_change_callback = callable
+        self._on_property_change_callback_loaded = True
 
     @property
     def model_id(self):

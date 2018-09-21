@@ -178,7 +178,7 @@ class TestDeploy(unittest2.TestCase):
             # Check state has been updated and model returns another data
             legion.utils.ensure_function_succeed(
                 lambda: context.client.invoke('time')['result'] != first_time_call_result,
-                5, 1
+                10, 2
             )
             # Get response after checked update and compare 5 times
             for _ in range(5):

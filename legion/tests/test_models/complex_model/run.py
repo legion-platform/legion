@@ -18,12 +18,12 @@ with open(FILE_PATH, 'w') as fstream:
     fstream.write('10')
 
 
-def on_property_update():
+def on_property_change():
     print('I have got an update!')
     complex_package.store.STORE.time_marker = int(time.time())
 
 
-legion.model.on_property_update(on_property_update)
+legion.model.on_property_change(on_property_change)
 
 
 def calculate(x):
