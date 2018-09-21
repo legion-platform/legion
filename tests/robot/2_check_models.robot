@@ -41,6 +41,7 @@ Checking property update callback
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  2
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  2
+    Ensure model API call result field is correct  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  result  300   a=1  b=2
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
