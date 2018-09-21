@@ -37,7 +37,7 @@ class TestUtilsOther(unittest2.TestCase):
         description = utils.get_function_description(tmp)
         self.assertIn('not callable object', description)
 
-    def test_ensure_retries_positive(self):
+    def test_ensure_retries_none_positive(self):
         counter = 0
 
         def func():
@@ -50,7 +50,7 @@ class TestUtilsOther(unittest2.TestCase):
         self.assertEqual(result, 42)
         self.assertEqual(counter, 2)
 
-    def test_ensure_retries_negative(self):
+    def test_ensure_retries_none_negative(self):
         counter = 0
 
         def func():
@@ -61,6 +61,30 @@ class TestUtilsOther(unittest2.TestCase):
 
         result = utils.ensure_function_succeed(func, 2, 1)
         self.assertEqual(result, None)
+        self.assertEqual(counter, 2)
+
+    def test_ensure_retries_bool_positive(self):
+        counter = 0
+
+        def func():
+            nonlocal counter
+            counter += 1
+            return counter > 1
+
+        result = utils.ensure_function_succeed(func, 3, 1, boolean_check=True)
+        self.assertEqual(result, True)
+        self.assertEqual(counter, 2)
+
+    def test_ensure_retries_bool_negative(self):
+        counter = 0
+
+        def func():
+            nonlocal counter
+            counter += 1
+            return counter > 2
+
+        result = utils.ensure_function_succeed(func, 2, 1, boolean_check=True)
+        self.assertEqual(result, False)
         self.assertEqual(counter, 2)
 
 

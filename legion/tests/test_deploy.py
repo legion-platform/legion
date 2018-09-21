@@ -176,14 +176,24 @@ class TestDeploy(unittest2.TestCase):
             result = requests.get(emit_update_url)
             self.assertEqual(result.status_code, 200)
             # Check state has been updated and model returns another data
-            legion.utils.ensure_function_succeed(
-                lambda: context.client.invoke('time')['result'] != first_time_call_result['result'],
-                10, 2
-            )
+
+            def check():
+                """
+                Check that store has been updated
+
+                :return: bool
+                """
+                actual = context.client.invoke('time')
+                print('Actual data: {!r}. Previous data: {!r}'.format(actual, first_time_call_result))
+                return actual['result'] > first_time_call_result['result']
+
+            check_result = legion.utils.ensure_function_succeed(check, 10, 2, boolean_check=True)
+            self.assertTrue(check_result, 'Cannot check that result has been updated')
             # Get response after checked update and compare 5 times
             for _ in range(5):
                 second_time_call_result = context.client.invoke('time')
-                self.assertGreater(second_time_call_result['result'], first_time_call_result['result'])
+                self.assertGreater(second_time_call_result['result'], first_time_call_result['result'],
+                                   'Model returns old data')
 
     def test_io_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:

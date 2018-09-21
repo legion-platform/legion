@@ -20,6 +20,8 @@ with open(FILE_PATH, 'w') as fstream:
 
 def on_property_change():
     print('I have got an update!')
+    time.sleep(1)
+    print('I am ready for update')
     complex_package.store.STORE.time_marker = int(time.time())
 
 
