@@ -21,7 +21,7 @@ node {
             result = build job: params.DeployLegionJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
-                    string(name: 'LegionVersion', value: "latest"),
+                    string(name: 'LegionVersion', value: "0.8.0-20180921010650.440.a4d63d2"),
                     string(name: 'TestsTags', value: "core,k8s,aws"),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
@@ -33,7 +33,7 @@ node {
             result = build job: params.DeployLegionEnclaveJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
-                    string(name: 'LegionVersion', value: "latest"),
+                    string(name: 'LegionVersion', value: "0.8.0-20180921010650.440.a4d63d2"),
                     string(name: 'EnclaveName', value: 'enclave-ci')
             ]
         }
