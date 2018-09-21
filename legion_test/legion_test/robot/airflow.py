@@ -34,7 +34,7 @@ class Airflow:
     BASE_REST_API_URL_TEMPLATE = '%s/admin/rest_api/'
     BASE_URL_TEMPLATE = '%s/admin/'
 
-    _TIMEOUT_SEC = 10
+    _TIMEOUT_SEC = 20
 
     logger = logging.getLogger(__name__)
 
