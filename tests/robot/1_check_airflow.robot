@@ -11,13 +11,8 @@ Check test dags should not fail
     [Tags]  airflow  airflow-api
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Airflow     ${enclave}
-    \    :FOR    ${dag}   IN   @{TEST_DAGS}
-        \   ${tasks} =              Find Airflow Tasks  ${dag}
-        \    :FOR    ${task}     IN      @{tasks}
-            \   ${date_time} =  Get Current Date  result_format='%Y-%m-%d %H:%M:%S'
-            \   ${status} =     Trigger Airflow task    ${dag}  ${task}  ${date_time}
-            \   should be equal     ${status}   ${None}
-        should not be empty         ${TEST_DAGS}
-        ${failed_dags} =            Get failed Airflow DAGs
-        Should Not Contain          ${failed_dags}    example_python_work
-        Should Not Contain          ${failed_dags}    s3_connection_test
+    \  keywords.Check Test Dags For Valid Status Code   ${TEST_DAGS}
+    should not be empty         ${TEST_DAGS}
+    ${failed_dags} =            Get failed Airflow DAGs
+    Should Not Contain          ${failed_dags}    example_python_work
+    Should Not Contain          ${failed_dags}    s3_connection_test
