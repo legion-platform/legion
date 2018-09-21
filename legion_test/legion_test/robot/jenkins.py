@@ -127,23 +127,20 @@ class Jenkins:
         response = self._client.build_job(job_name, parameters=parameters)
         print('Result of Job run: {!r}'.format(response))
 
-    def is_job_finished(self, job_name, job_should_be_in_queue=True):
+    def is_job_finished(self, job_name):
         """
         Check if Jenkins job is finished
 
         :param job_name: Jenkins job name
         :type job_name: str
-        :param job_should_be_in_queue: fail if job not in queue
-        :type job_should_be_in_queue: bool
         :raises: Exception
         :return: bool -- is finished or not
         """
         job_info = self._client.get_job_info(job_name)
 
-        if job_should_be_in_queue:
-            if not job_info['lastBuild'] and not job_info['inQueue']:
-                print('Job info: {}'.format(repr(job_info)))
-                raise Exception('Cannot find any build and not in queue')
+        if not job_info['lastBuild'] and not job_info['inQueue']:
+            print('Job info: {}'.format(repr(job_info)))
+            raise Exception('Cannot find any build and not in queue')
 
         if job_info['lastCompletedBuild'] and \
                         job_info['lastCompletedBuild']['number'] == job_info['lastBuild']['number'] and \
@@ -193,14 +190,10 @@ class Jenkins:
         :raises: Exception
         :return: None
         """
-        print('Analyzing Jenkins job {!r} status'.format(job_name))
-        if self.is_job_finished(job_name, False):
-            print('Job already has been finished, skipping...')
-        else:
-            print('Running Jenkins job {!r}'.format(job_name))
-            self.run_jenkins_job(job_name, **parameters)
-            print('Waiting for Jenkins job {!r} result'.format(job_name))
-            self.wait_jenkins_job(job_name, 600)
+        print('Running Jenkins job {!r}'.format(job_name))
+        self.run_jenkins_job(job_name, **parameters)
+        print('Waiting for Jenkins job {!r} result'.format(job_name))
+        self.wait_jenkins_job(job_name, 600)
 
     def last_jenkins_job_is_successful(self, job_name):
         """

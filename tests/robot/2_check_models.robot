@@ -8,23 +8,26 @@ Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
 Library             legion_test.robot.Jenkins
 Library             legion_test.robot.Model
-Test Setup          Choose cluster context            ${CLUSTER_NAME}
+Suite Setup         Run Keywords
+...                 Choose cluster context                    ${CLUSTER_NAME}                         AND
+...                 Run predefined Jenkins jobs for enclave   ${MODEL_TEST_ENCLAVE}
 
 *** Test Cases ***
 Running, waiting and checks jobs in Jenkins
     [Documentation]  Build and check every example in Jenkins
     [Tags]  jenkins  models  enclave
     Connect to Jenkins endpoint
-    Run, wait and check jenkins jobs for enclave     ${MODEL_TEST_ENCLAVE}
+    :FOR  ${model_name}  IN  @{JENKINS_JOBS}
+    \    Test model pipeline result   ${model_name}   ${MODEL_TEST_ENCLAVE}
 
 Checking property update callback
     [Documentation]  Build and check model that uses property system
     [Tags]  jenkins  models  enclave  props
     Connect to Jenkins endpoint
-    ${model_id}    ${model_version} =   Test model pipeline  ${MODEL_WITH_PROPS}  ${MODEL_TEST_ENCLAVE}
+    ${model_id}    ${model_version} =   Test model pipeline result   ${MODEL_WITH_PROPS}   ${MODEL_TEST_ENCLAVE}
     Log                                 Model with id = ${model_id} and version = ${model_version} has been deployed
     ${edge}=        Build enclave EDGE URL  ${MODEL_TEST_ENCLAVE}
-                    Get token from EDI    ${MODEL_TEST_ENCLAVE}
+                    Get token from EDI      ${MODEL_TEST_ENCLAVE}
 
     Log             Resetting property to wrong value
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  0
@@ -39,11 +42,11 @@ Checking property update callback
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  2
 
-Check Vertical Scailing
-    [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
-    [Tags]  jenkins model
-    :FOR  ${enclave}    IN    @{ENCLAVES}
-    \  Connect to Jenkins endpoint
-        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
-        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
-        Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+#Check Vertical Scailing
+#    [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
+#    [Tags]  jenkins model
+#    :FOR  ${enclave}    IN    @{ENCLAVES}
+#    \  Connect to Jenkins endpoint
+#        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
+#        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
+#        Last Jenkins job is successful                          PERF TEST Vertical-Scaling

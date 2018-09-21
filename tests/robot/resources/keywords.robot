@@ -195,10 +195,8 @@ Verify model info from edi
     Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
 #    Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
 
-Test model pipeline
-    [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
-    Run and wait Jenkins job                                DYNAMIC MODEL ${model_name}   Enclave=${enclave}
-    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
+Test model pipeline result
+    [Arguments]          ${model_name}                      ${enclave}
     Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
     ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
     Log                  Model meta is ${model_meta}
@@ -226,10 +224,16 @@ Check if all enclave domains are registered
     :FOR    ${enclave_subdomain}    IN    @{ENCLAVE_SUBDOMAINS}
     \   Check domain exists  ${enclave_subdomain}-${enclave}.${HOST_BASE_DOMAIN}
 
-Run, wait and check jenkins jobs for enclave
+Run model jenkins Job
+    [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
+    Run and wait Jenkins job                                DYNAMIC MODEL ${model_name}   Enclave=${enclave}
+    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
+
+Run predefined Jenkins jobs for enclave
     [Arguments]             ${enclave}
+    Connect to Jenkins endpoint
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
-    \    Test model pipeline    ${model_name}    ${enclave}
+    \    Run model jenkins Job  ${model_name}  ${enclave}
 
     # --------- TEMPLATE KEYWORDS SECTION -----------
 
