@@ -42,11 +42,11 @@ Checking property update callback
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  2
 
-#Check Vertical Scailing
-#    [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
-#    [Tags]  jenkins model
-#    :FOR  ${enclave}    IN    @{ENCLAVES}
-#    \  Connect to Jenkins endpoint
-#        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
-#        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
-#        Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+Check Vertical Scailing
+    [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
+    [Tags]  jenkins model
+    :FOR  ${enclave}    IN    @{ENCLAVES}
+    \  Connect to Jenkins endpoint
+        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
+        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
+        Last Jenkins job is successful                          PERF TEST Vertical-Scaling
