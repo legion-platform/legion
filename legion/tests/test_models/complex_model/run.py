@@ -22,7 +22,7 @@ def on_property_change():
     print('I have got an update!')
     time.sleep(1)
     print('I am ready for update')
-    complex_package.store.STORE.time_marker = int(time.time())
+    complex_package.store.time_marker = int(time.time())
 
 
 legion.model.on_property_change(on_property_change)
@@ -38,7 +38,7 @@ def calculate(x):
 
 
 def time_callback(x):
-    return complex_package.store.STORE.time_marker
+    return complex_package.store.time_marker
 
 
 legion.model.export_untyped(lambda x: {'result': int(calculate(x))})
