@@ -47,4 +47,3 @@ Check Vertical Scailing
         Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
         Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
         Last Jenkins job is successful                          PERF TEST Vertical-Scaling
-    Ensure model API call result field is correct  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  result  300  a=1  b=2
