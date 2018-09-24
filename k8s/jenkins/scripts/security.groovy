@@ -165,4 +165,5 @@ if (enableOpenId.toLowerCase() == "true") {
 }
 
 
-System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "")
+System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "");
+System.setProperty("org.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL", "3600");
