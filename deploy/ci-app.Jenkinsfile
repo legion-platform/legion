@@ -11,7 +11,8 @@ node {
                     string(name: 'JenkinsPluginsRepository', value: params.JenkinsPluginsRepository),
                     string(name: 'JenkinsPluginsRepositoryStore', value: params.JenkinsPluginsRepositoryStore),
                     string(name: 'LocalDocumentationStorage', value: params.LocalDocumentationStorage),
-                    booleanParam(name: 'EnableSlackNotifications', value: params.EnableSlackNotifications)
+                    booleanParam(name: 'EnableSlackNotifications', value: params.EnableSlackNotifications),
+                    booleanParam(name: 'EnableDockerCache', value: true)
             ]
 
             buildNumber = result.getNumber()
