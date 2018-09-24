@@ -22,7 +22,6 @@ from legion_test.robot.dex_client import get_session_cookies
 import requests
 
 
-
 class Grafana:
     """
     Grafana client for robot tests

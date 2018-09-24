@@ -33,7 +33,7 @@ def wait_until(condition, iteration_duration=5, iterations=10):
     :type iterations: int
     :return: True or False -- is condition result has been changed to True
     """
-    for iteation in range(iterations):
+    for _ in range(iterations):
         if condition():
             return True
 

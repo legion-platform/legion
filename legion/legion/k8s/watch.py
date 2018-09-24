@@ -19,6 +19,7 @@ legion k8s watch context manager
 import logging
 
 import kubernetes
+import kubernetes.client.rest
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
@@ -37,6 +38,7 @@ class ResourceWatch:
     def __init__(self, api_function, *args,
                  filter_callable=None,
                  object_constructor=None,
+                 resource_version=None,
                  **kwargs):
         """
         Initialize context manager for resource watch
@@ -45,38 +47,15 @@ class ResourceWatch:
         :param args: additional positional arguments for API function
         :param filter_callable: (Optional) callable to filter objects
         :param object_constructor:  (Optional) callable to construct object wrappers
+        :param resource_version: (Optional) start resource version
         :param kwargs: additional key value arguments for API function
         """
         self._api_function = api_function
         self._filter_callable = filter_callable
         self._object_constructor = object_constructor
+        self._resource_version = resource_version
         self._args = args
         self._kwargs = kwargs
-
-        self._watch = kubernetes.watch.Watch()
-        self._stream = None
-
-    def __enter__(self):
-        """
-        Enter watch
-
-        :return:
-        """
-        self._stream = self._watch.stream(self._api_function,
-                                          *self._args,
-                                          **self._kwargs)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Exit watch
-
-        :param exc_type: exception type
-        :param exc_val: exception
-        :param exc_tb: exception traceback
-        :return: None
-        """
-        self.stop()
 
     @property
     def stream(self):
@@ -88,14 +67,27 @@ class ResourceWatch:
         """
         LOGGER.debug('Starting watch stream')
 
-        reconnect = True
-        while reconnect:
-            reconnect = False
-
+        while True:
+            LOGGER.debug('Entering event loop iteration in watch')
             try:
-                for event in self._stream:
+                watch = kubernetes.watch.Watch()
+                kwargs = self._kwargs
+                if self._resource_version:
+                    LOGGER.debug('Using latest resource version: {}'.format(self._resource_version))
+                    kwargs['resource_version'] = self._resource_version
+
+                LOGGER.debug('Creating watcher for function {}. Args: {!r}, Kwargs: {!r}'
+                             .format(self._api_function.__name__, self._args, kwargs))
+
+                stream = watch.stream(self._api_function,
+                                      *self._args,
+                                      **kwargs)
+                for event in stream:
                     event_type = event['type']
                     event_object = event['object']
+
+                    if hasattr(event['object'], 'metadata') and hasattr(event['object'].metadata, 'resource_version'):
+                        self._resource_version = event['object'].metadata.resource_version
 
                     # Check if valid object
                     pass_event = not self._filter_callable or self._filter_callable(event_object)
@@ -106,28 +98,19 @@ class ResourceWatch:
                             event_object = self._object_constructor(event_object)
 
                         yield (event_type, event_object)
-            except urllib3.exceptions.ProtocolError:
-                LOGGER.info('Connection to K8S API has been lost, reconnecting..')
-                reconnect = True
+            except urllib3.exceptions.ProtocolError as protocol_error:
+                LOGGER.warning('Connection to K8S API has been lost: {}. Reconnecting...'.format(protocol_error))
+                continue
+            except kubernetes.client.rest.ApiException as kube_api_exception:
+                LOGGER.warning('Got Kubernetes API exception: {}'.format(kube_api_exception))
+                if kube_api_exception.status == 500:
+                    LOGGER.warning('Got Kubernetes error 500. Reconnecting...')
+                    continue
+                else:
+                    LOGGER.warning('Got wrong error code. Breaking...')
+                    break
+            except Exception as general_exception:
+                LOGGER.exception('Got general exception: {}. Breaking...'.format(general_exception))
+                break
 
         LOGGER.debug('Watch stream has been ended')
-
-    @property
-    def watch(self):
-        """
-        Access watch object
-
-        :return: :py:class:`kubernetes.watch.Watch` -- watch object
-        """
-        return self._watch
-
-    def stop(self):
-        """
-        Stop watch
-
-        :return: None
-        """
-        try:
-            self.watch.stop()
-        finally:
-            LOGGER.debug('Watch has been stopped')

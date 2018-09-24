@@ -530,7 +530,7 @@ def model_properties_storage_name(model_id, model_version):
     :type model_version: str
     :return: str -- name of properties storage
     """
-    return 'model-{}-{}'.format(model_id, model_version)
+    return normalize_name('model-{}-{}'.format(model_id, model_version), dns_1035=True)
 
 
 def string_to_bool(value):
@@ -611,7 +611,7 @@ def get_function_description(callable_object):
     return '<{} {} in {}>'.format(object_class_name, object_name, module_name)
 
 
-def ensure_function_succeed(function_to_call, retries, timeout):
+def ensure_function_succeed(function_to_call, retries, timeout, boolean_check=False):
     """
     Try to call function till it will return not None object.
     Raise if there are no retries left
@@ -622,14 +622,21 @@ def ensure_function_succeed(function_to_call, retries, timeout):
     :type retries: int
     :param timeout: timeout between retries
     :type timeout: int
+    :param boolean_check: (Optional) check function for True-able value (by default value is checked for not None value)
+    :type boolean_check: bool
     :return: Any -- result of successful function call or None if no retries left
     """
     function_description = get_function_description(function_to_call)
     for no in range(retries):
         LOGGER.debug('Calling {}'.format(function_description))
         result = function_to_call()
-        if result is not None:
-            return result
+
+        if boolean_check:
+            if result:
+                return result
+        else:
+            if result is not None:
+                return result
 
         if no < retries:
             LOGGER.debug('Retry {}/{} was failed'.format(no + 1, retries))
@@ -638,4 +645,4 @@ def ensure_function_succeed(function_to_call, retries, timeout):
             time.sleep(timeout)
 
     LOGGER.error('No retries left for function {}'.format(function_description))
-    return None
+    return False if boolean_check else None

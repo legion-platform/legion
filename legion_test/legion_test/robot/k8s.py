@@ -22,6 +22,10 @@ import kubernetes.config
 import kubernetes.config.config_exception
 import urllib3
 
+import legion.k8s.utils
+import legion.k8s.properties
+import legion.utils
+
 
 class K8s:
     """
@@ -62,6 +66,7 @@ class K8s:
         :return: None
         """
         self._context = context
+        legion.k8s.utils.CONNECTION_CONTEXT = context
 
     def service_is_running(self, service_name, namespace=None):
         """
@@ -208,3 +213,21 @@ class K8s:
         scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
         scale_data.spec.replicas = replicas
         extension_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
+
+    def update_model_property_key(self, namespace, model_id, model_version, key, value):
+        """
+        Update models config map property by key value
+
+        :param namespace: name of namespace
+        :param model_id: model ID
+        :param model_version: model version
+        :param key: key of config map
+        :param value: new value for key
+        :return: None
+        """
+        storage_name = legion.utils.model_properties_storage_name(model_id, model_version)
+        property = legion.k8s.properties.K8SConfigMapStorage(storage_name, namespace)
+
+        property.load()
+        property[key] = value
+        property.save()

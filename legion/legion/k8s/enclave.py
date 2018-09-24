@@ -244,19 +244,24 @@ class Enclave:
         storage_name = legion.utils.model_properties_storage_name(model_id, model_version)
         storage = legion.k8s.K8SConfigMapStorage(storage_name, self.namespace)
 
+        LOGGER.info('Found properties storages: {!r}. Checking storage name {!r}'.format(registered_storages,
+                                                                                         storage_name))
+
         if storage_name in registered_storages:
             LOGGER.info('Analyzing properties storage {!r} for model {!r}'.format(storage, model_id))
             storage.load()
 
-            missed_properties = set(properties) - set(storage.keys())
+            storage_keys = set(storage.keys())
+            LOGGER.info('Storage already has keys: {!r}'.format(storage_keys))
 
-            for missed_property in missed_properties:
-                if missed_property not in default_values:
-                    raise Exception('Cannot find default value for property {}'.format(missed_property))
+            missed_properties = set(properties) - storage_keys
+            if missed_properties:
+                LOGGER.info('Storage has missed properties: {!r}'.format(missed_properties))
 
-                storage[missed_property] = default_values[missed_property]
-                LOGGER.info('Property {!r} has been set to default value {!r}'.format(missed_property,
-                                                                                      default_values[missed_property]))
+                for missed_property in missed_properties:
+                    storage[missed_property] = default_values[missed_property]
+                    LOGGER.info('Property {!r} has been set to default value {!r}'
+                                .format(missed_property, default_values[missed_property]))
         else:
             LOGGER.info('Creating properties storage {!r} for model {!r} with default values'.format(storage, model_id))
             for k, v in default_values.items():
@@ -310,7 +315,7 @@ class Enclave:
 
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
-            port=5000
+            port=legion.config.LEGION_PORT[1]
             )
 
         livenessprobe = kubernetes.client.V1Probe(
@@ -339,7 +344,10 @@ class Enclave:
             ],
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,
-            ports=[kubernetes.client.V1ContainerPort(container_port=5000, name='api', protocol='TCP')])
+            ports=[
+                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1],
+                                                  name='api', protocol='TCP')
+            ])
 
         pod_template = kubernetes.client.V1PodTemplateSpec(
             metadata=kubernetes.client.V1ObjectMeta(annotations=image_meta_information.kubernetes_annotations,
@@ -461,12 +469,12 @@ class Enclave:
 
         core_api = kubernetes.client.CoreV1Api(client)
 
-        with legion.k8s.watch.ResourceWatch(core_api.list_namespaced_service,
-                                            namespace=self.namespace,
-                                            filter_callable=legion.k8s.services.Service.is_legion_service,
-                                            object_constructor=legion.k8s.services.Service) as watch:
-            for (event_type, event_object) in watch.stream:
-                yield (event_type, event_object)
+        watch = legion.k8s.watch.ResourceWatch(core_api.list_namespaced_service,
+                                               namespace=self.namespace,
+                                               filter_callable=legion.k8s.services.Service.is_legion_service,
+                                               object_constructor=legion.k8s.services.Service)
+        for (event_type, event_object) in watch.stream:
+            yield (event_type, event_object)
 
     @staticmethod
     def watch_enclaves():
@@ -480,11 +488,12 @@ class Enclave:
 
         core_api = kubernetes.client.CoreV1Api(client)
 
-        with legion.k8s.watch.ResourceWatch(core_api.list_namespace,
-                                            filter_callable=Enclave.is_enclave,
-                                            object_constructor=Enclave.build_from_namespace_object) as watch:
-            for (event_type, event_object) in watch.stream:
-                yield (event_type, event_object)
+        watch = legion.k8s.watch.ResourceWatch(core_api.list_namespace,
+                                               filter_callable=Enclave.is_enclave,
+                                               object_constructor=Enclave.build_from_namespace_object)
+
+        for (event_type, event_object) in watch.stream:
+            yield (event_type, event_object)
 
     def delete(self, grace_period_seconds=0):
         """

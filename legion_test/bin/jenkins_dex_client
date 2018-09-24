@@ -22,6 +22,7 @@ from legion_test.robot import dex_client
 from legion_test import profiler_loader
 import os
 
+
 def work():
     profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
     if dex_client.get_jenkins_credentials():

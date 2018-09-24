@@ -127,6 +127,28 @@ class Jenkins:
         response = self._client.build_job(job_name, parameters=parameters)
         print('Result of Job run: {!r}'.format(response))
 
+    def is_job_finished(self, job_name):
+        """
+        Check if Jenkins job is finished
+
+        :param job_name: Jenkins job name
+        :type job_name: str
+        :raises: Exception
+        :return: bool -- is finished or not
+        """
+        job_info = self._client.get_job_info(job_name)
+
+        if not job_info['lastBuild'] and not job_info['inQueue']:
+            print('Job info: {}'.format(repr(job_info)))
+            raise Exception('Cannot find any build and not in queue')
+
+        if job_info['lastCompletedBuild'] and \
+                        job_info['lastCompletedBuild']['number'] == job_info['lastBuild']['number'] and \
+                not job_info['inQueue']:
+            return True
+
+        return False
+
     def wait_jenkins_job(self, job_name, timeout=0, sleep=5):
         """
         Wait finish of last job build
@@ -149,21 +171,29 @@ class Jenkins:
         start = time.time()
         time.sleep(sleep)
         while True:
-            job_info = self._client.get_job_info(job_name)
-            if not job_info['lastBuild'] and not job_info['inQueue']:
-                print('Job info: {}'.format(repr(job_info)))
-                raise Exception('Cannot find any build and not in queue')
-
-            if job_info['lastCompletedBuild'] and \
-                    job_info['lastCompletedBuild']['number'] == job_info['lastBuild']['number'] and \
-                    not job_info['inQueue']:
-                return True
+            if self.is_job_finished(job_name):
+                return
 
             elapsed = time.time() - start
             if elapsed > timeout > 0:
                 raise Exception('Timeout')
 
             time.sleep(sleep)
+
+    def run_and_wait_jenkins_job(self, job_name, **parameters):
+        """
+        Run Jenkins job and wait for result
+
+        :param job_name: Jenkins job name
+        :type job_name: str
+        :param parameters: Jenkins job run parameters. Defaults uses is nothing specified
+        :raises: Exception
+        :return: None
+        """
+        print('Running Jenkins job {!r}'.format(job_name))
+        self.run_jenkins_job(job_name, **parameters)
+        print('Waiting for Jenkins job {!r} result'.format(job_name))
+        self.wait_jenkins_job(job_name, 600)
 
     def last_jenkins_job_is_successful(self, job_name):
         """

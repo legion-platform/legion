@@ -16,8 +16,11 @@
 import os
 import sys
 import logging
+import requests
 
 import unittest2
+
+import legion.utils
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
@@ -142,6 +145,11 @@ class TestDeploy(unittest2.TestCase):
                         'input_params': False,
                         'name': 'default',
                         'use_df': False,
+                    },
+                    'time': {
+                        'input_params': False,
+                        'name': 'time',
+                        'use_df': False,
                     }
                 },
                 'model_id': model_id,
@@ -161,6 +169,31 @@ class TestDeploy(unittest2.TestCase):
                 ],
                 'invalid batch invocation result'
             )
+            # Get first call result
+            first_time_call_result = context.client.invoke('time')
+            # Emit properties update callback to update properties manually (emulate ConfigMap update)
+            emit_update_url = '{}/emit-properties-update'.format(context.client.api_url)
+            result = requests.get(emit_update_url)
+            self.assertEqual(result.status_code, 200)
+            # Check state has been updated and model returns another data
+
+            def check():
+                """
+                Check that store has been updated
+
+                :return: bool
+                """
+                actual = context.client.invoke('time')
+                print('Actual data: {!r}. Previous data: {!r}'.format(actual, first_time_call_result))
+                return actual['result'] > first_time_call_result['result']
+
+            check_result = legion.utils.ensure_function_succeed(check, 10, 2, boolean_check=True)
+            self.assertTrue(check_result, 'Cannot check that result has been updated')
+            # Get response after checked update and compare 5 times
+            for _ in range(5):
+                second_time_call_result = context.client.invoke('time')
+                self.assertGreater(second_time_call_result['result'], first_time_call_result['result'],
+                                   'Model returns old data')
 
     def test_io_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
