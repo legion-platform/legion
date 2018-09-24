@@ -33,12 +33,13 @@ def build_configuration_and_files(configuration):
     :return: tuple(dict[str, str], list[str]) -- tuple of new configuration and list of temporary files
     """
     new_files = []
+    new_configuration = configuration.copy()
     for stream in ('stdout', 'stderr'):
         if stream not in configuration:
             _1, new_file = tempfile.mkstemp(prefix='robot.run_process.')
-            configuration[stream] = new_file
+            new_configuration[stream] = new_file
             new_files.append(new_file)
-    return configuration, new_files
+    return new_configuration, new_files
 
 
 class Process:
