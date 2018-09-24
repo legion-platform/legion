@@ -19,6 +19,7 @@
     resource: "{{ ec2_jenkins_vol.volume_id }}"
     state: present
     tags:
+      "user:tag": "{{ vendor }}"
       KubernetesCluster: "{{ cluster_name }}"
   tags: jenkins_volume
   when: persistent_jenkins_volume
