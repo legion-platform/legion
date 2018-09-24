@@ -67,10 +67,10 @@ class Process:
             result = process_lib.run_process(command, *arguments, **new_configuration)
             _1, _2 = result.stdout, result.stderr  # force loading data from file streams
         finally:
-            for file in temporary_files:
+            for temp_file in temporary_files:
                 try:
-                    os.remove(file)
+                    os.remove(temp_file)
                 except Exception as file_removal_exception:
-                    print('Cannot remove temporary file {!r}: {}'.format(file, file_removal_exception))
+                    print('Cannot remove temporary file {!r}: {}'.format(temp_file, file_removal_exception))
 
         return result
