@@ -76,6 +76,7 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 3
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /admin/airflow/dag_stats
@@ -83,6 +84,7 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 3
+          failureThreshold: 3
       volumes:
       - name: airflow-config-dir
         configMap:
