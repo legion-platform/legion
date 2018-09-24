@@ -22,8 +22,7 @@ import sys
 import logging
 import contextlib
 
-import robot.libraries.Process
-import robot.running
+import legion_test.robot.framework_extensions
 
 
 ROBOT_LISTENER_API_VERSION = 3
@@ -54,22 +53,6 @@ def with_execution_time_limit(limit):
         yield
     finally:
         signal.alarm(0)
-
-
-def get_imported_library_instance(name):
-    """
-    Get library instance from storage
-
-    :param name: name of library
-    :type name: str
-    :return: library instance or None (e.g. robot.libraries.Process.Process instance)
-    """
-    context = robot.running.context.EXECUTION_CONTEXTS.current
-    namespace = context.namespace
-    imported = namespace._kw_store.libraries
-    if name not in imported:
-        return None
-    return imported[name]._libinst
 
 
 def report_process_output(process_name, stream_name, stream):
@@ -124,7 +107,7 @@ def end_test(test, result):
     :return: None
     """
     if not result.passed:
-        process_lib = get_imported_library_instance('Process')
+        process_lib = legion_test.robot.framework_extensions.get_imported_library_instance('Process')
         if process_lib:
             all_processes = process_lib._processes._connections
             all_results = process_lib._results
