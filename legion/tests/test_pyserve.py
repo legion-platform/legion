@@ -190,6 +190,17 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertIsInstance(response, list, 'Result is not a list')
             self.assertListEqual(response, expected_answer, 'Invalid answer')
 
+    def test_model_invoke_summation_with_empty_list_in_batch_mode(self):
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            parameters = [{} for _ in range(10)]
+            expected_answer = []
+
+            response = model.model_client.batch(parameters)
+
+            self.assertIsInstance(response, list, 'Result is not a list')
+            self.assertListEqual(response, expected_answer, 'Invalid answer')
+
     def test_model_invoke_summation_with_df_and_files(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:

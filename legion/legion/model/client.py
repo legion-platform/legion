@@ -218,8 +218,6 @@ class ModelClient:
         :type endpoint: str
         :return: list -- parsed model response
         """
-        if not invoke_parameters:
-            return []
         request_lines = []
         for parameters in invoke_parameters:
             data, files = self._prepare_invoke_request(**parameters)
@@ -227,6 +225,9 @@ class ModelClient:
                 raise Exception('Files object not allowed for batch invocation')
 
             request_lines.append(legion.http.encode_http_params(data))
+
+        if not all(request_lines):
+            return []
 
         content = '\n'.join(request_lines)
         url = self.build_batch_url(endpoint)
