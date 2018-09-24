@@ -218,6 +218,8 @@ class ModelClient:
         :type endpoint: str
         :return: list -- parsed model response
         """
+        if not invoke_parameters:
+            return []
         request_lines = []
         for parameters in invoke_parameters:
             data, files = self._prepare_invoke_request(**parameters)
