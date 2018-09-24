@@ -1,6 +1,6 @@
 def legionVersion = null
 
-node {
+node ('build-agent') {
     try {
         stage('Build') {
             result = build job: params.BuildLegionJobName, propagate: true, wait: true, parameters: [
