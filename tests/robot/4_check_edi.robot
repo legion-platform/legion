@@ -6,7 +6,6 @@ Resource            resources/variables.robot
 Variables           load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             Collections
-Library             Process
 Suite Setup         Choose cluster context                              ${CLUSTER_NAME}
 Test Setup          Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
 Test Teardown       Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
