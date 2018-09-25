@@ -5,6 +5,7 @@ Library             String
 Library             OperatingSystem
 Library             Process
 Library             Collections
+Library             DateTime
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Jenkins
 Library             legion_test.robot.Utils
@@ -281,14 +282,17 @@ Secured component domain should be accessible by valid credentials
     Should contain   ${auth_page}    ${component}
     Should not contain   ${auth_page}    Invalid Email Address and password
 
-Check test dags for valid status code
-    [Arguments]   ${TEST_DASG}
+Invoke and check test dags for valid status code
+    [Arguments]   ${enclave}
     [Documentation]  Check test dags for valid status code
+    Connect to enclave Airflow                           ${enclave}
     :FOR    ${dag}      IN      @{TEST_DAGS}
-    \   ${tasks} =          Find Airflow Tasks  ${dag}
-    \   Check airflow tasks for valid status code  ${tasks}   ${dag}
+    \   ${tasks} =            Find Airflow Tasks  ${dag}
+    \   Run airflow task and validate stderr      ${tasks}   ${dag}
+    \   ${failed_dags} =      Get failed Airflow DAGs
+    \   Should Not Contain    ${failed_dags}      ${dag}
 
-Check airflow tasks for valid status code
+Run airflow task and validate stderr
     [Arguments]   ${tasks}   ${dag}
     [Documentation]  Check airflow tasks for valid status code
     :FOR    ${task}     IN      @{tasks}

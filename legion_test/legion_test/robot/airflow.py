@@ -23,6 +23,7 @@ import logging
 import time
 from legion_test.robot.dex_client import get_session_cookies
 
+
 class Airflow:
     """
     Airflow client for robot tests
@@ -60,6 +61,7 @@ class Airflow:
         if not root_url:
             raise Exception('"domain" parameter is required')
 
+        print('Connecting to Airflow {!r}'.format(root_url))
         self.root_url = root_url
         e = None
         for i in range(num_attempts):
@@ -87,10 +89,12 @@ class Airflow:
             url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
         else:
             url = (self.BASE_URL_TEMPLATE % self.root_url) + path
-        print('Requesting Airflow URL: {!r}'.format(url))
+        print('Requesting Airflow URL: {!r}. Params: {!r}. KWARGS: {!r}'.format(url, params, kwargs))
         response = requests.get(url, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
         if response.status_code == 200:
-            return response.json()
+            json = response.json()
+            print('Airflow response: {!r}'.format(json))
+            return json
         else:
             raise RequestException('HTTP Code %d for "GET %s "' % (response.status_code, url))
 
@@ -136,7 +140,9 @@ class Airflow:
             :param subdir: (Optional) File location or directory from which to look for the dag"""
 
         return self._find_lines_in_stdout(self._get('api?api=list_tasks',
-                                                    params={'dag_id': dag_id, 'tree': tree, 'subdir': subdir}))
+                                                    params={'dag_id': dag_id,
+                                                            'tree': tree,
+                                                            'subdir': subdir}))
 
     def trigger_airflow_task(self, dag_id, task_id, execution_date, subdir=None, dry_run=None, task_params=None):
         """ Test a task instance. This will run a task without checking for dependencies or recording
