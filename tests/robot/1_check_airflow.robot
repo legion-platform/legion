@@ -12,7 +12,6 @@ Check test dags should not fail
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Airflow                ${enclave}
     \  Check Test Dags For Valid Status Code     ${TEST_DAGS}
-    \  Should Not Be Empty                       ${TEST_DAGS}
     \  ${failed_dags} =                          Get failed Airflow DAGs
     \  :FOR    ${required_dag_name}    IN    @{TEST_DAGS}
     \  \  Should Not Contain                     ${failed_dags}    ${required_dag_name}

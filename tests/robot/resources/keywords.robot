@@ -284,14 +284,14 @@ Secured component domain should be accessible by valid credentials
 Check test dags for valid status code
     [Arguments]   ${TEST_DASG}
     [Documentation]  Check test dags for valid status code
-    :FOR    ${dag}   IN   @{TEST_DAGS}
-    \   ${tasks} =              Find Airflow Tasks  ${dag}
+    :FOR    ${dag}      IN      @{TEST_DAGS}
+    \   ${tasks} =          Find Airflow Tasks  ${dag}
     \   Check airflow tasks for valid status code  ${tasks}   ${dag}
 
 Check airflow tasks for valid status code
     [Arguments]   ${tasks}   ${dag}
     [Documentation]  Check airflow tasks for valid status code
     :FOR    ${task}     IN      @{tasks}
-    \   ${date_time} =  Get Current Date  result_format='%Y-%m-%d %H:%M:%S'
-    \   ${status} =     Trigger Airflow task    ${dag}  ${task}  ${date_time}
-    \   should be equal     ${status}   ${None}
+    \   ${date_time} =      Get Current Date  result_format='%Y-%m-%d %H:%M:%S'
+    \   ${status} =         Trigger Airflow task    ${dag}  ${task}  ${date_time}
+    \   Should Be Equal     ${status}   ${None}
