@@ -20,55 +20,56 @@ import tempfile
 import os
 
 import robot.libraries.Process
+import robot.running
 
-import legion_test.robot.framework_extensions
 
-
-def build_configuration_and_files(configuration):
+def build_configuration_and_files(configuration, temp_directory=None):
     """
     Parse Run Process arguments and create files for streams without arguments
 
     :param configuration: robot call argument
     :type configuration: dict[str, str]
+    :param temp_directory: (Optional) directory to store temp files, by default - system temp
+    :type temp_directory: str
     :return: tuple(dict[str, str], list[str]) -- tuple of new configuration and list of temporary files
     """
     new_files = []
     new_configuration = configuration.copy()
     for stream in ('stdout', 'stderr'):
         if stream not in configuration:
-            _1, new_file = tempfile.mkstemp(prefix='robot.run_process.')
+            _1, new_file = tempfile.mkstemp(prefix='robot.run_process.', dir=temp_directory)
+            print('Temporary file {!r} has been created for stream {!r}. Directory = {!r}'
+                  .format(new_file, stream, temp_directory))
             new_configuration[stream] = new_file
             new_files.append(new_file)
     return new_configuration, new_files
 
 
-class Process:
+class Process(robot.libraries.Process.Process):
     """
     Native process library wrapper for gathering streams without PIPEs
     """
 
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    @staticmethod
-    def run_process_without_pipe(command, *arguments, **configuration):
+    def run_process_without_pipe(self, command, *arguments, **configuration):
         """
         Wrapper around `Run Process` function from standard `Process` library.
         Uses temporary files instead of PIPEs for stdout and stderr streams.
         Removes files at the end of operation.
         Runs a process and waits for it to complete.
         """
-        process_lib = legion_test.robot.framework_extensions.get_imported_library_instance('Process')
-        if not process_lib:
-            raise Exception('Robot native library Process has not been imported')
-
+        variables = robot.running.context.EXECUTION_CONTEXTS.current.variables.current.as_dict(decoration=False)
+        new_configuration, temporary_files = build_configuration_and_files(configuration,
+                                                                           variables.get('TEMP_DIRECTORY'))
         result = None
-        new_configuration, temporary_files = build_configuration_and_files(configuration)
         try:
-            result = process_lib.run_process(command, *arguments, **new_configuration)
+            result = self.run_process(command, *arguments, **new_configuration)
             _1, _2 = result.stdout, result.stderr  # force loading data from file streams
         finally:
             for temp_file in temporary_files:
                 try:
+                    print('Removing temporary file {!r}'.format(temp_file))
                     os.remove(temp_file)
                 except Exception as file_removal_exception:
                     print('Cannot remove temporary file {!r}: {}'.format(temp_file, file_removal_exception))

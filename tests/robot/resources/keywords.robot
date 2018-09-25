@@ -3,7 +3,6 @@ Documentation       Legion robot resources
 Resource            variables.robot
 Library             String
 Library             OperatingSystem
-Library             Process
 Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Jenkins

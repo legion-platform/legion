@@ -79,7 +79,8 @@ def get_variables(arg=None):
         'ENCLAVES': data.get('enclaves', []),
 
         'CLUSTER_NAME': data['cluster_name'],
-        'NEXUS_DOCKER_REPO': data['docker_repo']
+        'NEXUS_DOCKER_REPO': data['docker_repo'],
+        'TEMP_DIRECTORY': data['tmp_dir']
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
