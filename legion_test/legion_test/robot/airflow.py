@@ -87,7 +87,8 @@ class Airflow:
             url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
         else:
             url = (self.BASE_URL_TEMPLATE % self.root_url) + path
-        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
+        print('Requesting Airflow URL: {!r}'.format(url))
+        response = requests.get(url, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
         if response.status_code == 200:
             return response.json()
         else:
@@ -170,7 +171,6 @@ class Airflow:
         return self._get('api?api=trigger_dag', params={'dag_id': dag_id, 'subdir': subdir, 'run_id': run_id,
                                                         'conf': conf, 'exec_date': exec_date})
 
-
     def get_failed_airflow_dags(self):
         """
         Get Failed airflow dags
@@ -181,7 +181,10 @@ class Airflow:
         failed_dags = []
         for dag_id, dag_runs in data.items():
             for dag_run in dag_runs:
-                if dag_run.get('color', '') == 'red' and dag_run.get('count', 0) > 0:
+                color = dag_run.get('color', '')
+                run_count = dag_run.get('count', 0)
+                print('Detected DAG {!r}. Color: {!r}, Run count: {!r}'.format(dag_id, color, run_count))
+                if color == 'red' and run_count > 0:
                     failed_dags.append(dag_id)
                     break
         return failed_dags
@@ -205,8 +208,8 @@ class Airflow:
     @staticmethod
     def _find_lines(response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
+        lines = []
         if type(obj) == str:
-            lines = []
             for match in first_pattern.finditer(obj):
                 if second_pattern is None:
                     lines.append(match.group(1))
