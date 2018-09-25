@@ -108,7 +108,7 @@ def parse_batch_request(input_request):
     :return: list[dict] -- list of dicts with requested fields
     """
     if not input_request.data:
-        raise Exception('Request does not contain any data')
+        return []
 
     return [parse_url_querystring(parse_qs(line))
             for line in input_request.data.decode('utf-8').split('\n')]

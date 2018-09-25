@@ -226,7 +226,7 @@ class ModelClient:
 
             request_lines.append(legion.http.encode_http_params(data))
 
-        if not all(request_lines):
+        if not request_lines:
             return []
 
         content = '\n'.join(request_lines)
