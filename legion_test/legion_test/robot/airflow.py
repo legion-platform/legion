@@ -23,6 +23,7 @@ import logging
 import time
 from legion_test.robot.dex_client import get_session_cookies
 
+
 class Airflow:
     """
     Airflow client for robot tests
@@ -34,7 +35,7 @@ class Airflow:
     BASE_REST_API_URL_TEMPLATE = '%s/admin/rest_api/'
     BASE_URL_TEMPLATE = '%s/admin/'
 
-    _TIMEOUT_SEC = 10
+    _TIMEOUT_SEC = 20
 
     logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class Airflow:
         if not root_url:
             raise Exception('"domain" parameter is required')
 
+        print('Connecting to Airflow {!r}'.format(root_url))
         self.root_url = root_url
         e = None
         for i in range(num_attempts):
@@ -87,9 +89,12 @@ class Airflow:
             url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
         else:
             url = (self.BASE_URL_TEMPLATE % self.root_url) + path
-        response = requests.get(url, params, timeout = self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
+        print('Requesting Airflow URL: {!r}. Params: {!r}. KWARGS: {!r}'.format(url, params, kwargs))
+        response = requests.get(url, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
         if response.status_code == 200:
-            return response.json()
+            json = response.json()
+            print('Airflow response: {!r}'.format(json))
+            return json
         else:
             raise RequestException('HTTP Code %d for "GET %s "' % (response.status_code, url))
 
@@ -126,10 +131,51 @@ class Airflow:
 
         return self._get('api?api=rest_api_plugin_version')
 
-    def find_airflow_dags(self):
-        """ List all the DAGs names
-            GET /airflow/dag_stats"""
-        return dict.keys(self._get('airflow/dag_stats', use_rest_api_root=False))
+    def find_airflow_tasks(self, dag_id, tree=None, subdir=None):
+        """ List the tasks within a DAG
+            GET /api?api=list_tasks&dag_id=value&tree&subdir=value
+
+            :param dag_id: The id of the dag
+            :param tree: (Optional) Boolean, Tree view
+            :param subdir: (Optional) File location or directory from which to look for the dag"""
+
+        return self._find_lines_in_stdout(self._get('api?api=list_tasks',
+                                                    params={'dag_id': dag_id,
+                                                            'tree': tree,
+                                                            'subdir': subdir}))
+
+    def trigger_airflow_task(self, dag_id, task_id, execution_date, subdir=None, dry_run=None, task_params=None):
+        """ Test a task instance. This will run a task without checking for dependencies or recording
+                it's state in the database.
+                GET /api?api=test&dag_id=value&task_id=value&execution_date=value&subdir=value&dry_run&task_params=value
+
+            :param dag_id: The id of the dag
+            :param task_id: The id of the task
+            :param execution_date: The execution date of the DAG (Example: 2017-01-02T03:04:05)
+            :param subdir: (Optional) File location or directory from which to look for the dag
+            :param dry_run: (Optional) Perform a dry run
+            :param task_params: (Optional) Sends a JSON params dict to the task
+            """
+        status = self._get('api?api=test',
+                           params={'dag_id': dag_id, 'task_id': task_id, 'execution_date': execution_date,
+                                   'subdir': subdir, 'dry_run': dry_run, 'task_params': task_params})
+        stderr = self._find_lines_in_stderr(status)
+        if stderr:
+            raise Exception("task {t} failed:\n {e}".format(t=task_id, e=stderr))
+        return
+
+    def trigger_airflow_dag(self, dag_id, subdir=None, run_id=None, conf=None, exec_date=None):
+        """ Trigger a DAG run
+            GET /api?api=trigger_dag&dag_id=value&subdir=value&run_id=value&conf=value&exec_date=value
+
+            :param dag_id: The id of the dag
+            :param subdir: (Optional) File location or directory from which to look for the dag
+            :param run_id: (Optional) Helps to identify this run
+            :param conf: (Optional) JSON string that gets pickled into the DagRun's conf attribute
+            :param exec_date: (Optional) The execution date of the DAG
+            """
+        return self._get('api?api=trigger_dag', params={'dag_id': dag_id, 'subdir': subdir, 'run_id': run_id,
+                                                        'conf': conf, 'exec_date': exec_date})
 
     def get_failed_airflow_dags(self):
         """
@@ -137,24 +183,39 @@ class Airflow:
         :rtype list[str]
         :return: A list of failed dags names
         """
-        data = self._get('airflow/task_stats', use_rest_api_root = False)
+        data = self._get('airflow/task_stats', use_rest_api_root=False)
         failed_dags = []
         for dag_id, dag_runs in data.items():
             for dag_run in dag_runs:
-                if dag_run.get('color', '') == 'red' and dag_run.get('count', 0) > 0:
+                color = dag_run.get('color', '')
+                run_count = dag_run.get('count', 0)
+                print('Detected DAG {!r}. Color: {!r}, Run count: {!r}'.format(dag_id, color, run_count))
+                if color == 'red' and run_count > 0:
                     failed_dags.append(dag_id)
                     break
         return failed_dags
 
-    @staticmethod
-    def _find_lines_in_stdout(response, first_pattern=SIMPLE_ROW, second_pattern=None):
+    def _find_lines_in_stdout(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
         if type(obj) != str and 'output' in obj:
             obj = obj['output']
         if type(obj) != str and 'stdout' in obj:
             obj = obj['stdout']
+        return self._find_lines(obj, first_pattern, second_pattern)
+
+    def _find_lines_in_stderr(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
+        obj = response
+        if type(obj) != str and 'output' in obj:
+            obj = obj['output']
+        if type(obj) != str and 'stderr' in obj:
+            obj = obj['stderr']
+        return self._find_lines(obj, first_pattern, second_pattern)
+
+    @staticmethod
+    def _find_lines(response, first_pattern=SIMPLE_ROW, second_pattern=None):
+        obj = response
+        lines = []
         if type(obj) == str:
-            lines = []
             for match in first_pattern.finditer(obj):
                 if second_pattern is None:
                     lines.append(match.group(1))
@@ -163,5 +224,4 @@ class Airflow:
                     result = second_pattern.search(line)
                     if result is not None:
                         lines.append(result.group(1))
-
         return lines
