@@ -1,7 +1,5 @@
 FROM python:3.6
 
-ENV DOCKERVERSION=18.03.1-ce
-
 RUN apt-get update && apt-get install -y software-properties-common \
 	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
 	&& apt-get clean all
