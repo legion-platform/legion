@@ -37,7 +37,7 @@ credentials:2.1.18
 display-url-api:2.2.0
 docker-commons:1.13
 docker-workflow:1.17
-durable-task:1.25
+durable-task:1.26
 email-ext:2.63
 envinject-api:1.5
 envinject:2.1.6
