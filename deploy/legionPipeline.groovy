@@ -173,6 +173,7 @@ def runRobotTests(tags="") {
 
             PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
             PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
+            PATH_TO_COOKIES="${PATH_TO_PROFILES_DIR}cookies.dat"
             CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
             CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
             echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
@@ -182,6 +183,10 @@ def runRobotTests(tags="") {
             ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            PROFILE=$Profile LEGION_VERSION=$LegionVersion \
+            jenkins_dex_client --path_to_profiles $PATH_TO_PROFILES_DIR > $PATH_TO_COOKIES
+            cat $PATH_TO_COOKIES
+
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/python3 -m robot.run --listener legion_test.process_reporter --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR $robot_tags *.robot || true

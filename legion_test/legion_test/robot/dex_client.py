@@ -31,6 +31,25 @@ _session_cookies = {}
 _jenkins_credentials = None
 
 
+def init_session_id_from_data(data: dict):
+    """
+    Initialize Session ID value from serialized data
+
+    :param data: persisted login data
+    :type data: dict[str, str]
+    """
+
+    global _session_cookies, _jenkins_credentials
+    if not _session_cookies and not _jenkins_credentials:
+        cookies = data['cookies'].split(';')
+        for cookie in cookies:
+            if len(cookie.split('=')) > 2:
+                _session_cookies[cookie.split('=')[0]] = '{}='.format(cookie.split('=')[1])
+            else:
+                _session_cookies[cookie.split('=')[0]] = cookie.split('=')[1]
+        _jenkins_credentials = (data['jenkins_user'], data['jenkins_password'])
+
+
 def init_session_id(login: str, password: str, cluster_host: str) -> None:
     """
     Initialize Session ID value from a Cookie after authentication.
@@ -57,11 +76,13 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
             else:
                 raise ValueError('Request ID was not found on page')
 
-            response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id),
-                                {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password})
+            url = AUTHENTICATION_PATH.format(cluster_host, request_id)
+            data = {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password}
+            response = session.post(url, data)
             if response.status_code != 200:
-                raise IOError('Unable to authorise, got {} http code'
-                              .format(response.status_code))
+                raise IOError('Unable to authorise, got {} http code from {} for the query to {} with data, response {}'
+                              .format(response.status_code, auth_endpoint_url.format(cluster_host),
+                                      url, data, response.text))
 
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):

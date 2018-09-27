@@ -22,9 +22,24 @@ from legion_test.robot import dex_client
 from legion_test import profiler_loader
 import os
 
+ENV_NAME = 'PATH_TO_PROFILES_DIR'
 
-def work():
-    profiler_loader.get_variables(os.getenv('PATH_TO_PROFILES_DIR'))
+
+def work(path=None):
+    """
+    Perform Jenkins Dex Client action
+
+    :param path: (Optional) path to profiles. By default env variable PATH_TO_PROFILES_DIR is used
+    :type path: str or None
+    """
+    if not path:
+        path = os.getenv('PATH_TO_PROFILES_DIR')
+        if not path:
+            raise Exception('Cannot detect path to profiles. '
+                            'Please use CLI argument or ENV variable {!r}'.format(ENV_NAME))
+
+    profiler_loader.get_variables(path)
+
     if dex_client.get_jenkins_credentials():
         username, password = dex_client.get_jenkins_credentials()
         cookies = ';'.join(['{}={}'.format(k, v) for (k, v) in dex_client.get_session_cookies().items()])
@@ -36,7 +51,8 @@ if __name__ == '__main__':
                                      description='Jenkins Dex client authorizes in Jenkins via Dex and '
                                                  'grabs Cookies and API Token from Jenkins UI, that are '
                                                  'required for testing.')
+    parser.add_argument("--path-to-profiles", type=str, help='Path to the dir with profiles')
 
     args = parser.parse_args()
 
-    work()
+    work(args.path_to_profiles)

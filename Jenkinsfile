@@ -304,6 +304,11 @@ node {
                     cd k8s/test-bare-model-api/model-2
                     docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
+                }, 'Build Bare model 3': {
+                    sh """
+                    cd k8s/test-bare-model-api/model-3
+                    docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    """
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
@@ -342,6 +347,8 @@ node {
                     UploadDockerImage('test-bare-model-api-model-1')
                 }, 'Upload Bare model 2': {
                     UploadDockerImage('test-bare-model-api-model-2')
+                }, 'Upload Bare model 3': {
+                    UploadDockerImage('test-bare-model-api-model-3')
                 }, 'Upload Edi Docker image': {
                     UploadDockerImage('k8s-edi')
                 }, 'Upload Airflow Docker image': {
