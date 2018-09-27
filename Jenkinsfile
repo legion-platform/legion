@@ -50,6 +50,8 @@ node {
             def date = new Date()
             def buildDate = dateFormat.format(date)
 
+            dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
+
             Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
             println(Globals.dockerLabels)
 
@@ -256,7 +258,7 @@ node {
                 'Build Base Docker image':{
                     sh """
                     cd base-python-image
-                    docker build -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
                     """
                     UploadDockerImage('base-python-image')
                 }, 'Upload Legion to local PyPi repo':{
@@ -272,7 +274,7 @@ node {
                 'Build Grafana Docker image': {
                     sh """
                     cd k8s/grafana
-                    docker build --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg pip_extra_index_params=" --extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Edge Docker image': {
                     sh """
@@ -285,32 +287,32 @@ node {
 
                     cp -f legion/requirements/base.txt k8s/edge/requirements.txt
                     cd k8s/edge
-                    docker build --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Jenkins Docker image': {
                     sh """
                     cd k8s/jenkins
-                    docker build --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Bare model 1': {
                     sh """
                     cd k8s/test-bare-model-api/model-1
-                    docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Bare model 2': {
                     sh """
                     cd k8s/test-bare-model-api/model-2
-                    docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Edi Docker image': {
                     sh """
                     cd k8s/edi
-                    docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Build Airflow Docker image': {
                     sh """
                     cd k8s/airflow
-                    docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
                 }, 'Run Python tests': {
                     sh """

@@ -11,7 +11,8 @@ node {
                     string(name: 'JenkinsPluginsRepository', value: params.JenkinsPluginsRepository),
                     string(name: 'JenkinsPluginsRepositoryStore', value: params.JenkinsPluginsRepositoryStore),
                     string(name: 'LocalDocumentationStorage', value: params.LocalDocumentationStorage),
-                    booleanParam(name: 'EnableSlackNotifications', value: params.EnableSlackNotifications)
+                    booleanParam(name: 'EnableSlackNotifications', value: params.EnableSlackNotifications),
+                    booleanParam(name: 'EnableDockerCache', value: params.EnableDockerCache)
             ]
 
             buildNumber = result.getNumber()
@@ -94,19 +95,19 @@ node {
                     string(name: 'EnclaveName', value: 'enclave-ci')
             ]
         }
-
+    }
+    catch (e) {
+        // If there was an exception thrown, the build failed
+        currentBuild.result = "FAILED"
+        throw e
+    }
+    finally {
         stage('Terminate Cluster') {
             result = build job: params.TerminateClusterJobName, propagate: true, wait: true, parameters: [
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
             ]
         }
-
-    } 
-    catch (e) {
-        // If there was an exception thrown, the build failed
-        currentBuild.result = "FAILED"
-        throw e
     }
 
 }
