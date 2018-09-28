@@ -7,7 +7,7 @@
     vpc_id: "{{ vpc_id }}"
     region: "{{ aws_region }}"
     tags:
-      vendor: "{{ vendor }}"
+      "user:tag": "{{ vendor }}"
       env_name: "{{ env_name }}"
       KubernetesCluster: "{{ cluster_name }}"
     rules:
@@ -58,7 +58,7 @@
     wait: yes
     wait_timeout: 900
     tags:
-      vendor: "{{ vendor }}"
+      "user:tag": "{{ vendor }}"
       env_name: "{{ env_name }}"
       KubernetesCluster: "{{ cluster_name }}"
   register: airflow_rds_instance

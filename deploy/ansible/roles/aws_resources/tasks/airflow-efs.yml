@@ -7,7 +7,7 @@
     vpc_id: "{{ vpc_id }}"
     region: "{{ aws_region }}"
     tags:
-      vendor: "{{ vendor }}"
+      "user:tag": "{{ vendor }}"
       env_name: "{{ env_name }}"
       KubernetesCluster: "{{ cluster_name }}"
     rules:
@@ -44,7 +44,7 @@
     region: "{{ aws_region }}"
     tags:
       Name: "{{env_name}}-airflow-efs"
-      vendor: "{{ vendor }}"
+      "user:tag": "{{ vendor }}"
       env_name: "{{ env_name }}"
       purpose: "airflow_storage"
       KubernetesCluster: "{{ cluster_name }}"
