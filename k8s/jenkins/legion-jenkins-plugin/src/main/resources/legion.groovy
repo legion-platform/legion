@@ -17,6 +17,10 @@
  */
 
 
+class Constants {
+    static final TEMP_STORAGE = 'legion-notebook-run-storage'
+}
+
 def modelId() {
     def modelId = legionProperties()['modelId']
 
@@ -135,58 +139,62 @@ def rootDir() {
     return result
 }
 
+def createAndGetWorkStorage(){
+    sh """
+    rm -rf "${Constants.TEMP_STORAGE}" && mkdir -p "${Constants.TEMP_STORAGE}"
+    """
+    return sh(returnStdout: true, script: "cd \"${Constants.TEMP_STORAGE}\" && pwd").trim()
+}
+
 def runNotebook(notebookName) {
     env.ROOT_DIR = rootDir()
     env.NOTEBOOK_NAME = notebookName
     env.MODEL_ID = defaultModelId(notebookName)
+    env.WORK_STORAGE = createAndGetWorkStorage()
 
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'NOTEBOOK_NAME = ' + env.NOTEBOOK_NAME
     echo 'MODEL_ID = ' + env.MODEL_ID
+    echo 'WORK_STORAGE = ' + env.WORK_STORAGE
 
     sh """
-    echo \$GRAPHITE_HOST
-
     pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
-    export CONTAINER_DIR="`pwd`"
-    cd ${env.ROOT_DIR}
-    jupyter nbconvert --execute "${env.NOTEBOOK_NAME}" --stdout > notebook.html
-    cp notebook.html "\$CONTAINER_DIR"
+    cd "${env.ROOT_DIR}"
+    jupyter nbconvert --execute "${env.NOTEBOOK_NAME}" --stdout > "${v}/notebook.html"
     """
 
     sleep time: 1, unit: 'SECONDS'
 
-    archiveArtifacts 'notebook.html'
+    archiveArtifacts "${env.WORK_STORAGE}/notebook.html"
 }
 
 def runScript(scriptPath){
     env.ROOT_DIR = rootDir()
     env.TARGET_SCRIPT_PATH = scriptPath
     env.MODEL_ID = defaultModelId(scriptPath)
+    env.WORK_STORAGE = createAndGetWorkStorage()
 
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'TARGET_SCRIPT_PATH = ' + env.TARGET_SCRIPT_PATH
     echo 'MODEL_ID = ' + env.MODEL_ID
+    echo 'WORK_STORAGE = ' + env.WORK_STORAGE
 
     sh """
     pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
-    export CONTAINER_DIR="`pwd`"
-    cd ${env.ROOT_DIR}
-    python3.6 "${env.TARGET_SCRIPT_PATH}" | tee script-log.txt
+    cd "${env.ROOT_DIR}"
+    python3.6 "${env.TARGET_SCRIPT_PATH}" | tee "${env.WORK_STORAGE}/script-log.txt"
 
-    echo "<html><body><h2>Script output</h2><pre>" > notebook.html
-    cat script-log.txt >> notebook.html
-    echo "</pre></body></html>" >> notebook.html
+    echo "<html><body><h2>Script output</h2><pre>" > "${env.WORK_STORAGE}/notebook.html"
+    cat "${env.WORK_STORAGE}/script-log.txt" >> "${env.WORK_STORAGE}/notebook.html"
+    echo "</pre></body></html>" >> "${env.WORK_STORAGE}/notebook.html"
 
-    cp script-log.txt "\$CONTAINER_DIR" || true
-    cp notebook.html "\$CONTAINER_DIR" || true
     sleep 15
     """
 
     sleep time: 1, unit: 'SECONDS'
 
-    archiveArtifacts 'script-log.txt'
-    archiveArtifacts 'notebook.html'
+    archiveArtifacts "${env.WORK_STORAGE}/script-log.txt"
+    archiveArtifacts "${env.WORK_STORAGE}/notebook.html"
 }
 
 def generateModelTemporaryImageName(modelId, modelVersion){
@@ -244,34 +252,42 @@ def deploy(Map deployParams=null) {
 def runTests() {
     env.ROOT_DIR = rootDir()
     env.MODEL_ID = modelId()
+    env.WORK_STORAGE = createAndGetWorkStorage()
 
+    echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'MODEL_ID = ' + env.MODEL_ID
+    echo 'WORK_STORAGE = ' + env.WORK_STORAGE
 
     sh """
     cd "${env.ROOT_DIR}/tests"
-    MODEL_ID="${env.MODEL_ID}" nosetests --with-xunit
+    MODEL_ID="${env.MODEL_ID}" nosetests --with-xunit --xunit-file "${env.WORK_STORAGE}/nosetests.xml"
     """
 
-    junit rootDir() + '/tests/nosetests.xml'
+    junit "${env.WORK_STORAGE}/nosetests.xml"
 }
 
 def runPerformanceTests(testScript) {
     env.ROOT_DIR = rootDir()
     env.TEST_SCRIPT = testScript
     env.ENCLAVE_DEPLOYMENT_PREFIX = sh(returnStdout: true, script: 'echo $ENCLAVE_DEPLOYMENT_PREFIX').trim()
+    env.WORK_STORAGE = createAndGetWorkStorage()
 
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'TEST_SCRIPT = ' + env.TEST_SCRIPT
+    echo 'WORK_STORAGE = ' + env.WORK_STORAGE
 
     modelApiHost = (params.host && params.host.length() > 0) ? params.host : "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edge.${params.Enclave}"
 
     sh """
-    echo "Starting quering ${modelApiHost}"
     pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
-    cd ${env.ROOT_DIR}/performance/ && locust -f ${env.TEST_SCRIPT} --no-web -c ${params.testUsers} -r ${params.testHatchRate} -n ${params.testRequestsCount} --host ${modelApiHost} --only-summary --logfile locust.log
+
+    echo "Starting querying ${modelApiHost}"
+
+    cd ${env.ROOT_DIR}/performance/
+    locust -f ${env.TEST_SCRIPT} --no-web -c ${params.testUsers} -r ${params.testHatchRate} -n ${params.testRequestsCount} --host ${modelApiHost} --only-summary --logfile "${env.WORK_STORAGE}/locust.log"
     """
 
-    archiveArtifacts rootDir() + '/performance/locust.log'
+    archiveArtifacts "${env.WORK_STORAGE}/locust.log"
 }
 
 return this
