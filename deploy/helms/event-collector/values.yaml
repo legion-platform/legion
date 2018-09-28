@@ -16,7 +16,7 @@ PullPolicy: "Always"
 
 s3:
   bucket: "none"
-  region: "us-east-2"
+  region: "none"
 
   time_slice_format: "%Y%m%d%H"
   time_slice_wait: "5m"
