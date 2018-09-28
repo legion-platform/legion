@@ -17,10 +17,6 @@
  */
 
 
-class Constants {
-    static final TEMP_STORAGE = 'legion-notebook-run-storage'
-}
-
 def modelId() {
     def modelId = legionProperties()['modelId']
 
