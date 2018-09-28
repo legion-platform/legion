@@ -36,6 +36,13 @@ spec:
       containers:
       - name: redis
         image: redis:3
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "256Mi"
         ports:
         - name: node
           containerPort: 6379

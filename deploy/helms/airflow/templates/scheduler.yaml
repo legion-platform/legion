@@ -20,6 +20,13 @@ spec:
       containers:
       - name: scheduler
         image: "{{ .Values.image }}"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "300Mi"
+          limits:
+            cpu: "600m"
+            memory: "1024Mi"
         env:
         - name: POSTGRES_HOST
         {{- if .Values.postgres.external}}
