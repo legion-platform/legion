@@ -11,12 +11,12 @@ Test Setup          Choose cluster context            ${CLUSTER_NAME}
 
 *** Test Cases ***
 Check if K8S dashboard domain has been secured
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Check if component domain has been secured
     component=dashboard    enclave=${EMPTY}
 
 Check if Jenkins domain has been secured
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Check if component domain has been secured
     component=jenkins    enclave=${EMPTY}
 
@@ -32,27 +32,27 @@ Check if Jenkins domain has been secured
 #    component=grafana    enclave=${EMPTY}
 
 Check if Grafana enclave domain has been secured
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Check if component domain has been secured
     component=grafana    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Airflow enclave domain has been secured
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Check if component domain has been secured
     component=airflow    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Flower enclave domain has been secured
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Check if component domain has been secured
     component=flower    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if K8S dashboard domain does not auth with invalid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=dashboard    enclave=${EMPTY}
 
 Check if Jenkins domain does not auth with invalid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=jenkins    enclave=${EMPTY}
 
@@ -68,53 +68,53 @@ Check if Jenkins domain does not auth with invalid creds
 #    component=grafana    enclave=${EMPTY}
 
 Check if Grafana enclave does not auth with invalid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=grafana    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Airflow enclave does not auth with invalid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=airflow    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Flower enclave domain does not auth with invalid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=flower    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Jenkins domain can auth with valid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should be accessible by valid credentials
     component=jenkins    enclave=${EMPTY}
 
 Check if Grafana enclave can auth with valid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should be accessible by valid credentials
     component=grafana    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Airflow enclave can auth with valid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should be accessible by valid credentials
     component=airflow    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if Flower enclave can auth with valid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should be accessible by valid credentials
     component=flower    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if K8S dashboard domain can auth with valid creds
-    [Tags]  core  security   auth
+    [Tags]  core  security  auth
     [Template]    Secured component domain should be accessible by valid credentials
     component=Dashboard    enclave=${EMPTY}
 
 # TODO uncomment when would be secured
 #Check if Nexus domain can auth with valid creds
-#    [Tags]  core  security   auth
+#    [Tags]  core  security  auth
 #    [Template]    Secured component domain should be accessible by valid credentials
 #    component=nexus    enclave=${EMPTY}
 #
 #Check if Grafana domain can auth with valid creds
-#    [Tags]  core  security   auth
+#    [Tags]  core  security  auth
 #    [Template]    Secured component domain should be accessible by valid credentials
 #    component=grafana    enclave=${EMPTY}
 

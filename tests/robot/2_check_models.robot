@@ -45,7 +45,7 @@ Checking property update callback
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
-    [Tags]  jenkins model
+    [Tags]  jenkins  model  scaling
     :FOR  ${enclave}    IN    @{ENCLAVES}
     \  Connect to Jenkins endpoint
         Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
