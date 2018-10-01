@@ -52,8 +52,8 @@ spec:
         imagePullPolicy: "{{ .Values.jenkins.image.pullPolicy }}"
         resources:
           requests:
-            cpu: "300m"
-            memory: "1200Mi"
+            cpu: "450m"
+            memory: "1500Mi"
           limits:
             cpu: "1000m"
             memory: "2500Mi"
