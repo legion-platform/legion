@@ -52,11 +52,11 @@ spec:
         imagePullPolicy: "{{ .Values.jenkins.image.pullPolicy }}"
         resources:
           requests:
-            cpu: "200m"
+            cpu: "300m"
             memory: "1200Mi"
           limits:
-            cpu: "300m"
-            memory: "1500Mi"
+            cpu: "1000m"
+            memory: "2500Mi"
         env:
         - name: JAVA_OPTS
           value: "-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true -Dcom.epam.legion.jenkins.dashboard.url=/dashboard/script/model_builds.js?orgId=1&theme=light&model= -Dcom.epam.legion.jenkins.report.html.path=notebook.html"
