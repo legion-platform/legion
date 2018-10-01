@@ -1,0 +1,17 @@
+rootDomain: "{{ root_domain }}"
+awsAccountId: "{{ aws.account_id }}"
+clusterName: "{{ cluster_name }}"
+enclaveName: "{{ enclave }}"
+domainDelimiter: "{{ domain_delimiter }}"
+
+replicas: "{{ collector.replicas }}"
+
+image: "{{ docker_repo }}/k8s-fluentd:{{ legion_version }}"
+
+s3:
+  key_id: "{{ fluentd.aws.access_key_id }}"
+  secret_key: "{{ fluentd.aws.secret_access_key }}"
+
+  bucket: "{{ collector.bucket }}"
+  region: "{{ collector.region }}"
+  path: "events/${tag}/year=%Y/month=%m/day=%d/"

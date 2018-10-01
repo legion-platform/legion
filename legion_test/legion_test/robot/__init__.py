@@ -7,3 +7,5 @@ from .k8s import K8s
 from .flower import Flower
 from .model import Model
 from .process import Process
+from .feedback import Feedback
+from .s3 import S3

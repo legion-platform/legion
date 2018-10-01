@@ -314,6 +314,11 @@ node {
                     cd k8s/airflow
                     docker build $dockerCacheArg --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
                     """
+                }, 'Build Fluentd image': {
+                    sh """
+                    cd k8s/fluentd
+                    docker build --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    """
                 }, 'Run Python tests': {
                     sh """
                     cd legion
@@ -341,6 +346,8 @@ node {
                     UploadDockerImage('k8s-edi')
                 }, 'Upload Airflow Docker image': {
                     UploadDockerImage('k8s-airflow')
+                }, 'Upload Fluentd Docker image': {
+                    UploadDockerImage('k8s-fluentd')
                 }, 'Upload Legion to PyPi repo': {
                     if (params.UploadLegionPackage){
                         sh """

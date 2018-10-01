@@ -1,0 +1,7 @@
+name: event-collector
+version: 0.0.1
+appVersion: 1.7.1
+description: Legion event collector
+maintainers:
+- name: Legion team
+  email: legion-dev@googlegroups.com

@@ -29,12 +29,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
     apt-get clean && apt-get autoclean
 
 # setup locale
-RUN locale-gen en_CA.UTF-8 && update-locale LANG=en_CA.UTF-8
+RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
 COPY default_locale /etc/default/locale
 RUN chmod 0755 /etc/default/locale
-ENV LC_ALL=en_CA.UTF-8
-ENV LANG=en_CA.UTF-8
-ENV LANGUAGE=en_CA.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
 
 RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
 

@@ -8,3 +8,6 @@ ${MODEL_WITH_PROPS_PROP}            number.pow_of_ten
 ${TEST_MODEL_ID}                    demo-abc-model
 ${TEST_MODEL_1_VERSION}             1.0
 ${TEST_MODEL_2_VERSION}             1.1
+${TEST_MODEL_VERSION}               1.0
+${FEEDBACK_TAG}                     tag1
+${FEEDBACK_PREFIX}                  events

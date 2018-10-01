@@ -81,7 +81,7 @@ cert_dir: "/etc/dynssl"                 # folder for storing SSL certificates on
 use_https: "yes" # [?]
 use_https_for_tests: "yes" # [?]
 pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple" # repository for Python packages
-nexus_docker_repo: "nexus-local.cc.epm.kharlamov.biz:443" # docker registry with builded images
+docker_repo: "nexus-local.cc.epm.kharlamov.biz:443" # docker registry with builded images
 namespace: default      # namespace of core deployment
 deployment: legion      # name of deployment
 examples_to_test:       # which Jenkins examples will be executed in tests
