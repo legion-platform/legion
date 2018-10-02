@@ -83,3 +83,8 @@ dashboard:                     # Kubernetes dashboard configuration
 
 secrets_bucket: ~               # S3 bucket with secrets
 secrets_file: ~  # path for temporary storage
+
+collector:    # event collector configuration
+  replicas: ~
+  bucket: ~ # bucket for event collector data
+  region: ~ # bucket region
