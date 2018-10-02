@@ -18,7 +18,7 @@ Check EDI availability in all enclaves
     :FOR    ${enclave}      IN                            @{ENCLAVES}
     \       ${edi_state}=   Run EDI inspect               ${enclave}
     \                       Should Be Equal As Integers   ${edi_state.rc}     0
-    [Teardown]                    NONE
+    [Teardown]              NONE
 
 Check EDI deploy procedure
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
