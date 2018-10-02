@@ -30,7 +30,7 @@ RUN service cron stop \
     && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow
 
 RUN pip3 install --disable-pip-version-check cryptography \
-    && pip3 install --disable-pip-version-check apache-airflow[postgres,jdbc,password,mysql,celery,redis,s3]==1.9.0 \
+    && pip3 install --disable-pip-version-check apache-airflow[postgres,jdbc,password,mysql,celery,redis,s3]==1.10.0 \
     pyOpenSSL ndg-httpsclient pyasn1 psycopg2-binary redis hiredis requests
 
 RUN cd  /home/airflow && \
