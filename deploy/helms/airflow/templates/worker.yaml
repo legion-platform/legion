@@ -23,11 +23,11 @@ spec:
         image: "{{ .Values.image }}"
         resources:
           requests:
+            cpu: "500m"
+            memory: "1000Mi"
+          limits:
             cpu: "1000m"
             memory: "2000Mi"
-          limits:
-            cpu: "2000m"
-            memory: "4000Mi"
         env:
         - name: POSTGRES_HOST
         {{- if .Values.postgres.external}}
