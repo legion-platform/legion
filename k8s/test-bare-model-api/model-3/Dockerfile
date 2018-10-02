@@ -21,7 +21,7 @@ WORKDIR /app
 RUN pip install -r requirements.txt
 
 LABEL com.epam.legion.model.id="edi-test-model" \
-      com.epam.legion.model.version="1.3" \
+      com.epam.legion.model.version="1.2" \
       com.epam.legion.container_type="model"
 
 ENTRYPOINT ["python"]

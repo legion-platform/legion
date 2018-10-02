@@ -43,10 +43,8 @@ def init_session_id_from_data(data: dict):
     if not _session_cookies and not _jenkins_credentials:
         cookies = data['cookies'].split(';')
         for cookie in cookies:
-            if len(cookie.split('=')) > 2:
-                _session_cookies[cookie.split('=')[0]] = '{}='.format(cookie.split('=')[1])
-            else:
-                _session_cookies[cookie.split('=')[0]] = cookie.split('=')[1]
+            cookie = cookie.replace('=', ':', 1)
+            _session_cookies[cookie.split(':')[0]] = cookie.split(':')[1]
         _jenkins_credentials = (data['jenkins_user'], data['jenkins_password'])
 
 
@@ -86,7 +84,7 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
 
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):
-                _session_cookies[cookie_name]= session.cookies.get(cookie_name)
+                _session_cookies[cookie_name] = session.cookies.get(cookie_name)
         if len(_session_cookies) == 0:
             raise ValueError('Cant find any session ID in Cookies')
 

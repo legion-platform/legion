@@ -102,6 +102,8 @@ def get_variables(arg=None):
                 }
         except IOError:
             pass
+        except IndexError:
+            pass
 
     if 'dex' in data and data['dex']['enabled'] and 'staticPasswords' in data['dex']['config'] and \
             data['dex']['config']['staticPasswords']:
