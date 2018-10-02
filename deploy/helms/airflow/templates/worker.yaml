@@ -23,7 +23,7 @@ spec:
         image: "{{ .Values.image }}"
         resources:
           requests:
-            cpu: "500m"
+            cpu: "1000m"
             memory: "1000Mi"
           limits:
             cpu: "1000m"
