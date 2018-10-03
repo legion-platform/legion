@@ -157,4 +157,3 @@ Check EDI enclave inspect procedure without deployed model
     ${resp}=        Run EDI inspect                ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers    ${resp.rc}          0
                     Should Not Contain             ${resp.stdout}      ${TEST_EDI_MODEL_ID}
-    [Teardown]      NONE
