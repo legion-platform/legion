@@ -23,7 +23,7 @@ pipeline {
                     def buildDate = dateFormat.format(date)
                     Globals.dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
 
-                    def dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
+                    Globals.dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
                     println(Globals.dockerLabels)
