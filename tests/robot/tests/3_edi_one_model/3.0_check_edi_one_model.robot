@@ -41,7 +41,7 @@ Check EDI deploy with scale to 1
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   1
+    ${resp}=        Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_3}   1
                     Should Be Equal As Integers    ${resp.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}    ${TEST_MODEL_3_VERSION}
                     Should contain                 ${response}             "model_version": "${TEST_MODEL_3_VERSION}"
@@ -55,7 +55,7 @@ Check EDI deploy with scale to 2
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   2
+    ${resp}=        Run EDI deploy with scale      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_3}   2
                     Should Be Equal As Integers    ${resp.rc}         0
     ${response}=    Check model started            ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}    ${TEST_MODEL_3_VERSION}
                     Should contain                 ${response}             "model_version": "${TEST_MODEL_3_VERSION}"
@@ -69,7 +69,7 @@ Check EDI invalid model name deploy procedure
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
     [Documentation]  Try to deploy dummy invalid model name through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}test
+    ${resp}=        Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_3}test
                     Should Be Equal As Integers   ${resp.rc}         2
                     Should Contain                ${resp.stderr}     Can't get image labels for  ${TEST_MODEL_IMAGE_3}test
 
@@ -77,7 +77,7 @@ Check EDI double deploy procedure for the same model
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
     [Documentation]  Try to deploy twice the same dummy model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+    ${resp}=        Run EDI deploy                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_3}
                     Should Be Equal As Integers   ${resp.rc}         0
     ${response}=    Check model started           ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}    ${TEST_MODEL_3_VERSION}
                     Should contain                ${response}             "model_version": "${TEST_MODEL_3_VERSION}"
