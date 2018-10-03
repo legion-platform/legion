@@ -25,7 +25,7 @@ Check if flower scale up works properly
        Should be equal as integers     ${workers_number}           ${replicas_number}      Workers number doesn't equal to     Replicas number
        ${new_replicas_number} =        Sum up                ${replicas_number}     ${1}
        Set deployment replicas         ${new_replicas_number}      airflow-${enclave}-worker  ${enclave}
-       Sleep                           240s
+       Sleep                           120s
        ${replicas_number} =            Get deployment replicas     airflow-${enclave}-worker  ${enclave}
        ${workers_number} =             Get number of workers from Flower
        Should be equal as integers     ${new_replicas_number}      ${replicas_number}      Actual Replicas values doens't equal    to set Replicas number
@@ -42,7 +42,7 @@ Check if flower scale down works properly
        Should be True                  ${replicas_number}>1      Replicas number should be greater than 1 to start this test
        ${new_replicas_number} =        Subtract                 ${replicas_number}     ${1}
        Set deployment replicas         ${new_replicas_number}      airflow-${enclave}-worker  ${enclave}
-       Sleep                           240s
+       Sleep                           120s
        ${replicas_number} =            Get deployment replicas     airflow-${enclave}-worker  ${enclave}
        ${workers_number} =             Get number of workers from Flower
        Should be equal as integers     ${new_replicas_number}      ${workers_number}       Actual Replicas values doens't equal    to set Replicas number
