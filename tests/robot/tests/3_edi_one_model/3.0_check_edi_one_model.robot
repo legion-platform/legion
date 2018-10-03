@@ -89,7 +89,7 @@ Check EDI double deploy procedure for the same model
 Check EDI undeploy procedure
     [Documentation]  Try to undeploy dummy valid model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
+    ${resp}=        Run EDI undeploy without version    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
                     Should Be Equal As Integers         ${resp.rc}         0
     ${resp}=        Run EDI inspect                     ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers         ${resp.rc}         0
@@ -98,7 +98,7 @@ Check EDI undeploy procedure
 Check EDI scale up procedure
     [Documentation]  Try to scale up model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
+    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_EDI_MODEL_ID}    2
                     Should Be Equal As Integers    ${resp.rc}           0
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_EDI_MODEL_ID}
@@ -108,7 +108,7 @@ Check EDI scale up procedure
 Check EDI scale down procedure
     [Documentation]  Try to scale up model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    2
+    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_EDI_MODEL_ID}    2
                     Should Be Equal As Integers    ${resp.rc}          0
     ${resp}=        Run EDI inspect with parse     ${MODEL_TEST_ENCLAVE}
     ${model}=       Find model information in edi  ${resp}    ${TEST_EDI_MODEL_ID}
@@ -125,14 +125,14 @@ Check EDI scale down procedure
 Check EDI scale to 0 procedure
     [Documentation]  Try to scale to 0 model through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    0
+    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_EDI_MODEL_ID}    0
                     Should Be Equal As Integers    ${resp.rc}          2
                     Should contain                 ${resp.stderr}      Invalid scale parameter: should be greater then 0
 
 Check EDI invalid model id scale up procedure
     [Documentation]  Try to scale up dummy model with invalid name through EDI console
     [Tags]  edi  cli  enclave  one_version
-    ${resp}=        Run EDI scale                ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}test   2
+    ${resp}=        Run EDI scale                ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}test   2
                     Should Be Equal As Integers  ${resp.rc}         2
                     Should contain               ${resp.stderr}     No one model can be found
 
