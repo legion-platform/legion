@@ -17,6 +17,7 @@
 K8SBaseHook module
 """
 import os
+import yaml
 from airflow.hooks.base_hook import BaseHook
 from airflow.models import Connection
 from airflow.utils.log.logging_mixin import LoggingMixin
@@ -30,7 +31,7 @@ class K8SBaseHook(BaseHook):
     upon failure to retrieve from k8s.
     """
 
-    STORAGE_NAME_PREFIX = 'airflow-credentials-'
+    STORAGE_NAME_PREFIX = 'airflow-credentials'
 
     @classmethod
     def get_connection(cls, conn_id):
@@ -44,8 +45,8 @@ class K8SBaseHook(BaseHook):
             return cls._get_conn_from_k8s(conn_id)
         except Exception as e:
             LoggingMixin().log.warning(
-                'Failed to retrieve connection {} from k8s secret '
-                'retrieving from env/db'.format(conn_id),
+                'Failed to retrieve connection {} from k8s secret. The error message is {} '
+                'retrieving from env/db'.format(conn_id, e),
                 exc_info=True, stack_info=True
             )
         return super().get_connection(conn_id)
@@ -59,7 +60,10 @@ class K8SBaseHook(BaseHook):
         :type conn_id: str
         """
         config_map = K8SSecretStorage.retrive(
-            storage_name=cls.STORAGE_NAME_PREFIX + conn_id,
+            storage_name=cls.STORAGE_NAME_PREFIX,
             k8s_namespace=os.environ['NAMESPACE']
         )
-        return Connection(**config_map.data)
+        connection_data = yaml.load(config_map.data)
+        if conn_id not in connection_data:
+            raise Exception("Doesn't have {} key in k8s secret".format(conn_id))
+        return Connection(**connection_data.get(conn_id))
