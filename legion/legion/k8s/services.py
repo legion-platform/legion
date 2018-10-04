@@ -300,9 +300,7 @@ class ModelService(Service):
         self._deployment = ensure_function_succeed(self._load_deployment_data_logic,
                                                    LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
         if not self._deployment:
-            raise Exception('Failed to load deployment for {!r}'.format(self))
-
-        self._deployment_data_loaded = True
+            self._deployment_data_loaded = True
 
     def reload_cache(self):
         """
@@ -320,8 +318,7 @@ class ModelService(Service):
 
         :return: int -- current model scale
         """
-        self._load_deployment_data()
-        if self.deployment.status.available_replicas:
+        if self.deployment and self.deployment.status.available_replicas:
             return self.deployment.status.available_replicas
         else:
             return 0
@@ -338,7 +335,9 @@ class ModelService(Service):
         if new_scale < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
 
-        self._load_deployment_data()
+        if not self.deployment:
+            raise Exception('Unable to find desired deployment.')
+
         client = legion.k8s.utils.build_client()
 
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
@@ -363,6 +362,9 @@ class ModelService(Service):
         :type grace_period_seconds: int
         :return: None
         """
+        if not self.deployment:
+            raise Exception('Unable to find desired deployment.')
+
         client = legion.k8s.utils.build_client()
 
         api_instance = kubernetes.client.AppsV1beta1Api(client)
@@ -389,8 +391,7 @@ class ModelService(Service):
 
         :return: int -- desired model scale
         """
-        self._load_deployment_data()
-        return self.deployment.status.replicas if self.deployment.status.replicas else 0
+        return 0 if not self.deployment else self.deployment.status.replicas if self.deployment.status.replicas else 0
 
     @property
     def status(self):
@@ -414,10 +415,9 @@ class ModelService(Service):
         """
         Get model image
 
-        :return: str -- model image
+        :return: str -- model image, or None if deployment isn't found
         """
-        self._load_deployment_data()
-        return self.deployment.spec.template.spec.containers[0].image
+        return None if not self.deployment else self.deployment.spec.template.spec.containers[0].image
 
     @property
     def metrics_name(self):
