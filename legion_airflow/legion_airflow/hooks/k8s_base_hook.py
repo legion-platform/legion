@@ -63,7 +63,7 @@ class K8SBaseHook(BaseHook):
             storage_name=cls.STORAGE_NAME_PREFIX,
             k8s_namespace=os.environ['NAMESPACE']
         )
-        connection_data = yaml.load(config_map.data)
-        if conn_id not in connection_data:
-            raise Exception("Doesn't have {} key in k8s secret".format(conn_id))
+        connection_data = yaml.load(config_map.data['data'])
+        if conn_id not in connection_data.values():
+            raise Exception("Doesn't have {} value in k8s secret".format(conn_id))
         return Connection(**connection_data.get(conn_id))
