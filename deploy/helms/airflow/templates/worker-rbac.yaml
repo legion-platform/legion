@@ -9,7 +9,7 @@ rules:
 - apiGroups: [""] # core API group
   resources: ["secrets"]
   verbs: ["watch", "get"]
-  resourceNames: ['airflow-credentials-*']
+  resourceNames: ['airflow-credentials']
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
