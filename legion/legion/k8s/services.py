@@ -318,7 +318,6 @@ class ModelService(Service):
 
         :return: int -- current model scale
         """
-        self._load_deployment_data()
         if self.deployment and self.deployment.status.available_replicas:
             return self.deployment.status.available_replicas
         else:
@@ -336,7 +335,6 @@ class ModelService(Service):
         if new_scale < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
 
-        self._load_deployment_data()
         if not self.deployment:
             raise Exception('Unable to find desired deployment.')
 
