@@ -392,7 +392,10 @@ class ModelService(Service):
         :return: int -- desired model scale
         """
         self._load_deployment_data()
-        return 0 if not self.deployment else self.deployment.status.replicas if self.deployment.status.replicas else 0
+        if self.deployment and self.deployment.status.replicas:
+            return self.deployment.status.replicas
+        else:
+            return 0
 
     @property
     def status(self):
