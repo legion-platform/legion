@@ -126,7 +126,7 @@ spec:
       nodeSelector:
         kubernetes.io/role: master
       containers:
-        - image: k8s.gcr.io/cluster-autoscaler:v1.2.0
+        - image: k8s.gcr.io/cluster-autoscaler:v1.2.2
           name: cluster-autoscaler
           resources:
             limits:
@@ -142,6 +142,9 @@ spec:
             - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
             - --expander=least-waste
+            - --scan-interval=60s
+            - --scale-down-delay-after-add=1m
+            - --scale-down-unneeded-time=1m
             - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{ cluster_name }}
           env:
             - name: AWS_REGION
