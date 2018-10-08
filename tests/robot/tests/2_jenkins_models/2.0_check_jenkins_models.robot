@@ -55,5 +55,5 @@ Check Vertical Scailing
         Last Jenkins job is successful                          PERF TEST Vertical-Scaling
 
     Get cluster nodes and their count    after
-    Should Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
+    Should Not Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
     Wait node scale down           ${NODES_COUNT_BEFORE}
