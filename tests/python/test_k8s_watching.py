@@ -68,7 +68,7 @@ class TestK8SWatching(unittest2.TestCase):
         except:
             pass
 
-    @attr('k8s', 'watch')
+    @attr('k8s', 'watch', 'infra')
     def test_watch_enclaves(self):
         """
         Check enclave watching
