@@ -46,8 +46,14 @@ Checking property update callback
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
     [Tags]  jenkins  model  scaling
+    Get cluster nodes and their count    before
+
     :FOR  ${enclave}    IN    @{ENCLAVES}
     \  Connect to Jenkins endpoint
         Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
         Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
         Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+
+    Get cluster nodes and their count    after
+    Should Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
+    Wait node scale down           ${NODES_COUNT_BEFORE}

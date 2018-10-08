@@ -16,6 +16,8 @@
 """
 Robot test library - kubernetes dashboard
 """
+import time
+
 import kubernetes
 import kubernetes.client
 import kubernetes.config
@@ -231,3 +233,49 @@ class K8s:
         property.load()
         property[key] = value
         property.save()
+
+    def get_cluster_nodes(self):
+        """
+        Get current nodes by Kubernetes API
+
+        :return: V1NodeList
+        """
+        client = self.build_client()
+        core_api = kubernetes.client.CoreV1Api(client)
+        nodes = core_api.list_node().items
+        return nodes
+
+    def wait_node_scale_down(self, expected_count, timeout=200, sleep=5):
+        """
+        Wait finish of last job build
+
+        :param expected_count: expected node count
+        :type expected_count: int
+        :param timeout: waiting timeout in seconds. 0 for disable (infinite)
+        :type timeout: str or int
+        :param sleep: sleep between checks in seconds
+        :type sleep: str or int
+        :raises: Exception
+        :return: None
+        """
+        client = self.build_client()
+        core_api = kubernetes.client.CoreV1Api(client)
+
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+
+        while True:
+            nodes_num = core_api.list_node().count()
+            elapsed = time.time() - start
+            if nodes_num == expected_count:
+                print('Scaled node was successfully unscaled after {} seconds'
+                      .format(elapsed))
+                return
+            elif elapsed > timeout > 0:
+                raise Exception('Node was not unscaled after {} seconds wait'.format(timeout))
+            else:
+                print('Current node count {}, but not as expected {}. Sleep {} seconds and try again'
+                      .format(nodes_num, expected_count, sleep))
+                time.sleep(sleep)
