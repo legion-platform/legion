@@ -11,14 +11,14 @@ Test Setup          Choose cluster context            ${CLUSTER_NAME}
 *** Test Cases ***
 Check if flower available
     [Documentation]  Check if Flower UI is available
-    [Tags]  airflow  flower  scale
+    [Tags]  airflow  flower  scale  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
         Check if flower online
 
 Check if flower scale up works properly
     [Documentation]  Scale up Flower deployment and check if number of celery workers increases
-    [Tags]  airflow  flower  scale
+    [Tags]  airflow  flower  scale  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
        ${workers_number} =             Get number of workers from Flower
@@ -34,7 +34,7 @@ Check if flower scale up works properly
 
 Check if flower scale down works properly
     [Documentation]  Scale down Flower deployment and check if number of celery workers decreases
-    [Tags]  airflow  flower  scale
+    [Tags]  airflow  flower  scale  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
        ${workers_number} =             Get number of workers from Flower
