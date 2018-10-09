@@ -413,6 +413,8 @@ class CsvReader:
             if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # trim quotes
                 cell = cell[1:-1]
             cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+        else:
+            cells.append('')
         return cells
 
 
@@ -421,7 +423,7 @@ class CsvWriter(object):
 
     EOL = '\r\n'
 
-    def __init__(self, writer: object, column_splitter: str = ',', quote: str = '"'):
+    def __init__(self, writer: object, column_splitter: str = ',', quote: str = '"', columns_number: int = 0):
         """
         Initialize CsvWriter.
 
@@ -431,10 +433,13 @@ class CsvWriter(object):
         :type column_splitter: str
         :param quote: quote symbol
         :type quote: str
+        :param columns_number: (Optional) a number of columns, that is used for input validation
+        :type columns_number: int
         """
         self.writer = writer
         self.column_splitter = column_splitter
         self.quote = quote
+        self.columns_number = columns_number
 
     def __enter__(self):
         """
@@ -468,7 +473,11 @@ class CsvWriter(object):
         :return: None
         """
         if cells is not None:
-            self.writer.write(self._format_row(cells, self.column_splitter, self.quote) + self.EOL)
+            if len(cells) != self.columns_number:
+                raise ValueError('Expected {} columns in input but got {}: {}'
+                                 .format(self.columns_number, len(cells), ', '.join(cells)))
+            else:
+                self.writer.write(self._format_row(cells, self.column_splitter, self.quote) + self.EOL)
 
     def __getattr__(self, name: str):
         """
@@ -507,12 +516,8 @@ class CsvWriter(object):
         row = ''
         for cell in cells:
             if column_splitter in cell or quote in cell or '\n' in cell:  # if cell contains comma or quote
-                protected_cell = quote + cell.replace(quote, quote + quote) + quote  # wrap cell in quotes
-                if row != '':
-                    row += column_splitter
-                row += protected_cell
-            else:
-                if row != '':
-                    row += column_splitter
-                row += cell
+                cell = quote + cell.replace(quote, quote + quote) + quote  # wrap cell in quotes
+            if not row:
+                row += column_splitter
+            row += cell
         return row
