@@ -123,7 +123,8 @@ class S3Hook(K8SBaseHook):
         """
         return json.load(self.open_file(bucket, key, 'r', encoding))
 
-    def write_csv_file(self, bucket: str, key: str, encoding: str = 'utf-8', splitter: str = ',', quote: str = '"'):
+    def write_csv_file(self, bucket: str, key: str, encoding: str = 'utf-8', splitter: str = ',',
+                       quote: str = '"', columns_number: int = 0):
         """
         Return CsvWriter to write a file.
 
@@ -137,9 +138,12 @@ class S3Hook(K8SBaseHook):
         :type splitter: str
         :param quote: quote symbol
         :type quote: str
+        :param columns_number: number of columns for validation
+        :type columns_number: int
         :return: :py:class:`CsvWriter` -- csv reader
         """
-        return CsvWriter(self.open_file(bucket, key, 'w', encoding), column_splitter=splitter, quote=quote)
+        return CsvWriter(self.open_file(bucket, key, 'w', encoding), column_splitter=splitter, quote=quote,
+                         columns_number=columns_number)
 
     def write_json_file(self, obj: object, bucket: str, key: str, encoding: str = 'utf-8'):
         """
@@ -413,8 +417,6 @@ class CsvReader:
             if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # trim quotes
                 cell = cell[1:-1]
             cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
-        else:
-            cells.append('')
         return cells
 
 
@@ -473,7 +475,7 @@ class CsvWriter(object):
         :return: None
         """
         if cells is not None:
-            if len(cells) != self.columns_number:
+            if self.columns_number and len(cells) != self.columns_number:
                 raise ValueError('Expected {} columns in input but got {}: {}'
                                  .format(self.columns_number, len(cells), ', '.join(cells)))
             else:
