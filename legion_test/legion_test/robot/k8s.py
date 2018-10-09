@@ -267,7 +267,7 @@ class K8s:
         time.sleep(sleep)
 
         while True:
-            nodes_num = core_api.list_node().count()
+            nodes_num = len(core_api.list_node().items)
             elapsed = time.time() - start
             if nodes_num == expected_count:
                 print('Scaled node was successfully unscaled after {} seconds'
