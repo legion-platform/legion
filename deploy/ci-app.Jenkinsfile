@@ -57,7 +57,7 @@ node {
                     [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
                     string(name: 'LegionVersion', value: legionVersion),
-                    string(name: 'TestsTags', value: params.TestTags),
+                    string(name: 'TestsTags', value: "apps"),
                     booleanParam(name: 'DeployLegion', value: true),
                     booleanParam(name: 'CreateJenkinsTests', value: true),
                     booleanParam(name: 'UseRegressionTests', value: true),
