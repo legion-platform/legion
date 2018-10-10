@@ -51,8 +51,8 @@
 - name: Remove event collector S3 access policy
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-event-collector-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-event-collector-s3-access-policy"
+    iam_name: "{{ cluster_name }}-{{ enclave }}-collector-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-collector-s3-access-policy"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:
@@ -60,7 +60,7 @@
 
 - name: Remove enclave event collector IAM role
   iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-event-collector-role"
+    name: "{{ cluster_name }}-{{ enclave }}-collector-role"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:
