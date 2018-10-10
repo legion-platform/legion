@@ -18,7 +18,7 @@ staticClients:
   - 'https://auth.{{ cluster_name }}/callback/{{ env_name }}'
   name: '{{ cluster_name }} Cluster'
 
-staticPasswords: {{ dex.config.staticPasswords|to_yaml }}
+staticPasswords: {{ dex.config.staticPasswords | json }}
 
 enablePasswordDB: {{ dex.config.enablePasswordDB | default('true') }}
 
