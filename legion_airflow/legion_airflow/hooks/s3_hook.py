@@ -519,7 +519,7 @@ class CsvWriter(object):
         for cell in cells:
             if column_splitter in cell or quote in cell or '\n' in cell:  # if cell contains comma or quote
                 cell = quote + cell.replace(quote, quote + quote) + quote  # wrap cell in quotes
-            if not row:
+            if row != '':
                 row += column_splitter
             row += cell
         return row
