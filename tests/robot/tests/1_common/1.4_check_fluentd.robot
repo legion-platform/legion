@@ -11,7 +11,7 @@ Library             legion_test.robot.Utils
 *** Test Cases ***
 Check feedback gathering
     [Documentation]  Checking that feedback gathering works
-    [Tags]  feedback  fluentd  infra
+    [Tags]  feedback  fluentd  apps
     Send feedback data      ${HOST_PROTOCOL}://feedback-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}   ${FEEDBACK_TAG}  a=0
 
 Check feedback processing

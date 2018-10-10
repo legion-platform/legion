@@ -13,13 +13,13 @@ Test Teardown       Close All Browsers
 *** Test Cases ***
 Checking if all core domains have been registered
     [Documentation]  Check that all required core DNS A records has been registered
-    [Tags]  core  dns  infra
+    [Tags]  core  dns  apps
     :FOR    ${subdomain}    IN    @{SUBDOMAINS}
     \  Check domain exists  ${subdomain}.${HOST_BASE_DOMAIN}
 
 Checking if all enclave domains have been registered
     [Documentation]  Check that all required enclave DNS A records has been registered
-    [Tags]  core  dns  infra
+    [Tags]  core  dns  apps
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \   Check if all enclave domains are registered      ${enclave}
 
@@ -37,7 +37,7 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
 
 Check Nexus availability
     [Documentation]  Check Nexus UI availability
-    [Tags]  nexus  ui  infra
+    [Tags]  nexus  ui  apps
     Sleep  60
     Open Nexus                              /
     Wait Nexus componens in menu
@@ -52,7 +52,7 @@ Check Nexus Components available
 
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave
-    [Tags]  grafana  enclave  infra
+    [Tags]  grafana  enclave  apps
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Grafana     ${enclave}
 
