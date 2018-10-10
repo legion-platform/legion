@@ -21,6 +21,13 @@ spec:
       - name: grafana
         image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
         imagePullPolicy: "{{ .Values.grafana.image.pullPolicy }}"
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: "admin"

@@ -14,8 +14,8 @@ aws_region: us-east-2
 node_autoscaler_min: 3
 node_autoscaler_max: 5
 bastion_shape: t2.micro
-master_shape: m5.large
-node_shape: m5.large
+master_shape: m5.xlarge
+node_shape: m5.xlarge
 
 # Ohio high memory instances
 node_extra_shapes:
@@ -53,8 +53,6 @@ cluster_zones:
     kops_utility_cidr: "{{ private_network }}.117.0/24"
 k8s_master_zones:
   - us-east-2a
-  - us-east-2b
-  - us-east-2c
 # Legion specific variables
 persistent_jenkins_volume: true
 ssh_public_key: ~/.ssh/id_rsa.pub
@@ -76,7 +74,6 @@ examples_to_test:
 model_id_to_test: income
 enclaves:
   - company-a
-  - company-b
 storageclass: efs
 airflow_dags_dir: '/airflow-dags'
 airflow_dags_pvc: legion-airflow-dags

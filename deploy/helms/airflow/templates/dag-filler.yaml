@@ -13,6 +13,13 @@ spec:
       containers:
       - name: alpine
         image: alpine:3.5
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
         command: ["cp",  "-R", "/mnt/dags/.", "{{ .Values.storage.airflow_dags_directory }}"]
         volumeMounts:
         - name: dag-volume

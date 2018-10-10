@@ -23,6 +23,13 @@ spec:
         - name: {{ .Chart.Name }}-nginx
           image: nginx:stable
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "512Mi"
           ports:
             - name: http
               containerPort: 80
@@ -42,6 +49,13 @@ spec:
 
         - name: {{ .Chart.Name }}-auth
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "512Mi"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: [ "--config", "config.yaml" ]
           ports:

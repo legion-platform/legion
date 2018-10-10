@@ -35,6 +35,13 @@ spec:
       - name: edi
         image: "{{ .Values.edi.image.repository }}:{{ .Values.edi.image.tag }}"
         imagePullPolicy: "{{ .Values.edi.image.pullPolicy }}"
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+          limits:
+            cpu: "100m"
+            memory: "512Mi"
         env:
         - name: DEPLOYMENT
           value: "{{ .Release.Name }}"

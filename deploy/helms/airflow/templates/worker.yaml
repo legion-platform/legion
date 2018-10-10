@@ -21,6 +21,13 @@ spec:
       containers:
       - name: worker
         image: "{{ .Values.image }}"
+        resources:
+          requests:
+            cpu: "1500m"
+            memory: "1000Mi"
+          limits:
+            cpu: "2000m"
+            memory: "2500Mi"
         env:
         - name: POSTGRES_HOST
         {{- if .Values.postgres.external}}
