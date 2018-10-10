@@ -2,7 +2,7 @@ replicaCount: {{ dex.replicas | default('1') }}
 
 issuer: https://dex.{{ cluster_name }}
 
-{% if dex.config.connectors %}
+{% if dex.config.connectors is defined %}
 connectors:
 {{ dex.config.connectors|to_yaml }}
 {% else %}
