@@ -519,10 +519,12 @@ class CsvWriter(object):
         :return: str -- formatted row
         """
         row = ''
+        cell_number = 0
         for cell in cells:
             if column_splitter in cell or quote in cell or '\n' in cell:  # if cell contains comma or quote
                 cell = quote + cell.replace(quote, quote + quote) + quote  # wrap cell in quotes
-            if row != '':
+            if cell_number > 0:
                 row += column_splitter
             row += cell
+            cell_number += 1
         return row
