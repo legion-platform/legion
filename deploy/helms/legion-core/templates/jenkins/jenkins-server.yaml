@@ -107,6 +107,8 @@ spec:
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
           value: "8125"
+        - name: CLUSTER_NAME
+          value: {{ .Values.clusterName }}
         {{- if .Values.jenkins.airflow.enabled }}
         - name: DAGS_VOLUME_PVC
           value: {{ .Values.jenkins.dags_volume_pvc }}

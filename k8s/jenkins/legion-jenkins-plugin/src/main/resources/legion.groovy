@@ -66,9 +66,13 @@ def pod(Map podParams=null, Closure body) {
         return
     }
 
+    def annotations = []
+
     image = podParams.get('image', getDefaultImageName())
     cpu = podParams.get('cpu', '330m')
     ram = podParams.get('ram', '4Gi')
+    iamRole = podParams.get('iamRole', "${System.getenv('CLUSTER_NAME')}-${params.Enclave}-jslave-role")
+    annotations << podAnnotation(key: 'iam.amazonaws.com/role', value: iamRole)
 
     envToPass = [
             "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
@@ -99,6 +103,7 @@ spec:
     podTemplate(
             label: label, yaml: tolerations,
             namespace: "${params.Enclave}",
+            annotations: annotations,
             containers: [
                     containerTemplate(
                             name: 'model',
