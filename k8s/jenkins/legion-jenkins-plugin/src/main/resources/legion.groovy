@@ -232,6 +232,7 @@ def deploy(Map deployParams=null) {
     count = deployParams.get('count', 1)
     livenesstimeout = deployParams.get('livenesstimeout', 2)
     readinesstimeout = deployParams.get('readinesstimeout', 2)
+    modelIamRole = deployParams.get('modelIamRole', "${System.getenv('CLUSTER_NAME')}-${params.Enclave}-model-role")
     deploytimeout = deployParams.get('deploytimeout', 300)
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
@@ -241,7 +242,7 @@ def deploy(Map deployParams=null) {
 
     sh """
     legionctl undeploy --ignore-not-found ${env.MODEL_ID}
-    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
+    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --model-iam-role=${modelIamRole} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
     legionctl inspect
     """
 }

@@ -288,13 +288,15 @@ def deploy_kubernetes(args):
     """
     Deploy kubernetes model
 
-    :param args: command arguments with .model_id, .namespace , .livenesstimeout, .readinesstimeout and .scale
+    :param args: command arguments with .model_id, .namespace , .livenesstimeout,
+                .readinesstimeout, .model_iam_role and .scale
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
     LOGGER.info('Sending deploy request to {!r}'.format(edi_client))
-    model_deployments = edi_client.deploy(args.image, args.scale, args.livenesstimeout, args.readinesstimeout)
+    model_deployments = edi_client.deploy(args.image, args.model_iam_role, args.scale, args.livenesstimeout,
+                                          args.readinesstimeout)
     LOGGER.info('Server returned list of affected deployments: {!r}'.format(model_deployments))
 
     wait_operation_finish(args, edi_client,

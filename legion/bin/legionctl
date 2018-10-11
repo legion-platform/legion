@@ -53,6 +53,8 @@ if __name__ == '__main__':
                                               description='deploys a model into a kubernetes cluster')
     deploy_k8s_parser.add_argument('image',
                                    type=str, help='docker image')
+    deploy_k8s_parser.add_argument('--model-iam-role',
+                                   type=str, help='IAM role to be used at model pod')
     deploy_k8s_parser.add_argument('--image-for-k8s',
                                    type=str, help='docker image for kubernetes deployment')
     deploy_k8s_parser.add_argument('--scale',
