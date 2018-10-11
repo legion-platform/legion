@@ -33,6 +33,7 @@ from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
 from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 import legion.k8s.utils
 from legion.utils import normalize_name, ensure_function_succeed
+import legion.k8s.exceptions
 
 LOGGER = logging.getLogger(__name__)
 
@@ -222,7 +223,6 @@ class ModelService(Service):
         self._model_version = k8s_service.metadata.labels.get(DOMAIN_MODEL_VERSION)
 
         self._deployment = None
-        self._deployment_data_loaded = False
 
     @staticmethod
     def is_model_service(k8s_service):
@@ -294,21 +294,21 @@ class ModelService(Service):
 
         :return: None
         """
-        if self._deployment_data_loaded:
+        if self._deployment:
             return
 
         self._deployment = ensure_function_succeed(self._load_deployment_data_logic,
                                                    LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT)
         if not self._deployment:
-            self._deployment_data_loaded = True
+            raise legion.k8s.exceptions.UnknownDeploymentForModelService(self.name)
 
     def reload_cache(self):
         """
-        Reload all cached data about ingress
+        Reload all cached data about deployment
 
         :return: None
         """
-        self._deployment_data_loaded = False
+        self._deployment = None
         self._load_deployment_data()
 
     @property
@@ -318,7 +318,7 @@ class ModelService(Service):
 
         :return: int -- current model scale
         """
-        if self.deployment and self.deployment.status.available_replicas:
+        if self.deployment.status.available_replicas:
             return self.deployment.status.available_replicas
         else:
             return 0
@@ -334,9 +334,6 @@ class ModelService(Service):
         """
         if new_scale < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
-
-        if not self.deployment:
-            raise Exception('Unable to find desired deployment.')
 
         client = legion.k8s.utils.build_client()
 
@@ -362,9 +359,6 @@ class ModelService(Service):
         :type grace_period_seconds: int
         :return: None
         """
-        if not self.deployment:
-            raise Exception('Unable to find desired deployment.')
-
         client = legion.k8s.utils.build_client()
 
         api_instance = kubernetes.client.AppsV1beta1Api(client)
@@ -392,7 +386,7 @@ class ModelService(Service):
         :return: int -- desired model scale
         """
         self._load_deployment_data()
-        if self.deployment and self.deployment.status.replicas:
+        if self.deployment.status.replicas:
             return self.deployment.status.replicas
         else:
             return 0
@@ -422,7 +416,7 @@ class ModelService(Service):
         :return: str -- model image, or None if deployment isn't found
         """
         self._load_deployment_data()
-        return None if not self.deployment else self.deployment.spec.template.spec.containers[0].image
+        return self.deployment.spec.template.spec.containers[0].image
 
     @property
     def metrics_name(self):
