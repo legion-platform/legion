@@ -86,7 +86,7 @@ class S3Hook(K8SBaseHook):
         """
         self.check_if_maintenance(bucket, key)
         uri = self._get_uri(bucket, key)
-        self.logging.info('Opening file "{}" with "{}" mode'.format(uri, mode))
+        self.logger.info('Opening file "{}" with "{}" mode'.format(uri, mode))
         return smart_open.smart_open(uri=uri, mode=mode,
                                      encoding=encoding,
                                      aws_access_key_id=self.aws_access_key_id,
@@ -173,7 +173,7 @@ class S3Hook(K8SBaseHook):
         """
         try:
             uri = self._get_uri(bucket, key)
-            self.logging.info('Checking if "{}" exists'.format(uri))
+            self.logger.info('Checking if "{}" exists'.format(uri))
             smart_open.smart_open(uri,
                                   mode='rb',
                                   aws_access_key_id=self.aws_access_key_id,
