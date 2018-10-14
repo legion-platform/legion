@@ -354,12 +354,26 @@ def generate_token():
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str, vcs_project_url=str, vcs_credentials=str, ci_pipeline_path=str)
 @legion.http.requested_fields('project_name', 'vcs_project_url')
-def train_ml_import():
+def train_ml_import(project_name, vcs_project_url, vcs_credentials=None, ci_pipeline_path=None):
+    """
+    Import project
+
+    :param project_name: name of project
+    :type project_name: str
+    :param vcs_project_url: project URL in VCS (git / svn and so on). E.g. ssh://git@.../project_name or https://...
+    :type vcs_project_url: str
+    :param vcs_credentials: (Optional) credentials for connection to VCS
+    :type vcs_credentials: str
+    :param ci_pipeline_path: (Optional) custom path to pipeline declaration inside VCS
+    :type ci_pipeline_path: str
+    :return:
+    """
     # Validation project_name [/w/d_\-]+
     return {
         'project_name': '',
         'project_url': '',
-        'actions': {
+        'links': {
+            'history_url': '',
             'remove_url': '',
             'run_url': '',
             'cancel_url': '',
@@ -381,7 +395,7 @@ def train_ml_remove():
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str, profile_name=str)
 @legion.http.requested_fields('project_name')
-def train_ml_run():
+def train_ml_execute():
     return {
         'project_name': '',
         'project_url': '',
@@ -418,7 +432,7 @@ def train_ml_history():
 @legion.http.populate_fields(project_name=str)
 @legion.http.requested_fields('project_name')
 def train_ml_cancel():
-    pass
+    return True
 
 
 @register_blueprint(*EDI_TRAIN_ML_STATUS)
@@ -427,7 +441,7 @@ def train_ml_cancel():
 @legion.http.populate_fields(project_name=str)
 @legion.http.requested_fields('project_name')
 def train_ml_status():
-    pass
+    return True
 
 
 @register_blueprint(*EDI_TRAIN_ML_LOGS)
@@ -436,14 +450,27 @@ def train_ml_status():
 @legion.http.populate_fields(project_name=str)
 @legion.http.requested_fields('project_name')
 def train_ml_logs():
-    pass
+    return True
 
 
 @register_blueprint(*EDI_TRAIN_ML_INSPECT)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 def train_ml_inspect():
-    pass
+    return {
+        'projects': [
+            {
+                'project_name': '',
+                'project_url': '',
+                'links': {
+                    'history_url': '',
+                    'remove_url': '',
+                    'run_url': '',
+                    'cancel_url': '',
+                }
+            }
+        ]
+    }
 
 
 def create_application():

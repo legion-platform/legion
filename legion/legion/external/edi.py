@@ -57,20 +57,26 @@ class EdiClient:
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
 
-    def _query(self, endpoint_declaration, payload=None):
+    def _query(self, endpoint_declaration, payload=None, url_substitutes=None):
         """
         Perform query to EDI server
 
         :param url_template: url template from legion.const.api
         :type url_template: str
-        :param payload: payload (will be converted to JSON) or None
+        :param payload: data payload or None
         :type payload: dict[str, any]
+        :param url_substitutes: data for replacing URL
+        :type url_substitutes: dict[str, str]
         :return: dict[str, any] -- response content
         """
         url_template = endpoint_declaration[0]
-        http_method = endpoint_declaration[1]
+        http_method = endpoint_declaration[1].lower()
 
-        sub_url = url_template.format(version=self._version)
+        url_substitutes_dict = {'version': self._version}
+        if url_substitutes:
+            url_substitutes_dict.update(url_substitutes)
+
+        sub_url = url_template.format(**url_substitutes_dict)
         full_url = self._base.strip('/') + sub_url
 
         auth = None
@@ -86,8 +92,8 @@ class EdiClient:
 
         while left_retries > 0:
             try:
-                LOGGER.debug('Requesting {}'.format(full_url))
-                response = requests.request(http_method.lower(), full_url, data=payload, headers=headers, auth=auth)
+                LOGGER.debug('Requesting {} in {} mode'.format(full_url, http_method))
+                response = requests.request(http_method, full_url, data=payload, headers=headers, auth=auth)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
@@ -244,6 +250,121 @@ class EdiClient:
         response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, payload=payload)
         if response and 'token' in response:
             return response['token']
+
+    def train_ml_import(self, project_name, vcs_project_url, vcs_credentials=None, ci_pipeline_path=None):
+        """
+        Import project
+
+        :param project_name: name of project
+        :type project_name: str
+        :param vcs_project_url: project URL in VCS (git / svn and so on). E.g. ssh://git@.../project_name or https://...
+        :type vcs_project_url: str
+        :param vcs_credentials: (Optional) credentials for connection to VCS
+        :type vcs_credentials: str
+        :param ci_pipeline_path: (Optional) custom path to pipeline declaration inside VCS
+        :type ci_pipeline_path: str
+        :return:
+        """
+        payload = {
+            'project_name': project_name,
+            'vcs_project_url': vcs_project_url
+        }
+        if vcs_credentials:
+            payload['vcs_credentials'] = vcs_credentials
+        if vcs_credentials:
+            payload['ci_pipeline_path'] = ci_pipeline_path
+
+        return self._query(legion.edi.server.EDI_TRAIN_ML_IMPORT,
+                           payload=payload)
+
+    def train_ml_remove(self, project_name):
+        """
+        Remove project
+
+        :param project_name: name of project
+        :type project_name: str
+        :return:
+        """
+        return self._query(legion.edi.server.EDI_TRAIN_ML_REMOVE,
+                           url_substitutes={'project_name': project_name})
+
+    def train_ml_execute(self, project_name, profile_name=None):
+        """
+        Execute project. It creates new execution
+
+        :param project_name: name of project
+        :type project_name: str
+        :param profile_name: (Optional) name of profile
+        :type profile_name: str or None
+        :return:
+        """
+        payload = {}
+        if profile_name:
+            payload['profile_name'] = profile_name
+
+        return self._query(legion.edi.server.EDI_TRAIN_ML_EXECUTE,
+                           payload=payload,
+                           url_substitutes={'project_name': project_name})
+
+    def train_ml_history(self, project_name):
+        """
+        Get list of existed executions
+
+        :param project_name: name of project
+        :type project_name: str
+        :return:
+        """
+        return self._query(legion.edi.server.EDI_TRAIN_ML_HISTORY,
+                           url_substitutes={'project_name': project_name})
+
+    def train_ml_cancel(self, project_name, execution_id):
+        """
+        Cancel execution
+
+        :param project_name: name of project
+        :type project_name: str
+        :param execution_id: id of execution
+        :type execution_id: int
+        :return:
+        """
+        return self._query(legion.edi.server.EDI_TRAIN_ML_CANCEL,
+                           url_substitutes={'project_name': project_name, 'execution_id': execution_id})
+
+    def train_ml_status(self, project_name, execution_id):
+        """
+        Get status of execution
+
+        :param project_name: name of project
+        :type project_name: str
+        :param execution_id: id of execution
+        :type execution_id: int
+        :return:
+        """
+        return self._query(legion.edi.server.EDI_TRAIN_ML_STATUS,
+                           url_substitutes={'project_name': project_name, 'execution_id': execution_id})
+
+    def train_ml_logs(self, project_name, execution_id):
+        """
+        Get execution logs
+
+        :param project_name: name of project
+        :type project_name: str
+        :param execution_id: id of execution
+        :type execution_id: int
+        :return:
+        """
+        return self._query(legion.edi.server.EDI_TRAIN_ML_LOGS,
+                           url_substitutes={'project_name': project_name, 'execution_id': execution_id})
+
+    def train_ml_inspect(self):
+        """
+        Get list of executions
+
+        :param project_name: name of project
+        :type project_name: str
+        :return:
+        """
+        return self._query(legion.edi.server.EDI_TRAIN_ML_INSPECT)
 
     def __repr__(self):
         """
