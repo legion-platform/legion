@@ -127,8 +127,8 @@ def root():
     return {
         'component': 'EDI server',
         'version': EDI_VERSION,
-        'endpoints': [{
-            'url': url,
+        'links': [{
+            'href': url,
             'method': method,
             'description': description
         } for url, (_, method, description) in ALL_EDI_API_ENDPOINTS]
