@@ -18,6 +18,7 @@ Flask app
 """
 
 import logging
+import itertools
 
 import legion.config
 import legion.k8s
@@ -34,38 +35,49 @@ blueprint = Blueprint('apiserver', __name__)
 
 EDI_VERSION = '2.0'
 # URLs
-EDI_ROOT = '/'
-# - Model management (/ml_model)
-EDI_DEPLOY = '/api/{version}/ml_model/deploy'
-EDI_UNDEPLOY = '/api/{version}/ml_model/undeploy'
-EDI_SCALE = '/api/{version}/ml_model/scale'
-EDI_INSPECT = '/api/{version}/ml_model/inspect'
+EDI_ROOT = '/', 'GET'
+# - Model management (/ml/models)
+EDI_DEPLOY = '/api/{version}/ml/models/deploy', 'POST', 'Deploy new model in system'
+EDI_UNDEPLOY = '/api/{version}/ml/models/undeploy', 'POST', 'Undeploy already deployed model'
+EDI_SCALE = '/api/{version}/ml/models/scale', 'POST', 'Scale (up/down) already deployed model'
+EDI_INSPECT = '/api/{version}/ml/models/inspect', 'GET', 'Get information about deployed models'
 # - System information
-EDI_INFO = '/api/{version}/info'
+EDI_INFO = '/api/{version}/info', 'GET', 'Get information about system'
 # - Security management
-EDI_GENERATE_TOKEN = '/api/{version}/generate_token'
-# - Model training (/ml_train)
-EDI_TRAIN_ML_IMPORT = '/api/{version}/ml_train/import'
-EDI_TRAIN_ML_REMOVE = '/api/{version}/ml_train/remove'
-EDI_TRAIN_ML_RUN = '/api/{version}/ml_train/run'
-EDI_TRAIN_ML_CANCEL = '/api/{version}/ml_train/cancel'
-EDI_TRAIN_ML_STATUS = '/api/{version}/ml_train/status'
-EDI_TRAIN_ML_LOGS = '/api/{version}/ml_train/logs'
-EDI_TRAIN_ML_INSPECT = '/api/{version}/ml_train/inspect'
+EDI_GENERATE_TOKEN = '/api/{version}/generate_token', 'POST', 'Generate access token for model invocation'
+# - Model training (/ml/projects)
+EDI_TRAIN_ML_IMPORT = '/api/{version}/ml/projects', 'POST', 'Add/Import new project'
+EDI_TRAIN_ML_INSPECT = '/api/{version}/ml/projects', 'GET', 'Get list of existed projects'
+EDI_TRAIN_ML_REMOVE = '/api/{version}/ml/projects/{project_name}', 'DELETE', 'Remove project'
+EDI_TRAIN_ML_EXECUTE = '/api/{version}/ml/projects/{project_name}/executions', 'POST', 'Execute/Run project build'
+EDI_TRAIN_ML_HISTORY = '/api/{version}/ml/projects/{project_name}/executions', 'GET', \
+                       'Get information about projects execution'
+EDI_TRAIN_ML_CANCEL = '/api/{version}/ml/projects/{project_name}/executions/{execution_id}/cancel', 'POST', \
+                      'Cancel/Abort project execution'
+EDI_TRAIN_ML_STATUS = '/api/{version}/ml/projects/{project_name}/executions/{execution_id}', 'GET', \
+                      'Get information about execution status'
+EDI_TRAIN_ML_LOGS = '/api/{version}/ml/projects/{project_name}/executions/{execution_id}/logs', 'GET', \
+                    'Get execution logs'
 
 
-ALL_EDI_API_ENDPOINTS = EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, EDI_INFO, EDI_GENERATE_TOKEN
+ALL_EDI_API_ENDPOINTS = {}
 
 
-def build_blueprint_url(endpoint_url_template):
+def register_blueprint(url, method, description=None):
     """
-    Build endpoint url from template
+    Build blueprint decorator. Register URL handler and add to list of all handlers
 
-    :param endpoint_url_template: endpoint url template
-    :type endpoint_url_template: str
-    :return: str -- builded url
+    :param url: url of method (with {version} and parameters literals)
+    :type url: str
+    :param method: HTTP method, e.g. POST / DELETE / PUT
+    :type method: str
+    :param description: (Optional) method description
+    :type description: None or str
+    :return: Callable[Any, Any]
     """
-    return endpoint_url_template.format(version=EDI_VERSION)
+    built_url = url.replace('{version}', EDI_VERSION)
+    ALL_EDI_API_ENDPOINTS[built_url] = (url, method, description)
+    return blueprint.route(built_url, methods=[method])
 
 
 def authenticate(user, password):
@@ -103,7 +115,7 @@ def return_model_deployments(model_deployments):
     return [deployment.as_dict() for deployment in model_deployments]
 
 
-@blueprint.route(build_blueprint_url(EDI_ROOT), methods=['GET'])
+@register_blueprint(*EDI_ROOT)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 def root():
@@ -115,11 +127,15 @@ def root():
     return {
         'component': 'EDI server',
         'version': EDI_VERSION,
-        'endpoints': [build_blueprint_url(url) for url in ALL_EDI_API_ENDPOINTS]
+        'endpoints': [{
+            'url': url,
+            'method': method,
+            'description': description
+        } for url, (_, method, description) in ALL_EDI_API_ENDPOINTS]
     }
 
 
-@blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
+@register_blueprint(*EDI_DEPLOY)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(image=str, count=int, livenesstimeout=int, readinesstimeout=int)
@@ -169,7 +185,7 @@ def model_deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     return return_model_deployments([model_deployment])
 
 
-@blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
+@register_blueprint(*EDI_UNDEPLOY)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(model=str, version=str, grace_period=int, ignore_not_found=bool)
@@ -217,7 +233,7 @@ def model_undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     return return_model_deployments(model_deployments)
 
 
-@blueprint.route(build_blueprint_url(EDI_SCALE), methods=['POST'])
+@register_blueprint(*EDI_SCALE)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(model=str, count=int, version=str)
@@ -252,7 +268,7 @@ def model_scale(model, count, version=None):
     return return_model_deployments(model_deployments)
 
 
-@blueprint.route(build_blueprint_url(EDI_INSPECT), methods=['GET'])
+@register_blueprint(*EDI_INSPECT)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(model=str, version=str)
@@ -296,7 +312,7 @@ def model_inspect(model=None, version=None):
     return return_model_deployments(model_deployments)
 
 
-@blueprint.route(build_blueprint_url(EDI_INFO), methods=['GET'])
+@register_blueprint(*EDI_INFO)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 def info():
@@ -308,7 +324,7 @@ def info():
     return app.config['CLUSTER_STATE']
 
 
-@blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['GET'])
+@register_blueprint(*EDI_GENERATE_TOKEN)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 def generate_token():
@@ -333,34 +349,70 @@ def generate_token():
 
 
 # Model training section
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_IMPORT), methods=['POST'])
+@register_blueprint(*EDI_TRAIN_ML_IMPORT)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str, vcs_project_url=str, vcs_credentials=str, ci_pipeline_path=str)
 @legion.http.requested_fields('project_name', 'vcs_project_url')
 def train_ml_import():
-    pass
+    # Validation project_name [/w/d_\-]+
+    return {
+        'project_name': '',
+        'project_url': '',
+        'actions': {
+            'remove_url': '',
+            'run_url': '',
+            'cancel_url': '',
+        }
+    }
 
 
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_REMOVE), methods=['POST'])
+@register_blueprint(*EDI_TRAIN_ML_REMOVE)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str)
 @legion.http.requested_fields('project_name')
 def train_ml_remove():
-    pass
+    return True
 
 
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_RUN), methods=['POST'])
+@register_blueprint(*EDI_TRAIN_ML_EXECUTE)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(project_name=str)
+@legion.http.populate_fields(project_name=str, profile_name=str)
 @legion.http.requested_fields('project_name')
 def train_ml_run():
-    pass
+    return {
+        'project_name': '',
+        'project_url': '',
+        'execution_id': 123,
+        'actions': {
+            'remove_url': '',
+            'run_url': '',
+            'status_url': '',
+        }
+    }
 
 
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_CANCEL), methods=['POST'])
+@register_blueprint(*EDI_TRAIN_ML_HISTORY)
+@legion.http.provide_json_response
+@legion.http.authenticate(authenticate)
+@legion.http.populate_fields(project_name=str, profile_name=str)
+@legion.http.requested_fields('project_name')
+def train_ml_history():
+    return {
+        'project_name': '',
+        'project_url': '',
+        'history': [
+            {
+                'execution_id': 123,
+                'log_url': 'https://...'
+            }
+        ]
+    }
+
+
+@register_blueprint(*EDI_TRAIN_ML_CANCEL)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str)
@@ -369,7 +421,7 @@ def train_ml_cancel():
     pass
 
 
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_STATUS), methods=['GET'])
+@register_blueprint(*EDI_TRAIN_ML_STATUS)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str)
@@ -378,7 +430,7 @@ def train_ml_status():
     pass
 
 
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_LOGS), methods=['GET'])
+@register_blueprint(*EDI_TRAIN_ML_LOGS)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 @legion.http.populate_fields(project_name=str)
@@ -387,7 +439,7 @@ def train_ml_logs():
     pass
 
 
-@blueprint.route(build_blueprint_url(EDI_TRAIN_ML_INSPECT), methods=['GET'])
+@register_blueprint(*EDI_TRAIN_ML_INSPECT)
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
 def train_ml_inspect():

@@ -57,7 +57,7 @@ class EdiClient:
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
 
-    def _query(self, url_template, payload=None, action='GET'):
+    def _query(self, endpoint_declaration, payload=None):
         """
         Perform query to EDI server
 
@@ -65,10 +65,11 @@ class EdiClient:
         :type url_template: str
         :param payload: payload (will be converted to JSON) or None
         :type payload: dict[str, any]
-        :param action: HTTP method (GET, POST, PUT, DELETE)
-        :type action: str
         :return: dict[str, any] -- response content
         """
+        url_template = endpoint_declaration[0]
+        http_method = endpoint_declaration[1]
+
         sub_url = url_template.format(version=self._version)
         full_url = self._base.strip('/') + sub_url
 
@@ -86,7 +87,7 @@ class EdiClient:
         while left_retries > 0:
             try:
                 LOGGER.debug('Requesting {}'.format(full_url))
-                response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
+                response = requests.request(http_method.lower(), full_url, data=payload, headers=headers, auth=auth)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
@@ -178,7 +179,7 @@ class EdiClient:
         if readinesstimeout:
             payload['readinesstimeout'] = readinesstimeout
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload))
+        return self.parse_deployments(self._query(legion.edi.server.EDI_DEPLOY, payload=payload))
 
     def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
         """
@@ -205,7 +206,7 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_UNDEPLOY, action='POST', payload=payload))
+        return self.parse_deployments(self._query(legion.edi.server.EDI_UNDEPLOY, payload=payload))
 
     def scale(self, model, count, version=None):
         """
@@ -226,7 +227,7 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
+        return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, payload=payload))
 
     def get_token(self, version=None):
         """
@@ -240,7 +241,7 @@ class EdiClient:
         if version:
             payload['version'] = version
 
-        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='GET', payload=payload)
+        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, payload=payload)
         if response and 'token' in response:
             return response['token']
 
