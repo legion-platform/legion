@@ -86,6 +86,7 @@ class S3Hook(K8SBaseHook):
         """
         self.check_if_maintenance(bucket, key)
         uri = self._get_uri(bucket, key)
+        self.logger.info('Opening file "{}" with "{}" mode'.format(uri, mode))
         return smart_open.smart_open(uri=uri, mode=mode,
                                      encoding=encoding,
                                      aws_access_key_id=self.aws_access_key_id,
@@ -123,7 +124,8 @@ class S3Hook(K8SBaseHook):
         """
         return json.load(self.open_file(bucket, key, 'r', encoding))
 
-    def write_csv_file(self, bucket: str, key: str, encoding: str = 'utf-8', splitter: str = ',', quote: str = '"'):
+    def write_csv_file(self, bucket: str, key: str, encoding: str = 'utf-8', splitter: str = ',',
+                       quote: str = '"', columns_number: int = 0):
         """
         Return CsvWriter to write a file.
 
@@ -137,9 +139,12 @@ class S3Hook(K8SBaseHook):
         :type splitter: str
         :param quote: quote symbol
         :type quote: str
+        :param columns_number: number of columns for validation
+        :type columns_number: int
         :return: :py:class:`CsvWriter` -- csv reader
         """
-        return CsvWriter(self.open_file(bucket, key, 'w', encoding), column_splitter=splitter, quote=quote)
+        return CsvWriter(self.open_file(bucket, key, 'w', encoding), column_splitter=splitter, quote=quote,
+                         columns_number=columns_number)
 
     def write_json_file(self, obj: object, bucket: str, key: str, encoding: str = 'utf-8'):
         """
@@ -167,7 +172,9 @@ class S3Hook(K8SBaseHook):
         :return: bool -- True if file exist, False otherwise
         """
         try:
-            smart_open.smart_open(self._get_uri(bucket, key),
+            uri = self._get_uri(bucket, key)
+            self.logger.info('Checking if "{}" exists'.format(uri))
+            smart_open.smart_open(uri,
                                   mode='rb',
                                   aws_access_key_id=self.aws_access_key_id,
                                   aws_secret_access_key=self.aws_secret_access_key).close()
@@ -421,7 +428,7 @@ class CsvWriter(object):
 
     EOL = '\r\n'
 
-    def __init__(self, writer: object, column_splitter: str = ',', quote: str = '"'):
+    def __init__(self, writer: object, column_splitter: str = ',', quote: str = '"', columns_number: int = 0):
         """
         Initialize CsvWriter.
 
@@ -431,10 +438,13 @@ class CsvWriter(object):
         :type column_splitter: str
         :param quote: quote symbol
         :type quote: str
+        :param columns_number: (Optional) a number of columns, that is used for input validation
+        :type columns_number: int
         """
         self.writer = writer
         self.column_splitter = column_splitter
         self.quote = quote
+        self.columns_number = columns_number
 
     def __enter__(self):
         """
@@ -468,7 +478,11 @@ class CsvWriter(object):
         :return: None
         """
         if cells is not None:
-            self.writer.write(self._format_row(cells, self.column_splitter, self.quote) + self.EOL)
+            if self.columns_number and len(cells) != self.columns_number:
+                raise ValueError('Expected {} columns in input but got {}: {}'
+                                 .format(self.columns_number, len(cells), ', '.join(cells)))
+            else:
+                self.writer.write(self._format_row(cells, self.column_splitter, self.quote) + self.EOL)
 
     def __getattr__(self, name: str):
         """
@@ -505,14 +519,12 @@ class CsvWriter(object):
         :return: str -- formatted row
         """
         row = ''
+        cell_number = 0
         for cell in cells:
             if column_splitter in cell or quote in cell or '\n' in cell:  # if cell contains comma or quote
-                protected_cell = quote + cell.replace(quote, quote + quote) + quote  # wrap cell in quotes
-                if row != '':
-                    row += column_splitter
-                row += protected_cell
-            else:
-                if row != '':
-                    row += column_splitter
-                row += cell
+                cell = quote + cell.replace(quote, quote + quote) + quote  # wrap cell in quotes
+            if cell_number > 0:
+                row += column_splitter
+            row += cell
+            cell_number += 1
         return row
