@@ -20,7 +20,7 @@ data:
 
     dag = DAG(
         dag_id='example_python_work', default_args=args,
-        schedule_interval='*/1 * * * *',
+        schedule_interval='@once',
         dagrun_timeout=datetime.timedelta(minutes=2))
 
     def output_some_data():
@@ -30,15 +30,15 @@ data:
                                  python_callable=output_some_data,
                                  dag=dag)
 
-    sleep_3_sec = BashOperator(task_id='sleep_3_seconds',
-                               bash_command='sleep 3',
+    echo_1 = BashOperator(task_id='echo_1',
+                               bash_command='echo $(date)',
                                dag=dag)
-    sleep_2_sec = BashOperator(task_id='sleep_2_seconds',
-                               bash_command='sleep 2',
+    echo_2 = BashOperator(task_id='echo_2',
+                               bash_command='echo $(date)',
                                dag=dag)
 
-    sleep_3_sec >> output_data
-    sleep_2_sec >> output_data
+    echo_1 >> output_data
+    echo_2 >> output_data
 
     if __name__ == "__main__":
         dag.cli()
