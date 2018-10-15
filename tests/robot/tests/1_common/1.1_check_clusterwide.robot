@@ -58,7 +58,7 @@ Check enclave Grafana availability
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
-    [Tags]  jenkins  model  scaling  infra
+    [Tags]  k8s  scaling  infra
     Get cluster nodes and their count    before
 
     :FOR  ${enclave}    IN    @{ENCLAVES}

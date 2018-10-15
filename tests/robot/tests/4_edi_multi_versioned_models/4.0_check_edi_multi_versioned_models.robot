@@ -15,16 +15,6 @@ Test Teardown       Run Keywords
 ...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}   ${TEST_MODEL_IMAGE_2}
 
 *** Test Cases ***
-Check EDI availability in all enclaves
-    [Setup]         NONE
-    [Documentation]  Try to connect to EDI in each enclave
-    [Tags]  edi  cli  enclave  multi_versions  infra
-    :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  ${edi_state} =           Run EDI inspect  ${enclave}
-    \  Log                      ${edi_state}
-    \  Should Be Equal As Integers       ${edi_state.rc}   0
-    [Teardown]      NONE
-
 Check EDI deploy 2 models with different versions but the same id
     [Setup]         NONE
     [Tags]  edi  cli  enclave  multi_versions  apps
