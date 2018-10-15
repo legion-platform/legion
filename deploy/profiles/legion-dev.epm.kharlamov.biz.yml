@@ -85,6 +85,7 @@ collector:
   region: "{{ aws_region }}"
 
 jenkins_slave_s3_bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"
+common_model_s3_bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"
 
 # Addons
 dashboard:

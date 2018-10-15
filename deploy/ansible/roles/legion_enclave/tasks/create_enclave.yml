@@ -113,15 +113,14 @@
     object: "/{{ airflow_s3_logs_path }}"
     mode: create
 
-- name: Create S3 storage for Event Collector
+- name: Create S3 buckets for enclave resources
   aws_s3:
-    bucket: "{{ collector.bucket }}"
+    bucket: "{{ item }}"
     mode: create
-
-- name: Create S3 storage for Jenkins Slave
-  aws_s3:
-    bucket: "{{ jenkins_slave_s3_bucket }}"
-    mode: create
+  with_items:
+    - "{{ collector.bucket }}"
+    - "{{ jenkins_slave_s3_bucket }}"
+    - "{{ common_model_s3_bucket }}"
 
 # Create IAM roles
 - name: Generate Trust policy documents
@@ -137,50 +136,32 @@
     dest: "{{ tmp_dir }}/{{ item }}.{{ enclave }}.{{ cluster_name }}.yaml"
   with_items:
     - airflow_s3_access_policy
-    - event_collector_s3_access_policy
+    - collector_s3_access_policy
     - jslave_s3_access_policy
+    - model_s3_access_policy
 
-- name: Create Airflow IAM role
+- name: Create Enclave IAM roles
   iam:
     iam_type: role
-    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
     trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
     state: present
+  with_items:
+    - airflow
+    - collector
+    - jslave
+    - model
 
-- name: Attach Airflow S3 accesse policy to the role
+- name: Attach S3 accesse policies to the roles
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
-    policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
+    iam_name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-s3-access-policy"
+    policy_document: "{{ tmp_dir }}/{{ item }}_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
     state: present
-
-- name: Create Event Collector IAM role
-  iam:
-    iam_type: role
-    name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
-    state: present
-
-- name: Attach Event Collector S3 accesse policy to the role
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-collector-s3-access-policy"
-    policy_document: "{{ tmp_dir }}/event_collector_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
-    state: present
-
-- name: Create Jenkins-slave IAM role
-  iam:
-    iam_type: role
-    name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
-    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
-    state: present
-
-- name: Attach Jenkins-slave S3 accesse policy to the role
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-jslave-s3-access-policy"
-    policy_document: "{{ tmp_dir }}/jslave_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
-    state: present
+  with_items:
+    - airflow
+    - collector
+    - jslave
+    - model
+    
