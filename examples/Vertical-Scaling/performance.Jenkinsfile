@@ -1,7 +1,7 @@
 node {
     def legion = load legion()
 
-    legion.pod(cpu: '7') {
+    legion.pod(ram: '12Gi') {
         stage('System info'){
             sh "df -h"
             sh "cat /proc/cpuinfo"
