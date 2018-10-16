@@ -507,7 +507,7 @@ class ModelServeTestBuild:
             raise exception
 
 
-def build_requests_reponse_from_flask_test_response(test_response, url):
+def build_requests_reponse_from_flask_client_response(test_response, url):
     """
     Build requests.Response object from Flask test client response
 
@@ -538,7 +538,7 @@ def build_requests_mock_function(test_client):
     """
     def func(action, url, data=None, headers=None):
         test_response = test_client.open(url, method=action, data=data, headers=headers)
-        return build_requests_reponse_from_flask_test_response(test_response, url)
+        return build_requests_reponse_from_flask_client_response(test_response, url)
     return func
 
 
