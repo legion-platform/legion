@@ -573,7 +573,7 @@ class EDITestServer:
         with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
                patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
                  patch('legion.edi.server.get_application_grafana', lambda *x: None), \
-                   patch_environ(additional_environment): # pylint: disable=E127
+                   patch_environ(additional_environment):  # noqa
             self.application = ediserve.init_application(None)
 
         self.application.testing = True
