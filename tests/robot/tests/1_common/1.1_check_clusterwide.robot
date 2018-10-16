@@ -50,10 +50,23 @@ Check Nexus Components available
 #    List Should Contain Value               ${componentNames}           docker-hosted
 #    List Should Contain Value               ${componentNames}           raw
 
-
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave
     [Tags]  grafana  enclave
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Grafana     ${enclave}
 
+Check Vertical Scailing
+    [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
+    [Tags]  jenkins  model  scaling  infra
+    Get cluster nodes and their count    before
+
+    :FOR  ${enclave}    IN    @{ENCLAVES}
+    \  Connect to Jenkins endpoint
+        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
+        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
+        Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+
+    Get cluster nodes and their count    after
+    Should Not Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
+    Wait node scale down           ${NODES_COUNT_BEFORE}
