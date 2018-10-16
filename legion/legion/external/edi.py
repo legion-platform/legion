@@ -35,7 +35,7 @@ class EdiClient:
     EDI client
     """
 
-    def __init__(self, base=None, token=None, retries=3, http_client=None, use_relative_url=False):
+    def __init__(self, base, token=None, retries=3):
         """
         Build client
 
@@ -54,11 +54,24 @@ class EdiClient:
         self._token = token
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
-        if http_client:
-            self._http_client = http_client
-        else:
-            self._http_client = requests
-        self._use_relative_url = use_relative_url
+
+
+    def _request(self, action, url, data=None, headers=None):
+        """
+        Make HTTP request
+
+        :param action: request action, e.g. get / post / delete
+        :type action: str
+        :param url: target URL
+        :type url: str
+        :param data: (Optional) data to be placed in body of request
+        :param data: dict[str, str] or None
+        :param headers: (Optional) additional HTTP headers
+        :param headers: dict[str, str] or None
+        :return: :py:class:`requests.Response` -- response
+        """
+        return requests.request(action.lower(), url, data=data, headers=headers)
+
 
     def _query(self, url_template, payload=None, action='GET'):
         """
@@ -73,20 +86,16 @@ class EdiClient:
         :return: dict[str, any] -- response content
         """
         sub_url = url_template.format(version=self._version)
-        if self._use_relative_url:
-            target_url = sub_url
-        else:
-            target_url = self._base.strip('/') + sub_url
-
-        headers = {}
+        target_url = self._base.strip('/') + sub_url
 
         left_retries = self._retries if self._retries > 0 else 1
         raised_exception = None
 
         while left_retries > 0:
             try:
-                LOGGER.debug('Requesting {}'.format(full_url))
-                response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
+                LOGGER.debug('Requesting {}'.format(target_url))
+                # TODO: Add sending token (LEGION #313)
+                response = self._request(action, target_url, payload)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
@@ -100,20 +109,12 @@ class EdiClient:
                 self._base, raised_exception
             ))
 
-        if hasattr(response, 'text'):
-            response_data = response.text
-        else:
-            response_data = response.data
-
-        if isinstance(response_data, bytes):
-            response_data = response_data.decode('utf-8')
-
         try:
-            answer = json.loads(response_data)
+            answer = json.loads(response.text)
             LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
                          .format(answer, response.status_code, target_url))
         except ValueError as json_decode_exception:
-            raise ValueError('Invalid JSON structure {!r}: {}'.format(response_data, json_decode_exception))
+            raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
         if isinstance(answer, dict) and answer.get('error', False):
             exception = answer.get('exception')

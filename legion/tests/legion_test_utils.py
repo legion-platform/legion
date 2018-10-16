@@ -13,6 +13,7 @@ import docker
 import docker.types
 import docker.errors
 import docker.client
+import requests
 
 import legion.config
 import legion.containers.docker
@@ -506,6 +507,41 @@ class ModelServeTestBuild:
             raise exception
 
 
+def build_requests_reponse_from_flask_test_response(test_response, url):
+    """
+    Build requests.Response object from Flask test client response
+
+    :param test_response: Flask test client response
+    :type test_response: :py:class:`flask.wrappers.Response`
+    :param url: requested URL
+    :type url: str
+    :return: :py:class:`requests.Response` -- response object
+    """
+    response = requests.Response()
+    response.status_code = test_response.status_code
+    response.url = url
+    response._content = test_response.data
+    for header, value in test_response.headers.items():
+        response.headers[header] = value
+    response._encoding = test_response.charset
+    response._content_consumed = True
+    return response
+
+
+def build_requests_mock_function(test_client):
+    """
+    Build function that shoul replace requests.request function in tests
+
+    :param test_client: test flask client
+    :type test_client: :py:class:`flask.test.FlaskClient`
+    :return: Callable[[str, str, dict[str, str], dict[str, str]], requests.Response]
+    """
+    def func(action, url, data=None, headers=None):
+        test_response = test_client.open(url, method=action, data=data, headers=headers)
+        return build_requests_reponse_from_flask_test_response(test_response, url)
+    return func
+
+
 class EDITestServer:
     """
     Context manager for testing EDI server
@@ -519,7 +555,6 @@ class EDITestServer:
 
         self.application = None
         self.http_client = None
-        self.edi_client = None
 
     def __enter__(self):
         """
@@ -535,15 +570,16 @@ class EDITestServer:
         test_enclave = legion.k8s.enclave.Enclave(self._enclave_name)
         test_enclave._data_loaded = True
 
-        with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name):
-            with patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave):
-                with patch('legion.edi.server.get_application_grafana', lambda *x: None):
-                    with patch_environ(additional_environment):
-                        self.application = ediserve.init_application(None)
-                        self.application.testing = True
-                        self.http_client = self.application.test_client()
-                        self.edi_client = legion.external.edi.EdiClient(http_client=self.http_client,
-                                                                        use_relative_url=True)
+        with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
+             patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
+             patch('legion.edi.server.get_application_grafana', lambda *x: None), \
+             patch_environ(additional_environment):
+            self.application = ediserve.init_application(None)
+
+        self.application.testing = True
+        self.http_client = self.application.test_client()
+        self.edi_client = legion.external.edi.EdiClient('')
+        self.edi_client._request = build_requests_mock_function(self.http_client)
 
         return self
 

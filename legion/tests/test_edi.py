@@ -37,15 +37,29 @@ from legion_test_models import create_simple_summation_model_by_df, \
 import legion.serving.pyserve as pyserve
 
 
+def get_models_mock_empty(model_id, model_version):
+    return []
+
 class TestEDI(unittest2.TestCase):
-    def test_model_info_with_typed_columns(self):
+    def test_edi_inspect_all_empty(self):
         with EDITestServer() as edi:
-            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models', side_effect=lambda *x, **y: []) as get_models_patched:
+            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models', side_effect=get_models_mock_empty) as get_models_patched:
                 models_info = edi.edi_client.inspect()
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 0)
                 self.assertTrue(len(get_models_patched.call_args_list) == 1, 'should be exactly one call')
 
+    def test_edi_inspect_model_id_and_version_empty(self):
+        TEST_MODEL_ID = 'test-id'
+        TEST_MODEL_VERSION = 'test-version'
+
+        with EDITestServer() as edi:
+            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models', side_effect=get_models_mock_empty) as get_models_patched:
+                models_info = edi.edi_client.inspect(TEST_MODEL_ID, TEST_MODEL_VERSION)
+                self.assertIsInstance(models_info, list)
+                self.assertEqual(len(models_info), 0)
+                self.assertTrue(len(get_models_patched.call_args_list) == 1, 'should be exactly one call')
+                self.assertTupleEqual(get_models_patched.call_args_list[0][0], (TEST_MODEL_ID, TEST_MODEL_VERSION))
 
 
 if __name__ == '__main__':
