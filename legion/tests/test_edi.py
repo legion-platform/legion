@@ -15,15 +15,11 @@
 #
 from __future__ import print_function
 
-import unittest2
-import unittest.mock
-import json
-from random import randint
-import urllib.parse
-from io import BytesIO
 import sys
 import os
 
+import unittest2
+import unittest.mock
 from werkzeug.datastructures import FileMultiDict
 
 sys.path.extend(os.path.dirname(__file__))
@@ -35,6 +31,7 @@ from legion_test_models import create_simple_summation_model_by_df, \
     create_simple_summation_model_lists_with_files_info
 
 import legion.serving.pyserve as pyserve
+import legion.k8s.services
 
 
 def get_models_mock_empty(model_id, model_version):

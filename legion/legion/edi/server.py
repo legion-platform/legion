@@ -262,13 +262,7 @@ def inspect(model=None, version=None):
         try:
             model_api_info = {}
 
-            model_client = legion.model.ModelClient(
-                model_id=model_service.id,
-                model_version=model_service.version,
-                host=model_service.url_with_ip,
-                timeout=3
-            )
-            LOGGER.info('Building model client: {!r}'.format(model_client))
+            model_client = legion.model.ModelClient.build_from_model_service(model_service)
 
             try:
                 model_api_info['result'] = model_client.info()

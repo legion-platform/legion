@@ -91,6 +91,24 @@ class ModelClient:
 
         self._timeout = timeout
 
+    @staticmethod
+    def build_from_model_service(model_service, timeout=3):
+        """
+        Build model client from model service information
+
+        :param model_service: model service information
+        :type model_service: :py:class:`legion.k8s.services.ModelService`
+        :param timeout: (Optional) connection timeout
+        :type timeout: int
+        :return: :py:class:`legion.model.client.ModelClient` -- model client
+        """
+        return ModelClient(
+            model_id=model_service.id,
+            model_version=model_service.version,
+            host=model_service.url_with_ip,
+            timeout=timeout
+        )
+
     def __repr__(self):
         """
         Get string representation of model client
