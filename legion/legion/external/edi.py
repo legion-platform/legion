@@ -51,7 +51,6 @@ class EdiClient:
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
 
-
     def _request(self, action, url, data=None, headers=None):
         """
         Make HTTP request
@@ -67,7 +66,6 @@ class EdiClient:
         :return: :py:class:`requests.Response` -- response
         """
         return requests.request(action.lower(), url, data=data, headers=headers)
-
 
     def _query(self, url_template, payload=None, action='GET'):
         """

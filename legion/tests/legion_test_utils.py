@@ -571,9 +571,9 @@ class EDITestServer:
         test_enclave._data_loaded = True
 
         with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
-             patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
-             patch('legion.edi.server.get_application_grafana', lambda *x: None), \
-             patch_environ(additional_environment):
+               patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
+                 patch('legion.edi.server.get_application_grafana', lambda *x: None), \
+                   patch_environ(additional_environment): # pylint: disable=E127
             self.application = ediserve.init_application(None)
 
         self.application.testing = True

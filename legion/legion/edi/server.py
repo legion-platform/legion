@@ -339,6 +339,7 @@ def create_application():
 
     return application
 
+
 def get_application_enclave(application):
     """
     Build enclave's object
@@ -348,6 +349,7 @@ def get_application_enclave(application):
     :return :py:class:`legion.k8s.enclave.Enclave`
     """
     return legion.k8s.Enclave(application.config['NAMESPACE'])
+
 
 def get_application_grafana(application):
     """

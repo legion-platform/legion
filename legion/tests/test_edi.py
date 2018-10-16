@@ -40,10 +40,12 @@ import legion.serving.pyserve as pyserve
 def get_models_mock_empty(model_id, model_version):
     return []
 
+
 class TestEDI(unittest2.TestCase):
     def test_edi_inspect_all_empty(self):
         with EDITestServer() as edi:
-            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models', side_effect=get_models_mock_empty) as get_models_patched:
+            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models',
+                                     side_effect=get_models_mock_empty) as get_models_patched:
                 models_info = edi.edi_client.inspect()
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 0)
@@ -54,7 +56,8 @@ class TestEDI(unittest2.TestCase):
         TEST_MODEL_VERSION = 'test-version'
 
         with EDITestServer() as edi:
-            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models', side_effect=get_models_mock_empty) as get_models_patched:
+            with unittest.mock.patch('legion.k8s.enclave.Enclave.get_models',
+                                     side_effect=get_models_mock_empty) as get_models_patched:
                 models_info = edi.edi_client.inspect(TEST_MODEL_ID, TEST_MODEL_VERSION)
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 0)
