@@ -99,7 +99,10 @@ secrets_file: ~  # path for temporary storage
 
 collector:    # event collector configuration
   replicas: ~
-  bucket: ~ # bucket for event collector data
+  bucket_prefix: ~ # data bucket preffix
+  bucket: ~ # bucket name
   region: ~ # bucket region
 
+jenkins_slave_s3_bucket: ~ # s3 bucket name for jenkins slave data
+common_model_s3_bucket: ~ # s3 bucket name for common model data
 # hide_edge_page: ~ # (Optional) 'false' - Edge home page os visible (default value)
