@@ -79,7 +79,9 @@ def get_variables(arg=None):
         'CLUSTER_NAME': data['cluster_name'],
         'NEXUS_DOCKER_REPO': data['docker_repo'],
         'TEMP_DIRECTORY': data['tmp_dir'],
-        'FEEDBACK__BUCKET': data['collector']['bucket'],
+        'FEEDBACK_BUCKET': '{}-{}-{}'.format(data['collector']['bucket_prefix'],
+                                              data['env_type'],
+                                              data['enclaves'][0]),
         'FEEDBACK__REGION': data['collector']['region']
     }
 

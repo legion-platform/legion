@@ -81,6 +81,7 @@ airflow_pvc: 200m
 
 collector:
   replicas: 1
+  bucket_prefix: epm-legion-data
   bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"
   region: "{{ aws_region }}"
 
