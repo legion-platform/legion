@@ -321,7 +321,7 @@ def info():
 
     :return: dict -- state of cluster
     """
-    return app.config['CLUSTER_STATE']
+    return {}
 
 
 @register_blueprint(*EDI_GENERATE_TOKEN)
@@ -485,6 +485,29 @@ def create_application():
 
     return application
 
+def get_application_enclave(application):
+    """
+    Build enclave's object
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return :py:class:`legion.k8s.enclave.Enclave`
+    """
+    return legion.k8s.Enclave(application.config['NAMESPACE'])
+
+def get_application_grafana(application):
+    """
+    Build enclave's grafana client
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return :py:class:`legion.external.grafana.GrafanaClient`
+    """
+    grafana_client = legion.external.grafana.GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
+                                                           application.config['CLUSTER_SECRETS']['grafana.user'],
+                                                           application.config['CLUSTER_SECRETS']['grafana.password'])
+    return grafana_client
+
 
 def load_cluster_config(application):
     """
@@ -497,16 +520,9 @@ def load_cluster_config(application):
     if not application.config['NAMESPACE']:
         application.config['NAMESPACE'] = legion.k8s.get_current_namespace()
 
-    application.config['ENCLAVE'] = legion.k8s.Enclave(application.config['NAMESPACE'])
-
-    application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(
-        application.config['CLUSTER_SECRETS_PATH'])
-    application.config['CLUSTER_STATE'] = legion.k8s.load_config(application.config['CLUSTER_CONFIG_PATH'])
-
-    grafana_client = legion.external.grafana.GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
-                                                           application.config['CLUSTER_SECRETS']['grafana.user'],
-                                                           application.config['CLUSTER_SECRETS']['grafana.password'])
-    application.config['GRAFANA_CLIENT'] = grafana_client
+    application.config['ENCLAVE'] = get_application_enclave(application)
+    application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(application.config['CLUSTER_SECRETS_PATH'])
+    application.config['GRAFANA_CLIENT'] = get_application_grafana(application)
     application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 
 

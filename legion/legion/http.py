@@ -321,6 +321,7 @@ def apply_env_args(application):
 
     apply_env_argument(application, legion.config.CLUSTER_CONFIG_PATH[0])
     apply_env_argument(application, legion.config.CLUSTER_SECRETS_PATH[0])
+    apply_env_argument(application, legion.config.JWT_CONFIG_PATH[0])
 
 
 def configure_application(application, args):
