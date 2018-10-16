@@ -35,27 +35,30 @@ class EdiClient:
     EDI client
     """
 
-    def __init__(self, base, user=None, password=None, token=None, retries=3):
+    def __init__(self, base=None, token=None, retries=3, http_client=None, use_relative_url=False):
         """
         Build client
 
         :param base: base url, for example: http://edi.parallels
         :type base: str
-        :param user: user name for user/password based auth
-        :type user: str or None
-        :param password: user password for user/password based auth
-        :type password: str or None
         :param token: token for token based auth
         :type token: str or None
         :param retries: command retries or less then 2 if disabled
         :type retries: int
+        :param http_client: HTTP client (default: requests)
+        :type http_client: python class that implements requests-like post & get methods
+        :param use_relative_url: use non-full get/post requests (useful for testings)
+        :type use_relative_url: bool
         """
         self._base = base
-        self._user = user
-        self._password = password
         self._token = token
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
+        if http_client:
+            self._http_client = http_client
+        else:
+            self._http_client = requests
+        self._use_relative_url = use_relative_url
 
     def _query(self, url_template, payload=None, action='GET'):
         """
@@ -70,15 +73,12 @@ class EdiClient:
         :return: dict[str, any] -- response content
         """
         sub_url = url_template.format(version=self._version)
-        full_url = self._base.strip('/') + sub_url
+        if self._use_relative_url:
+            target_url = sub_url
+        else:
+            target_url = self._base.strip('/') + sub_url
 
-        auth = None
         headers = {}
-
-        if self._user and self._password:
-            auth = (self._user, self._password)
-        elif self._token:
-            auth = ('token', self._token)
 
         left_retries = self._retries if self._retries > 0 else 1
         raised_exception = None
@@ -100,12 +100,20 @@ class EdiClient:
                 self._base, raised_exception
             ))
 
+        if hasattr(response, 'text'):
+            response_data = response.text
+        else:
+            response_data = response.data
+
+        if isinstance(response_data, bytes):
+            response_data = response_data.decode('utf-8')
+
         try:
-            answer = json.loads(response.text)
+            answer = json.loads(response_data)
             LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
-                         .format(answer, response.status_code, full_url))
+                         .format(answer, response.status_code, target_url))
         except ValueError as json_decode_exception:
-            raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
+            raise ValueError('Invalid JSON structure {!r}: {}'.format(response_data, json_decode_exception))
 
         if isinstance(answer, dict) and answer.get('error', False):
             exception = answer.get('exception')

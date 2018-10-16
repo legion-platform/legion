@@ -20,10 +20,12 @@ import legion.containers.headers
 from legion.model import ModelClient
 import legion.model.client
 import legion.serving.pyserve as pyserve
+import legion.edi.server as ediserve
 from legion.utils import remove_directory
 
 LOGGER = logging.getLogger(__name__)
 TEST_MODELS_LOCATION = os.path.join(os.path.dirname(__file__), 'test_models')
+TEST_DATA_LOCATION = os.path.join(os.path.dirname(__file__), 'data')
 
 
 def build_distribution():
@@ -502,6 +504,57 @@ class ModelServeTestBuild:
 
         if exception:
             raise exception
+
+
+class EDITestServer:
+    """
+    Context manager for testing EDI server
+    """
+
+    def __init__(self, enclave_name='debug-enclave'):
+        """
+        Create context
+        """
+        self._enclave_name = enclave_name
+
+        self.application = None
+        self.http_client = None
+        self.edi_client = None
+
+    def __enter__(self):
+        """
+        Enter into context
+
+        :return: self
+        """
+        additional_environment = {
+            legion.config.CLUSTER_SECRETS_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'secrets'),
+            legion.config.JWT_CONFIG_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'jwt_config')
+        }
+
+        test_enclave = legion.k8s.enclave.Enclave(self._enclave_name)
+        test_enclave._data_loaded = True
+
+        with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name):
+            with patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave):
+                with patch('legion.edi.server.get_application_grafana', lambda *x: None):
+                    with patch_environ(additional_environment):
+                        self.application = ediserve.init_application(None)
+                        self.application.testing = True
+                        self.http_client = self.application.test_client()
+                        self.edi_client = legion.external.edi.EdiClient(http_client=self.http_client,
+                                                                        use_relative_url=True)
+
+        return self
+
+    def __exit__(self, *args):
+        """
+        Exit
+
+        :param args: list of arguements
+        :return: None
+        """
+        pass
 
 
 class ModelLocalContainerExecutionContext:
