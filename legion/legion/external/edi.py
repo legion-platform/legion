@@ -45,10 +45,6 @@ class EdiClient:
         :type token: str or None
         :param retries: command retries or less then 2 if disabled
         :type retries: int
-        :param http_client: HTTP client (default: requests)
-        :type http_client: python class that implements requests-like post & get methods
-        :param use_relative_url: use non-full get/post requests (useful for testings)
-        :type use_relative_url: bool
         """
         self._base = base
         self._token = token
