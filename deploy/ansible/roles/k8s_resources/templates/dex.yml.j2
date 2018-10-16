@@ -2,7 +2,7 @@ replicaCount: {{ dex.replicas | default('1') }}
 
 issuer: https://dex.{{ cluster_name }}
 
-{% if dex.config.connectors %}
+{% if dex.config.connectors is defined %}
 connectors:
 {{ dex.config.connectors|to_yaml }}
 {% else %}
@@ -18,7 +18,8 @@ staticClients:
   - 'https://auth.{{ cluster_name }}/callback/{{ env_name }}'
   name: '{{ cluster_name }} Cluster'
 
-staticPasswords:
-{{ dex.config.staticPasswords|to_yaml }}
+staticPasswords: {{ dex.config.staticPasswords | to_json }}
+
+enablePasswordDB: {{ dex.config.enablePasswordDB | default('true') }}
 
 tls_secret: {{ cluster_name }}-tls
