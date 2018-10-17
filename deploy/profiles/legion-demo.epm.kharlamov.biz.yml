@@ -67,9 +67,6 @@ pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simp
 docker_repo: "nexus-local.cc.epm.kharlamov.biz:443/legion"
 namespace: default
 deployment: legion
-service_account:
-  login:  admin
-  password: admin
 examples_to_test:
   - Test-Summation
   - Digit-Recognition

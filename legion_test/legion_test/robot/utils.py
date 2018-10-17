@@ -143,8 +143,10 @@ class Utils:
         """
         Check if model return valid code for get request
 
-        :param str url: url with model_id for checking
-        :param str token: token for the authorization
+        :param url: url with model_id for checking
+        :type url: str
+        :param token: token for the authorization
+        :type token: str
         :return:  str -- response text
         """
         tries = 6
@@ -178,8 +180,10 @@ class Utils:
         Get component main auth page
 
         :param boolean jenkins: if jenkins service is under test
-        :param str url: component url
-        :param str token: token for the authorization
+        :param url: component url
+        :type url: str
+        :param token: token for the authorization
+        :type url: str
         :return:  response_code and response_text
         :rtype: dict
         """

@@ -13,3 +13,6 @@ ${TEST_MODEL_3_VERSION}             1.2
 ${TEST_MODEL_VERSION}               1.0
 ${FEEDBACK_TAG}                     tag1
 ${FEEDBACK_PREFIX}                  events
+# TODO: Two next lines should be removed when closing LEGION #499, #313, #316
+${SERVICE_ACCOUNT}                  admin
+${SERVICE_PASSWORD}                 admin

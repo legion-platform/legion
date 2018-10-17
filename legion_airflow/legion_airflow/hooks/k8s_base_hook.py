@@ -32,7 +32,7 @@ class K8SBaseHook(BaseHook):
             return cls._get_conn_from_k8s(conn_id)
         except Exception as e:
             LoggingMixin().log.warning(
-                'Failed to retrieve connection {} from k8s secret: '
+                'Failed to retrieve connection {} from k8s secret '
                 'retrieving from env/db'.format(conn_id),
                 exc_info=True, stack_info=True
             )

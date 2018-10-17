@@ -72,9 +72,6 @@ def get_variables(arg=None):
         'HOST_BASE_DOMAIN': data.get('test_base_domain', data['base_domain']),
         'USE_HTTPS_FOR_TESTS': data.get('use_https_for_tests', 'yes') == 'yes',
 
-        'SERVICE_ACCOUNT': data['service_account']['login'],
-        'SERVICE_PASSWORD': data['service_account']['password'],
-
         'JENKINS_JOBS': data['examples_to_test'],
         'MODEL_ID': data['model_id_to_test'],
         'ENCLAVES': data.get('enclaves', []),

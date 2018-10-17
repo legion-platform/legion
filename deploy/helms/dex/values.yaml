@@ -37,13 +37,13 @@ staticClients: []
 #  - 'https://jenkins.domain.com/securityRealm/finishLogin'
 #  - 'https://auth.domain2.com/callback/example'
 #  name: 'Example Cluster'
-#  secret: eXamplEsEcretphrase24len
+#  secret: example
 
 staticPasswords: []
-# - email: "admin@example.com"
+# - email: "example@example.com"
 #   # bcrypt hash of the string "password"
 #   hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
-#   username: "admin"
+#   username: example
 #   userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
 
 logger:
