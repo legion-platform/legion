@@ -45,6 +45,9 @@ node {
                 Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                 Globals.rootCommit = Globals.rootCommit.trim()
             }
+            stage('Check code for security issues'){
+                sh "bash install-git-secrets-hook.sh && git secrets --scan -r"
+            }
 
             def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
             def date = new Date()
