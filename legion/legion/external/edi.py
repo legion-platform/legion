@@ -312,8 +312,10 @@ def build_client(args=None):
         user = os.environ.get(*legion.config.EDI_USER)
         password = os.environ.get(*legion.config.EDI_PASSWORD)
 
+    # TODO: Password and user now are ignored. Add auth mechanism (LEGION #313)
+
     if not token:
         token = os.environ.get(*legion.config.EDI_TOKEN)
 
-    client = EdiClient(host, user, password, token)
+    client = EdiClient(host, token)
     return client
