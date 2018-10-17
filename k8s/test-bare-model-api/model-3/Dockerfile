@@ -20,8 +20,8 @@ WORKDIR /app
 
 RUN pip install -r requirements.txt
 
-LABEL com.epam.legion.model.id="demo-abc-model" \
-      com.epam.legion.model.version="1.0" \
+LABEL com.epam.legion.model.id="edi-test-model" \
+      com.epam.legion.model.version="1.2" \
       com.epam.legion.container_type="model"
 
 ENTRYPOINT ["python"]

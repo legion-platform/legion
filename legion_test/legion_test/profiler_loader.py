@@ -20,10 +20,11 @@ Variables loader (from profiles/{env.PROFILE}.yml and /{env.CREDENTIAL_SECRETS}.
 import os
 
 import yaml
-from legion_test.robot.dex_client import init_session_id
+from legion_test.robot.dex_client import init_session_id, init_session_id_from_data
 
 PROFILE_ENVIRON_KEY = 'PROFILE'
 PATH_TO_PROFILES_DIR = 'PATH_TO_PROFILES_DIR'
+PATH_TO_COOKIES_FILE = 'PATH_TO_COOKIES'
 CREDENTIAL_SECRETS_ENVIRONMENT_KEY = 'CREDENTIAL_SECRETS'
 
 
@@ -88,9 +89,33 @@ def get_variables(arg=None):
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
     variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if len(variables['ENCLAVES']) > 0 else 'UNKNOWN_ENCLAVE'
 
+    cookies = os.getenv(PATH_TO_COOKIES_FILE)
+    cookies_data = None
+    if cookies:
+        try:
+            with open(cookies, 'r') as stream:
+                lines = stream.readlines()
+                cookies_data = {
+                    'jenkins_user': lines[0].rstrip(),
+                    'jenkins_password': lines[1].rstrip(),
+                    'cookies': lines[2].rstrip()
+                }
+        except IOError:
+            pass
+        except IndexError:
+            pass
+
     if 'dex' in data and data['dex']['enabled'] and 'staticPasswords' in data['dex']['config'] and \
             data['dex']['config']['staticPasswords']:
         static_user = data['dex']['config']['staticPasswords'][0]
-        init_session_id(static_user['email'], static_user['password'], data.get('test_base_domain', data['base_domain']))
+        if not cookies_data:
+            init_session_id(static_user['email'], static_user['password'], data.get('test_base_domain', data['base_domain']))
+        else:
+            init_session_id_from_data(cookies_data)
+        variables['STATIC_USER_EMAIL'] = static_user['email']
+        variables['STATIC_USER_PASS'] = static_user['password']
+    else:
+        variables['STATIC_USER_EMAIL'] = ''
+        variables['STATIC_USER_PASS'] = ''
 
     return variables

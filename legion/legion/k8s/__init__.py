@@ -25,3 +25,4 @@ from legion.k8s.utils import build_client, get_current_namespace, load_config, l
 from legion.k8s.utils import CONNECTION_CONTEXT
 from legion.k8s.watch import ResourceWatch
 from legion.k8s.properties import K8SPropertyStorage, K8SConfigMapStorage, K8SSecretStorage
+from legion.k8s.exceptions import UnknownDeploymentForModelService

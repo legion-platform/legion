@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Legion Airflow check
-Resource            resources/keywords.robot
-Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
+Resource            ../../resources/keywords.robot
+Variables           ../../load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
 
 *** Test Cases ***
 Check test dags should not fail

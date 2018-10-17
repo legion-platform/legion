@@ -256,29 +256,32 @@ def inspect(model=None, version=None):
     model_services = app.config['ENCLAVE'].get_models(model, version)
 
     for model_service in model_services:
-        model_api_info = {}
-
-        model_client = legion.model.ModelClient(
-            model_id=model_service.id,
-            model_version=model_service.version,
-            host=model_service.url_with_ip,
-            timeout=3
-        )
-        LOGGER.info('Building model client: {!r}'.format(model_client))
-
         try:
-            model_api_info['result'] = model_client.info()
-            model_api_ok = True
-        except Exception as model_api_exception:
-            LOGGER.error('Cannot connect to model <{}> endpoint to get info: {}'.format(model_service,
-                                                                                        model_api_exception))
-            model_api_info['exception'] = str(model_api_exception)
-            model_api_ok = False
+            model_api_info = {}
 
-        model_deployments.append(legion.k8s.ModelDeploymentDescription.build_from_model_service(
-            model_service,
-            model_api_ok, model_api_info
-        ))
+            model_client = legion.model.ModelClient(
+                model_id=model_service.id,
+                model_version=model_service.version,
+                host=model_service.url_with_ip,
+                timeout=3
+            )
+            LOGGER.info('Building model client: {!r}'.format(model_client))
+
+            try:
+                model_api_info['result'] = model_client.info()
+                model_api_ok = True
+            except Exception as model_api_exception:
+                LOGGER.error('Cannot connect to model <{}> endpoint to get info: {}'.format(model_service,
+                                                                                            model_api_exception))
+                model_api_info['exception'] = str(model_api_exception)
+                model_api_ok = False
+
+            model_deployments.append(legion.k8s.ModelDeploymentDescription.build_from_model_service(
+                model_service,
+                model_api_ok, model_api_info
+            ))
+        except legion.k8s.UnknownDeploymentForModelService:
+            LOGGER.debug('Ignoring error about unknown deployment for model service {!r}'.format(model_service))
 
     return return_model_deployments(model_deployments)
 

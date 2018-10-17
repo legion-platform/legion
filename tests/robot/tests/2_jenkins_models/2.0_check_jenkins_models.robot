@@ -1,8 +1,8 @@
 *** Settings ***
 Documentation       Legion stack operational check
-Resource            resources/keywords.robot
-Resource            resources/variables.robot
-Variables           load_variables_from_profiles.py   ${PATH_TO_PROFILES_DIR}
+Resource            ../../resources/browser.robot
+Resource            ../../resources/keywords.robot
+Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
