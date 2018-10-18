@@ -108,6 +108,7 @@ node {
                     string(name: 'Profile', value: params.Profile),
             ]
         }
+        notifyBuild(currentBuild.result)
     }
 
 }
