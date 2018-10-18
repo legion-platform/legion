@@ -73,7 +73,7 @@ def deployLegion() {
                                      legion_version=${LegionVersion}" ',
                             colorized: true
                         )
-                        
+
                     }
                 }
             }
@@ -105,7 +105,7 @@ def createjenkinsJobs(String commitID) {
             ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            
+
             export PATH=./:$PATH DISPLAY=:99
             export PROFILE=${Profile}
 
@@ -204,7 +204,7 @@ def runRobotTests(tags="") {
             ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
-            ../../.venv/bin/nosetests $nose_tags --with-xunit || true
+            ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
             '''
             step([
                 $class : 'RobotPublisher',
@@ -315,7 +315,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
     if (buildStatus == 'STARTED') {
         colorCode = '#FFFF00'
     } else if (buildStatus == 'SUCCESSFUL') {
-        colorCode = '#00FF00' 
+        colorCode = '#00FF00'
     } else {
         colorCode = '#FF0000'
     }
