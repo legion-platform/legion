@@ -407,19 +407,23 @@ class CsvReader:
         cells = []
         cell = ''
         for c in row.rstrip():
-            if ((c == column_splitter) and (
-                    (len(cell) >= 1 and cell[0] != quote) or (len(cell) >= 2 and cell[0] == quote and cell[-1] == quote)
-            )):
-                if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # trim quotes
-                    cell = cell[1:-1]
+            if c == column_splitter and len(cell) >= 1 and cell[0] != quote:  # found splitter in cell without quotes
+                cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+                cell = ''
+            elif c == column_splitter and len(cell) >= 2 and cell[0] == quote and cell[-1] == quote \
+                    and cell.count(quote) % 2 == 0:
+                # found splitter outside of quotes
+                cell = cell[1:-1]
+                cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+                cell = ''
+            elif c == column_splitter and len(cell) == 0:  # found empty cell
                 cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
                 cell = ''
             else:
                 cell += c
-        if len(cell) > 0:  # if cell is not empty
-            if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # trim quotes
-                cell = cell[1:-1]
-            cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+        if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # trim quotes
+            cell = cell[1:-1]
+        cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
         return cells
 
 
