@@ -63,6 +63,12 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         current_namespace_name = VARIABLES['ENCLAVES'][0]
         current_namespace = core_api.read_namespace(current_namespace_name)
 
+        def check_cluster_is_active():
+            namespace_object = core_api.read_namespace(TEST_ENCLAVE_NAME)
+            LOGGER.debug('Get namespace object: {!r}'.format(namespace_object))
+            LOGGER.info('Status of namespace object is {!r}'.format(namespace_object.status.phase))
+            return namespace_object.status.phase.lower == 'active'
+
         try:
             new_namespace_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
                 name=TEST_ENCLAVE_NAME, labels={
@@ -73,6 +79,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
             LOGGER.info('Creating namespace {}'.format(TEST_ENCLAVE_NAME))
             core_api.create_namespace(new_namespace)
+            legion_test.utils.wait_until(check_cluster_is_active)
         except Exception as exception:
             LOGGER.info('Cannot create namespace {} that should be built for testing: {}'
                         .format(TEST_ENCLAVE_NAME, exception))
