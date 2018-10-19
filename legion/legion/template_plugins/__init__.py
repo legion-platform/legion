@@ -19,4 +19,3 @@ legion template plugins
 from .enclave import enclave_models_monitor
 from .io import file_change_monitor
 from .os_environ import environment_variables_provider
-from .config_map import invalid_token_monitor

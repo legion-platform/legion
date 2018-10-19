@@ -1,5 +1,5 @@
 --
---   Copyright 2017 EPAM Systems
+--   Copyright 2018 EPAM Systems
 --
 --   Licensed under the Apache License, Version 2.0 (the "License");
 --   you may not use this file except in compliance with the License.
@@ -24,6 +24,6 @@ function _M.check_token(invalid_tokens)
         if token == invalid_token then
              ngx.log(ngx.WARN, "Invalid token")
              ngx.exit(ngx.HTTP_UNAUTHORIZED)
-        end    
+        end
     end
 end

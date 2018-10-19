@@ -1,0 +1,11 @@
+{{- define "invalid-tokens"  }}
+invalid_tokens: []
+{{- end  }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{  .Release.Name }}-invalid-tokens"
+type: Opaque
+data:
+  invalid-tokens.yaml: |-
+    {{ include "invalid-tokens" . | b64enc }}
