@@ -16,6 +16,7 @@
 {{ load_module('legion.template_plugins.enclave_models_monitor') }}
 {{ load_module('legion.template_plugins.environment_variables_provider') }}
 {{ load_module('legion.template_plugin.invalid_token_monitor') }}
+{{ load_module('legion.template_plugins.file_change_monitor', filepath='/home/edge/invalid-tokens.yaml', is_yaml=True, var_name='var') }}
 
 env JWT_SECRET;
 
@@ -87,7 +88,7 @@ http{
             local jwt = require("nginx-jwt")
             jwt.auth()
             local invalid_tokens = require "invalid_tokens"
-            invalid_tokens.check_token({{ tokens }})
+            invalid_tokens.check_token({{ var.invalid_tokens }})
         ';
 
         proxy_pass {{ model_endpoint.model_service.url_with_ip }}/api/model/{{ model_endpoint.model_service.id }}/{{ model_endpoint.model_service.version }};
