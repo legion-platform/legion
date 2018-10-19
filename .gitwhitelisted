@@ -28,4 +28,5 @@
 1.2.3.4/32
 # Allow IPv4 configuration for nonMasqueradeCIDR be stored
 nonMasqueradeCIDR:\\s*[0-9\\./]+
-
+# Allow user:tag
+user:tag
