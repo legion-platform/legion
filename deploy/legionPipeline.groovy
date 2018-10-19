@@ -304,10 +304,10 @@ def notifyBuild(String buildStatus = 'STARTED') {
     }
     def mailSubject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
     def summary = """\
-    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    branch *${GitBranch}*
-    profile *<https://${env.Profile}|${env.Profile}>*
-    ${arguments}
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult}) \n
+    Branch: *${GitBranch}* \n
+    Profile: *<https://${env.Profile}|${env.Profile}>* \n
+    Arguments: ${arguments} \n
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 
@@ -326,7 +326,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
         emailext (
             subject: mailSubject,
             body: summary,
-            to: 'Aliaksandr_Semianets@epam.com',
+            to: 'legion.ci.bot@gmail.com'
         )
     /// Notify committers about CI builds
     } else if ("${env.JOB_NAME}".contains("Legion_CI")) {
@@ -341,7 +341,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
         emailext (
             subject: mailSubject,
             body: summary,
-            to: 'Aliaksandr_Semianets@epam.com',
+            to: 'legion.ci.bot@gmail.com'
         )
     }
 

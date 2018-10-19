@@ -1,6 +1,10 @@
 def legionVersion = null
 
 node {
+    stage('Checkout GIT'){
+            checkout scm
+    }
+    def legion = load 'deploy/legionPipeline.groovy'
     try {
         stage('Build') {
             result = build job: params.BuildLegionJobName, propagate: true, wait: true, parameters: [
@@ -108,7 +112,7 @@ node {
                     string(name: 'Profile', value: params.Profile),
             ]
         }
-        notifyBuild(currentBuild.result)
+        legion.notifyBuild(currentBuild.result)
     }
 
 }

@@ -1,6 +1,10 @@
 def legionVersion = "latest"
 
 node {
+    stage('Checkout GIT'){
+            checkout scm
+    }
+    def legion = load 'deploy/legionPipeline.groovy'
     try {
         stage('Terminate Cluster if exists') {
             result = build job: params.TerminateClusterJobName, propagate: true, wait: true, parameters: [
@@ -47,7 +51,6 @@ node {
         stage('Test') {
             print("${env.BUILD_NUMBER}")
         }
-
     }
     catch (e) {
         // If there was an exception thrown, the build failed
@@ -60,7 +63,8 @@ node {
                 [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
             ]
-        notifyBuild(currentBuild.result)
+        }
+        legion.notifyBuild(currentBuild.result)
     }
 
 }
