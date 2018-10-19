@@ -1,13 +1,18 @@
 from argparse import Namespace
 import logging
+import contextlib
 import time
 import tempfile
+import typing
 import os
 import tarfile
 import io
+import json
 import glob
 import subprocess
 from unittest.mock import patch
+import importlib
+import inspect
 
 import docker
 import docker.types
@@ -27,6 +32,11 @@ from legion.utils import remove_directory
 LOGGER = logging.getLogger(__name__)
 TEST_MODELS_LOCATION = os.path.join(os.path.dirname(__file__), 'test_models')
 TEST_DATA_LOCATION = os.path.join(os.path.dirname(__file__), 'data')
+TEST_RESPONSES_LOCATION = os.path.join(TEST_DATA_LOCATION, 'responses')
+
+ResponseObjectType = typing.NamedTuple('ResponseObjectType', [
+    ('data', object)
+])
 
 
 def build_distribution():
@@ -84,6 +94,90 @@ def patch_environ(values, flush_existence=False):
         new_values.update(values)
 
     return patch('os.environ', new_values)
+
+
+@contextlib.contextmanager
+def persist_swagger_function_response_to_file(function, response_code):
+    """
+    Context managers
+    Persist result of invocation swagger client query data to disk
+
+    :param function: name of function
+    :type function: str
+    :param response_code: name of response code
+    :type response_code: str
+    """
+    client = build_swagger_function_client(function)
+    origin = client.__class__.deserialize
+
+    def response_catcher(self, response, type_name):
+        _1, function_name = function.rsplit('.', maxsplit=1)
+        call_stack_functions = [f.function for f in inspect.stack()]
+
+        if function_name in call_stack_functions:
+            path = '{}/{}.{}.{}.json'.format(TEST_RESPONSES_LOCATION, function,
+                                             type_name, response_code)
+            with open(path, 'w') as stream:
+                data = json.loads(response.data)
+                json.dump(data, stream, indent=2, sort_keys=True)
+
+        return origin(self, response, type_name)
+
+    client.__class__.deserialize = response_catcher
+    yield
+    client.__class__.deserialize = origin
+
+
+def build_swagger_function_client(function):
+    """
+    Build swagger client for function
+
+    :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
+    :type function: str
+    :return: object -- generated swagger API client
+    """
+
+    module_name, module_class, _1 = function.rsplit('.', maxsplit=2)
+    module_instance = importlib.import_module(module_name)
+    module_api_client_class = getattr(module_instance, module_class)
+    module_api_client = module_api_client_class()
+    return module_api_client.api_client
+
+
+def mock_swagger_function_response_from_file(function, response_code, *args, **kwargs):
+    """
+    Mock swagger client function with response from file
+
+    :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
+    :type function: str
+    :param response_code: name of response code (no), e.g. two_models
+    :type response_code: str
+    :return: Any -- response
+    """
+    valid_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, response_code))
+
+    if not valid_files:
+        raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
+            function, response_code
+        ))
+
+    if len(valid_files) > 1:
+        raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
+            function, response_code
+        ))
+
+    path, filename = valid_files[0], os.path.basename(valid_files[0])
+    splits = filename.rsplit('.')
+    return_type = splits[-3]
+    client = build_swagger_function_client(function)
+
+    with open(path) as response_file:
+        data = ResponseObjectType(data=response_file.read())
+
+    def response_catcher(*args, **kwargs):
+        return client.deserialize(data, return_type)
+
+    return patch(function, side_effect=response_catcher)
 
 
 class LegionTestContainer:
