@@ -38,6 +38,6 @@ async def invalid_token_monitor(template_system):
                                      k8s_namespace=namespace)
 
 
-    for new_state in config_map.watch():
+    for _, new_state in config_map.watch():
         LOGGER.info('Got updated model state')
         template_system.render(tokens=new_state['invalid_tokens'])
