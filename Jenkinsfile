@@ -45,6 +45,9 @@ node {
                 Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                 Globals.rootCommit = Globals.rootCommit.trim()
             }
+            stage('Check code for security issues'){
+                sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+            }
 
             def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
             def date = new Date()
@@ -125,7 +128,7 @@ node {
                     sh """
                     cp legion/legion/version.py legion_test/legion_test/version.py
                     cd legion_test
-                    ../.venv/bin/python3.6 setup.py sdist 
+                    ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     """
@@ -133,7 +136,7 @@ node {
                     print('Build legion')
                     sh """
                     cd legion
-                    ../.venv/bin/python3.6 setup.py sdist 
+                    ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     """
@@ -144,7 +147,7 @@ node {
                     cd legion_airflow
                     ../.venv/bin/pip install -r requirements/base.txt
                     ../.venv/bin/pip install -r requirements/test.txt
-                    ../.venv/bin/python3.6 setup.py sdist 
+                    ../.venv/bin/python3.6 setup.py sdist
                     ../.venv/bin/python3.6 setup.py bdist_wheel
                     ../.venv/bin/python3.6 setup.py develop
                     """
@@ -191,7 +194,7 @@ node {
                     ../.venv/bin/pylint tests >> pylint.log || exit 0
                     cd ..
                     '''
-    
+
                     archiveArtifacts 'legion/pylint.log'
                     warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
 
@@ -253,7 +256,7 @@ node {
                     }
                 }
             )
-            
+
             parallel(
                 'Build Base Docker image':{
                     sh """
@@ -330,7 +333,7 @@ node {
                     VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" ../.venv/bin/nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
                     """
                     junit 'legion/nosetests.xml'
-    
+
                     sh """
                     cd legion && cp -rf cover/ \"${params.LocalDocumentationStorage}\$(../.venv/bin/python3.6 -c 'import legion; print(legion.__version__);')-cover/\"
                     """

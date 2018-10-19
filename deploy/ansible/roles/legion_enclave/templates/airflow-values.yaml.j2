@@ -15,11 +15,6 @@ secrets:
     db: {{ aws.rds.database_name }}
     schema: {{ airflow_db_schema }}
 
-  rabbitmq:
-    user: airflow
-    password: airflow
-    vhost: airflow
-
   fernet_key: {{ airflow.fernet_key }}
   flask: {{ secret_flask }}
 

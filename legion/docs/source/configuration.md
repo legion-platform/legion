@@ -134,8 +134,8 @@ Here is an example of secret file
 aws:
   account_id: 000000000000
   rds: # credentials for dynamically deployed RDS
-    username: user
-    password: pass
+    username: example
+    password: example
     database_name: db
 
 # Airflow configuration
@@ -146,8 +146,8 @@ airflow:
     connection_type: mysql
     host: hostnamehere
     port: 3306
-    login: readonly
-    password: passwordhere
+    login: example
+    password: example
 
   # Connection to S3
   - connection_id: s3_conn
@@ -159,9 +159,9 @@ airflow:
     smtp_host: smtp.post.domain
     smtp_starttls: true
     smtp_ssl: true
-    smtp_user: user
+    smtp_user: example
     smtp_port: 465
-    smtp_password: password
+    smtp_password: example
     smtp_mail_from: mine.email@post.domain
 
   # Fernet key
@@ -170,8 +170,8 @@ airflow:
   # Airflow-slack integration
   slack:
     channel: airflow
-    username: Airflow
-    token: ""
+    username: example
+    token: example
   webserver:
     email_backend: "etl.slack.send_notification" # set email_backend to empty for Slack disabling notifications
 
@@ -184,7 +184,7 @@ fluentd:
 external_access_sgs: # list of AWS SG that should be added on ELB
   - sg-00000000
 allowed_wan_ips:  # list of whitelisted CIDRs
-  - 20.10.30.40/32
+  - 1.2.3.4/32
 jenkins_cc_sg: sg-00000000 # CC Jenkins Security Group to be whitelisted on cluster
 
 
@@ -212,10 +212,10 @@ dex:
         orgs:
         - name: legion-platform  # linked GitHub organizations
     staticPasswords:  # static hardcoded passwords for test
-    - email: "user@example.com"      
-      password: password
+    - email: example@example.com
+      password: example
       hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W" # bcrypt hash of the string "password"
-      username: "user"
+      username: example
       userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
   groups:  # GitHub groups mapping
   - clusterrolebinding: cluster-admin

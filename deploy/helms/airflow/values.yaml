@@ -3,9 +3,9 @@ domainDelimiter: "-"
 
 secrets:
   postgres:
-    user: airflow
-    password: airflow
-    db: airflow
+    user: example
+    password: example
+    db: pass
 
   fernet_key: fernet_key
   flask: flask
