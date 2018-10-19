@@ -18,6 +18,13 @@ spec:
         component: "{{ .Release.Name }}-edge"
     spec:
       serviceAccountName: "{{ .Release.Name }}-edge"
+      volumes:
+      - name: invalid-tokens
+        configMap:
+          name: "{{  .Release.Name }}-invalid-tokens"
+          items:
+            -key: invalid-tokens.yaml
+             path: invalid-tokens.yaml
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
