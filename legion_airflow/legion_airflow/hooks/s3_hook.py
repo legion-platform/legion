@@ -1,5 +1,17 @@
 #
-#    Copyright 2018 IQVIA. All Rights Reserved.
+#    Copyright 2018 EPAM Systems
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #
 """S3 hook package."""
 import smart_open
@@ -59,7 +71,8 @@ class S3Hook(K8SBaseHook):
         path = [self.s3_root_path or bucket, key]
         return 's3://' + '/'.join(name.strip('/') for name in path)
 
-    def _parse_s3_url(self, s3url):
+    @staticmethod
+    def _parse_s3_url(s3url):
         """
         Parse any passed s3url into bucket and key pair
         :param s3url: s3 storage absolute path
@@ -394,36 +407,41 @@ class CsvReader:
     @staticmethod
     def _read_row(row: str, column_splitter: str = ',', quote: str = '"'):
         """
-        Read and return row.
+        Read a CSV line char by char and convert it into list of cells.
 
-        :param row: row
+        :param row: line in CSV format
         :type row: str
         :param column_splitter: column splitter
         :type column_splitter: str
         :param quote: quote symbol
         :type quote: str
-        :return: list -- data row
+        :return: list -- list of cells
         """
         cells = []
-        cell = ''
+        cell = ''  # cell buffer
         for c in row.rstrip():
-            if c == column_splitter and len(cell) >= 1 and cell[0] != quote:  # found splitter in cell without quotes
-                cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+            if c == column_splitter and len(cell) >= 1 and cell[0] != quote:
+                # found splitter in cell that is not framed with quotes
+                cells.append(cell.replace(quote + quote, quote))
+                # replaced middle double quotes with a single
                 cell = ''
             elif c == column_splitter and len(cell) >= 2 and cell[0] == quote and cell[-1] == quote \
                     and cell.count(quote) % 2 == 0:
-                # found splitter outside of quotes
+                # found splitter outside of cell framed with quotes
+                # if number of found quotes is even, than current character is outside of quotes
                 cell = cell[1:-1]
-                cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+                cells.append(cell.replace(quote + quote, quote))
+                # replaced middle double quotes with a single
                 cell = ''
             elif c == column_splitter and len(cell) == 0:  # found empty cell
-                cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+                cells.append(cell)  # add an empty cell
                 cell = ''
-            else:
+            else: # append found character to current cell buffer
                 cell += c
-        if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # trim quotes
+        # row is read but something left in cell buffer
+        if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # remove frame quotes
             cell = cell[1:-1]
-        cells.append(cell.replace(quote + quote, quote))  # replace double quotes to single quote
+        cells.append(cell.replace(quote + quote, quote))  # replaced middle double quotes with a single
         return cells
 
 
