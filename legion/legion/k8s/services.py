@@ -368,7 +368,7 @@ class ModelService(Service):
                                                  grace_period_seconds=grace_period_seconds)
 
         LOGGER.info('Deleting service {} in namespace {}'.format(self.k8s_service.metadata.name, self.namespace))
-        core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name,
+        core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name, body=body,
                                              namespace=self.namespace)
 
         LOGGER.info('Deleting deployment {} in namespace {} with grace period {}s'
