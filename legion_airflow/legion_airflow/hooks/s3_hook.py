@@ -390,7 +390,7 @@ class CsvReader:
         while row.count(self.quote) % 2 == 1:
             row = row + '\n' + self.reader.__next__()
         if row is not None:
-            return self._read_row(row, self.column_splitter, self.quote)
+            return self.read_row(row, self.column_splitter, self.quote)
         else:
             return None
 
@@ -405,7 +405,7 @@ class CsvReader:
         return getattr(self.reader, name)
 
     @staticmethod
-    def _read_row(row: str, column_splitter: str = ',', quote: str = '"'):
+    def read_row(row: str, column_splitter: str = ',', quote: str = '"'):
         """
         Read a CSV line char by char and convert it into list of cells.
 
@@ -504,7 +504,7 @@ class CsvWriter(object):
                 raise ValueError('Expected {} columns in input but got {}: {}'
                                  .format(self.columns_number, len(cells), ', '.join(cells)))
             else:
-                self.writer.write(self._format_row(cells, self.column_splitter, self.quote) + self.EOL)
+                self.writer.write(self.format_row(cells, self.column_splitter, self.quote) + self.EOL)
 
     def __getattr__(self, name: str):
         """
@@ -528,7 +528,7 @@ class CsvWriter(object):
             return 0
 
     @staticmethod
-    def _format_row(cells: list, column_splitter: str = ',', quote: str = '"'):
+    def format_row(cells: list, column_splitter: str = ',', quote: str = '"'):
         """
         Format row.
 
