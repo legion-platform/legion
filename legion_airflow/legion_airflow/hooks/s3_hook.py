@@ -436,7 +436,7 @@ class CsvReader:
             elif c == column_splitter and len(cell) == 0:  # found empty cell
                 cells.append(cell)  # add an empty cell
                 cell = ''
-            else: # append found character to current cell buffer
+            else:  # append found character to current cell buffer
                 cell += c
         # row is read but something left in cell buffer
         if len(cell) >= 2 and cell[0] == quote and cell[-1] == quote:  # remove frame quotes
