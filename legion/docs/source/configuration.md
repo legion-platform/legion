@@ -101,7 +101,7 @@ airflow_rds_shape: "db.t2.medium"                                        # shape
 airflow_rds_size: "50"                                                   # size of Airflow RDS in GB
 
 # Airflow DAGs configuration [?]
-airflow_s3_bucket_name: "epm-legion-data-{{ env_type }}-{{ enclave }}"                              # Airflow storage location at S3             
+legion_data_s3_bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"                              # Airflow storage location at S3             
 airflow_expected_output: 'expected-data/'                                # Configuration for Airflow DAGs
 
 # Addons configuration

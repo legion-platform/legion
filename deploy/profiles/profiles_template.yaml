@@ -59,13 +59,14 @@ examples_to_test: ~      # which Jenkins examples will be executed in tests
 model_id_to_test: ~  # id of model which will be tested in EDI tests
 enclaves: ~ # list of enclaves which will be automatically deployed after Legion deploy
 
+legion_data_bucket_prefix: ~ # S3 bucket name prefix
+legion_data_s3_bucket: ~ # s3 bucket for enclave data
 
 # Airflow specific configuration
 airflow_dags_dir: ~                                        # Name of Aitflow DAGs directory
 airflow_dags_pvc: ~                                    # Name of Airflow DAGs PVC which will be created in Cluster
-airflow_s3_bucket_name: ~                         # S3 bucket for airflow data
 airflow_s3_logs_path: ~                           # Path at S3 for airflow log
-airflow_s3_logs_url: ~                             # S3 url for storing Airflow logs, it should contain bucket name and key. E.g.: airflow_s3_logs_url: "s3://{{ airflow_s3_bucket_name }}/{{ airflow_s3_logs_path }}"
+airflow_s3_logs_url: ~                             # S3 url for storing Airflow logs, it should contain bucket name and key. E.g.: airflow_s3_logs_url: "s3://{{ legion_data_s3_bucket }}/{{ airflow_s3_logs_path }}"
 airflow_pvc: ~                                                        # Airflow PVC size (for storing DAGs code)
 
 # Airflow RDS configuration
