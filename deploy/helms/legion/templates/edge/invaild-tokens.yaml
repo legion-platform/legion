@@ -8,4 +8,4 @@ metadata:
 type: Opaque
 data:
   invalid-tokens.yaml: |-
-    {{ include "invalid-tokens" . | b64enc }}
+    {{ include "invalid-tokens" . }}
