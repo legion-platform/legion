@@ -19,11 +19,10 @@ function _M.check_token(invalid_tokens)
     local auth_header = ngx.var.http_Authorization
 
     local _, _, token = string.find(auth_header, "Bearer%s+(.+)")
-
-    for index, invalid_token in ipair(invalid_tokens) do
+    for invalid_token in string.gmatch(invalid_tokens, "%S+") do
         if token == invalid_token then
-             ngx.log(ngx.WARN, "Invalid token")
-             ngx.exit(ngx.HTTP_UNAUTHORIZED)
+            ngx.log(ngx.WARN, "Invalid token")
+            ngx.exit(ngx.HTTP_UNAUTHORIZED)
         end
     end
 end

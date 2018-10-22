@@ -46,7 +46,7 @@ spec:
         - name: ENABLE_HOME_PAGE
           value: "{{ .Values.edge.enableHomePage }}"
         volumeMounts:
-        - mountPath: /home/edge/invalid-tokens.yaml
+        - mountPath: /invalid-tokens.yaml
           name: invalid-tokens
           subPath: invalid-tokens.yaml
         ports:
