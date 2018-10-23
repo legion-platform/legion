@@ -326,7 +326,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
         emailext (
             subject: mailSubject,
             body: summary,
-            to: 'legion.ci.bot@gmail.com'
+            to: "${env.DevTeamMailList}"
         )
     /// Notify committers about CI builds
     } else if ("${env.JOB_NAME}".contains("Legion_CI")) {
@@ -341,7 +341,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
         emailext (
             subject: mailSubject,
             body: summary,
-            to: 'legion.ci.bot@gmail.com'
+            to: "${env.DevTeamMailList}"
         )
     }
 
