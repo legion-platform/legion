@@ -232,3 +232,55 @@ class Utils:
         else:
             response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
         return {"response_code": response.status_code, "response_text": response.text}
+
+    @staticmethod
+    def get_static_user_data():
+        """
+        Get static user email and password form secrets
+
+        :return: user email and password
+        :rtype: dict
+        """
+        import os
+
+        import yaml
+        from legion_test.profiler_loader import CREDENTIAL_SECRETS_ENVIRONMENT_KEY
+        secrets = os.getenv(CREDENTIAL_SECRETS_ENVIRONMENT_KEY)
+        if not secrets:
+            raise Exception(
+                'Cannot get secrets - {} env variable is not set'.format(CREDENTIAL_SECRETS_ENVIRONMENT_KEY))
+
+        if not os.path.exists(secrets):
+            raise Exception('Cannot get secrets - file not found {}'.format(secrets))
+
+        with open(secrets, 'r') as stream:
+            data = yaml.load(stream)
+
+        static_user = data['dex']['config']['staticPasswords'][0]
+        return {"login": static_user['email'], "password": static_user['password']}
+
+    @staticmethod
+    def wait_up_to_second(second, time_template=None):
+        """
+        Wait up to second then generate time from template
+
+        :param second: target second (0..59)
+        :type second: int
+        :param time_template: (Optional) time template
+        :type time_template: str
+        :return: None or str -- time from template
+        """
+        current_second = datetime.datetime.now().second
+        target_second = int(second)
+
+        if current_second > target_second:
+            sleep_time = 60 - (current_second - target_second)
+        else:
+            sleep_time = target_second - current_second
+
+        if sleep_time:
+            print('Waiting {} second(s)'.format(sleep_time))
+            time.sleep(sleep_time)
+
+        if time_template:
+            return datetime.datetime.utcnow().strftime(time_template)
