@@ -321,8 +321,8 @@ def notifyBuild(String buildStatus = 'STARTED') {
     }
 
     /// Notify everyone about each Nightly build
-    if ("${env.JOB_NAME}".contains("Legion_CI_Nightly")) {
-        ///slackSend (color: colorCode, message: summary)
+    if ("${env.JOB_NAME}".contains("Legion_CI_Infra")) {
+        slackSend (color: colorCode, message: summary)
         emailext (
             subject: mailSubject,
             body: summary,
@@ -337,7 +337,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
         )
     /// Notify everyone about failed Master or Develop branch builds
     } else if (!currentBuildResultSuccessful && masterOrDevelopBuild) {
-        ///slackSend (color: colorCode, message: summary)
+        slackSend (color: colorCode, message: summary)
         emailext (
             subject: mailSubject,
             body: summary,
