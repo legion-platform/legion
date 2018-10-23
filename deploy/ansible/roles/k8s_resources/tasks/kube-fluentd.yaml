@@ -1,0 +1,36 @@
+---
+
+- name: Generate fluentd s3 access policy document
+  template:
+    src: "airflow_s3_access_policy.yaml.j2"
+    dest: "{{ tmp_dir }}/fluentd_s3_access_policy.{{ cluster_name }}.yaml"
+
+- name: Create fluentd S3 access role
+  iam:
+    iam_type: role
+    name: "{{ cluster_name }}-fluentd-role"
+    trust_policy_filepath: "{{ tmp_dir }}/fluentd_s3_access_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Attach Airflow S3 accesse policy to the role
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-fluentd-role"
+    policy_name: "{{ cluster_name }}-fluentd-s3-access-policy"
+    policy_document: "{{ tmp_dir }}/fluentd_s3_access_policy.{{ cluster_name }}.yaml"
+    state: present
+
+- name: Create fluentd configuration (values) file
+  template:
+    src: fluentd-values.yaml.j2
+    dest: "{{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml"
+    mode: 0644
+
+- name: Install kube-fluentd chart
+  shell: helm --kube-context {{ cluster_name }} del --purge kube-fluentd
+  ignore_errors: true
+
+- name: Install kube-fluentd chart
+  shell: helm --kube-context {{ cluster_name }} install kube-fluentd --name kube-fluentd --namespace=kube-system --wait --timeout 600 -f  {{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml
+  args:
+    chdir: ../helms
