@@ -137,22 +137,22 @@ filter_by_owner = {{ .Values.webserver.filter_by_owner }}
 
 [kubernetes]
 airflow_configmap = airflow-configmap
-worker_container_repository = airflow
+#worker_container_repository = airflow
 worker_container_tag = latest
 worker_container_image_pull_policy = IfNotPresent
-delete_worker_pods = True
-git_repo = https://github.com/apache/incubator-airflow.git
-git_branch = master
-git_subpath = airflow/example_dags/
-git_user =
-git_password =
+delete_worker_pods = False
+#git_repo = https://github.com/apache/incubator-airflow.git
+#git_branch = master
+#git_subpath = airflow/example_dags/
+#git_user =
+#git_password =
 dags_volume_claim = airflow-dags
 dags_volume_subpath =
-logs_volume_claim = airflow-logs
-logs_volume_subpath =
+#logs_volume_claim = airflow-logs
+#logs_volume_subpath =
 in_cluster = True
-namespace = default
-gcp_service_account_keys =
+namespace = company-a
+#gcp_service_account_keys =
 # For cloning DAGs from git repositories into volumes: ttps://github.com/kubernetes/git-sync
 git_sync_container_repository = gcr.io/google-containers/git-sync-amd64
 git_sync_container_tag = v2.0.5
