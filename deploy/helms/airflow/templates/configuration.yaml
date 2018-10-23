@@ -32,7 +32,7 @@ encrypt_s3_logs = {{ .Values.core.encrypt_s3_logs }}
 # s3_log_folder =
 
 # The executor class that airflow should use. Choices include
-# SequentialExecutor, LocalExecutor, CeleryExecutor
+# SequentialExecutor, LocalExecutor, CeleryExecutor, KubernetesExecutor
 executor = {{ .Values.core.executor }}
 
 # The SqlAlchemy connection string to the metadata database.
@@ -134,6 +134,29 @@ dex_admin_email = {{ .Values.webserver.dex_admin_email }}
 
 # Filter the list of dags by owner name (requires authentication to be enabled)
 filter_by_owner = {{ .Values.webserver.filter_by_owner }}
+
+[kubernetes]
+airflow_configmap = airflow-configmap
+worker_container_repository = airflow
+worker_container_tag = latest
+worker_container_image_pull_policy = IfNotPresent
+delete_worker_pods = True
+git_repo = https://github.com/apache/incubator-airflow.git
+git_branch = master
+git_subpath = airflow/example_dags/
+git_user =
+git_password =
+dags_volume_claim = airflow-dags
+dags_volume_subpath =
+logs_volume_claim = airflow-logs
+logs_volume_subpath =
+in_cluster = True
+namespace = default
+gcp_service_account_keys =
+# For cloning DAGs from git repositories into volumes: ttps://github.com/kubernetes/git-sync
+git_sync_container_repository = gcr.io/google-containers/git-sync-amd64
+git_sync_container_tag = v2.0.5
+git_sync_init_container_name = git-sync-clone
 
 [email]
 email_backend = {{ .Values.webserver.email_backend }}
