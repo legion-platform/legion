@@ -9,15 +9,15 @@
   loop_control:
     loop_var: enclave
 
-- name: Generate airflow s3 access policy document
+- name: Generate jenkins s3 access policy document
   template:
-    src: "airflow_s3_access_policy.yaml.j2"
-    dest: "{{ tmp_dir }}/airflow_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
+    src: "jenkins_s3_access_policy.yaml.j2"
+    dest: "{{ tmp_dir }}/jenkins_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
   with_items: "{{ enclaves }}"
   loop_control:
     loop_var: enclave
 
-- name: Create Airflow S3 access role
+- name: Create Jenkins S3 access role
   iam:
     iam_type: role
     name: "{{ cluster_name }}-jenkins-role"
@@ -27,12 +27,12 @@
   loop_control:
     loop_var: enclave
 
-- name: Attach Airflow S3 accesse policy to the role
+- name: Attach Jenkins S3 accesse policy to the role
   iam_policy:
     iam_type: role
     iam_name: "{{ cluster_name }}-jenkins-role"
     policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
-    policy_document: "{{ tmp_dir }}/airflow_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
+    policy_document: "{{ tmp_dir }}/jenkins_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
     state: present
   with_items: "{{ enclaves }}"
   loop_control:

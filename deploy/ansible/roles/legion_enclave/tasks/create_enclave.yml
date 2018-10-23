@@ -122,7 +122,7 @@
 # Create IAM roles
 - name: Generate Trust policy documents
   template:
-    src: "{{ item }}.yaml.j2"
+    src: trust_policy.yaml.j2
     dest: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
 
 - name: Generate S3 access policy documents
@@ -136,7 +136,6 @@
     name: "{{ cluster_name }}-{{ enclave }}-s3-access-role"
     trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
     state: present
-
 
 - name: Attach S3 accesse policies to the roles
   iam_policy:
