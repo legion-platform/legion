@@ -31,7 +31,7 @@
     dest: "{{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml"
     mode: 0644
 
-- name: Install kube-fluentd chart
+- name: Delete kube-fluentd chart
   shell: helm --kube-context {{ cluster_name }} del --purge kube-fluentd
   ignore_errors: true
 
