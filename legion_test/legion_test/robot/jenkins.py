@@ -69,7 +69,7 @@ class Jenkins:
         """
         self._client = None  # type: jenkins.Jenkins
 
-    def connect_to_jenkins(self, domain, user=None, password=None, add_dex_cookies=True, timeout=10):
+    def connect_to_jenkins(self, domain, user=None, password=None, dex_cookies={}, timeout=10):
         """
         Connect to Jenkins server
 
@@ -81,21 +81,24 @@ class Jenkins:
         :type password: str
         :param timeout: timeout for connection process in seconds
         :type timeout: int or str
-        :param add_dex_cookies: if Dex Cookies should be added to request
-        :type add_dex_cookies: bool
+        :param dex_cookies:  Dex Cookies if they are already received, if empty - get new for Legion static user
+        :type dex_cookies: dict
         :return: None
         """
-        if get_jenkins_credentials():
+        if get_jenkins_credentials() and not user and not password:
             user, password = get_jenkins_credentials()
         self._client = jenkins.Jenkins(domain,
                                        username=user,
                                        password=password,
                                        timeout=int(timeout))
-        if add_dex_cookies:
+        if not dex_cookies:
             self._client.crumb = {'crumbRequestField': 'Cookie',
                             'crumb': ';'.join(['{}={}'.format(k,v)
                                           for (k,v) in get_session_cookies().items()])}
-
+        else:
+            self._client.crumb = {'crumbRequestField': 'Cookie',
+                            'crumb': ';'.join(['{}={}'.format(k,v)
+                                          for (k,v) in dex_cookies.items()])}
         user = self._client.get_whoami()
         print('Hello %s from Jenkins' % (user['fullName']))
         self._client.wait_for_normal_op(10)
