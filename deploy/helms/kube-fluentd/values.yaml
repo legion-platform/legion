@@ -1,0 +1,29 @@
+# KUBE_LOGS_S3_BUCKET_NAME: some-bucket
+# KUBE_LOGS_S3_BUCKET_REGION: aws-region
+# SYSTEM_LOGS_S3_BUCKET_NAME: some-bucket
+# SYSTEM_LOGS_S3_BUCKET_REGION: aws-region
+
+# annotations:
+#   iam.amazonaws.com/role: some-kube2iam-role-if-needed
+
+image:
+  repository: some/kube-fluentd
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+resources:
+  limits:
+   cpu: 200m
+   memory: 256Mi
+  requests:
+   cpu: 100m
+   memory: 64Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
