@@ -15,7 +15,7 @@ node {
         }
 
         stage('deploy'){
-            legion.deploy()
+            legion.deploy(timeout: 400)
         }
     }
 }
