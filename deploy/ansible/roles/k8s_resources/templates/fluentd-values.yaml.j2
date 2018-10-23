@@ -1,7 +1,7 @@
-KUBE_LOGS_S3_BUCKET_NAME: {{ kube-fluentd.fluentd_s3_bucket_name }}
-KUBE_LOGS_S3_BUCKET_REGION: {{ kube-fluentd.fluentd_s3_bucket_region }}
-SYSTEM_LOGS_S3_BUCKET_NAME: {{ kube-fluentd.fluentd_s3_bucket_name }}
-SYSTEM_LOGS_S3_BUCKET_REGION: {{ kube-fluentd.fluentd_s3_bucket_region }}
+KUBE_LOGS_S3_BUCKET_NAME: {{ kube_fluentd.fluentd_s3_bucket_name }}
+KUBE_LOGS_S3_BUCKET_REGION: {{ kube_fluentd.fluentd_s3_bucket_region }}
+SYSTEM_LOGS_S3_BUCKET_NAME: {{ kube_fluentd.fluentd_s3_bucket_name }}
+SYSTEM_LOGS_S3_BUCKET_REGION: {{ kube_fluentd.fluentd_s3_bucket_region }}
 
 annotations:
   iam.amazonaws.com/role: {{ cluster_name }}-fluentd-role

@@ -5,8 +5,8 @@
       "Effect": "Allow",
       "Action": ["s3:*"],
       "Resource": [
-        "arn:aws:s3:::{{ kube-fluentd.fluentd_s3_bucket_name }}",
-        "arn:aws:s3:::{{ kube-fluentd.fluentd_s3_bucket_name }}/*"]
+        "arn:aws:s3:::{{ kube_fluentd.fluentd_s3_bucket_name }}",
+        "arn:aws:s3:::{{ kube_fluentd.fluentd_s3_bucket_name }}/*"]
     }
   ]
 }
