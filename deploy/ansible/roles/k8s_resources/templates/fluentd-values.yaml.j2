@@ -5,3 +5,7 @@ SYSTEM_LOGS_S3_BUCKET_REGION: {{ kube_fluentd.fluentd_s3_bucket_region }}
 
 annotations:
   iam.amazonaws.com/role: {{ cluster_name }}-fluentd-role
+
+image:
+  repository: {{ docker_repo }}/kube-fluentd
+  tag: latest
