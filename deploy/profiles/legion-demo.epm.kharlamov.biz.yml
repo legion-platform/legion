@@ -75,9 +75,10 @@ enclaves:
   - company-a
   - company-b
 storageclass: efs
+legion_data_bucket_prefix: epm-legion-data
+legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"
 airflow_dags_dir: '/airflow-dags'
 airflow_dags_pvc: legion-airflow-dags
-legion_data_s3_bucket: 'epm-legion-data-{{ env_type }}-{{ enclave }}'
 airflow_s3_logs_path: 'airflow-logs/'
 airflow_s3_logs_url: "s3://{{ legion_data_s3_bucket }}/{{ airflow_s3_logs_path }}"
 airflow_expected_output: 'expected-data/'
@@ -85,12 +86,7 @@ airflow_pvc: 200m
 
 collector:
   replicas: 1
-  bucket_prefix: epm-legion-data
-  bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"
   region: "{{ aws_region }}"
-
-legion_data_s3_bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"
-legion_data_s3_bucket: "epm-legion-data-{{ env_type }}-{{ enclave }}"
 
 # Addons
 dashboard:
