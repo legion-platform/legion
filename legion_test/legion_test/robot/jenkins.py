@@ -127,6 +127,19 @@ class Jenkins:
         response = self._client.build_job(job_name, parameters=parameters)
         print('Result of Job run: {!r}'.format(response))
 
+    def get_latest_job_number(self, job_name):
+        """
+        Get No. of latest completed build of job
+
+        :param job_name: Jenkins job name
+        :type job_name: str
+        :return: int
+        """
+        if not self._client:
+            raise Exception('Jenkins client has not been initialized')
+        job_info = self._client.get_job_info(job_name)
+        return job_info['lastBuild']['number']
+
     def is_job_finished(self, job_name):
         """
         Check if Jenkins job is finished
@@ -136,6 +149,8 @@ class Jenkins:
         :raises: Exception
         :return: bool -- is finished or not
         """
+        if not self._client:
+            raise Exception('Jenkins client has not been initialized')
         job_info = self._client.get_job_info(job_name)
 
         if not job_info['lastBuild'] and not job_info['inQueue']:
@@ -149,9 +164,30 @@ class Jenkins:
 
         return False
 
+    def print_jenkins_build_logs(self, job_name, build_no=None):
+        """
+        Gather and print Jenkins job logs
+
+        :param job_name: Jenkins job name
+        :type job_name: str
+        :param build_no: (Optional) No. of build or latest
+        :type build_no: int / None
+        :return: None
+        """
+        if not self._client:
+            raise Exception('Jenkins client has not been initialized')
+
+        try:
+            if not build_no:
+                build_no = self.get_latest_job_number(job_name)
+            logs = self._client.get_build_console_output(job_name, build_no)
+            print("Jenkins Build #{} logs:\n{}".format(build_no, logs))
+        except Exception as log_gathering_exception:
+            print('Cannot gather build #{} logs: {}'.format(build_no, log_gathering_exception))
+
     def wait_jenkins_job(self, job_name, timeout=0, sleep=5):
         """
-        Wait finish of last job build
+        Wait finish of last job build and print job logs
 
         :param job_name: Jenkins job name
         :type job_name: str
@@ -172,10 +208,12 @@ class Jenkins:
         time.sleep(sleep)
         while True:
             if self.is_job_finished(job_name):
+                self.print_jenkins_build_logs(job_name)
                 return
 
             elapsed = time.time() - start
             if elapsed > timeout > 0:
+                self.print_jenkins_build_logs(job_name)
                 raise Exception('Timeout')
 
             time.sleep(sleep)
