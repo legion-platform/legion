@@ -10,10 +10,13 @@
 - name: Attach AssumeRole policy to cluster nodes
   iam_policy:
     iam_type: role
-    iam_name: "nodes.{{ cluster_name }}"
+    iam_name: "{{ item }}.{{ cluster_name }}"
     policy_name: "{{ cluster_name }}-legion-k8s-assume-role"
     policy_document: "{{ tmp_dir }}/kube2iam_iam_policy.{{ cluster_name }}.yaml"
     state: present
+  with_items:
+    - nodes
+    - masters
 
 - name: Create kubernetes kube2iam configuration template
   template:
