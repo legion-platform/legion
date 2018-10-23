@@ -2,7 +2,7 @@
 
 - name: Generate fluentd s3 access policy document
   template:
-    src: "airflow_s3_access_policy.yaml.j2"
+    src: "fluentd_s3_access_policy.yaml.j2"
     dest: "{{ tmp_dir }}/fluentd_s3_access_policy.{{ cluster_name }}.yaml"
 
 - name: Create fluentd S3 access role
