@@ -9,7 +9,7 @@ route53_zone: epm.kharlamov.biz
 # System vars
 tmp_dir: /tmp/
 
-# AWS
+# AWS 
 aws_region: us-east-2
 node_autoscaler_min: 3
 node_autoscaler_max: 5

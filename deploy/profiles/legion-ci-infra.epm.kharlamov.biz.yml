@@ -42,12 +42,7 @@ private_network: '172.31'
 cluster_zones:
   - zone_name: us-east-2a
     kops_cidr: "{{ private_network }}.124.0/24"
-    kops_utility_cidr: "{{
-
-# Cluster logs
-kube_fluentd:
-  fluentd_s3_bucket_name: epm-legion-data-ci-app-logs
-  fluentd_s3_bucket_region: us-east-2 private_network }}.125.0/24"
+    kops_utility_cidr: "{{ private_network }}.125.0/24"
   - zone_name: us-east-2b
     kops_cidr: "{{ private_network }}.126.0/24"
     kops_utility_cidr: "{{ private_network }}.127.0/24"
