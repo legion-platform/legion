@@ -75,6 +75,11 @@ airflow_rds_size: ~                                                   # size of 
 # Airflow DAGs configuration [?]
 airflow_expected_output: ~                                # Configuration for Airflow DAGs
 
+# Kube fluentd properties
+kube_fluentd:
+  fluentd_s3_bucket_name: ~
+  fluentd_s3_bucket_region: ~
+
 # Addons configuration
 storageclass: ~              # Which storage use in PVCs
 dashboard:                     # Kubernetes dashboard configuration
