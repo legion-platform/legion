@@ -31,3 +31,5 @@ function _M.init(invalid_tokens)
         _M.invalid_tokens[invalid_token] = true
     end
 end
+
+return _M
