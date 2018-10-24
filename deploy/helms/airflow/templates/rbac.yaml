@@ -29,5 +29,23 @@ kind: ServiceAccount
 metadata:
   name: "{{ .Release.Name }}-airflow-worker"
 
-
-
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-airflow-scheduler"
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-rbac
+subjects:
+  - kind: ServiceAccount
+    # Reference to upper's `metadata.name`
+    name:  "{{ .Release.Name }}-airflow-scheduler"
+    # Reference to upper's `metadata.namespace`
+    namespace: company-a
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+apiGroup: rbac.authorization.k8s.io
