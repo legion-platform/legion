@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: "{{ .Release.Name }}-airflow"
+  name: "{{ .Release.Name }}-web"
   labels:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
@@ -14,9 +14,10 @@ spec:
       annotations:
         iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
-        app: "{{ .Release.Name }}-airflow"
+        app: "{{ .Release.Name }}-web"
     spec:
       restartPolicy: Always
+      serviceAccountName: "{{ .Release.Name }}-web"
       containers:
       - name: scheduler
         image: "{{ .Values.image }}"
@@ -31,7 +32,7 @@ spec:
         - name: AIRFLOW_KUBE_NAMESPACE
           valueFrom:
             fieldRef:
-            fieldPath: metadata.namespace        
+              fieldPath: metadata.namespace        
         - name: POSTGRES_HOST
         {{- if .Values.postgres.external}}
           value: "{{ .Values.postgres.host }}"
@@ -112,6 +113,9 @@ spec:
           items:
           - key: airflow.cfg
             path: airflow.cfg
+      - name: connections-config
+        secret:
+          secretName: "{{ .Release.Name }}-connections-config"
       - name: dag-volume
         persistentVolumeClaim:
           {{- if .Values.storage.use_specified_pvc }}
