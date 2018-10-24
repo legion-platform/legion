@@ -8,7 +8,7 @@ route53_zone: epm.kharlamov.biz
 # System vars
 tmp_dir: /tmp/
 
-# AWS 
+# AWS
 aws_region: us-east-2
 node_autoscaler_min: 3
 node_autoscaler_max: 5
@@ -88,6 +88,11 @@ collector:
 dashboard:
   version: "1.8.3"
   insecure: true
+
+# Cluster logs
+kube_fluentd:
+  fluentd_s3_bucket_name: epm-legion-data-dev-logs
+  fluentd_s3_bucket_region: us-east-2
 
 # Secrets
 secrets_bucket: "legion-cluster"

@@ -88,6 +88,11 @@ dashboard:
   version: "1.8.3"
   insecure: true
 
+# Cluster logs
+kube_fluentd:
+  fluentd_s3_bucket_name: epm-legion-data-ci-app-logs
+  fluentd_s3_bucket_region: us-east-2
+
 # Secrets
 secrets_bucket: "legion-cluster"
 secrets_file: "/tmp/{{ cluster_name }}-secrets"
