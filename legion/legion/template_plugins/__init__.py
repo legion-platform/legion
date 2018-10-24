@@ -20,4 +20,3 @@ from .enclave import enclave_models_monitor
 from .io import file_change_monitor
 from .os_environ import environment_variables_provider
 from .k8s import enclave_configmap_monitor
-from .config_map import invalid_token_monitor
