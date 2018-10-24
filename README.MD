@@ -30,9 +30,9 @@ Legion provides:
 ### AI Toolschains:
 
 * Sklearn
-* Tensorflow
-* Spark
-* R
+* Tensorflow (not supported yet)
+* Spark (not supported yet)
+* R (not supported yet)
 	
 ## Documentation
 * [Model REST API](legion/docs/source/model_rest_api.md)
