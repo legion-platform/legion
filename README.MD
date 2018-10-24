@@ -27,7 +27,7 @@ Legion provides:
 * Flask
 * NGinx
 
-### AI Toolschains:
+### ML/AI Toolchains:
 
 * Sklearn
 * Tensorflow (not supported yet)
