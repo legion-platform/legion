@@ -1,0 +1,130 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-dags"
+data:
+  example_python_work.py: |-
+    # -*- coding: utf-8 -*-
+    import datetime
+    import logging
+
+    import airflow
+    from airflow.operators.bash_operator import BashOperator
+    from airflow.operators.python_operator import PythonOperator
+    from airflow.models import DAG
+
+    args = {
+        'owner': 'airflow',
+        'start_date': datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+    }
+
+    dag = DAG(
+        dag_id='example_python_work', default_args=args,
+        schedule_interval='@once',
+        dagrun_timeout=datetime.timedelta(minutes=2))
+
+    def output_some_data():
+        print('Output data')
+
+    output_data = PythonOperator(task_id='output_some_data',
+                                 python_callable=output_some_data,
+                                 dag=dag)
+
+    echo_1 = BashOperator(task_id='echo_1',
+                               bash_command='echo $(date)',
+                               dag=dag)
+    echo_2 = BashOperator(task_id='echo_2',
+                               bash_command='echo $(date)',
+                               dag=dag)
+
+    echo_1 >> output_data
+    echo_2 >> output_data
+
+    if __name__ == "__main__":
+        dag.cli()
+
+
+  s3-connection-test.py: |-
+    """DAG for S3 connection testing."""
+    from datetime import datetime
+    import logging
+
+    from airflow import DAG
+    from airflow.operators.python_operator import PythonOperator
+
+    from legion_airflow.hooks.s3_hook import S3Hook
+
+    S3_CONN_ID = 's3_conn'
+    TEST_FILE_NAME = 's3_check.csv'
+
+    def create_file_in_s3():
+        """
+        Create file in S3
+
+        :return: None
+        """
+        logging.info("Create s3 hook")
+        s3_hook = S3Hook(S3_CONN_ID)
+        logging.info("Create file {} in s3".format(TEST_FILE_NAME))
+        file_created = {'file_created': datetime.now().isoformat()}
+        s3_hook.write_json_file(file_created, '', TEST_FILE_NAME)
+        logging.info("Done.")
+
+
+    dag_test = DAG(dag_id='s3_connection_test',
+                   description='DAG creates file in S3',
+                   schedule_interval='@once',
+                   start_date=datetime.combine(datetime.now(), datetime.min.time()),
+                   catchup=True)
+
+    task = PythonOperator(
+        task_id='create_file_in_s3',
+        dag=dag_test,
+        python_callable=create_file_in_s3)
+
+  k8s_operator_test.py: |-
+    from airflow import DAG
+    from datetime import datetime, timedelta
+    from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
+    from airflow.operators.dummy_operator import DummyOperator
+    
+    default_args = {
+        'owner': 'airflow',
+        'depends_on_past': False,
+        'start_date': datetime.utcnow(),
+        'email': ['airflow@example.com'],
+        'email_on_failure': False,
+        'email_on_retry': False,
+        'retries': 1,
+        'retry_delay': timedelta(minutes=5)
+    }
+    
+    dag = DAG(
+        'kubernetes_sample', default_args=default_args, schedule_interval=timedelta(minutes=10))
+    
+    start = DummyOperator(task_id='run_this_first', dag=dag)
+    
+    passing = KubernetesPodOperator(namespace='default',
+                              image="python:3.6",
+                              cmds=["python","-c"],
+                              arguments=["print('hello world')"],
+                              labels={"foo": "bar"},
+                              name="passing-test",
+                              task_id="passing-task",
+                              get_logs=True,
+                              dag=dag
+                              )
+    
+    failing = KubernetesPodOperator(namespace='default',
+                              image="ubuntu:1604",
+                              cmds=["python","-c"],
+                              arguments=["print('hello world')"],
+                              labels={"foo": "bar"},
+                              name="fail",
+                              task_id="failing-task",
+                              get_logs=True,
+                              dag=dag
+                              )
+    
+    passing.set_upstream(start)
+    failing.set_upstream(start)

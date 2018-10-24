@@ -1,0 +1,62 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-web"
+  name: "{{ .Release.Name }}-web"
+spec:
+  rules:
+    - host: "{{ .Values.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-web"
+              servicePort: 8080
+
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-web"
+              servicePort: 8080
+    {{- end }}
+    {{- if .Values.ingress.flowerEnabled}}
+    - host: "{{ .Values.ingress.domain.flowerPartial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-flower"
+              servicePort: 5555
+
+    {{- if .Values.addLocalDomain }}
+    - host: "{{ .Values.ingress.domain.flowerPartial }}.local.{{ .Values.rootDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-flower"
+              servicePort: 5555
+    {{- end }}
+    {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - "{{ .Values.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+    {{- if .Values.ingress.flowerEnabled}}
+    - "{{ .Values.ingress.domain.flowerPartial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
+    {{- end }}
+    {{- if .Values.ingress.tls.autoSecretNameDeduction }}
+    secretName: "{{ .Values.rootDomain }}-tls"
+    {{- else }}
+    secretName: {{ .Values.tls.secretName  }}
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-dag-filler"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-dag-filler"
+spec:
+  template:
+    spec:
+      containers:
+      - name: alpine
+        image: alpine:3.5
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+        command: ["cp",  "-R", "/mnt/dags/.", "{{ .Values.storage.airflow_dags_directory }}"]
+        volumeMounts:
+        - name: dag-volume
+          mountPath: "{{ .Values.storage.airflow_dags_directory }}"
+        - name: airflow-dags
+          mountPath: /mnt/dags
+      restartPolicy: Never
+      volumes:
+      - name: dag-volume
+        persistentVolumeClaim:
+          {{- if .Values.storage.use_specified_pvc }}
+          claimName: {{ .Values.storage.pvc_name }}
+          {{- else}}
+          claimName: "{{ .Release.Name }}-dag-pvc"
+          {{- end}}
+      - name: airflow-dags
+        configMap:
+          name: "{{ .Release.Name }}-dags"

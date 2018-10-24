@@ -1,12 +1,30 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
-  name: "{{ .Release.Name }}-airflow"
+  name: "{{ .Release.Name }}-web"
   labels:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    component: "{{ .Release.Name }}-scheduler"
+    component: "{{ .Release.Name }}-web"
+spec:
+  selector:
+    app: "{{ .Release.Name }}-airflow-web"
+  ports:
+    - name: web
+      protocol: TCP
+      port: 8080
+      targetPort: web
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-web"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-web"
 spec:
   replicas: 1
   template:
@@ -14,55 +32,11 @@ spec:
       annotations:
         iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
-        app: "{{ .Release.Name }}-airflow"
+        app: "{{ .Release.Name }}-airflow-web"
     spec:
       restartPolicy: Always
       containers:
-      - name: scheduler
-        image: "{{ .Values.image }}"
-        resources:
-          requests:
-            cpu: "1000m"
-            memory: "1024Mi"
-          limits:
-            cpu: "2000m"
-            memory: "2048Mi"
-        env:
-        - name: AIRFLOW_KUBE_NAMESPACE
-          valueFrom:
-            fieldRef:
-            fieldPath: metadata.namespace        
-        - name: POSTGRES_HOST
-        {{- if .Values.postgres.external}}
-          value: "{{ .Values.postgres.host }}"
-        {{- else }}
-          value: "{{ .Release.Name }}-postgres"
-        {{- end }}
-        - name: POSTGRES_PORT
-          value: "{{ .Values.postgres.port }}"
-        - name: REDIS_HOST
-          value: "{{ .Release.Name }}-redis"
-        - name: AIRFLOW_HOME
-          value: "/home/airflow"
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - 'ps x |grep "[a]irflow scheduler"'
-          initialDelaySeconds: 10
-          timeoutSeconds: 3
-          periodSeconds: 3
-        volumeMounts:
-        - name: airflow-config
-          mountPath: /home/airflow/airflow.cfg
-          subPath: airflow.cfg
-        - name: dag-volume
-          mountPath: "{{ .Values.storage.airflow_dags_directory }}"
-        - name: airflow-config-dir
-          mountPath: /home/airflow/config
-        args: ["airflow", "scheduler"]
-      - name: webserver
+      - name: web
         image: "{{ .Values.image }}"
         resources:
           requests:
@@ -102,6 +76,20 @@ spec:
         - name: web
           containerPort: 8080
         args: ["airflow", "webserver"]
+        livenessProbe:
+          httpGet:
+            path: /admin/airflow/dag_stats
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /admin/rest_api/api?api=rest_api_plugin_version
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 3
       volumes:
       - name: airflow-config-dir
         configMap:
@@ -112,6 +100,9 @@ spec:
           items:
           - key: airflow.cfg
             path: airflow.cfg
+      - name: connections-config
+        secret:
+          secretName: "{{ .Release.Name }}-connections-config"
       - name: dag-volume
         persistentVolumeClaim:
           {{- if .Values.storage.use_specified_pvc }}
@@ -119,21 +110,3 @@ spec:
           {{- else}}
           claimName: "{{ .Release.Name }}-dag-pvc"
           {{- end}}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: "{{ .Release.Name }}-web"
-  labels:
-    heritage: {{ .Release.Service | quote }}
-    release: {{ .Release.Name | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    component: "{{ .Release.Name }}-web"
-spec:
-  selector:
-    app: "{{ .Release.Name }}-web"
-  ports:
-    - name: web
-      protocol: TCP
-      port: 8080
-      targetPort: web
