@@ -15,14 +15,19 @@
 --
 local _M = {}
 
-function _M.check_token(invalid_tokens)
+function _M.check_token()
     local auth_header = ngx.var.http_Authorization
 
     local _, _, token = string.find(auth_header, "Bearer%s+(.+)")
+    if _M.invalid_tokens[token] ~= nil then
+        ngx.log(ngx.WARN, "Invalid token")
+        ngx.exit(ngx.HTTP_UNAUTHORIZED)
+    end
+end
+
+function _M.init(invalid_tokens)
+    _M.invalid_tokens = {}
     for invalid_token in string.gmatch(invalid_tokens, "%S+") do
-        if token == invalid_token then
-            ngx.log(ngx.WARN, "Invalid token")
-            ngx.exit(ngx.HTTP_UNAUTHORIZED)
-        end
+        _M.invalid_tokens[invalid_token] = true
     end
 end

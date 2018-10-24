@@ -54,6 +54,8 @@ http{
 
     local statistics_sender = require "statistics_sender"
     statistics_sender.init(host, port, namespace)
+    local invalid_tokens = require "invalid_tokens"
+    invalid_tokens.init("{{ var }}")
   }
 
   server {
@@ -85,7 +87,7 @@ http{
             local jwt = require("nginx-jwt")
             jwt.auth()
             local invalid_tokens = require "invalid_tokens"
-            invalid_tokens.check_token("{{ var }}")
+            invalid_tokens.check_token()
         ';
 
         proxy_pass {{ model_endpoint.model_service.url_with_ip }}/api/model/{{ model_endpoint.model_service.id }}/{{ model_endpoint.model_service.version }};
