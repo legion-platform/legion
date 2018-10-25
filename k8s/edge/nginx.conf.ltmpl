@@ -15,7 +15,7 @@
 #
 {{ load_module('legion.template_plugins.enclave_models_monitor') }}
 {{ load_module('legion.template_plugins.environment_variables_provider') }}
-{{ load_module('legion.template_plugins.enclave_configmap_monitor') }}
+{{ load_module('legion.template_plugins.enclave_configmap_monitor', key="invalid-tokens") }}
 
 env JWT_SECRET;
 
