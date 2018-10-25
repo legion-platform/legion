@@ -12,24 +12,6 @@ REDIS_CLI=${REDIS_CLI:-"/usr/bin/redis-cli"}
 BOOTUP_CHECK_TIMEOUT=${BOOTUP_CHECK_TIMEOUT:-"10"}
 BOOTUP_DIRECTORY=${BOOTUP_DIRECTORY:-"/opt/bootup"}
 
-# wait for redis
-if [ "$2" = "webserver" ] || [ "$2" = "worker" ] || [ "$2" = "scheduler" ] || [ "$2" = "flower" ] ; then
-  echo "CHECKING REDIS"
-  X="`timeout $BOOTUP_CHECK_TIMEOUT $REDIS_CLI -h $REDIS_HOST ping`"
-  j=0
-  while [ "${X}" != "PONG" ]; do
-    j=`expr $j + 1`
-    if [ $j -ge $TRY_LOOP ]; then
-      echo "$(date) - $REDIS_HOST still not reachable, giving up"
-      exit 1
-    fi
-    echo "$(date) - waiting for Redis... $j/$TRY_LOOP"
-    sleep 5
-    X="`timeout $BOOTUP_CHECK_TIMEOUT $REDIS_CLI -h $REDIS_HOST ping`"
-  done
-  echo "REDIS READY"
-fi
-
 # wait for DB
 if [ "$2" = "webserver" ] || [ "$2" = "worker" ] || [ "$2" = "scheduler" ]; then
   echo "CHECKING PG"

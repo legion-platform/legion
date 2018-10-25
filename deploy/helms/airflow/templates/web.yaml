@@ -45,15 +45,6 @@ spec:
           value: "{{ .Release.Name }}-redis"
         - name: AIRFLOW_HOME
           value: "/home/airflow"
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - 'ps x |grep "[a]irflow scheduler"'
-          initialDelaySeconds: 10
-          timeoutSeconds: 3
-          periodSeconds: 3
         volumeMounts:
         - name: airflow-config
           mountPath: /home/airflow/airflow.cfg
