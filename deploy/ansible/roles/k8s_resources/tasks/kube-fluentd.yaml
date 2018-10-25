@@ -2,8 +2,8 @@
 
 - name: Create Logging S3 bucket
   s3_bucket:
-    name: {{ kube_fluentd.fluentd_s3_bucket_name }}
-    region: {{ kube_fluentd.fluentd_s3_bucket_region }}
+    name: "{{ kube_fluentd.fluentd_s3_bucket_name }}"
+    region: "{{ kube_fluentd.fluentd_s3_bucket_region }}"
     state: present
 
 - name: Generate trust policy document
