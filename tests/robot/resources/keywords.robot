@@ -288,6 +288,8 @@ Invoke and check test dags for valid status code
     Connect to enclave Airflow                           ${enclave}
     :FOR    ${dag}      IN      @{TEST_DAGS}
     \   ${tasks} =            Find Airflow Tasks  ${dag}
+# Temporary disabling triggering Airflow tasks as it fails Airflow test
+# TODO: Need to rewrite this logic as a part of Airflow upgrade.
 #    \   Run airflow task and validate stderr      ${tasks}   ${dag}
     \   ${failed_dags} =      Get failed Airflow DAGs
     \   Should Not Contain    ${failed_dags}      ${dag}
