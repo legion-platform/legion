@@ -80,6 +80,7 @@ def file_change_monitor(template_system, filepath, is_yaml=False, var_name='file
 async def loop(event_loop, watcher, template_system, filepath, is_yaml=False, var_name='file'):
     """
     Run aionotify watcher in current event loop
+
     :param event_loop: Current event loop
     :param watcher: aionotify watcher object
     :param template_system: Object, that contains 'render' callback function

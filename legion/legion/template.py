@@ -120,7 +120,7 @@ class LegionTemplateEngine:
         module = importlib.import_module(module_name)
         module_function = getattr(module, function_name)
         kwargs['template_system'] = self
-        self._plugins.append((module_function, args, kwargs, ))
+        self._plugins.append((module_function, args, kwargs))
         return ''
 
     def render(self, **items):
