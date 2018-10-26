@@ -18,10 +18,6 @@ spec:
         component: "{{ .Release.Name }}-edge"
     spec:
       serviceAccountName: "{{ .Release.Name }}-edge"
-      volumes:
-      - name: invalid-tokens
-        configMap:
-          name: "{{ .Release.Name }}-invalid-tokens"
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
@@ -45,9 +41,6 @@ spec:
               key: "jwt.secret"
         - name: ENABLE_HOME_PAGE
           value: "{{ .Values.edge.enableHomePage }}"
-        volumeMounts:
-        - mountPath: /invalid-tokens/
-          name: invalid-tokens
         ports:
         - containerPort: 80
           name: api
