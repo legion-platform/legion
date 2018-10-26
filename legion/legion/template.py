@@ -182,7 +182,8 @@ class LegionTemplateEngine:
         LOGGER.debug('Staring loop')
         running_threads = []
         for f, args, kwargs in self._plugins:
-            thread = threading.Thread(target=f, args=args, kwargs=kwargs, daemon=True)
+            thread = threading.Thread(target=f, args=args, kwargs=kwargs,
+                                      daemon=True, name=f.__name__)
             thread.start()
             running_threads.append(thread)
         for t in running_threads:
