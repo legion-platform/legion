@@ -9,7 +9,7 @@
 image:
   repository: some/kube-fluentd
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
