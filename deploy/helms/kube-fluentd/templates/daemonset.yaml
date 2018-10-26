@@ -41,6 +41,18 @@ spec:
             value: {{ .Values.SYSTEM_LOGS_S3_BUCKET_NAME }}
           - name: SYSTEM_LOGS_S3_BUCKET_REGION
             value: {{ .Values.SYSTEM_LOGS_S3_BUCKET_REGION }}
+          livenessProbe:
+            httpGet:
+              path: /fluentd.pod.healthcheck?json=%7B%22log%22%3A+%22health+check%22%7D
+              port: 9880
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /fluentd.pod.healthcheck?json=%7B%22log%22%3A+%22health+check%22%7D
+              port: 9880
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
           volumeMounts:
           - mountPath: /var/log
             name: varlog
