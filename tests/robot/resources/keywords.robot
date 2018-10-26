@@ -249,8 +249,7 @@ Check if component domain has been secured
     Log              Auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text
-    Should contain   ${auth_page}    Log in to dex
-    Should contain   ${auth_page}    Log in with Email
+    Should contain   ${auth_page}    Log in
 
 Secured component domain should not be accessible by invalid credentials
     [Arguments]     ${component}    ${enclave}
