@@ -73,3 +73,15 @@
 - name: Remove kube2iam service account
   shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
   ignore_errors: true
+
+- name: Remove Kube Fluentd S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-fluentd-role"
+    policy_name: "{{ cluster_name }}-fluentd-s3-access-policy"
+    state: absent
+
+- name: Remove Kube Fluentd IAM role
+  iam_role:
+    name: "{{ cluster_name }}-fluentd-role"
+    state: absent
