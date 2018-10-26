@@ -9,7 +9,7 @@
 - name: Generate trust policy document
   template:
     src: "trust_policy.yaml.j2"
-    dest: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
+    dest: "{{ tmp_dir }}/trust_policy.kube-fluentd.{{ cluster_name }}.yaml"
 
 - name: Generate fluentd s3 access policy document
   template:
@@ -20,7 +20,7 @@
   iam:
     iam_type: role
     name: "{{ cluster_name }}-fluentd-role"
-    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
+    trust_policy_filepath: "{{ tmp_dir }}/trust_policy.kube-fluentd.{{ cluster_name }}.yaml"
     state: present
 
 - name: Attach Airflow S3 accesse policy to the role
