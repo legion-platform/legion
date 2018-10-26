@@ -15,7 +15,7 @@
 - name: Remove data bucket S3 access policy
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-s3-access-role"
+    iam_name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
     policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
     state: absent
   with_items: "{{ enclaves }}"
@@ -24,7 +24,61 @@
 
 - name: Remove data bucket access role
   iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-s3-access-role"
+    name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-collector-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket access role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-collector-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket access role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-model-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket access role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-model-role"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:

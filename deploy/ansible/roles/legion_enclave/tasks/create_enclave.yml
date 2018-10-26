@@ -133,14 +133,24 @@
 - name: Create Enclave IAM roles
   iam:
     iam_type: role
-    name: "{{ cluster_name }}-{{ enclave }}-s3-access-role"
+    name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
     trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ cluster_name }}.yaml"
     state: present
+  with_items:
+    - airflow
+    - jslave
+    - collector
+    - model
 
 - name: Attach S3 accesse policies to the roles
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-s3-access-role"
+    iam_name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
     policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
     policy_document: "{{ tmp_dir }}/enclave_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
     state: present
+  with_items:
+    - airflow
+    - jslave
+    - collector
+    - model
