@@ -19,7 +19,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Add Python3.6 repository
 RUN apt-get update && apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:deadsnakes/ppa 
+    add-apt-repository -y ppa:deadsnakes/ppa
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3.6 \
     g++ apt-utils build-essential python3.6-dev python3-pip python3-setuptools libpython3.6-dev \
@@ -37,10 +37,11 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 
 RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
+RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 pipenv==2018.10.13
 
-COPY requirements.txt /root/requirements.txt
+COPY Pipfile Pipfile
+COPY Pipfile.lock Pipfile.lock
 
-RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 numpy==1.14.3
-RUN pip3 install --disable-pip-version-check --no-cache-dir -r /root/requirements.txt
+RUN pipenv install --system --deploy --python python3.6
 
 WORKDIR /app
