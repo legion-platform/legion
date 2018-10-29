@@ -29,6 +29,7 @@ edi:
 edge:
   enabled: true
   replicas: 2
+  enableHomePage: true
   image:
     repository: "legion/k8s-edge"
     tag: "latest"

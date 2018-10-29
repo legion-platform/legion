@@ -14,6 +14,7 @@
 #    limitations under the License.
 #
 {{ load_module('legion.template_plugins.enclave_models_monitor') }}
+{{ load_module('legion.template_plugins.environment_variables_provider') }}
 
 env JWT_SECRET;
 
@@ -61,10 +62,12 @@ http{
 
     chunked_transfer_encoding on;
 
+    {% if environ['ENABLE_HOME_PAGE'] == 'true' %}
     # Root location
     location / {
       root /static;
     }
+    {% endif %}
 
     # Models API
     {% for model_endpoint in models %}

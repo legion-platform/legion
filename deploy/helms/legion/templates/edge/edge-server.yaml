@@ -39,6 +39,8 @@ spec:
             secretKeyRef:
               name: "{{ .Release.Name }}-jwt-config"
               key: "jwt.secret"
+        - name: ENABLE_HOME_PAGE
+          value: "{{ .Values.edge.enableHomePage }}"
         ports:
         - containerPort: 80
           name: api
