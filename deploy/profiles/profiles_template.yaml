@@ -89,4 +89,4 @@ collector:    # event collector configuration
   bucket: ~ # bucket for event collector data
   region: ~ # bucket region
 
-hide_edge_page: ~ # 'true' - Edge Home page is hidden
+# hide_edge_page: ~ # (Optional) 'false' - Edge home page os visible (default value)
