@@ -309,6 +309,7 @@ def generate_token():
     """
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
     jwt_exp_date = None
+    jwt_created_date = datetime.now()
     if 'jwt.exp.datetime' in app.config['JWT_CONFIG']:
         try:
             jwt_exp_date = datetime.strptime(app.config['JWT_CONFIG']['jwt.exp.datetime'], "%Y-%m-%dT%H:%M:%S")
@@ -318,7 +319,8 @@ def generate_token():
         jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
         jwt_exp_date = datetime.utcnow() + jwt_life_length
 
-    token = jwt.encode({'exp': jwt_exp_date}, jwt_secret, algorithm='HS256').decode('utf-8')
+    token = jwt.encode({'exp': jwt_exp_date,
+                        "crd": str(jwt_created_date)}, jwt_secret, algorithm='HS256').decode('utf-8')
     return {'token': token, 'exp': jwt_exp_date}
 
 
