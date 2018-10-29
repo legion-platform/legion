@@ -5,8 +5,11 @@
       "Effect": "Allow",
       "Action": ["s3:*"],
       "Resource": [
-        "arn:aws:s3:::{{ kube_fluentd.fluentd_s3_bucket_name }}",
-        "arn:aws:s3:::{{ kube_fluentd.fluentd_s3_bucket_name }}/*"]
+{% for bucket in logging_buckets %}
+        "arn:aws:s3:::{{ bucket }}",
+        "arn:aws:s3:::{{ bucket }}/*"]{% if not loop.last %},{% endif %}
+
+{% endfor %}
     }
   ]
 }

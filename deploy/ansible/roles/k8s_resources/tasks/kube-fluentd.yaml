@@ -1,9 +1,38 @@
 ---
 
-- name: Create Logging S3 bucket
+- name: Set list of logging buckets
+  set_fact:
+    list_logging_buckets:
+      - "{{ kube_fluentd.kube_s3_bucket_name }}"
+      - "{{ kube_fluentd.system_s3_bucket_name }}"
+      - "{{ kube_fluentd.services_s3_bucket_name }}"
+
+- name: Set unique list of logging buckets
+  set_fact:
+    logging_buckets: "{{ list_logging_buckets | unique }}"
+
+- name: Create Kube Logging S3 bucket
   s3_bucket:
-    name: "{{ kube_fluentd.fluentd_s3_bucket_name }}"
-    region: "{{ kube_fluentd.fluentd_s3_bucket_region }}"
+    name: "{{ kube_fluentd.kube_s3_bucket_name }}"
+    region: "{{ kube_fluentd.kube_s3_bucket_region }}"
+    state: present
+
+- name: Create Systemd Logging S3 bucket
+  s3_bucket:
+    name: "{{ kube_fluentd.system_s3_bucket_name }}"
+    region: "{{ kube_fluentd.system_s3_bucket_region }}"
+    state: present
+
+- name: Create Systemd Logging S3 bucket
+  s3_bucket:
+    name: "{{ kube_fluentd.system_s3_bucket_name }}"
+    region: "{{ kube_fluentd.system_s3_bucket_region }}"
+    state: present
+
+- name: Create Services Logging S3 bucket
+  s3_bucket:
+    name: "{{ kube_fluentd.services_s3_bucket_name }}"
+    region: "{{ kube_fluentd.services_s3_bucket_region }}"
     state: present
 
 - name: Generate trust policy document
