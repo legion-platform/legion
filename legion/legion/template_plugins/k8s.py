@@ -25,7 +25,7 @@ from legion.k8s import K8SConfigMapStorage
 LOGGER = logging.getLogger(__name__)
 
 
-def enclave_configmap_monitor(template_system, var_name="var", key=""):
+def enclave_configmap_monitor(template_system, var_name="var"):
     """
     Update template with current model state
 
@@ -43,4 +43,4 @@ def enclave_configmap_monitor(template_system, var_name="var", key=""):
     for event, new_state in config_map.watch():
         LOGGER.info('Got updated configmap state')
         LOGGER.info("New state is {}".format(new_state))
-        template_system.render(**{var_name: new_state.get(key, "")})
+        template_system.render(**{var_name: new_state})
