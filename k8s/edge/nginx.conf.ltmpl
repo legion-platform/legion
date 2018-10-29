@@ -85,7 +85,9 @@ http{
     location /api/model/{{ model_endpoint.url }} {
         access_by_lua '
             local jwt = require("nginx-jwt")
-            jwt.auth()
+            jwt.auth({
+                model_id=function (val) return jwt.table_contains(val,{{ model_endpoint.model_service.id }}) end
+            })
             local invalid_tokens = require "invalid_tokens"
             invalid_tokens.check_token()
         ';
