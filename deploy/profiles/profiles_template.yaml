@@ -76,9 +76,17 @@ airflow_rds_size: ~                                                   # size of 
 airflow_expected_output: ~                                # Configuration for Airflow DAGs
 
 # Kube fluentd properties
+# Cluster logs
 kube_fluentd:
-  fluentd_s3_bucket_name: ~
-  fluentd_s3_bucket_region: ~
+  kube_s3_bucket_name: ~
+  kube_s3_bucket_region: ~
+  # kube_s3_bucket_prefix: ~
+  system_s3_bucket_name: ~
+  system_s3_bucket_region: ~
+  # system_s3_bucket_prefix: ~
+  services_s3_bucket_name: ~
+  services_s3_bucket_region: ~
+  # services_s3_bucket_prefix: ~
 
 # Addons configuration
 storageclass: ~              # Which storage use in PVCs

@@ -92,8 +92,15 @@ dashboard:
 
 # Cluster logs
 kube_fluentd:
-  fluentd_s3_bucket_name: epm-legion-data-test-logs
-  fluentd_s3_bucket_region: us-east-2
+  kube_s3_bucket_name: epm-legion-data-test-logs
+  kube_s3_bucket_region: us-east-2
+  # kube_s3_bucket_prefix: cluster_logs
+  system_s3_bucket_name: epm-legion-data-test-logs
+  system_s3_bucket_region: us-east-2
+  # system_s3_bucket_prefix: cluster_logs
+  services_s3_bucket_name: epm-legion-data-test-logs
+  services_s3_bucket_region: us-east-2
+  # services_s3_bucket_prefix: cluster_logs
 
 
 # Secrets

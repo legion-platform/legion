@@ -37,10 +37,20 @@ spec:
             value: {{ .Values.KUBE_LOGS_S3_BUCKET_NAME }}
           - name: KUBE_LOGS_S3_BUCKET_REGION
             value: {{ .Values.KUBE_LOGS_S3_BUCKET_REGION }}
+          - name: KUBE_LOGS_PREFIX
+            value: {{ .Values.KUBE_LOGS_PREFIX }}
           - name: SYSTEM_LOGS_S3_BUCKET_NAME
             value: {{ .Values.SYSTEM_LOGS_S3_BUCKET_NAME }}
           - name: SYSTEM_LOGS_S3_BUCKET_REGION
             value: {{ .Values.SYSTEM_LOGS_S3_BUCKET_REGION }}
+          - name: SYSTEM_LOGS_PREFIX
+            value: {{ .Values.SYSTEM_LOGS_PREFIX }}
+          - name: SERVICES_LOGS_S3_BUCKET_NAME
+            value: {{ .Values.SERVICES_LOGS_S3_BUCKET_NAME }}
+          - name: SERVICES_LOGS_S3_BUCKET_REGION
+            value: {{ .Values.SERVICES_LOGS_S3_BUCKET_REGION }}
+          - name: SERVICES_LOGS_PREFIX
+            value: {{ .Values.SERVICES_LOGS_PREFIX }}
           livenessProbe:
             httpGet:
               path: /fluentd.pod.healthcheck?json=%7B%22log%22%3A+%22health+check%22%7D
