@@ -29,6 +29,5 @@ async def environment_variables_provider(template_system):
     :param template_system: Object, that contains 'render' callback function
     :return: None
     """
-
     LOGGER.info('Render template with environ variables')
     template_system.render(environ=os.environ)
