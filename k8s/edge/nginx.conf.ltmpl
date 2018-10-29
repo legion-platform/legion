@@ -86,7 +86,8 @@ http{
         access_by_lua '
             local jwt = require("nginx-jwt")
             jwt.auth({
-                model_id=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.id }}") end
+                model_id=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.id }}") end,
+                version=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.version }}") end
             })
             local invalid_tokens = require "invalid_tokens"
             invalid_tokens.check_token()

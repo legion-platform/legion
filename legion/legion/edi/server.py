@@ -322,9 +322,9 @@ def info():
 @blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model_id=str)
-@legion.http.requested_fields('model_id')
-def generate_token(model_id):
+@legion.http.populate_fields(model_id=str, version=str)
+@legion.http.requested_fields('model_id', 'version')
+def generate_token(model_id, version):
     """
     Generate JWT token
 
@@ -341,7 +341,8 @@ def generate_token(model_id):
     if not jwt_exp_date or jwt_exp_date < datetime.now():
         jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
         jwt_exp_date = datetime.utcnow() + jwt_life_length
-    token = jwt.encode({'exp': jwt_exp_date, 'model_id': [model_id]}, jwt_secret, algorithm='HS256').decode('utf-8')
+    token = jwt.encode({'exp': jwt_exp_date, 'model_id': [model_id],
+                        'version': [version]}, jwt_secret, algorithm='HS256').decode('utf-8')
     return {'token': token, 'exp': jwt_exp_date}
 
 
