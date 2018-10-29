@@ -116,6 +116,8 @@ spec:
       app: cluster-autoscaler
   template:
     metadata:
+      annotations:
+        iam.amazonaws.com/role: masters.{{ cluster_name }}
       labels:
         app: cluster-autoscaler
     spec:
