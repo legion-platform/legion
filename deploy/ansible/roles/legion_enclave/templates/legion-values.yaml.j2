@@ -28,7 +28,7 @@ grafana:
 edge:
   enabled: true
   replicas: 2
-  enableHomePage: {% if hide_edge_page == true %}false{% else %}true{% endif %}
+  enableHomePage: {% if (hide_edge_page | default('false')) == true %}false{% else %}true{% endif %}
 
   image:
     repository: "{{ docker_repo }}/k8s-edge"
