@@ -95,7 +95,7 @@ pipeline {
                 stage('Build Jenkins plugin') {
                     agent {
                         docker {
-                            image 'maven:3'
+                            image 'maven:3.5.3-jdk-8'
                             args '-v $HOME/.m2:/tmp/.m2 -e HOME=/tmp'
                         }
                     }
