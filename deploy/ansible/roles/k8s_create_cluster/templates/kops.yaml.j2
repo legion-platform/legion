@@ -156,7 +156,7 @@ metadata:
 spec:
   image: {{ aws_image }}
   machineType: {{ shape }}
-  rootVolumeSize: 64
+  rootVolumeSize: {{ extra_shape_root_voluem_size | default('64') }}
   maxSize: {{ node_extra_max }}
   minSize: {{ node_extra_min }}
   nodeLabels:

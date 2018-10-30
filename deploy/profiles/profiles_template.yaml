@@ -24,6 +24,7 @@ node_shape: ~       # shape for modes
 node_autoscaler_min: ~     # minimum count of nodes for autoscaler group
 node_autoscaler_max: ~     # maximum count of nodes for autoscaler group
 node_extra_shapes: ~        # list of shapes that can be started up during model building of Jenkins (will be shutted down automatically)
+# extra_shape_root_voluem_size: ~ #String of root volume size in GB. Default 64
 
 node_extra_min: ~          # minimum count of nodes for model building
 node_extra_max: ~          # maximum count of nodes for model building
