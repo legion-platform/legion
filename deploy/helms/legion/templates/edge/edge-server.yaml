@@ -47,7 +47,7 @@ spec:
           protocol: TCP
         livenessProbe:
           httpGet:
-            path: /
+            path: /healthcheck
             port: 80
           initialDelaySeconds: 10
           periodSeconds: 3
