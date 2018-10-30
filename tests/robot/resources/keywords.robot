@@ -236,6 +236,13 @@ Run predefined Jenkins jobs for enclave
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
     \    Run model jenkins Job  ${model_name}  ${enclave}
 
+Get cluster nodes and their count
+    [Arguments]    ${is_before}
+    @{cluster_nodes} =    Get cluster nodes
+    ${nodes_number} =     Get Length    ${cluster_nodes}
+    Run Keyword If   '${is_before}' == 'before'    Set Test Variable     ${NODES_COUNT_BEFORE}    ${nodes_number}
+    ...    ELSE      Set Test Variable     ${NODES_COUNT_AFTER}    ${nodes_number}
+
     # --------- TEMPLATE KEYWORDS SECTION -----------
 
 Check if component domain has been secured
