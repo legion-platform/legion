@@ -28,14 +28,23 @@ data:
 
     output_data = PythonOperator(task_id='output_some_data',
                                  python_callable=output_some_data,
-                                 dag=dag)
+                                 dag=dag,
+                                 executor_config={
+                                     "KubernetesExecutor": {"image": "{{ .Values.image }}"}}
+    )
 
     echo_1 = BashOperator(task_id='echo_1',
                                bash_command='echo $(date)',
-                               dag=dag)
+                               dag=dag,
+                               executor_config={
+                                   "KubernetesExecutor": {"image": "{{ .Values.image }}"}}
+    )
     echo_2 = BashOperator(task_id='echo_2',
                                bash_command='echo $(date)',
-                               dag=dag)
+                               dag=dag,
+                               executor_config={
+                                   "KubernetesExecutor": {"image": "{{ .Values.image }}"}}
+    )
 
     echo_1 >> output_data
     echo_2 >> output_data
@@ -80,7 +89,10 @@ data:
     task = PythonOperator(
         task_id='create_file_in_s3',
         dag=dag_test,
-        python_callable=create_file_in_s3)
+        python_callable=create_file_in_s3,
+        executor_config={
+            "KubernetesExecutor": {"image": "{{ .Values.image }}"}}
+    )
 
   k8s_operator_test.py: |-
     from airflow import DAG

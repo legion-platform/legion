@@ -49,7 +49,7 @@ spec:
         - name: airflow-config
           mountPath: /home/airflow/airflow.cfg
           subPath: airflow.cfg
-        - name: dag-volume
+        - name: airflow-dags
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
         - name: airflow-config-dir
           mountPath: /home/airflow/config
@@ -86,7 +86,7 @@ spec:
           subPath: airflow.cfg
         - name: connections-config
           mountPath: /opt/secrets
-        - name: dag-volume
+        - name: airflow-dags
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
         - name: airflow-config-dir
           mountPath: /home/airflow/config
@@ -107,7 +107,7 @@ spec:
       - name: connections-config
         secret:
           secretName: "{{ .Release.Name }}-connections-config"
-      - name: dag-volume
+      - name: airflow-dags
         persistentVolumeClaim:
           {{- if .Values.storage.use_specified_pvc }}
           claimName: {{ .Values.storage.pvc_name }}
