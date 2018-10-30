@@ -62,10 +62,14 @@ http{
 
     chunked_transfer_encoding on;
 
-    {% if environ['ENABLE_HOME_PAGE'] == 'true' %}
     # Root location
+    {% if environ['ENABLE_HOME_PAGE'] == 'true' %}
     location / {
       root /static;
+    }
+    {% else %}
+    location / {
+      return 200;
     }
     {% endif %}
 
