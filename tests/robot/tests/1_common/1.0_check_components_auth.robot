@@ -156,3 +156,31 @@ Check if EDGE authorize with valid token
      ${auth_page} =  Get From Dictionary   ${response}    response_text
      Should not contain   ${auth_page}    401 Authorization Required
      [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}
+
+Check if EDGE don't authorize with other model version valid token
+     [Tags]  core  security  auth  edi_token
+     [Documentation]  Deploy one model, and try to get model info with valid token for another model version
+     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                     Should Be Equal As Integers         ${resp.rc}         0
+     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                     Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+     ${TOKEN}=       Get token from EDI    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_2_VERSION}/info     ${EMPTY}    ${TOKEN}
+     Dictionary Should Contain Item    ${response}    response_code    401
+     ${auth_page} =  Get From Dictionary   ${response}    response_text
+     Should contain   ${auth_page}    401 Authorization Required
+     [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}
+
+Check if EDGE don't authorize with other model id valid token
+     [Tags]  core  security  auth  edi_token
+     [Documentation]  Deploy one model, and try to get model info with valid token for another model version
+     ${resp}=        Run EDI deploy                      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                     Should Be Equal As Integers         ${resp.rc}         0
+     ${resp}=        Check model started                 ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                     Should contain                      ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+     ${TOKEN}=       Get token from EDI    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}test    ${TEST_MODEL_1_VERSION}
+     &{response}=    Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_2_VERSION}/info     ${EMPTY}    ${TOKEN}
+     Dictionary Should Contain Item    ${response}    response_code    401
+     ${auth_page} =  Get From Dictionary   ${response}    response_text
+     Should contain   ${auth_page}    401 Authorization Required
+     [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}

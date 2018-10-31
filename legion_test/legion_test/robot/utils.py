@@ -175,6 +175,27 @@ class Utils:
             raise Exception('Unexpected case happen!')
 
     @staticmethod
+    def execute_post_request(url, data=None, json=None):
+        """
+        Execute post request
+
+        :param url: url for request
+        :type url: str
+        :param data: data to send in request
+        :type data: dict
+        :param json: json data to send in request
+        :type json: dict
+        :return:  str -- response text
+        """
+        if data:
+            response = requests.post(url, data=data)
+        elif json:
+            response = requests.post(url, json=json)
+        else:
+            response = requests.post(url)
+        return {"text": response.text, "code": response.status_code}
+
+    @staticmethod
     def get_component_auth_page(url, jenkins=False, token=None):
         """
         Get component main auth page

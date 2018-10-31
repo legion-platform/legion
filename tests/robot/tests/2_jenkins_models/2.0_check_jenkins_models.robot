@@ -25,19 +25,19 @@ Checking property update callback
     [Tags]  jenkins  models  enclave  props  apps
     Connect to Jenkins endpoint
     ${model_id}    ${model_version} =   Test model pipeline result   ${MODEL_WITH_PROPS}   ${MODEL_TEST_ENCLAVE}
-    Log                                 Model with id = ${model_id} and version = ${model_version} has been deployed
+    Log   Model with id = ${model_id} and version = ${model_version} has been deployed
     ${edge}=        Build enclave EDGE URL  ${MODEL_TEST_ENCLAVE}
-                    Get token from EDI      ${MODEL_TEST_ENCLAVE}
+                    Get token from EDI      ${MODEL_TEST_ENCLAVE}   ${model_id}    ${model_version}
 
-    Log             Resetting property to wrong value
+    Log   Resetting property to wrong value
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  0
-    Log             Updating property to start value and invoking model with check
+    Log   Updating property to start value and invoking model with check
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  1
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  1
     Ensure model API call result field is correct  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  result  30   a=1  b=2
 
-    Log             Updating property to another value and invoking model with check
+    Log   Updating property to another value and invoking model with check
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  2
 
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  2
