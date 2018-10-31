@@ -58,14 +58,24 @@
   - name: WORKAROUND delete pods in phase terminating
     shell: kubectl --context {{ cluster_name }} --namespace {{ enclave_name }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave_name }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
 
-  - name: Remove Airflow S3 access policy
+  - name: Remove data bucket S3 access policy
     iam_policy:
       iam_type: role
-      iam_name: "{{ cluster_name }}-{{ enclave_name }}-airflow-role"
-      policy_name: "{{ cluster_name }}-{{ enclave_name }}-airflow-s3-access-policy"
+      iam_name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
+      policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
       state: absent
- 
-  - name: Remove enclave Airflow IAM role
+    with_items: 
+      - collector
+      - airflow
+      - jslave
+      - model
+
+  - name: Remove IAM roles
     iam_role:
-      name: "{{ cluster_name }}-{{ enclave_name }}-airflow-role"
+      name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
       state: absent
+    with_items: 
+      - collector
+      - airflow
+      - jslave
+      - model

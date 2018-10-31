@@ -22,7 +22,7 @@
   loop_control:
     loop_var: enclave
 
-- name: Remove data bucket access role
+- name: Remove jslave role
   iam_role:
     name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
     state: absent
@@ -40,7 +40,7 @@
   loop_control:
     loop_var: enclave
 
-- name: Remove data bucket access role
+- name: Remove collector role
   iam_role:
     name: "{{ cluster_name }}-{{ enclave }}-collector-role"
     state: absent
@@ -58,7 +58,7 @@
   loop_control:
     loop_var: enclave
 
-- name: Remove data bucket access role
+- name: Remove airflow role
   iam_role:
     name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
     state: absent
@@ -76,7 +76,7 @@
   loop_control:
     loop_var: enclave
 
-- name: Remove data bucket access role
+- name: Remove model role
   iam_role:
     name: "{{ cluster_name }}-{{ enclave }}-model-role"
     state: absent
