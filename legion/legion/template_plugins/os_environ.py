@@ -14,8 +14,20 @@
 #    limitations under the License.
 #
 """
-legion template plugins
+Environment variables provider for Legion Template
 """
-from .enclave import enclave_models_monitor
-from .io import file_change_monitor
-from .os_environ import environment_variables_provider
+import logging
+import os
+
+LOGGER = logging.getLogger(__name__)
+
+
+async def environment_variables_provider(template_system):
+    """
+    Update template context with environment variables values
+
+    :param template_system: Object, that contains 'render' callback function
+    :return: None
+    """
+    LOGGER.info('Render template with environ variables')
+    template_system.render(environ=os.environ)

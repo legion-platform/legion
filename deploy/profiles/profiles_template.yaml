@@ -88,3 +88,5 @@ collector:    # event collector configuration
   replicas: ~
   bucket: ~ # bucket for event collector data
   region: ~ # bucket region
+
+# hide_edge_page: ~ # (Optional) 'false' - Edge home page os visible (default value)
