@@ -154,6 +154,13 @@ metadata:
     kops.k8s.io/cluster: {{ cluster_name }}
   name: nodes.{{ shape }}
 spec:
+  hooks:
+  - name: resize-nvme-rootfs
+    roles:
+    - Node
+    manifest: |
+      Type=oneshot
+      ExecStart=/bin/sh -c 'test -b /dev/nvme0n1p1 && growpart-workaround /dev/nvme0n1 1 && resize2fs /dev/nvme0n1p1 || true'
   image: {{ aws_image }}
   machineType: {{ shape }}
   rootVolumeSize: {{ extra_shape_root_voluem_size | default('64') }}
