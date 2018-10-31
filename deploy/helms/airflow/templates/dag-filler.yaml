@@ -24,7 +24,7 @@ spec:
         volumeMounts:
         - name: dag-volume
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
-        - name: airflow-dags
+        - name: airflow-dags-source
           mountPath: /mnt/dags
       restartPolicy: Never
       volumes:
@@ -35,6 +35,6 @@ spec:
           {{- else}}
           claimName: "{{ .Release.Name }}-dag-pvc"
           {{- end}}
-      - name: airflow-dags
+      - name: airflow-dags-source
         configMap:
           name: "{{ .Release.Name }}-dags"
