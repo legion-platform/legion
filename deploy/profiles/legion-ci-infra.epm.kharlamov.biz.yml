@@ -88,6 +88,18 @@ dashboard:
   version: "1.8.3"
   insecure: true
 
+# Cluster logs
+kube_fluentd:
+  kube_s3_bucket_name: epm-legion-data-ci-infra-logs
+  kube_s3_bucket_region: us-east-2
+  # kube_s3_bucket_prefix: cluster_logs
+  system_s3_bucket_name: epm-legion-data-ci-infra-logs
+  system_s3_bucket_region: us-east-2
+  # system_s3_bucket_prefix: cluster_logs
+  services_s3_bucket_name: epm-legion-data-ci-infra-logs
+  services_s3_bucket_region: us-east-2
+  # services_s3_bucket_prefix: cluster_logs
+
 # Secrets
 secrets_bucket: "legion-cluster"
 secrets_file: "/tmp/{{ cluster_name }}-secrets"
