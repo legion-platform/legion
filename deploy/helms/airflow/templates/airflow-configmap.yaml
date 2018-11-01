@@ -1,0 +1,286 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  airflow.cfg: |-
+    [core]
+    # The home folder for airflow, default is ~/airflow
+    airflow_home = /home/airflow
+  
+    # The folder where your airflow pipelines live, most likely a
+    # subfolder in a code repository
+    dags_folder = {{ .Values.storage.airflow_dags_directory }}
+  
+    logging_level = {{ .Values.core.logging_level }}
+    log_format = {{ .Values.core.logging_format }}
+    simple_log_format = {{ .Values.core.logging_simple_format }}
+    filename_template = {{ .Values.core.logging_filename_template }}
+  
+    # The folder where airflow should store its log files. This location
+    base_log_folder = /home/airflow/logs
+  
+    # S3 bucket path for data storage
+    s3_root_path = {{ .Values.storage.s3_root_path }}
+  
+    # Airflow can store logs remotely in AWS S3 or Google Cloud Storage. Users
+    # must supply a remote location URL (starting with either 's3://...' or
+    # 'gs://...') and an Airflow connection id that provides access to the storage
+    # location.
+    logging_config_class = log_config.DEFAULT_LOGGING_CONFIG
+    remote_logging = {{ .Values.core.remote_logging }}
+    remote_base_log_folder = {{ .Values.core.remote_base_log_folder }}
+    remote_log_conn_id = {{ .Values.core.remote_log_conn_id }}
+    # Use server-side encryption for logs stored in S3
+    encrypt_s3_logs = {{ .Values.core.encrypt_s3_logs }}
+    # deprecated option for remote log storage, use remote_base_log_folder instead!
+    # s3_log_folder =
+  
+    # The executor class that airflow should use. Choices include
+    # SequentialExecutor, LocalExecutor, CeleryExecutor, KubernetesExecutor
+    executor = {{ .Values.core.executor }}
+  
+    # The SqlAlchemy connection string to the metadata database.
+    # SqlAlchemy supports many different database engine, more information
+    # their website
+    {{- if .Values.postgres.external}}
+    sql_alchemy_conn = postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{     .Values.secrets.postgres.password }}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{     .Values.secrets.postgres.db }}
+    {{- else }}
+    sql_alchemy_conn = postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{     .Values.secrets.postgres.password }}@{{ .Release.Name }}-postgres/{{ .Values.secrets.postgres.db }}
+    {{- end }}
+  
+    # The SqlAlchemy pool size is the maximum number of database connections
+    # in the pool.
+    sql_alchemy_pool_size = {{ .Values.core.sql_alchemy_pool_size }}
+  
+    # The SqlAlchemy pool recycle is the number of seconds a connection
+    # can be idle in the pool before it is invalidated. This config does
+    # not apply to sqlite.
+    sql_alchemy_pool_recycle = {{ .Values.core.sql_alchemy_pool_recycle }}
+  
+    # The amount of parallelism as a setting to the executor. This defines
+    # the max number of task instances that should run simultaneously
+    # on this airflow installation
+    parallelism = {{ .Values.core.parallelism }}
+  
+    # The number of task instances allowed to run concurrently by the scheduler
+    dag_concurrency = {{ .Values.core.dag_concurrency }}
+  
+    # Are DAGs paused by default at creation
+    dags_are_paused_at_creation = {{ .Values.core.dags_are_paused_at_creation }}
+  
+    # The maximum number of active DAG runs per DAG
+    max_active_runs_per_dag = {{ .Values.core.max_active_runs_per_dag }}
+  
+    # Whether to load the examples that ship with Airflow. It's good to
+    # get started, but you probably want to set this to False in a production
+    # environment
+    load_examples = {{ .Values.core.load_examples }}
+  
+    # Where your Airflow plugins are stored
+    plugins_folder = /home/airflow/plugins
+  
+    # Secret key to save connection passwords in the db
+    fernet_key = {{ .Values.secrets.fernet_key }}
+  
+    # Whether to disable pickling dags
+    donot_pickle = {{ .Values.core.donot_pickle }}
+  
+    # How long before timing out a python file import while filling the DagBag
+    dagbag_import_timeout = {{ .Values.core.dagbag_import_timeout }}
+  
+    task_log_reader = task
+  
+    [webserver]
+    # The base url of your website as airflow cannot guess what domain or
+    # cname you are using. This is use in automated emails that
+    # airflow sends to point links to the right web server
+    base_url = http://{{ .Values.ingress.domain.partial }}.{{ .Values.rootDomain }}
+  
+    # The ip specified when starting the web server
+    web_server_host = 0.0.0.0
+  
+    # The port on which to run the web server
+    web_server_port = 8080
+  
+    # The time the gunicorn webserver waits before timing out on a worker
+    web_server_worker_timeout = {{ .Values.webserver.web_server_worker_timeout }}
+  
+    # Number of seconds to wait before refreshing a batch of workers.
+    worker_refresh_interval = {{ .Values.webserver.worker_refresh_interval }}
+  
+    # Secret key used to run your flask app
+    secret_key = {{ .Values.secrets.flask }}
+  
+    # Number of workers to run the Gunicorn web server
+    workers = {{ .Values.webserver.workers }}
+  
+    # The worker class gunicorn should use. Choices include
+    # sync (default), eventlet, gevent
+    worker_class = {{ .Values.webserver.worker_class }}
+  
+    # Expose the configuration file in the web server
+    expose_config = {{ .Values.webserver.expose_config }}
+  
+    # Set to true to turn on authentication :     http://pythonhosted.org/airflow/installation.html#web-authentication
+    authenticate = {{ .Values.webserver.authenticate }}
+  
+    # Authentication backend (python module), should be non-empty if authentication is On
+    auth_backend = {{ .Values.webserver.auth_backend }}
+  
+    # Group name in Dex, which indicates Super Admin user.
+    dex_group_admin = {{ .Values.webserver.dex_group_admin }}
+  
+    # Group name in Dex, which indicates Data Profiler user.
+    dex_group_profiler = {{ .Values.webserver.dex_group_profiler }}
+  
+    # Email of an user, that is defined in Dex as Static user and used for service purposes.
+    dex_admin_email = {{ .Values.webserver.dex_admin_email }}
+  
+    # Filter the list of dags by owner name (requires authentication to be enabled)
+    filter_by_owner = {{ .Values.webserver.filter_by_owner }}
+  
+    [kubernetes]
+    airflow_configmap ={{ .Release.Name }}-configmap
+    #worker_container_repository = airflow
+    #worker_container_tag = latest
+    worker_container_image_pull_policy = IfNotPresent
+    delete_worker_pods = False
+    #git_repo = https://github.com/apache/incubator-airflow.git
+    #git_branch = master
+    #git_subpath = airflow/example_dags/
+    #git_user =
+    #git_password =
+    dags_volume_claim = legion-airflow-dags
+    #dags_volume_subpath =
+    #logs_volume_claim = airflow-logs
+    #logs_volume_subpath =
+    in_cluster = True
+    namespace = company-a
+    #gcp_service_account_keys =
+    # For cloning DAGs from git repositories into volumes: ttps://github.com/kubernetes/git-sync
+    #git_sync_container_repository = gcr.io/google-containers/git-sync-amd64
+    #git_sync_container_tag = v2.0.5
+    #git_sync_init_container_name = git-sync-clone
+  
+    [email]
+    email_backend = {{ .Values.webserver.email_backend }}
+  
+    [smtp]
+    # If you want airflow to send emails on retries, failure, and you want to
+    # the airflow.utils.send_email function, you have to configure an smtp
+    # server here
+    smtp_host = {{ .Values.smtp.smtp_host }}
+    smtp_starttls = {{ .Values.smtp.smtp_starttls }}
+    smtp_ssl = {{ .Values.smtp.smtp_ssl }}
+    smtp_user = {{ .Values.smtp.smtp_user }}
+    smtp_port = {{ .Values.smtp.smtp_port }}
+    smtp_password = {{ .Values.smtp.smtp_password }}
+    smtp_mail_from = {{ .Values.smtp.smtp_mail_from }}
+  
+    [slack]
+    # This section only applies if you are using slack as an email_backend to receive notifications
+    channel = {{ .Values.slack.channel }}
+    username = {{ .Values.slack.username }}
+    token = {{ .Values.slack.token }}
+  
+    [celery]
+    # This section only applies if you are using the CeleryExecutor in
+    # [core] section above
+  
+    # The app name that will be used by celery
+    celery_app_name = {{ .Values.celery.celery_app_name }}
+  
+    # The concurrency that will be used when starting workers with the
+    # "airflow worker" command. This defines the number of task instances that
+    # a worker will take, so size up your workers based on the resources on
+    # your worker box and the nature of your tasks
+    celeryd_concurrency = {{ .Values.celery.celeryd_concurrency }}
+  
+    # When you start an airflow worker, airflow starts a tiny web server
+    # subprocess to serve the workers local log files to the airflow main
+    # web server, who then builds pages and sends them to users. This defines
+    # the port on which the logs are served. It needs to be unused, and open
+    # visible from the main web server to connect into the workers.
+    worker_log_server_port = {{ .Values.celery.worker_log_server_port }}
+  
+    # The Celery broker URL. Celery supports RabbitMQ, Redis and experimentally
+    # a sqlalchemy database. Refer to the Celery documentation for more
+    # information.
+    broker_url = redis://{{ .Release.Name }}-redis:6379/0
+  
+    # Another key Celery setting
+    {{- if .Values.postgres.external}}
+    celery_result_backend = db+postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{     .Values.secrets.postgres.password }}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{     .Values.secrets.postgres.db }}
+    {{- else }}
+    celery_result_backend = db+postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{     .Values.secrets.postgres.password }}@{{ .Release.Name }}-postgres/{{ .Values.secrets.postgres.db }}
+    {{- end }}
+  
+  
+    # Celery Flower is a sweet UI for Celery. Airflow has a shortcut to start
+    # it `airflow flower`. This defines the port that Celery Flower runs on
+    flower_port = {{ .Values.celery.flower_port }}
+  
+    # Default queue that tasks get assigned to and that worker listen on.
+    default_queue = {{ .Values.celery.default_queue }}
+  
+    [scheduler]
+    # Task instances listen for external kill signal (when you clear tasks
+    # from the CLI or the UI), this defines the frequency at which they should
+    # listen (in seconds).
+    job_heartbeat_sec = {{ .Values.scheduler.job_heartbeat_sec }}
+  
+    # The scheduler constantly tries to trigger new tasks (look at the
+    # scheduler section in the docs for more information). This defines
+    # how often the scheduler should run (in seconds).
+    scheduler_heartbeat_sec = {{ .Values.scheduler.scheduler_heartbeat_sec }}
+  
+    # Statsd (https://github.com/etsy/statsd) integration settings
+    statsd_on =  {{ .Values.scheduler.statsd_on }}
+    statsd_host =  {{ .Values.scheduler.statsd_host }}
+    statsd_port =  {{ .Values.scheduler.statsd_port }}
+    statsd_prefix = {{ .Values.scheduler.statsd_prefix }}
+  
+    child_process_log_directory = {AIRFLOW_HOME}/logs/scheduler
+  
+    # The scheduler can run multiple threads in parallel to schedule dags.
+    # This defines how many threads will run. However airflow will never
+    # use more threads than the amount of cpu cores available.
+    max_threads = {{ .Values.scheduler.max_threads }}
+  
+    [mesos]
+    # Mesos master address which MesosExecutor will connect to.
+    master = localhost:5050
+  
+    # The framework name which Airflow scheduler will register itself as on mesos
+    framework_name = Airflow
+  
+    # Number of cpu cores required for running one task instance using
+    # 'airflow run <dag_id> <task_id> <execution_date> --local -p <pickle_id>'
+    # command on a mesos slave
+    task_cpu = {{ .Values.mesos.task_cpu }}
+  
+    # Memory in MB required for running one task instance using
+    # 'airflow run <dag_id> <task_id> <execution_date> --local -p <pickle_id>'
+    # command on a mesos slave
+    task_memory = {{ .Values.mesos.task_memory }}
+  
+    # Enable framework checkpointing for mesos
+    # See http://mesos.apache.org/documentation/latest/slave-recovery/
+    checkpoint = {{ .Values.mesos.checkpoint }}
+  
+    # Failover timeout in milliseconds.
+    # When checkpointing is enabled and this option is set, Mesos waits
+    # until the configured timeout for
+    # the MesosExecutor framework to re-register after a failover. Mesos
+    # shuts down running tasks if the
+    # MesosExecutor framework fails to re-register within this timeframe.
+    failover_timeout = {{ .Values.mesos.failover_timeout }}
+  
+    # Enable framework authentication for mesos
+    # See http://mesos.apache.org/documentation/latest/configuration/
+    authenticate = {{ .Values.mesos.authenticate }}
+  
+    # Mesos credentials, if authentication is enabled
+    default_principal = {{ .Values.mesos.default_principal }}
+    default_secret = {{ .Values.mesos.default_secret }}
