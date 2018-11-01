@@ -136,7 +136,7 @@ dex_admin_email = {{ .Values.webserver.dex_admin_email }}
 filter_by_owner = {{ .Values.webserver.filter_by_owner }}
 
 [kubernetes]
-#airflow_configmap = airflow-configmap
+airflow_configmap = airflow-company-a-config
 #worker_container_repository = airflow
 #worker_container_tag = latest
 worker_container_image_pull_policy = IfNotPresent
@@ -146,7 +146,7 @@ delete_worker_pods = False
 #git_subpath = airflow/example_dags/
 #git_user =
 #git_password =
-#dags_volume_claim = legion-airflow-dags
+dags_volume_claim = legion-airflow-dags
 #dags_volume_subpath =
 #logs_volume_claim = airflow-logs
 #logs_volume_subpath =
