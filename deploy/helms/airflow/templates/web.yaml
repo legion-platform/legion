@@ -99,8 +99,11 @@ spec:
         configMap:
           name: "{{ .Release.Name }}-log-config"
       - name: airflow-config
-        configMap:
-          name: "{{ .Release.Name }}-configmap"
+        secret:
+          secretName: "{{ .Release.Name }}-config"
+          items:
+          - key: airflow.cfg
+            path: airflow.cfg
       - name: connections-config
         secret:
           secretName: "{{ .Release.Name }}-connections-config"

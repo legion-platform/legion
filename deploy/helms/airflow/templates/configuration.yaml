@@ -136,7 +136,7 @@ dex_admin_email = {{ .Values.webserver.dex_admin_email }}
 filter_by_owner = {{ .Values.webserver.filter_by_owner }}
 
 [kubernetes]
-airflow_configmap = airflow-company-a-config
+airflow_configmap ={{ .Release.Name }}-worker-config
 #worker_container_repository = airflow
 #worker_container_tag = latest
 worker_container_image_pull_policy = IfNotPresent

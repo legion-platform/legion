@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-configmap
+  name: {{ .Release.Name }}-worker-config
 data:
   airflow.cfg: |-
     [core]
@@ -27,7 +27,6 @@ data:
     # must supply a remote location URL (starting with either 's3://...' or
     # 'gs://...') and an Airflow connection id that provides access to the storage
     # location.
-    logging_config_class = log_config.DEFAULT_LOGGING_CONFIG
     remote_logging = {{ .Values.core.remote_logging }}
     remote_base_log_folder = {{ .Values.core.remote_base_log_folder }}
     remote_log_conn_id = {{ .Values.core.remote_log_conn_id }}
@@ -141,7 +140,7 @@ data:
     filter_by_owner = {{ .Values.webserver.filter_by_owner }}
   
     [kubernetes]
-    airflow_configmap ={{ .Release.Name }}-configmap
+    airflow_configmap ={{ .Release.Name }}-worker-config
     #worker_container_repository = airflow
     #worker_container_tag = latest
     worker_container_image_pull_policy = IfNotPresent
