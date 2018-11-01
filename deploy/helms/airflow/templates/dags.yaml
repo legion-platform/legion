@@ -22,16 +22,22 @@ data:
         dag_id='example_python_work', default_args=args,
         schedule_interval='@once',
         dagrun_timeout=datetime.timedelta(minutes=2))
+    
+    executor_config = {
+        "KubernetesExecutor": {
+        "image": "{{ .Values.image }}",
+        "annotations": { "iam.amazonaws.com/role": "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role" }
+        }
+    }
 
     echo_1 = BashOperator(task_id='echo_1',
                           bash_command='env',
                           dag=dag,
-                          executor_config={
-                          "KubernetesExecutor": {"image": "{{ .Values.image }}"}}
+                          executor_config=executor_config
     )
+
     echo_2 = BashOperator(task_id='echo_2',
                           bash_command='ls -lsa',
                           dag=dag,
-                          executor_config={
-                          "KubernetesExecutor": {"image": "{{ .Values.image }}"}}
+                          executor_config=executor_config
     )
