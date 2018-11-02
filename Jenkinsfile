@@ -144,8 +144,8 @@ pipeline {
                         pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503,E731
                         pydocstyle --source legion
 
-                        TERM="linux" pylint legion > legion-pylint.log || exit 0
-                        TERM="linux" pylint tests >> legion-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion > legion-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n tests >> legion-pylint.log || exit 0
                         cd ..
                         '''
 
@@ -158,8 +158,8 @@ pipeline {
                         pycodestyle --show-source --show-pep8 tests
                         pydocstyle legion_airflow
 
-                        TERM="linux" pylint legion_airflow > legion_airflow-pylint.log || exit 0
-                        TERM="linux" pylint tests >> legion_airflow-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion_airflow > legion_airflow-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n tests >> legion_airflow-pylint.log || exit 0
                         cd ..
                         '''
 
@@ -168,7 +168,8 @@ pipeline {
 
                         sh '''
                         cd legion_test
-                        pylint legion_test > legion_test-pylint.log || exit 0
+
+                        TERM="linux" pylint --persistent=n legion_test > legion_test-pylint.log || exit 0
                         cd ..
                         '''
 
