@@ -410,18 +410,10 @@ EOL
                         UploadDockerImage('k8s-jenkins')
                     }
                 }
-                stage('Upload Bare model 1') {
+                stage('Upload Bare models') {
                     steps {
                         UploadDockerImage('test-bare-model-api-model-1')
-                    }
-                }
-                stage('Upload Bare model 2') {
-                    steps {
                         UploadDockerImage('test-bare-model-api-model-2')
-                    }
-                }
-                stage('Upload Bare model 3') {
-                    steps {
                         UploadDockerImage('test-bare-model-api-model-3')
                     }
                 }
