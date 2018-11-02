@@ -320,17 +320,17 @@ EOL
                     steps {
                         // Build test-bare-model-api-model-1
                         sh """
-                        cd k8s/test-bare-model-api
+                        cd tests/test-bare-model-api
                         docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.0" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                         // Build test-bare-model-api-model-2
                         sh """
-                        cd k8s/test-bare-model-api
+                        cd tests/test-bare-model-api
                         docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.1" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                         // Build test-bare-model-api-model-3
                         sh """
-                        cd k8s/test-bare-model-api
+                        cd tests/test-bare-model-api
                         docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="edi-test-model" --build-arg model_version="1.2" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
