@@ -315,27 +315,22 @@ EOL
                         """
                     }
                 }
-                stage("Build Bare model 1") {
+                stage("Build Bare models") {
                     steps {
+                        // Build test-bare-model-api-model-1
                         sh """
-                        cd k8s/test-bare-model-api/model-1
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd k8s/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.0" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare model 2") {
-                    steps {
+                        // Build test-bare-model-api-model-2
                         sh """
-                        cd k8s/test-bare-model-api/model-2
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd k8s/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.1" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare model 3") {
-                    steps {
+                        // Build test-bare-model-api-model-3
                         sh """
-                        cd k8s/test-bare-model-api/model-3
-                        docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd k8s/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="edi-test-model" --build-arg model_version="1.2" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
