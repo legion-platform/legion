@@ -61,8 +61,8 @@
   - name: Remove data bucket S3 access policy
     iam_policy:
       iam_type: role
-      iam_name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
-      policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
+      iam_name: "{{ cluster_name }}-{{ enclave_name }}-{{ item }}-role"
+      policy_name: "{{ cluster_name }}-{{ enclave_name }}-s3-access-policy"
       state: absent
     with_items: 
       - collector
@@ -72,7 +72,7 @@
 
   - name: Remove IAM roles
     iam_role:
-      name: "{{ cluster_name }}-{{ enclave }}-{{ item }}-role"
+      name: "{{ cluster_name }}-{{ enclave_name }}-{{ item }}-role"
       state: absent
     with_items: 
       - collector

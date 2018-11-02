@@ -139,8 +139,8 @@
   with_items:
     - airflow
     - jslave
-    - collector
     - model
+    - collector
 
 - name: Attach S3 accesse policies to the roles
   iam_policy:
