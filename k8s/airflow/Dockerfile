@@ -62,7 +62,9 @@ RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string && \
 
 COPY create_secrets.py /home/airflow/create_secrets.py
 COPY log-config.py /home/airflow/config/log-config.py
+RUN echo #nope > /home/airflow/config/__init__.py
 COPY entrypoint.sh /home/airflow/init.sh
+
 
 RUN chown -R airflow: ${AIRFLOW_HOME} && chmod -R 775 ${AIRFLOW_HOME} && \
     chmod a+x /home/airflow/init.sh

@@ -19,7 +19,7 @@ data:
     }
 
     dag = DAG(
-        dag_id='example_python_work', default_args=args,
+        dag_id="{{ .Values.example_dag_id }}", default_args=args,
         schedule_interval='@once',
         dagrun_timeout=datetime.timedelta(minutes=2))
     
