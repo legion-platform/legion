@@ -50,16 +50,11 @@ spec:
           mountPath: /opt/secrets
         - name: airflow-dags
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
-        - name: airflow-config-dir
-          mountPath: /home/airflow/config
         ports:
         - name: web
           containerPort: 8080
         args: ["airflow", "webserver"]
       volumes:
-      - name: airflow-config-dir
-        configMap:
-          name: "{{ .Release.Name }}-log-config"
       - name: airflow-config
         secret:
           secretName: "{{ .Release.Name }}-config"

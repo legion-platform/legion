@@ -49,13 +49,8 @@ spec:
           subPath: airflow.cfg
         - name: airflow-dags
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
-        - name: airflow-config-dir
-          mountPath: /home/airflow/config
         args: ["airflow", "scheduler"]
       volumes:
-      - name: airflow-config-dir
-        configMap:
-          name: "{{ .Release.Name }}-log-config"
       - name: airflow-config
         secret:
           secretName: "{{ .Release.Name }}-config"
