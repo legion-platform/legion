@@ -61,8 +61,8 @@ RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string && \
     pip3 install $pip_extra_index_params legion_airflow$pip_legion_version_string
 
 COPY create_secrets.py /home/airflow/create_secrets.py
-COPY log-config.py /home/airflow/config/log-config.py
-RUN echo #nope > /home/airflow/config/__init__.py
+#COPY log-config.py /home/airflow/config/log-config.py
+#RUN echo #nope > /home/airflow/config/__init__.py
 COPY entrypoint.sh /home/airflow/init.sh
 
 

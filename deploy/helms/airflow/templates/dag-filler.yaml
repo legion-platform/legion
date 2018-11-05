@@ -20,7 +20,7 @@ spec:
           limits:
             cpu: "300m"
             memory: "256Mi"
-        command: ["airflow", "delete_dag", "example_python_work", "&&", "cp",  "-R", "/mnt/dags/.", "{{ .Values.storage.airflow_dags_directory }}"]
+        command: ["airflow", "delete_dag", "example_python_work", ';', "cp",  "-R", "/mnt/dags/.", "{{ .Values.storage.airflow_dags_directory }}"]
         volumeMounts:
         - name: dag-volume
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
