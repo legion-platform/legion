@@ -1,4 +1,5 @@
 graft legion_airflow/auth
 graft legion_airflow/slack
 graft legion_airflow/hooks
+graft legion_airflow/logging
 recursive-include requirements *.txt

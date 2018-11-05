@@ -23,7 +23,7 @@ EXPOSE 8080
 
 RUN apt-get update && apt-get install -y \
     cron libkrb5-dev libsasl2-dev libssl-dev libffi-dev  iputils-ping \
-    build-essential libblas-dev liblapack-dev libmysqlclient-dev sudo \
+    build-essential libblas-dev liblapack-dev libmysqlclient-dev sudo vim \
     iputils-ping openssh-client libpq-dev sshpass redis-tools netcat && \
     apt-get clean && apt-get autoclean
 
@@ -61,8 +61,6 @@ RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string && \
     pip3 install $pip_extra_index_params legion_airflow$pip_legion_version_string
 
 COPY create_secrets.py /home/airflow/create_secrets.py
-#COPY log-config.py /home/airflow/config/log-config.py
-#RUN echo #nope > /home/airflow/config/__init__.py
 COPY entrypoint.sh /home/airflow/init.sh
 
 

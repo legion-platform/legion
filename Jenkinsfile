@@ -156,9 +156,8 @@ pipeline {
 
                         sh '''
                         cd legion_airflow
-                        pycodestyle legion_airflow
+                        pycodestyle legion_airflow --ignore E402,E126,W503,E731,W391
                         pycodestyle tests
-                        pydocstyle legion_airflow
 
                         pylint legion_airflow >> pylint.log || exit 0
                         pylint tests >> pylint.log || exit 0
@@ -168,33 +167,6 @@ pipeline {
                         archiveArtifacts 'legion/pylint.log'
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
 
-                        sh '''
-                        cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
-                        pydocstyle legion_airflow
-
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
-                        cd ..
-                        '''
-
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
-
-                        sh '''
-                        cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
-                        pydocstyle legion_airflow
-
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
-                        cd ..
-                        '''
-
-                        archiveArtifacts 'legion_airflow/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
                     }
                 }
                 stage("Upload Legion package") {

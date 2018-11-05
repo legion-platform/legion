@@ -52,11 +52,8 @@ spec:
         args: ["airflow", "scheduler"]
       volumes:
       - name: airflow-config
-        secret:
-          secretName: "{{ .Release.Name }}-config"
-          items:
-          - key: airflow.cfg
-            path: airflow.cfg
+        configMap:
+          name: "{{ .Release.Name }}-config"
       - name: airflow-dags
         persistentVolumeClaim:
           {{- if .Values.storage.use_specified_pvc }}
