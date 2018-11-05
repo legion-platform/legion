@@ -195,6 +195,35 @@ class Airflow:
                     break
         return failed_dags
 
+    def is_dag_ready(self, dag_id, timeout=60, sleep=3):
+        """
+        Check if dag was loaded to airflow web
+
+        :param str dag_id: The id of the dag
+        :param int timeout: seconds to wait
+        :param int sleep: seconds to sleep before retries
+        :rtype boolean
+        :return: if dag is on the airflow web
+        """
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+
+        while True:
+            data = self._get('airflow/dag_stats', use_rest_api_root=False)
+            elapsed = time.time() - start
+            if dag_id in data.keys():
+                print('Dag {} became available after {} seconds'
+                      .format(dag_id, data))
+                return True
+            elif elapsed > timeout > 0:
+                raise Exception('Dag {} did not become available after {} seconds wait'.format(dag_id, timeout))
+            else:
+                print('Dag {} is not available after {} seconds'
+                      .format(dag_id, elapsed))
+                time.sleep(sleep)
+
     def _find_lines_in_stdout(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
         if type(obj) != str and 'output' in obj:

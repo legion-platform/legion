@@ -293,6 +293,8 @@ Invoke and check test dags for valid status code
     [Documentation]  Check test dags for valid status code
     Connect to enclave Airflow                           ${enclave}
     :FOR    ${dag}      IN      @{TEST_DAGS}
+    \   ${ready} =            Is dag ready    ${dag}
+    \   Should Be True 	      ${ready} == True    Dag ${dag} was not ready
     \   ${tasks} =            Find Airflow Tasks  ${dag}
 # Temporary disabling triggering Airflow tasks as it fails Airflow test
 # TODO: Need to rewrite this logic as a part of Airflow upgrade.

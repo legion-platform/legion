@@ -92,7 +92,7 @@ metadata:
   name: master-{{ zone.zone_name }}
 spec:
   cloudLabels:
-    vendor: {{ vendor }}
+    "user:tag": {{ vendor }}
   image: {{ aws_image }}
   machineType: {{ master_shape }}
   maxSize: 1
@@ -131,7 +131,7 @@ spec:
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes
   cloudLabels:
-    vendor: {{ vendor }}
+    "user:tag": {{ vendor }}
     k8s.io/cluster-autoscaler/enabled: "yes"
     kubernetes.io/cluster/{{ cluster_name }}: "true"
   role: Node
@@ -165,7 +165,7 @@ spec:
     kops.k8s.io/instancegroup: nodes.{{ shape }}
     dedicated: jenkins-slave
   cloudLabels:
-    vendor: {{ vendor }}
+    "user:tag": {{ vendor }}
     k8s.io/cluster-autoscaler/enabled: "yes"
     kubernetes.io/cluster/{{ cluster_name }}: "true"
   role: Node
@@ -200,7 +200,7 @@ spec:
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: bastions
   cloudLabels:
-    vendor: {{ vendor }}
+    "user:tag": {{ vendor }}
   role: Bastion
   subnets:
   {% for zone in cluster_zones %}

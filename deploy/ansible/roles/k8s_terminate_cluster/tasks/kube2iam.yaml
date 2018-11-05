@@ -12,55 +12,73 @@
     name: "{{ cluster_name }}-jenkins-role"
     state: absent
 
-- name: Remove Airflow S3 access policy
+- name: Remove data bucket S3 access policy
   iam_policy:
     iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
+    iam_name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:
     loop_var: enclave
 
-- name: Remove enclave Airflow IAM role
+- name: Remove jslave role
   iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:
     loop_var: enclave
 
-- name: Remove Airflow S3 access policy
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
-- name: Remove enclave Airflow IAM role
-  iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
-- name: Remove event collector S3 access policy
+- name: Remove data bucket S3 access policy
   iam_policy:
     iam_type: role
     iam_name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-collector-s3-access-policy"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:
     loop_var: enclave
 
-- name: Remove enclave event collector IAM role
+- name: Remove collector role
   iam_role:
     name: "{{ cluster_name }}-{{ enclave }}-collector-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove airflow role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove data bucket S3 access policy
+  iam_policy:
+    iam_type: role
+    iam_name: "{{ cluster_name }}-{{ enclave }}-model-role"
+    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
+    state: absent
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Remove model role
+  iam_role:
+    name: "{{ cluster_name }}-{{ enclave }}-model-role"
     state: absent
   with_items: "{{ enclaves }}"
   loop_control:

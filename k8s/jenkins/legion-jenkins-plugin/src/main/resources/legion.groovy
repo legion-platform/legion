@@ -66,9 +66,13 @@ def pod(Map podParams=null, Closure body) {
         return
     }
 
+    def annotations = []
+
     image = podParams.get('image', getDefaultImageName())
     cpu = podParams.get('cpu', '330m')
     ram = podParams.get('ram', '4Gi')
+    iamRole = podParams.get('iamRole', "${System.getenv('CLUSTER_NAME')}-${params.Enclave}-jslave-role")
+    annotations << podAnnotation(key: 'iam.amazonaws.com/role', value: iamRole)
 
     envToPass = [
             "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
@@ -99,6 +103,7 @@ spec:
     podTemplate(
             label: label, yaml: tolerations,
             namespace: "${params.Enclave}",
+            annotations: annotations,
             containers: [
                     containerTemplate(
                             name: 'model',
@@ -227,6 +232,7 @@ def deploy(Map deployParams=null) {
     count = deployParams.get('count', 1)
     livenesstimeout = deployParams.get('livenesstimeout', 2)
     readinesstimeout = deployParams.get('readinesstimeout', 2)
+    modelIamRole = deployParams.get('modelIamRole', "${System.getenv('CLUSTER_NAME')}-${params.Enclave}-model-role")
     deploytimeout = deployParams.get('deploytimeout', 300)
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
@@ -236,7 +242,7 @@ def deploy(Map deployParams=null) {
 
     sh """
     legionctl undeploy --ignore-not-found ${env.MODEL_ID}
-    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
+    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --model-iam-role=${modelIamRole} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
     legionctl inspect
     """
 }

@@ -109,14 +109,16 @@ def root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, count=int, livenesstimeout=int, readinesstimeout=int)
+@legion.http.populate_fields(image=str, model_iam_role=str, count=int, livenesstimeout=int, readinesstimeout=int)
 @legion.http.requested_fields('image')
-def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
+def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
     """
     Deploy API endpoint
 
     :param image: Docker image for deploy (for kubernetes deployment and local pull)
     :type image: str
+    :param model_iam_role: IAM role to be used at model pod
+    type model_iam_role: str
     :param count: count of pods to create
     :type count: int
     :param livenesstimeout: time in seconds for liveness check
@@ -125,8 +127,8 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     :type readinesstimeout: int
     :return: bool -- True
     """
-    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r}'
-                .format(image, count, livenesstimeout, readinesstimeout))
+    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r} and \
+                {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, model_iam_role))
 
     # Build dictionary with information about deployed models
     deployed_models = app.config['ENCLAVE'].get_models()
@@ -137,7 +139,8 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
         model_service = deployed_models_by_image[image]
         model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
     else:
-        model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
+        model_service = app.config['ENCLAVE'].deploy_model(image, model_iam_role, count,
+                                                           livenesstimeout, readinesstimeout)
         LOGGER.info('Model (id={}, version={}) has been deployed'
                     .format(model_service.id, model_service.version))
 

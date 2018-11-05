@@ -269,12 +269,14 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
-    def deploy_model(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy_model(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy new model
 
         :param image: docker image with model
         :type image: str
+        :param model_iam_role: IAM role to be used at model pod
+        :type model_iam_role: str
         :param count: count of pods
         :type count: int
         :param livenesstimeout: model pod startup timeout (used in liveness probe)
@@ -349,8 +351,11 @@ class Enclave:
                                                   name='api', protocol='TCP')
             ])
 
+        pod_annotations = image_meta_information.kubernetes_annotations
+        pod_annotations['iam.amazonaws.com/role'] = model_iam_role
+
         pod_template = kubernetes.client.V1PodTemplateSpec(
-            metadata=kubernetes.client.V1ObjectMeta(annotations=image_meta_information.kubernetes_annotations,
+            metadata=kubernetes.client.V1ObjectMeta(annotations=pod_annotations,
                                                     labels=image_meta_information.kubernetes_labels),
             spec=kubernetes.client.V1PodSpec(
                 containers=[container],
@@ -365,7 +370,7 @@ class Enclave:
             api_version="extensions/v1beta1",
             kind="Deployment",
             metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
-                                                    annotations=image_meta_information.kubernetes_annotations,
+                                                    annotations=pod_annotations,
                                                     labels=image_meta_information.kubernetes_labels),
             spec=deployment_spec)
 

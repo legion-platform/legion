@@ -17,7 +17,7 @@ Check feedback gathering
 Check feedback processing
     [Documentation]  Checking that feedback process works normally
     [Tags]  feedback  fluentd  aws
-    Choose bucket           ${FEEDBACK__BUCKET}
+    Choose bucket           ${FEEDBACK_BUCKET}
 
     ${a_value} =            Generate Random String   4                  [NUMBERS]
     ${event_time} =         Wait up to second        20                 year=%Y/month=%m/day=%d/%Y%m%d%H

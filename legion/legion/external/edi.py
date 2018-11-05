@@ -154,12 +154,14 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy API endpoint
 
         :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
+        :param model_iam_role: IAM role to be used at model pod
+        :type model_iam_role: str
         :param count: count of pods to create
         :type count: int
         :param livenesstimeout: model pod startup timeout (used in liveness probe)
@@ -169,7 +171,8 @@ class EdiClient:
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
-            'image': image
+            'image': image,
+            'model_iam_role': model_iam_role
         }
         if count is not None:
             payload['count'] = count
