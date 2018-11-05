@@ -33,18 +33,34 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: "{{ .Release.Name }}-web"
-  namespace: company-a
+  name: "{{ .Release.Name }}-scheduler"
+  namespace: {{ .Release.Namespace }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "{{ .Release.Name }}-scheduler"
+rules:
+- apiGroups: [""] # core API group
+  resources: ["configmaps"]
+  verbs: ["list", "get"]
+- apiGroups: [""] # core API group
+  resources: ["secrets"]
+  verbs: ["watch", "get"]
+  resourceNames: ['airflow-credentials']
+- apiGroups: ["", "extensions", "apps"]
+  resources: ["deployments", "replicasets", "pods"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
-  name: admin-rbac
+  name: "{{ .Release.Name }}-scheduler"
 subjects:
   - kind: ServiceAccount
-    name:  "{{ .Release.Name }}-web"
-    namespace: company-a
+    name:  "{{ .Release.Name }}-scheduler"
+    namespace: {{ .Release.Namespace }}
 roleRef:
-  kind: ClusterRole
-  name: cluster-admin
+  kind: Role
+  name: "{{ .Release.Name }}-scheduler"
 apiGroup: rbac.authorization.k8s.io

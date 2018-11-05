@@ -1,12 +1,12 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: "{{ .Release.Name }}-worker"
+  name: "{{ .Release.Name }}-scheduler"
   labels:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    component: "{{ .Release.Name }}-worker"
+    component: "{{ .Release.Name }}-scheduler"
 spec:
   replicas: 1
   template:
@@ -14,21 +14,25 @@ spec:
       annotations:
         iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
-        app: "{{ .Release.Name }}-airflow-worker"
+        app: "{{ .Release.Name }}-scheduler"
     spec:
-      serviceAccountName: "{{ .Release.Name }}-airflow-worker"
       restartPolicy: Always
+      serviceAccountName: "{{ .Release.Name }}-scheduler"
       containers:
-      - name: worker
+      - name: scheduler
         image: "{{ .Values.image }}"
         resources:
           requests:
-            cpu: "1500m"
-            memory: "1000Mi"
+            cpu: "1000m"
+            memory: "1024Mi"
           limits:
             cpu: "2000m"
-            memory: "2500Mi"
+            memory: "2048Mi"
         env:
+        - name: AIRFLOW_KUBE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace        
         - name: POSTGRES_HOST
         {{- if .Values.postgres.external}}
           value: "{{ .Values.postgres.host }}"
@@ -37,25 +41,17 @@ spec:
         {{- end }}
         - name: POSTGRES_PORT
           value: "{{ .Values.postgres.port }}"
-        - name: REDIS_HOST
-          value: "{{ .Release.Name }}-redis"
         - name: AIRFLOW_HOME
           value: "/home/airflow"
-        - name: MODEL_SERVER_URL
-          value: "http://{{ .Values.legion_release }}-edge"
-        - name: EDI_URL
-          value: "http://{{ .Values.legion_release }}-edi"
-        - name: NAMESPACE
-          value: "{{ .Release.Namespace }}"
         volumeMounts:
         - name: airflow-config
           mountPath: /home/airflow/airflow.cfg
           subPath: airflow.cfg
-        - name: dag-volume
+        - name: airflow-dags
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
         - name: airflow-config-dir
           mountPath: /home/airflow/config
-        args: ["airflow", "worker"]
+        args: ["airflow", "scheduler"]
       volumes:
       - name: airflow-config-dir
         configMap:
@@ -66,7 +62,7 @@ spec:
           items:
           - key: airflow.cfg
             path: airflow.cfg
-      - name: dag-volume
+      - name: airflow-dags
         persistentVolumeClaim:
           {{- if .Values.storage.use_specified_pvc }}
           claimName: {{ .Values.storage.pvc_name }}
