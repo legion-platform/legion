@@ -5,7 +5,7 @@ config:
   whitelist_domain: .{{ cluster_name }}
   cookie_domain: .{{ cluster_name }}
   cookie_secure: true
-  cookie_expire: 24h
+  cookie_expire: {{ dex.config.cookie_expire | default(3600) }}
   email_domains: "*"
   set_authorization_header: true
   skip_provider_button: true
