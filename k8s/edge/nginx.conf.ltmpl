@@ -65,10 +65,6 @@ http{
 
     chunked_transfer_encoding on;
 
-    location /healthcheck {
-      return 200;
-    }
-
     # Root location
     {% if environ['ENABLE_HOME_PAGE'] == 'true' %}
     location / {
@@ -79,6 +75,10 @@ http{
       return 404;
     }
     {% endif %}
+
+    location /healthcheck {
+      return 200;
+    }
 
     # Models API
     {% for model_endpoint in models %}
