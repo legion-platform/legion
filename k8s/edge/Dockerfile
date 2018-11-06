@@ -30,16 +30,15 @@ RUN set -ex \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
   && chmod +x /usr/bin/dumb-init
 
-# Line below is a temporal approach to decrease build time and the source of requirements.txt - legion/requirements/base.txt that is copied here during Jenkins pipeline execution (Jenkinsfile)
+# Section (till nginx-jwt installation) below is a temporal approach to decrease build time and the source of Pipfile's - legion/Pipfile* that have been copied here
 # This workaround should be removed as soon as #226 is done
-COPY requirements.txt /root/requirements.txt
-RUN python3 -m pip install --disable-pip-version-check --no-cache-dir -r /root/requirements.txt
+RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
+RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 pipenv==2018.10.13
 
-# Install Legion
-ARG pip_extra_index_params=""
-ARG pip_legion_version_string=""
+COPY Pipfile Pipfile
+COPY Pipfile.lock Pipfile.lock
 
-RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
+RUN pipenv install --system --deploy --python python3.6
 
 # Checkout nginx-jwt v.1.0.0
 RUN git clone https://github.com/auth0/nginx-jwt.git \
@@ -50,6 +49,12 @@ RUN git clone https://github.com/auth0/nginx-jwt.git \
     && cp nginx-jwt.lua /usr/local/share/lua/5.3/nginx-jwt.lua \
     && cp -r lib/resty /usr/local/share/lua/5.3/resty \
     && cd - && rm -rf nginx-jwt
+
+# Install Legion
+ARG pip_extra_index_params=""
+ARG pip_legion_version_string=""
+
+RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
 
 WORKDIR /
 

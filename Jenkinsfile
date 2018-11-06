@@ -144,57 +144,37 @@ pipeline {
                         pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503,E731
                         pydocstyle --source legion
 
-                        export TERM="linux"
-                        rm -f pylint.log
-                        pylint legion >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion > legion-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n tests >> legion-pylint.log || exit 0
                         cd ..
                         '''
 
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+                        archiveArtifacts 'legion/legion-pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/legion-pylint.log']], unHealthy: ''
 
                         sh '''
                         cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
+                        pycodestyle --show-source --show-pep8 legion_airflow
+                        pycodestyle --show-source --show-pep8 tests
                         pydocstyle legion_airflow
 
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion_airflow > legion_airflow-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n tests >> legion_airflow-pylint.log || exit 0
                         cd ..
                         '''
-        
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                        archiveArtifacts 'legion_airflow/legion_airflow-pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/legion_airflow-pylint.log']], unHealthy: ''
 
                         sh '''
-                        cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
-                        pydocstyle legion_airflow
+                        cd legion_test
 
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion_test > legion_test-pylint.log || exit 0
                         cd ..
                         '''
 
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
-
-                        sh '''
-                        cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
-                        pydocstyle legion_airflow
-
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
-                        cd ..
-                        '''
-
-                        archiveArtifacts 'legion_airflow/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
+                        archiveArtifacts 'legion_test/legion_test-pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_test/legion_test-pylint.log']], unHealthy: ''
                     }
                 }
                 stage("Upload Legion package") {
@@ -336,27 +316,22 @@ EOL
                         """
                     }
                 }
-                stage("Build Bare model 1") {
+                stage("Build Bare models") {
                     steps {
+                        // Build test-bare-model-api-model-1
                         sh """
-                        cd k8s/test-bare-model-api/model-1
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd tests/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.0" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare model 2") {
-                    steps {
+                        // Build test-bare-model-api-model-2
                         sh """
-                        cd k8s/test-bare-model-api/model-2
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd tests/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.1" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare model 3") {
-                    steps {
+                        // Build test-bare-model-api-model-3
                         sh """
-                        cd k8s/test-bare-model-api/model-3
-                        docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd tests/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="edi-test-model" --build-arg model_version="1.2" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -435,18 +410,10 @@ EOL
                         UploadDockerImage('k8s-jenkins')
                     }
                 }
-                stage('Upload Bare model 1') {
+                stage('Upload Bare models') {
                     steps {
                         UploadDockerImage('test-bare-model-api-model-1')
-                    }
-                }
-                stage('Upload Bare model 2') {
-                    steps {
                         UploadDockerImage('test-bare-model-api-model-2')
-                    }
-                }
-                stage('Upload Bare model 3') {
-                    steps {
                         UploadDockerImage('test-bare-model-api-model-3')
                     }
                 }
