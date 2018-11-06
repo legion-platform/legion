@@ -98,6 +98,7 @@ class ResourceWatch:
                             event_object = self._object_constructor(event_object)
 
                         yield (event_type, event_object)
+
             except urllib3.exceptions.ProtocolError as protocol_error:
                 LOGGER.warning('Connection to K8S API has been lost: {}. Reconnecting...'.format(protocol_error))
                 continue

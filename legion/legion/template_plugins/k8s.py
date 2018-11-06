@@ -20,11 +20,12 @@ import logging
 
 from legion.k8s import Enclave
 from legion.k8s.utils import get_current_namespace
+from legion.k8s import K8SConfigMapStorage
 
 LOGGER = logging.getLogger(__name__)
 
 
-def enclave_models_monitor(template_system):
+def enclave_configmap_monitor(template_system, var_name="var"):
     """
     Update template with current model state
 
@@ -32,11 +33,14 @@ def enclave_models_monitor(template_system):
     :return: None
     """
     namespace = get_current_namespace()
-    LOGGER.info('Starting models monitor in namespace {}'.format(namespace))
+    LOGGER.info('Starting configmap monitor in namespace {}'.format(namespace))
 
-    enclave = Enclave(namespace)
-    LOGGER.info('Loaded enclave {}'.format(enclave))
+    config_map = K8SConfigMapStorage.retrive(
+        storage_name="legion-{}-invalid-tokens".format(namespace),
+        k8s_namespace=namespace)
+    LOGGER.info("initial value is {}".format(config_map.data))
 
-    for new_state in enclave.watch_model_service_endpoints_state():
-        LOGGER.info('Got updated model state')
-        template_system.render(models=new_state)
+    for event, new_state in config_map.watch():
+        LOGGER.info('Got updated configmap state')
+        LOGGER.info("New state is {}".format(new_state))
+        template_system.render(**{var_name: new_state})

@@ -22,9 +22,7 @@ import os
 import os.path
 import importlib
 
-import asyncio
-from asyncio.tasks import Task
-
+import threading
 from jinja2 import Environment, FileSystemLoader, Undefined
 
 LOGGER = logging.getLogger(__name__)
@@ -73,8 +71,7 @@ class LegionTemplateEngine:
         self._context = {
             'load_module': self.load_module
         }
-        self._coroutines = []
-        self._loop = asyncio.get_event_loop()
+        self._plugins = []
         self._initializing_mode = True
 
     @property
@@ -122,9 +119,8 @@ class LegionTemplateEngine:
         module_name, function_name = name.rsplit('.', 1)
         module = importlib.import_module(module_name)
         module_function = getattr(module, function_name)
-        future = asyncio.ensure_future(module_function(self, *args, **kwargs))
-
-        self._coroutines.append(future)
+        kwargs['template_system'] = self
+        self._plugins.append((module_function, args, kwargs))
         return ''
 
     def render(self, **items):
@@ -135,30 +131,31 @@ class LegionTemplateEngine:
         :type items: dict[str, Any]
         :return: None
         """
-        LOGGER.debug('Updating context')
-        self._context.update(items)
+        with threading.Lock():
+            LOGGER.debug('Updating context')
+            self._context.update(items)
 
-        # Interrupt rendering if we are in initializing mode
-        if self._initializing_mode:
-            return None
+            # Interrupt rendering if we are in initializing mode
+            if self._initializing_mode:
+                return None
 
-        LOGGER.debug('Rendering')
-        # Render and update target file
-        content = self._template.render(self._context)
-        with open(self._output_file, 'w') as file_stream:
-            file_stream.write(content)
+            LOGGER.debug('Rendering')
+            # Render and update target file
+            content = self._template.render(self._context)
+            with open(self._output_file, 'w') as file_stream:
+                file_stream.write(content)
 
-        # Notify targets
-        if self._command:
-            os.system(self._command)
-        if self._signal and self._pid:
-            os.kill(self._pid, self._signal)
-        if self._signal and self._pid_file and os.path.exists(self._pid_file):
-            with open(self._pid_file) as pf:
-                pid = pf.read().strip()
-                if not pid.isdigit():
-                    raise ValueError('PID "{}" is not an integer'.format(pid))
-                os.kill(int(pid), self._signal)
+            # Notify targets
+            if self._command:
+                os.system(self._command)
+            if self._signal and self._pid:
+                os.kill(self._pid, self._signal)
+            if self._signal and self._pid_file and os.path.exists(self._pid_file):
+                with open(self._pid_file) as pf:
+                    pid = pf.read().strip()
+                    if not pid.isdigit():
+                        raise ValueError('PID "{}" is not an integer'.format(pid))
+                    os.kill(int(pid), self._signal)
 
     def render_loop(self):
         """
@@ -178,18 +175,19 @@ class LegionTemplateEngine:
         self.render()
 
         # Check is any courutine present
-        if not self._coroutines:
+        if not self._plugins:
             raise Exception('Template doesnt use any plugin')
 
         # Start loop
         LOGGER.debug('Staring loop')
-        result = self._loop.run_until_complete(asyncio.wait(self._coroutines))
-        LOGGER.debug('Loop finished')
-
-        if result is not None and type(result) == tuple and len(result) > 0 and type(result[0]) == set:
-            task = result[0].pop()
-            if type(task) == Task and task.exception() is not None:
-                raise task.exception()
+        running_threads = []
+        for f, args, kwargs in self._plugins:
+            thread = threading.Thread(target=f, args=args, kwargs=kwargs,
+                                      daemon=True, name=f.__name__)
+            thread.start()
+            running_threads.append(thread)
+        for t in running_threads:
+            t.join()
 
 
 class SilentUndefined(Undefined):

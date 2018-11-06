@@ -21,11 +21,12 @@ import os
 
 import aionotify
 import yaml
+import asyncio
 
 LOGGER = logging.getLogger(__name__)
 
 
-async def file_change_monitor(template_system, filepath, is_yaml=False, var_name='file'):
+def file_change_monitor(template_system, filepath, is_yaml=False, var_name='file'):
     """
      On file change updates template context with a file content
      and renders it.
@@ -70,12 +71,31 @@ async def file_change_monitor(template_system, filepath, is_yaml=False, var_name
     watcher.watch(path=filepath, flags=aionotify.Flags.MODIFY)
 
     LOGGER.debug('Awaiting setup of watcher for file {}'.format(filepath))
-    await watcher.setup(template_system._loop)
+    event_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(event_loop)
+    future = asyncio.ensure_future(loop(event_loop, watcher, template_system, filepath, is_yaml, var_name))
+    event_loop.run_until_complete(future)
 
+
+async def loop(event_loop, watcher, template_system, filepath, is_yaml=False, var_name='file'):
+    """
+    Run aionotify watcher in current event loop
+
+    :param event_loop: Current event loop
+    :param watcher: aionotify watcher object
+    :param template_system: Object, that contains 'render' callback function
+    :param filepath: Path to a File, relative to template file or absolute
+    :type filepath: str
+    :param is_yaml_file: Indicates if file is in yaml format and it should be parsed
+    :type is_yaml_file: bool
+    :param var_name: variable name, used to store file content in context
+    :type var_name: str
+    :return: None
+    """
+    await watcher.setup(event_loop)
     LOGGER.debug('Starting aionotify loop')
     while True:
         await watcher.get_event()
-
         LOGGER.info('Got update event for file {}'.format(filepath))
         with open(filepath) as f:
             if is_yaml:
