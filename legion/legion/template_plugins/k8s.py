@@ -14,11 +14,10 @@
 #    limitations under the License.
 #
 """
-Enclave models Notifier module for Legion Template
+Enclave configmaps update notifier module for Legion Template
 """
 import logging
 
-from legion.k8s import Enclave
 from legion.k8s.utils import get_current_namespace
 from legion.k8s import K8SConfigMapStorage
 

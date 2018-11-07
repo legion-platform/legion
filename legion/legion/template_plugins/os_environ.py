@@ -22,7 +22,7 @@ import os
 LOGGER = logging.getLogger(__name__)
 
 
-async def environment_variables_provider(template_system):
+def environment_variables_provider(template_system):
     """
     Update template context with environment variables values
 
