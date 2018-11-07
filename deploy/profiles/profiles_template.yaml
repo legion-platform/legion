@@ -34,8 +34,7 @@ vpc_id: ~               # VPC id where the cluster will be created
 # Common cluster configuration for KOPS
 cluster_name: ~ # unique KOPS cluster name
 state_store: ~  # AWS S3 bucket for storing KOPS state
-aws_image: ~  # base Kubernetes image
-kubernetes_version: ~         # kubernetes version
+
 private_network: ~         # private network prefix
 cluster_zones:                    # configuration of cluster zones
   - zone_name: ~

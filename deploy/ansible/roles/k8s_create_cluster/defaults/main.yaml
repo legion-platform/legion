@@ -8,3 +8,6 @@ kops_sha256sum: "ccc64c44daa9ee6d4a63bc27f42135983527a37b98edca953488444a46797d9
 kubectl_version: "v1.10.6"
 kubectl_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/linux/amd64"
 kubectl_darwin_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/darwin/amd64"
+
+aws_image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+kubernetes_version: 1.10.6
