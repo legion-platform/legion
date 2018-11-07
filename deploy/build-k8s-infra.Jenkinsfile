@@ -141,7 +141,7 @@ pipeline {
                  credentialsId: 'nexus-local-repository',
                  usernameVariable: 'USERNAME',
                  passwordVariable: 'PASSWORD']]) {
-                    sh "docker login -u ${USERNAME} -p ${PASSWORD} "
+                    sh "docker login -u ${USERNAME} -p ${PASSWORD} ${params.DockerRegistry}"
                 }
             }
         }
