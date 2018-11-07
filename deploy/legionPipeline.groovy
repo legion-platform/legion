@@ -329,4 +329,28 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
     slackSend (color: colorCode, message: summary)
 }
+
+
+def uploadDockerImage(String imageName, String buildVersion) {
+    if (params.StableRelease) {
+        sh """
+        # Push stable image to local registry
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:latest
+        docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker push ${params.DockerRegistry}/${imageName}:latest
+        # Push stable image to DockerHub
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
+        docker push ${params.DockerHubRegistry}/${imageName}:${buildVersion}
+        docker push ${params.DockerHubRegistry}/${imageName}:latest
+        """
+    } else {
+        sh """
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
+        """
+    }
+}
+
 return this
