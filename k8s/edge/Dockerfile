@@ -39,7 +39,6 @@ COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
 
 RUN pipenv install --system --deploy --python python3.6
-RUN python3 -m compileall /usr/lib/python3.6/site-packages
 
 # Checkout nginx-jwt v.1.0.0
 RUN git clone https://github.com/auth0/nginx-jwt.git \
@@ -59,9 +58,6 @@ RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_str
 
 WORKDIR /
 
-
-# Temporary, DO NOT MERGE!
-RUN apk add --no-cache strace
 RUN python3 -m compileall /usr/lib/python3.6/site-packages
 
 # Staff

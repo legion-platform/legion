@@ -17,5 +17,5 @@
 
 /usr/local/openresty/bin/openresty
 
-strace -T -tt -y legion-template "/nginx.conf.ltmpl" "/usr/local/openresty/nginx/conf/nginx.conf" --signal=SIGHUP --pid-file="/usr/local/openresty/nginx/logs/nginx.pid" --command="echo Reloading Nginx" --verbose
+legion-template "/nginx.conf.ltmpl" "/usr/local/openresty/nginx/conf/nginx.conf" --signal=SIGHUP --pid-file="/usr/local/openresty/nginx/logs/nginx.pid" --command="echo Reloading Nginx" --verbose
 
