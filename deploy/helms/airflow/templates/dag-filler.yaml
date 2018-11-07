@@ -11,8 +11,8 @@ spec:
   template:
     spec:
       containers:
-      - name: dag-filler
-        image: "{{ .Values.image }}"
+      - name: alpine
+        image: alpine:3.5
         resources:
           requests:
             cpu: "100m"
@@ -20,35 +20,14 @@ spec:
           limits:
             cpu: "300m"
             memory: "256Mi"
-        env:
-        - name: POSTGRES_HOST
-        {{- if .Values.postgres.external}}
-          value: "{{ .Values.postgres.host }}"
-        {{- else }}
-          value: "{{ .Release.Name }}-postgres"
-        {{- end }}
-        - name: POSTGRES_PORT
-          value: "{{ .Values.postgres.port }}"
-        - name: AIRFLOW_HOME
-          value: "/home/airflow"
-        - name: BOOTUP_DIRECTORY
-          value: "/opt/bootup"
-        - name: SECRETS_DIRECTORY
-          value: "/opt/secrets"
-        command: ["/bin/sh","-c"]
-        args: ["airflow delete_dag {{ .Values.example_dag_id }} -y || true; cp -R /mnt/dags/. {{ .Values.storage.airflow_dags_directory }}"]
+        command: ["cp",  "-R", "/mnt/dags/.", "{{ .Values.storage.airflow_dags_directory }}"]
         volumeMounts:
-        - name: connections-config
-          mountPath: /opt/secrets
         - name: dag-volume
           mountPath: "{{ .Values.storage.airflow_dags_directory }}"
-        - name: airflow-dags-source
+        - name: airflow-dags
           mountPath: /mnt/dags
       restartPolicy: Never
       volumes:
-      - name: connections-config
-        secret:
-          secretName: "{{ .Release.Name }}-connections-config"
       - name: dag-volume
         persistentVolumeClaim:
           {{- if .Values.storage.use_specified_pvc }}
@@ -56,6 +35,6 @@ spec:
           {{- else}}
           claimName: "{{ .Release.Name }}-dag-pvc"
           {{- end}}
-      - name: airflow-dags-source
+      - name: airflow-dags
         configMap:
           name: "{{ .Release.Name }}-dags"
