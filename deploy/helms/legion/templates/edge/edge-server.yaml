@@ -50,7 +50,10 @@ spec:
             path: /healthcheck
             port: 80
           initialDelaySeconds: 10
-          periodSeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 8
       - name: dns
         image: "janeczku/go-dnsmasq:release-1.0.7"
         args:

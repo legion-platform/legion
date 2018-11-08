@@ -76,7 +76,7 @@ http{
     }
     {% endif %}
 
-    location /healthcheck {
+    location = /healthcheck {
       return 200;
     }
 
