@@ -1,0 +1,144 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "build_date": "20181101113553",
+      "build_id": "535",
+      "build_user": "null",
+      "com.epam.legion.container_type": "model",
+      "com.epam.legion.model.id": "demo-abc-model",
+      "com.epam.legion.model.version": "1.0",
+      "deployment.kubernetes.io/revision": "1",
+      "git_revision": "8968684"
+    },
+    "creationTimestamp": "2018-11-06T12:47:04Z",
+    "generation": 2,
+    "labels": {
+      "com.epam.legion.model.id": "demo-abc-model",
+      "com.epam.legion.model.version": "1.0",
+      "legion.component": "model",
+      "legion.system": "yes"
+    },
+    "name": "model-demo-abc-model-1-0",
+    "namespace": "debug-enclave",
+    "resourceVersion": "165820",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-0",
+    "uid": "0ffd59a5-e1c2-11e8-9de3-12a89ae87206"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "com.epam.legion.model.id": "demo-abc-model",
+        "com.epam.legion.model.version": "1.0",
+        "legion.component": "model",
+        "legion.system": "yes"
+      }
+    },
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": 1,
+        "maxUnavailable": 1
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "annotations": {
+          "build_date": "20181101113553",
+          "build_id": "535",
+          "build_user": "null",
+          "com.epam.legion.container_type": "model",
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.0",
+          "git_revision": "8968684"
+        },
+        "creationTimestamp": null,
+        "labels": {
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.0",
+          "legion.component": "model",
+          "legion.system": "yes"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "STATSD_HOST",
+                "value": "legion-debug-enclave-graphite.debug-enclave"
+              },
+              {
+                "name": "STATSD_PORT",
+                "value": "80"
+              }
+            ],
+            "image": "localhost.com:443/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
+            "imagePullPolicy": "Always",
+            "livenessProbe": {
+              "failureThreshold": 10,
+              "httpGet": {
+                "path": "/healthcheck",
+                "port": 5000,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 2,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 2
+            },
+            "name": "model",
+            "ports": [
+              {
+                "containerPort": 5000,
+                "name": "api",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 5,
+              "httpGet": {
+                "path": "/healthcheck",
+                "port": 5000,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 2,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 2
+            },
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "model",
+        "serviceAccountName": "model",
+        "terminationGracePeriodSeconds": 30
+      }
+    }
+  },
+  "status": {
+    "availableReplicas": 2,
+    "conditions": [
+      {
+        "lastTransitionTime": "2018-11-06T12:47:10Z",
+        "lastUpdateTime": "2018-11-06T12:47:10Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+      }
+    ],
+    "observedGeneration": 1,
+    "readyReplicas": 1,
+    "replicas": 1,
+    "updatedReplicas": 1
+  }
+}
