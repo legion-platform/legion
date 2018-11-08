@@ -58,6 +58,8 @@ RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_str
 
 WORKDIR /
 
+RUN python3 -m compileall /usr/lib/python3.6/site-packages
+
 # Staff
 ADD start.sh /start.sh
 ADD statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua

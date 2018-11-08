@@ -96,12 +96,7 @@ class LegionTemplateEngine:
         """
         Load module
         Example: {{ load_module('loadable_module', *args, *kwargs) }}
-        and module should be
-            async def temp(template_system, *args, **kwargs):
-                print("I'm in template extension")
-                for i in range(2):
-                    template_system.render(a=i)
-                    await asyncio.sleep(1)
+        and module should a function that will be run once and forever
 
         :param name: name of module
         :type name: str
@@ -109,17 +104,18 @@ class LegionTemplateEngine:
         :type args: any
         :param kwargs: additional key-value arguments
         :type args: any
-        :return: str -- empty string
+        :return: str -- empty string (will be placed in template)
         """
         if not self._initializing_mode:
             return ''
 
-        LOGGER.info('Loading module {} with arguments {} and {}'.format(name, args, kwargs))
-
+        LOGGER.info('Loading module {} with arguments {}, {}'.format(name, args, kwargs))
         module_name, function_name = name.rsplit('.', 1)
         module = importlib.import_module(module_name)
+        LOGGER.debug('Module {} has been imported: {!r}'.format(module_name, module))
         module_function = getattr(module, function_name)
         kwargs['template_system'] = self
+        LOGGER.debug('Appending {} to plugins list'.format(name))
         self._plugins.append((module_function, args, kwargs))
         return ''
 
@@ -174,7 +170,7 @@ class LegionTemplateEngine:
         LOGGER.debug('Staring first render')
         self.render()
 
-        # Check is any courutine present
+        # Check is any plugin present
         if not self._plugins:
             raise Exception('Template doesnt use any plugin')
 
@@ -182,10 +178,14 @@ class LegionTemplateEngine:
         LOGGER.debug('Staring loop')
         running_threads = []
         for f, args, kwargs in self._plugins:
+            LOGGER.info('Running thread {}'.format(f.__name__))
             thread = threading.Thread(target=f, args=args, kwargs=kwargs,
                                       daemon=True, name=f.__name__)
             thread.start()
+            LOGGER.debug('Thread {} has been started'.format(f.__name__))
             running_threads.append(thread)
+
+        LOGGER.debug('Render loop has been started')
         for t in running_threads:
             t.join()
 

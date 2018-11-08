@@ -45,12 +45,20 @@ spec:
         - containerPort: 80
           name: api
           protocol: TCP
-        livenessProbe:
+        readinessProbe:
           httpGet:
             path: /healthcheck
             port: 80
-          initialDelaySeconds: 10
-          periodSeconds: 3
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 20
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
       - name: dns
         image: "janeczku/go-dnsmasq:release-1.0.7"
         args:
