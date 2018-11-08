@@ -1008,7 +1008,7 @@
                     "value": "80"
                   }
                 ],
-                "image": "localhost.com:443/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
+                "image": "localhost/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
                 "imagePullPolicy": "Always",
                 "livenessProbe": {
                   "failureThreshold": 10,

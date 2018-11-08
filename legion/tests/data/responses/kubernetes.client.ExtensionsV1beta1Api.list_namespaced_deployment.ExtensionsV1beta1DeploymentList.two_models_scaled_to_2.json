@@ -70,7 +70,7 @@
                     "value": "5555"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -350,7 +350,7 @@
                     "value": "/home/airflow"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "exec": {
@@ -526,7 +526,7 @@
                     "value": "/opt/secrets"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -734,7 +734,7 @@
                     "value": "debug-enclave"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "worker",
                 "resources": {
@@ -868,7 +868,7 @@
           "spec": {
             "containers": [
               {
-                "image": "localhost.com:443/legion/k8s-fluentd:0.9.0-20181105095338.552.8968684",
+                "image": "localhost/legion/k8s-fluentd:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "fluentd",
                 "ports": [
@@ -1008,7 +1008,7 @@
                     "value": "80"
                   }
                 ],
-                "image": "localhost.com:443/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
+                "image": "localhost/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
                 "imagePullPolicy": "Always",
                 "livenessProbe": {
                   "failureThreshold": 10,
@@ -1150,7 +1150,7 @@
                     "value": "80"
                   }
                 ],
-                "image": "localhost.com:443/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a",
+                "image": "localhost/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a",
                 "imagePullPolicy": "Always",
                 "livenessProbe": {
                   "failureThreshold": 10,
