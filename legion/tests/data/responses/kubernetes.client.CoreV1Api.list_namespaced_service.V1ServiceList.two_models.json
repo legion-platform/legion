@@ -3,7 +3,7 @@
   "items": [
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:04:33Z",
+        "creationTimestamp": "2018-11-05T15:08:21Z",
         "labels": {
           "chart": "airflow-0.0.1",
           "component": "airflow-debug-enclave-flower",
@@ -12,9 +12,9 @@
         },
         "name": "airflow-debug-enclave-flower",
         "namespace": "debug-enclave",
-        "resourceVersion": "4894",
+        "resourceVersion": "4381",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/airflow-debug-enclave-flower",
-        "uid": "6061e75b-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "a22a5842-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -38,7 +38,7 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:04:33Z",
+        "creationTimestamp": "2018-11-05T15:08:21Z",
         "labels": {
           "chart": "airflow-0.0.1",
           "component": "airflow-debug-enclave-redis",
@@ -47,9 +47,9 @@
         },
         "name": "airflow-debug-enclave-redis",
         "namespace": "debug-enclave",
-        "resourceVersion": "4897",
+        "resourceVersion": "4384",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/airflow-debug-enclave-redis",
-        "uid": "6065b7e2-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "a22d11f0-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -73,7 +73,7 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:04:33Z",
+        "creationTimestamp": "2018-11-05T15:08:21Z",
         "labels": {
           "chart": "airflow-0.0.1",
           "component": "airflow-debug-enclave-web",
@@ -82,9 +82,9 @@
         },
         "name": "airflow-debug-enclave-web",
         "namespace": "debug-enclave",
-        "resourceVersion": "4901",
+        "resourceVersion": "4387",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/airflow-debug-enclave-web",
-        "uid": "6069b828-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "a2309496-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -108,15 +108,15 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:06:27Z",
+        "creationTimestamp": "2018-11-05T15:09:59Z",
         "labels": {
           "component": "event-collector-debug-enclave-fluentd"
         },
         "name": "event-collector-debug-enclave-fluentd",
         "namespace": "debug-enclave",
-        "resourceVersion": "5249",
+        "resourceVersion": "4681",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/event-collector-debug-enclave-fluentd",
-        "uid": "a4936899-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "dcd6d33f-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -140,7 +140,7 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:02:31Z",
+        "creationTimestamp": "2018-11-05T15:06:09Z",
         "labels": {
           "component": "legion-debug-enclave-edge",
           "legion.component": "edge",
@@ -148,9 +148,9 @@
         },
         "name": "legion-debug-enclave-edge",
         "namespace": "debug-enclave",
-        "resourceVersion": "4540",
+        "resourceVersion": "4028",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-edge",
-        "uid": "17bf0867-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "536d8c32-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -174,7 +174,7 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:02:31Z",
+        "creationTimestamp": "2018-11-05T15:06:09Z",
         "labels": {
           "component": "legion-debug-enclave-edi",
           "legion.component": "edi",
@@ -182,9 +182,9 @@
         },
         "name": "legion-debug-enclave-edi",
         "namespace": "debug-enclave",
-        "resourceVersion": "4543",
+        "resourceVersion": "4031",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-edi",
-        "uid": "17c2ac99-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "53709507-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -208,7 +208,7 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:02:31Z",
+        "creationTimestamp": "2018-11-05T15:06:09Z",
         "labels": {
           "component": "legion-debug-enclave-grafana",
           "legion.component": "grafana",
@@ -217,9 +217,9 @@
         },
         "name": "legion-debug-enclave-grafana",
         "namespace": "debug-enclave",
-        "resourceVersion": "4546",
+        "resourceVersion": "4034",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-grafana",
-        "uid": "17c6b18d-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "5373621d-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -243,7 +243,7 @@
     },
     {
       "metadata": {
-        "creationTimestamp": "2018-10-19T10:02:31Z",
+        "creationTimestamp": "2018-11-05T15:06:09Z",
         "labels": {
           "component": "legion-debug-enclave-graphite",
           "legion.component": "graphite",
@@ -251,9 +251,9 @@
         },
         "name": "legion-debug-enclave-graphite",
         "namespace": "debug-enclave",
-        "resourceVersion": "4549",
+        "resourceVersion": "4037",
         "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-graphite",
-        "uid": "17cab59b-d386-11e8-bf95-06157bfeb4a4"
+        "uid": "53762ba2-e10c-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -296,54 +296,26 @@
     {
       "metadata": {
         "annotations": {
-          "annotation.io.kubernetes.container.hash": "55b89b2a",
-          "annotation.io.kubernetes.container.restartCount": "0",
-          "annotation.io.kubernetes.container.terminationMessagePath": "/dev/termination-log",
-          "annotation.io.kubernetes.container.terminationMessagePolicy": "File",
-          "annotation.io.kubernetes.pod.terminationGracePeriod": "30",
-          "build_date": "20181019095046",
-          "build_id": "760",
+          "build_date": "20181106123539",
+          "build_id": "560",
           "build_user": "null",
-          "com.epam.jenkins.build_id": "1",
-          "com.epam.jenkins.build_number": "1",
-          "com.epam.jenkins.build_tag": "jenkins-DYNAMIC MODEL Digit-Recognition-1",
-          "com.epam.jenkins.build_url": "None",
-          "com.epam.jenkins.git_branch": "None",
-          "com.epam.jenkins.git_commit": "None",
-          "com.epam.jenkins.job_name": "DYNAMIC MODEL Digit-Recognition",
-          "com.epam.jenkins.node_name": "jenkins-slave-9c03g-lwth5",
-          "com.epam.legion.class": "pyserve",
           "com.epam.legion.container_type": "model",
-          "com.epam.legion.model.id": "recognize-digits",
-          "com.epam.legion.model.property_values": "{}",
+          "com.epam.legion.model.id": "demo-abc-model",
           "com.epam.legion.model.version": "1.0",
-          "com.epam.legion.version": "0.9.0-20181019095143.760.dc59b83",
-          "com.epam.mode.properties_callback_exists": "True",
-          "com.epam.model.endpoints": "default",
-          "com.epam.model.id": "recognize-digits",
-          "com.epam.model.required_properties": "",
-          "com.epam.model.version": "1.0",
-          "git_revision": "dc59b83",
-          "io.kubernetes.container.logpath": "/var/log/pods/443ad79c-d38b-11e8-bf95-06157bfeb4a4/model_0.log",
-          "io.kubernetes.container.name": "model",
-          "io.kubernetes.docker.type": "container",
-          "io.kubernetes.pod.name": "jenkins-slave-9c03g-lwth5",
-          "io.kubernetes.pod.namespace": "debug-enclave",
-          "io.kubernetes.pod.uid": "443ad79c-d38b-11e8-bf95-06157bfeb4a4",
-          "io.kubernetes.sandbox.id": "d4f8f84149ef6d79807a243753d15a33ca834af39e14b679487d4c4f1ff74b76"
+          "git_revision": "3b9739a"
         },
-        "creationTimestamp": "2018-10-19T10:41:28Z",
+        "creationTimestamp": "2018-11-07T13:54:46Z",
         "labels": {
-          "com.epam.legion.model.id": "recognize-digits",
+          "com.epam.legion.model.id": "demo-abc-model",
           "com.epam.legion.model.version": "1.0",
           "legion.component": "model",
           "legion.system": "yes"
         },
-        "name": "model-recognize-digits-1-0",
+        "name": "model-demo-abc-model-1-0",
         "namespace": "debug-enclave",
-        "resourceVersion": "10531",
-        "selfLink": "/api/v1/namespaces/debug-enclave/services/model-recognize-digits-1-0",
-        "uid": "88ed6601-d38b-11e8-9fc5-02f24b2d65fe"
+        "resourceVersion": "349492",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/model-demo-abc-model-1-0",
+        "uid": "afcfda72-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -356,7 +328,7 @@
           }
         ],
         "selector": {
-          "com.epam.legion.model.id": "recognize-digits",
+          "com.epam.legion.model.id": "demo-abc-model",
           "com.epam.legion.model.version": "1.0",
           "legion.component": "model",
           "legion.system": "yes"
@@ -371,54 +343,26 @@
     {
       "metadata": {
         "annotations": {
-          "annotation.io.kubernetes.container.hash": "d259c7b4",
-          "annotation.io.kubernetes.container.restartCount": "0",
-          "annotation.io.kubernetes.container.terminationMessagePath": "/dev/termination-log",
-          "annotation.io.kubernetes.container.terminationMessagePolicy": "File",
-          "annotation.io.kubernetes.pod.terminationGracePeriod": "30",
-          "build_date": "20181019095046",
-          "build_id": "760",
+          "build_date": "20181106123539",
+          "build_id": "560",
           "build_user": "null",
-          "com.epam.jenkins.build_id": "1",
-          "com.epam.jenkins.build_number": "1",
-          "com.epam.jenkins.build_tag": "jenkins-DYNAMIC MODEL Test-Summation-1",
-          "com.epam.jenkins.build_url": "None",
-          "com.epam.jenkins.git_branch": "None",
-          "com.epam.jenkins.git_commit": "None",
-          "com.epam.jenkins.job_name": "DYNAMIC MODEL Test-Summation",
-          "com.epam.jenkins.node_name": "jenkins-slave-1t05s-gx3b0",
-          "com.epam.legion.class": "pyserve",
           "com.epam.legion.container_type": "model",
-          "com.epam.legion.model.id": "test-summation",
-          "com.epam.legion.model.property_values": "{\"number.pow\": \"1\", \"number.pow_of_ten\": \"1\"}",
-          "com.epam.legion.model.version": "1.0",
-          "com.epam.legion.version": "0.9.0-20181019095143.760.dc59b83",
-          "com.epam.mode.properties_callback_exists": "True",
-          "com.epam.model.endpoints": "default, sum_and_pow",
-          "com.epam.model.id": "test-summation",
-          "com.epam.model.required_properties": "number.pow, number.pow_of_ten",
-          "com.epam.model.version": "1.0",
-          "git_revision": "dc59b83",
-          "io.kubernetes.container.logpath": "/var/log/pods/df094ed9-d38a-11e8-bf95-06157bfeb4a4/model_0.log",
-          "io.kubernetes.container.name": "model",
-          "io.kubernetes.docker.type": "container",
-          "io.kubernetes.pod.name": "jenkins-slave-1t05s-gx3b0",
-          "io.kubernetes.pod.namespace": "debug-enclave",
-          "io.kubernetes.pod.uid": "df094ed9-d38a-11e8-bf95-06157bfeb4a4",
-          "io.kubernetes.sandbox.id": "ba16517f48e38165c05f0c274e6ff87acb2e5fa9f810af42a354350c4ae50219"
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
+          "git_revision": "3b9739a"
         },
-        "creationTimestamp": "2018-10-19T10:39:24Z",
+        "creationTimestamp": "2018-11-07T13:55:11Z",
         "labels": {
-          "com.epam.legion.model.id": "test-summation",
-          "com.epam.legion.model.version": "1.0",
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
           "legion.component": "model",
           "legion.system": "yes"
         },
-        "name": "model-test-summation-1-0",
+        "name": "model-demo-abc-model-1-1",
         "namespace": "debug-enclave",
-        "resourceVersion": "10208",
-        "selfLink": "/api/v1/namespaces/debug-enclave/services/model-test-summation-1-0",
-        "uid": "3eb92309-d38b-11e8-9fc5-02f24b2d65fe"
+        "resourceVersion": "349565",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/model-demo-abc-model-1-1",
+        "uid": "be75fad1-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
         "clusterIP": "1.2.3.4",
@@ -431,8 +375,8 @@
           }
         ],
         "selector": {
-          "com.epam.legion.model.id": "test-summation",
-          "com.epam.legion.model.version": "1.0",
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
           "legion.component": "model",
           "legion.system": "yes"
         },
@@ -446,7 +390,7 @@
   ],
   "kind": "ServiceList",
   "metadata": {
-    "resourceVersion": "44911",
+    "resourceVersion": "349693",
     "selfLink": "/api/v1/namespaces/debug-enclave/services"
   }
 }

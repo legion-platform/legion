@@ -70,7 +70,7 @@
                     "value": "5555"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -350,7 +350,7 @@
                     "value": "/home/airflow"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "exec": {
@@ -526,7 +526,7 @@
                     "value": "/opt/secrets"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -734,7 +734,7 @@
                     "value": "debug-enclave"
                   }
                 ],
-                "image": "localhost.com:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "worker",
                 "resources": {
@@ -868,7 +868,7 @@
           "spec": {
             "containers": [
               {
-                "image": "localhost.com:443/legion/k8s-fluentd:0.9.0-20181105095338.552.8968684",
+                "image": "localhost:443/legion/k8s-fluentd:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "fluentd",
                 "ports": [
@@ -960,7 +960,7 @@
         "uid": "afc8e10a-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
-        "replicas": 2,
+        "replicas": 1,
         "selector": {
           "matchLabels": {
             "com.epam.legion.model.id": "demo-abc-model",
@@ -1058,7 +1058,7 @@
         }
       },
       "status": {
-        "availableReplicas": 2,
+        "availableReplicas": 1,
         "conditions": [
           {
             "lastTransitionTime": "2018-11-07T13:54:46Z",
@@ -1069,10 +1069,10 @@
             "type": "Available"
           }
         ],
-        "observedGeneration": 2,
-        "readyReplicas": 2,
-        "replicas": 2,
-        "updatedReplicas": 2
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
       }
     },
     {
@@ -1200,7 +1200,7 @@
         }
       },
       "status": {
-        "availableReplicas": 2,
+        "availableReplicas": 1,
         "conditions": [
           {
             "lastTransitionTime": "2018-11-07T13:55:11Z",
@@ -1211,10 +1211,10 @@
             "type": "Available"
           }
         ],
-        "observedGeneration": 2,
-        "readyReplicas": 2,
-        "replicas": 2,
-        "updatedReplicas": 2
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
       }
     }
   ],

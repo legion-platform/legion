@@ -686,7 +686,10 @@ class EDITestServer:
         """
         additional_environment = {
             legion.config.CLUSTER_SECRETS_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'secrets'),
-            legion.config.JWT_CONFIG_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'jwt_config')
+            legion.config.JWT_CONFIG_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'jwt_config'),
+            legion.config.REGISTER_ON_GRAFANA[0]: 'false',
+            legion.config.STATSD_HOST[0]: "graphite",
+            legion.config.STATSD_PORT[0]: str(80)
         }
 
         test_enclave = legion.k8s.enclave.Enclave(self._enclave_name)
