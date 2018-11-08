@@ -51,7 +51,7 @@
                 "env": [
                   {
                     "name": "POSTGRES_HOST",
-                    "value": "localhost.com"
+                    "value": "127.0.0.1.com"
                   },
                   {
                     "name": "POSTGRES_PORT",
@@ -70,7 +70,7 @@
                     "value": "5555"
                   }
                 ],
-                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -318,7 +318,7 @@
         "template": {
           "metadata": {
             "annotations": {
-              "iam.amazonaws.com/role": "localhost.com-debug-enclave-airflow-role"
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
             },
             "creationTimestamp": null,
             "labels": {
@@ -335,7 +335,7 @@
                 "env": [
                   {
                     "name": "POSTGRES_HOST",
-                    "value": "localhost.com"
+                    "value": "127.0.0.1.com"
                   },
                   {
                     "name": "POSTGRES_PORT",
@@ -350,7 +350,7 @@
                     "value": "/home/airflow"
                   }
                 ],
-                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "exec": {
@@ -486,7 +486,7 @@
         "template": {
           "metadata": {
             "annotations": {
-              "iam.amazonaws.com/role": "localhost.com-debug-enclave-airflow-role"
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
             },
             "creationTimestamp": null,
             "labels": {
@@ -503,7 +503,7 @@
                 "env": [
                   {
                     "name": "POSTGRES_HOST",
-                    "value": "localhost.com"
+                    "value": "127.0.0.1.com"
                   },
                   {
                     "name": "POSTGRES_PORT",
@@ -526,7 +526,7 @@
                     "value": "/opt/secrets"
                   }
                 ],
-                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -690,7 +690,7 @@
         "template": {
           "metadata": {
             "annotations": {
-              "iam.amazonaws.com/role": "localhost.com-debug-enclave-airflow-role"
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
             },
             "creationTimestamp": null,
             "labels": {
@@ -707,7 +707,7 @@
                 "env": [
                   {
                     "name": "POSTGRES_HOST",
-                    "value": "localhost.com"
+                    "value": "127.0.0.1.com"
                   },
                   {
                     "name": "POSTGRES_PORT",
@@ -734,7 +734,7 @@
                     "value": "debug-enclave"
                   }
                 ],
-                "image": "localhost:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1:443/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "worker",
                 "resources": {
@@ -858,7 +858,7 @@
         "template": {
           "metadata": {
             "annotations": {
-              "iam.amazonaws.com/role": "localhost.com-debug-enclave-collector-role"
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-collector-role"
             },
             "creationTimestamp": null,
             "labels": {
@@ -868,7 +868,7 @@
           "spec": {
             "containers": [
               {
-                "image": "localhost:443/legion/k8s-fluentd:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1:443/legion/k8s-fluentd:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "fluentd",
                 "ports": [
@@ -1008,7 +1008,7 @@
                     "value": "80"
                   }
                 ],
-                "image": "localhost/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
+                "image": "127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a",
                 "imagePullPolicy": "Always",
                 "livenessProbe": {
                   "failureThreshold": 10,
