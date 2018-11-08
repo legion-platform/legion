@@ -27,7 +27,7 @@ data:
     # must supply a remote location URL (starting with either 's3://...' or
     # 'gs://...') and an Airflow connection id that provides access to the storage
     # location.
-    logging_config_class = legion_airflow.logging.log_config.DEFAULT_LOGGING_CONFIG 
+    #logging_config_class = legion_airflow.logging.log_config.DEFAULT_LOGGING_CONFIG 
     remote_logging = {{ .Values.core.remote_logging }}
     remote_base_log_folder = {{ .Values.core.remote_base_log_folder }}
     remote_log_conn_id = {{ .Values.core.remote_log_conn_id }}
