@@ -14,7 +14,7 @@ Test Teardown       Run EDI undeploy model without version and check    ${MODEL_
 Check EDI availability in all enclaves
     [Setup]         NONE
     [Documentation]  Try to connect to EDI in each enclave
-    [Tags]  edi  cli  enclave  infra
+    [Tags]  edi  cli  enclave  apps
     :FOR    ${enclave}      IN                            @{ENCLAVES}
     \       ${edi_state}=   Run EDI inspect               ${enclave}
     \                       Should Be Equal As Integers   ${edi_state.rc}     0

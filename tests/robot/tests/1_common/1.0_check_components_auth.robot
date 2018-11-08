@@ -10,7 +10,7 @@ Test Setup          Choose cluster context            ${CLUSTER_NAME}
 
 *** Test Cases ***
 Check if K8S dashboard domain has been secured
-    [Tags]  core  security  auth  apps
+    [Tags]  core  security  auth  infra
     [Template]    Check if component domain has been secured
     component=dashboard    enclave=${EMPTY}
 
@@ -46,7 +46,7 @@ Check if Flower enclave domain has been secured
     component=flower    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if K8S dashboard domain does not auth with invalid creds
-    [Tags]  core  security  auth  apps
+    [Tags]  core  security  auth  infra
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=dashboard    enclave=${EMPTY}
 
@@ -102,7 +102,7 @@ Check if Flower enclave can auth with valid creds
     component=flower    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if K8S dashboard domain can auth with valid creds
-    [Tags]  core  security  auth  apps
+    [Tags]  core  security  auth  infra
     [Template]    Secured component domain should be accessible by valid credentials
     component=Dashboard    enclave=${EMPTY}
 

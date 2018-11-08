@@ -13,13 +13,13 @@ Test Teardown       Close All Browsers
 *** Test Cases ***
 Checking if all core domains have been registered
     [Documentation]  Check that all required core DNS A records has been registered
-    [Tags]  core  dns  apps
+    [Tags]  core  dns  infra
     :FOR    ${subdomain}    IN    @{SUBDOMAINS}
     \  Check domain exists  ${subdomain}.${HOST_BASE_DOMAIN}
 
 Checking if all enclave domains have been registered
     [Documentation]  Check that all required enclave DNS A records has been registered
-    [Tags]  core  dns  apps
+    [Tags]  core  dns  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \   Check if all enclave domains are registered      ${enclave}
 
