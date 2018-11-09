@@ -13,7 +13,7 @@ SERVICES_LOGS_PREFIX: cluster_logs
 #   iam.amazonaws.com/role: some-kube2iam-role-if-needed
 
 image:
-  repository: some/kube-fluentd
+  repository: legionplatform/k8s-kube-fluentd
   tag: latest
   pullPolicy: Always
 
