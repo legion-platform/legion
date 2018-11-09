@@ -408,7 +408,8 @@ class TestEDI(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
                         'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment', 'one_model_scaled_to_2'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                        'one_model_scaled_to_2'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 2)
