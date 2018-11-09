@@ -16,9 +16,11 @@
 """
 Robot test library - flower
 """
+import time
 import requests
 from requests.exceptions import RequestException
 from legion_test.robot.dex_client import get_session_cookies
+
 
 class Flower:
     """
@@ -59,7 +61,8 @@ class Flower:
             :type parse_json: bool
             :rtype: dict or str
             """
-        response = requests.get(self.base_url + path, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
+        response = requests.get(self.base_url + path, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(),
+                                **kwargs)
         if response.status_code == 200:
             if parse_json:
                 return response.json()
@@ -91,3 +94,32 @@ class Flower:
                     workers_number += 1
 
         return workers_number
+
+    def wait_for_worker_is_ready(self, expected_count=1, timeout=180, sleep=5):
+        """
+        Wait until expected count of Flower workers started
+
+        :param int or str expected_count: expected num of online Flower workers
+        :param int or str timeout: seconds to wait
+        :param int or str sleep: seconds to sleep before retries
+        :return: None
+        """
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+        expected_count = int(expected_count)
+
+        while True:
+            online_workers_number = 0
+            elapsed = time.time() - start
+            if self.get_number_of_workers_from_flower() >= expected_count:
+                print('Online workers count is {} after {} seconds'
+                      .format(online_workers_number, elapsed))
+                return
+            elif elapsed > timeout > 0:
+                raise Exception('Online workers did not become available after {} seconds wait'.format(elapsed))
+            else:
+                print('Online workers not found after {} seconds.'
+                      .format(elapsed))
+                time.sleep(sleep)

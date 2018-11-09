@@ -196,6 +196,44 @@ class K8s:
         else:
             return 0
 
+    def wait_deployment_replicas_count(self, deployment_name, namespace='default', expected_replicas_num=1,
+                                       timeout=180, sleep=5):
+        """
+        Wait for expected number of replicas for a specified deployment from Kubernetes API
+
+        :param deployment_name: name of a deployment
+        :type deployment_name: str
+        :param namespace: name of a namespace to look in
+        :type namespace: str
+        :param timeout: waiting timeout in seconds. 0 for disable (infinite)
+        :type timeout: str or int
+        :param sleep: sleep between checks in seconds
+        :type sleep: str or int
+        :param expected_replicas_num: expected replicas number
+        :type expected_replicas_num: str
+        :return: None
+        """
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+        expected_replicas_num = int(expected_replicas_num)
+
+        while True:
+            elapsed = time.time() - start
+            current_replicas_num = self.get_deployment_replicas(deployment_name, namespace)
+            if current_replicas_num >= expected_replicas_num:
+                print('Replicas number matches expectations after {} seconds'
+                      .format(elapsed))
+                return
+            elif elapsed > timeout > 0:
+                raise Exception('Replicas number does not matches expectations after {} seconds'
+                                .format(elapsed))
+            else:
+                print('Current Replicas number {}, but not as expected {}. Sleep {} seconds and try again'
+                      .format(current_replicas_num, expected_replicas_num, sleep))
+                time.sleep(sleep)
+
     def set_deployment_replicas(self, replicas, deployment_name, namespace='default'):
         """
         Update number of replicas for a specified deployment from Kubernetes API
