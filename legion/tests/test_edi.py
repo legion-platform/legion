@@ -264,7 +264,6 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[0].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
 
-
     def test_negative_edi_undeploy_by_invalid_model_id(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
@@ -275,14 +274,14 @@ class TestEDI(unittest2.TestCase):
                     self.assertEqual(str(e),
                                      "Got error from server: 'No one model can be found'")
 
-
     def test_edi_scale_up(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
                         'one_model_scaled_to_2'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model_scaled_to_2'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                        'one_model_scaled_to_2'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale('demo-abc-model', 2)
                 self.assertIsInstance(deployments, list)
@@ -297,11 +296,11 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[0].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
 
-
     def test_edi_scale_down(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model_scaled_to_2'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                        'one_model_scaled_to_2'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
                         'one_model_scaled_to_1'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
@@ -319,19 +318,18 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[0].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
 
-
     def test_negative_edi_scale_to_0(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment', 'one_model_scaled_to_2'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                        'one_model_scaled_to_2'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 0)
                 except Exception as e:
                     self.assertEqual(str(e),
                                      "Got error from server: 'Invalid scale parameter: should be greater then 0'")
-
 
     def test_negative_edi_invalid_model_id(self):
         with EDITestServer() as edi:
@@ -346,7 +344,6 @@ class TestEDI(unittest2.TestCase):
                 except Exception as e:
                     self.assertEqual(str(e),
                                      "Got error from server: 'No one model can be found'")
-
 
     def test_edi_inspect_all_models_by_version(self):
         with EDITestServer() as edi:
@@ -377,7 +374,6 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[1].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
 
-
     def test_edi_inspect_all_models_by_id(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
@@ -407,7 +403,6 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[1].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
 
-
     def test_negative_edi_scale_without_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
@@ -420,7 +415,6 @@ class TestEDI(unittest2.TestCase):
                 except Exception as e:
                     self.assertEqual(str(e),
                                      "Got error from server: 'Please specify version of model'")
-
 
     def test_negative_edi_undeploy_without_version(self):
         with EDITestServer() as edi:
@@ -435,7 +429,6 @@ class TestEDI(unittest2.TestCase):
                 except Exception as e:
                     self.assertEqual(str(e),
                                      "Got error from server: 'Please specify version of model'")
-
 
     def test_edi_undeploy_all_models_by_version(self):
         with EDITestServer() as edi:
@@ -469,7 +462,6 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[1].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
 
-
     def test_edi_scale_all_models_by_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
@@ -502,7 +494,6 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(deployments[1].namespace, 'debug-enclave')
                 self.assertEqual(deployments[1].image,
                                  '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
-
 
 # TODO uncomment after https://github.com/legion-platform/legion/pull/553 will be merged
 # def test_edi_scale_all_models_by_id(self):
