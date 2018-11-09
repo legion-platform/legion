@@ -27,7 +27,7 @@ data:
     # must supply a remote location URL (starting with either 's3://...' or
     # 'gs://...') and an Airflow connection id that provides access to the storage
     # location.
-    #logging_config_class = legion_airflow.logging.log_config.DEFAULT_LOGGING_CONFIG 
+    # logging_config_class = log_config.DEFAULT_LOGGING_CONFIG 
     remote_logging = {{ .Values.core.remote_logging }}
     remote_base_log_folder = {{ .Values.core.remote_base_log_folder }}
     remote_log_conn_id = {{ .Values.core.remote_log_conn_id }}
@@ -44,9 +44,9 @@ data:
     # SqlAlchemy supports many different database engine, more information
     # their website
     {{- if .Values.postgres.external}}
-    sql_alchemy_conn = postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{ .Values.secrets.postgres.password }}@{{ .Values.postgres.host }}:{{     .Values.postgres.port }}/{{ .Values.secrets.postgres.db }}
+    sql_alchemy_conn = postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{ .Values.secrets.postgres.password }}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.secrets.postgres.db }}
     {{- else }}
-    sql_alchemy_conn = postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{ .Values.secrets.postgres.password }}@{{ .Release.Name }}-postgres/{{     .Values.secrets.postgres.db }}
+    sql_alchemy_conn = postgresql+psycopg2://{{ .Values.secrets.postgres.user }}:{{ .Values.secrets.postgres.password }}@{{ .Release.Name }}-postgres/{{ .Values.secrets.postgres.db }}
     {{- end }}
     
     # The SqlAlchemy pool size is the maximum number of database connections
@@ -141,7 +141,7 @@ data:
     filter_by_owner = {{ .Values.webserver.filter_by_owner }}
     
     [kubernetes]
-    airflow_configmap ={{ .Release.Name }}-worker-config
+    airflow_configmap ={{ .Release.Name }}-config
     #worker_container_repository = airflow
     #worker_container_tag = latest
     worker_container_image_pull_policy = IfNotPresent

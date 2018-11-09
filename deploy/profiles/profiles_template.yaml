@@ -62,6 +62,7 @@ enclaves: ~ # list of enclaves which will be automatically deployed after Legion
 
 # Airflow specific configuration
 airflow_dags_dir: ~                                        # Name of Aitflow DAGs directory
+airflow_executor: ~         # airflow executor name
 airflow_dags_pvc: ~                                    # Name of Airflow DAGs PVC which will be created in Cluster
 airflow_s3_bucket_name: ~                         # S3 bucket for airflow data
 airflow_s3_logs_path: ~                           # Path at S3 for airflow log
