@@ -16,10 +16,10 @@
 """
 Robot test library - flower
 """
-import time
 import requests
 from requests.exceptions import RequestException
 from legion_test.robot.dex_client import get_session_cookies
+from legion_test.utils import wait_until
 
 
 class Flower:
@@ -95,31 +95,13 @@ class Flower:
 
         return workers_number
 
-    def wait_for_worker_is_ready(self, expected_count=1, timeout=180, sleep=5):
+    def wait_for_worker_is_ready(self, expected_count=1):
         """
         Wait until expected count of Flower workers started
 
         :param int or str expected_count: expected num of online Flower workers
-        :param int or str timeout: seconds to wait
-        :param int or str sleep: seconds to sleep before retries
         :return: None
         """
-        timeout = int(timeout)
-        sleep = int(sleep)
-        start = time.time()
-        time.sleep(sleep)
         expected_count = int(expected_count)
-
-        while True:
-            online_workers_number = 0
-            elapsed = time.time() - start
-            if self.get_number_of_workers_from_flower() >= expected_count:
-                print('Online workers count is {} after {} seconds'
-                      .format(online_workers_number, elapsed))
-                return
-            elif elapsed > timeout > 0:
-                raise Exception('Online workers did not become available after {} seconds wait'.format(elapsed))
-            else:
-                print('Online workers not found after {} seconds.'
-                      .format(elapsed))
-                time.sleep(sleep)
+        wait_until(lambda: self.get_number_of_workers_from_flower() >= expected_count,
+                   iteration_duration=5, iterations=35)
