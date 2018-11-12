@@ -69,7 +69,7 @@
       - airflow
       - jslave
       - model
-
+      
   - name: Remove IAM roles
     iam_role:
       name: "{{ cluster_name }}-{{ enclave_name }}-{{ item }}-role"
@@ -79,3 +79,4 @@
       - airflow
       - jslave
       - model
+
