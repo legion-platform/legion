@@ -1,3 +1,12 @@
+import java.text.SimpleDateFormat
+
+class Globals {
+    static String rootCommit = null
+    static String buildVersion = null
+    static String dockerLabels = null
+    static String dockerCacheArg = null
+}
+
 def legion
 def commit_id = null
 def dockerCacheArg
@@ -9,33 +18,56 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5'))
         disableConcurrentBuilds()
     }
-    parameters {
-        booleanParam(defaultValue: false, description: 'Enable slack notifications', name: 'EnableSlackNotifications')
-        booleanParam(defaultValue: false, description: '', name: 'EnableDockerCache')
-    }
     environment {
         build_workspace = "${WORKSPACE}"
         def dex_dockerimage = "k8s-dex"
         shared_lib_path = "deploy/legionPipeline.groovy"
-        docker_registry = "legionplatform"
-        dex_repository = "https://github.com/legion-platform/dex.git"
-        dex_branch_name = "feat/legion"
-        legion_repository = "https://github.com/legion-platform/legion.git"
-        legion_branch_name = "develop"
+        docker_registry = "legionplatformtest"
     }
     stages {
         stage('Checkout and set build vars') {
             steps {
                 dir ("${build_workspace}/dex") {
-                    checkout([$class: 'GitSCM', branches: [[name: "${dex_branch_name}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: "${dex_repository}"]]])
+                    checkout([$class: 'GitSCM', branches: [[name: "${params.GitBranchDex}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: "${params.GitRepoDex}"]]])
                     script {
+                        Globals.rootCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD')
+                        Globals.rootCommit = Globals.rootCommit.trim()
+                        def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
+                        def date = new Date()
+                        def buildDate = dateFormat.format(date)
                         dockerCacheArg = (params.EnableDockerCache) ? '' : '--no-cache'
-                        commit_id = sh(returnStdout: true, script: 'git rev-parse --short HEAD')
-                        sh "echo ${commit_id}"
+                        Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
+                        println(Globals.dockerLabels)
+                        print("Check code for security issues")
+                        sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+                        /// Define build version
+                        if (params.StableRelease) {
+                            if (params.ReleaseVersion){
+                                Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${params.ReleaseVersion} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                            } else {
+                                print('Error: ReleaseVersion parameter must be specified for stable release')
+                                exit 1
+                            }
+                        } else {
+                            Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                        }
+
+                        Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
+                        
+                        env.BuildVersion = Globals.buildVersion
+                        
+                        currentBuild.description = "${Globals.buildVersion} ${params.GitBranch}"
+                        print("Build version " + Globals.buildVersion)
+                        print('Building shared artifact')
+                        envFile = 'file.env'
+                        sh """
+                        rm -f $envFile
+                        touch $envFile
+                        echo "LEGION_VERSION=${Globals.buildVersion}" >> $envFile
+                        """
+                        archiveArtifacts envFile
+                        sh "rm -f $envFile"
                     }
-                }
-                dir ("${build_workspace}/legion") {
-                    checkout([$class: 'GitSCM', branches: [[name: "${legion_branch_name}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: "${legion_repository}"]]])
                 }
             }
         }
@@ -52,8 +84,8 @@ pipeline {
             steps {
                 sh """
                 docker tag ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER} ${docker_registry}/${dex_dockerimage}:latest
-                docker tag ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER} ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER}-${commit_id}
-                docker push ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER}-${commit_id}
+                docker tag ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER} ${docker_registry}/${dex_dockerimage}:${Globals.buildVersion}
+                docker push ${docker_registry}/${dex_dockerimage}:${Globals.buildVersion}
                 docker push ${docker_registry}/${dex_dockerimage}:latest
                 """
             }
