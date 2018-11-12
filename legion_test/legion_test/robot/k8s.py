@@ -27,6 +27,7 @@ import urllib3
 import legion.k8s.utils
 import legion.k8s.properties
 import legion.utils
+from legion_test.utils import wait_until
 
 
 class K8s:
@@ -196,6 +197,22 @@ class K8s:
         else:
             return 0
 
+    def wait_deployment_replicas_count(self, deployment_name, namespace='default', expected_replicas_num=1):
+        """
+        Wait for expected number of replicas for a specified deployment from Kubernetes API
+
+        :param deployment_name: name of a deployment
+        :type deployment_name: str
+        :param namespace: name of a namespace to look in
+        :type namespace: str
+        :param expected_replicas_num: expected replicas number
+        :type expected_replicas_num: str
+        :return: None
+        """
+        expected_replicas_num = int(expected_replicas_num)
+        wait_until(lambda: self.get_deployment_replicas(deployment_name, namespace) >= expected_replicas_num,
+                   iteration_duration=5, iterations=35)
+
     def set_deployment_replicas(self, replicas, deployment_name, namespace='default'):
         """
         Update number of replicas for a specified deployment from Kubernetes API
@@ -251,10 +268,6 @@ class K8s:
 
         :param expected_count: expected node count
         :type expected_count: int
-        :param timeout: waiting timeout in seconds. 0 for disable (infinite)
-        :type timeout: str or int
-        :param sleep: sleep between checks in seconds
-        :type sleep: str or int
         :raises: Exception
         :return: None
         """
