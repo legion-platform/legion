@@ -14,18 +14,18 @@
 #    limitations under the License.
 #
 """
-Legion Templating System
+Legion Templating System unit tests
 """
 import logging
 import unittest2
 import os
 import shutil
 from threading import Thread
-import time
 
 import asyncio
 
 from legion.template import LegionTemplateEngine
+import legion.utils
 
 TEST_FILES_LOCATION = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -48,19 +48,34 @@ class TestLegionTemplateEngine(unittest2.TestCase):
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
 
-    def assertStringEqualToTemplateFile(self, expected_string, template_file, msg=None):
-        template_file_path = os.path.join(TEST_FILES_LOCATION, template_file)
-        with open(template_file_path, 'r') as file_stream:
-            content = file_stream.read().strip('\n\r ')
-            expected_string = expected_string.strip('\n\r ')
-            self.assertEqual(content, expected_string, msg)
+    def assertStringEqualToTemplateFileWithIterations(self, actual_string_getter, expected_file, msg=None):
+        expected_file_path = os.path.join(TEST_FILES_LOCATION, expected_file)
+        with open(expected_file_path, 'r') as expected_file_stream:
+            expected_data = expected_file_stream.read().strip('\n\r ')
+            actual_string_stripped = None
 
+        def check_function():
+            nonlocal actual_string_getter, actual_string_stripped, expected_file, expected_data
+            actual_string = actual_string_getter()
+            actual_string_stripped = actual_string.strip('\n\r ')
+
+            print('Expected (from {}):\n{}\nActual:\n{}\n'.format(expected_file, expected_data, actual_string_stripped))
+            return actual_string_stripped == expected_data
+
+        legion.utils.ensure_function_succeed(check_function, 5, 2, boolean_check=True)
+        self.assertEqual(actual_string_stripped, expected_data, msg)
+
+    @unittest2.skip
     def test_empty_template(self):
         """
         Test exception generation for empty template file
         """
         with TemplateRenderThread('yaml_file_empty.t', 'yaml_file_empty.tmp.out') as renderer:
-            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
+            def check_render_got_exception():
+                return renderer.raised_exception
+
+            self.assertTrue(legion.utils.ensure_function_succeed(check_render_got_exception, 5, 3))
+
             self.assertIsNotNone(renderer.raised_exception)
             self.assertIsInstance(renderer.raised_exception, Exception)
             self.assertEqual(renderer.raised_exception.args[0], 'Template doesnt use any plugin')
@@ -73,14 +88,14 @@ class TestLegionTemplateEngine(unittest2.TestCase):
         _setup_template_value('yaml_file_test_values.tmp.yml', 'yaml_file_test_values_1.yml')
 
         with TemplateRenderThread('yaml_file_test.t', 'yaml_file_test.tmp.out') as renderer:
-            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-            self.assertStringEqualToTemplateFile(renderer.output_data, 'yaml_file_test_values_expected_1.out')
+            self.assertStringEqualToTemplateFileWithIterations(renderer.output_data_getter,
+                                                               'yaml_file_test_values_expected_1.out')
 
             # Set updated data
             print('Updating file..')
             _setup_template_value('yaml_file_test_values.tmp.yml', 'yaml_file_test_values_2.yml')
-            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-            self.assertStringEqualToTemplateFile(renderer.output_data, 'yaml_file_test_values_expected_2.out')
+            self.assertStringEqualToTemplateFileWithIterations(renderer.output_data_getter,
+                                                               'yaml_file_test_values_expected_2.out')
 
     def test_duo_yaml_files_watch(self):
         """
@@ -91,20 +106,20 @@ class TestLegionTemplateEngine(unittest2.TestCase):
         _setup_template_value('yaml_file_test_values_second.tmp.yml', 'yaml_file_test_values_2.yml')
 
         with TemplateRenderThread('yaml_file_test_duo.t', 'yaml_file_test_duo.tmp.out') as renderer:
-            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-            self.assertStringEqualToTemplateFile(renderer.output_data, 'yaml_file_test_duo_expected_1.out')
+            self.assertStringEqualToTemplateFileWithIterations(renderer.output_data_getter,
+                                                               'yaml_file_test_duo_expected_1.out')
 
             # Set updated data
             print('Updating first file..')
             _setup_template_value('yaml_file_test_values_first.tmp.yml', 'yaml_file_test_values_2.yml')
-            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-            self.assertStringEqualToTemplateFile(renderer.output_data, 'yaml_file_test_duo_expected_2.out')
+            self.assertStringEqualToTemplateFileWithIterations(renderer.output_data_getter,
+                                                               'yaml_file_test_duo_expected_2.out')
 
             # Set updated data
             print('Updating second file..')
             _setup_template_value('yaml_file_test_values_second.tmp.yml', 'yaml_file_test_values_1.yml')
-            time.sleep(self.SLEEP_INTERVAL_IN_SEC)
-            self.assertStringEqualToTemplateFile(renderer.output_data, 'yaml_file_test_duo_expected_3.out')
+            self.assertStringEqualToTemplateFileWithIterations(renderer.output_data_getter,
+                                                               'yaml_file_test_duo_expected_3.out')
 
 
 class TemplateRenderThread(Thread):
@@ -139,6 +154,7 @@ class TemplateRenderThread(Thread):
             asyncio.set_event_loop(self.event_loop)
             template_system = LegionTemplateEngine(self.template_path, self.output_path)
             template_system.render_loop()
+
         except Exception as exception:
             self.raised_exception = exception
             raise self.raised_exception
@@ -149,7 +165,15 @@ class TemplateRenderThread(Thread):
 
         :return: None
         """
+        if os.path.exists(self.output_path):
+            os.unlink(self.output_path)
+
         self.start()
+
+        if not legion.utils.ensure_function_succeed(lambda: os.path.exists(self.output_path),
+                                                    5, 2, boolean_check=True):
+            raise Exception('File {} is not existed'.format(self.output_path))
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -166,10 +190,19 @@ class TemplateRenderThread(Thread):
         """
         Get data stored if target file
 
-        :return: None
+        :return: str
         """
         with open(self.output_path, 'r') as file:
             return file.read()
+
+    @property
+    def output_data_getter(self):
+        """
+        Build output data getter
+
+        :return: Callable[[], str]
+        """
+        return lambda: self.output_data
 
 
 if __name__ == '__main__':
