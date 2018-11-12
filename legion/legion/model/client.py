@@ -226,6 +226,9 @@ class ModelClient:
 
             request_lines.append(legion.http.encode_http_params(data))
 
+        if not request_lines:
+            return []
+
         content = '\n'.join(request_lines)
         url = self.build_batch_url(endpoint)
         response = self._http_client.post(url,
