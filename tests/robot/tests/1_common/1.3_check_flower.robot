@@ -22,16 +22,16 @@ Check if flower scale up works properly
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
        ${workers_number} =             Get number of workers from Flower
-       ${expected} =                   Evaluate    ${workers_number} + 1
+       Log                             Current workers number is ${workers_number}
        ${active_workers_exists}=       Wait for worker is ready    expected_count=1
        ${workers_number} =             Get number of workers from Flower
        ${replicas_number} =            Get deployment replicas     airflow-${enclave}-worker  ${enclave}
        Should be equal as integers     ${workers_number}           ${replicas_number}      Workers number doesn't equal to     Replicas number
        ${new_replicas_number} =        Sum up                ${replicas_number}     ${1}
        Set deployment replicas         ${new_replicas_number}      airflow-${enclave}-worker  ${enclave}
-       ${replicas}=                    Wait deployment replicas count    airflow-${enclave}-worker  namespace=${enclave}   expected_replicas_num=${expected}
+       ${replicas}=                    Wait deployment replicas count    airflow-${enclave}-worker  namespace=${enclave}   expected_replicas_num=${new_replicas_number}
        ${replicas_number} =            Get deployment replicas     airflow-${enclave}-worker  ${enclave}
-       ${active_workers_exists}=       Wait for worker is ready    expected_count=${expected}
+       ${active_workers_exists}=       Wait for worker is ready    expected_count=${new_replicas_number}
        ${workers_number} =             Get number of workers from Flower
        Should be equal as integers     ${new_replicas_number}      ${replicas_number}      Actual Replicas values doens't equal    to set Replicas number
        Should be equal as integers     ${new_replicas_number}      ${workers_number}       Workers number hasn't been increased    to new Replicas number
