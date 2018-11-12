@@ -8,8 +8,6 @@ class Globals {
 }
 
 def legion
-def commit_id = null
-def dockerCacheArg
 
 pipeline {
     agent any
@@ -22,7 +20,6 @@ pipeline {
         build_workspace = "${WORKSPACE}"
         def dex_dockerimage = "k8s-dex"
         shared_lib_path = "deploy/legionPipeline.groovy"
-        docker_registry = "legionplatformtest"
     }
     stages {
         stage('Checkout and set build vars') {
@@ -32,6 +29,10 @@ pipeline {
                     script {
                         Globals.rootCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD')
                         Globals.rootCommit = Globals.rootCommit.trim()
+                    }
+                }
+                dir ("${build_workspace}/legion") {
+                    script {
                         def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
                         def date = new Date()
                         def buildDate = dateFormat.format(date)
@@ -75,7 +76,7 @@ pipeline {
             steps {
                 dir ("${build_workspace}/dex") {
                     sh '''
-                    docker build  ${dockerCacheArg} -t ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER} -f Dockerfile .
+                    docker build  ${dockerCacheArg} -t ${params.DockerRegistry}/${dex_dockerimage}:${BUILD_NUMBER} -f Dockerfile .
                     '''
                 }
             }
@@ -83,10 +84,10 @@ pipeline {
         stage('Push docker image Dex') {
             steps {
                 sh """
-                docker tag ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER} ${docker_registry}/${dex_dockerimage}:latest
-                docker tag ${docker_registry}/${dex_dockerimage}:${BUILD_NUMBER} ${docker_registry}/${dex_dockerimage}:${Globals.buildVersion}
-                docker push ${docker_registry}/${dex_dockerimage}:${Globals.buildVersion}
-                docker push ${docker_registry}/${dex_dockerimage}:latest
+                docker tag ${params.DockerRegistry}/${dex_dockerimage}:${BUILD_NUMBER} ${params.DockerRegistry}/${dex_dockerimage}:latest
+                docker tag ${params.DockerRegistry}/${dex_dockerimage}:${BUILD_NUMBER} ${params.DockerRegistry}/${dex_dockerimage}:${Globals.buildVersion}
+                docker push ${params.DockerRegistry}/${dex_dockerimage}:${Globals.buildVersion}
+                docker push ${params.DockerRegistry}/${dex_dockerimage}:latest
                 """
             }
         }
