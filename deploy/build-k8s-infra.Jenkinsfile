@@ -80,8 +80,6 @@ pipeline {
                     steps {
                         dir ("${build_workspace}/kube-fluentd") {
                             sh """
-                            pwd
-                            ls -alh
                             docker build ${Globals.dockerCacheArg} -t legion/${kube_fluentd_dockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
@@ -91,8 +89,6 @@ pipeline {
                     steps {
                         dir ("${build_workspace}/kube-elb-security") {
                             sh """
-                            pwd
-                            ls -alh
                             docker build ${Globals.dockerCacheArg} -t legion/${kube_elb_security_dockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
