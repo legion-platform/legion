@@ -6,7 +6,7 @@ COPY ./ /go/src/github.com/legion-platform/kube-elb-security
 
 RUN go get -v github.com/legion-platform/kube-elb-security
 
-FROM alpine:latest
+FROM alpine:3.8
 
 COPY --from=builder /go/bin/kube-elb-security /kube-elb-security
 

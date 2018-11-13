@@ -11,7 +11,7 @@ RUN cd /go/src/github.com/bitly/oauth2_proxy \
 && git pull -r JoelSpeed kubernetes \
 && go install
 
-FROM alpine:latest
+FROM alpine:3.8
 
 COPY --from=builder /go/bin/oauth2_proxy /oauth2_proxy
 
