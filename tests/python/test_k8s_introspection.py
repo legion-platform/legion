@@ -59,6 +59,15 @@ class TestK8SIntrospection(unittest2.TestCase):
         self.assertIn(VARIABLES['MODEL_TEST_ENCLAVE'], enclaves_map, 'cannot find test enclave')
         return enclaves_map[VARIABLES['MODEL_TEST_ENCLAVE']]
 
+    @attr('default')
+    def test_for_report_creation(self):
+        """
+        Always run test for successful report generation
+
+        :return: None
+        """
+        pass
+
     @attr('k8s', 'inspection', 'apps')
     def test_building_connection(self):
         """
