@@ -142,7 +142,7 @@ def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
         withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def tags_list=tags.toString().trim().split(',')
-            def robot_tags= []
+            def robot_tags= [" -i default"]
             def nose_tags = [" -a default"]
             for (item in tags_list) {
                 if (item.startsWith('-')) {
