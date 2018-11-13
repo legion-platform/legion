@@ -71,31 +71,6 @@ pipeline {
                     """
                     archiveArtifacts envFile
                     sh "rm -f $envFile"
-
-                    /// Set Git Tag in case of stable release
-                    if (params.StableRelease) {
-                        stage('Set GIT release Tag'){
-                            if (params.PushGitTag){
-                                print('Set Release tag')
-                                sh """
-                                if [ `git tag |grep -w ${params.ReleaseVersion}` ]; then
-                                    if [ ${params.ForceTagPush} = "true" ]; then
-                                        echo 'Removing existing git tag'
-                                        git tag -d ${params.ReleaseVersion}
-                                        git push origin :refs/tags/${params.ReleaseVersion}
-                                    else
-                                        echo 'Specified tag already exists!'
-                                        exit 1
-                                    fi
-                                fi
-                                git tag ${params.ReleaseVersion}
-                                git push origin ${params.ReleaseVersion}
-                                """
-                            } else {
-                                print("Skipping release git tag push")
-                            }
-                        }
-                    }
                 }
             }
         }
