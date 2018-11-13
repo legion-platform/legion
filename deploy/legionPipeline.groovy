@@ -196,9 +196,6 @@ def runRobotTests(tags="") {
             echo "Starting python tests"
             cd ../python
 
-            echo "Creating nose test report file template"
-            touch nosetests.xml
-
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
 
             export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
