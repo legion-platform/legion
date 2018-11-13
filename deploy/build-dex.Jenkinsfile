@@ -76,7 +76,7 @@ pipeline {
             steps {
                 dir ("${build_workspace}/dex") {
                     sh '''
-                    docker build  ${dockerCacheArg} -t ${params.DockerRegistry}/${dex_dockerimage}:${BUILD_NUMBER} -f Dockerfile .
+                    docker build  ${Globals.dockerCacheArg} -t ${params.DockerRegistry}/${dex_dockerimage}:${BUILD_NUMBER} -f Dockerfile .
                     '''
                 }
             }
