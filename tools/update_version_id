@@ -120,9 +120,12 @@ def work(args):
 
     date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-    git_revision = get_git_revision(args.version_file, not args.use_full_commit_id)
-    if not git_revision:
-        git_revision = '0000'
+    if not args.git_revision:
+        git_revision = get_git_revision(args.version_file, not args.use_full_commit_id)
+        if not git_revision:
+            git_revision = '0000'
+    else:
+        git_revision = args.git_revision
 
     build_id = args.build_id
     build_user = args.build_user
@@ -145,6 +148,8 @@ if __name__ == '__main__':
     parser.add_argument('build_user', type=str, help='Set build user')
     parser.add_argument('--build-version', type=str, help='Explicitly specify new Legion build version')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')
+    parser.add_argument('--git-revision', type=str, help='Set git revision')
+
 
     args = parser.parse_args()
 
@@ -157,3 +162,4 @@ if __name__ == '__main__':
         print('Exception')
         print(exception)
         exit(3)
+
