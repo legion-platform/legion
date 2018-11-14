@@ -15,15 +15,30 @@
         from_port: 5432
         to_port: 5432
         group_id: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
-      - proto: tcp
-        from_port: 5432
-        to_port: 5432
-        group_id: "{{ jenkins_cc_sg }}"
     rules_egress:
       - proto: tcp
         from_port: 0
         to_port: 65535
         cidr_ip: "{{ private_network }}.0.0/16"
+
+- name: Append Airflow RDS Security Group 
+  ec2_group:
+    name: "{{env_name}}-airflow-rds-sg"
+    description: "Airflow RDS SG"
+    vpc_id: "{{ cluster_vpc_id }}"
+    region: "{{ aws_region }}"
+    purge_rules: false
+    purge_rules_egress: false
+    tags:
+      "user:tag": "{{ vendor }}"
+      env_name: "{{ env_name }}"
+      KubernetesCluster: "{{ cluster_name }}"
+    rules:
+      - proto: tcp
+        from_port: 5432
+        to_port: 5432
+        cidr_ip: "{{ item }}"
+  with_items: "{{ allowed_wan_ips }}"
 
 - name: Get Airflow RDS SG
   ec2_group_facts:
