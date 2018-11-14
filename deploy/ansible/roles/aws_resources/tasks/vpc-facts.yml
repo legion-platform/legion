@@ -31,3 +31,14 @@
 - name: Debug cluster_vpc_id
   debug:
     msg: "{{ cluster_vpc_id }}"
+
+- name: Create VPC-Peer
+  ec2_vpc_peer:
+    region: "{{ aws_region }}"
+    vpc_id: "{{ cluster_vpc_id }}"
+    peer_vpc_id: "{{ vpc_id }}"
+    state: present
+    tags:
+      Name: "{{ item.zone_name }}.{{ cluster_name }}"
+      KubernetesCluster: "{{ cluster_name }}"
+  register: vpc_peer
