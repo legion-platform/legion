@@ -56,7 +56,7 @@ pipeline {
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
                     /// Define build version
-                    if ("${stable_release}") {
+                    if "${stable_release}" {
                         if ("${release_version}"){
                             Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                         } else {
