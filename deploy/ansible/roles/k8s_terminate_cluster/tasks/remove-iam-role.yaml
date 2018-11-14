@@ -10,8 +10,10 @@
     policy_name: "{{ item }}"
     state: absent
   loop: "{{ role_policies.stdout_lines }}"
+  when: iam_role not in default_cluster_roles
 
 - name: Remove iam role
   iam_role:
     name: "{{ iam_role }}"
     state: absent
+  when: iam_role not in default_cluster_roles

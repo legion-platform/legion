@@ -1,0 +1,4 @@
+default_cluster_roles: 
+  - bastion.{{ cluster_name }}
+  - masters.{{ cluster_name }}
+  - nodes.{{ cluster_name }}
