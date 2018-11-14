@@ -1,6 +1,6 @@
 ---
 
-- include: aws-resources.yaml
 - include: kube2iam.yaml
+- include: aws-resources.yaml
 - include: jenkins-volume.yml
 - include: kops-cluster.yaml
