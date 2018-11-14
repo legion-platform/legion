@@ -1,0 +1,74 @@
+- name: Create VPC Peer
+  ec2_vpc_peer:
+    region: "{{ aws_region }}"
+    vpc_id: "{{ cluster_vpc_id }}"
+    peer_vpc_id: "{{ vpc_id }}"
+    state: present
+    tags:
+      Name: "{{ cluster_name }}"
+      KubernetesCluster: "{{ cluster_name }}"
+  register: vpc_peer
+
+- name: Accept local VPC peering request
+  ec2_vpc_peer:
+    region: "{{ aws_region }}"
+    peering_id: "{{ vpc_peer.peering_id }}"
+    state: accept
+  register: action_peer
+
+- name: Get CC VPC facts
+  ec2_vpc_subnet_facts:
+    filters:
+      vpc-id: "{{ vpc_id }}"
+      "tag:Name": "legion-mgmt"
+  register: cc_subnet_facts
+
+- name: Get CC VPC cidr
+  set_fact:
+    cc_cidr: "{{ cc_subnet_facts.subnets.0.cidr_block }}"
+  tags: test
+
+- name: Debug CC cidr
+  debug:
+    msg: "{{ cc_cidr }}"
+
+- name: Update CC route table with workers subnets
+  ec2_vpc_route_table:
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ aws_region }}"
+    purge_routes: false
+    purge_subnets: false
+    tags:
+      Name: legion
+    routes:
+      - dest: "{{ item }}"
+        vpc_peering_connection_id: "{{ vpc_peer.peering_id }}"
+  with_items: "{{ subnet_facts.results|map(attribute='subnets.0.cidr_block')|list }}"
+
+- name: Update CC route table with utility subnets
+  ec2_vpc_route_table:
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ aws_region }}"
+    purge_routes: false
+    purge_subnets: false
+    tags:
+      Name: legion
+    routes:
+      - dest: "{{ item }}"
+        vpc_peering_connection_id: "{{ vpc_peer.peering_id }}"
+  with_items: "{{ utility_subnet_facts.results|map(attribute='subnets.0.cidr_block')|list }}"
+
+- name: Update Cluster route tables
+  ec2_vpc_route_table:
+    vpc_id: "{{ cluster_vpc_id }}"
+    region: "{{ aws_region }}"
+    purge_routes: false
+    purge_subnets: false
+    lookup: id
+    route_table_id: "{{ item }}"
+    routes:
+      - dest: "{{ cc_cidr }}"
+        vpc_peering_connection_id: "{{ vpc_peer.peering_id }}"
+  with_items: "{{ cluster_route_tables.route_tables |map(attribute='id')|list }}"
+
+

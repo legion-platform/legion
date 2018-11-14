@@ -2,5 +2,6 @@
 
 - include: jenkins-volume.yml
 - include: vpc-facts.yml
+- include: vpc-peer.yml
 - include: airflow-efs.yml
 - include: airflow-rds.yml

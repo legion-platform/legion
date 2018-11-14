@@ -9,6 +9,15 @@
   with_items: "{{ cluster_zones }}"
   register: subnet_facts
 
+- name: Get VPC Cluster utility subnets
+  ec2_vpc_subnet_facts:
+    region: "{{ aws_region }}"
+    filters: 
+      "tag:Name": "utility-{{ item.zone_name }}.{{ cluster_name }}"
+      "tag:KubernetesCluster": "{{ cluster_name }}"
+  with_items: "{{ cluster_zones }}"
+  register: utility_subnet_facts
+
 - name: Cluster subnets
   debug: 
     msg: "{{ subnet_facts.results|map(attribute='subnets.0.id')|list }}"
@@ -32,19 +41,9 @@
   debug:
     msg: "{{ cluster_vpc_id }}"
 
-- name: Create VPC-Peer
-  ec2_vpc_peer:
+- name: Get Cluster Route Tables
+  ec2_vpc_route_table_facts:
     region: "{{ aws_region }}"
-    vpc_id: "{{ cluster_vpc_id }}"
-    peer_vpc_id: "{{ vpc_id }}"
-    state: present
-    tags:
-      KubernetesCluster: "{{ cluster_name }}"
-  register: vpc_peer
-
-- name: Accept local VPC peering request
-  ec2_vpc_peer:
-    region: "{{ aws_region }}"
-    peering_id: "{{ vpc_peer.peering_id }}"
-    state: accept
-  register: action_peer
+    filters:
+      vpc-id: "{{ cluster_vpc_id }}"
+  register: cluster_route_tables
