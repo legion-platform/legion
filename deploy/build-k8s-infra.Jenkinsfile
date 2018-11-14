@@ -66,7 +66,7 @@ pipeline {
                     } else {
                         Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                     }
-                    Globals.legionRelease = sh returnStdout: true, script: "echo ${Globals.buildVersion} | cut -d '-' -f1"
+                    Globals.legionRelease = sh(returnStdout: true, script: "echo ${Globals.buildVersion} | cut -d '-' -f1")
                     Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
                     env.BuildVersion = Globals.buildVersion
