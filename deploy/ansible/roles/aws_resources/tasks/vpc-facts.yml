@@ -41,3 +41,10 @@
     tags:
       KubernetesCluster: "{{ cluster_name }}"
   register: vpc_peer
+
+- name: Accept local VPC peering request
+  ec2_vpc_peer:
+    region: "{{ aws_region }}"
+    peering_id: "{{ vpc_peer.peering_id }}"
+    state: accept
+  register: action_peer
