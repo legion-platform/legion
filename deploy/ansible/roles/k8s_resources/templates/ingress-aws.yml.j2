@@ -11,14 +11,13 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
     # Increase the ELB idle timeout to avoid issues with WebSockets or Server-Sent Events.
     service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '3600'
-    service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "{{ external_access_sgs|join(',') }}"
+    #service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "{{ external_access_sgs|join(',') }}"
 
 spec:
   type: LoadBalancer
   selector:
     app: ingress-nginx
-  loadBalancerSourceRanges: 
-  - 127.0.0.1/32
+  loadBalancerSourceRanges: "{{ allowed_wan_ips | to_json }}"
   ports:
   - name: http
     port: 80
