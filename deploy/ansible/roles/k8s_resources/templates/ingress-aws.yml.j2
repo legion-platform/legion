@@ -17,7 +17,7 @@ spec:
   type: LoadBalancer
   selector:
     app: ingress-nginx
-  loadBalancerSourceRanges: "{{ allowed_wan_ips | to_json }}"
+  loadBalancerSourceRanges: {{ allowed_wan_ips | to_json }}
   ports:
   - name: http
     port: 80
