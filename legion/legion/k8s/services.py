@@ -371,12 +371,32 @@ class ModelService(Service):
         core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name, body=body,
                                              namespace=self.namespace)
 
+        service_deleted = ensure_function_succeed(
+            lambda: self.k8s_service.metadata.name not in [
+                item.metadata.name
+                for item in core_v1api.list_namespaced_service(self.namespace).items],
+            10, 1, boolean_check=True
+        )
+
+        if not service_deleted:
+            raise Exception('Cannot delete service')
+
         LOGGER.info('Deleting deployment {} in namespace {} with grace period {}s'
                     .format(self.deployment.metadata.name, self.namespace, grace_period_seconds))
         api_instance.delete_namespaced_deployment(name=self.deployment.metadata.name,
                                                   namespace=self.namespace, body=body,
                                                   grace_period_seconds=grace_period_seconds,
                                                   propagation_policy='Background')
+
+        deployment_deleted = ensure_function_succeed(
+            lambda: self.deployment.metadata.name not in [
+                item.metadata.name
+                for item in api_instance.list_namespaced_deployment(self.namespace).items],
+            10, 1, boolean_check=True
+        )
+
+        if not deployment_deleted:
+            raise Exception('Cannot delete deployment')
 
     @property
     def desired_scale(self):
