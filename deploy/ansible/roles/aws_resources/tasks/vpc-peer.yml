@@ -18,6 +18,7 @@
 
 - name: Get CC VPC facts
   ec2_vpc_subnet_facts:
+    region: "{{ aws_region }}"
     filters:
       vpc-id: "{{ vpc_id }}"
       "tag:Name": "legion-mgmt"
@@ -26,7 +27,6 @@
 - name: Get CC VPC cidr
   set_fact:
     cc_cidr: "{{ cc_subnet_facts.subnets.0.cidr_block }}"
-  tags: test
 
 - name: Debug CC cidr
   debug:
