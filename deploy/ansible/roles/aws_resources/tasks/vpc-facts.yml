@@ -39,6 +39,5 @@
     peer_vpc_id: "{{ vpc_id }}"
     state: present
     tags:
-      Name: "{{ item.zone_name }}.{{ cluster_name }}"
       KubernetesCluster: "{{ cluster_name }}"
   register: vpc_peer
