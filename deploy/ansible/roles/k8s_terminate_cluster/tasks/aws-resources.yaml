@@ -52,3 +52,25 @@
     region: "{{ aws_region }}"
     name: "{{env_name}}-airflow-efs-sg"
     state: absent
+
+- name: Get cluster VPC peers
+  ec2_vpc_peering_facts:
+    region: "{{ aws_region }}"
+    filters:
+      "tag:Name": "{{ cluster_name }}"
+      "tag:KubernetesCluster": "{{ cluster_name }}"
+      status-code: ['active']
+  register: cluster_vpc_peers
+
+- name: List of VPC peers to be deleted
+  debug:
+    msg: "About to delete VPC peer {{ item }}"
+  with_items: "{{ cluster_vpc_peers.result | map(attribute='vpc_peering_connection_id')|list }}"
+
+- name: Delete VPC Peer
+  ec2_vpc_peer:
+    region: "{{ aws_region }}"
+    peering_id: "{{ item }}"
+    state: absent
+  register: vpc_peer
+  with_items: "{{ cluster_vpc_peers.result | map(attribute='vpc_peering_connection_id')|list }}"
