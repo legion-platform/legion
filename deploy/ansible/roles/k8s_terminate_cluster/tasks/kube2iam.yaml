@@ -1,123 +1,18 @@
 ---
 
-#- name: Remove Jenkins airflow S3 access policy
-#  iam_policy:
-#    iam_type: role
-#    iam_name: "{{ cluster_name }}-jenkins-role"
-#    policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
-#    state: absent
-#
-#- name: Remove Jenkins IAM role
-#  iam_role:
-#    name: "{{ cluster_name }}-jenkins-role"
-#    state: absent
-
-- name: Remove data bucket S3 access policy
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
 - name: Get cluster IAM roles
-  shell: "aws iam list-roles | grep legion-dev | grep RoleName | awk '{print $2}'| tr -d '\"' |tr -d ','"
-  register: enclave_iam_roles
+  shell: "aws iam list-roles | grep {{ cluster_name }} | grep RoleName | awk '{print $2}'| tr -d '\"' |tr -d ','"
+  register: iam_roles
 
-- name: show roles
-  debug: 
-     msg: "role - {{ item }}"
-  with_items: 
-    - "{{ enclave_iam_roles.stdout_lines }}"
+- include_tasks: remove-iam-role.yaml
+  loop: "{{ iam_roles.stdout_lines }}"
+  loop_control:
+    loop_var: iam_role
 
-- name: Remove iam roles
-  iam_role:
-    name: "{{ item }}"
-    state: present
-    managed_policy: []
-  with_items: 
-    - "{{ enclave_iam_roles.stdout_lines }}"
+- name: Remove kube2iam daemonset
+  shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true
+  ignore_errors: true
 
-#- name: Remove jslave role
-#  iam_role:
-#    name: "{{ cluster_name }}-{{ enclave }}-jslave-role"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-#
-#- name: Remove data bucket S3 access policy
-#  iam_policy:
-#    iam_type: role
-#    iam_name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-#    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-#
-#- name: Remove collector role
-#  iam_role:
-#    name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-#
-#- name: Remove data bucket S3 access policy
-#  iam_policy:
-#    iam_type: role
-#    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-#    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-#
-#- name: Remove airflow role
-#  iam_role:
-#    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-#
-#- name: Remove data bucket S3 access policy
-#  iam_policy:
-#    iam_type: role
-#    iam_name: "{{ cluster_name }}-{{ enclave }}-model-role"
-#    policy_name: "{{ cluster_name }}-{{ enclave }}-s3-access-policy"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-#
-#- name: Remove model role
-#  iam_role:
-#    name: "{{ cluster_name }}-{{ enclave }}-model-role"
-#    state: absent
-#  with_items: "{{ enclaves }}"
-#  loop_control:
-#    loop_var: enclave
-
-#- name: Remove kube2iam daemonset
-#  shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true
-#  ignore_errors: true
-#
-#- name: Remove kube2iam service account
-#  shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
-#  ignore_errors: true
-#
-#- name: Remove Kube Fluentd S3 access policy
-#  iam_policy:
-#    iam_type: role
-#    iam_name: "{{ cluster_name }}-fluentd-role"
-#    policy_name: "{{ cluster_name }}-fluentd-s3-access-policy"
-#    state: absent
-#
-#- name: Remove Kube Fluentd IAM role
-#  iam_role:
-#    name: "{{ cluster_name }}-fluentd-role"
-#    state: absent
+- name: Remove kube2iam service account
+  shell: kubectl --context {{ cluster_name }} delete sa -n kube-system kube2iam --ignore-not-found=true
+  ignore_errors: true
