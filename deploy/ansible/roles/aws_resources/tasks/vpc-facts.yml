@@ -23,3 +23,11 @@
 - name: Workers security groups
   debug:
     msg: "{{ workers_sg_facts.security_groups|map(attribute='group_id')|list }}"
+
+- name: Get cluster VPC-ID
+  set_fact:
+    cluster_vpc_id: "{{ subnet_facts.results.0.subnets.0.vpc_id }}"
+
+- name: Debug cluster_vpc_id
+  debug:
+    msg: "{{ cluster_vpc_id }}"
