@@ -7,7 +7,6 @@ class Globals {
     static String buildVersion = null
     static String dockerLabels = null
     static String dockerCacheArg = null
-    static String legionRelease = null
 }
 
 pipeline {
@@ -66,8 +65,6 @@ pipeline {
                     } else {
                         Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                     }
-                    def legionReleaseScript = $/eval "echo ${Globals.buildVersion} | cut -d '-' -f1"/$
-                    Globals.legionRelease = sh returnStdout: true, script: "${legionReleaseScript}"
                     Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
 
                     env.BuildVersion = Globals.buildVersion
@@ -133,7 +130,7 @@ pipeline {
                 stage('Upload oauth2-proxy-docker Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage("${oauth2_proxy_docker_dockerimage}", "${Globals.buildVersion}", "${Globals.legionRelease}")
+                            legion.uploadDockerImage("${oauth2_proxy_docker_dockerimage}", "${Globals.buildVersion}")
                         }
 
                     }
@@ -141,14 +138,14 @@ pipeline {
                 stage('Upload kube-fluentd Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage("${kube_fluentd_dockerimage}", "${Globals.buildVersion}", "${Globals.legionRelease}")
+                            legion.uploadDockerImage("${kube_fluentd_dockerimage}", "${Globals.buildVersion}")
                         }
                     }
                 }
                 stage('Upload kube-elb-security Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage("${kube_elb_security_dockerimage}", "${Globals.buildVersion}", "${Globals.legionRelease}")
+                            legion.uploadDockerImage("${kube_elb_security_dockerimage}", "${Globals.buildVersion}")
                         }
                     }
                 }

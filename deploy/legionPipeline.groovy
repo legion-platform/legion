@@ -331,7 +331,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
 }
 
 
-def uploadDockerImage(String imageName, String buildVersion, String legionRelease) {
+def uploadDockerImage(String imageName, String buildVersion) {
     if (params.StableRelease) {
         sh """
         # Push stable image to local registry
@@ -340,9 +340,9 @@ def uploadDockerImage(String imageName, String buildVersion, String legionReleas
         docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
         docker push ${params.DockerRegistry}/${imageName}:latest
         # Push stable image to DockerHub
-        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:${legionRelease}
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:${buildVersion}
         docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
-        docker push ${params.DockerHubRegistry}/${imageName}:${legionRelease}
+        docker push ${params.DockerHubRegistry}/${imageName}:${buildVersion}
         docker push ${params.DockerHubRegistry}/${imageName}:latest
         """
     } else {
