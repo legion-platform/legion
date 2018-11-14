@@ -422,7 +422,7 @@ class Enclave:
         service_ready = legion.utils.ensure_function_succeed(
             lambda: image_meta_information.k8s_name in [
                 item.metadata.name
-                for item in k8s_service.list_namespaced_service(self.namespace).items],
+                for item in core_v1api.list_namespaced_service(self.namespace).items],
             10, 1, boolean_check=True
         )
 
