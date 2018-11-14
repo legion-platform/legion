@@ -9,7 +9,6 @@ spec:
   api:
     loadBalancer:
       type: Public
-      additionalSecurityGroups: {{ external_access_sgs|to_yaml }}
   authorization:
     rbac: {}
   kubeAPIServer:
