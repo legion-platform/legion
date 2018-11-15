@@ -30,14 +30,6 @@ PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'Pipfile.lo
 DATA_DIRECTORY = os.path.join(PACKAGE_LIB_PATH, 'data')
 
 
-def choose_existed_file(*variants):
-    for variant in variants:
-        if os.path.exists(variant):
-            return variant
-
-    raise Exception('File is not existed in any of paths: {}'.format(','.join(variants)))
-
-
 class CollectDataBuildCommand(Command):
     user_options = []
 
@@ -107,9 +99,6 @@ def extract_version(filename):
         else:
             raise RuntimeError("Unable to find version string in %s." % (file_content,))
 
-# Calculate actual location of requirements file
-ACTUAL_PIP_FILE_LOCK_PATH = choose_existed_file(PIP_FILE_LOCK_PATH,
-                                                os.path.join(DATA_DIRECTORY, 'Pipfile.lock'))
 
 setup(name='legion',
       version=extract_version(os.path.join(PACKAGE_ROOT_PATH, 'legion', 'version.py')),
