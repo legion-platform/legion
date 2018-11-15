@@ -144,7 +144,7 @@ def runRobotTests(tags="") {
             def tags_list = tags.toString().trim().split(',')
             def robot_tags = []
             def nose_tags = []
-            if (tags_list) {
+            if (tags) {
                 nose_tags.add(" -a default")
                 robot_tags.add(" -i default")
             }
