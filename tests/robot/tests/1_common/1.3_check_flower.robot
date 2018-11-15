@@ -19,22 +19,19 @@ Check if flower available
 Check if flower scale up works properly
     [Documentation]  Scale up Flower deployment and check if number of celery workers increases
     [Tags]  airflow  flower  scale  apps
-    [Setup]  Run keywords
-    ...   :FOR    ${enclave}    IN    @{ENCLAVES}
-    ...   \  Set deployment replicas   ${1}  airflow-${enclave}-worker  ${enclave}
-    ...      Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${1}
+    [Setup]  Set replicas num   ${1}
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
-                                     Wait for worker is ready    expected_count=${1}
+       Wait for worker is ready    expected_count=${1}
        ${workers_number} =           Get number of workers from Flower
        ${replicas_number} =          Get deployment replicas     airflow-${enclave}-worker  ${enclave}
        Should be equal as integers   ${workers_number}  ${replicas_number}  Workers number doesn't equal to     Replicas number
        ${new_replicas_number} =      Sum up   ${replicas_number}  ${1}
        Set deployment replicas       ${new_replicas_number}  airflow-${enclave}-worker  ${enclave}
-                                     Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${new_replicas_number}
+       Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${new_replicas_number}
        ${replicas_number} =          Get deployment replicas     airflow-${enclave}-worker  ${enclave}
-                                     Wait for worker is ready    expected_count=${new_replicas_number}
-                                     Should Be True 	      ${active_workers_exists} == True    Dag ${dag} was not ready
+       Wait for worker is ready    expected_count=${new_replicas_number}
+       Should Be True 	             ${active_workers_exists} == True    Dag ${dag} was not ready
        ${workers_number} =           Get number of workers from Flower
        Should be equal as integers   ${new_replicas_number}  ${replicas_number}  Actual Replicas values doens't equal    to set Replicas number
        Should be equal as integers   ${new_replicas_number}  ${workers_number}   Workers number hasn't been increased    to new Replicas number
@@ -42,21 +39,18 @@ Check if flower scale up works properly
 Check if flower scale down works properly
     [Documentation]  Scale down Flower deployment and check if number of celery workers decreases
     [Tags]  airflow  flower  scale  apps
-    [Setup]  Run keywords
-    ...   :FOR    ${enclave}    IN    @{ENCLAVES}
-    ...   \   Set deployment replicas   ${2}  airflow-${enclave}-worker  ${enclave}
-    ...       Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${2}
+    [Setup]  Set replicas num   ${2}
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
-                                     Wait for worker is ready  expected_count=${2}
+       Wait for worker is ready  expected_count=${2}
        ${workers_number} =           Get number of workers from Flower
        ${replicas_number} =          Get deployment replicas   airflow-${enclave}-worker  ${enclave}
        Should be equal as integers   ${workers_number}  ${replicas_number}  Workers number doesn't equal to     Replicas number
        ${new_replicas_number} =      Subtract   ${replicas_number}  ${1}
        Set deployment replicas       ${new_replicas_number}  airflow-${enclave}-worker  ${enclave}
-                                     Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${new_replicas_number}
+       Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${new_replicas_number}
        ${replicas_number} =          Get deployment replicas   airflow-${enclave}-worker  ${enclave}
-                                     Wait for worker is ready   expected_count=${new_replicas_number}
+       Wait for worker is ready   expected_count=${new_replicas_number}
        ${workers_number} =           Get number of workers from Flower
        Should be equal as integers   ${new_replicas_number}  ${workers_number}   Actual Replicas values doens't equal    to set Replicas number
        Should be equal as integers   ${new_replicas_number}  ${replicas_number}  Workers number hasn't been decreased to new Replicas number

@@ -309,3 +309,9 @@ Run airflow task and validate stderr
     \   ${date_time} =      Get Current Date  result_format='%Y-%m-%d %H:%M:%S'
     \   ${status} =         Trigger Airflow task    ${dag}  ${task}  ${date_time}
     \   Should Be Equal     ${status}   ${None}
+
+Set replicas num
+    [Arguments]   ${replicas_num}
+    :FOR  ${enclave}    IN    @{ENCLAVES}
+    \   Set deployment replicas   ${replicas_num}  airflow-${enclave}-worker  ${enclave}
+        Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${replicas_num}
