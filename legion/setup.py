@@ -16,18 +16,60 @@
 import os
 import re
 import json
+import shutil
+
 from setuptools import setup
+from distutils import log as dist_logger
+from distutils.core import Command
+from distutils.command.sdist import sdist
+from wheel.bdist_wheel import bdist_wheel
 
 
 PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'Pipfile.lock')
+PACKAGE_LIB_PATH = os.path.join(PACKAGE_ROOT_PATH, 'legion')
+
+PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'Pipfile.lock')
+DATA_DIRECTORY = os.path.join(PACKAGE_LIB_PATH, 'data')
+
+
+class CollectDataBuildCommand(Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def copy_file(self, src, *target_path):
+        target_path = os.path.join(DATA_DIRECTORY, *target_path)
+        dist_logger.info('copying %s to %s', src, target_path)
+        shutil.copyfile(src, target_path)
+
+    def run(self):
+        dist_logger.info('collecting requirements data to %s', DATA_DIRECTORY)
+        if os.path.exists(DATA_DIRECTORY):
+            dist_logger.info('removing existed directory')
+            shutil.rmtree(DATA_DIRECTORY)
+
+        dist_logger.info('creating directory')
+        os.makedirs(DATA_DIRECTORY)
+
+        dist_logger.info('copying data')
+        self.copy_file(PIP_FILE_LOCK_PATH, 'Pipfile.lock')
+
+        dist_logger.info('collection of requirements has been finished')
+
+
+cmdclass = {}
+cmdclass['collect_data'] = CollectDataBuildCommand
 
 
 def extract_requirements(pip_file_lock_path, section):
     """
     Extracts requirements from a pip formatted requirements file.
 
-    :param pip_file_lock_path: path to Pipfile lock
+    :param pip_file_lock_path: path to Pipfile.lock
     :type pip_file_lock_path: str
     :param section: name of package section in Pipfile.lock
     :type section: str
@@ -69,7 +111,9 @@ setup(name='legion',
       packages=['legion'],
       include_package_data=True,
       scripts=['bin/legionctl', 'bin/edi', 'bin/legion-template'],
+      package_data={'legion': ['legion/data/*']},
       install_requires=extract_requirements(PIP_FILE_LOCK_PATH, 'default'),
       test_suite='nose.collector',
       tests_require=extract_requirements(PIP_FILE_LOCK_PATH, 'develop'),
-      zip_safe=False)
+      zip_safe=False,
+      cmdclass=cmdclass)

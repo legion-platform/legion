@@ -8,5 +8,6 @@ graft legion/serving
 graft legion/static
 graft legion/template_plugins
 graft legion/templates
+graft legion/data
 
 graft requirements
