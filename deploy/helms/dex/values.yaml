@@ -5,7 +5,7 @@
 replicaCount: 2
 
 image:
-  repository: sath89/dex
+  repository: legionplatform/k8s-dex
   tag: latest
   pullPolicy: IfNotPresent
 
