@@ -157,8 +157,6 @@ def runRobotTests(tags="") {
             env.nose_tags = nose_tags.join(" ")
             sh '''
             cd legion
-            ../.venv/bin/pip install -r requirements/base.txt
-            ../.venv/bin/pip install -r requirements/test.txt
             ../.venv/bin/python setup.py develop
             cd ..
 

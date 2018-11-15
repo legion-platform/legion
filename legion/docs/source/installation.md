@@ -36,13 +36,11 @@ sudo apt-get install -y --no-install-recommends \
      g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
      libtiff5-dev libjpeg8-dev zlib1g-dev \
      tcl8.6-dev tk8.6-dev python-tk python3-tk \
-     libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev     
+     libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev
 ```
 * Install python dependencies
 ```bash
 sudo pip3 install wheel
-sudo pip3 install -r legion-root/legion/requirements/base.txt
-sudo pip3 install -r legion-root/legion/requirements/test.txt
 ```
 * Install legion package and create wheel in legion-root/legion folder
 ```bash
