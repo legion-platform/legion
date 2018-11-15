@@ -28,6 +28,7 @@ import socket
 import subprocess
 import sys
 import time
+import json
 import tempfile
 import zipfile
 import inspect
@@ -561,6 +562,39 @@ def parse_value_to_type(value, target_type):
         return string_to_bool(str(value))
     else:
         return target_type(value)
+
+
+def get_list_of_requirements():
+    """
+    Get list of requirements stored in data/Pipfile.lock
+
+    :return: list[(str, str)] -- list of requirements in the "package==version" format
+    """
+    file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'Pipfile.lock')
+    if not os.path.exists(file_path):
+        raise Exception('File with requirements ({}) is not exists', file_path)
+
+    with open(file_path, 'r') as file_stream:
+        file_data = json.load(file_stream)
+
+    file_objects = file_data.get('default', {})
+    return sorted([
+        (key, value['version'][2:])
+        for (key, value) in file_objects.items()
+    ], key=lambda item: item[0])
+
+
+def get_installed_packages():
+    """
+    Get list of installed packages
+
+    :return: list[(str, str)] -- list of installed packages in the "package==version" format
+    """
+    import pkg_resources
+    return sorted([
+        (item.key, item.version)
+        for item in pkg_resources.working_set
+    ], key=lambda item: item[0])
 
 
 def deduce_model_file_name(model_id, model_version):
