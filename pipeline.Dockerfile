@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y software-properties-common \
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
 # Install requirements for legion package
-ADD legion/Pipfile /src/requirements/legion/Pipfile
-ADD legion/Pipfile.lock /src/requirements/legion/Pipfile.lock
+ADD legion/requirements/Pipfile /src/requirements/legion/Pipfile
+ADD legion/requirements/Pipfile.lock /src/requirements/legion/Pipfile.lock
 RUN cd /src/requirements/legion && pipenv install --system --dev
 
 # Install requirements for legion_test package
