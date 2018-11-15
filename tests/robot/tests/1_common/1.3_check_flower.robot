@@ -31,7 +31,6 @@ Check if flower scale up works properly
        Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${new_replicas_number}
        ${replicas_number} =          Get deployment replicas     airflow-${enclave}-worker  ${enclave}
        Wait for worker is ready    expected_count=${new_replicas_number}
-       Should Be True 	             ${active_workers_exists} == True    Dag ${dag} was not ready
        ${workers_number} =           Get number of workers from Flower
        Should be equal as integers   ${new_replicas_number}  ${replicas_number}  Actual Replicas values doens't equal    to set Replicas number
        Should be equal as integers   ${new_replicas_number}  ${workers_number}   Workers number hasn't been increased    to new Replicas number
