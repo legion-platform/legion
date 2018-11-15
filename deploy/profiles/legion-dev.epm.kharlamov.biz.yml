@@ -38,7 +38,7 @@ airflow_rds_size: "50"
 cluster_name: legion-dev.epm.kharlamov.biz
 state_store: s3://legion-cluster
 
-private_network: '172.31'
+private_network: '10.0'
 cluster_zones:
   - zone_name: us-east-2a
     kops_cidr: "{{ private_network }}.100.0/24"
