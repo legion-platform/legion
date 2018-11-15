@@ -21,8 +21,6 @@ import shutil
 from setuptools import setup
 from distutils import log as dist_logger
 from distutils.core import Command
-from distutils.command.sdist import sdist
-from wheel.bdist_wheel import bdist_wheel
 
 
 PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -61,8 +59,9 @@ class CollectDataBuildCommand(Command):
         dist_logger.info('collection of requirements has been finished')
 
 
-cmdclass = {}
-cmdclass['collect_data'] = CollectDataBuildCommand
+cmdclass = dict(
+    collect_data=CollectDataBuildCommand
+)
 
 
 def extract_requirements(pip_file_lock_path, section):
