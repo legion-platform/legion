@@ -13,21 +13,34 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from setuptools import setup
 import os
 import re
+import json
+from setuptools import setup
+
 
 PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'Pipfile.lock')
 
 
-def extract_requirements(filename):
+def extract_requirements(pip_file_lock_path, section):
     """
     Extracts requirements from a pip formatted requirements file.
-    :param filename: str path to file
-    :return: list of package names as strings
+
+    :param pip_file_lock_path: path to Pipfile lock
+    :type pip_file_lock_path: str
+    :param section: name of package section in Pipfile.lock
+    :type section: str
+    :return: list[str] of package names as strings
     """
-    with open(filename, 'r') as requirements_file:
-        return requirements_file.read().splitlines()
+    with open(pip_file_lock_path, 'r') as pip_file_lock_stream:
+        pip_file_lock_data = json.load(pip_file_lock_stream)
+        pip_file_section_data = pip_file_lock_data.get(section, {})
+        return [
+            key + value['version']
+            for (key, value)
+            in pip_file_section_data.items()
+        ]
 
 
 def extract_version(filename):
@@ -56,7 +69,7 @@ setup(name='legion',
       packages=['legion'],
       include_package_data=True,
       scripts=['bin/legionctl', 'bin/edi', 'bin/legion-template'],
-      install_requires=extract_requirements(os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'base.txt')),
+      install_requires=extract_requirements(PIP_FILE_LOCK_PATH, 'default'),
       test_suite='nose.collector',
-      tests_require=extract_requirements(os.path.join(PACKAGE_ROOT_PATH, 'requirements', 'test.txt')),
+      tests_require=extract_requirements(PIP_FILE_LOCK_PATH, 'develop'),
       zip_safe=False)
