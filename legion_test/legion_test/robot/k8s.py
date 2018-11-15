@@ -210,8 +210,11 @@ class K8s:
         :return: None
         """
         expected_replicas_num = int(expected_replicas_num)
-        wait_until(lambda: self.get_deployment_replicas(deployment_name, namespace) >= expected_replicas_num,
-                   iteration_duration=5, iterations=35)
+        result = wait_until(lambda: self.get_deployment_replicas(deployment_name, namespace) == expected_replicas_num,
+                            iteration_duration=5, iterations=35)
+        if not result:
+            raise Exception("Expected ready replicas count '{}' does not match actual '{}'"
+                            .format(expected_replicas_num, self.get_deployment_replicas(deployment_name, namespace)))
 
     def set_deployment_replicas(self, replicas, deployment_name, namespace='default'):
         """
