@@ -7,13 +7,13 @@ RUN apt-get update && apt-get install -y software-properties-common \
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
 # Install requirements for legion package
-ADD legion/requirements/Pipfile /src/legion/Pipfile
-ADD legion/requirements/Pipfile.lock /src/legion/Pipfile.lock
+ADD legion/Pipfile /src/requirements/legion/Pipfile
+ADD legion/Pipfile.lock /src/requirements/legion/Pipfile.lock
 RUN cd /src/requirements/legion && pipenv install --system --dev
 
 # Install requirements for legion_test package
-ADD legion_test/requirements/Pipfile /src/legion_test/requirements/Pipfile
-ADD legion_test/requirements/Pipfile.lock /src/legion_test/Prequirements/ipfile.lock
+ADD legion_test/requirements/Pipfile /src/requirements/legion_test/Pipfile
+ADD legion_test/requirements/Pipfile.lock /src/requirements/legion_test/Pipfile.lock
 RUN cd /src/requirements/legion_test && pipenv install --system --dev
 
 # Install requirements for legion_airflow package
