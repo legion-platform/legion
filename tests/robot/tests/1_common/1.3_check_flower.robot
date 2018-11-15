@@ -20,7 +20,8 @@ Check if flower scale up works properly
     [Documentation]  Scale up Flower deployment and check if number of celery workers increases
     [Tags]  airflow  flower  scale  apps
     [Setup]  Run keywords
-    ...      Set deployment replicas   ${1}  airflow-${enclave}-worker  ${enclave}
+    ...   :FOR    ${enclave}    IN    @{ENCLAVES}
+    ...   \  Set deployment replicas   ${1}  airflow-${enclave}-worker  ${enclave}
     ...      Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${1}
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
@@ -42,8 +43,9 @@ Check if flower scale down works properly
     [Documentation]  Scale down Flower deployment and check if number of celery workers decreases
     [Tags]  airflow  flower  scale  apps
     [Setup]  Run keywords
-    ...      Set deployment replicas   ${2}  airflow-${enclave}-worker  ${enclave}
-    ...      Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${2}
+    ...   :FOR    ${enclave}    IN    @{ENCLAVES}
+    ...   \   Set deployment replicas   ${2}  airflow-${enclave}-worker  ${enclave}
+    ...       Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${2}
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Flower     ${enclave}
                                      Wait for worker is ready  expected_count=${2}
@@ -58,4 +60,3 @@ Check if flower scale down works properly
        ${workers_number} =           Get number of workers from Flower
        Should be equal as integers   ${new_replicas_number}  ${workers_number}   Actual Replicas values doens't equal    to set Replicas number
        Should be equal as integers   ${new_replicas_number}  ${replicas_number}  Workers number hasn't been decreased to new Replicas number
-    [Teardown]
