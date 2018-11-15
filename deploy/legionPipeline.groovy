@@ -140,10 +140,14 @@ def createjenkinsJobs(String commitID) {
 
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
-        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            def tags_list=tags.toString().trim().split(',')
-            def robot_tags= [" -i default"]
-            def nose_tags = [" -a default"]
+    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+            def tags_list = tags.toString().trim().split(',')
+            def robot_tags = []
+            def nose_tags = []
+            if (tags_list) {
+                nose_tags.add(" -a default")
+                robot_tags.add(" -i default")
+            }
             for (item in tags_list) {
                 if (item.startsWith('-')) {
                     item = item.replace("-","")
