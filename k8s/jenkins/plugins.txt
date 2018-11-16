@@ -58,6 +58,7 @@ javadoc:1.4
 jenkins-multijob-plugin:1.31
 jira:3.0.1
 jquery-detached:1.2.1
+job-dsl:1.70
 junit:1.24
 ldap:1.20
 mailer:1.21
