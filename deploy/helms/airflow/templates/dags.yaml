@@ -52,9 +52,12 @@ data:
     from airflow.operators.python_operator import PythonOperator
 
     from legion_airflow.hooks.s3_hook import S3Hook
+    improt os
 
     S3_CONN_ID = 's3_conn'
     TEST_FILE_NAME = 's3_check.csv'
+
+    LOG = logging.getLogger('airflow.task')
 
 
     def create_file_in_s3():
@@ -63,12 +66,13 @@ data:
 
         :return: None
         """
-        logging.info("Create s3 hook")
+        LOG.info("Create s3 hook")
         s3_hook = S3Hook(S3_CONN_ID)
-        logging.info("Create file {} in s3".format(TEST_FILE_NAME))
+
+        LOG.info("Create file {} in s3".format(TEST_FILE_NAME))
         file_created = {'file_created': datetime.now().isoformat()}
-        s3_hook.write_json_file(file_created, '', TEST_FILE_NAME)
-        logging.info("Done.")
+        s3_hook.write_json_file(obj=file_created, bucket=os.environ['S3_BUCKET_NAME'], key=TEST_FILE_NAME)
+        LOG.info("Done.")
 
 
     dag_test = DAG(dag_id='s3_connection_test',
