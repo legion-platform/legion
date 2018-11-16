@@ -18,6 +18,9 @@ secrets:
   fernet_key: {{ airflow.fernet_key }}
   flask: {{ secret_flask }}
 
+  s3:
+    bucket_name:
+
 connections:
 {{ airflow.connections|to_yaml }}
 
@@ -76,6 +79,7 @@ storage:
   airflow_dags_directory: "{{ airflow_dags_dir }}"
   pvc_name: "{{ airflow_dags_pvc }}"
   s3_root_path: "s3://{{legion_data_s3_bucket}}/"
+  bucket_name: "{{ legion_data_s3_bucket }}"
 
 ingress:
   enabled: true

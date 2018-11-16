@@ -2,6 +2,7 @@ rootDomain: k8s-nightly.epm.kharlamov.biz
 localDomain: "cluster.local"
 enclaveDeploymentPrefix: "legion-"
 domainDelimiter: "."
+s3BucketName: ""
 
 secrets:
   nexus:
