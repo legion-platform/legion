@@ -103,5 +103,8 @@ class Flower:
         :return: None
         """
         expected_count = int(expected_count)
-        wait_until(lambda: self.get_number_of_workers_from_flower() >= expected_count,
-                   iteration_duration=5, iterations=35)
+        worker_ready = wait_until(lambda: self.get_number_of_workers_from_flower() == expected_count,
+                                  iteration_duration=10, iterations=30)
+        if not worker_ready:
+            raise Exception("Expected ready workers count '{}' does not match actual '{}'"
+                            .format(expected_count, self.get_number_of_workers_from_flower()))
