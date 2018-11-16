@@ -52,7 +52,7 @@ data:
     from airflow.operators.python_operator import PythonOperator
 
     from legion_airflow.hooks.s3_hook import S3Hook
-    improt os
+    import os
 
     S3_CONN_ID = 's3_conn'
     TEST_FILE_NAME = 's3_check.csv'
