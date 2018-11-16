@@ -48,6 +48,7 @@ node {
                     string(name: 'Profile', value: params.Profile),
                     string(name: 'EnclaveName', value: 'enclave-ci')
             ]
+        }
         stage('Test') {
             print("${env.BUILD_NUMBER}")
         }
