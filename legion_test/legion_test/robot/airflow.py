@@ -204,6 +204,24 @@ class Airflow:
                     break
         return failed_dags
 
+    def get_succeeded_airflow_dags(self):
+        """
+        Get succeeded airflow dags
+        :rtype list[str]
+        :return: A list of succeeded dags names
+        """
+        data = self._get('airflow/task_stats', use_rest_api_root=False)
+        succeeded_dags = []
+        for dag_id, dag_runs in data.items():
+            for dag_run in dag_runs:
+                color = dag_run.get('color', '')
+                run_count = dag_run.get('count', 0)
+                print('Detected DAG {!r}. Color: {!r}, Run count: {!r}'.format(dag_id, color, run_count))
+                if color == 'green' and run_count > 0:
+                    succeeded_dags.append(dag_id)
+                    break
+        return succeeded_dags
+
     def is_dag_ready(self, dag_id, timeout=60, sleep=3):
         """
         Check if dag was loaded to airflow web
