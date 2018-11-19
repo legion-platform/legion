@@ -25,7 +25,9 @@ s3_root_path = {{ .Values.storage.s3_root_path }}
 logging_config_class = log_config.DEFAULT_LOGGING_CONFIG
 remote_logging = {{ .Values.core.remote_logging }}
 remote_base_log_folder = {{ .Values.core.remote_base_log_folder }}
+{{ if .Values.core.remote_log_conn_id }}
 remote_log_conn_id = {{ .Values.core.remote_log_conn_id }}
+{{ end }}
 # Use server-side encryption for logs stored in S3
 encrypt_s3_logs = {{ .Values.core.encrypt_s3_logs }}
 # deprecated option for remote log storage, use remote_base_log_folder instead!
