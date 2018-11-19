@@ -18,7 +18,7 @@ pipeline {
     }
     environment {
         build_workspace = "${WORKSPACE}/k8s/k8s-infra"
-        def oauth2_proxy_docker_dockerimage = "k8s-oauth2-proxy-docker"
+        def oauth2_proxy_docker_dockerimage = "k8s-oauth2-proxy"
         def kube_fluentd_dockerimage = "k8s-kube-fluentd"
         def kube_elb_security_dockerimage = "k8s-kube-elb-security"
         shared_lib_path = "deploy/legionPipeline.groovy"
@@ -103,9 +103,9 @@ pipeline {
                         }
                     }
                 }
-                stage('Build oauth2-proxy-docker') {
+                stage('Build oauth2-proxy') {
                     steps {
-                        dir ("${build_workspace}/oauth2-proxy-docker") {
+                        dir ("${build_workspace}/oauth2-proxy") {
                             sh """
                             docker build ${Globals.dockerCacheArg} -t legion/${oauth2_proxy_docker_dockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
@@ -127,7 +127,7 @@ pipeline {
         }
         stage('Push docker images') {
             parallel {
-                stage('Upload oauth2-proxy-docker Docker Image') {
+                stage('Upload oauth2-proxy Docker Image') {
                     steps {
                         script {
                             legion.uploadDockerImage("${oauth2_proxy_docker_dockerimage}", "${Globals.buildVersion}")
