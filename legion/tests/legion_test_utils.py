@@ -97,15 +97,15 @@ def patch_environ(values, flush_existence=False):
 
 
 @contextlib.contextmanager
-def persist_swagger_function_response_to_file(function, response_code):
+def persist_swagger_function_response_to_file(function, test_resource_name):
     """
     Context managers
     Persist result of invocation swagger client query data to disk
 
     :param function: name of function
     :type function: str
-    :param response_codes: name of response code (no), e.g. two_models
-    :type response_codes: str
+    :param test_resource_name: name of test resource (is used in file naming), e.g. two_models
+    :type test_resource_name: str
     """
     client = build_swagger_function_client(function)
     origin = client.__class__.deserialize
@@ -116,7 +116,7 @@ def persist_swagger_function_response_to_file(function, response_code):
 
         if function_name in call_stack_functions:
             path = '{}/{}.{}.{}.json'.format(TEST_RESPONSES_LOCATION, function,
-                                             type_name, response_code)
+                                             type_name, test_resource_name)
             with open(path, 'w') as stream:
                 data = json.loads(response.data)
                 json.dump(data, stream, indent=2, sort_keys=True)
@@ -144,26 +144,26 @@ def build_swagger_function_client(function):
     return module_api_client.api_client
 
 
-def mock_swagger_function_response_from_file(function, response_code):
+def mock_swagger_function_response_from_file(function, test_resource_name):
     """
     Mock swagger client function with response from file
 
     :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
     :type function: str
-    :param response_codes: name of response code (no), e.g. two_models
-    :type response_codes: str
+    :param test_resource_name: name of test response (is used in file naming), e.g. two_models
+    :type test_resource_name: str
     :return: Any -- response
     """
-    searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, response_code))
+    searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, test_resource_name))
 
     if not searched_files:
         raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
-            function, response_code
+            function, test_resource_name
         ))
 
     if len(searched_files) > 1:
         raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
-            function, response_code
+            function, test_resource_name
         ))
 
     path, filename = searched_files[0], os.path.basename(searched_files[0])
