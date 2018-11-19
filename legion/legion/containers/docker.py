@@ -150,7 +150,6 @@ def build_docker_image(client, model_id, model_file, labels,
                                                  for (name, version) in missed_packages]
             raise Exception('Some packages are missed: {}'.format(', '.join(missed_packages_requirements_list)))
 
-
         try:
             LOGGER.info('Copying model binary from {!r} to {!r}'
                         .format(model_file, target_model_file))
