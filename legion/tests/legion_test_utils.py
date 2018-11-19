@@ -97,21 +97,16 @@ def patch_environ(values, flush_existence=False):
 
 
 @contextlib.contextmanager
-def persist_swagger_function_response_to_file(function, response_codes):
+def persist_swagger_function_response_to_file(function, response_code):
     """
     Context managers
     Persist result of invocation swagger client query data to disk
 
     :param function: name of function
     :type function: str
-    :param response_codes: name of response code (no), e.g. two_models. Or list of response codes
-    :type response_codes: str or list[str]
+    :param response_codes: name of response code (no), e.g. two_models
+    :type response_codes: str
     """
-    num = 0
-    if isinstance(response_codes, str):
-        response_codes = [response_codes]
-        num = -1
-
     client = build_swagger_function_client(function)
     origin = client.__class__.deserialize
 
@@ -120,13 +115,6 @@ def persist_swagger_function_response_to_file(function, response_codes):
         call_stack_functions = [f.function for f in inspect.stack()]
 
         if function_name in call_stack_functions:
-            nonlocal num
-            if num == -1:
-                response_code = response_codes[0]
-            else:
-                response_code = response_codes[num]
-                num += 1
-
             path = '{}/{}.{}.{}.json'.format(TEST_RESPONSES_LOCATION, function,
                                              type_name, response_code)
             with open(path, 'w') as stream:
@@ -156,50 +144,35 @@ def build_swagger_function_client(function):
     return module_api_client.api_client
 
 
-def mock_swagger_function_response_from_file(function, response_codes):
+def mock_swagger_function_response_from_file(function, response_code):
     """
     Mock swagger client function with response from file
 
     :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
     :type function: str
-    :param response_codes: name of response code (no), e.g. two_models. Or list of response codes
-    :type response_codes: str or list[str]
+    :param response_codes: name of response code (no), e.g. two_models
+    :type response_codes: str
     :return: Any -- response
     """
-    num = 0
-    if isinstance(response_codes, str):
-        response_codes = [response_codes]
-        num = -1
+    searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, response_code))
 
-    response_files = []
-    for response_code in response_codes:
-        valid_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, response_code))
+    if not searched_files:
+        raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
+            function, response_code
+        ))
 
-        if not valid_files:
-            raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
-                function, response_code
-            ))
+    if len(searched_files) > 1:
+        raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
+            function, response_code
+        ))
 
-        if len(valid_files) > 1:
-            raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
-                function, response_code
-            ))
-
-        path, filename = valid_files[0], os.path.basename(valid_files[0])
-        splits = filename.rsplit('.')
-        return_type = splits[-3]
-        response_files.append((path, return_type))
+    path, filename = searched_files[0], os.path.basename(searched_files[0])
+    splits = filename.rsplit('.')
+    return_type = splits[-3]
 
     client = build_swagger_function_client(function)
 
     def response_catcher(*args, **kwargs):
-        nonlocal num
-        if num == -1:
-            path, return_type = response_files[0]
-        else:
-            path, return_type = response_files[num]
-            num += 1
-
         with open(path) as response_file:
             data = ResponseObjectType(data=response_file.read())
 
