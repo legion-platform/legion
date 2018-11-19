@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: legionplatform/k8s-oauth2-proxy-docker
+  repository: legionplatform/k8s-oauth2-proxy
   tag: latest
   pullPolicy: IfNotPresent
 
