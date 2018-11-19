@@ -141,6 +141,16 @@ def build_docker_image(client, model_id, model_file, labels,
         target_workspace = '/app'
         target_model_file = os.path.join(target_workspace, model_id)
 
+        LOGGER.info('Checking package state')
+        installed_packages = set(legion.utils.get_installed_packages())
+        requirements = set(legion.utils.get_list_of_requirements())
+        missed_packages = requirements - installed_packages
+        if missed_packages:
+            missed_packages_requirements_list = ['{}=={}'.format(name, version)
+                                                 for (name, version) in missed_packages]
+            raise Exception('Some packages are missed: {}'.format(', '.join(missed_packages_requirements_list)))
+
+
         try:
             LOGGER.info('Copying model binary from {!r} to {!r}'
                         .format(model_file, target_model_file))
