@@ -49,21 +49,42 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 2)
                 # Test model #1 fields
-                self.assertEqual(models_info[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(models_info[0].model, 'demo-abc-model')
-                self.assertEqual(models_info[0].version, '1.0')
-                self.assertEqual(models_info[0].scale, 1)
-                self.assertEqual(models_info[0].ready_replicas, 1)
-                self.assertEqual(models_info[0].namespace, 'debug-enclave')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': models_info[0].image,
+                    'model': models_info[0].model,
+                    'version': models_info[0].version,
+                    'scale': models_info[0].scale,
+                    'ready_replicas': models_info[0].ready_replicas,
+                    'namespace': models_info[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
+
                 # Test model #2 fields
-                self.assertEqual(models_info[1].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(models_info[1].model, 'demo-abc-model')
-                self.assertEqual(models_info[1].version, '1.1')
-                self.assertEqual(models_info[1].scale, 1)
-                self.assertEqual(models_info[1].ready_replicas, 1)
-                self.assertEqual(models_info[1].namespace, 'debug-enclave')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.1',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': models_info[1].image,
+                    'model': models_info[1].model,
+                    'version': models_info[1].version,
+                    'scale': models_info[1].scale,
+                    'ready_replicas': models_info[1].ready_replicas,
+                    'namespace': models_info[1].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_inspect_by_model_id(self):
         with EDITestServer() as edi:
@@ -76,21 +97,42 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 2)
                 # Test model #1 fields
-                self.assertEqual(models_info[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(models_info[0].model, 'demo-abc-model')
-                self.assertEqual(models_info[0].version, '1.0')
-                self.assertEqual(models_info[0].scale, 1)
-                self.assertEqual(models_info[0].ready_replicas, 1)
-                self.assertEqual(models_info[0].namespace, 'debug-enclave')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': models_info[0].image,
+                    'model': models_info[0].model,
+                    'version': models_info[0].version,
+                    'scale': models_info[0].scale,
+                    'ready_replicas': models_info[0].ready_replicas,
+                    'namespace': models_info[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
+
                 # Test model #2 fields
-                self.assertEqual(models_info[1].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(models_info[1].model, 'demo-abc-model')
-                self.assertEqual(models_info[1].version, '1.1')
-                self.assertEqual(models_info[1].scale, 1)
-                self.assertEqual(models_info[1].ready_replicas, 1)
-                self.assertEqual(models_info[1].namespace, 'debug-enclave')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.1',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': models_info[1].image,
+                    'model': models_info[1].model,
+                    'version': models_info[1].version,
+                    'scale': models_info[1].scale,
+                    'ready_replicas': models_info[1].ready_replicas,
+                    'namespace': models_info[1].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_inspect_by_model_version(self):
         with EDITestServer() as edi:
@@ -103,13 +145,23 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 1)
                 # Test model #1 fields
-                self.assertEqual(models_info[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(models_info[0].model, 'demo-abc-model')
-                self.assertEqual(models_info[0].version, '1.0')
-                self.assertEqual(models_info[0].scale, 1)
-                self.assertEqual(models_info[0].ready_replicas, 1)
-                self.assertEqual(models_info[0].namespace, 'debug-enclave')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': models_info[0].image,
+                    'model': models_info[0].model,
+                    'version': models_info[0].version,
+                    'scale': models_info[0].scale,
+                    'ready_replicas': models_info[0].ready_replicas,
+                    'namespace': models_info[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_inspect_by_model_id_and_version(self):
         with EDITestServer() as edi:
@@ -122,13 +174,23 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(models_info, list)
                 self.assertEqual(len(models_info), 1)
                 # Test model #1 fields
-                self.assertEqual(models_info[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(models_info[0].model, 'demo-abc-model')
-                self.assertEqual(models_info[0].version, '1.0')
-                self.assertEqual(models_info[0].scale, 1)
-                self.assertEqual(models_info[0].ready_replicas, 1)
-                self.assertEqual(models_info[0].namespace, 'debug-enclave')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': models_info[0].image,
+                    'model': models_info[0].model,
+                    'version': models_info[0].version,
+                    'scale': models_info[0].scale,
+                    'ready_replicas': models_info[0].ready_replicas,
+                    'namespace': models_info[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_inspect_return_none_for_invalid_model_id(self):
         with EDITestServer() as edi:
@@ -175,14 +237,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
                 # Check deployed model fields
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_deploy_model_with_scale_1(self):
         with EDITestServer() as edi:
@@ -197,14 +270,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
                 # Check deployed models fields
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_deploy_model_with_scale_2(self):
         with EDITestServer() as edi:
@@ -221,14 +305,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
                 # Check deployed models fields
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 2)
-                self.assertEqual(deployments[0].ready_replicas, 2)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 2,
+                    'ready_replicas': 2,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_negative_edi_deploy_scale_with_0(self):
         with EDITestServer() as edi:
@@ -255,14 +350,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
                 # Check undeployed model fields
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_negative_edi_undeploy_by_invalid_model_id(self):
         with EDITestServer() as edi:
@@ -287,14 +393,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
                 # Check scaled model fields
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 2)
-                self.assertEqual(deployments[0].ready_replicas, 2)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 2,
+                    'ready_replicas': 2,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_scale_down(self):
         with EDITestServer() as edi:
@@ -309,14 +426,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
                 # Check scaled model fields
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_negative_edi_scale_to_0(self):
         with EDITestServer() as edi:
@@ -357,22 +485,46 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 2)
                 # Validate scaled models
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(deployments[1].model, 'demo-abc-model')
-                self.assertEqual(deployments[1].version, '1.1')
-                self.assertEqual(deployments[1].status, 'ok')
-                self.assertEqual(deployments[1].scale, 1)
-                self.assertEqual(deployments[1].ready_replicas, 1)
-                self.assertEqual(deployments[1].namespace, 'debug-enclave')
-                self.assertEqual(deployments[1].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
+                # Test model #1 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
+                # Test model #2 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.1',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[1].image,
+                    'model': deployments[1].model,
+                    'version': deployments[1].version,
+                    'scale': deployments[1].scale,
+                    'ready_replicas': deployments[1].ready_replicas,
+                    'status': deployments[1].status,
+                    'namespace': deployments[1].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_inspect_all_models_by_id(self):
         with EDITestServer() as edi:
@@ -386,22 +538,46 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 2)
                 # Validate scaled models
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(deployments[1].model, 'demo-abc-model')
-                self.assertEqual(deployments[1].version, '1.1')
-                self.assertEqual(deployments[1].status, 'ok')
-                self.assertEqual(deployments[1].scale, 1)
-                self.assertEqual(deployments[1].ready_replicas, 1)
-                self.assertEqual(deployments[1].namespace, 'debug-enclave')
-                self.assertEqual(deployments[1].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
+                # Test model #1 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
+                # Test model #2 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.1',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[1].image,
+                    'model': deployments[1].model,
+                    'version': deployments[1].version,
+                    'scale': deployments[1].scale,
+                    'ready_replicas': deployments[1].ready_replicas,
+                    'status': deployments[1].status,
+                    'namespace': deployments[1].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_negative_edi_scale_without_version(self):
         with EDITestServer() as edi:
@@ -446,22 +622,46 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 2)
                 # Validate deleted models
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 1)
-                self.assertEqual(deployments[0].ready_replicas, 1)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(deployments[1].model, 'demo-abc-model')
-                self.assertEqual(deployments[1].version, '1.1')
-                self.assertEqual(deployments[1].status, 'ok')
-                self.assertEqual(deployments[1].scale, 1)
-                self.assertEqual(deployments[1].ready_replicas, 1)
-                self.assertEqual(deployments[1].namespace, 'debug-enclave')
-                self.assertEqual(deployments[1].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
+                # Test model #1 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
+                # Test model #2 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.1',
+                    'scale': 1,
+                    'ready_replicas': 1,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[1].image,
+                    'model': deployments[1].model,
+                    'version': deployments[1].version,
+                    'scale': deployments[1].scale,
+                    'ready_replicas': deployments[1].ready_replicas,
+                    'status': deployments[1].status,
+                    'namespace': deployments[1].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_scale_all_models_by_version(self):
         with EDITestServer() as edi:
@@ -479,89 +679,160 @@ class TestEDI(unittest2.TestCase):
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 2)
                 # Validate scaled models
-                self.assertEqual(deployments[0].model, 'demo-abc-model')
-                self.assertEqual(deployments[0].version, '1.0')
-                self.assertEqual(deployments[0].status, 'ok')
-                self.assertEqual(deployments[0].scale, 2)
-                self.assertEqual(deployments[0].ready_replicas, 2)
-                self.assertEqual(deployments[0].namespace, 'debug-enclave')
-                self.assertEqual(deployments[0].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-                self.assertEqual(deployments[1].model, 'demo-abc-model')
-                self.assertEqual(deployments[1].version, '1.1')
-                self.assertEqual(deployments[1].status, 'ok')
-                self.assertEqual(deployments[1].scale, 2)
-                self.assertEqual(deployments[1].ready_replicas, 2)
-                self.assertEqual(deployments[1].namespace, 'debug-enclave')
-                self.assertEqual(deployments[1].image,
-                                 '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
+                # Test model #1 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.0',
+                    'scale': 2,
+                    'ready_replicas': 2,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[0].image,
+                    'model': deployments[0].model,
+                    'version': deployments[0].version,
+                    'scale': deployments[0].scale,
+                    'ready_replicas': deployments[0].ready_replicas,
+                    'status': deployments[0].status,
+                    'namespace': deployments[0].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
+                # Test model #2 fields
+                expected_result = {
+                    'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                    'model': 'demo-abc-model',
+                    'version': '1.1',
+                    'scale': 2,
+                    'ready_replicas': 2,
+                    'status': 'ok',
+                    'namespace': 'debug-enclave'
+                }
+                actual_result = {
+                    'image': deployments[1].image,
+                    'model': deployments[1].model,
+                    'version': deployments[1].version,
+                    'scale': deployments[1].scale,
+                    'ready_replicas': deployments[1].ready_replicas,
+                    'status': deployments[1].status,
+                    'namespace': deployments[1].namespace
+                }
+                self.assertDictEqual(expected_result, actual_result)
 
-# TODO uncomment after https://github.com/legion-platform/legion/pull/553 will be merged
-# def test_edi_scale_all_models_by_id(self):
-#     with mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
-#         with EDITestServer() as edi:
-#             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service',
-#                         'two_models_1_id_and_2_versions'), \
-#                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-#                         'two_models_1_id_and_2_versions'), \
-#                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-#                         'last_model_scaled_to_2'), \
-#                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-#                         'two_models_scaled_to_2'):
-#                 deployments = edi.edi_client.scale(model='*', count=2)
-#                 # Test count of returned deployments
-#                 self.assertIsInstance(deployments, list)
-#                 self.assertEqual(len(deployments), 2)
-#                 # Validate scaled models
-#                 self.assertEqual(deployments[0].model, 'demo-abc-model')
-#                 self.assertEqual(deployments[0].version, '1.0')
-#                 self.assertEqual(deployments[0].status, 'ok')
-#                 self.assertEqual(deployments[0].scale, 2)
-#                 self.assertEqual(deployments[0].ready_replicas, 2)
-#                 self.assertEqual(deployments[0].namespace, 'debug-enclave')
-#                 self.assertEqual(deployments[0].image,
-#                                  '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-#                 self.assertEqual(deployments[1].model, 'demo-abc-model')
-#                 self.assertEqual(deployments[1].version, '1.1')
-#                 self.assertEqual(deployments[1].status, 'ok')
-#                 self.assertEqual(deployments[1].scale, 2)
-#                 self.assertEqual(deployments[1].ready_replicas, 2)
-#                 self.assertEqual(deployments[1].namespace, 'debug-enclave')
-#                 self.assertEqual(deployments[1].image,
-#                                  '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
+    def test_edi_scale_all_models_by_id(self):
+        with mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+            with EDITestServer() as edi:
+                with m_func('kubernetes.client.CoreV1Api.list_namespaced_service',
+                            'two_models_1_id_and_2_versions'), \
+                     m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                            'two_models_1_id_and_2_versions'), \
+                     m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                            'last_model_scaled_to_2'), \
+                     m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                            'two_models_scaled_to_2'):
+                    deployments = edi.edi_client.scale(model='*', count=2)
+                    # Test count of returned deployments
+                    self.assertIsInstance(deployments, list)
+                    self.assertEqual(len(deployments), 2)
+                    # Validate scaled models
+                    # Test model #1 fields
+                    expected_result = {
+                        'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                        'model': 'demo-abc-model',
+                        'version': '1.0',
+                        'scale': 2,
+                        'ready_replicas': 2,
+                        'status': 'ok',
+                        'namespace': 'debug-enclave'
+                    }
+                    actual_result = {
+                        'image': deployments[0].image,
+                        'model': deployments[0].model,
+                        'version': deployments[0].version,
+                        'scale': deployments[0].scale,
+                        'ready_replicas': deployments[0].ready_replicas,
+                        'status': deployments[0].status,
+                        'namespace': deployments[0].namespace
+                    }
+                    self.assertDictEqual(expected_result, actual_result)
+                    # Test model #2 fields
+                    expected_result = {
+                        'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                        'model': 'demo-abc-model',
+                        'version': '1.1',
+                        'scale': 2,
+                        'ready_replicas': 2,
+                        'status': 'ok',
+                        'namespace': 'debug-enclave'
+                    }
+                    actual_result = {
+                        'image': deployments[1].image,
+                        'model': deployments[1].model,
+                        'version': deployments[1].version,
+                        'scale': deployments[1].scale,
+                        'ready_replicas': deployments[1].ready_replicas,
+                        'status': deployments[1].status,
+                        'namespace': deployments[1].namespace
+                    }
+                    self.assertDictEqual(expected_result, actual_result)
 
-# def test_edi_undeploy_all_models_by_id(self):
-#     with mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
-#         with EDITestServer() as edi:
-#             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service',
-#                         'two_models_1_id_and_2_versions'), \
-#                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-#                         'two_models_1_id_and_2_versions'), \
-#                  m_func(
-#                      'kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
-#                      'last_model_deleted'), \
-#                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'):
-#                 deployments = edi.edi_client.undeploy(model='*')
-#                 # Test count of returned deployments
-#                 self.assertIsInstance(deployments, list)
-#                 self.assertEqual(len(deployments), 2)
-#                 # Validate deleted models
-#                 self.assertEqual(deployments[0].model, 'demo-abc-model')
-#                 self.assertEqual(deployments[0].version, '1.0')
-#                 self.assertEqual(deployments[0].status, 'ok')
-#                 self.assertEqual(deployments[0].scale, 1)
-#                 self.assertEqual(deployments[0].ready_replicas, 1)
-#                 self.assertEqual(deployments[0].namespace, 'debug-enclave')
-#                 self.assertEqual(deployments[0].image,
-#                                  '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
-#                 self.assertEqual(deployments[1].model, 'demo-abc-model')
-#                 self.assertEqual(deployments[1].version, '1.1')
-#                 self.assertEqual(deployments[1].status, 'ok')
-#                 self.assertEqual(deployments[1].scale, 1)
-#                 self.assertEqual(deployments[1].ready_replicas, 1)
-#                 self.assertEqual(deployments[1].namespace, 'debug-enclave')
-#                 self.assertEqual(deployments[1].image,
-#                                  '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a')
+    def test_edi_undeploy_all_models_by_id(self):
+        with mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+            with EDITestServer() as edi:
+                with m_func('kubernetes.client.CoreV1Api.list_namespaced_service',
+                            'two_models_1_id_and_2_versions'), \
+                     m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                            'two_models_1_id_and_2_versions'), \
+                     m_func(
+                         'kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
+                         'last_model_deleted'), \
+                     m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'):
+                    deployments = edi.edi_client.undeploy(model='*')
+                    # Test count of returned deployments
+                    self.assertIsInstance(deployments, list)
+                    self.assertEqual(len(deployments), 2)
+                    # Validate deleted models
+                    # Test model #1 fields
+                    expected_result = {
+                        'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
+                        'model': 'demo-abc-model',
+                        'version': '1.0',
+                        'scale': 1,
+                        'ready_replicas': 1,
+                        'status': 'ok',
+                        'namespace': 'debug-enclave'
+                    }
+                    actual_result = {
+                        'image': deployments[0].image,
+                        'model': deployments[0].model,
+                        'version': deployments[0].version,
+                        'scale': deployments[0].scale,
+                        'ready_replicas': deployments[0].ready_replicas,
+                        'status': deployments[0].status,
+                        'namespace': deployments[0].namespace
+                    }
+                    self.assertDictEqual(expected_result, actual_result)
+                    # Test model #2 fields
+                    expected_result = {
+                        'image': '127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181106123540.560.3b9739a',
+                        'model': 'demo-abc-model',
+                        'version': '1.1',
+                        'scale': 1,
+                        'ready_replicas': 1,
+                        'status': 'ok',
+                        'namespace': 'debug-enclave'
+                    }
+                    actual_result = {
+                        'image': deployments[1].image,
+                        'model': deployments[1].model,
+                        'version': deployments[1].version,
+                        'scale': deployments[1].scale,
+                        'ready_replicas': deployments[1].ready_replicas,
+                        'status': deployments[1].status,
+                        'namespace': deployments[1].namespace
+                    }
+                    self.assertDictEqual(expected_result, actual_result)
 
 
 if __name__ == '__main__':
