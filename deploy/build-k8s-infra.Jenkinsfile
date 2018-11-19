@@ -13,25 +13,28 @@ pipeline {
     agent any
 
     options{
-        buildDiscarder(logRotator(numToKeepStr: '5'))
+        buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '15'))
         disableConcurrentBuilds()
     }
     environment {
-        build_workspace = "${WORKSPACE}/k8s/k8s-infra"
-        def oauth2_proxy_docker_dockerimage = "k8s-oauth2-proxy"
-        def kube_fluentd_dockerimage = "k8s-kube-fluentd"
-        def kube_elb_security_dockerimage = "k8s-kube-elb-security"
-        shared_lib_path = "deploy/legionPipeline.groovy"
+        /// Input parameters
         //Enable docker cache parameter
-        enable_docker_cache = "${params.EnableDockerCache}"
+        param_enable_docker_cache = "${params.EnableDockerCache}"
         //Build major version release and optionally push it to public repositories
-        stable_release = "${params.StableRelease}"
+        param_stable_release = "${params.StableRelease}"
         //Release version to tag all artifacts to
-        release_version = "${params.ReleaseVersion}"
+        param_release_version = "${params.ReleaseVersion}"
         //Git Branch to build package from
-        git_branch = "${params.GitBranch}"
-        //Docker registry 
-        docker_registry = "${params.DockerRegistry}"
+        param_git_branch = "${params.GitBranch}"
+        //Docker registry to build package from
+        param_docker_registry = "${params.DockerRegistry}"
+        ///Job parameters
+        buildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
+        oauth2ProxyDockerimage = "k8s-oauth2-proxy"
+        kubeFluentdDockerimage = "k8s-kube-fluentd"
+        kubeElbSecurityDockerimage = "k8s-kube-elb-security"
+        sharedLibPath = "deploy/legionPipeline.groovy"
+
     }
     stages {
         stage('Checkout and set build vars') {
@@ -39,14 +42,14 @@ pipeline {
                 cleanWs()
                 checkout scm
                 script {
-                    legion = load "${shared_lib_path}"
+                    legion = load "${sharedLibPath}"
                     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                     Globals.rootCommit = Globals.rootCommit.trim()
                     def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
                     def date = new Date()
                     def buildDate = dateFormat.format(date)
 
-                    Globals.dockerCacheArg = "${enable_docker_cache}" ? '' : '--no-cache'
+                    Globals.dockerCacheArg = "${param_enable_docker_cache}" ? '' : '--no-cache'
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
                     println(Globals.dockerLabels)
@@ -55,9 +58,9 @@ pipeline {
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
                     /// Define build version
-                    if (env.stable_release) {
-                        if (env.release_version){
-                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                    if (env.param_stable_release) {
+                        if (env.param_release_version){
+                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
                             exit 1
@@ -69,7 +72,7 @@ pipeline {
 
                     env.BuildVersion = Globals.buildVersion
 
-                    currentBuild.description = "${Globals.buildVersion} ${git_branch}"
+                    currentBuild.description = "${Globals.buildVersion} ${param_git_branch}"
                     print("Build version " + Globals.buildVersion)
                     print('Building shared artifact')
                     envFile = 'file.env'
@@ -87,27 +90,27 @@ pipeline {
             parallel {
                 stage('Build kube-fluentd') {
                     steps {
-                        dir ("${build_workspace}/kube-fluentd") {
+                        dir ("${buildWorkspace}/kube-fluentd") {
                             sh """
-                            docker build ${Globals.dockerCacheArg} -t legion/${kube_fluentd_dockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            docker build ${Globals.dockerCacheArg} -t legion/${kubeFluentdDockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
                     }
                 }
                 stage('Build kube-elb-security') {
                     steps {
-                        dir ("${build_workspace}/kube-elb-security") {
+                        dir ("${buildWorkspace}/kube-elb-security") {
                             sh """
-                            docker build ${Globals.dockerCacheArg} -t legion/${kube_elb_security_dockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            docker build ${Globals.dockerCacheArg} -t legion/${kubeElbSecurityDockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
                     }
                 }
                 stage('Build oauth2-proxy') {
                     steps {
-                        dir ("${build_workspace}/oauth2-proxy") {
+                        dir ("${buildWorkspace}/oauth2-proxy") {
                             sh """
-                            docker build ${Globals.dockerCacheArg} -t legion/${oauth2_proxy_docker_dockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            docker build ${Globals.dockerCacheArg} -t legion/${oauth2ProxyDockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
                     }
@@ -121,7 +124,7 @@ pipeline {
                  credentialsId: 'nexus-local-repository',
                  usernameVariable: 'USERNAME',
                  passwordVariable: 'PASSWORD']]) {
-                    sh "docker login -u ${USERNAME} -p ${PASSWORD} ${docker_registry}"
+                    sh "docker login -u ${USERNAME} -p ${PASSWORD} ${param_docker_registry}"
                 }
             }
         }
@@ -130,7 +133,7 @@ pipeline {
                 stage('Upload oauth2-proxy Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage("${oauth2_proxy_docker_dockerimage}", "${Globals.buildVersion}")
+                            legion.uploadDockerImage("${oauth2ProxyDockerimage}", "${Globals.buildVersion}")
                         }
 
                     }
@@ -138,14 +141,14 @@ pipeline {
                 stage('Upload kube-fluentd Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage("${kube_fluentd_dockerimage}", "${Globals.buildVersion}")
+                            legion.uploadDockerImage("${kubeFluentdDockerimage}", "${Globals.buildVersion}")
                         }
                     }
                 }
                 stage('Upload kube-elb-security Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage("${kube_elb_security_dockerimage}", "${Globals.buildVersion}")
+                            legion.uploadDockerImage("${kubeElbSecurityDockerimage}", "${Globals.buildVersion}")
                         }
                     }
                 }
