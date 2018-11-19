@@ -1,6 +1,10 @@
 def legionVersion = null
 
 node {
+    stage('Checkout GIT'){
+            checkout scm
+    }
+    def legion = load 'deploy/legionPipeline.groovy'
     try {
         stage('Build') {
             result = build job: params.BuildLegionJobName, propagate: true, wait: true, parameters: [
@@ -86,6 +90,9 @@ node {
         // If there was an exception thrown, the build failed
         currentBuild.result = "FAILED"
         throw e
+    }
+    finally {
+        legion.notifyBuild(currentBuild.result)
     }
 
 }

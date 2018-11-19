@@ -287,13 +287,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
     print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
 
-    if (!masterOrDevelopBuild)
-        return
-
-    // Skip green -> green
-    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
-        return
-
     // Default values
     def colorCode = '#FF0000'
     def arguments = ""
@@ -303,18 +296,18 @@ def notifyBuild(String buildStatus = 'STARTED') {
     if (params.LegionVersion) {
         arguments = arguments + "\nversion *${params.LegionVersion}*"
     }
-
     if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
         arguments = arguments + "\nDeploy *${params.DeployLegion}*, Create Jenkins tests *${params.CreateJenkinsTests}*, Use regression tests *${params.UseRegressionTests}*"
     }
     if (params.EnclaveName) {
         arguments = arguments + "\nEnclave *${params.EnclaveName}*"
     }
+    def mailSubject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
     def summary = """\
-    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    branch *${GitBranch}*
-    profile *<https://${env.Profile}|${env.Profile}>*
-    ${arguments}
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult}) \n
+    Branch: *${GitBranch}* \n
+    Profile: *<https://${env.Profile}|${env.Profile}>* \n
+    Arguments: ${arguments} \n
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 
@@ -327,6 +320,30 @@ def notifyBuild(String buildStatus = 'STARTED') {
         colorCode = '#FF0000'
     }
 
-    slackSend (color: colorCode, message: summary)
+    /// Notify everyone about each Nightly build
+    if ("${env.JOB_NAME}".contains("Legion_CI_Infra")) {
+        slackSend (color: colorCode, message: summary)
+        emailext (
+            subject: mailSubject,
+            body: summary,
+            to: "${env.DevTeamMailList}"
+        )
+    /// Notify committers about CI builds
+    } else if ("${env.JOB_NAME}".contains("Legion_CI")) {
+        emailext (
+            subject: mailSubject,
+            body: summary,
+            recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+        )
+    /// Notify everyone about failed Master or Develop branch builds
+    } else if (!currentBuildResultSuccessful && masterOrDevelopBuild) {
+        slackSend (color: colorCode, message: summary)
+        emailext (
+            subject: mailSubject,
+            body: summary,
+            to: "${env.DevTeamMailList}"
+        )
+    }
+
 }
 return this
