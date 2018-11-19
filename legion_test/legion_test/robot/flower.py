@@ -90,9 +90,10 @@ class Flower:
         workers_number = 0
         if response.get('data', []):
             for item in response.get('data'):
-                if item.get('worker-offline', 0) != 1:
+                if item.get('status', False) is True:
                     workers_number += 1
 
+        print("Online workers number in flower is {}".format(workers_number))
         return workers_number
 
     def wait_for_worker_is_ready(self, expected_count=1):

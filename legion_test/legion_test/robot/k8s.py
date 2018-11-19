@@ -192,6 +192,7 @@ class K8s:
         client = self.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
         scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         if scale_data is not None:
             return scale_data.status.replicas
         else:
@@ -233,8 +234,11 @@ class K8s:
         client = self.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
         scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         scale_data.spec.replicas = replicas
+        print("Setting replica to {} for {} in {} enclave".format(replicas, deployment_name, namespace))
         extension_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
+        print("Replica to {} for {} in {} enclave was set up".format(replicas, deployment_name, namespace))
 
     def update_model_property_key(self, namespace, model_id, model_version, key, value):
         """
