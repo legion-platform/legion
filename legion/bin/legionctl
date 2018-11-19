@@ -30,10 +30,27 @@ import legion.utils
 
 ROOT_LOGGER = logging.getLogger()
 
+
+def list_dependencies(args):
+    """
+    Print package dependencies
+
+    :param args: command arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: None
+    """
+    dependencies = legion.utils.get_list_of_requirements()
+    for (name, version) in dependencies:
+        print('{}=={}'.format(name, version))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='legion Command-Line Interface')
     parser.add_argument('--verbose',
                         help='verbose log output',
+                        action='store_true')
+    parser.add_argument('--version',
+                        help='get package version',
                         action='store_true')
     subparsers = parser.add_subparsers()
 
@@ -135,6 +152,10 @@ if __name__ == '__main__':
                                 type=legion.utils.string_to_bool)
     pyserve_parser.set_defaults(func=serve_model)
 
+    # --------- UTILS SECTION -----------
+    list_dependencies_parser = subparsers.add_parser('list-dependencies', description='list package dependencies')
+    list_dependencies_parser.set_defaults(func=list_dependencies)
+
     # --------- END OF SECTIONS -----------
     args = parser.parse_args(sys.argv[1:])
 
@@ -150,11 +171,14 @@ if __name__ == '__main__':
                         stream=sys.stderr)
 
     try:
-        if 'func' in v:
-            args.func(args)
+        if args.version:
+            print(legion.__version__)
         else:
-            parser.print_help()
-            sys.exit(1)
+            if 'func' in v:
+                args.func(args)
+            else:
+                parser.print_help()
+                sys.exit(1)
     except Exception as exception:
         ROOT_LOGGER.exception(exception)
         sys.exit(2)
