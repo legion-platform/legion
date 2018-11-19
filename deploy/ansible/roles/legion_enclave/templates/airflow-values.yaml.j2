@@ -18,9 +18,6 @@ secrets:
   fernet_key: {{ airflow.fernet_key }}
   flask: {{ secret_flask }}
 
-  s3:
-    bucket_name:
-
 connections:
 {{ airflow.connections|to_yaml }}
 
