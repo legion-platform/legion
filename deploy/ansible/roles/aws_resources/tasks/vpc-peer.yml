@@ -17,16 +17,14 @@
   register: action_peer
 
 - name: Get CC VPC facts
-  ec2_vpc_subnet_facts:
+  ec2_vpc_net_facts:
     region: "{{ aws_region }}"
-    filters:
-      vpc-id: "{{ vpc_id }}"
-      "tag:Name": "legion-mgmt"
-  register: cc_subnet_facts
+    vpc_ids: "{{ vpc_id }}"
+  register: cc_vpc_facts
 
 - name: Get CC VPC cidr
   set_fact:
-    cc_cidr: "{{ cc_subnet_facts.subnets.0.cidr_block }}"
+    cc_cidr: "{{ cc_vpc_facts.vpcs.0.cidr_block }}"
 
 - name: Debug CC cidr
   debug:
