@@ -74,6 +74,7 @@
     vpc_id: "{{ vpc_id }}"
     region: "{{ aws_region }}"
     group_id: "{{ jenkins_cc_sg }}"
+    name: Jenkins CC
     purge_rules: false
     purge_rules_egress: false
     purge_tags: false
@@ -89,6 +90,7 @@
     vpc_id: "{{ vpc_id }}"
     region: "{{ aws_region }}"
     group_id: "{{ jenkins_cc_sg }}"
+    name: Jenkins CC
     purge_rules: false
     purge_rules_egress: false
     purge_tags: false
