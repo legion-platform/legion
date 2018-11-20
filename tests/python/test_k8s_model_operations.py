@@ -206,7 +206,8 @@ class TestK8SModelOperations(unittest2.TestCase):
 
         self.assertIsInstance(model_service.scale, int, 'wrong model current scale type')
 
-        legion_test.utils.wait_until(lambda: model_service.reload_cache() or model_service.scale > 0)
+        legion_test.utils.wait_until(lambda: model_service.reload_cache() is None
+                                             and model_service.scale > 0)
 
         self.assertGreater(model_service.scale, 0, 'wrong model current scale value')
         self.assertIsInstance(model_service.desired_scale, int, 'wrong model current scale type')

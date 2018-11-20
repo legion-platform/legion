@@ -189,11 +189,12 @@ class Enclave:
         :type model_version: str or None
         :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
         """
-        return [
+        items = [
             model_service
             for id_and_version, model_service in self.models.items()
             if model_id in (id_and_version.id, '*', None) and model_version in (id_and_version.version, None, '*')
         ]
+        return sorted(items, key=lambda ms: '{}/{}'.format(ms.id, ms.version))
 
     def get_models_strict(self, model_id, model_version=None, ignore_not_found=False):
         """
