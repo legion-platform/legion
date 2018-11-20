@@ -288,7 +288,10 @@ def inspect(model=None, version=None):
 @legion.http.authenticate(authenticate)
 def info():
     """
-    Info API endpoint
+    Info API endpoint.
+
+    DEPRECATED. WILL BE REMOVED IN MAJOR RELEASE
+    TODO: Remove in major release
 
     :return: dict -- state of cluster
     """
