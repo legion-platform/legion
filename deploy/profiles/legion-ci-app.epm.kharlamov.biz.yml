@@ -5,6 +5,9 @@ env_name: legion-ci-app
 base_domain: legion-ci-app.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
+# Logging
+log_level: debug
+
 # System vars
 tmp_dir: /tmp/
 

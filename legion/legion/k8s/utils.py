@@ -66,6 +66,7 @@ def build_client():
     try:
         kubernetes.config.load_incluster_config()
     except kubernetes.config.config_exception.ConfigException:
+        LOGGER.debug('Connecting to cluster using context {!r}'.format(CONNECTION_CONTEXT))
         kubernetes.config.load_kube_config(context=CONNECTION_CONTEXT)
 
     # Disable SSL warning for self-signed certificates

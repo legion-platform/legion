@@ -5,6 +5,7 @@ enclaveName: unknown
 localDomain: "cluster.local"
 addLocalDomain: false
 
+log_level: info
 
 edi:
   enabled: true

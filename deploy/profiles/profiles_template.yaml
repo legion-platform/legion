@@ -9,6 +9,10 @@ env_type: ~           # name of env. type, will be added in resource tags
 env_name: ~    # short name of env, will be added in resource tags
 
 
+# Logging
+log_level: ~  # log level: debug / info / warning / error
+
+
 # Ansible variables
 tmp_dir: ~                          # directory for storing temporary files (on host during deploy)
 git_key: ~    # SSH Git access key which will be copied to Jenkins in cluster

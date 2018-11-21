@@ -53,8 +53,8 @@ class TestK8SWatching(unittest2.TestCase):
         """
         logging.basicConfig(level=logging.DEBUG)
 
-        legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
-        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
+        legion.k8s.utils.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
+        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.utils.CONNECTION_CONTEXT))
 
         try:
             legion.k8s.Enclave(TEST_ENCLAVE_NAME).delete()

@@ -22,7 +22,6 @@ from legion.k8s.definitions import ModelIdVersion, ModelDeploymentDescription
 from legion.k8s.definitions import STATUS_OK, STATUS_FAIL, STATUS_WARN
 from legion.k8s.definitions import EVENT_ADDED, EVENT_MODIFIED, EVENT_DELETED
 from legion.k8s.utils import build_client, get_current_namespace, load_config, load_secrets
-from legion.k8s.utils import CONNECTION_CONTEXT
 from legion.k8s.watch import ResourceWatch
 from legion.k8s.properties import K8SPropertyStorage, K8SConfigMapStorage, K8SSecretStorage
 from legion.k8s.exceptions import UnknownDeploymentForModelService

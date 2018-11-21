@@ -35,6 +35,8 @@ spec:
           value: "true"
         - name: GF_INSTALL_PLUGINS
           value: ""
+        - name: GF_LOG_LEVEL
+          value: "{{ .Values.log_level }}"
         - name: GF_GRAPHITE_DATASOURCE
         {{- if .Values.grafana.graphite }}
           value: "{{ .Values.grafana.graphite }}"
