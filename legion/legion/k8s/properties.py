@@ -38,7 +38,6 @@ import legion.k8s.definitions
 import legion.k8s.utils
 import legion.k8s.services
 import legion.utils
-from pandas.tests.extension.conftest import data
 
 LOGGER = logging.getLogger(__name__)
 
