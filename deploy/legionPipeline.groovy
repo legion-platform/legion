@@ -27,7 +27,9 @@ def createCluster() {
                     playbook: 'create-cluster.yml',
                     extras: '--vault-password-file=${vault} \
                             --extra-vars "profile=${Profile} \
-                            skip_kops=${Skip_kops}"',
+                            skip_kops=${Skip_kops} \
+                            legion_infra_version=${LegionInfraVersion} \
+                            legion_infra_registry=${LegionInfraRegistry}"',
                     colorized: true
                     )
                 }
@@ -91,9 +93,9 @@ def createjenkinsJobs(String commitID) {
     ../.venv/bin/python setup.py develop
     '''
     withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def output = sh(script:'''
-	        cd .venv/bin
+            cd .venv/bin
             export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
             export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
@@ -117,9 +119,9 @@ def createjenkinsJobs(String commitID) {
             env.jenkins_pass = creds[2]
             env.jenkins_token = creds[3]
         }
-	}
-	sh '''
-	cd .venv/bin
+    }
+    sh '''
+    cd .venv/bin
     ./create_example_jobs \
     "https://jenkins.${Profile}" \
     ../../examples \
@@ -138,7 +140,7 @@ def createjenkinsJobs(String commitID) {
 
 def runRobotTests(tags="") {
     withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def tags_list=tags.toString().trim().split(',')
             def robot_tags= []
             def nose_tags = []
@@ -217,7 +219,7 @@ def runRobotTests(tags="") {
                 otherFiles : "*.png",
             ])
         }
-	}
+    }
     junit 'tests/python/nosetests.xml'
 }
 

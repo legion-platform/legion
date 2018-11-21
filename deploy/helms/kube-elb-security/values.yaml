@@ -9,7 +9,7 @@ rbac:
   apiVersion: v1
 
 image:
-  repository: legion-platform/kube-elb-security
+  repository: legionplatform/k8s-kube-elb-security
   tag: latest
   pullPolicy: Always
 

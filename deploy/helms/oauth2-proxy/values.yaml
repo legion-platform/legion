@@ -5,8 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: docker.io/sath89/oauth2_proxy
-  tag: kubernetes
+  repository: legionplatform/k8s-oauth2-proxy
+  tag: latest
   pullPolicy: IfNotPresent
 
 config:
