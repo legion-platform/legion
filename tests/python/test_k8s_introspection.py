@@ -21,6 +21,7 @@ import logging
 import unittest2
 
 import legion.k8s
+import legion.k8s.utils
 import legion.config
 import legion.external
 import legion_test.profiler_loader
@@ -42,8 +43,8 @@ class TestK8SIntrospection(unittest2.TestCase):
         """
         logging.basicConfig(level=logging.DEBUG)
 
-        legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
-        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
+        legion.k8s.utils.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
+        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.utils.CONNECTION_CONTEXT))
 
     def _get_test_enclave(self):
         """

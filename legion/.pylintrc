@@ -3,3 +3,6 @@ max-line-length=120
 
 [BASIC]
 const-rgx=(([A-Z_][A-Za-z0-9_]*)|(__.*__))$
+
+[MESSAGES CONTROL]
+disable=W1202
