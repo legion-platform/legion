@@ -18,6 +18,8 @@
 Default config for legion
 """
 
+MAX_CONTENT_LENGTH = 1024*1024*100  # limit request size to 100MB
+
 MODEL_ID = "dummy-model"
 
 LEGION_ADDR = "0.0.0.0"
