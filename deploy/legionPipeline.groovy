@@ -21,7 +21,7 @@ def createClusterDockerized() {
     file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("legion/k8s-ansible:${params.LegionVersion}").inside {
+                docker.image("legion/k8s-ansible:${params.LegionVersion}").inside("-e ANSIBLE_LOCAL_TEMP=/tmp/") {
                     stage('Create cluster') {
                         sh """
                         cd /opt/ansible && ansible-playbook create-cluster.yml \
