@@ -9,12 +9,8 @@ node {
 
         legion.buildDescription()
         
-        stage('Install tools package'){
-            legion.installTools()
-        }
-
         stage('Create Kubernetes Cluster') {
-            legion.createCluster()
+            legion.createClusterDockerized()
         }
     }
     catch (e) {
