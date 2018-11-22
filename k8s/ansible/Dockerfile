@@ -29,6 +29,8 @@ RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/ho
 
 RUN apt-get clean && apt-get autoclean
 
-COPY deploy/ansible /opt/ansible
+COPY deploy/ansible /opt/legion/deploy/ansible
+COPY deploy/helms /opt/legion/deploy/helms
+COPY deploy/profiles /opt/legion/deploy/profiles
 
-WORKDIR /opt/ansible
+WORKDIR /opt/deploy
