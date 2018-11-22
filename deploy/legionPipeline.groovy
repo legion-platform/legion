@@ -20,14 +20,14 @@ def createClusterDockerized() {
     withCredentials([
     file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
-            sh 'env >/tmp/envvarstest'
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                 docker.image("legion/k8s-ansible:${params.LegionVersion}").inside {
                     stage('Create cluster') {
                         sh """
-                        env
-                        ls -lsa
-                        ansible -m ping localhost
+                        cd /opt/ansible && ansible-playbook create-cluster.yml \
+                        --vault-password-file=${vault} \
+                        --extra-vars "profile=${Profile} \
+                        skip_kops=${Skip_kops}"
                         """
                     }
                 }
