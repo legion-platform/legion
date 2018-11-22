@@ -379,7 +379,9 @@ class ModelService(Service):
         )
 
         if not service_deleted:
-            raise Exception('Cannot delete service')
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot remove service {}'.format(self.k8s_service.metadata.name)
+            )
 
         LOGGER.info('Deleting deployment {} in namespace {} with grace period {}s'
                     .format(self.deployment.metadata.name, self.namespace, grace_period_seconds))
@@ -396,7 +398,9 @@ class ModelService(Service):
         )
 
         if not deployment_deleted:
-            raise Exception('Cannot delete deployment')
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot remove deployment {}'.format(self.deployment.metadata.name)
+            )
 
     @property
     def desired_scale(self):

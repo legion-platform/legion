@@ -47,7 +47,7 @@ spec:
           value: "{{ .Release.Name }}"
         - name: NAMESPACE
           value: "{{ .Release.Namespace }}"
-        - name: LEGION_API_ADDR 
+        - name: LEGION_API_ADDR
           value: "0.0.0.0"
         - name: LEGION_API_PORT
           value: "5000"
@@ -61,9 +61,13 @@ spec:
           value: "{{ .Values.secrets.nexus.admin }}"
         - name: MODEL_IMAGES_REGISTRY_HOST
           value: "localhost:31111"
+        - name: K8S_API_RETRIES_COUNT
+          value: "{{ .Values.edi.k8s_api_retries_count }}"
+        - name: K8S_API_RETRIES_WAIT
+          value: "{{ .Values.edi.k8s_api_retries_wait }}"
         volumeMounts:
         - mountPath: /var/run/docker.sock
-          name: docker-socket 
+          name: docker-socket
         - mountPath: /opt/legion/secrets
           name: cluster-secrets
           readOnly: true

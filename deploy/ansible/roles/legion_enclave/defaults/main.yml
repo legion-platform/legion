@@ -7,3 +7,5 @@ namespace: "{{ enclave }}"
 source_secret_name: "{{ base_domain }}-tls"
 airflow_db_schema: "{{ enclave }}"
 airflow_db_enclave_user: "{{ enclave }}"
+k8s_api_retries_count: 10
+k8s_api_retries_wait: 3

@@ -396,7 +396,9 @@ class Enclave:
         )
 
         if not deployment_ready:
-            raise Exception('Cannot get deployment info')
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create deployment {}'.format(image_meta_information.k8s_name)
+            )
 
         # Creating a service
         service_spec = kubernetes.client.V1ServiceSpec(
@@ -427,7 +429,9 @@ class Enclave:
         )
 
         if not service_ready:
-            raise Exception('Cannot get deployment info')
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create service {}'.format(image_meta_information.k8s_name)
+            )
 
         LOGGER.info('Building model service object')
         return legion.k8s.services.ModelService(k8s_service)

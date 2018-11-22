@@ -31,3 +31,18 @@ class UnknownDeploymentForModelService(Exception):
         :type model_service_name: str
         """
         super().__init__('Cannot find deployment for model service {!r}'.format(model_service_name))
+
+
+class KubernetesOperationIsNotConfirmed(Exception):
+    """
+    Exception occurs when module cannot perform K8S operation
+    """
+
+    def __init__(self, message):
+        """
+        Build exception instance
+
+        :param message: description
+        :type message: str
+        """
+        super().__init__('Cannot confirm kubernetes operation: {!r}'.format(message))

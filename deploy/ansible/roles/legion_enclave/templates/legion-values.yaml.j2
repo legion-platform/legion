@@ -47,6 +47,9 @@ edi:
     repository: "{{ docker_repo }}/k8s-edi"
     tag: "{{ legion_version }}"
 
+  k8s_api_retries_count: "{{ k8s_api_retries_count }}"
+  k8s_api_retries_wait: "{{ k8s_api_retries_wait }}"
+
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
