@@ -53,6 +53,11 @@ cluster_zones:
     kops_utility_cidr: "{{ private_network }}.111.0/24"
 k8s_master_zones:
   - us-east-2a
+default_cluster_roles: 
+  - bastion.{{ cluster_name }}
+  - masters.{{ cluster_name }}
+  - nodes.{{ cluster_name }}
+
 # Legion specific variables
 persistent_jenkins_volume: true
 ssh_public_key: ~/.ssh/id_rsa.pub
