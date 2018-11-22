@@ -144,10 +144,6 @@ def runRobotTests(tags="") {
             def tags_list = tags.toString().trim().split(',')
             def robot_tags = []
             def nose_tags = []
-            if (tags) {
-                nose_tags.add(" -a default")
-                robot_tags.add(" -i default")
-            }
             for (item in tags_list) {
                 if (item.startsWith('-')) {
                     item = item.replace("-","")
@@ -197,6 +193,8 @@ def runRobotTests(tags="") {
             PROFILE=$Profile LEGION_VERSION=$LegionVersion PATH_TO_COOKIES=$PATH_TO_COOKIES \
             ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 4 --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter $robot_tags --outputdir . tests/**/*.robot || true
 
+            def robot_report = find tests/robot/ -name "*.xml"
+
             echo "Starting python tests"
             cd ../python
 
@@ -209,7 +207,10 @@ def runRobotTests(tags="") {
 
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
+
+            def nose_report = find tests/python/ -name "*.xml"
             '''
+            if (robot_report) {
             step([
                 $class : 'RobotPublisher',
                 outputPath : 'tests/robot/',
@@ -220,9 +221,18 @@ def runRobotTests(tags="") {
                 onlyCritical : true,
                 otherFiles : "*.png",
             ])
+            }
+            else {
+                echo "No '*.xml' files for generating robot report"
+            }
         }
     }
+    if (nose_report) {
     junit 'tests/python/nosetests.xml'
+    }
+    else {
+        echo "No ''*.xml' files for generating nosetests report"
+    }
 }
 
 def deployLegionEnclave() {
