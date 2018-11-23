@@ -139,6 +139,7 @@ def createjenkinsJobs(String commitID) {
 }
 
 def runRobotTests(tags="") {
+    def nose_report = 0
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def tags_list = tags.toString().trim().split(',')
@@ -206,11 +207,9 @@ def runRobotTests(tags="") {
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
             '''
-            def robot_report = sh 'find tests/robot/ -name "*.xml" | wc -l'
-            echo "robot_report is ${robot_report}"
-            def nose_report = sh 'find tests/python/ -name "*.xml" | wc -l'
-            echo "nose_report is ${nose_report}"
-            if (robot_report > 0) {
+            def robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
+            nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
+            if (robot_report.toInteger() > 0) {
                 step([
                     $class : 'RobotPublisher',
                     outputPath : 'tests/robot/',
@@ -227,7 +226,7 @@ def runRobotTests(tags="") {
             }
         }
     }
-    if (nose_report > 0) {
+    if (nose_report.toInteger() > 1) {
         junit 'tests/python/nosetests.xml'
     }
     else {
