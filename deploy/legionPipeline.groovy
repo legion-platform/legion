@@ -206,30 +206,28 @@ def runRobotTests(tags="") {
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
             '''
-            echo "Start creating test reports"
-            def robot_report = find tests/robot/ -name "*.xml"
-            echo "robot_report if ${robot_report}"
-            def nose_report = find tests/python/ -name "*.xml"
-            echo "nose_report if ${nose_report}"
-
-            if (robot_report) {
-            step([
-                $class : 'RobotPublisher',
-                outputPath : 'tests/robot/',
-                outputFileName : "*.xml",
-                disableArchiveOutput : false,
-                passThreshold : 100,
-                unstableThreshold: 95.0,
-                onlyCritical : true,
-                otherFiles : "*.png",
-            ])
+            def robot_report = sh find tests/robot/ -name "*.xml"
+            echo "robot_report is ${robot_report}"
+            def nose_report = sh find tests/python/ -name "*.xml"
+            echo "nose_report is ${nose_report}"
+            if (${robot_report}) {
+                step([
+                    $class : 'RobotPublisher',
+                    outputPath : 'tests/robot/',
+                    outputFileName : "*.xml",
+                    disableArchiveOutput : false,
+                    passThreshold : 100,
+                    unstableThreshold: 95.0,
+                    onlyCritical : true,
+                    otherFiles : "*.png",
+                ])
             }
             else {
                 echo "No '*.xml' files for generating robot report"
             }
         }
     }
-    if (nose_report) {
+    if (${nose_report}) {
         junit 'tests/python/nosetests.xml'
     }
     else {
