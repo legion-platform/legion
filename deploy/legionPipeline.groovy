@@ -233,8 +233,12 @@ def runRobotTests(tags="") {
     else {
         echo "No ''*.xml' files for generating nosetests report"
     }
-    if (!(nose_report.toInteger() > 1) && !(robot_report.toInteger() > 0)) {
-        echo "No tests were run during this build. Marking it as UNSTABLE"
+    if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && !tags) {
+        echo "All tests were run but no reports found. Marking build as UNSTABLE"
+        currentBuild.result = 'UNSTABLE'
+    }
+    if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && tags) {
+        echo "No tests were run during this build. Marking build as UNSTABLE"
         currentBuild.result = 'UNSTABLE'
     }
 }
