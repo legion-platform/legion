@@ -16,7 +16,6 @@ def buildDescription(){
    currentBuild.description = "${env.param_profile} ${env.param_git_branch}"
 }
 
-
 def ansibleDebugRunCheck(String debugRun) {
     // Run ansible playbooks and helm charts from sources in workspace and use verbose output for debug purposes
     if (debugRun == "true" ) {
