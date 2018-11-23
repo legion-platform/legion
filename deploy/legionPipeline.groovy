@@ -193,8 +193,6 @@ def runRobotTests(tags="") {
             PROFILE=$Profile LEGION_VERSION=$LegionVersion PATH_TO_COOKIES=$PATH_TO_COOKIES \
             ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 4 --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter $robot_tags --outputdir . tests/**/*.robot || true
 
-            def robot_report = find tests/robot/ -name "*.xml"
-
             echo "Starting python tests"
             cd ../python
 
@@ -207,9 +205,13 @@ def runRobotTests(tags="") {
 
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
-
-            def nose_report = find tests/python/ -name "*.xml"
             '''
+            echo "Start creating test reports"
+            def robot_report = find tests/robot/ -name "*.xml"
+            echo "robot_report if ${robot_report}"
+            def nose_report = find tests/python/ -name "*.xml"
+            echo "nose_report if ${nose_report}"
+
             if (robot_report) {
             step([
                 $class : 'RobotPublisher',
@@ -228,7 +230,7 @@ def runRobotTests(tags="") {
         }
     }
     if (nose_report) {
-    junit 'tests/python/nosetests.xml'
+        junit 'tests/python/nosetests.xml'
     }
     else {
         echo "No ''*.xml' files for generating nosetests report"
