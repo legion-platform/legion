@@ -28,7 +28,7 @@ RUN apt-get install -y \
 RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
 
 # Install Helm
-ADD https://raw.githubusercontent.com/helm/helm/v2.11.0/scripts/get /tmp/get_helm.sh
+ADD https://raw.githubusercontent.com/helm/helm/v2.10.0/scripts/get /tmp/get_helm.sh
 RUN bash /tmp/get_helm.sh
 
 # Install Kops
