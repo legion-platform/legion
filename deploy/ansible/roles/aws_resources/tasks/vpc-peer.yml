@@ -69,7 +69,7 @@
         vpc_peering_connection_id: "{{ vpc_peer.peering_id }}"
   with_items: "{{ cluster_route_tables.route_tables |map(attribute='id')|list }}"
 
-- name: Update Jenkins CC security group with workers subnets
+- name: Update Jenkins CC security group with cluster VPC subnet
   ec2_group:
     vpc_id: "{{ vpc_id }}"
     region: "{{ aws_region }}"
@@ -81,20 +81,4 @@
     purge_tags: false
     rules:
       - proto: all
-        cidr_ip: "{{ item }}"
-  with_items: "{{ subnet_facts.results|map(attribute='subnets.0.cidr_block')|list }}"
-
-- name: Update Jenkins CC security group with utility subnets
-  ec2_group:
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ aws_region }}"
-    group_id: "{{ jenkins_cc_sg }}"
-    name: legion-jenkins
-    description: legion-jenkins
-    purge_rules: false
-    purge_rules_egress: false
-    purge_tags: false
-    rules:
-      - proto: all
-        cidr_ip: "{{ item }}"
-  with_items: "{{ utility_subnet_facts.results|map(attribute='subnets.0.cidr_block')|list }}"
+        cidr_ip: "{{ private_network }}.0.0/16"
