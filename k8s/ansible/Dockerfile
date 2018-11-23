@@ -31,6 +31,14 @@ RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/ho
 ADD https://raw.githubusercontent.com/helm/helm/v2.11.0/scripts/get /tmp/get_helm.sh
 RUN bash /tmp/get_helm.sh
 
+# Install Kops
+ADD https://github.com/kubernetes/kops/releases/download/1.10.0/kops-linux-amd64 /usr/local/bin/kops
+RUN chmod a+x /usr/local/bin/kops
+
+# Install kubectl
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.10.6/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+RUN chmod a+x /usr/local/bin/kubectl
+
 # Cleanup temp resources
 RUN apt-get clean && apt-get autoclean
 
