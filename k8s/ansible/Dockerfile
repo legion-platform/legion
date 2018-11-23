@@ -27,8 +27,14 @@ RUN apt-get install -y \
 # Configure ansible
 RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
 
+# Install Helm
+ADD https://raw.githubusercontent.com/helm/helm/v2.11.0/scripts/get /tmp/get_helm.sh
+RUN bash /tmp/get_helm.sh
+
+# Cleanup temp resources
 RUN apt-get clean && apt-get autoclean
 
+# Deploy Legion
 COPY deploy/ansible /opt/legion/deploy/ansible
 COPY deploy/helms /opt/legion/deploy/helms
 COPY deploy/profiles /opt/legion/deploy/profiles

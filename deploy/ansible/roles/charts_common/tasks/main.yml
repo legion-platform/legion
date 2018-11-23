@@ -1,4 +1,8 @@
 ---
+
+- name: Init Helm
+  shell: helm --kube-context {{ cluster_name }} init
+
 - name: Add helm repositories
   shell: helm --kube-context {{ cluster_name }} repo add {{ item }}
   with_items:
