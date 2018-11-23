@@ -80,9 +80,7 @@
     purge_rules_egress: false
     purge_tags: false
     rules:
-      - proto: tcp
-        from_port: 443
-        to_port: 443
+      - proto: all
         cidr_ip: "{{ item }}"
   with_items: "{{ subnet_facts.results|map(attribute='subnets.0.cidr_block')|list }}"
 
@@ -97,8 +95,6 @@
     purge_rules_egress: false
     purge_tags: false
     rules:
-      - proto: tcp
-        from_port: 443
-        to_port: 443
+      - proto: all
         cidr_ip: "{{ item }}"
   with_items: "{{ utility_subnet_facts.results|map(attribute='subnets.0.cidr_block')|list }}"
