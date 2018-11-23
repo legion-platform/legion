@@ -237,7 +237,7 @@ def runRobotTests(tags="") {
         echo "All tests were run but no reports found. Marking build as UNSTABLE"
         currentBuild.result = 'UNSTABLE'
     }
-    if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && tags) {
+    if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
         echo "No tests were run during this build. Marking build as UNSTABLE"
         currentBuild.result = 'UNSTABLE'
     }
