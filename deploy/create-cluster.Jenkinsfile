@@ -10,7 +10,7 @@ node {
         legion.buildDescription()
         
         stage('Create Kubernetes Cluster') {
-            legion.createClusterDockerized()
+            legion.createCluster()
         }
     }
     catch (e) {
