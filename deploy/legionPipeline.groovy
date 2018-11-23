@@ -139,10 +139,12 @@ def createjenkinsJobs(String commitID) {
 }
 
 def runRobotTests(tags="") {
+    def nose_report = 0
+    def robot_report = 0
     withAWS(credentials: 'kops') {
-        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            def tags_list=tags.toString().trim().split(',')
-            def robot_tags= []
+    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+            def tags_list = tags.toString().trim().split(',')
+            def robot_tags = []
             def nose_tags = []
             for (item in tags_list) {
                 if (item.startsWith('-')) {
@@ -169,6 +171,7 @@ def runRobotTests(tags="") {
 
             echo "Starting robot tests"
             cd ../tests/robot
+            rm -f *.xml
             ../../.venv/bin/pip install yq
 
             PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
@@ -187,7 +190,6 @@ def runRobotTests(tags="") {
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion \
             jenkins_dex_client --path-to-profiles $PATH_TO_PROFILES_DIR > $PATH_TO_COOKIES
-            cat $PATH_TO_COOKIES
 
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion PATH_TO_COOKIES=$PATH_TO_COOKIES \
@@ -206,19 +208,39 @@ def runRobotTests(tags="") {
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
             ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
             '''
-            step([
-                $class : 'RobotPublisher',
-                outputPath : 'tests/robot/',
-                outputFileName : "*.xml",
-                disableArchiveOutput : false,
-                passThreshold : 100,
-                unstableThreshold: 95.0,
-                onlyCritical : true,
-                otherFiles : "*.png",
-            ])
+            robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
+            nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
+            if (robot_report.toInteger() > 0) {
+                step([
+                    $class : 'RobotPublisher',
+                    outputPath : 'tests/robot/',
+                    outputFileName : "*.xml",
+                    disableArchiveOutput : false,
+                    passThreshold : 100,
+                    unstableThreshold: 95.0,
+                    onlyCritical : true,
+                    otherFiles : "*.png",
+                ])
+            }
+            else {
+                echo "No '*.xml' files for generating robot report"
+            }
         }
     }
-    junit 'tests/python/nosetests.xml'
+    if (nose_report.toInteger() > 1) {
+        junit 'tests/python/nosetests.xml'
+    }
+    else {
+        echo "No ''*.xml' files for generating nosetests report"
+    }
+    if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && !tags) {
+        echo "All tests were run but no reports found. Marking build as UNSTABLE"
+        currentBuild.result = 'UNSTABLE'
+    }
+    if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
+        echo "No tests were run during this build. Marking build as UNSTABLE"
+        currentBuild.result = 'UNSTABLE'
+    }
 }
 
 def deployLegionEnclave() {
