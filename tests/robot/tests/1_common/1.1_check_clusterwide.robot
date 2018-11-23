@@ -13,7 +13,7 @@ Test Teardown       Close All Browsers
 *** Test Cases ***
 Checking if all core domains have been registered
     [Documentation]  Check that all required core DNS A records has been registered
-    [Tags]  core  dns  infra  default
+    [Tags]  core  dns  infra
     :FOR    ${subdomain}    IN    @{SUBDOMAINS}
     \  Check domain exists  ${subdomain}.${HOST_BASE_DOMAIN}
 
