@@ -171,6 +171,7 @@ def runRobotTests(tags="") {
 
             echo "Starting robot tests"
             cd ../tests/robot
+            rm -f *.xml
             ../../.venv/bin/pip install yq
 
             PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
@@ -234,6 +235,7 @@ def runRobotTests(tags="") {
         echo "No ''*.xml' files for generating nosetests report"
     }
     if (!(nose_report.toInteger() > 1) && !(robot_report.toInteger() > 0)) {
+        echo "No tests were run during this build. Marking it as UNSTABLE"
         currentBuild.result = 'UNSTABLE'
     }
 }
