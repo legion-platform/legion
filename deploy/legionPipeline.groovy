@@ -190,7 +190,6 @@ def runRobotTests(tags="") {
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion \
             jenkins_dex_client --path-to-profiles $PATH_TO_PROFILES_DIR > $PATH_TO_COOKIES
-            cat $PATH_TO_COOKIES
 
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion PATH_TO_COOKIES=$PATH_TO_COOKIES \
