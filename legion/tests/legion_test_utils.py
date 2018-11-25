@@ -104,8 +104,8 @@ def build_sequential_resource_name_generator(responses):
     :type responses: list[str]
     :return: Callable[[], str] -- function that generates name of responses
     """
-
     i = 0
+
     def func():
         nonlocal i
         if i >= len(responses):
@@ -215,7 +215,8 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
         else:
             raise Exception('Invalid type of argument ({}). Should be callable or string')
 
-        searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, current_test_resource_name))
+        searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function,
+                                                            current_test_resource_name))
 
         if not searched_files:
             raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(

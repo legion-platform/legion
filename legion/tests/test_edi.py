@@ -42,6 +42,7 @@ DOCKER_IMAGE_LABELS = {
     'com.epam.legion.model.version': '1.0'
 }
 
+
 class TestEDI(unittest2.TestCase):
     def test_edi_inspect_all_detail(self):
         with EDITestServer() as edi:
