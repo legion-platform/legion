@@ -352,6 +352,11 @@ class ModelService(Service):
         self.reload_cache()
 
     def check_service_is_deleted(self):
+        """
+        Check that this service has been deleted
+
+        :return: bool -- has services been deleted
+        """
         client = legion.k8s.utils.build_client()
         core_v1api = kubernetes.client.CoreV1Api(client)
 
@@ -363,6 +368,11 @@ class ModelService(Service):
         return self.k8s_service.metadata.name not in actual_services
 
     def check_deployment_is_deleted(self):
+        """
+        Check that this deployment has been deleted
+
+        :return: bool -- has deployment been deleted
+        """
         client = legion.k8s.utils.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
 
