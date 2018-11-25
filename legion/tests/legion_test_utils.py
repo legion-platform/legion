@@ -96,6 +96,39 @@ def patch_environ(values, flush_existence=False):
     return patch('os.environ', new_values)
 
 
+def build_sequential_resource_name_generator(responses):
+    """
+    Build function that can sequential return name of responses
+
+    :param responses: list of responses
+    :type responses: list[str]
+    :return: Callable[[], str] -- function that generates name of responses
+    """
+
+    i = 0
+    def func():
+        nonlocal i
+        if i >= len(responses):
+            raise Exception('Function is called #{} time, but have only {} variant(s)'.format(
+                i + 1, len(responses)
+            ))
+        value = responses[i]
+        i += 1
+        return value
+    return func
+
+
+def print_stack_trace(stack_state):
+    """
+    Print stack trace info to console
+
+    :param stack_state: stack trace frames
+    :type stack_state: litst[]
+    """
+    for frame in stack_state:
+        print('* function {} {}:{}'.format(frame.function, frame.filename, frame.lineno))
+
+
 @contextlib.contextmanager
 def persist_swagger_function_response_to_file(function, test_resource_name):
     """
@@ -104,19 +137,33 @@ def persist_swagger_function_response_to_file(function, test_resource_name):
 
     :param function: name of function
     :type function: str
-    :param test_resource_name: name of test resource (is used in file naming), e.g. two_models
-    :type test_resource_name: str
+    :param test_resource_name: name of test response (is used in file naming), e.g. two_models OR
+                               function that returns this string
+    :type test_resource_name: str or Callable[[], str]
     """
     client = build_swagger_function_client(function)
     origin = client.__class__.deserialize
 
     def response_catcher(self, response, type_name):
         _1, function_name = function.rsplit('.', maxsplit=1)
-        call_stack_functions = [f.function for f in inspect.stack()]
+        call_stack = inspect.stack()
+        call_stack_functions = [f.function for f in call_stack]
 
         if function_name in call_stack_functions:
+            print('Trying to persist function {}'.format(function))
+            # Very verbose test debugging:
+            # print_stack_trace(call_stack[:-2])
+
+            if callable(test_resource_name):
+                current_test_resource_name = test_resource_name()
+            elif isinstance(test_resource_name, str):
+                current_test_resource_name = test_resource_name
+            else:
+                raise Exception('Invalid type of argument ({}). Should be callable or string')
             path = '{}/{}.{}.{}.json'.format(TEST_RESPONSES_LOCATION, function,
-                                             type_name, test_resource_name)
+                                             type_name, current_test_resource_name)
+
+            print('Persisting to resource {} ({})'.format(current_test_resource_name, path))
             with open(path, 'w') as stream:
                 data = json.loads(response.data)
                 json.dump(data, stream, indent=2, sort_keys=True)
@@ -150,29 +197,43 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
 
     :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
     :type function: str
-    :param test_resource_name: name of test response (is used in file naming), e.g. two_models
-    :type test_resource_name: str
+    :param test_resource_name: name of test response (is used in file naming), e.g. two_models OR
+                               function that returns this string
+    :type test_resource_name: str or Callable[[], str]
     :return: Any -- response
     """
-    searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, test_resource_name))
-
-    if not searched_files:
-        raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
-            function, test_resource_name
-        ))
-
-    if len(searched_files) > 1:
-        raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
-            function, test_resource_name
-        ))
-
-    path, filename = searched_files[0], os.path.basename(searched_files[0])
-    splits = filename.rsplit('.')
-    return_type = splits[-3]
-
-    client = build_swagger_function_client(function)
-
     def response_catcher(*args, **kwargs):
+        print('Trying to return mocked answer for {}'.format(function))
+        # Very verbose test debugging:
+        # call_stack = inspect.stack()
+        # print_stack_trace(call_stack[:-2])
+
+        if callable(test_resource_name):
+            current_test_resource_name = test_resource_name()
+        elif isinstance(test_resource_name, str):
+            current_test_resource_name = test_resource_name
+        else:
+            raise Exception('Invalid type of argument ({}). Should be callable or string')
+
+        searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function, current_test_resource_name))
+
+        if not searched_files:
+            raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
+                function, current_test_resource_name
+            ))
+
+        if len(searched_files) > 1:
+            raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
+                function, current_test_resource_name
+            ))
+
+        path, filename = searched_files[0], os.path.basename(searched_files[0])
+        splits = filename.rsplit('.')
+        return_type = splits[-3]
+        print('Trying to return mocked answer for {} using {}'.format(function, path))
+
+        client = build_swagger_function_client(function)
+
         with open(path) as response_file:
             data = ResponseObjectType(data=response_file.read())
 

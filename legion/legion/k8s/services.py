@@ -351,6 +351,28 @@ class ModelService(Service):
 
         self.reload_cache()
 
+    def check_service_is_deleted(self):
+        client = legion.k8s.utils.build_client()
+        core_v1api = kubernetes.client.CoreV1Api(client)
+
+        actual_services = [
+            item.metadata.name
+            for item
+            in core_v1api.list_namespaced_service(self.namespace).items
+        ]
+        return self.k8s_service.metadata.name not in actual_services
+
+    def check_deployment_is_deleted(self):
+        client = legion.k8s.utils.build_client()
+        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+
+        actual_deployments = [
+            item.metadata.name
+            for item
+            in extension_api.list_namespaced_deployment(self.namespace).items
+        ]
+        return self.deployment.metadata.name not in actual_deployments
+
     def delete(self, grace_period_seconds=0):
         """
         Remove model from cluster
@@ -372,9 +394,7 @@ class ModelService(Service):
                                              namespace=self.namespace)
 
         service_deleted = ensure_function_succeed(
-            lambda: self.k8s_service.metadata.name not in [
-                item.metadata.name
-                for item in core_v1api.list_namespaced_service(self.namespace).items],
+            lambda: self.check_service_is_deleted(),
             10, 1, boolean_check=True
         )
 
@@ -391,9 +411,7 @@ class ModelService(Service):
                                                   propagation_policy='Background')
 
         deployment_deleted = ensure_function_succeed(
-            lambda: self.deployment.metadata.name not in [
-                item.metadata.name
-                for item in api_instance.list_namespaced_deployment(self.namespace).items],
+            lambda: self.check_deployment_is_deleted(),
             10, 1, boolean_check=True
         )
 

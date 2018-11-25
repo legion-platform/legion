@@ -207,8 +207,14 @@ def get_meta_from_docker_labels(labels):
     :type labels: dict[str, Any]
     :return: tuple[str, dict[str, str], str, str] -- k8s_name name, labels in DNS-1123 format, model id and version
     """
-    model_id = labels[legion.containers.headers.DOMAIN_MODEL_ID]
-    model_version = labels[legion.containers.headers.DOMAIN_MODEL_VERSION]
+    model_id = labels.get(legion.containers.headers.DOMAIN_MODEL_ID)
+    model_version = labels.get(legion.containers.headers.DOMAIN_MODEL_VERSION)
+
+    if not model_id or not model_version:
+        raise Exception('Legion docker labels for model image are missed: {}'.format(
+            ', '.join((legion.containers.headers.DOMAIN_MODEL_ID,
+                       legion.containers.headers.DOMAIN_MODEL_VERSION,)),
+        ))
 
     kubernetes_labels = dict()
     kubernetes_labels[LEGION_COMPONENT_LABEL] = LEGION_COMPONENT_NAME_MODEL
