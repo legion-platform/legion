@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 # install ansible with system utilities
 RUN apt-get update && apt-get install -y \
     ansible=2.7.2-1ppa~bionic apt-transport-https bash curl tar openssh-client \
-    sshpass git ca-certificates python-pip apt-utils locales
+    sshpass git ca-certificates python-pip apt-utils locales && \
+    apt-get clean && apt-get autoclean
 
 # setup locale
 RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
@@ -22,14 +23,11 @@ ENV LANGUAGE=en_US.UTF-8
  # Install ansible dependencies
 RUN apt-get install -y \
     python-yaml python-jinja2 python-boto python-boto3 python-psycopg2 \
-    postgresql-client python-crypto python-cryptography 
+    postgresql-client python-crypto python-cryptography && \
+    apt-get clean && apt-get autoclean
 
 # Configure ansible
 RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
-
-# Install Helm
-ADD https://raw.githubusercontent.com/helm/helm/v2.10.0/scripts/get /tmp/get_helm.sh
-RUN bash /tmp/get_helm.sh
 
 # Install Kops
 ADD https://github.com/kubernetes/kops/releases/download/1.10.0/kops-linux-amd64 /usr/local/bin/kops
@@ -39,8 +37,11 @@ RUN chmod a+x /usr/local/bin/kops
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.10.6/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod a+x /usr/local/bin/kubectl
 
-# Cleanup temp resources
-RUN apt-get clean && apt-get autoclean
+# Install Helm
+ENV HELM_VERSION=v2.10.0
+ADD https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz /tmp/helm/
+RUN tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
+    mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
 
 # Deploy Legion
 COPY deploy/ansible /opt/legion/deploy/ansible
