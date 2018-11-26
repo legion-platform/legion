@@ -17,6 +17,7 @@
 legion k8s services classes
 """
 import logging
+import os
 
 import kubernetes
 import kubernetes.client
