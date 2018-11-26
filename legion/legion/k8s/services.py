@@ -403,9 +403,12 @@ class ModelService(Service):
         core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name, body=body,
                                              namespace=self.namespace)
 
+        retries = int(os.getenv(*legion.config.K8S_API_RETRIES_COUNT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRIES_WAIT))
+
         service_deleted = ensure_function_succeed(
             lambda: self.check_service_is_deleted(),
-            10, 1, boolean_check=True
+            retries, retry_timeout, boolean_check=True
         )
 
         if not service_deleted:
@@ -422,7 +425,7 @@ class ModelService(Service):
 
         deployment_deleted = ensure_function_succeed(
             lambda: self.check_deployment_is_deleted(),
-            10, 1, boolean_check=True
+            retries, retry_timeout, boolean_check=True
         )
 
         if not deployment_deleted:

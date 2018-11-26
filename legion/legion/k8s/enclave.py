@@ -388,11 +388,14 @@ class Enclave:
             body=deployment,
             namespace=self.namespace)
 
+        retries = int(os.getenv(*legion.config.K8S_API_RETRIES_COUNT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRIES_WAIT))
+
         deployment_ready = legion.utils.ensure_function_succeed(
             lambda: image_meta_information.k8s_name in [
                 item.metadata.name
                 for item in extensions_v1beta1.list_namespaced_deployment(self.namespace).items],
-            10, 1, boolean_check=True
+            retries, retry_timeout, boolean_check=True
         )
 
         if not deployment_ready:
@@ -425,7 +428,7 @@ class Enclave:
             lambda: image_meta_information.k8s_name in [
                 item.metadata.name
                 for item in core_v1api.list_namespaced_service(self.namespace).items],
-            10, 1, boolean_check=True
+            retries, retry_timeout, boolean_check=True
         )
 
         if not service_ready:
