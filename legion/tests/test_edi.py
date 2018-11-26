@@ -660,6 +660,7 @@ class TestEDI(unittest2.TestCase):
                         'last_model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
                  mock.patch('legion.k8s.utils.is_code_run_in_cluster', return_value=None), \
+                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
                 deployments = edi.edi_client.undeploy(model='demo-abc-model', version='*')
                 # Test count of returned deployments
