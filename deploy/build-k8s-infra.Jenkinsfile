@@ -1,6 +1,7 @@
 import java.text.SimpleDateFormat
 
 def legion
+def chartNames = null
 
 class Globals {
     static String rootCommit = null
@@ -28,6 +29,8 @@ pipeline {
         param_git_branch = "${params.GitBranch}"
         //Docker registry to build package from
         param_docker_registry = "${params.DockerRegistry}"
+        // Nexus helm repository
+        param_nexusHelmRepository = "${params.NexusHelmRepository}"
         ///Job parameters
         buildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
         oauth2ProxyDockerimage = "k8s-oauth2-proxy"
@@ -154,6 +157,49 @@ pipeline {
                 }
             }
         }
+        stage('Package helm charts'){
+            steps{
+                dir ("${WORKSPACE}/deploy/helms") {
+                    script {
+                        chartNames = sh(returnStdout: true, script: 'ls').split()
+                        println (chartNames)
+                        for (chart in chartNames){
+                            sh"""
+                            sed -i 's@version: 0.1.0@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                            sed -i 's@version: 0.0.1@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                            helm package ${chart}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        stage('Deploy helm charts'){
+            steps{
+                withCredentials([[
+                 $class: 'UsernamePasswordMultiBinding',
+                 credentialsId: 'nexus-local-repository',
+                 usernameVariable: 'USERNAME',
+                 passwordVariable: 'PASSWORD']]) {
+                    dir ("${WORKSPACE}/deploy/helms") {
+                        script {
+                            for (chart in chartNames){
+                               sh"""
+                               curl -u ${USERNAME}:${PASSWORD} ${param_nexusHelmRepository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                               """
+                            }
+                            if (env.param_stable_release) {
+                                sh """
+
+                                """
+                            }
+
+
+                         }
+                    }
+             }
+        }
+
     }
     post {
       always {
