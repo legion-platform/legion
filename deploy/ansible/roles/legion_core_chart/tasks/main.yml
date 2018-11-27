@@ -68,13 +68,11 @@
 
 - name: Copy git deploy key to host
   copy:
-    src: "{{ git_key }}"
+    content: "{{ jenkins.git_key | b64decode }}"
     dest: "{{ tmp_dir }}/git.{{ cluster_name }}.deploy"
-    owner: "{{ deploy_key_owner }}"
-    group: "{{ deploys_key_group }}"
 
 - name: Remove old GIT secret
-  shell: kubectl --context {{ cluster_name }} delete secret legion-git-deploy  --ignore-not-found=true
+  shell: kubectl --context {{ cluster_name }} delete secret legion-git-deploy --ignore-not-found=true
 
 - name: Create GIT secret
   shell: kubectl --context {{ cluster_name }} create secret generic legion-git-deploy --from-file=id_rsa={{ tmp_dir }}/git.{{ cluster_name }}.deploy
