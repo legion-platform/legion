@@ -38,6 +38,7 @@ import legion.config
 import legion.external.grafana
 from legion.utils import normalize_name
 import legion.k8s.services
+import legion.k8s.exceptions
 import legion.k8s.enclave
 from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
@@ -211,10 +212,11 @@ def get_meta_from_docker_labels(labels):
     model_version = labels.get(legion.containers.headers.DOMAIN_MODEL_VERSION)
 
     if not model_id or not model_version:
-        raise Exception('Legion docker labels for model image are missed: {}'.format(
-            ', '.join((legion.containers.headers.DOMAIN_MODEL_ID,
-                       legion.containers.headers.DOMAIN_MODEL_VERSION,)),
-        ))
+        raise legion.k8s.exceptions.IncompatibleLegionModelDockerImage(
+            'Legion docker labels for model image are missed: {}'.format(
+                ', '.join((legion.containers.headers.DOMAIN_MODEL_ID,
+                           legion.containers.headers.DOMAIN_MODEL_VERSION,)),
+            ))
 
     kubernetes_labels = dict()
     kubernetes_labels[LEGION_COMPONENT_LABEL] = LEGION_COMPONENT_NAME_MODEL

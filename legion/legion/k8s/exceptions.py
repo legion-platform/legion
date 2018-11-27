@@ -46,3 +46,19 @@ class KubernetesOperationIsNotConfirmed(Exception):
         :type message: str
         """
         super().__init__('Cannot confirm kubernetes operation: {!r}'.format(message))
+
+
+class IncompatibleLegionModelDockerImage(Exception):
+    """
+    Exception occurs when user tries to use incompatible docker image (e.g. with missed labels)
+    """
+
+    def __init__(self, message):
+        """
+        Build exception instance
+
+        :param message: description
+        :type message: str
+        """
+        self.message = message
+        super().__init__('Incompatible Legion image: {!r}'.format(self.message))

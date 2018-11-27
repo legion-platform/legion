@@ -324,7 +324,7 @@ class Enclave:
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
             port=legion.config.LEGION_PORT[1]
-            )
+        )
 
         livenessprobe = kubernetes.client.V1Probe(
             failure_threshold=10,
@@ -388,8 +388,8 @@ class Enclave:
             body=deployment,
             namespace=self.namespace)
 
-        retries = int(os.getenv(*legion.config.K8S_API_RETRIES_COUNT))
-        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRIES_WAIT))
+        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
 
         deployment_ready = legion.utils.ensure_function_succeed(
             lambda: image_meta_information.k8s_name in [

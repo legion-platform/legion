@@ -61,10 +61,10 @@ spec:
           value: "{{ .Values.secrets.nexus.admin }}"
         - name: MODEL_IMAGES_REGISTRY_HOST
           value: "localhost:31111"
-        - name: K8S_API_RETRIES_COUNT
-          value: "{{ .Values.edi.k8s_api_retries_count }}"
-        - name: K8S_API_RETRIES_WAIT
-          value: "{{ .Values.edi.k8s_api_retries_wait }}"
+        - name: K8S_API_RETRY_NUMBER_MAX_LIMIT
+          value: "{{ .Values.edi.k8s_api_retry_number_max_limit }}"
+        - name: K8S_API_RETRY_DELAY_SEC
+          value: "{{ .Values.edi.k8s_api_retry_delay_sec }}"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket
