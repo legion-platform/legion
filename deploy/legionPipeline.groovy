@@ -284,27 +284,33 @@ def deployLegionEnclave() {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                     if (params.PublicRelease){
-                        ansiblePlaybook(
-                            playbook: 'deploy-legion-enclave.yml',
-                            extras: '--vault-password-file=${vault} \
-                                     --extra-vars "profile=${Profile} \
-                                     legion_version=${LegionVersion} \
-                                     pypi_repo=${PypiRepo} \
-                                     docker_repo=${DockerRepo} \
-                                     helm_repo=${HelmRepo} \
-                                     enclave_name=${EnclaveName}"',
-                            colorized: true
-                         )
+                        docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -u root") {
+                            stage('Deploy Legion Enclave') {
+                                sh """
+                                cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion-enclave.yml \
+                                --vault-password-file=${vault} \
+                                --extra-vars "profile=${params.Profile} \
+                                legion_version=${params.LegionVersion} \
+                                pypi_repo=${params.PypiRepo} \
+                                docker_repo=${params.DockerRepo} \
+                                helm_repo=${HelmRepo} \
+                                enclave_name=${params.EnclaveName}"
+                                """
+                            }
+                        }
                     } else {
-                        ansiblePlaybook(
-                            playbook: 'deploy-legion-enclave.yml',
-                            extras: '--vault-password-file=${vault} \
-                                     --extra-vars "profile=${Profile} \
-                                     legion_version=${LegionVersion} \
-                                     helm_repo=${HelmRepo} \
-                                     enclave_name=${EnclaveName}" ',
-                            colorized: true
-                        )
+                        docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -u root") {
+                            stage('Deploy Legion Enclave') {
+                                sh """
+                                cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion-enclave.yml \
+                                --vault-password-file=${vault} \
+                                --extra-vars "profile=${params.Profile} \
+                                legion_version=${params.LegionVersion} \
+                                helm_repo=${HelmRepo} \
+                                enclave_name=${params.EnclaveName}"
+                                """
+                            }
+                        }
                     }
                 }
             }
@@ -318,13 +324,16 @@ def terminateLegionEnclave() {
             file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    ansiblePlaybook(
-                        playbook: 'terminate-legion-enclave.yml',
-                            extras: '--vault-password-file=${vault} \
-                                    --extra-vars "profile=${Profile} \
-                                    enclave_name=${EnclaveName}"',
-                            colorized: true
-                    )
+                    docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -u root") {
+                        stage('Terminate Legion Enclave') {
+                            sh """
+                            cd /opt/legion/deploy/ansible && ansible-playbook terminate-legion-enclave.yml \
+                            --vault-password-file=${vault} \
+                            --extra-vars "profile=${params.Profile} \
+                            enclave_name=${params.EnclaveName}"
+                            """
+                        }
+                    }
                 }
             }
         }
