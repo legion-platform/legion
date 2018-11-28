@@ -33,8 +33,9 @@ RUN apt-get update && apt-get install --yes docker-ce
 COPY scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
 COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
 
-# Copy plugins installation script
+# Copy plugins installation script & set run mode
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
+RUN chmod +x /usr/local/bin/install-plugins.sh
 
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 
@@ -48,22 +49,20 @@ ENV JENKINS_UC_DOWNLOAD=$update_center_download_url
 ARG update_center_experimental_url="https://updates.jenkins.io/experimental"
 ENV JENKINS_UC_EXPERIMENTAL=$update_center_experimental_url
 
+# Install plugins
+USER jenkins
+
 RUN echo "INSTALLING BASE PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
-    chmod +x /usr/local/bin/install-plugins.sh
+    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
 
 # Non-cached section
 
 ARG legion_plugin_version="latest"
 ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
 
-RUN "printenv"
-
-RUN echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
+RUN rm -f /usr/share/jenkins/ref/plugins.txt && \
+    echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
     echo "INSTALLING LEGION PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
-    chmod +x /usr/local/bin/install-plugins.sh
-
-# Install plugins
-USER jenkins
-RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
