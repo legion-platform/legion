@@ -312,7 +312,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/jenkins
-                        docker build ${Globals.dockerCacheArg} --build-arg update_center_url="" --build-arg update_center_experimental_url="${params.JenkinsPluginsRepository}" --build-arg update_center_download_url="${params.JenkinsPluginsProxy}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg update_center_url="" --build-arg update_center_experimental_url="${params.JenkinsPluginsProxy}" --build-arg update_center_download_url="${params.JenkinsPluginsProxy}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
