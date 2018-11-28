@@ -36,11 +36,20 @@ COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs
 # Copy plugins installation script
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
 
-# Prepare plugins
+# Prepare env variables from build arguments
+ARG JENKINS_UC="https://updates.jenkins.io"
+ENV JENKINS_UC=$JENKINS_UC
+
+ARG JENKINS_UC_DOWNLOAD="https://updates.jenkins.io/download"
+ENV JENKINS_UC_DOWNLOAD=$JENKINS_UC_DOWNLOAD
+
+ARG JENKINS_UC_EXPERIMENTAL="https://updates.jenkins.io/experimental"
+ENV JENKINS_UC_EXPERIMENTAL=$JENKINS_UC_EXPERIMENTAL
+
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 
-ARG jenkins_plugin_version="latest"
-ENV JENKINS_PLUGIN_VERSION=$jenkins_plugin_version
+ARG JENKINS_PLUGIN_VERSION="latest"
+ENV JENKINS_PLUGIN_VERSION=$JENKINS_PLUGIN_VERSION
 RUN echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" >> /usr/share/jenkins/ref/plugins.txt && \
     echo "INSTALLING NEXT PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
