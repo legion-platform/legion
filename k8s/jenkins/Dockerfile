@@ -39,14 +39,14 @@ COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 
 # Prepare env variables from build arguments
-ARG JENKINS_UC="https://updates.jenkins.io"
-ENV JENKINS_UC=$JENKINS_UC
+ARG update_center_url="https://updates.jenkins.io"
+ENV JENKINS_UC=$update_center_url
 
-ARG JENKINS_UC_DOWNLOAD="https://updates.jenkins.io/download"
-ENV JENKINS_UC_DOWNLOAD=$JENKINS_UC_DOWNLOAD
+ARG update_center_download_url="https://updates.jenkins.io/download"
+ENV JENKINS_UC_DOWNLOAD=$update_center_download_url
 
-ARG JENKINS_UC_EXPERIMENTAL="https://updates.jenkins.io/experimental"
-ENV JENKINS_UC_EXPERIMENTAL=$JENKINS_UC_EXPERIMENTAL
+ARG update_center_experimental_url="https://updates.jenkins.io/experimental"
+ENV JENKINS_UC_EXPERIMENTAL=$update_center_experimental_url
 
 RUN echo "INSTALLING BASE PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
@@ -54,8 +54,8 @@ RUN echo "INSTALLING BASE PLUGINS:" && \
 
 # Non-cached section
 
-ARG JENKINS_PLUGIN_VERSION="latest"
-ENV JENKINS_PLUGIN_VERSION=$JENKINS_PLUGIN_VERSION
+ARG legion_plugin_version="latest"
+ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
 
 RUN "printenv"
 
