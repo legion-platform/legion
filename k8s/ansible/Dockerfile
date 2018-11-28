@@ -46,6 +46,7 @@ RUN tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
 # Deploy Legion
 COPY deploy/ansible /opt/legion/deploy/ansible
 COPY deploy/helms /opt/legion/deploy/helms
-COPY deploy/profiles /opt/legion/deploy/profiles
+COPY deploy/profiles/profiles_template.yaml /opt/legion/deploy/profiles/profiles_template.yaml
+COPY deploy/profiles/secrets_template.yaml /opt/legion/deploy/profiles/secrets_template.yaml
 
-WORKDIR /opt/deploy
+WORKDIR /opt/legion/deploy/
