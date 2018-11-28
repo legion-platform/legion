@@ -28,32 +28,12 @@ def createCluster() {
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${params.Profile} \
                         skip_kops=${params.Skip_kops}"
+                        helm_repo=${params.HelmRepo} \
+                        legion_version=${params.LegionVersion} \
+                        legion_infra_version=${params.LegionInfraVersion} \
+                        legion_infra_registry=${params.LegionInfraRegistry}"',
                         """
                     }
-                }
-            }
-        }
-    }
-}
-
-def createCluster() {
-    dir('deploy/ansible'){
-        sh 'env'
-        withCredentials([
-            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            withAWS(credentials: 'kops') {
-            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                ansiblePlaybook(
-                    playbook: 'create-cluster.yml',
-                    extras: '--vault-password-file=${vault} \
-                            --extra-vars "profile=${Profile} \
-                            skip_kops=${Skip_kops} \
-                            helm_repo=${HelmRepo} \
-                            legion_version=${LegionVersion} \
-                            legion_infra_version=${LegionInfraVersion} \
-                            legion_infra_registry=${LegionInfraRegistry}"',
-                    colorized: true
-                    )
                 }
             }
         }
