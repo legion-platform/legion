@@ -17,6 +17,7 @@
 legion k8s services classes
 """
 import logging
+import os
 
 import kubernetes
 import kubernetes.client
@@ -351,6 +352,38 @@ class ModelService(Service):
 
         self.reload_cache()
 
+    def check_service_is_deleted(self):
+        """
+        Check that this service has been deleted
+
+        :return: bool -- has services been deleted
+        """
+        client = legion.k8s.utils.build_client()
+        core_v1api = kubernetes.client.CoreV1Api(client)
+
+        actual_services = [
+            item.metadata.name
+            for item
+            in core_v1api.list_namespaced_service(self.namespace).items
+        ]
+        return self.k8s_service.metadata.name not in actual_services
+
+    def check_deployment_is_deleted(self):
+        """
+        Check that this deployment has been deleted
+
+        :return: bool -- has deployment been deleted
+        """
+        client = legion.k8s.utils.build_client()
+        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+
+        actual_deployments = [
+            item.metadata.name
+            for item
+            in extension_api.list_namespaced_deployment(self.namespace).items
+        ]
+        return self.deployment.metadata.name not in actual_deployments
+
     def delete(self, grace_period_seconds=0):
         """
         Remove model from cluster
@@ -371,12 +404,35 @@ class ModelService(Service):
         core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name, body=body,
                                              namespace=self.namespace)
 
+        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
+
+        service_deleted = ensure_function_succeed(
+            lambda: self.check_service_is_deleted(),
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not service_deleted:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot remove service {}'.format(self.k8s_service.metadata.name)
+            )
+
         LOGGER.info('Deleting deployment {} in namespace {} with grace period {}s'
                     .format(self.deployment.metadata.name, self.namespace, grace_period_seconds))
         api_instance.delete_namespaced_deployment(name=self.deployment.metadata.name,
                                                   namespace=self.namespace, body=body,
                                                   grace_period_seconds=grace_period_seconds,
                                                   propagation_policy='Background')
+
+        deployment_deleted = ensure_function_succeed(
+            lambda: self.check_deployment_is_deleted(),
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not deployment_deleted:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot remove deployment {}'.format(self.deployment.metadata.name)
+            )
 
     @property
     def desired_scale(self):

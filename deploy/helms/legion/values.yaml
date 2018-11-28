@@ -17,6 +17,9 @@ edi:
 
   rbac: true
 
+  k8s_api_retry_number_max_limit: 10
+  k8s_api_retry_delay_sec: 3
+
   ingress:
     enabled: true
     annotations: {}
@@ -53,7 +56,7 @@ jenkins:
     pullPolicy: "Always"
 
   rbac: true
-  
+
   ingress:
     enabled: true
     annotations: {}

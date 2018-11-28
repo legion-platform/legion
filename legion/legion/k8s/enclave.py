@@ -324,7 +324,7 @@ class Enclave:
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
             port=legion.config.LEGION_PORT[1]
-            )
+        )
 
         livenessprobe = kubernetes.client.V1Probe(
             failure_threshold=10,
@@ -388,6 +388,21 @@ class Enclave:
             body=deployment,
             namespace=self.namespace)
 
+        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
+
+        deployment_ready = legion.utils.ensure_function_succeed(
+            lambda: image_meta_information.k8s_name in [
+                item.metadata.name
+                for item in extensions_v1beta1.list_namespaced_deployment(self.namespace).items],
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not deployment_ready:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create deployment {}'.format(image_meta_information.k8s_name)
+            )
+
         # Creating a service
         service_spec = kubernetes.client.V1ServiceSpec(
             selector=image_meta_information.kubernetes_labels,
@@ -408,6 +423,18 @@ class Enclave:
         k8s_service = core_v1api.create_namespaced_service(
             body=service,
             namespace=self.namespace)
+
+        service_ready = legion.utils.ensure_function_succeed(
+            lambda: image_meta_information.k8s_name in [
+                item.metadata.name
+                for item in core_v1api.list_namespaced_service(self.namespace).items],
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not service_ready:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create service {}'.format(image_meta_information.k8s_name)
+            )
 
         LOGGER.info('Building model service object')
         return legion.k8s.services.ModelService(k8s_service)

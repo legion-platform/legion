@@ -70,7 +70,7 @@
                     "value": "5555"
                   }
                 ],
-                "image": "127.0.0.1/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -350,7 +350,7 @@
                     "value": "/home/airflow"
                   }
                 ],
-                "image": "127.0.0.1/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "exec": {
@@ -526,7 +526,7 @@
                     "value": "/opt/secrets"
                   }
                 ],
-                "image": "127.0.0.1/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "livenessProbe": {
                   "failureThreshold": 3,
@@ -734,7 +734,7 @@
                     "value": "debug-enclave"
                   }
                 ],
-                "image": "127.0.0.1/ada/k8s-airflow:0.9.0-20181105095338.552.8968684",
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181105095338.552.8968684",
                 "imagePullPolicy": "IfNotPresent",
                 "name": "worker",
                 "resources": {

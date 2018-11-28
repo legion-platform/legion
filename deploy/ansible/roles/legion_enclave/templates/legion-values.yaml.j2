@@ -47,6 +47,9 @@ edi:
     repository: "{{ docker_repo }}/k8s-edi"
     tag: "{{ legion_version }}"
 
+  k8s_api_retry_number_max_limit: "{{ k8s_api_retry_number_max_limit }}"
+  k8s_api_retry_delay_sec: "{{ k8s_api_retry_delay_sec }}"
+
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
