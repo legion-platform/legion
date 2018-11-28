@@ -37,8 +37,6 @@ COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
 
 # Prepare plugins
-ARG jenkins_plugin_server="http://nexus-local.cc.epm.kharlamov.biz/jenkins"
-ENV JENKINS_UC_EXPERIMENTAL=$jenkins_plugin_server
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 
 ARG jenkins_plugin_version="latest"

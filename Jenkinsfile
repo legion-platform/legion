@@ -26,10 +26,10 @@ pipeline {
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
                     println(Globals.dockerLabels)
-                    
+
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
-                    
+
                     /// Define build version
                     if (params.StableRelease) {
                         if (params.ReleaseVersion){
@@ -132,7 +132,7 @@ pipeline {
                     }
                 }
                 stage('Run Python code analyzers') {
-                    agent { 
+                    agent {
                         docker {
                             image "legion-docker-agent:${env.BUILD_NUMBER}"
                         }
@@ -248,7 +248,7 @@ EOL
             }
         }
         stage('Build docs') {
-            agent { 
+            agent {
                 docker {
                     image "legion-docker-agent:${env.BUILD_NUMBER}"
                     args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage}"
@@ -312,7 +312,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/jenkins
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} -e "JENKINS_UC_EXPERIMENTAL=${params.JenkinsPluginsRepository}" -e "JENKINS_UC_DOWNLOAD=${params.JenkinsPluginsRepositoryStore}" --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -374,7 +374,7 @@ EOL
                         cp /src/legion/nosetests.xml legion/nosetests.xml
                         """
                         junit 'legion/nosetests.xml'
-        
+
                         sh """
                         cp -rf /src/legion/cover \"${params.LocalDocumentationStorage}/${Globals.buildVersion}-cover\"
                         """
@@ -478,8 +478,8 @@ EOL
             }
         }
 	}
-    post { 
-        always { 
+    post {
+        always {
             script {
                 legion = load "deploy/legionPipeline.groovy"
                 legion.notifyBuild(currentBuild.currentResult)
