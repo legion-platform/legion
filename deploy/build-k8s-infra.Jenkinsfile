@@ -188,13 +188,6 @@ pipeline {
                                curl -u ${USERNAME}:${PASSWORD} ${param_nexusHelmRepository} --upload-file ${chart}-${Globals.buildVersion}.tgz
                                """
                             }
-                            //if (env.param_stable_release) {
-                            //    sh """
-                            //
-                            //    """
-                            //}
-
-
                         }
                     }
                 }
