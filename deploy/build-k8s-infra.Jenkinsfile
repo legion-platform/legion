@@ -161,12 +161,12 @@ pipeline {
             steps{
                 dir ("${WORKSPACE}/deploy/helms") {
                     script {
-                        chartNames = sh(returnStdout: true, script: 'ls').split()
+                        //chartNames = sh(returnStdout: true, script: 'ls').split()
+                        chartNames = [ 'oauth2-proxy', 'kube-fluentd', 'kube-elb-security' ]
                         println (chartNames)
                         for (chart in chartNames){
                             sh"""
-                            sed -i 's@version: 0.1.0@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
-                            sed -i 's@version: 0.0.1@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                            sed -i 's@^version: .*$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
                             helm package ${chart}
                             """
                         }
@@ -188,11 +188,11 @@ pipeline {
                                curl -u ${USERNAME}:${PASSWORD} ${param_nexusHelmRepository} --upload-file ${chart}-${Globals.buildVersion}.tgz
                                """
                             }
-                            if (env.param_stable_release) {
-                                sh """
-
-                                """
-                            }
+                            //if (env.param_stable_release) {
+                            //    sh """
+                            //
+                            //    """
+                            //}
 
 
                          }
