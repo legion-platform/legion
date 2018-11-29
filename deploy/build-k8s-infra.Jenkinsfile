@@ -166,7 +166,7 @@ pipeline {
                         println (chartNames)
                         for (chart in chartNames){
                             sh"""
-                            sed -i 's@^version: .*$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                            sed -i 's@^version: .*\$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
                             helm package ${chart}
                             """
                         }
