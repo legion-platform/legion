@@ -91,7 +91,7 @@
     loop_var: enclave
 
 - name: Pre run with dumping
-  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --debug --dry-run -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-helm/legion-core --name legion-core --debug --dry-run -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
   register: helm_core_install_output
   args:
     chdir: ../helms
@@ -102,7 +102,7 @@
     dest: "{{ tmp_dir }}/helm.core.{{ cluster_name }}.debug"
 
 - name: Install legion core chart
-  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --wait --timeout 600 -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-helm/legion-core --name legion-core --wait --timeout 600 -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
   args:
     chdir: ../helms
 

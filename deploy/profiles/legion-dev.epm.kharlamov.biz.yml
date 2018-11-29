@@ -69,6 +69,7 @@ use_https: "yes"
 use_https_for_tests: "yes"
 pypi_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/pypi-hosted/simple"
 docker_repo: "nexus-local.cc.epm.kharlamov.biz:443/legion"
+helm_repo: "https://nexus-local.cc.epm.kharlamov.biz/repository/helm-main/"
 namespace: default
 deployment: legion
 examples_to_test:

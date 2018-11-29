@@ -59,7 +59,9 @@
     kubectl --context {{ cluster_name }} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
     sleep 1
     helm --kube-context {{ cluster_name }} init --service-account tiller
+    helm --kube-context {{ cluster_name }} repo add legion-helm {{ helm_repo }}
     helm --kube-context {{ cluster_name }} repo update
+    helm --kube-context {{ cluster_name }} fetch legion-helm
   when: helm_list_initial_status.failed and helm_list_status.stdout.find('could not find a ready tiller') == -1
 
 - name: Wait for helm ready
