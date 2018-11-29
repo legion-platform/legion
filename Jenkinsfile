@@ -7,9 +7,10 @@ class Globals {
     static String dockerCacheArg = null
 }
 
+def chartNames = null
+
 pipeline {
     agent any
-
     stages {
         stage('Checkout and set build vars') {
             steps {
@@ -477,7 +478,42 @@ EOL
                 }
             }
         }
-	}
+                stage('Package helm charts'){
+            steps{
+                dir ("${WORKSPACE}/deploy/helms") {
+                    script {
+                        chartNames = sh(returnStdout: true, script: 'ls').split()
+                        println (chartNames)
+                        for (chart in chartNames){
+                            sh"""
+                            sed -i 's@^version: .*\$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                            helm package ${chart}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        stage('Deploy helm charts'){
+            steps{
+                withCredentials([[
+                 $class: 'UsernamePasswordMultiBinding',
+                 credentialsId: 'nexus-local-repository',
+                 usernameVariable: 'USERNAME',
+                 passwordVariable: 'PASSWORD']]) {
+                    dir ("${WORKSPACE}/deploy/helms") {
+                        script {
+                            for (chart in chartNames){
+                               sh"""
+                               curl -u ${USERNAME}:${PASSWORD} ${params.NexusHelmRepository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                               """
+                            }
+                        }
+                    }
+                }
+             }
+        }
+    }
     post { 
         always { 
             script {
