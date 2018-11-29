@@ -29,7 +29,7 @@
     git_secret_name: legion-git-deploy
 
 - name: Pre run with dumping
-  shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   register: helm_legion_install_output
   args:
     chdir: ../helms
@@ -40,7 +40,7 @@
     dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.debug"
 
 - name: Install legion chart
-  shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   args:
     chdir: ../helms
 
