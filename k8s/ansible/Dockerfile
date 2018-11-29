@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 # install ansible with system utilities
 RUN apt-get update && apt-get install -y \
     ansible=2.7.2-1ppa~bionic apt-transport-https bash curl tar openssh-client \
-    sshpass git ca-certificates python-pip apt-utils locales && \
+    sshpass=1.06-1 git ca-certificates python-pip apt-utils locales && \
     apt-get clean && apt-get autoclean
 
 # setup locale
@@ -22,19 +22,22 @@ ENV LANGUAGE=en_US.UTF-8
 
  # Install ansible dependencies
 RUN apt-get install -y \
-    python-yaml python-jinja2 python-boto python-boto3 python-psycopg2 \
-    postgresql-client python-crypto python-cryptography && \
+    python-yaml=3.12-1build2 python-jinja2=2.10-1 python-boto=2.44.0-1ubuntu2 python-boto3=1.4.2-1 \
+    python-psycopg2=2.7.4-1 postgresql-client=10+190 python-crypto=2.6.1-8ubuntu2 \
+    python-cryptography=2.1.4-1ubuntu1.2 && \
     apt-get clean && apt-get autoclean
 
 # Configure ansible
 RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
 
 # Install Kops
-ADD https://github.com/kubernetes/kops/releases/download/1.10.0/kops-linux-amd64 /usr/local/bin/kops
+ENV KOPS_VERSION=1.10.0
+ADD https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 /usr/local/bin/kops
 RUN chmod a+x /usr/local/bin/kops
 
 # Install kubectl
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.10.6/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+ENV KUBECTL_VERSION=v1.10.6
+ADD https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod a+x /usr/local/bin/kubectl
 
 # Install Helm
@@ -45,6 +48,7 @@ RUN tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
 
 # Deploy Legion
 COPY deploy/ansible /opt/legion/deploy/ansible
+# TODO remove helm charts from image as soon as helm repo will be eintroduced
 COPY deploy/helms /opt/legion/deploy/helms
 COPY deploy/profiles/profiles_template.yaml /opt/legion/deploy/profiles/profiles_template.yaml
 COPY deploy/profiles/secrets_template.yaml /opt/legion/deploy/profiles/secrets_template.yaml

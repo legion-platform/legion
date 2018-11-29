@@ -71,6 +71,8 @@ node {
                     string(name: 'Profile', value: params.Profile),
                     string(name: 'LegionVersion', value: legionVersion),
                     string(name: 'DockerRepo', value: params.DockerRepo),
+                    string(name: 'LegionInfraVersion', value: params.LegionInfraVersion),
+                    string(name: 'LegionInfraRegistry', value: params.LegionInfraRegistry),
                     booleanParam(name: 'Skip_kops', value: false)
             ]
         }

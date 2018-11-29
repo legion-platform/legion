@@ -27,6 +27,8 @@ def createCluster() {
                         cd /opt/legion/deploy/ansible && ansible-playbook create-cluster.yml \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${params.Profile} \
+                        legion_infra_version=${params.LegionInfraVersion} \
+                        legion_infra_registry=${params.LegionInfraRegistry} \
                         skip_kops=${params.Skip_kops}"
                         helm_repo=${params.HelmRepo} \
                         legion_version=${params.LegionVersion} \
