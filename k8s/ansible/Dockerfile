@@ -2,14 +2,10 @@ FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# add ansible repository
-RUN apt-get update && apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:ansible/ansible-2.7
-
-# install ansible with system utilities
+# install system utilities
 RUN apt-get update && apt-get install -y \
-    ansible=2.7.2-1ppa~bionic apt-transport-https bash curl tar openssh-client \
-    sshpass=1.06-1 git ca-certificates python-pip apt-utils locales && \
+    python-pip apt-transport-https bash curl tar openssh-client \
+    sshpass git ca-certificates python-pip apt-utils locales && \
     apt-get clean && apt-get autoclean
 
 # setup locale
@@ -20,6 +16,9 @@ ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 
+# Install ansible from pip
+RUN pip install ansible==2.7.2
+
  # Install ansible dependencies
 RUN apt-get install -y \
     python-yaml=3.12-1build2 python-jinja2=2.10-1 python-boto=2.44.0-1ubuntu2 python-boto3=1.4.2-1 \
@@ -28,7 +27,7 @@ RUN apt-get install -y \
     apt-get clean && apt-get autoclean
 
 # Configure ansible
-RUN /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+RUN mkdir -p /etc/ansible/ && /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
 
 # Install Kops
 ENV KOPS_VERSION=1.10.0
@@ -48,7 +47,7 @@ RUN tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
 
 # Deploy Legion
 COPY deploy/ansible /opt/legion/deploy/ansible
-# TODO remove helm charts from image as soon as helm repo will be eintroduced
+# TODO remove helm charts from image as soon as helm repo will be introduced
 COPY deploy/helms /opt/legion/deploy/helms
 COPY deploy/profiles/profiles_template.yaml /opt/legion/deploy/profiles/profiles_template.yaml
 COPY deploy/profiles/secrets_template.yaml /opt/legion/deploy/profiles/secrets_template.yaml
