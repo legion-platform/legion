@@ -514,31 +514,32 @@ EOL
                 }
                 dir ("${WORKSPACE}/legion-helm-charts") {
                     script{
-                    if (params.StableRelease) {
-                        stage('Update Legion version string'){
-                            if (params.UpdateVersionString){
-                                //checkout repo with existing charts  (needed for generating correct repo index file )
-                                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/legion-platform/legion-helm-charts.git']]])
-                                //move packed charts to folder (where repo was checkouted)
-                                for (chart in chartNames){
-                                    sh"""
-                                    cp ${WORKSPACE}/deploy/helms/${chart}--${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/
-                                    git add ${chart}--${Globals.buildVersion}.tgz
+                        if (params.StableRelease) {
+                            stage('Update Legion version string'){
+                                if (params.UpdateVersionString){
+                                    //checkout repo with existing charts  (needed for generating correct repo index file )
+                                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/legion-platform/legion-helm-charts.git']]])
+                                    //move packed charts to folder (where repo was checkouted)
+                                    for (chart in chartNames){
+                                        sh"""
+                                        cp ${WORKSPACE}/deploy/helms/${chart}--${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/
+                                        git add ${chart}--${Globals.buildVersion}.tgz
+                                        """
+                                    }
+                                    sh """
+                                    ls -alh
+                                    helm repo index ./
+                                    cat index.yaml
+                                    git add index.yaml
+                                    git status
+                                    echo "Release ${Globals.buildVersion}"
                                     """
                                 }
-                                sh """
-                                ls -alh
-                                helm repo index ./
-                                cat index.yaml
-                                git add index.yaml
-                                git status
-                                echo "Release ${Globals.buildVersion}"
-                                """
                             }
                         }
                     }
                 }
-             }
+            }
         }
     }
     post {
