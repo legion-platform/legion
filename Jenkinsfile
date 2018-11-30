@@ -518,7 +518,7 @@ EOL
                         //    stage('Publish helm's to Public repo'){
                                 //if (params.UpdateVersionString){
                                     //checkout repo with existing charts  (needed for generating correct repo index file )
-                                    checkout([$class: 'GitSCM', branches: [[name: "$(params.HelmRepoGitBranch)" ]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: "${params.HelmRepoGitUrl}"]]])
+                                    checkout([$class: 'GitSCM', branches: [[name: "${params.HelmRepoGitBranch}" ]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: "${params.HelmRepoGitUrl}"]]])
                                     //move packed charts to folder (where repo was checkouted)
                                     for (chart in chartNames){
                                         sh"""
@@ -533,7 +533,7 @@ EOL
                                     git add index.yaml
                                     git status
                                     git commit -m "Release ${Globals.buildVersion}"
-                                    git push origin $(params.HelmRepoGitBranch)
+                                    git push origin ${params.HelmRepoGitBranch}
                                     """
                                 //}
                             //}
