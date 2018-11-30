@@ -522,7 +522,7 @@ EOL
                                     //move packed charts to folder (where repo was checkouted)
                                     for (chart in chartNames){
                                         sh"""
-                                        cp ${WORKSPACE}/deploy/helms/${chart}--${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/
+                                        cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/
                                         git add ${chart}--${Globals.buildVersion}.tgz
                                         """
                                     }
