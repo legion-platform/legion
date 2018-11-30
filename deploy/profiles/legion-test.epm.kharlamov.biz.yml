@@ -65,7 +65,6 @@ default_cluster_roles:
 persistent_jenkins_volume: true
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: Kirill_Makhonin@epam.com
-git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
 use_https_for_tests: "yes"
