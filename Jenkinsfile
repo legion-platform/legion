@@ -514,11 +514,11 @@ EOL
                 }
                 dir ("${WORKSPACE}/legion-helm-charts") {
                     script{
-                        if (params.StableRelease) {
-                            stage('Update Legion version string'){
-                                if (params.UpdateVersionString){
+                        //if (params.StableRelease) {
+                        //    stage('Publish helm's to Public repo'){
+                                //if (params.UpdateVersionString){
                                     //checkout repo with existing charts  (needed for generating correct repo index file )
-                                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/legion-platform/legion-helm-charts.git']]])
+                                //    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/legion-platform/legion-helm-charts.git']]])
                                     //move packed charts to folder (where repo was checkouted)
                                     for (chart in chartNames){
                                         sh"""
@@ -534,9 +534,9 @@ EOL
                                     git status
                                     echo "Release ${Globals.buildVersion}"
                                     """
-                                }
-                            }
-                        }
+                                //}
+                            //}
+                        //}
                     }
                 }
             }
