@@ -70,7 +70,7 @@ def deployLegion() {
                     } else {
                         ansiblePlaybook(
                             playbook: 'deploy-legion.yml',
-                            extras: '--vault-password-file=${vault} \
+                            extras: '-vvvv --vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
                                      legion_version=${LegionVersion}" ',
                             colorized: true
