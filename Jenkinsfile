@@ -515,7 +515,7 @@ EOL
                 dir ("${WORKSPACE}/legion-helm-charts") {
                     script{
                         if (params.StableRelease) {
-                            stage('Publish helm's to Public repo'){
+                            stage('Publish helm charts to Public repo'){
                                 if (params.UpdateVersionString){
                                     //checkout repo with existing charts  (needed for generating correct repo index file )
                                     git branch: "${params.HelmRepoGitBranch}", poll: false, url: "${params.HelmRepoGitUrl}"
