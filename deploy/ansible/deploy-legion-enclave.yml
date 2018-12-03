@@ -41,6 +41,10 @@
     include_role:
       name: charts_common
 
+  - name: Install charts common dependencies
+    include_role:
+      name: helm
+
   - name: "Deploy Legion enclave"
     include_role:
       name: legion_enclave
