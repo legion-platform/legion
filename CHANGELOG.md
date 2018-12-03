@@ -1,4 +1,4 @@
-## [0.9.0](https://github.com/legion-platform/legion/tree/0.9.0) (2018-12-01)
+## [0.9.0](https://github.com/legion-platform/legion/tree/0.9.0) (2018-12-03)
 
 ### Added
 - Feedback events registration [\#8](https://github.com/legion-platform/legion/issues/8)
