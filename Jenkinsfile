@@ -514,9 +514,9 @@ EOL
                 }
                 dir ("${WORKSPACE}/legion-helm-charts") {
                     script{
-                        //if (params.StableRelease) {
-                        //    stage('Publish helm's to Public repo'){
-                                //if (params.UpdateVersionString){
+                        if (params.StableRelease) {
+                            stage('Publish helm's to Public repo'){
+                                if (params.UpdateVersionString){
                                     //checkout repo with existing charts  (needed for generating correct repo index file )
                                     git branch: "${params.HelmRepoGitBranch}", poll: false, url: "${params.HelmRepoGitUrl}"
                                     //move packed charts to folder (where repo was checkouted)
@@ -535,9 +535,9 @@ EOL
                                     git commit -m "Release ${Globals.buildVersion}"
                                     git push origin ${params.HelmRepoGitBranch}
                                     """
-                                //}
-                            //}
-                        //}
+                                }
+                            }
+                        }
                     }
                 }
             }
