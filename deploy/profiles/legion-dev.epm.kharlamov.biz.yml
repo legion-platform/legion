@@ -5,6 +5,9 @@ env_name: legion-dev
 base_domain: legion-dev.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
 
+# Logging
+log_level: debug
+
 # System vars
 tmp_dir: /tmp/
 
@@ -37,8 +40,7 @@ airflow_rds_size: "50"
 # Kops
 cluster_name: legion-dev.epm.kharlamov.biz
 state_store: s3://legion-cluster
-aws_image: kope.io/k8s-1.9-debian-stretch-amd64-hvm-ebs-2018-05-27
-kubernetes_version: 1.9.3
+
 private_network: '172.31'
 cluster_zones:
   - zone_name: us-east-2a
@@ -52,6 +54,11 @@ cluster_zones:
     kops_utility_cidr: "{{ private_network }}.105.0/24"
 k8s_master_zones:
   - us-east-2a
+default_cluster_roles: 
+  - bastion.{{ cluster_name }}
+  - masters.{{ cluster_name }}
+  - nodes.{{ cluster_name }}
+
 # Legion specific variables
 persistent_jenkins_volume: true
 ssh_public_key: ~/.ssh/id_rsa.pub
@@ -71,23 +78,35 @@ model_id_to_test: income
 enclaves:
   - company-a
 storageclass: efs
+legion_data_bucket_prefix: epm-legion-data
+legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"
 airflow_dags_dir: '/airflow-dags'
 airflow_dags_pvc: legion-airflow-dags
-airflow_s3_bucket_name: 'epm-legion-data-{{ env_type }}-{{ enclave }}'
 airflow_s3_logs_path: 'airflow-logs/'
-airflow_s3_logs_url: "s3://{{ airflow_s3_bucket_name }}/{{ airflow_s3_logs_path }}"
+airflow_s3_logs_url: "s3://{{ legion_data_s3_bucket }}/{{ airflow_s3_logs_path }}"
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
 
 collector:
   replicas: 1
-  bucket: epm-legion-data-dev
-  region: us-east-2
+  region: "{{ aws_region }}"
 
 # Addons
 dashboard:
   version: "1.8.3"
   insecure: true
+
+# Cluster logs
+kube_fluentd:
+  kube_s3_bucket_name: epm-legion-data-dev-logs
+  kube_s3_bucket_region: us-east-2
+  # kube_s3_bucket_prefix: cluster_logs
+  system_s3_bucket_name: epm-legion-data-dev-logs
+  system_s3_bucket_region: us-east-2
+  # system_s3_bucket_prefix: cluster_logs
+  services_s3_bucket_name: epm-legion-data-dev-logs
+  services_s3_bucket_region: us-east-2
+  # services_s3_bucket_prefix: cluster_logs
 
 # Secrets
 secrets_bucket: "legion-cluster"

@@ -1,18 +1,24 @@
 from argparse import Namespace
 import logging
+import contextlib
 import time
 import tempfile
+import typing
 import os
 import tarfile
 import io
+import json
 import glob
 import subprocess
 from unittest.mock import patch
+import importlib
+import inspect
 
 import docker
 import docker.types
 import docker.errors
 import docker.client
+import requests
 
 import legion.config
 import legion.containers.docker
@@ -20,10 +26,17 @@ import legion.containers.headers
 from legion.model import ModelClient
 import legion.model.client
 import legion.serving.pyserve as pyserve
+import legion.edi.server as ediserve
 from legion.utils import remove_directory
 
 LOGGER = logging.getLogger(__name__)
 TEST_MODELS_LOCATION = os.path.join(os.path.dirname(__file__), 'test_models')
+TEST_DATA_LOCATION = os.path.join(os.path.dirname(__file__), 'data')
+TEST_RESPONSES_LOCATION = os.path.join(TEST_DATA_LOCATION, 'responses')
+
+ResponseObjectType = typing.NamedTuple('ResponseObjectType', [
+    ('data', object)
+])
 
 
 def build_distribution():
@@ -81,6 +94,153 @@ def patch_environ(values, flush_existence=False):
         new_values.update(values)
 
     return patch('os.environ', new_values)
+
+
+def build_sequential_resource_name_generator(responses):
+    """
+    Build function that can sequential return name of responses
+
+    :param responses: list of responses
+    :type responses: list[str]
+    :return: Callable[[], str] -- function that generates name of responses
+    """
+    i = 0
+
+    def func():
+        nonlocal i
+        if i >= len(responses):
+            raise Exception('Function is called #{} time, but have only {} variant(s)'.format(
+                i + 1, len(responses)
+            ))
+        value = responses[i]
+        i += 1
+        return value
+    return func
+
+
+def print_stack_trace(stack_state):
+    """
+    Print stack trace info to console
+
+    :param stack_state: stack trace frames
+    :type stack_state: litst[]
+    """
+    for frame in stack_state:
+        print('* function {} {}:{}'.format(frame.function, frame.filename, frame.lineno))
+
+
+@contextlib.contextmanager
+def persist_swagger_function_response_to_file(function, test_resource_name):
+    """
+    Context managers
+    Persist result of invocation swagger client query data to disk
+
+    :param function: name of function
+    :type function: str
+    :param test_resource_name: name of test response (is used in file naming), e.g. two_models OR
+                               function that returns this string
+    :type test_resource_name: str or Callable[[], str]
+    """
+    client = build_swagger_function_client(function)
+    origin = client.__class__.deserialize
+
+    def response_catcher(self, response, type_name):
+        _1, function_name = function.rsplit('.', maxsplit=1)
+        call_stack = inspect.stack()
+        call_stack_functions = [f.function for f in call_stack]
+
+        if function_name in call_stack_functions:
+            print('Trying to persist function {}'.format(function))
+            # Very verbose test debugging:
+            # print_stack_trace(call_stack[:-2])
+
+            if callable(test_resource_name):
+                current_test_resource_name = test_resource_name()
+            elif isinstance(test_resource_name, str):
+                current_test_resource_name = test_resource_name
+            else:
+                raise Exception('Invalid type of argument ({}). Should be callable or string')
+            path = '{}/{}.{}.{}.json'.format(TEST_RESPONSES_LOCATION, function,
+                                             type_name, current_test_resource_name)
+
+            print('Persisting to resource {} ({})'.format(current_test_resource_name, path))
+            with open(path, 'w') as stream:
+                data = json.loads(response.data)
+                json.dump(data, stream, indent=2, sort_keys=True)
+
+        return origin(self, response, type_name)
+
+    client.__class__.deserialize = response_catcher
+    yield
+    client.__class__.deserialize = origin
+
+
+def build_swagger_function_client(function):
+    """
+    Build swagger client for function
+
+    :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
+    :type function: str
+    :return: object -- generated swagger API client
+    """
+
+    module_name, module_class, _1 = function.rsplit('.', maxsplit=2)
+    module_instance = importlib.import_module(module_name)
+    module_api_client_class = getattr(module_instance, module_class)
+    module_api_client = module_api_client_class()
+    return module_api_client.api_client
+
+
+def mock_swagger_function_response_from_file(function, test_resource_name):
+    """
+    Mock swagger client function with response from file
+
+    :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
+    :type function: str
+    :param test_resource_name: name of test response (is used in file naming), e.g. two_models OR
+                               function that returns this string
+    :type test_resource_name: str or Callable[[], str]
+    :return: Any -- response
+    """
+    def response_catcher(*args, **kwargs):
+        print('Trying to return mocked answer for {}'.format(function))
+        # Very verbose test debugging:
+        # call_stack = inspect.stack()
+        # print_stack_trace(call_stack[:-2])
+
+        if callable(test_resource_name):
+            current_test_resource_name = test_resource_name()
+        elif isinstance(test_resource_name, str):
+            current_test_resource_name = test_resource_name
+        else:
+            raise Exception('Invalid type of argument ({}). Should be callable or string')
+
+        searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function,
+                                                            current_test_resource_name))
+
+        if not searched_files:
+            raise Exception('Cannot find response example file for function {!r} with code {!r}'.format(
+                function, current_test_resource_name
+            ))
+
+        if len(searched_files) > 1:
+            raise Exception('Finded more then one file for function {!r} with code {!r}'.format(
+                function, current_test_resource_name
+            ))
+
+        path, filename = searched_files[0], os.path.basename(searched_files[0])
+        splits = filename.rsplit('.')
+        return_type = splits[-3]
+        print('Trying to return mocked answer for {} using {}'.format(function, path))
+
+        client = build_swagger_function_client(function)
+
+        with open(path) as response_file:
+            data = ResponseObjectType(data=response_file.read())
+
+        return client.deserialize(data, return_type)
+
+    return patch(function, side_effect=response_catcher)
 
 
 class LegionTestContainer:
@@ -502,6 +662,95 @@ class ModelServeTestBuild:
 
         if exception:
             raise exception
+
+
+def build_requests_reponse_from_flask_client_response(test_response, url):
+    """
+    Build requests.Response object from Flask test client response
+
+    :param test_response: Flask test client response
+    :type test_response: :py:class:`flask.wrappers.Response`
+    :param url: requested URL
+    :type url: str
+    :return: :py:class:`requests.Response` -- response object
+    """
+    response = requests.Response()
+    response.status_code = test_response.status_code
+    response.url = url
+    response._content = test_response.data
+    for header, value in test_response.headers.items():
+        response.headers[header] = value
+    response._encoding = test_response.charset
+    response._content_consumed = True
+    return response
+
+
+def build_requests_mock_function(test_client):
+    """
+    Build function that shoul replace requests.request function in tests
+
+    :param test_client: test flask client
+    :type test_client: :py:class:`flask.test.FlaskClient`
+    :return: Callable[[str, str, dict[str, str], dict[str, str]], requests.Response]
+    """
+    def func(action, url, data=None, headers=None):
+        test_response = test_client.open(url, method=action, data=data, headers=headers)
+        return build_requests_reponse_from_flask_client_response(test_response, url)
+    return func
+
+
+class EDITestServer:
+    """
+    Context manager for testing EDI server
+    """
+
+    def __init__(self, enclave_name='debug-enclave'):
+        """
+        Create context
+        """
+        self._enclave_name = enclave_name
+
+        self.application = None
+        self.http_client = None
+
+    def __enter__(self):
+        """
+        Enter into context
+
+        :return: self
+        """
+        additional_environment = {
+            legion.config.CLUSTER_SECRETS_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'secrets'),
+            legion.config.JWT_CONFIG_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'jwt_config'),
+            legion.config.REGISTER_ON_GRAFANA[0]: 'false',
+            legion.config.STATSD_HOST[0]: "graphite",
+            legion.config.STATSD_PORT[0]: str(80)
+        }
+
+        test_enclave = legion.k8s.enclave.Enclave(self._enclave_name)
+        test_enclave._data_loaded = True
+
+        with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
+               patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
+                 patch('legion.edi.server.get_application_grafana', lambda *x: None), \
+                   patch_environ(additional_environment):  # noqa
+            self.application = ediserve.init_application(None)
+
+        self.application.testing = True
+        self.http_client = self.application.test_client()
+        self.edi_client = legion.external.edi.EdiClient('')
+        self.edi_client._request = build_requests_mock_function(self.http_client)
+
+        return self
+
+    def __exit__(self, *args):
+        """
+        Exit
+
+        :param args: list of arguements
+        :return: None
+        """
+        pass
 
 
 class ModelLocalContainerExecutionContext:

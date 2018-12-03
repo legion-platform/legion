@@ -33,21 +33,36 @@ RUN apt-get update && apt-get install --yes docker-ce
 COPY scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
 COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
 
-# Copy plugins installation script
+# Copy plugins installation script & set run mode
 COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
+RUN chmod +x /usr/local/bin/install-plugins.sh
 
-# Prepare plugins
-ARG jenkins_plugin_server="http://nexus-local.cc.epm.kharlamov.biz/jenkins"
-ENV JENKINS_UC_EXPERIMENTAL=$jenkins_plugin_server
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 
-ARG jenkins_plugin_version="latest"
-ENV JENKINS_PLUGIN_VERSION=$jenkins_plugin_version
-RUN echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" >> /usr/share/jenkins/ref/plugins.txt && \
-    echo "INSTALLING NEXT PLUGINS:" && \
-    cat /usr/share/jenkins/ref/plugins.txt && \
-    chmod +x /usr/local/bin/install-plugins.sh
+# Prepare env variables from build arguments
+ARG update_center_url="https://updates.jenkins.io"
+ENV JENKINS_UC=$update_center_url
+
+ARG update_center_download_url="https://updates.jenkins.io/download"
+ENV JENKINS_UC_DOWNLOAD=$update_center_download_url
+
+ARG update_center_experimental_url="https://updates.jenkins.io/experimental"
+ENV JENKINS_UC_EXPERIMENTAL=$update_center_experimental_url
 
 # Install plugins
 USER jenkins
-RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+
+RUN echo "INSTALLING BASE PLUGINS:" && \
+    cat /usr/share/jenkins/ref/plugins.txt && \
+    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+
+# Non-cached section
+
+ARG legion_plugin_version="latest"
+ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
+
+RUN rm -f /usr/share/jenkins/ref/plugins.txt && \
+    echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
+    echo "INSTALLING LEGION PLUGINS:" && \
+    cat /usr/share/jenkins/ref/plugins.txt && \
+    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt

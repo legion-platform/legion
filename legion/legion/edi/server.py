@@ -109,14 +109,27 @@ def root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, count=int, livenesstimeout=int, readinesstimeout=int)
+@legion.http.populate_fields(image=str, model_iam_role=str, count=int, livenesstimeout=int, readinesstimeout=int)
 @legion.http.requested_fields('image')
-def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
+def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
     """
     Deploy API endpoint
 
+    K8S API functions will be invoked in the next order:
+    - CoreV1Api.list_namespaced_service (to get information about actual model services)
+    If there is deployed model with same image:
+      - ExtensionsV1beta1Api.list_namespaced_deployment (to get information of service's deployment)
+    if there is no any deployed model with same image:
+      - CoreV1Api.list_namespaced_service (to check is there any model with same model id / version)
+      - ExtensionsV1beta1Api.create_namespaced_deployment (to create model deployment)
+      - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that model deployment has been created)
+      - CoreV1Api.create_namespaced_service (to create model service)
+      - CoreV1Api.list_namespaced_service (to ensure that model service has been created)
+
     :param image: Docker image for deploy (for kubernetes deployment and local pull)
     :type image: str
+    :param model_iam_role: IAM role to be used at model pod
+    type model_iam_role: str
     :param count: count of pods to create
     :type count: int
     :param livenesstimeout: time in seconds for liveness check
@@ -125,8 +138,8 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
     :type readinesstimeout: int
     :return: bool -- True
     """
-    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r}'
-                .format(image, count, livenesstimeout, readinesstimeout))
+    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r} and \
+                {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, model_iam_role))
 
     # Build dictionary with information about deployed models
     deployed_models = app.config['ENCLAVE'].get_models()
@@ -137,7 +150,8 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
         model_service = deployed_models_by_image[image]
         model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
     else:
-        model_service = app.config['ENCLAVE'].deploy_model(image, count, livenesstimeout, readinesstimeout)
+        model_service = app.config['ENCLAVE'].deploy_model(image, model_iam_role, count,
+                                                           livenesstimeout, readinesstimeout)
         LOGGER.info('Model (id={}, version={}) has been deployed'
                     .format(model_service.id, model_service.version))
 
@@ -164,6 +178,16 @@ def deploy(image, count=1, livenesstimeout=2, readinesstimeout=2):
 def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     """
     Undeploy API endpoint
+
+    K8S API functions will be invoked in the next order:
+    - CoreV1Api.list_namespaced_service (to get information about actual model services)
+    Per each service that should be undeployed (N-times):
+      - ExtensionsV1beta1Api.list_namespaced_deployment (to get information of service's deployment)
+      - CoreV1Api.delete_namespaced_service (to remove model service)
+      - CoreV1Api.list_namespaced_service (to ensure that service has been removed)
+      - AppsV1beta1Api.delete_namespaced_deployment (to remove deployment)
+      - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that deployment has been removed)
+
 
     :param model: model id
     :type model: str
@@ -259,13 +283,7 @@ def inspect(model=None, version=None):
         try:
             model_api_info = {}
 
-            model_client = legion.model.ModelClient(
-                model_id=model_service.id,
-                model_version=model_service.version,
-                host=model_service.url_with_ip,
-                timeout=3
-            )
-            LOGGER.info('Building model client: {!r}'.format(model_client))
+            model_client = legion.model.ModelClient.build_from_model_service(model_service)
 
             try:
                 model_api_info['result'] = model_client.info()
@@ -291,11 +309,14 @@ def inspect(model=None, version=None):
 @legion.http.authenticate(authenticate)
 def info():
     """
-    Info API endpoint
+    Info API endpoint.
+
+    DEPRECATED. WILL BE REMOVED IN MAJOR RELEASE
+    TODO: Remove in major release
 
     :return: dict -- state of cluster
     """
-    return app.config['CLUSTER_STATE']
+    return {}
 
 
 @blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['GET'])
@@ -309,6 +330,7 @@ def generate_token():
     """
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
     jwt_exp_date = None
+    jwt_created_date = datetime.now()
     if 'jwt.exp.datetime' in app.config['JWT_CONFIG']:
         try:
             jwt_exp_date = datetime.strptime(app.config['JWT_CONFIG']['jwt.exp.datetime'], "%Y-%m-%dT%H:%M:%S")
@@ -318,7 +340,8 @@ def generate_token():
         jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
         jwt_exp_date = datetime.utcnow() + jwt_life_length
 
-    token = jwt.encode({'exp': jwt_exp_date}, jwt_secret, algorithm='HS256').decode('utf-8')
+    token = jwt.encode({'exp': jwt_exp_date,
+                        "crd": str(jwt_created_date)}, jwt_secret, algorithm='HS256').decode('utf-8')
     return {'token': token, 'exp': jwt_exp_date}
 
 
@@ -335,6 +358,31 @@ def create_application():
     return application
 
 
+def get_application_enclave(application):
+    """
+    Build enclave's object
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return :py:class:`legion.k8s.enclave.Enclave`
+    """
+    return legion.k8s.Enclave(application.config['NAMESPACE'])
+
+
+def get_application_grafana(application):
+    """
+    Build enclave's grafana client
+
+    :param application: Flask app instance
+    :type application: :py:class:`Flask.app`
+    :return :py:class:`legion.external.grafana.GrafanaClient`
+    """
+    grafana_client = legion.external.grafana.GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
+                                                           application.config['CLUSTER_SECRETS']['grafana.user'],
+                                                           application.config['CLUSTER_SECRETS']['grafana.password'])
+    return grafana_client
+
+
 def load_cluster_config(application):
     """
     Load cluster configuration into Flask config
@@ -346,16 +394,9 @@ def load_cluster_config(application):
     if not application.config['NAMESPACE']:
         application.config['NAMESPACE'] = legion.k8s.get_current_namespace()
 
-    application.config['ENCLAVE'] = legion.k8s.Enclave(application.config['NAMESPACE'])
-
-    application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(
-        application.config['CLUSTER_SECRETS_PATH'])
-    application.config['CLUSTER_STATE'] = legion.k8s.load_config(application.config['CLUSTER_CONFIG_PATH'])
-
-    grafana_client = legion.external.grafana.GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
-                                                           application.config['CLUSTER_SECRETS']['grafana.user'],
-                                                           application.config['CLUSTER_SECRETS']['grafana.password'])
-    application.config['GRAFANA_CLIENT'] = grafana_client
+    application.config['ENCLAVE'] = get_application_enclave(application)
+    application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(application.config['CLUSTER_SECRETS_PATH'])
+    application.config['GRAFANA_CLIENT'] = get_application_grafana(application)
     application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 
 

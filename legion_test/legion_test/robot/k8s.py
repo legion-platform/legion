@@ -27,6 +27,7 @@ import urllib3
 import legion.k8s.utils
 import legion.k8s.properties
 import legion.utils
+from legion_test.utils import wait_until
 
 
 class K8s:
@@ -191,10 +192,30 @@ class K8s:
         client = self.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
         scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         if scale_data is not None:
             return scale_data.status.replicas
         else:
             return 0
+
+    def wait_deployment_replicas_count(self, deployment_name, namespace='default', expected_replicas_num=1):
+        """
+        Wait for expected number of replicas for a specified deployment from Kubernetes API
+
+        :param deployment_name: name of a deployment
+        :type deployment_name: str
+        :param namespace: name of a namespace to look in
+        :type namespace: str
+        :param expected_replicas_num: expected replicas number
+        :type expected_replicas_num: str
+        :return: None
+        """
+        expected_replicas_num = int(expected_replicas_num)
+        result = wait_until(lambda: self.get_deployment_replicas(deployment_name, namespace) == expected_replicas_num,
+                            iteration_duration=5, iterations=35)
+        if not result:
+            raise Exception("Expected ready replicas count '{}' does not match actual '{}'"
+                            .format(expected_replicas_num, self.get_deployment_replicas(deployment_name, namespace)))
 
     def set_deployment_replicas(self, replicas, deployment_name, namespace='default'):
         """
@@ -213,8 +234,11 @@ class K8s:
         client = self.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
         scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         scale_data.spec.replicas = replicas
+        print("Setting replica to {} for {} in {} enclave".format(replicas, deployment_name, namespace))
         extension_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
+        print("Replica to {} for {} in {} enclave was set up".format(replicas, deployment_name, namespace))
 
     def update_model_property_key(self, namespace, model_id, model_version, key, value):
         """
@@ -251,10 +275,6 @@ class K8s:
 
         :param expected_count: expected node count
         :type expected_count: int
-        :param timeout: waiting timeout in seconds. 0 for disable (infinite)
-        :type timeout: str or int
-        :param sleep: sleep between checks in seconds
-        :type sleep: str or int
         :raises: Exception
         :return: None
         """

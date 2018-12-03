@@ -1,6 +1,10 @@
 def legionVersion = "latest"
 
 node {
+    stage('Checkout GIT'){
+            checkout scm
+    }
+    def legion = load 'deploy/legionPipeline.groovy'
     try {
         stage('Terminate Cluster if exists') {
             result = build job: params.TerminateClusterJobName, propagate: true, wait: true, parameters: [
@@ -45,7 +49,9 @@ node {
                     string(name: 'EnclaveName', value: 'enclave-ci')
             ]
         }
-
+        stage('Test') {
+            print("${env.BUILD_NUMBER}")
+        }
     }
     catch (e) {
         // If there was an exception thrown, the build failed
@@ -55,10 +61,11 @@ node {
     finally {
         stage('Terminate Cluster') {
             result = build job: params.TerminateClusterJobName, propagate: true, wait: true, parameters: [
-                    [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
+                [$class: 'GitParameterValue', name: 'GitBranch', value: params.GitBranch],
                     string(name: 'Profile', value: params.Profile),
             ]
         }
+        legion.notifyBuild(currentBuild.result)
     }
 
 }

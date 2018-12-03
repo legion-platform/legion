@@ -19,6 +19,8 @@ Robot test library - flower
 import requests
 from requests.exceptions import RequestException
 from legion_test.robot.dex_client import get_session_cookies
+from legion_test.utils import wait_until
+
 
 class Flower:
     """
@@ -59,7 +61,8 @@ class Flower:
             :type parse_json: bool
             :rtype: dict or str
             """
-        response = requests.get(self.base_url + path, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
+        response = requests.get(self.base_url + path, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(),
+                                **kwargs)
         if response.status_code == 200:
             if parse_json:
                 return response.json()
@@ -87,7 +90,22 @@ class Flower:
         workers_number = 0
         if response.get('data', []):
             for item in response.get('data'):
-                if item.get('worker-offline', 0) != 1:
+                if item.get('status', False) is True:
                     workers_number += 1
 
+        print("Online workers number in flower is {}".format(workers_number))
         return workers_number
+
+    def wait_for_worker_is_ready(self, expected_count=1):
+        """
+        Wait until expected count of Flower workers started
+
+        :param int or str expected_count: expected num of online Flower workers
+        :return: None
+        """
+        expected_count = int(expected_count)
+        worker_ready = wait_until(lambda: self.get_number_of_workers_from_flower() == expected_count,
+                                  iteration_duration=10, iterations=30)
+        if not worker_ready:
+            raise Exception("Expected ready workers count '{}' does not match actual '{}'"
+                            .format(expected_count, self.get_number_of_workers_from_flower()))

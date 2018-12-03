@@ -82,14 +82,14 @@ spec:
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 5
-          timeoutSeconds: 3
+          timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /admin/rest_api/api?api=rest_api_plugin_version
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 5
-          timeoutSeconds: 3
+          timeoutSeconds: 10
       volumes:
       - name: airflow-config-dir
         configMap:

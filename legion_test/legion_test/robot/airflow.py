@@ -44,8 +44,9 @@ class Airflow:
         Init client
         """
         self.root_url = None  # Airflow Rest API Base url, type: str
+        self.dex_cookies = None  # Dex cookies for Airflow Rest API calls, type: dict
 
-    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3):
+    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3, dex_cookies={}):
         """
         Connect to Airflow Rest API
 
@@ -55,9 +56,13 @@ class Airflow:
         :type num_attempts: int
         :param pause_sec: Pause length in seconds between attempts to connect to Rest API.
         :type pause_sec: int
+        :param dex_cookies:  Dex Cookies if they are already received, if empty - get new for Legion static user
+        :type dex_cookies: dict
         :raise RequestException: on unavailable Rest API: if HTTP code 200 is not received
         :return None
         """
+        if dex_cookies:
+            self.dex_cookies = dex_cookies
         if not root_url:
             raise Exception('"domain" parameter is required')
 
@@ -85,12 +90,16 @@ class Airflow:
             :return: json-encoded content of a response, if any.
             :rtype: dict
             """
+        if self.dex_cookies:
+            cookies = self.dex_cookies
+        else:
+            cookies = get_session_cookies()
         if use_rest_api_root:
             url = (self.BASE_REST_API_URL_TEMPLATE % self.root_url) + path
         else:
             url = (self.BASE_URL_TEMPLATE % self.root_url) + path
         print('Requesting Airflow URL: {!r}. Params: {!r}. KWARGS: {!r}'.format(url, params, kwargs))
-        response = requests.get(url, params, timeout=self._TIMEOUT_SEC, cookies=get_session_cookies(), **kwargs)
+        response = requests.get(url, params, timeout=self._TIMEOUT_SEC, cookies=cookies, **kwargs)
         if response.status_code == 200:
             json = response.json()
             print('Airflow response: {!r}'.format(json))
@@ -194,6 +203,117 @@ class Airflow:
                     failed_dags.append(dag_id)
                     break
         return failed_dags
+
+    def get_succeeded_airflow_dags(self):
+        """
+        Get succeeded airflow dags
+        :rtype list[str]
+        :return: A list of succeeded dags names
+        """
+        data = self._get('airflow/task_stats', use_rest_api_root=False)
+        succeeded_dags = []
+        for dag_id, dag_runs in data.items():
+            for dag_run in dag_runs:
+                color = dag_run.get('color', '')
+                run_count = dag_run.get('count', 0)
+                print('Detected DAG {!r}. Color: {!r}, Run count: {!r}'.format(dag_id, color, run_count))
+                if color == 'green' and run_count > 0:
+                    succeeded_dags.append(dag_id)
+                    break
+        return succeeded_dags
+
+    def is_dag_ready(self, dag_id, timeout=60, sleep=3):
+        """
+        Check if dag was loaded to airflow web
+
+        :param str dag_id: The id of the dag
+        :param int timeout: seconds to wait
+        :param int sleep: seconds to sleep before retries
+        :rtype boolean
+        :return: if dag is on the airflow web
+        """
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+
+        while True:
+            data = self._get('airflow/dag_stats', use_rest_api_root=False)
+            elapsed = time.time() - start
+            if dag_id in data.keys():
+                print('Dag {} became available after {} seconds'
+                      .format(dag_id, data))
+                return True
+            elif elapsed > timeout > 0:
+                raise Exception('Dag {} did not become available after {} seconds wait'.format(dag_id, timeout))
+            else:
+                print('Dag {} is not available after {} seconds'
+                      .format(dag_id, elapsed))
+                time.sleep(sleep)
+
+    def get_airflow_dag_state(self, dag_id):
+        """
+        Get airflow dag state points
+        :rtype dict
+        :return: A dict with dag states
+        """
+        data = self._get('airflow/dag_stats', use_rest_api_root=False)
+        dag_stats = data[dag_id]
+        success_count = dag_stats[0]['count']
+        running_count = dag_stats[1]['count']
+        failed_count = dag_stats[2]['count']
+        print('Detected DAG {!r}. Success tasks count: {!r}, Running tasks count: {!r}, Failed tasks count: {!r}'
+              .format(dag_id, success_count, running_count, failed_count))
+        return {'success': success_count, 'running': running_count, 'failed': failed_count}
+
+    def wait_dag_finished(self, dag_id, timeout=120, sleep=5):
+        """
+        Wait airflow dag finished
+        :rtype dict
+        :return: A dict with dag states
+        """
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+
+        while True:
+            running_count = self.get_airflow_dag_state(dag_id)['running']
+            elapsed = time.time() - start
+            if running_count == 0:
+                print('Dag {} is not running after {} seconds'
+                      .format(dag_id, elapsed))
+                return
+            elif elapsed > timeout > 0:
+                raise Exception('Dag {} did not finish after {} seconds wait'.format(dag_id, timeout))
+            else:
+                print('Dag {} is still running after {} seconds'
+                      .format(dag_id, elapsed))
+                time.sleep(sleep)
+
+    def wait_dag_is_running(self, dag_id, timeout=60, sleep=5):
+        """
+        Wait airflow dag finished
+        :rtype dict
+        :return: A dict with dag states
+        """
+        timeout = int(timeout)
+        sleep = int(sleep)
+        start = time.time()
+        time.sleep(sleep)
+
+        while True:
+            data = self._get('airflow/dag_stats', use_rest_api_root=False)
+            elapsed = time.time() - start
+            if dag_id in data.keys():
+                print('Dag {} became available after {} seconds'
+                      .format(dag_id, data))
+                return True
+            elif elapsed > timeout > 0:
+                raise Exception('Dag {} did not become available after {} seconds wait'.format(dag_id, timeout))
+            else:
+                print('Dag {} is not available after {} seconds'.format(dag_id, elapsed))
+                time.sleep(sleep)
 
     def _find_lines_in_stdout(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response

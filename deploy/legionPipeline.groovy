@@ -27,7 +27,9 @@ def createCluster() {
                     playbook: 'create-cluster.yml',
                     extras: '--vault-password-file=${vault} \
                             --extra-vars "profile=${Profile} \
-                            skip_kops=${Skip_kops}"',
+                            skip_kops=${Skip_kops} \
+                            legion_infra_version=${LegionInfraVersion} \
+                            legion_infra_registry=${LegionInfraRegistry}"',
                     colorized: true
                     )
                 }
@@ -73,7 +75,7 @@ def deployLegion() {
                                      legion_version=${LegionVersion}" ',
                             colorized: true
                         )
-                        
+
                     }
                 }
             }
@@ -91,9 +93,9 @@ def createjenkinsJobs(String commitID) {
     ../.venv/bin/python setup.py develop
     '''
     withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
             def output = sh(script:'''
-	        cd .venv/bin
+            cd .venv/bin
             export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
             export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
             export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
@@ -105,7 +107,7 @@ def createjenkinsJobs(String commitID) {
             ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-            
+
             export PATH=./:$PATH DISPLAY=:99
             export PROFILE=${Profile}
 
@@ -117,9 +119,9 @@ def createjenkinsJobs(String commitID) {
             env.jenkins_pass = creds[2]
             env.jenkins_token = creds[3]
         }
-	}
-	sh '''
-	cd .venv/bin
+    }
+    sh '''
+    cd .venv/bin
     ./create_example_jobs \
     "https://jenkins.${Profile}" \
     ../../examples \
@@ -137,10 +139,12 @@ def createjenkinsJobs(String commitID) {
 }
 
 def runRobotTests(tags="") {
+    def nose_report = 0
+    def robot_report = 0
     withAWS(credentials: 'kops') {
     	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            def tags_list=tags.toString().trim().split(',')
-            def robot_tags= []
+            def tags_list = tags.toString().trim().split(',')
+            def robot_tags = []
             def nose_tags = []
             for (item in tags_list) {
                 if (item.startsWith('-')) {
@@ -157,8 +161,6 @@ def runRobotTests(tags="") {
             env.nose_tags = nose_tags.join(" ")
             sh '''
             cd legion
-            ../.venv/bin/pip install -r requirements/base.txt
-            ../.venv/bin/pip install -r requirements/test.txt
             ../.venv/bin/python setup.py develop
             cd ..
 
@@ -169,6 +171,7 @@ def runRobotTests(tags="") {
 
             echo "Starting robot tests"
             cd ../tests/robot
+            rm -f *.xml
             ../../.venv/bin/pip install yq
 
             PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
@@ -187,7 +190,6 @@ def runRobotTests(tags="") {
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion \
             jenkins_dex_client --path-to-profiles $PATH_TO_PROFILES_DIR > $PATH_TO_COOKIES
-            cat $PATH_TO_COOKIES
 
             PATH=../../.venv/bin:$PATH DISPLAY=:99 \
             PROFILE=$Profile LEGION_VERSION=$LegionVersion PATH_TO_COOKIES=$PATH_TO_COOKIES \
@@ -204,21 +206,41 @@ def runRobotTests(tags="") {
             ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
 
             PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
-            ../../.venv/bin/nosetests $nose_tags --with-xunit || true
+            ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
             '''
-            step([
-                $class : 'RobotPublisher',
-                outputPath : 'tests/robot/',
-                outputFileName : "*.xml",
-                disableArchiveOutput : false,
-                passThreshold : 100,
-                unstableThreshold: 95.0,
-                onlyCritical : true,
-                otherFiles : "*.png",
-            ])
+            robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
+            nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
+            if (robot_report.toInteger() > 0) {
+                step([
+                    $class : 'RobotPublisher',
+                    outputPath : 'tests/robot/',
+                    outputFileName : "*.xml",
+                    disableArchiveOutput : false,
+                    passThreshold : 100,
+                    unstableThreshold: 95.0,
+                    onlyCritical : true,
+                    otherFiles : "*.png",
+                ])
+            }
+            else {
+                echo "No '*.xml' files for generating robot report"
+            }
         }
-	}
-    junit 'tests/python/nosetests.xml'
+    }
+    if (nose_report.toInteger() > 1) {
+        junit 'tests/python/nosetests.xml'
+    }
+    else {
+        echo "No ''*.xml' files for generating nosetests report"
+    }
+    if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && !tags) {
+        echo "All tests were run but no reports found. Marking build as UNSTABLE"
+        currentBuild.result = 'UNSTABLE'
+    }
+    if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
+        echo "No tests were run during this build. Marking build as UNSTABLE"
+        currentBuild.result = 'UNSTABLE'
+    }
 }
 
 def deployLegionEnclave() {
@@ -287,13 +309,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
     print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
 
-    if (!masterOrDevelopBuild)
-        return
-
-    // Skip green -> green
-    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
-        return
-
     // Default values
     def colorCode = '#FF0000'
     def arguments = ""
@@ -303,18 +318,18 @@ def notifyBuild(String buildStatus = 'STARTED') {
     if (params.LegionVersion) {
         arguments = arguments + "\nversion *${params.LegionVersion}*"
     }
-
     if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
         arguments = arguments + "\nDeploy *${params.DeployLegion}*, Create Jenkins tests *${params.CreateJenkinsTests}*, Use regression tests *${params.UseRegressionTests}*"
     }
     if (params.EnclaveName) {
         arguments = arguments + "\nEnclave *${params.EnclaveName}*"
     }
+    def mailSubject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
     def summary = """\
-    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    branch *${GitBranch}*
-    profile *<https://${env.Profile}|${env.Profile}>*
-    ${arguments}
+    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult}) \n
+    Branch: *${GitBranch}* \n
+    Profile: *<https://${env.Profile}|${env.Profile}>* \n
+    Arguments: ${arguments} \n
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
 
@@ -322,11 +337,59 @@ def notifyBuild(String buildStatus = 'STARTED') {
     if (buildStatus == 'STARTED') {
         colorCode = '#FFFF00'
     } else if (buildStatus == 'SUCCESSFUL') {
-        colorCode = '#00FF00' 
+        colorCode = '#00FF00'
     } else {
         colorCode = '#FF0000'
     }
 
-    slackSend (color: colorCode, message: summary)
+    /// Notify everyone about each Nightly build
+    if ("${env.JOB_NAME}".contains("Legion_CI_Infra")) {
+        slackSend (color: colorCode, message: summary)
+        emailext (
+            subject: mailSubject,
+            body: summary,
+            to: "${env.DevTeamMailList}"
+        )
+    /// Notify committers about CI builds
+    } else if ("${env.JOB_NAME}".contains("Legion_CI")) {
+        emailext (
+            subject: mailSubject,
+            body: summary,
+            recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+        )
+    /// Notify everyone about failed Master or Develop branch builds
+    } else if (!currentBuildResultSuccessful && masterOrDevelopBuild) {
+        slackSend (color: colorCode, message: summary)
+        emailext (
+            subject: mailSubject,
+            body: summary,
+            to: "${env.DevTeamMailList}"
+        )
+    }
+
 }
+
+
+def uploadDockerImage(String imageName, String buildVersion) {
+    if (params.StableRelease) {
+        sh """
+        # Push stable image to local registry
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:latest
+        docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker push ${params.DockerRegistry}/${imageName}:latest
+        # Push stable image to DockerHub
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
+        docker push ${params.DockerHubRegistry}/${imageName}:${buildVersion}
+        docker push ${params.DockerHubRegistry}/${imageName}:latest
+        """
+    } else {
+        sh """
+        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
+        """
+    }
+}
+
 return this

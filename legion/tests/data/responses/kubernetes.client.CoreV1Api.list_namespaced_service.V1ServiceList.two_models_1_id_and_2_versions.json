@@ -1,0 +1,396 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:08:21Z",
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-debug-enclave-flower",
+          "heritage": "Tiller",
+          "release": "airflow-debug-enclave"
+        },
+        "name": "airflow-debug-enclave-flower",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4381",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/airflow-debug-enclave-flower",
+        "uid": "a22a5842-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "flower",
+            "port": 5555,
+            "protocol": "TCP",
+            "targetPort": "flower"
+          }
+        ],
+        "selector": {
+          "app": "airflow-debug-enclave-airflow-flower"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:08:21Z",
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-debug-enclave-redis",
+          "heritage": "Tiller",
+          "release": "airflow-debug-enclave"
+        },
+        "name": "airflow-debug-enclave-redis",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4384",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/airflow-debug-enclave-redis",
+        "uid": "a22d11f0-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "node",
+            "port": 6379,
+            "protocol": "TCP",
+            "targetPort": "node"
+          }
+        ],
+        "selector": {
+          "app": "airflow-debug-enclave-redis"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:08:21Z",
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-debug-enclave-web",
+          "heritage": "Tiller",
+          "release": "airflow-debug-enclave"
+        },
+        "name": "airflow-debug-enclave-web",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4387",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/airflow-debug-enclave-web",
+        "uid": "a2309496-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "web",
+            "port": 8080,
+            "protocol": "TCP",
+            "targetPort": "web"
+          }
+        ],
+        "selector": {
+          "app": "airflow-debug-enclave-airflow-web"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:09:59Z",
+        "labels": {
+          "component": "event-collector-debug-enclave-fluentd"
+        },
+        "name": "event-collector-debug-enclave-fluentd",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4681",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/event-collector-debug-enclave-fluentd",
+        "uid": "dcd6d33f-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "input",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 80
+          }
+        ],
+        "selector": {
+          "component": "event-collector-debug-enclave-fluentd"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:06:09Z",
+        "labels": {
+          "component": "legion-debug-enclave-edge",
+          "legion.component": "edge",
+          "legion.system": "yes"
+        },
+        "name": "legion-debug-enclave-edge",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4028",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-edge",
+        "uid": "536d8c32-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "api",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 80
+          }
+        ],
+        "selector": {
+          "component": "legion-debug-enclave-edge"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:06:09Z",
+        "labels": {
+          "component": "legion-debug-enclave-edi",
+          "legion.component": "edi",
+          "legion.system": "yes"
+        },
+        "name": "legion-debug-enclave-edi",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4031",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-edi",
+        "uid": "53709507-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "api",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 5000
+          }
+        ],
+        "selector": {
+          "component": "legion-debug-enclave-edi"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:06:09Z",
+        "labels": {
+          "component": "legion-debug-enclave-grafana",
+          "legion.component": "grafana",
+          "legion.port": "80",
+          "legion.system": "yes"
+        },
+        "name": "legion-debug-enclave-grafana",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4034",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-grafana",
+        "uid": "5373621d-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "api",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 3000
+          }
+        ],
+        "selector": {
+          "component": "legion-debug-enclave-grafana"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "creationTimestamp": "2018-11-05T15:06:09Z",
+        "labels": {
+          "component": "legion-debug-enclave-graphite",
+          "legion.component": "graphite",
+          "legion.system": "yes"
+        },
+        "name": "legion-debug-enclave-graphite",
+        "namespace": "debug-enclave",
+        "resourceVersion": "4037",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/legion-debug-enclave-graphite",
+        "uid": "53762ba2-e10c-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "api",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 80
+          },
+          {
+            "name": "carbon-reciever",
+            "port": 2003,
+            "protocol": "TCP",
+            "targetPort": 2003
+          },
+          {
+            "name": "statsd-admin",
+            "port": 8126,
+            "protocol": "TCP",
+            "targetPort": 8126
+          },
+          {
+            "name": "statsd",
+            "port": 8125,
+            "protocol": "UDP",
+            "targetPort": 8125
+          }
+        ],
+        "selector": {
+          "component": "legion-debug-enclave-graphite"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "build_date": "20181106123539",
+          "build_id": "560",
+          "build_user": "null",
+          "com.epam.legion.container_type": "model",
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.0",
+          "git_revision": "3b9739a"
+        },
+        "creationTimestamp": "2018-11-07T13:54:46Z",
+        "labels": {
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.0",
+          "legion.component": "model",
+          "legion.system": "yes"
+        },
+        "name": "model-demo-abc-model-1-0",
+        "namespace": "debug-enclave",
+        "resourceVersion": "349492",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/model-demo-abc-model-1-0",
+        "uid": "afcfda72-e294-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "api",
+            "port": 5000,
+            "protocol": "TCP",
+            "targetPort": "api"
+          }
+        ],
+        "selector": {
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.0",
+          "legion.component": "model",
+          "legion.system": "yes"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "build_date": "20181106123539",
+          "build_id": "560",
+          "build_user": "null",
+          "com.epam.legion.container_type": "model",
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
+          "git_revision": "3b9739a"
+        },
+        "creationTimestamp": "2018-11-07T13:55:11Z",
+        "labels": {
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
+          "legion.component": "model",
+          "legion.system": "yes"
+        },
+        "name": "model-demo-abc-model-1-1",
+        "namespace": "debug-enclave",
+        "resourceVersion": "349565",
+        "selfLink": "/api/v1/namespaces/debug-enclave/services/model-demo-abc-model-1-1",
+        "uid": "be75fad1-e294-11e8-9de3-12a89ae87206"
+      },
+      "spec": {
+        "clusterIP": "1.2.3.4",
+        "ports": [
+          {
+            "name": "api",
+            "port": 5000,
+            "protocol": "TCP",
+            "targetPort": "api"
+          }
+        ],
+        "selector": {
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
+          "legion.component": "model",
+          "legion.system": "yes"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    }
+  ],
+  "kind": "ServiceList",
+  "metadata": {
+    "resourceVersion": "349693",
+    "selfLink": "/api/v1/namespaces/debug-enclave/services"
+  }
+}

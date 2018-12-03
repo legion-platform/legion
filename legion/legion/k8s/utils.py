@@ -38,6 +38,7 @@ import legion.config
 import legion.external.grafana
 from legion.utils import normalize_name
 import legion.k8s.services
+import legion.k8s.exceptions
 import legion.k8s.enclave
 from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
@@ -66,6 +67,7 @@ def build_client():
     try:
         kubernetes.config.load_incluster_config()
     except kubernetes.config.config_exception.ConfigException:
+        LOGGER.debug('Connecting to cluster using context {!r}'.format(CONNECTION_CONTEXT))
         kubernetes.config.load_kube_config(context=CONNECTION_CONTEXT)
 
     # Disable SSL warning for self-signed certificates
@@ -206,8 +208,15 @@ def get_meta_from_docker_labels(labels):
     :type labels: dict[str, Any]
     :return: tuple[str, dict[str, str], str, str] -- k8s_name name, labels in DNS-1123 format, model id and version
     """
-    model_id = labels[legion.containers.headers.DOMAIN_MODEL_ID]
-    model_version = labels[legion.containers.headers.DOMAIN_MODEL_VERSION]
+    model_id = labels.get(legion.containers.headers.DOMAIN_MODEL_ID)
+    model_version = labels.get(legion.containers.headers.DOMAIN_MODEL_VERSION)
+
+    if not model_id or not model_version:
+        raise legion.k8s.exceptions.IncompatibleLegionModelDockerImage(
+            'Legion docker labels for model image are missed: {}'.format(
+                ', '.join((legion.containers.headers.DOMAIN_MODEL_ID,
+                           legion.containers.headers.DOMAIN_MODEL_VERSION,)),
+            ))
 
     kubernetes_labels = dict()
     kubernetes_labels[LEGION_COMPONENT_LABEL] = LEGION_COMPONENT_NAME_MODEL

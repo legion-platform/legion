@@ -44,6 +44,8 @@ spec:
     spec:
       hostNetwork: true
       serviceAccount: kube2iam
+      tolerations:
+      - operator: "Exists"
       containers:
         - image: jtblin/kube2iam:latest
           name: kube2iam

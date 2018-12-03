@@ -31,3 +31,34 @@ class UnknownDeploymentForModelService(Exception):
         :type model_service_name: str
         """
         super().__init__('Cannot find deployment for model service {!r}'.format(model_service_name))
+
+
+class KubernetesOperationIsNotConfirmed(Exception):
+    """
+    Exception occurs when module cannot perform K8S operation
+    """
+
+    def __init__(self, message):
+        """
+        Build exception instance
+
+        :param message: description
+        :type message: str
+        """
+        super().__init__('Cannot confirm kubernetes operation: {!r}'.format(message))
+
+
+class IncompatibleLegionModelDockerImage(Exception):
+    """
+    Exception occurs when user tries to use incompatible docker image (e.g. with missed labels)
+    """
+
+    def __init__(self, message):
+        """
+        Build exception instance
+
+        :param message: description
+        :type message: str
+        """
+        self.message = message
+        super().__init__('Incompatible Legion image: {!r}'.format(self.message))

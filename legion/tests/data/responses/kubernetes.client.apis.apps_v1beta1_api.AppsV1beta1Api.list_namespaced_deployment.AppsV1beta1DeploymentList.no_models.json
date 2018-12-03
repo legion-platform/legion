@@ -1,0 +1,1158 @@
+{
+  "apiVersion": "apps/v1beta1",
+  "items": [
+    {
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "creationTimestamp": "2018-11-23T11:54:44Z",
+        "generation": 1,
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-company-a-flower",
+          "heritage": "Tiller",
+          "release": "airflow-company-a"
+        },
+        "name": "airflow-company-a-flower",
+        "namespace": "company-a",
+        "resourceVersion": "16900",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/airflow-company-a-flower",
+        "uid": "91d59378-ef16-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "airflow-company-a-airflow-flower"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "airflow-company-a-airflow-flower"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "args": [
+                  "airflow",
+                  "flower"
+                ],
+                "env": [
+                  {
+                    "name": "POSTGRES_HOST",
+                    "value": "127.0.0.1.com"
+                  },
+                  {
+                    "name": "POSTGRES_PORT",
+                    "value": "5432"
+                  },
+                  {
+                    "name": "REDIS_HOST",
+                    "value": "airflow-company-a-redis"
+                  },
+                  {
+                    "name": "AIRFLOW_HOME",
+                    "value": "/home/airflow"
+                  },
+                  {
+                    "name": "FLOWER_PORT",
+                    "value": "5555"
+                  }
+                ],
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181123114112.1134.6b26d90",
+                "imagePullPolicy": "IfNotPresent",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "httpGet": {
+                    "path": "/",
+                    "port": 5555,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 30,
+                  "periodSeconds": 8,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 8
+                },
+                "name": "flower",
+                "ports": [
+                  {
+                    "containerPort": 5555,
+                    "name": "flower",
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "100m",
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "64Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/home/airflow/airflow.cfg",
+                    "name": "airflow-config",
+                    "subPath": "airflow.cfg"
+                  },
+                  {
+                    "mountPath": "/airflow-dags",
+                    "name": "dag-volume"
+                  },
+                  {
+                    "mountPath": "/home/airflow/config",
+                    "name": "airflow-config-dir"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "configMap": {
+                  "defaultMode": 420,
+                  "name": "airflow-company-a-log-config"
+                },
+                "name": "airflow-config-dir"
+              },
+              {
+                "name": "airflow-config",
+                "secret": {
+                  "defaultMode": 420,
+                  "items": [
+                    {
+                      "key": "airflow.cfg",
+                      "path": "airflow.cfg"
+                    }
+                  ],
+                  "secretName": "airflow-company-a-config"
+                }
+              },
+              {
+                "name": "dag-volume",
+                "persistentVolumeClaim": {
+                  "claimName": "legion-airflow-dags"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:54:45Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T11:54:44Z",
+            "lastUpdateTime": "2018-11-23T11:55:33Z",
+            "message": "ReplicaSet \"airflow-company-a-flower-c99d9979c\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "creationTimestamp": "2018-11-23T11:54:44Z",
+        "generation": 1,
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-company-a-redis",
+          "heritage": "Tiller",
+          "release": "airflow-company-a"
+        },
+        "name": "airflow-company-a-redis",
+        "namespace": "company-a",
+        "resourceVersion": "16795",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/airflow-company-a-redis",
+        "uid": "91d64c85-ef16-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "airflow-company-a-redis"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "airflow-company-a-redis"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "redis:3",
+                "imagePullPolicy": "IfNotPresent",
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-c",
+                      "redis-cli -h $(hostname) ping"
+                    ]
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 60,
+                  "periodSeconds": 3,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 3
+                },
+                "name": "redis",
+                "ports": [
+                  {
+                    "containerPort": 6379,
+                    "name": "node",
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "100m",
+                    "memory": "256Mi"
+                  },
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "64Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:54:45Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T11:54:44Z",
+            "lastUpdateTime": "2018-11-23T11:54:49Z",
+            "message": "ReplicaSet \"airflow-company-a-redis-5c7566f795\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "creationTimestamp": "2018-11-23T11:54:44Z",
+        "generation": 1,
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-company-a-scheduler",
+          "heritage": "Tiller",
+          "release": "airflow-company-a"
+        },
+        "name": "airflow-company-a-scheduler",
+        "namespace": "company-a",
+        "resourceVersion": "16831",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/airflow-company-a-scheduler",
+        "uid": "91d6f2e9-ef16-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "airflow-company-a-airflow-scheduler"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "app": "airflow-company-a-airflow-scheduler"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "args": [
+                  "airflow",
+                  "scheduler"
+                ],
+                "env": [
+                  {
+                    "name": "POSTGRES_HOST",
+                    "value": "127.0.0.1.com"
+                  },
+                  {
+                    "name": "POSTGRES_PORT",
+                    "value": "5432"
+                  },
+                  {
+                    "name": "REDIS_HOST",
+                    "value": "airflow-company-a-redis"
+                  },
+                  {
+                    "name": "AIRFLOW_HOME",
+                    "value": "/home/airflow"
+                  }
+                ],
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181123114112.1134.6b26d90",
+                "imagePullPolicy": "IfNotPresent",
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-c",
+                      "ps x |grep \"[a]irflow scheduler\""
+                    ]
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 3,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 3
+                },
+                "name": "scheduler",
+                "resources": {
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "2Gi"
+                  },
+                  "requests": {
+                    "cpu": "1",
+                    "memory": "1Gi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/home/airflow/airflow.cfg",
+                    "name": "airflow-config",
+                    "subPath": "airflow.cfg"
+                  },
+                  {
+                    "mountPath": "/airflow-dags",
+                    "name": "dag-volume"
+                  },
+                  {
+                    "mountPath": "/home/airflow/config",
+                    "name": "airflow-config-dir"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "configMap": {
+                  "defaultMode": 420,
+                  "name": "airflow-company-a-log-config"
+                },
+                "name": "airflow-config-dir"
+              },
+              {
+                "name": "airflow-config",
+                "secret": {
+                  "defaultMode": 420,
+                  "items": [
+                    {
+                      "key": "airflow.cfg",
+                      "path": "airflow.cfg"
+                    }
+                  ],
+                  "secretName": "airflow-company-a-config"
+                }
+              },
+              {
+                "name": "dag-volume",
+                "persistentVolumeClaim": {
+                  "claimName": "legion-airflow-dags"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:54:45Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:55:04Z",
+            "message": "ReplicaSet \"airflow-company-a-scheduler-b8b4cf787\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "creationTimestamp": "2018-11-23T11:54:44Z",
+        "generation": 1,
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-company-a-web",
+          "heritage": "Tiller",
+          "release": "airflow-company-a"
+        },
+        "name": "airflow-company-a-web",
+        "namespace": "company-a",
+        "resourceVersion": "16976",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/airflow-company-a-web",
+        "uid": "91d7a170-ef16-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "airflow-company-a-airflow-web"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "app": "airflow-company-a-airflow-web"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "args": [
+                  "airflow",
+                  "webserver"
+                ],
+                "env": [
+                  {
+                    "name": "POSTGRES_HOST",
+                    "value": "127.0.0.1.com"
+                  },
+                  {
+                    "name": "POSTGRES_PORT",
+                    "value": "5432"
+                  },
+                  {
+                    "name": "REDIS_HOST",
+                    "value": "airflow-company-a-redis"
+                  },
+                  {
+                    "name": "AIRFLOW_HOME",
+                    "value": "/home/airflow"
+                  },
+                  {
+                    "name": "BOOTUP_DIRECTORY",
+                    "value": "/opt/bootup"
+                  },
+                  {
+                    "name": "SECRETS_DIRECTORY",
+                    "value": "/opt/secrets"
+                  }
+                ],
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181123114112.1134.6b26d90",
+                "imagePullPolicy": "IfNotPresent",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "httpGet": {
+                    "path": "/admin/airflow/dag_stats",
+                    "port": 8080,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 60,
+                  "periodSeconds": 5,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 10
+                },
+                "name": "web",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "name": "web",
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "httpGet": {
+                    "path": "/admin/rest_api/api?api=rest_api_plugin_version",
+                    "port": 8080,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 60,
+                  "periodSeconds": 5,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 10
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "1200Mi"
+                  },
+                  "requests": {
+                    "cpu": "400m",
+                    "memory": "750Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/home/airflow/airflow.cfg",
+                    "name": "airflow-config",
+                    "subPath": "airflow.cfg"
+                  },
+                  {
+                    "mountPath": "/opt/secrets",
+                    "name": "connections-config"
+                  },
+                  {
+                    "mountPath": "/airflow-dags",
+                    "name": "dag-volume"
+                  },
+                  {
+                    "mountPath": "/home/airflow/config",
+                    "name": "airflow-config-dir"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "configMap": {
+                  "defaultMode": 420,
+                  "name": "airflow-company-a-log-config"
+                },
+                "name": "airflow-config-dir"
+              },
+              {
+                "name": "airflow-config",
+                "secret": {
+                  "defaultMode": 420,
+                  "items": [
+                    {
+                      "key": "airflow.cfg",
+                      "path": "airflow.cfg"
+                    }
+                  ],
+                  "secretName": "airflow-company-a-config"
+                }
+              },
+              {
+                "name": "connections-config",
+                "secret": {
+                  "defaultMode": 420,
+                  "secretName": "airflow-company-a-connections-config"
+                }
+              },
+              {
+                "name": "dag-volume",
+                "persistentVolumeClaim": {
+                  "claimName": "legion-airflow-dags"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:54:45Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:56:07Z",
+            "message": "ReplicaSet \"airflow-company-a-web-79b4486469\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "creationTimestamp": "2018-11-23T11:54:45Z",
+        "generation": 1,
+        "labels": {
+          "chart": "airflow-0.0.1",
+          "component": "airflow-company-a-worker",
+          "heritage": "Tiller",
+          "release": "airflow-company-a"
+        },
+        "name": "airflow-company-a-worker",
+        "namespace": "company-a",
+        "resourceVersion": "16836",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/airflow-company-a-worker",
+        "uid": "91d92c11-ef16-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "airflow-company-a-airflow-worker"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "app": "airflow-company-a-airflow-worker"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "args": [
+                  "airflow",
+                  "worker"
+                ],
+                "env": [
+                  {
+                    "name": "POSTGRES_HOST",
+                    "value": "127.0.0.1.com"
+                  },
+                  {
+                    "name": "POSTGRES_PORT",
+                    "value": "5432"
+                  },
+                  {
+                    "name": "REDIS_HOST",
+                    "value": "airflow-company-a-redis"
+                  },
+                  {
+                    "name": "AIRFLOW_HOME",
+                    "value": "/home/airflow"
+                  },
+                  {
+                    "name": "MODEL_SERVER_URL",
+                    "value": "http://legion-company-a-edge"
+                  },
+                  {
+                    "name": "EDI_URL",
+                    "value": "http://legion-company-a-edi"
+                  },
+                  {
+                    "name": "NAMESPACE",
+                    "value": "company-a"
+                  },
+                  {
+                    "name": "S3_BUCKET_NAME",
+                    "value": "epm-legion-data-test-company-a"
+                  }
+                ],
+                "image": "127.0.0.1/customer/k8s-airflow:0.9.0-20181123114112.1134.6b26d90",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "worker",
+                "resources": {
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "2500Mi"
+                  },
+                  "requests": {
+                    "cpu": "1500m",
+                    "memory": "1000Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/home/airflow/airflow.cfg",
+                    "name": "airflow-config",
+                    "subPath": "airflow.cfg"
+                  },
+                  {
+                    "mountPath": "/airflow-dags",
+                    "name": "dag-volume"
+                  },
+                  {
+                    "mountPath": "/home/airflow/config",
+                    "name": "airflow-config-dir"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "serviceAccount": "airflow-company-a-airflow-worker",
+            "serviceAccountName": "airflow-company-a-airflow-worker",
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "configMap": {
+                  "defaultMode": 420,
+                  "name": "airflow-company-a-log-config"
+                },
+                "name": "airflow-config-dir"
+              },
+              {
+                "name": "airflow-config",
+                "secret": {
+                  "defaultMode": 420,
+                  "items": [
+                    {
+                      "key": "airflow.cfg",
+                      "path": "airflow.cfg"
+                    }
+                  ],
+                  "secretName": "airflow-company-a-config"
+                }
+              },
+              {
+                "name": "dag-volume",
+                "persistentVolumeClaim": {
+                  "claimName": "legion-airflow-dags"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:54:45Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T11:54:45Z",
+            "lastUpdateTime": "2018-11-23T11:55:04Z",
+            "message": "ReplicaSet \"airflow-company-a-worker-8499bd78dc\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "creationTimestamp": "2018-11-23T11:56:17Z",
+        "generation": 1,
+        "labels": {
+          "chart": "event-collector-0.0.1",
+          "component": "event-collector-company-a-fluentd",
+          "heritage": "Tiller",
+          "release": "event-collector-company-a"
+        },
+        "name": "event-collector-company-a-fluentd",
+        "namespace": "company-a",
+        "resourceVersion": "17079",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/event-collector-company-a-fluentd",
+        "uid": "c9273bcd-ef16-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "component": "event-collector-company-a-fluentd"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "iam.amazonaws.com/role": "127.0.0.1.com-debug-enclave-airflow-role"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "component": "event-collector-company-a-fluentd"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "127.0.0.1/legion/k8s-fluentd:0.9.0-20181123114112.1134.6b26d90",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "fluentd",
+                "ports": [
+                  {
+                    "containerPort": 80,
+                    "name": "input",
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "cpu": "300m",
+                    "memory": "256Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/opt/config",
+                    "name": "fluentd-config-values"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "configMap": {
+                  "defaultMode": 420,
+                  "name": "event-collector-company-a-fluentd-config-values"
+                },
+                "name": "fluentd-config-values"
+              }
+            ]
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T11:56:17Z",
+            "lastUpdateTime": "2018-11-23T11:56:17Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T11:56:17Z",
+            "lastUpdateTime": "2018-11-23T11:56:41Z",
+            "message": "ReplicaSet \"event-collector-company-a-fluentd-745c46979d\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    {
+      "metadata": {
+        "annotations": {
+          "build_date": "20181123100709",
+          "build_id": "1131",
+          "build_user": "null",
+          "com.epam.legion.container_type": "model",
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
+          "deployment.kubernetes.io/revision": "1",
+          "git_revision": "d3524d8"
+        },
+        "creationTimestamp": "2018-11-23T12:45:37Z",
+        "generation": 1,
+        "labels": {
+          "com.epam.legion.model.id": "demo-abc-model",
+          "com.epam.legion.model.version": "1.1",
+          "legion.component": "model",
+          "legion.system": "yes"
+        },
+        "name": "model-demo-abc-model-1-1",
+        "namespace": "company-a",
+        "resourceVersion": "23165",
+        "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments/model-demo-abc-model-1-1",
+        "uid": "ad490617-ef1d-11e8-bf2e-02b3a1fbed10"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "com.epam.legion.model.id": "demo-abc-model",
+            "com.epam.legion.model.version": "1.1",
+            "legion.component": "model",
+            "legion.system": "yes"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 1
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "build_date": "20181123100709",
+              "build_id": "1131",
+              "build_user": "null",
+              "com.epam.legion.container_type": "model",
+              "com.epam.legion.model.id": "demo-abc-model",
+              "com.epam.legion.model.version": "1.1",
+              "git_revision": "d3524d8"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "com.epam.legion.model.id": "demo-abc-model",
+              "com.epam.legion.model.version": "1.1",
+              "legion.component": "model",
+              "legion.system": "yes"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "env": [
+                  {
+                    "name": "STATSD_HOST",
+                    "value": "legion-company-a-graphite.company-a"
+                  },
+                  {
+                    "name": "STATSD_PORT",
+                    "value": "80"
+                  }
+                ],
+                "image": "127.0.0.1/legion/test-bare-model-api-model-2:0.9.0-20181123100709.1131.d3524d8",
+                "imagePullPolicy": "Always",
+                "livenessProbe": {
+                  "failureThreshold": 10,
+                  "httpGet": {
+                    "path": "/healthcheck",
+                    "port": 5000,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 2,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 2
+                },
+                "name": "model",
+                "ports": [
+                  {
+                    "containerPort": 5000,
+                    "name": "api",
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 5,
+                  "httpGet": {
+                    "path": "/healthcheck",
+                    "port": 5000,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 2,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 2
+                },
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "serviceAccount": "model",
+            "serviceAccountName": "model",
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2018-11-23T12:45:37Z",
+            "lastUpdateTime": "2018-11-23T12:45:37Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2018-11-23T12:45:37Z",
+            "lastUpdateTime": "2018-11-23T12:45:43Z",
+            "message": "ReplicaSet \"model-demo-abc-model-1-1-6fd6d47f64\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    }
+  ],
+  "kind": "DeploymentList",
+  "metadata": {
+    "resourceVersion": "24261",
+    "selfLink": "/apis/apps/v1beta1/namespaces/company-a/deployments"
+  }
+}

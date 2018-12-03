@@ -47,6 +47,8 @@ spec:
           value: "http://{{ .Values.legion_release }}-edi"
         - name: NAMESPACE
           value: "{{ .Release.Namespace }}"
+        - name: S3_BUCKET_NAME
+          value: {{ .Values.storage.bucket_name }}
         volumeMounts:
         - name: airflow-config
           mountPath: /home/airflow/airflow.cfg

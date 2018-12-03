@@ -31,7 +31,7 @@ class S3Hook(K8SBaseHook):
     STOP_FILE_POSTFIX = '.STOP'
     STOP_FILE_NAME = 'STOP'
 
-    def __init__(self, conn_id: str, *args, **kwargs):
+    def __init__(self, conn_id: str = None, *args, **kwargs):
         """
         Initialize S3Hook.
 
@@ -47,10 +47,16 @@ class S3Hook(K8SBaseHook):
         self._args = args
         self._kwargs = kwargs
         # get the connection parameters
-        self.connection = self.get_connection(conn_id)
-        self.extras = self.connection.extra_dejson
-        self.aws_access_key_id = self.extras.get('aws_access_key_id', None)
-        self.aws_secret_access_key = self.extras.get('aws_secret_access_key', None)
+
+        if conn_id is not None:
+            self.connection = self.get_connection(conn_id)
+            self.extras = self.connection.extra_dejson
+            self.aws_access_key_id = self.extras.get('aws_access_key_id', None)
+            self.aws_secret_access_key = self.extras.get('aws_secret_access_key', None)
+        else:
+            self.aws_access_key_id = None
+            self.aws_secret_access_key = None
+
         try:
             self.s3_root_path = conf.get('core', 's3_root_path')
         except AirflowConfigException:

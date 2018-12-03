@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{  .Release.Name }}-invalid-tokens"
+  labels:
+    com.epam.legion.property: "{{  .Release.Name }}-invalid-tokens"
+type: Opaque
+data:
+  invalid-tokens: ""

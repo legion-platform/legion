@@ -1,0 +1,23 @@
+KUBE_LOGS_S3_BUCKET_NAME: {{ kube_fluentd.kube_s3_bucket_name }}
+KUBE_LOGS_S3_BUCKET_REGION: {{ kube_fluentd.kube_s3_bucket_region }}
+{% if kube_fluentd.kube_s3_bucket_prefix is defined %}
+KUBE_LOGS_PREFIX: {{ kube_fluentd.kube_s3_bucket_prefix }}
+{% endif %}
+SYSTEM_LOGS_S3_BUCKET_NAME: {{ kube_fluentd.system_s3_bucket_name }}
+SYSTEM_LOGS_S3_BUCKET_REGION: {{ kube_fluentd.system_s3_bucket_region }}
+{% if kube_fluentd.system_s3_bucket_prefix is defined %}
+SYSTEM_LOGS_PREFIX: {{ kube_fluentd.system_s3_bucket_prefix }}
+{% endif %}
+SERVICES_LOGS_S3_BUCKET_NAME: {{ kube_fluentd.services_s3_bucket_name }}
+SERVICES_LOGS_S3_BUCKET_REGION: {{ kube_fluentd.services_s3_bucket_region }}
+{% if kube_fluentd.services_s3_bucket_prefix is defined %}
+SERVICES_LOGS_PREFIX: {{ kube_fluentd.services_s3_bucket_prefix }}
+{% endif %}
+
+
+annotations:
+  iam.amazonaws.com/role: {{ cluster_name }}-fluentd-role
+
+image:
+  repository: {{ legion_infra_registry }}/k8s-kube-fluentd
+  tag: {{ legion_infra_version }}

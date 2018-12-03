@@ -35,27 +35,37 @@ class EdiClient:
     EDI client
     """
 
-    def __init__(self, base, user=None, password=None, token=None, retries=3):
+    def __init__(self, base, token=None, retries=3):
         """
         Build client
 
         :param base: base url, for example: http://edi.parallels
         :type base: str
-        :param user: user name for user/password based auth
-        :type user: str or None
-        :param password: user password for user/password based auth
-        :type password: str or None
         :param token: token for token based auth
         :type token: str or None
         :param retries: command retries or less then 2 if disabled
         :type retries: int
         """
         self._base = base
-        self._user = user
-        self._password = password
         self._token = token
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
+
+    def _request(self, action, url, data=None, headers=None):
+        """
+        Make HTTP request
+
+        :param action: request action, e.g. get / post / delete
+        :type action: str
+        :param url: target URL
+        :type url: str
+        :param data: (Optional) data to be placed in body of request
+        :param data: dict[str, str] or None
+        :param headers: (Optional) additional HTTP headers
+        :param headers: dict[str, str] or None
+        :return: :py:class:`requests.Response` -- response
+        """
+        return requests.request(action.lower(), url, data=data, headers=headers)
 
     def _query(self, url_template, payload=None, action='GET'):
         """
@@ -70,23 +80,16 @@ class EdiClient:
         :return: dict[str, any] -- response content
         """
         sub_url = url_template.format(version=self._version)
-        full_url = self._base.strip('/') + sub_url
-
-        auth = None
-        headers = {}
-
-        if self._user and self._password:
-            auth = (self._user, self._password)
-        elif self._token:
-            auth = ('token', self._token)
+        target_url = self._base.strip('/') + sub_url
 
         left_retries = self._retries if self._retries > 0 else 1
         raised_exception = None
 
         while left_retries > 0:
             try:
-                LOGGER.debug('Requesting {}'.format(full_url))
-                response = requests.request(action.lower(), full_url, data=payload, headers=headers, auth=auth)
+                LOGGER.debug('Requesting {}'.format(target_url))
+                # TODO: Add sending token (LEGION #313)
+                response = self._request(action, target_url, payload)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
@@ -103,7 +106,7 @@ class EdiClient:
         try:
             answer = json.loads(response.text)
             LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
-                         .format(answer, response.status_code, full_url))
+                         .format(answer, response.status_code, target_url))
         except ValueError as json_decode_exception:
             raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
@@ -154,12 +157,14 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy API endpoint
 
         :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
+        :param model_iam_role: IAM role to be used at model pod
+        :type model_iam_role: str
         :param count: count of pods to create
         :type count: int
         :param livenesstimeout: model pod startup timeout (used in liveness probe)
@@ -169,7 +174,8 @@ class EdiClient:
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
-            'image': image
+            'image': image,
+            'model_iam_role': model_iam_role
         }
         if count is not None:
             payload['count'] = count
@@ -306,8 +312,10 @@ def build_client(args=None):
         user = os.environ.get(*legion.config.EDI_USER)
         password = os.environ.get(*legion.config.EDI_PASSWORD)
 
+    # TODO: Password and user now are ignored. Add auth mechanism (LEGION #313)
+
     if not token:
         token = os.environ.get(*legion.config.EDI_TOKEN)
 
-    client = EdiClient(host, user, password, token)
+    client = EdiClient(host, token)
     return client

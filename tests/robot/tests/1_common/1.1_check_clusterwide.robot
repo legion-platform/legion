@@ -13,19 +13,19 @@ Test Teardown       Close All Browsers
 *** Test Cases ***
 Checking if all core domains have been registered
     [Documentation]  Check that all required core DNS A records has been registered
-    [Tags]  core  dns
+    [Tags]  core  dns  infra
     :FOR    ${subdomain}    IN    @{SUBDOMAINS}
     \  Check domain exists  ${subdomain}.${HOST_BASE_DOMAIN}
 
 Checking if all enclave domains have been registered
     [Documentation]  Check that all required enclave DNS A records has been registered
-    [Tags]  core  dns
+    [Tags]  core  dns  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \   Check if all enclave domains are registered      ${enclave}
 
 Checking if all replica sets, stateful sets, replication controllers are up and running
     [Documentation]  Gather information from kubernetes through API and check state of all required componens
-    [Tags]  k8s
+    [Tags]  k8s  infra
     Replica set is running                   ${DEPLOYMENT}-core-nexus
     Replication controller is running        ${DEPLOYMENT}-core-jenkins
     Replication controller is running        ${DEPLOYMENT}-core-graphite
@@ -37,7 +37,7 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
 
 Check Nexus availability
     [Documentation]  Check Nexus UI availability
-    [Tags]  nexus  ui
+    [Tags]  nexus  ui apps
     #Sleep  60
     Start browser    ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}
     Login with dex
@@ -46,7 +46,7 @@ Check Nexus availability
 
 Check Nexus Components available
     [Documentation]  Check that Nexus storages (components) are ready
-    [Tags]  nexus  ui
+    [Tags]  nexus  ui apps
     Start browser    ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}
     Login with dex
     Go To            ${NEXUS_HOST}/#browse/browse/components
@@ -56,13 +56,13 @@ Check Nexus Components available
 
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave
-    [Tags]  grafana  enclave
+    [Tags]  grafana  enclave  apps
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Grafana     ${enclave}
 
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
-    [Tags]  jenkins  model  scaling  infra
+    [Tags]  k8s  scaling  infra
     Get cluster nodes and their count    before
 
     :FOR  ${enclave}    IN    @{ENCLAVES}

@@ -1,70 +1,13 @@
 ---
 
-- name: Remove Jenkins airflow S3 access policy
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-jenkins-role"
-    policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
-    state: absent
+- name: Get cluster IAM roles
+  shell: "aws iam list-roles | grep {{ cluster_name }} | grep RoleName | awk '{print $2}'| tr -d '\"' |tr -d ','"
+  register: iam_roles
 
-- name: Remove Jenkins IAM role
-  iam_role:
-    name: "{{ cluster_name }}-jenkins-role"
-    state: absent
-
-- name: Remove Airflow S3 access policy
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
-    state: absent
-  with_items: "{{ enclaves }}"
+- include_tasks: remove-iam-role.yaml
+  loop: "{{ iam_roles.stdout_lines }}"
   loop_control:
-    loop_var: enclave
-
-- name: Remove enclave Airflow IAM role
-  iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
-- name: Remove Airflow S3 access policy
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-airflow-s3-access-policy"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
-- name: Remove enclave Airflow IAM role
-  iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-airflow-role"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
-- name: Remove event collector S3 access policy
-  iam_policy:
-    iam_type: role
-    iam_name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-    policy_name: "{{ cluster_name }}-{{ enclave }}-collector-s3-access-policy"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
-
-- name: Remove enclave event collector IAM role
-  iam_role:
-    name: "{{ cluster_name }}-{{ enclave }}-collector-role"
-    state: absent
-  with_items: "{{ enclaves }}"
-  loop_control:
-    loop_var: enclave
+    loop_var: iam_role
 
 - name: Remove kube2iam daemonset
   shell: kubectl --context {{ cluster_name }} delete daemonsets -n kube-system kube2iam --ignore-not-found=true

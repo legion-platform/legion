@@ -15,14 +15,14 @@ Suite Setup         Run Keywords
 *** Test Cases ***
 Running, waiting and checks jobs in Jenkins
     [Documentation]  Build and check every example in Jenkins
-    [Tags]  jenkins  models  enclave
+    [Tags]  jenkins  models  enclave  apps
     Connect to Jenkins endpoint
     :FOR  ${model_name}  IN  @{JENKINS_JOBS}
     \    Test model pipeline result   ${model_name}   ${MODEL_TEST_ENCLAVE}
 
 Checking property update callback
     [Documentation]  Build and check model that uses property system
-    [Tags]  jenkins  models  enclave  props
+    [Tags]  jenkins  models  enclave  props  apps
     Connect to Jenkins endpoint
     ${model_id}    ${model_version} =   Test model pipeline result   ${MODEL_WITH_PROPS}   ${MODEL_TEST_ENCLAVE}
     Log                                 Model with id = ${model_id} and version = ${model_version} has been deployed

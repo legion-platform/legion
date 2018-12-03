@@ -44,6 +44,10 @@ TEST_ENCLAVE_NAME = 'properties-storage'
 LOGGER = logging.getLogger(__name__)
 
 
+def check_modification_event_recieved(events, desired_data):
+    return len(events) > 0 and events[-1][1] == desired_data
+
+
 class TestK8SPropertiesStorage(unittest2.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -54,8 +58,8 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         logging.basicConfig(level=logging.DEBUG)
 
-        legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
-        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
+        legion.k8s.utils.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
+        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.utils.CONNECTION_CONTEXT))
 
         client = legion.k8s.utils.build_client()
         core_api = kubernetes.client.CoreV1Api(client)
@@ -67,7 +71,8 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
             namespace_object = core_api.read_namespace(TEST_ENCLAVE_NAME)
             LOGGER.debug('Get namespace object: {!r}'.format(namespace_object))
             LOGGER.info('Status of namespace object is {!r}'.format(namespace_object.status.phase))
-            return namespace_object.status.phase.lower == 'active'
+            result = namespace_object.status.phase.lower == 'active'
+            return result
 
         try:
             new_namespace_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
@@ -79,6 +84,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
 
             LOGGER.info('Creating namespace {}'.format(TEST_ENCLAVE_NAME))
             core_api.create_namespace(new_namespace)
+            LOGGER.info('Waiting until namespace will be active')
             legion_test.utils.wait_until(check_cluster_is_active)
         except Exception as exception:
             LOGGER.info('Cannot create namespace {} that should be built for testing: {}'
@@ -93,7 +99,8 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
             LOGGER.info('Cannot delete namespace {} that has been built for testing: {}'
                         .format(TEST_ENCLAVE_NAME, exception))
 
-    @attr('k8s', 'props', 'props_config_map')
+    @unittest.skip("Need to implement")
+    @attr('k8s', 'props', 'props_config_map', 'apps')
     def test_overwrite_config_map_storage(self):
         """
         Overwrite config map storage on save
@@ -102,7 +109,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
-    @attr('k8s', 'props', 'watch')
+    @attr('k8s', 'props', 'watch', 'apps')
     def test_config_map_storage_watch(self):
         """
         Test config map storage watching
@@ -115,30 +122,31 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         first_value = 'abc'
         second_value = 'abc-dgfa'
 
+        LOGGER.info('Constructing initial {!r} storage with start value {!r}'
+                    .format(storage_name, first_value))
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write[key] = first_value
         storage_to_write.save()
 
+        LOGGER.info('Retriving storage {!r}'.format(storage_name))
         storage_to_read = legion.k8s.K8SConfigMapStorage.retrive(storage_name, TEST_ENCLAVE_NAME)
 
         def listener():
+            LOGGER.info('Listener loop has been started')
             for event, new_data in storage_to_read.watch():
                 LOGGER.info('Got new event: type={}, new_data={}'.format(event, new_data))
                 events.append((event, new_data))
 
         with legion_test.utils.ContextThread(listener):
-            LOGGER.debug('Waiting before updating')
-
-            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 0, 1, 5))
-            self.assertTupleEqual(events[0], (legion.k8s.EVENT_ADDED, {key: first_value}))
-
+            LOGGER.info('Updating inside listener loop')
             storage_to_write[key] = second_value
             storage_to_write.save()
 
-            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 1, 1, 5))
-            self.assertTupleEqual(events[1], (legion.k8s.EVENT_MODIFIED, {key: second_value}))
+            LOGGER.info('Checking update')
+            self.assertTrue(legion_test.utils.wait_until(lambda: check_modification_event_recieved(events, {key: second_value}), 1, 5),
+                            'Modification event has not been recieved for {!r}'.format(storage_name))
 
-    @attr('k8s', 'props', 'watch')
+    @attr('k8s', 'props', 'watch', 'apps')
     def test_secret_storage_watch(self):
         """
         Test config map storage watching
@@ -151,30 +159,32 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         first_value = 'abc'
         second_value = 'abc-dgfa'
 
+        LOGGER.info('Constructing initial {!r} storage with start value {!r}'
+                    .format(storage_name, first_value))
         storage_to_write = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write[key] = first_value
         storage_to_write.save()
 
         storage_to_read = legion.k8s.K8SSecretStorage.retrive(storage_name, TEST_ENCLAVE_NAME)
+        thread_ready = False
 
         def listener():
+            LOGGER.info('Listener loop has been started')
             for event, new_data in storage_to_read.watch():
                 LOGGER.info('Got new event: type={}, new_data={}'.format(event, new_data))
                 events.append((event, new_data))
 
         with legion_test.utils.ContextThread(listener):
-            LOGGER.debug('Waiting before updating')
-
-            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 0, 1, 5))
-            self.assertTupleEqual(events[0], (legion.k8s.EVENT_ADDED, {key: first_value}))
-
+            LOGGER.info('Updating inside listener loop')
             storage_to_write[key] = second_value
             storage_to_write.save()
 
-            self.assertTrue(legion_test.utils.wait_until(lambda: len(events) > 1, 1, 5))
-            self.assertTupleEqual(events[1], (legion.k8s.EVENT_MODIFIED, {key: second_value}))
+            LOGGER.info('Checking update')
+            self.assertTrue(legion_test.utils.wait_until(lambda: check_modification_event_recieved(events, {key: second_value}), 1, 5),
+                            'Modification event has not been recieved for {!r}'.format(storage_name))
 
-    @attr('k8s', 'props', 'props_config_map')
+    @unittest.skip("Need to implement")
+    @attr('k8s', 'props', 'props_config_map', 'apps')
     def test_read_config_map_with_update_on_timeout(self):
         """
         Update config map on timeouts
@@ -183,7 +193,7 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         pass
 
-    @attr('k8s', 'props', 'props_config_map')
+    @attr('k8s', 'props', 'props_config_map', 'apps')
     def test_write_and_listing_config_map(self):
         """
         Listing config map
@@ -192,14 +202,17 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         storage_name = 'rw-storage-3'
 
+        LOGGER.info('Constructing empty {!r} storage'.format(storage_name))
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write.save()
 
-        self.assertIn(storage_name, legion.k8s.K8SConfigMapStorage.list(TEST_ENCLAVE_NAME))
+        self.assertIn(storage_name, legion.k8s.K8SConfigMapStorage.list(TEST_ENCLAVE_NAME),
+                      'Storage {!r} is not presented in list of storages'.format(storage_name))
 
+        LOGGER.info('Destroying storage {!r}'.format(storage_name))
         storage_to_write.destroy()
 
-    @attr('k8s', 'props', 'props_config_map')
+    @attr('k8s', 'props', 'props_config_map', 'apps')
     def test_retrive_config_map(self):
         """
         Retrive and load config map in one instruction
@@ -208,16 +221,19 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         storage_name = 'rw-retrive-storage-4'
 
+        LOGGER.info('Constructing storage {!r}'.format(storage_name))
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write['test_str'] = 'abc'
         storage_to_write.save()
 
+        LOGGER.info('Retriving storage {!r}'.format(storage_name))
         storage_to_read = legion.k8s.K8SConfigMapStorage.retrive(storage_name, TEST_ENCLAVE_NAME)
         self.assertEqual(storage_to_read['test_str'], 'abc')
 
+        LOGGER.info('Destroying storage {!r}'.format(storage_name))
         storage_to_read.destroy()
 
-    @attr('k8s', 'props', 'props_config_map')
+    @attr('k8s', 'props', 'props_config_map', 'apps')
     def test_create_and_read_config_map_storage(self):
         """
         Create and read config map storage with defined fields
@@ -226,25 +242,30 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         storage_name = 'rw-map-storage-5'
 
+        LOGGER.info('Constructing storage {!r}'.format(storage_name))
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
-
         storage_to_write['int_var'] = 1233
         storage_to_write['float_var'] = 52.2354
         storage_to_write['str_var'] = 'Test string'
         storage_to_write.save()
 
+        LOGGER.info('Listing storages')
         items = legion.k8s.K8SConfigMapStorage.list(TEST_ENCLAVE_NAME)
         self.assertIn(storage_name, items)
 
+        LOGGER.info('Loading storage {!r}'.format(storage_name))
         storage_to_read = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_read.load()
 
-        self.assertEqual(storage_to_read.get('int_var', cast=legion.model.int32), 1233)
-        self.assertAlmostEqual(storage_to_read.get('float_var', cast=legion.model.float32), 52.2354, 3)
-        self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string')
-        self.assertEqual(storage_to_read['str_var'], 'Test string')
+        self.assertEqual(storage_to_read.get('int_var', cast=legion.model.int32), 1233,
+                         'Wrong casting to int')
+        self.assertAlmostEqual(storage_to_read.get('float_var', cast=legion.model.float32), 52.2354, 3,
+                               'Wrong casting to float')
+        self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string',
+                         'Wrong casting to string')
+        self.assertEqual(storage_to_read['str_var'], 'Test string', 'Wrong calue w/o casting')
 
-    @attr('k8s', 'props', 'props_secret')
+    @attr('k8s', 'props', 'props_secret', 'apps')
     def test_create_and_read_secret_storage(self):
         """
         Create and read secret storage with defined fields
@@ -253,30 +274,39 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         """
         storage_name = 'rw-secret-storage-6'
 
+        LOGGER.info('Constructing storage {!r}'.format(storage_name))
         storage_to_write = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
-
         storage_to_write['int_var'] = 1233
         storage_to_write['float_var'] = 52.2354
         storage_to_write['str_var'] = 'Test string'
         storage_to_write.save()
 
+        LOGGER.info('Listing storages')
         items = legion.k8s.K8SSecretStorage.list(TEST_ENCLAVE_NAME)
-        self.assertIn(storage_name, items)
+        self.assertIn(storage_name, items, 'Storage {!r} has not presented in list of storages'
+                      .format(storage_name))
 
+        LOGGER.info('Loading storage {!r}'.format(storage_name))
         storage_to_read = legion.k8s.K8SSecretStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_read.load()
 
-        self.assertEqual(storage_to_read.get('int_var', cast=legion.model.int32), 1233)
-        self.assertAlmostEqual(storage_to_read.get('float_var', cast=legion.model.float32), 52.2354, 3)
-        self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string')
-        self.assertEqual(storage_to_read['str_var'], 'Test string')
+        self.assertEqual(storage_to_read.get('int_var', cast=legion.model.int32), 1233,
+                         'Wrong casting to int')
+        self.assertAlmostEqual(storage_to_read.get('float_var', cast=legion.model.float32), 52.2354, 3,
+                               'Wrong casting to float')
+        self.assertEqual(storage_to_read.get('str_var', cast=legion.model.string), 'Test string',
+                         'Wrong casting to str')
+        self.assertEqual(storage_to_read['str_var'], 'Test string',
+                         'Wrong value w/o casting')
 
+        LOGGER.info('Destroying storage {!r}'.format(storage_name))
         storage_to_read.destroy()
 
+        LOGGER.info('Listing storages')
         items = legion.k8s.K8SConfigMapStorage.list(TEST_ENCLAVE_NAME)
-        self.assertNotIn(storage_name, items)
+        self.assertNotIn(storage_name, items, 'Storage {!r} has presented in list of strages after removing')
 
-    @attr('k8s', 'props', 'props_config_map', 'props_ttl')
+    @attr('k8s', 'props', 'props_config_map', 'props_ttl', 'apps')
     def test_config_map_with_ttl(self):
         """
         Check config map TTL algorithm - positive test
@@ -287,28 +317,33 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         ttl = 1
 
         # Init storage
+        LOGGER.info('Constructing storage {!r}'.format(storage_name))
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write['test_str'] = 'abc'
         storage_to_write.save()
 
         # Build storage object with ttl
+        LOGGER.info('Building reader for {!r} with TTL = {!r}'.format(storage_name, ttl))
         storage_to_read = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME, cache_ttl=ttl)
         storage_to_read.load()
-        self.assertEqual(storage_to_read['test_str'], 'abc')
+        self.assertEqual(storage_to_read['test_str'], 'abc', 'Wrong data has been recieved')
 
         # Update storage
+        LOGGER.info('Updating storage {!r}'.format(storage_name))
         storage_to_write['test_str'] = 'def'
         storage_to_write.save()
 
         # Sleep TTL plus one seconds
+        LOGGER.info('Awaiting TTL + 1s = {}s for reader of storage {!r}'.format(ttl + 1, storage_name))
         time.sleep(ttl + 1)
 
         # Check that data has been reloaded without forcing
-        self.assertEqual(storage_to_read['test_str'], 'def')
+        self.assertEqual(storage_to_read['test_str'], 'def', 'Data has not been changed after TTL timeout')
 
+        LOGGER.info('Destroying storage {!r}'.format(storage_name))
         storage_to_read.destroy()
 
-    @attr('k8s', 'props', 'props_config_map', 'props_ttl')
+    @attr('k8s', 'props', 'props_config_map', 'props_ttl', 'apps')
     def test_config_map_without_ttl(self):
         """
         Check config map TTL algorithm - negative test
@@ -318,22 +353,26 @@ class TestK8SPropertiesStorage(unittest2.TestCase):
         storage_name = 'config-map-without-ttl'
 
         # Init storage
+        LOGGER.info('Constructing storage {!r}'.format(storage_name))
         storage_to_write = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_write['test_str'] = 'abc'
         storage_to_write.save()
 
         # Build storage object without ttl
+        LOGGER.info('Building reader for {!r} without TTL'.format(storage_name))
         storage_to_read = legion.k8s.K8SConfigMapStorage(storage_name, TEST_ENCLAVE_NAME)
         storage_to_read.load()
-        self.assertEqual(storage_to_read['test_str'], 'abc')
+        self.assertEqual(storage_to_read['test_str'], 'abc', 'Wrong data has been recieved')
 
         # Update storage
+        LOGGER.info('Updating storage {!r}'.format(storage_name))
         storage_to_write['test_str'] = 'def'
         storage_to_write.save()
 
         # Check that data has not been reloaded without forcing
-        self.assertEqual(storage_to_read['test_str'], 'abc')
+        self.assertEqual(storage_to_read['test_str'], 'abc', 'Data has been updated')
 
+        LOGGER.info('Destroying storage {!r}'.format(storage_name))
         storage_to_read.destroy()
 
 

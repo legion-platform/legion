@@ -30,7 +30,7 @@ core:
   logging_level: info
   remote_logging: true
   remote_base_log_folder: "{{ airflow_s3_logs_url }}"
-  remote_log_conn_id: s3_conn
+  remote_log_conn_id:
 
 webserver:
   worker_refresh_interval: 10
@@ -75,7 +75,8 @@ storage:
   dags_volume_pvc: "{{ airflow_dags_pvc }}"
   airflow_dags_directory: "{{ airflow_dags_dir }}"
   pvc_name: "{{ airflow_dags_pvc }}"
-  s3_root_path: "s3://{{airflow_s3_bucket_name}}/"
+  s3_root_path: "s3://{{legion_data_s3_bucket}}/"
+  bucket_name: "{{ legion_data_s3_bucket }}"
 
 ingress:
   enabled: true

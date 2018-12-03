@@ -189,11 +189,12 @@ class Enclave:
         :type model_version: str or None
         :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
         """
-        return [
+        items = [
             model_service
             for id_and_version, model_service in self.models.items()
             if model_id in (id_and_version.id, '*', None) and model_version in (id_and_version.version, None, '*')
         ]
+        return sorted(items, key=lambda ms: '{}/{}'.format(ms.id, ms.version))
 
     def get_models_strict(self, model_id, model_version=None, ignore_not_found=False):
         """
@@ -211,8 +212,13 @@ class Enclave:
         """
         model_services = self.get_models(model_id, model_version)
 
-        if len(model_services) > 1 and not model_version:
-            raise Exception('Please specify version of model')
+        ignore_strictness = model_id == '*' or model_version == '*'
+
+        if len(model_services) > 1:
+            LOGGER.info('More than one model was found for filter: id={!r} version={!r}'
+                        .format(model_id, model_version))
+            if not ignore_strictness and not model_version:
+                raise Exception('Please specify version of model')
 
         if not model_services:
             if not ignore_not_found:
@@ -269,12 +275,14 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
-    def deploy_model(self, image, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy_model(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
         """
         Deploy new model
 
         :param image: docker image with model
         :type image: str
+        :param model_iam_role: IAM role to be used at model pod
+        :type model_iam_role: str
         :param count: count of pods
         :type count: int
         :param livenesstimeout: model pod startup timeout (used in liveness probe)
@@ -316,7 +324,7 @@ class Enclave:
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
             port=legion.config.LEGION_PORT[1]
-            )
+        )
 
         livenessprobe = kubernetes.client.V1Probe(
             failure_threshold=10,
@@ -349,8 +357,11 @@ class Enclave:
                                                   name='api', protocol='TCP')
             ])
 
+        pod_annotations = image_meta_information.kubernetes_annotations
+        pod_annotations['iam.amazonaws.com/role'] = model_iam_role
+
         pod_template = kubernetes.client.V1PodTemplateSpec(
-            metadata=kubernetes.client.V1ObjectMeta(annotations=image_meta_information.kubernetes_annotations,
+            metadata=kubernetes.client.V1ObjectMeta(annotations=pod_annotations,
                                                     labels=image_meta_information.kubernetes_labels),
             spec=kubernetes.client.V1PodSpec(
                 containers=[container],
@@ -365,7 +376,7 @@ class Enclave:
             api_version="extensions/v1beta1",
             kind="Deployment",
             metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
-                                                    annotations=image_meta_information.kubernetes_annotations,
+                                                    annotations=pod_annotations,
                                                     labels=image_meta_information.kubernetes_labels),
             spec=deployment_spec)
 
@@ -376,6 +387,21 @@ class Enclave:
         extensions_v1beta1.create_namespaced_deployment(
             body=deployment,
             namespace=self.namespace)
+
+        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
+
+        deployment_ready = legion.utils.ensure_function_succeed(
+            lambda: image_meta_information.k8s_name in [
+                item.metadata.name
+                for item in extensions_v1beta1.list_namespaced_deployment(self.namespace).items],
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not deployment_ready:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create deployment {}'.format(image_meta_information.k8s_name)
+            )
 
         # Creating a service
         service_spec = kubernetes.client.V1ServiceSpec(
@@ -397,6 +423,18 @@ class Enclave:
         k8s_service = core_v1api.create_namespaced_service(
             body=service,
             namespace=self.namespace)
+
+        service_ready = legion.utils.ensure_function_succeed(
+            lambda: image_meta_information.k8s_name in [
+                item.metadata.name
+                for item in core_v1api.list_namespaced_service(self.namespace).items],
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not service_ready:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create service {}'.format(image_meta_information.k8s_name)
+            )
 
         LOGGER.info('Building model service object')
         return legion.k8s.services.ModelService(k8s_service)

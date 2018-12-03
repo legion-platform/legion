@@ -130,6 +130,8 @@ storage:
   use_specified_pvc: false
   pvc_name: ''
 
+  bucket_name: ''
+
 ingress:
   enabled: true
   flowerEnabled: true

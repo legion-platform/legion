@@ -15,6 +15,8 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
+      annotations:
+        iam.amazonaws.com/role: {{ .Values.iam_role }}
       labels:
         app: {{ include "kube-elb-security.name" . }}
         release: {{ .Release.Name }}

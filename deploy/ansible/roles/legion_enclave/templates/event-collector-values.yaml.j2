@@ -12,6 +12,6 @@ s3:
   key_id: "{{ fluentd.aws.access_key_id }}"
   secret_key: "{{ fluentd.aws.secret_access_key }}"
 
-  bucket: "{{ collector.bucket }}"
+  bucket: "{{ legion_data_s3_bucket }}"
   region: "{{ collector.region }}"
   path: "events/${tag}/year=%Y/month=%m/day=%d/"

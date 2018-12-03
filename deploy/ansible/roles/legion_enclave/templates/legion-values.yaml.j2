@@ -2,6 +2,8 @@ rootDomain: {{ root_domain }}
 enclaveName: "{{ enclave }}"
 namespace: default
 
+log_level: {{ log_level }}
+
 package:
   version: "{{ legion_version }}"
   repository: "{{ pypi_repo }}"
@@ -28,7 +30,9 @@ grafana:
 edge:
   enabled: true
   replicas: 2
-  image: 
+  enableHomePage: {% if (hide_edge_page | default('false')) == true %}false{% else %}true{% endif %}
+
+  image:
     repository: "{{ docker_repo }}/k8s-edge"
     tag: "{{ legion_version }}"
 
@@ -42,6 +46,9 @@ edi:
   image:
     repository: "{{ docker_repo }}/k8s-edi"
     tag: "{{ legion_version }}"
+
+  k8s_api_retry_number_max_limit: "{{ k8s_api_retry_number_max_limit }}"
+  k8s_api_retry_delay_sec: "{{ k8s_api_retry_delay_sec }}"
 
   ingress:
     tls:

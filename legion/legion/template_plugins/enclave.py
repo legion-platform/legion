@@ -24,7 +24,7 @@ from legion.k8s.utils import get_current_namespace
 LOGGER = logging.getLogger(__name__)
 
 
-async def enclave_models_monitor(template_system):
+def enclave_models_monitor(template_system):
     """
     Update template with current model state
 

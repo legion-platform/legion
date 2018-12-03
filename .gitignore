@@ -16,6 +16,8 @@
 keys/
 cover/
 
+legion/legion/data/Pipfile.lock
+
 test.model
 .noseids
 

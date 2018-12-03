@@ -26,10 +26,10 @@ pipeline {
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
                     println(Globals.dockerLabels)
-                    
+
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
-                    
+
                     /// Define build version
                     if (params.StableRelease) {
                         if (params.ReleaseVersion){
@@ -132,7 +132,7 @@ pipeline {
                     }
                 }
                 stage('Run Python code analyzers') {
-                    agent { 
+                    agent {
                         docker {
                             image "legion-docker-agent:${env.BUILD_NUMBER}"
                         }
@@ -144,57 +144,37 @@ pipeline {
                         pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503,E731
                         pydocstyle --source legion
 
-                        export TERM="linux"
-                        rm -f pylint.log
-                        pylint legion >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion > legion-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n tests >> legion-pylint.log || exit 0
                         cd ..
                         '''
 
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+                        archiveArtifacts 'legion/legion-pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/legion-pylint.log']], unHealthy: ''
 
                         sh '''
                         cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
+                        pycodestyle --show-source --show-pep8 legion_airflow
+                        pycodestyle --show-source --show-pep8 tests
                         pydocstyle legion_airflow
 
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion_airflow > legion_airflow-pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n tests >> legion_airflow-pylint.log || exit 0
                         cd ..
                         '''
-        
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
+
+                        archiveArtifacts 'legion_airflow/legion_airflow-pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/legion_airflow-pylint.log']], unHealthy: ''
 
                         sh '''
-                        cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
-                        pydocstyle legion_airflow
+                        cd legion_test
 
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
+                        TERM="linux" pylint --persistent=n legion_test > legion_test-pylint.log || exit 0
                         cd ..
                         '''
 
-                        archiveArtifacts 'legion/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/pylint.log']], unHealthy: ''
-
-                        sh '''
-                        cd legion_airflow
-                        pycodestyle legion_airflow
-                        pycodestyle tests
-                        pydocstyle legion_airflow
-
-                        pylint legion_airflow >> pylint.log || exit 0
-                        pylint tests >> pylint.log || exit 0
-                        cd ..
-                        '''
-
-                        archiveArtifacts 'legion_airflow/pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/pylint.log']], unHealthy: ''
+                        archiveArtifacts 'legion_test/legion_test-pylint.log'
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_test/legion_test-pylint.log']], unHealthy: ''
                     }
                 }
                 stage("Upload Legion package") {
@@ -268,7 +248,7 @@ EOL
             }
         }
         stage('Build docs') {
-            agent { 
+            agent {
                 docker {
                     image "legion-docker-agent:${env.BUILD_NUMBER}"
                     args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage}"
@@ -332,31 +312,26 @@ EOL
                     steps {
                         sh """
                         cd k8s/jenkins
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg jenkins_plugin_version="${Globals.buildVersion}" --build-arg jenkins_plugin_server="${params.JenkinsPluginsRepository}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg update_center_url="" --build-arg update_center_experimental_url="${params.JenkinsPluginsRepository}" --build-arg update_center_download_url="${params.JenkinsPluginsRepository}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
-                stage("Build Bare model 1") {
+                stage("Build Bare models") {
                     steps {
+                        // Build test-bare-model-api-model-1
                         sh """
-                        cd k8s/test-bare-model-api/model-1
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd tests/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.0" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare model 2") {
-                    steps {
+                        // Build test-bare-model-api-model-2
                         sh """
-                        cd k8s/test-bare-model-api/model-2
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd tests/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.1" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare model 3") {
-                    steps {
+                        // Build test-bare-model-api-model-3
                         sh """
-                        cd k8s/test-bare-model-api/model-3
-                        docker build --build-arg version="${Globals.buildVersion}" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        cd tests/test-bare-model-api
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="edi-test-model" --build-arg model_version="1.2" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -399,7 +374,7 @@ EOL
                         cp /src/legion/nosetests.xml legion/nosetests.xml
                         """
                         junit 'legion/nosetests.xml'
-        
+
                         sh """
                         cp -rf /src/legion/cover \"${params.LocalDocumentationStorage}/${Globals.buildVersion}-cover\"
                         """
@@ -435,18 +410,10 @@ EOL
                         UploadDockerImage('k8s-jenkins')
                     }
                 }
-                stage('Upload Bare model 1') {
+                stage('Upload Bare models') {
                     steps {
                         UploadDockerImage('test-bare-model-api-model-1')
-                    }
-                }
-                stage('Upload Bare model 2') {
-                    steps {
                         UploadDockerImage('test-bare-model-api-model-2')
-                    }
-                }
-                stage('Upload Bare model 3') {
-                    steps {
                         UploadDockerImage('test-bare-model-api-model-3')
                     }
                 }
@@ -511,9 +478,12 @@ EOL
             }
         }
 	}
-    post { 
-        always { 
-            notifyBuild(currentBuild.result)
+    post {
+        always {
+            script {
+                legion = load "deploy/legionPipeline.groovy"
+                legion.notifyBuild(currentBuild.currentResult)
+            }
             deleteDir()
         }
     }
@@ -547,47 +517,4 @@ def UploadDockerImage(imageName) {
     } else {
         UploadDockerImageLocal(imageName)
     }
-}
-
-def notifyBuild(String buildStatus = 'STARTED') {
-    // build status of null means successful
-    buildStatus =  buildStatus ?: 'SUCCESSFUL'
-
-    def previousBuild = currentBuild.getPreviousBuild()
-    def previousBuildResult = previousBuild != null ? previousBuild.result : null
-
-    def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
-    def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
-
-    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
-
-    print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
-
-    if (!masterOrDevelopBuild)
-        return
-
-    // Skip green -> green
-    if (currentBuildResultSuccessful && previousBuildResultSuccessful)
-        return
-
-    // Default values
-    def colorCode = '#FF0000'
-    def summary = """\
-    @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult})
-    branch *${params.GitBranch}*
-    commit *${Globals.rootCommit}*
-    version *${Globals.buildVersion}*
-    Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
-    """.stripIndent()
-
-    // Override default values based on build status
-    if (buildStatus == 'STARTED') {
-        colorCode = '#FFFF00'
-    } else if (buildStatus == 'SUCCESSFUL') {
-        colorCode = '#00FF00'
-    } else {
-        colorCode = '#FF0000'
-    }
-
-    slackSend (color: colorCode, message: summary)
 }

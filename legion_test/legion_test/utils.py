@@ -34,7 +34,8 @@ def wait_until(condition, iteration_duration=5, iterations=10):
     :return: True or False -- is condition result has been changed to True
     """
     for _ in range(iterations):
-        if condition():
+        result = condition()
+        if result:
             return True
 
         time.sleep(iteration_duration)
@@ -68,6 +69,7 @@ class ContextThread(threading.Thread):
     """
     Context manager thread
     """
+
     def __init__(self, threaded_function, name='ContextThread'):
         """
         Construct context manager
@@ -80,6 +82,16 @@ class ContextThread(threading.Thread):
         threading.Thread.__init__(self, name=name)
         self.daemon = True
         self._function = threaded_function
+        self._ready = False
+
+    @property
+    def is_thread_ready(self):
+        """
+        Check is thread ready
+
+        :return: bool -- is thread ready or not
+        """
+        return self._ready
 
     def run(self):
         """
@@ -88,6 +100,7 @@ class ContextThread(threading.Thread):
         :return: None
         """
         try:
+            self._ready = True
             self._function()
         finally:
             LOGGER.debug('ContextThread finished his work')
@@ -121,4 +134,5 @@ class ContextThread(threading.Thread):
         :param exc_tb: exception traceback
         :return: None
         """
+        self._ready = False
         self.stop()

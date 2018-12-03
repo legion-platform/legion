@@ -25,6 +25,7 @@ import unittest.mock
 import unittest2
 
 import legion.k8s
+import legion.k8s.utils
 import legion.config
 import legion.containers.docker
 import legion.external
@@ -67,8 +68,8 @@ class TestK8SModelOperations(unittest2.TestCase):
         """
         logging.basicConfig(level=logging.DEBUG)
 
-        legion.k8s.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
-        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.CONNECTION_CONTEXT))
+        legion.k8s.utils.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
+        LOGGER.info('K8S context has been set to {}'.format(legion.k8s.utils.CONNECTION_CONTEXT))
 
     def _remove_model_if_exists(self, model_id, model_version=None):
         """
@@ -107,7 +108,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         self.assertIn(VARIABLES['MODEL_TEST_ENCLAVE'], enclaves_map, 'cannot find test enclave')
         return enclaves_map[VARIABLES['MODEL_TEST_ENCLAVE']]
 
-    @attr('k8s', 'models')
+    @attr('k8s', 'models', 'apps')
     def test_bare_model_deploy(self):
         """
         Test bare model deploy
@@ -128,7 +129,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         self.assertEqual(model_service.id, TEST_MODEL_ID)
         self.assertEqual(model_service.version, TEST_MODEL_VERSION)
 
-    @attr('k8s', 'models')
+    @attr('k8s', 'models', 'apps')
     def test_bare_model_deploy_undeploy(self):
         """
         Test bare model deploy
@@ -153,7 +154,7 @@ class TestK8SModelOperations(unittest2.TestCase):
             'model service for model {} {} found after un deploy'.format(TEST_MODEL_ID, TEST_MODEL_VERSION)
         )
 
-    @attr('k8s', 'models')
+    @attr('k8s', 'models', 'apps')
     def test_model_watch_service_endpoints_state(self):
         states = []  # history of states (each state consists model services)
 
@@ -180,7 +181,7 @@ class TestK8SModelOperations(unittest2.TestCase):
             self.assertTrue(legion_test.utils.wait_until(lambda: not is_test_model_in_last_state()),
                             'state has been found but model has been removed')
 
-    @attr('k8s', 'models')
+    @attr('k8s', 'models', 'apps')
     def test_model_information(self):
         """
         Test that target-test model present
@@ -206,7 +207,8 @@ class TestK8SModelOperations(unittest2.TestCase):
 
         self.assertIsInstance(model_service.scale, int, 'wrong model current scale type')
 
-        legion_test.utils.wait_until(lambda: model_service.reload_cache() or model_service.scale > 0)
+        legion_test.utils.wait_until(lambda: model_service.reload_cache() is None
+                                             and model_service.scale > 0)
 
         self.assertGreater(model_service.scale, 0, 'wrong model current scale value')
         self.assertIsInstance(model_service.desired_scale, int, 'wrong model current scale type')
@@ -217,7 +219,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         self.assertIsInstance(model_service.image, str, 'cannot get model image')
         self.assertGreater(len(model_service.image), 0, 'empty model image string')
 
-    @attr('k8s', 'models')
+    @attr('k8s', 'models', 'apps')
     def test_model_scale_up_and_down(self):
         """
         Test model scale up and scale down procedure
