@@ -37,6 +37,7 @@
 - Replace virtualenv with pipenv [\#155](https://github.com/legion-platform/legion/issues/155)
 
 ### Fixed
+- Fix release tagging [\#631](https://github.com/legion-platform/legion/issues/631)
 - Legionctl freezes with verbose flag [\#383](https://github.com/legion-platform/legion/issues/383)
 - Pin ipykernel version 4.9.0 [\#501](https://github.com/legion-platform/legion/issues/501)
 - Remove sleeps in regression tests [\#475](https://github.com/legion-platform/legion/issues/475)

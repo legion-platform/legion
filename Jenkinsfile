@@ -64,7 +64,7 @@ pipeline {
                             if (params.PushGitTag){
                                 print('Set Release tag')
                                 sh """
-                                if [ `git tag |grep -w ${params.ReleaseVersion}` ]; then
+                                if [ `git tag |grep -x ${params.ReleaseVersion}` ]; then
                                     if [ ${params.ForceTagPush} = "true" ]; then
                                         echo 'Removing existing git tag'
                                         git tag -d ${params.ReleaseVersion}
