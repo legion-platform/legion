@@ -67,31 +67,17 @@ def deployLegion() {
     file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                if (params.PublicRelease){
-                    docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
-                        stage('Deploy Legion') {
-                            sh """
-                            cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
-                            --vault-password-file=${vault} \
-                            --extra-vars "profile=${params.Profile} \
-                            legion_version=${params.LegionVersion} \
-                            helm_repo=${HelmRepo} \
-                            pypi_repo=${params.PypiRepo} \
-                            docker_repo=${params.DockerRepo}"
-                            """
-                        }
-                    }
-                } else {
-                    docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
-                        stage('Deploy Legion') {
-                            sh """
-                            cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
-                            --vault-password-file=${vault} \
-                            --extra-vars "profile=${params.Profile} \
-                            helm_repo=${HelmRepo} \
-                            legion_version=${params.LegionVersion}"
-                            """
-                        }
+                docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    stage('Deploy Legion') {
+                        sh """
+                        cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
+                        --vault-password-file=${vault} \
+                        --extra-vars "profile=${params.Profile} \
+                        legion_version=${params.LegionVersion} \
+                        pypi_repo=${params.PypiRepo} \
+                        helm_repo=${params.HelmRepo} \
+                        docker_repo=${params.DockerRepo}"
+                        """
                     }
                 }
             }
@@ -260,6 +246,7 @@ def runRobotTests(tags="") {
 }
 
 def deployLegionEnclave() {
+<<<<<<< 540f7a37d9c0ca59f8a75a57f698dedefcfa8284
     dir('deploy/ansible'){
         withCredentials([
             file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
@@ -293,6 +280,23 @@ def deployLegionEnclave() {
                                 """
                             }
                         }
+=======
+    withCredentials([
+        file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+        withAWS(credentials: 'kops') {
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    stage('Deploy Legion') {
+                        sh """
+                        cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
+                        --vault-password-file=${vault} \
+                        --extra-vars "profile=${params.Profile} \
+                        legion_version=${params.LegionVersion} \
+                        pypi_repo=${params.PypiRepo} \
+                        docker_repo=${params.DockerRepo} \
+                        enclave_name=${params.EnclaveName}"
+                        """
+>>>>>>> [#566] move docker repo to job params
                     }
                 }
             }
