@@ -20,6 +20,7 @@
 - Add tests for scale/undeploy/inspect with "*" as param for multi models operations [\#334](https://github.com/legion-platform/legion/issues/334)
 - Trigger Airflow DAGs from robot tests [\#161](https://github.com/legion-platform/legion/issues/161)
 - Accelerate test execution [\#133](https://github.com/legion-platform/legion/issues/133)
+- Add change log file that follows this standard - https://keepachangelog.com/en/1.0.0/  [#509](https://github.com/legion-platform/legion/issues/509)
 
 ### Changed
 - Normalize Flower test methods [\#602](https://github.com/legion-platform/legion/issues/602)
