@@ -28,6 +28,7 @@ def createCluster() {
                     extras: '--vault-password-file=${vault} \
                             --extra-vars "profile=${Profile} \
                             skip_kops=${Skip_kops} \
+                            helm_repo=${HelmRepo} \
                             legion_infra_version=${LegionInfraVersion} \
                             legion_infra_registry=${LegionInfraRegistry}"',
                     colorized: true
@@ -63,6 +64,7 @@ def deployLegion() {
                             extras: '--vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
                                      legion_version=${LegionVersion} \
+                                     helm_repo=${HelmRepo} \
                                      pypi_repo=${PypiRepo} \
                                      docker_repo=${DockerRepo}" ',
                             colorized: true
@@ -72,6 +74,7 @@ def deployLegion() {
                             playbook: 'deploy-legion.yml',
                             extras: '-vvvv --vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
+                                     helm_repo=${HelmRepo} \
                                      legion_version=${LegionVersion}" ',
                             colorized: true
                         )
@@ -257,6 +260,7 @@ def deployLegionEnclave() {
                                      legion_version=${LegionVersion} \
                                      pypi_repo=${PypiRepo} \
                                      docker_repo=${DockerRepo} \
+                                     helm_repo=${HelmRepo} \
                                      enclave_name=${EnclaveName}"',
                             colorized: true
                          )
@@ -266,6 +270,7 @@ def deployLegionEnclave() {
                             extras: '--vault-password-file=${vault} \
                                      --extra-vars "profile=${Profile} \
                                      legion_version=${LegionVersion} \
+                                     helm_repo=${HelmRepo} \
                                      enclave_name=${EnclaveName}" ',
                             colorized: true
                         )
