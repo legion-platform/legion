@@ -65,7 +65,6 @@
   shell: |
     helm --kube-context {{ cluster_name }} repo add legion-helm {{ helm_repo }}
     helm --kube-context {{ cluster_name }} repo update
-    helm --kube-context {{ cluster_name }} fetch legion-helm
 
 - name: Wait for helm ready
   shell: helm --kube-context {{ cluster_name }} ls
