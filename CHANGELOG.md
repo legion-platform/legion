@@ -1,6 +1,7 @@
 ## [0.9.0](https://github.com/legion-platform/legion/tree/0.9.0) (2018-12-01)
 
 ### Added
+- Feedback events registration [\#8](https://github.com/legion-platform/legion/issues/8)
 - Jenkins slave and Airflow worker don't know S3 bucket name for a cluster [\#607](https://github.com/legion-platform/legion/issues/607)
 - Add waits in undeploy cycle [\#596](https://github.com/legion-platform/legion/issues/596)
 - Cleanup all IAM resources during cluster termination [\#586](https://github.com/legion-platform/legion/issues/586)
@@ -11,35 +12,34 @@
 - Model trainer job and Model pods need AWS credentials from Kube2iam [\#529](https://github.com/legion-platform/legion/issues/529)
 - Need an option to remove and invalidate API token [\#525](https://github.com/legion-platform/legion/issues/525)
 - Implement cluster-level-logging with AWS S3 as logging backend [\#514](https://github.com/legion-platform/legion/issues/514)
-- Feedback events registration [\#8](https://github.com/legion-platform/legion/issues/8)
 - Add profile parameter to hide Edge home page [\#549](https://github.com/legion-platform/legion/issues/549)
 - Extend Airflow and S3 test classes methods for testing purposes [\#546](https://github.com/legion-platform/legion/issues/546)
 - CI Notifications [\#513](https://github.com/legion-platform/legion/issues/513)
-- Extend dex config flexibility [\#527](https://github.com/legion-platform/legion/issues/527)
 - Add event collector properties to new profiles [\#505](https://github.com/legion-platform/legion/issues/505)
 - Add resource limitations/requests for K8S Pods [\#450](https://github.com/legion-platform/legion/issues/450)
 - Add tests for scale/undeploy/inspect with "*" as param for multi models operations [\#334](https://github.com/legion-platform/legion/issues/334)
 - Trigger Airflow DAGs from robot tests [\#161](https://github.com/legion-platform/legion/issues/161)
+- Accelerate test execution [\#133](https://github.com/legion-platform/legion/issues/133)
 
 ### Changed
 - Normalize Flower test methods [\#602](https://github.com/legion-platform/legion/issues/602)
 - Use lightweight docker image for scaling node tests [\#590](https://github.com/legion-platform/legion/issues/590)
 - Legion-platform github url [\#556](https://github.com/legion-platform/legion/issues/556)
-- Airflow S3 operator creates invalid CSV files [\#521](https://github.com/legion-platform/legion/issues/521)
 - Split Legion integration tests on 2 groups: infrastructure and applications [\#516](https://github.com/legion-platform/legion/issues/516)
 - Move PERF TEST Vertical-Scaling to infra tests [\#518](https://github.com/legion-platform/legion/issues/518)
 - Cluster autoscaler doesn scale down temp r4.large node after PERF TEST Vertical-Scaling [\#511](https://github.com/legion-platform/legion/issues/511)
 - Update legion aws tags [\#472](https://github.com/legion-platform/legion/issues/472)
 - Rework Build Process to avoid any host Jenkins dependencies [\#446](https://github.com/legion-platform/legion/issues/446)
 - Replace wrong test tags in robot tests [\#432](https://github.com/legion-platform/legion/issues/432)
-- Legionctl freezes with verbose flag [\#383](https://github.com/legion-platform/legion/issues/383)
 - Legionctl undeploy/scale commands with '*' parameter does not work [\#345](https://github.com/legion-platform/legion/issues/345)
 - Update to kubernetes 6.0.0 in order to support Python 3.7 [\#312](https://github.com/legion-platform/legion/issues/312)
 - Replace virtualenv with pipenv [\#155](https://github.com/legion-platform/legion/issues/155)
-- Remove sleeps in regression tests [\#475](https://github.com/legion-platform/legion/issues/475)
-- Pin ipykernel version 4.9.0 [\#501](https://github.com/legion-platform/legion/issues/501)
 
 ### Fixed
+- Legionctl freezes with verbose flag [\#383](https://github.com/legion-platform/legion/issues/383)
+- Pin ipykernel version 4.9.0 [\#501](https://github.com/legion-platform/legion/issues/501)
+- Remove sleeps in regression tests [\#475](https://github.com/legion-platform/legion/issues/475)
+- Airflow S3 operator creates invalid CSV files [\#521](https://github.com/legion-platform/legion/issues/521)
 - Flower test failed because worker does not scale down [\#613](https://github.com/legion-platform/legion/issues/613)
 - Airflow s3 connection test intermittent failures [\#510](https://github.com/legion-platform/legion/issues/510)
 - Redundant ConfigMap update events in callback mechanism [\#479](https://github.com/legion-platform/legion/issues/479)
@@ -63,5 +63,6 @@
 - Airflow S3hook fails while writing logs in S3 [\#270](https://github.com/legion-platform/legion/issues/270)
 
 ### Security
+- Extend dex config flexibility [\#527](https://github.com/legion-platform/legion/issues/527)
 - Potential security vulnerabilities with "requests" Python package [\#569](https://github.com/legion-platform/legion/issues/569)
 - Scan source code for security sensitive data before git push [\#493](https://github.com/legion-platform/legion/issues/493)
