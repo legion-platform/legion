@@ -11,4 +11,10 @@ kubectl_darwin_download_path: "https://storage.googleapis.com/kubernetes-release
 
 aws_image: kope.io/k8s-1.9-debian-stretch-amd64-hvm-ebs-2018-05-27
 # Used 1.9 image due to issues with protokube on m5 instances 
-kubernetes_version: 1.10.11
+kubernetes_version: 1.10.6
+
+# TLS defaults
+tls_cert_dir: /etc/ssl/"{{ base_domain }}"
+tls_cert_common_name: "{{ base_domain }}"
+tls_key_file_name: "{{ tls_cert_common_name }}.key"
+tls_fullchain_file_name: "{{ tls_cert_common_name }}.fullchain.crt"
