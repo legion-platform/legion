@@ -470,7 +470,7 @@ EOL
                         }
                         dir ("${WORKSPACE}/legion-helm-charts") {
                             script{
-                                //if (params.StableRelease) {
+                                if (params.StableRelease) {
                                     stage('Publish helm charts to Public repo'){
                                         //checkout repo with existing charts  (needed for generating correct repo index file )
                                         git branch: "${params.HelmRepoGitBranch}", poll: false, url: "${params.HelmRepoGitUrl}"
@@ -484,14 +484,13 @@ EOL
                                         }
                                         sh """
                                         helm repo index ./
-                                        cat index.yaml
                                         git add index.yaml
                                         git status
                                         git commit -m "Release ${Globals.buildVersion}"
                                         git push origin ${params.HelmRepoGitBranch}
                                         """
                                     }
-                                //}
+                                }
                             }
                         }
                     }
