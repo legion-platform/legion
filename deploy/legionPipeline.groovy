@@ -103,6 +103,25 @@ def deployLegion() {
     }
 }
 
+def UpdateTLSCert() {
+    dir('deploy/ansible'){
+        withCredentials([
+            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+            withAWS(credentials: 'kops') {
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                ansiblePlaybook(
+                    playbook: 'update-tls-certificate.yml',
+                    extras: '--vault-password-file=${vault} \
+                            --extra-vars "profile=${Profile} \
+                            vault_pass=${vault}" ',
+                    colorized: true
+                    )
+                }
+            }
+        }
+    }
+}
+
 def createjenkinsJobs(String commitID) {
     def creds
     sh '''

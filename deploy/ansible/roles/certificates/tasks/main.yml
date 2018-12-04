@@ -11,4 +11,5 @@
 - include: challenge.yaml
   when: valid_certificate_not_exists
 
-- include: install.yaml
+- include: upload.yaml
+  when: valid_certificate_not_exists

@@ -8,3 +8,6 @@
 # Create cluster with kops if needed
 - include: create-cluster.yaml
   when: skip_kops.find('false') != -1
+
+# Install certificates
+- include: install-tls-cert.yaml

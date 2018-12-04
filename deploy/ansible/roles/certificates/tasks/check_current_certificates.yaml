@@ -1,17 +1,26 @@
-- name: Check that certificate exists
-  connection: local
-  stat:
-    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
-  register: exists_certificate_file
+
+- name: Download TLS certificate from S3
+  aws_s3:
+    bucket: "{{ secrets_bucket }}"
+    object: "vault/certificates/{{ profile }}.tar.gz"
+    dest: "{{ tls_cert_dir }}/{{ profile }}.tar.gz"
+    mode: get
+  ignore_errors: true
+
+- name: Extract certificates from the archive
+  unarchive:
+    src: "{{ tls_cert_dir }}/{{ profile }}.tar.gz"
+    dest: "{{ tls_cert_dir }}"
+  ignore_errors: true
 
 - name: Calculate date in future for certificate check
-  command: python -c 'import datetime; print((datetime.datetime.now() + datetime.timedelta(days={{ ler53_check_delta_days }})).strftime("%Y%m%d%H%M%SZ"))'
+  command: python -c 'import datetime; print((datetime.datetime.now() + datetime.timedelta(days={{ tls_check_delta_days }})).strftime("%Y%m%d%H%M%SZ"))'
   register: certificate_check_date
 
-- name: "Ensure that the existing certificate is still valid in {{ ler53_check_delta_days }} days"
+- name: "Ensure that the existing certificate is still valid in {{ tls_check_delta_days }} days"
   connection: local
   openssl_certificate:
-    path: "{{ ler53_cert_dir }}/{{ ler53_cert_common_name }}.crt"
+    path: "{{ tls_cert_dir }}/{{ tls_cert_common_name }}.crt"
     provider: assertonly
     valid_at: "{{ certificate_check_date.stdout }}"
   register: certificate_content_check

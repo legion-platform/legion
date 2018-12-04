@@ -1,0 +1,32 @@
+---
+
+- name: Create a archive with generated certificates
+  archive:
+    path:
+      - "{{ tls_cert_dir }}/{{ tls_key_file_name }}"
+      - "{{ tls_cert_dir }}/{{ tls_fullchain_file_name }}.tar.gz"
+    dest: "{{ tls_cert_dir }}/{{ profile }}.tar.gz"
+    format: gz
+
+- name: Save vault pass to a file
+  copy:
+    content: "{{ vault_pass }}"
+    dest: "{{ tmp_dir }}/avpf"
+
+- name: Encrypt TLS crtificates archive
+  shell: ansible-vault encrypt "{{ tls_cert_dir }}/{{ profile }}.tar.gz" --vault-password-file={{ tmp_dir }}/avpf 
+
+- name: Upload TLS certificate to S3
+  aws_s3:
+    bucket: "{{ secrets_bucket }}"
+    object: "vault/certificates/{{ profile }}.tar.gz"
+    src: "{{ tls_cert_dir }}/{{ profile }}.tar.gz"
+    mode: put
+
+- name: Delete temp files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ tls_cert_dir }}"
+    - "{{ tmp_dir }}/avpf"
