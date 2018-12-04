@@ -80,6 +80,12 @@ airflow_rds_size: ~                                                   # size of 
 # Airflow DAGs configuration [?]
 airflow_expected_output: ~                                # Configuration for Airflow DAGs
 
+# Airflow worker pod limits
+airflow_worker_cpu_requests: ~
+airflow_worker_cpu_limits: ~
+airflow_worker_mem_requests: ~
+airflow_worker_mem_linmits: ~
+
 # Kube fluentd properties
 # Cluster logs
 kube_fluentd:
