@@ -30,25 +30,23 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
     Replication controller is running        ${DEPLOYMENT}-core-jenkins
     Replication controller is running        ${DEPLOYMENT}-core-graphite
     :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  Replication controller is running        ${DEPLOYMENT}-${enclave}-edge          ${enclave}
-    \  Replication controller is running        ${DEPLOYMENT}-${enclave}-edi           ${enclave}
-    \  Replication controller is running        ${DEPLOYMENT}-${enclave}-grafana       ${enclave}
-    \  Replication controller is running        ${DEPLOYMENT}-${enclave}-graphite      ${enclave}
+    \  Replication controller is running   ${DEPLOYMENT}-${enclave}-edge          ${enclave}
+    \  Replication controller is running   ${DEPLOYMENT}-${enclave}-edi           ${enclave}
+    \  Replication controller is running   ${DEPLOYMENT}-${enclave}-grafana       ${enclave}
+    \  Replication controller is running   ${DEPLOYMENT}-${enclave}-graphite      ${enclave}
 
 Check Nexus availability
     [Documentation]  Check Nexus UI availability
     [Tags]  nexus  ui  apps
-    Sleep  60
-    Open Nexus                              /
+    Open Nexus   /
     Wait Nexus componens in menu
 
 Check Nexus Components available
     [Documentation]  Check that Nexus storages (components) are ready
     [Tags]  nexus  ui  apps
-    Open Nexus                              /#browse/browse/components
-    ${componentNames}=                      Get Nexus components table
-#    List Should Contain Value               ${componentNames}           docker-hosted
-#    List Should Contain Value               ${componentNames}           raw
+    @{expectedComponentsNames} =  Create List  docker-hosted  raw
+    Open Nexus                   /#browse/browse/components
+    Check components presence in Nexus table  ${expectedComponentsNames}
 
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave
@@ -63,9 +61,9 @@ Check Vertical Scailing
 
     :FOR  ${enclave}    IN    @{ENCLAVES}
     \  Connect to Jenkins endpoint
-        Run Jenkins job                                         PERF TEST Vertical-Scaling   Enclave=${enclave}
-        Wait Jenkins job                                        PERF TEST Vertical-Scaling   600
-        Last Jenkins job is successful                          PERF TEST Vertical-Scaling
+        Run Jenkins job                  PERF TEST Vertical-Scaling   Enclave=${enclave}
+        Wait Jenkins job                 PERF TEST Vertical-Scaling   600
+        Last Jenkins job is successful   PERF TEST Vertical-Scaling
 
     Get cluster nodes and their count    after
     Should Not Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
