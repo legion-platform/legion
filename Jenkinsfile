@@ -478,7 +478,7 @@ EOL
                                         for (chart in chartNames){
                                             sh"""
                                             mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
-                                            cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/
+                                            cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
                                             git add ${chart}/${chart}-${Globals.buildVersion}.tgz
                                             """
                                         }
