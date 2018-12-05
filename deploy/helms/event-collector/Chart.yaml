@@ -3,5 +3,9 @@ version: 0.0.1
 appVersion: 1.7.1
 description: Legion event collector
 maintainers:
-- name: Legion team
-  email: legion-dev@googlegroups.com
+- name: Dmitrii Suslov
+  email: suslov.dimitriy@gmail.com
+- name: Alexander Semenets
+  email: am.semenets@gmail.com
+- name: Kirill Makhonin
+  email: kirill@makhonin.biz

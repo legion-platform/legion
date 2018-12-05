@@ -5,7 +5,9 @@ description: Legion stack core
 keywords:
 - ML
 maintainers:
-- name: Alexey Kharlamov
-  email: alexey@kharlamov.biz
+- name: Dmitrii Suslov
+  email: suslov.dimitriy@gmail.com
+- name: Alexander Semenets
+  email: am.semenets@gmail.com
 - name: Kirill Makhonin
   email: kirill@makhonin.biz
