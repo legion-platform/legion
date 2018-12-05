@@ -7,6 +7,8 @@ class Globals {
     static String dockerCacheArg = null
 }
 
+def chartNames = null
+
 pipeline {
     agent any
 
@@ -283,7 +285,7 @@ EOL
                 }
             }
         }
-        stage("Build Docker Images") {
+        stage("Build Artifacts") {
             parallel {
                 stage("Build Grafana Docker image") {
                     steps {
@@ -380,6 +382,23 @@ EOL
                         """
                     }
                 }
+                stage('Package helm charts'){
+                    steps{
+                        dir ("${WORKSPACE}/deploy/helms") {
+                            script {
+                                chartNames = sh(returnStdout: true, script: 'ls').split()
+                                println (chartNames)
+                                for (chart in chartNames){
+                                    sh"""
+                                    sed -i 's@^version: .*\$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                                    #Show package list, debug purposes
+                                    helm package ${chart}
+                                    """
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         stage("Docker login") {
@@ -432,6 +451,50 @@ EOL
                         UploadDockerImage('k8s-fluentd')
                     }
                 }
+                stage('Deploy helm charts'){
+                    steps{
+                        withCredentials([[
+                         $class: 'UsernamePasswordMultiBinding',
+                         credentialsId: 'nexus-local-repository',
+                         usernameVariable: 'USERNAME',
+                         passwordVariable: 'PASSWORD']]) {
+                            dir ("${WORKSPACE}/deploy/helms") {
+                                script {
+                                    for (chart in chartNames){
+                                       sh"""
+                                       curl -u ${USERNAME}:${PASSWORD} ${params.NexusHelmRepository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                                       """
+                                    }
+                                }
+                            }
+                        }
+                        dir ("${WORKSPACE}/legion-helm-charts") {
+                            script{
+                                if (params.StableRelease) {
+                                    stage('Publish helm charts to Public repo'){
+                                        //checkout repo with existing charts  (needed for generating correct repo index file )
+                                        git branch: "${params.HelmRepoGitBranch}", poll: false, url: "${params.HelmRepoGitUrl}"
+                                        //move packed charts to folder (where repo was checkouted)
+                                        for (chart in chartNames){
+                                            sh"""
+                                            mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
+                                            cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
+                                            git add ${chart}/${chart}-${Globals.buildVersion}.tgz
+                                            """
+                                        }
+                                        sh """
+                                        helm repo index ./
+                                        git add index.yaml
+                                        git status
+                                        git commit -m "Release ${Globals.buildVersion}"
+                                        git push origin ${params.HelmRepoGitBranch}
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         stage("CI Stage") {
@@ -479,7 +542,7 @@ EOL
                 }
             }
         }
-	}
+    }
     post {
         always {
             script {
