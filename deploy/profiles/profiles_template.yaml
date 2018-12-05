@@ -84,7 +84,7 @@ airflow_expected_output: ~                                # Configuration for Ai
 airflow_worker_cpu_requests: ~
 airflow_worker_cpu_limits: ~
 airflow_worker_mem_requests: ~
-airflow_worker_mem_linmits: ~
+airflow_worker_mem_limits: ~
 
 # Kube fluentd properties
 # Cluster logs

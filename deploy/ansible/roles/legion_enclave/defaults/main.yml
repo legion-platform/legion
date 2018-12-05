@@ -12,4 +12,4 @@ k8s_api_retry_delay_sec: 3
 airflow_worker_cpu_requests: "1500m"
 airflow_worker_cpu_limits: "2000m"
 airflow_worker_mem_requests: "1000Mi"
-airflow_worker_mem_linmits: "2500Mi"
+airflow_worker_mem_limits: "2500Mi"
