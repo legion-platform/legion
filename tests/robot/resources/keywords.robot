@@ -299,10 +299,11 @@ Invoke and check test dags for valid status code
 # Temporary disabling triggering Airflow tasks as it fails Airflow test
 # TODO: Need to rewrite this logic as a part of Airflow upgrade.
 #    \   Run airflow task and validate stderr      ${tasks}   ${dag}
+    \   Wait dag finished     ${dag}
     \   ${failed_dags} =      Get failed Airflow DAGs
     \   Should Not Contain    ${failed_dags}      ${dag}
-    \   ${succeeded_dags} =      Get succeeded Airflow DAGs
-    \   Should not be empty    ${succeeded_dags}
+    \   ${succeeded_dags} =   Get succeeded Airflow DAGs
+    \   Should not be empty   ${succeeded_dags}
 
 Run airflow task and validate stderr
     [Arguments]   ${tasks}   ${dag}
