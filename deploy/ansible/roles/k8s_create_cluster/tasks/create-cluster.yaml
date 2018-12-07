@@ -18,6 +18,19 @@
 - name: Create the physical cluster
   shell: "kops update cluster {{ cluster_name }} --yes --state {{ state_store }}"
 
+
+# HOTFIX: fix SSL check failure on ap ELB
+- name: Get Kube API ELB name
+  shell: "aws elb describe-load-balancers --output text --query 'LoadBalancerDescriptions[*].[LoadBalancerName]' |grep api-{{ env_name }}-epm | tr -d '\n'"
+  register: kubeapi_elb
+  until: kubeapi_elb.stdout.find('api-') != -1
+  retries: 10
+  delay: 15
+
+- name: Update API ELB healthcheck
+  shell: "aws elb configure-health-check --load-balancer-name {{ kubeapi_elb.stdout }} --health-check Target=TCP:443,Interval=10,UnhealthyThreshold=2,HealthyThreshold=2,Timeout=5"
+
+
 - name: Verify that all Kubernetes nodes are ready
   shell: kubectl --context {{ cluster_name }} get nodes | grep master | wc -l
   register: cmd_result
