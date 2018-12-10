@@ -8,7 +8,7 @@
   tags: dex
 
 - name: Install Kube-elb-security
-  command: "helm --kube-context {{ cluster_name }} install legion-helm/kube-elb-security --name kube-elb-security --version={{ legion_infra_version }} --namespace kube-system --set image.repository={{ docker_repo }}/kube-elb-security --set iam_role=masters.{{ cluster_name }},image.repository={{ legion_infra_registry }}/k8s-kube-elb-security,image.tag={{ legion_infra_version }} --wait"
+  command: "helm --kube-context {{ cluster_name }} install legion-helm/kube-elb-security --name kube-elb-security --version={{ legion_version }} --namespace kube-system --set image.repository={{ docker_repo }}/kube-elb-security --set iam_role=masters.{{ cluster_name }},image.repository={{ legion_infra_registry }}/k8s-kube-elb-security,image.tag={{ legion_infra_version }} --wait"
 
   args:
     chdir: ../helms

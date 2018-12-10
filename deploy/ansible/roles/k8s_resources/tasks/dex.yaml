@@ -16,7 +16,7 @@
   tags: dex
 
 - name: Install Dex
-  command: "helm --kube-context {{ cluster_name }} install legion-helm/dex --name dex --version={{ legion_infra_version }} --namespace kube-system -f {{ tmp_dir }}/dex.{{ cluster_name }}.yml --wait"
+  command: "helm --kube-context {{ cluster_name }} install legion-helm/dex --name dex --version={{ legion_version }} --namespace kube-system -f {{ tmp_dir }}/dex.{{ cluster_name }}.yml --wait"
   args:
     chdir: ../helms
   when: dex.enabled and helm_dex_status.stdout.find("DEPLOYED") == -1
