@@ -71,6 +71,6 @@
   ignore_errors: true
 
 - name: Install kube-fluentd chart
-  shell: helm --kube-context {{ cluster_name }} install kube-fluentd --name kube-fluentd --namespace=kube-system --wait --timeout 600 -f  {{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml
+  shell: helm --kube-context {{ cluster_name }} install legion-helm/kube-fluentd --name kube-fluentd --version={{ legion_version }} --namespace=kube-system --wait --timeout 600 -f  {{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml
   args:
     chdir: ../helms

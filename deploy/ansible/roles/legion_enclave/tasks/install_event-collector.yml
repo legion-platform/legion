@@ -18,7 +18,7 @@
     mode: 0644
 
 - name: Pre run with dumping
-  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/event-collector-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion-helm/event-collector --name event-collector-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/event-collector-values.yaml"
   register: helm_collector_install_output
   args:
     chdir: ../helms
@@ -29,7 +29,7 @@
     dest: ./helm.event-collector_{{ enclave }}.debug
 
 - name: Install event collector chart
-  shell: "helm --kube-context {{ cluster_name }} install event-collector --name event-collector-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/event-collector-values.yaml"
+  shell: "helm --kube-context {{ cluster_name }} install legion-helm/event-collector --name event-collector-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/event-collector-values.yaml"
   args:
     chdir: ../helms
 

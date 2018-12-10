@@ -37,6 +37,7 @@
   
   roles:
     - charts_common
+    - helm
     - legion_core_chart
 
   tasks:

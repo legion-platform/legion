@@ -50,7 +50,7 @@
   tags: k8s-authenticator
 
 - name: Install k8s-authenticator
-  command: "helm --kube-context {{ cluster_name }} install k8s-authenticator --name k8s-authenticator --namespace kube-system -f {{ tmp_dir }}/k8s-authenticator.{{ cluster_name }}.yml"
+  command: "helm --kube-context {{ cluster_name }} install legion-helm/k8s-authenticator --name k8s-authenticator --version={{ legion_version }} --namespace kube-system -f {{ tmp_dir }}/k8s-authenticator.{{ cluster_name }}.yml"
   args:
     chdir: ../helms
   when: dex.enabled
