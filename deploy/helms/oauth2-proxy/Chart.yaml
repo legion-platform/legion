@@ -4,6 +4,8 @@ description: oauth2-proxy (with JWT header proxy and whitelist domains for redir
 name: oauth2-proxy
 version: 0.1.0
 maintainers:
+- name: Alexey Kharlamov
+  email: alexey@kharlamov.biz
 - name: Dmitrii Suslov
   email: suslov.dimitriy@gmail.com
 - name: Alexander Semenets

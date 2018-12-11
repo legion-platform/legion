@@ -4,6 +4,8 @@ description: A Helm chart for Kubernetes
 name: dex
 version: 0.1.0
 maintainers:
+- name: Alexey Kharlamov
+  email: alexey@kharlamov.biz
 - name: Dmitrii Suslov
   email: suslov.dimitriy@gmail.com
 - name: Alexander Semenets
