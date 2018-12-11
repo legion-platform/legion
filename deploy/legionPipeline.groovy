@@ -27,12 +27,10 @@ def createCluster() {
                         cd /opt/legion/deploy/ansible && ansible-playbook create-cluster.yml \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${params.Profile} \
-                        legion_infra_version=${params.LegionInfraVersion} \
-                        legion_infra_registry=${params.LegionInfraRegistry} \
-                        skip_kops=${params.Skip_kops}"
-                        helm_repo=${params.HelmRepo} \
                         legion_version=${params.LegionVersion} \
                         legion_infra_version=${params.LegionInfraVersion} \
+                        skip_kops=${params.Skip_kops}"
+                        helm_repo=${params.HelmRepo} \
                         legion_infra_registry=${params.LegionInfraRegistry}"',
                         """
                     }
@@ -246,41 +244,6 @@ def runRobotTests(tags="") {
 }
 
 def deployLegionEnclave() {
-<<<<<<< 540f7a37d9c0ca59f8a75a57f698dedefcfa8284
-    dir('deploy/ansible'){
-        withCredentials([
-            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            withAWS(credentials: 'kops') {
-                wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    if (params.PublicRelease){
-                        docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
-                            stage('Deploy Legion Enclave') {
-                                sh """
-                                cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion-enclave.yml \
-                                --vault-password-file=${vault} \
-                                --extra-vars "profile=${params.Profile} \
-                                legion_version=${params.LegionVersion} \
-                                pypi_repo=${params.PypiRepo} \
-                                docker_repo=${params.DockerRepo} \
-                                helm_repo=${HelmRepo} \
-                                enclave_name=${params.EnclaveName}"
-                                """
-                            }
-                        }
-                    } else {
-                        docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
-                            stage('Deploy Legion Enclave') {
-                                sh """
-                                cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion-enclave.yml \
-                                --vault-password-file=${vault} \
-                                --extra-vars "profile=${params.Profile} \
-                                legion_version=${params.LegionVersion} \
-                                helm_repo=${HelmRepo} \
-                                enclave_name=${params.EnclaveName}"
-                                """
-                            }
-                        }
-=======
     withCredentials([
         file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
@@ -294,9 +257,9 @@ def deployLegionEnclave() {
                         legion_version=${params.LegionVersion} \
                         pypi_repo=${params.PypiRepo} \
                         docker_repo=${params.DockerRepo} \
+                        helm_repo=${params.HelmRepo} \
                         enclave_name=${params.EnclaveName}"
                         """
->>>>>>> [#566] move docker repo to job params
                     }
                 }
             }
