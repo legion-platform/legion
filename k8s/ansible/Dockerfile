@@ -47,8 +47,6 @@ RUN tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
 
 # Deploy Legion
 COPY deploy/ansible /opt/legion/deploy/ansible
-# TODO remove helm charts from image as soon as helm repo will be introduced
-COPY deploy/helms /opt/legion/deploy/helms
 COPY deploy/profiles/profiles_template.yaml /opt/legion/deploy/profiles/profiles_template.yaml
 COPY deploy/profiles/secrets_template.yaml /opt/legion/deploy/profiles/secrets_template.yaml
 
