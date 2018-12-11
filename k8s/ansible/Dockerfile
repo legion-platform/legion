@@ -23,7 +23,7 @@ RUN pip install ansible==2.7.2
 RUN apt-get install -y \
     python-yaml=3.12-1build2 python-jinja2=2.10-1 python-boto=2.44.0-1ubuntu2 python-boto3=1.4.2-1 \
     python-psycopg2=2.7.4-1 postgresql-client=10+190 python-crypto=2.6.1-8ubuntu2 \
-    python-cryptography=2.1.4-1ubuntu1.2 && \
+    python-cryptography=2.1.4-1ubuntu1.2 awscli=1.14.44-1ubuntu1 && \
     apt-get clean && apt-get autoclean
 
 # Configure ansible

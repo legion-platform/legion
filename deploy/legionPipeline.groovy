@@ -29,9 +29,9 @@ def createCluster() {
                         --extra-vars "profile=${params.Profile} \
                         legion_version=${params.LegionVersion} \
                         legion_infra_version=${params.LegionInfraVersion} \
-                        skip_kops=${params.Skip_kops}"
+                        skip_kops=${params.Skip_kops} \
                         helm_repo=${params.HelmRepo} \
-                        legion_infra_registry=${params.LegionInfraRegistry}"',
+                        legion_infra_registry=${params.LegionInfraRegistry}"
                         """
                     }
                 }
