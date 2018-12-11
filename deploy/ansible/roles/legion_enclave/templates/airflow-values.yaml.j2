@@ -32,6 +32,12 @@ core:
   remote_base_log_folder: "{{ airflow_s3_logs_url }}"
   remote_log_conn_id:
 
+worker:
+  cpu_requests: "{{ airflow_worker_cpu_requests }}"
+  cpu_limits: "{{ airflow_worker_cpu_limits }}"
+  mem_requests: "{{ airflow_worker_mem_requests }}"
+  mem_limits: "{{ airflow_worker_mem_limits }}"
+
 webserver:
   worker_refresh_interval: 10
   email_backend: {{ airflow.webserver.email_backend | default('airflow.utils.email.send_email_smtp') }}

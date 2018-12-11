@@ -87,6 +87,10 @@ airflow_s3_logs_path: 'airflow-logs/'
 airflow_s3_logs_url: "s3://{{ legion_data_s3_bucket }}/{{ airflow_s3_logs_path }}"
 airflow_expected_output: 'expected-data/'
 airflow_pvc: 200m
+airflow_worker_cpu_requests: "1500m"
+airflow_worker_cpu_limits: "2000m"
+airflow_worker_mem_requests: "1000Mi"
+airflow_worker_mem_limits: "2500Mi"
 
 collector:
   replicas: 1
