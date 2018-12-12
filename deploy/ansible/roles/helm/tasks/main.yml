@@ -64,7 +64,11 @@
 
 - name: Install helms client
   shell: "helm init --client-only"
+<<<<<<< eb7a090f8a6125ae610e3a749b45282e02a01c03
   when: install_tiller is skipped
+=======
+  when: install_tiller.skipped
+>>>>>>> [#566] update helm tiller installation
 
 - name: Install helm repos
   shell: |
