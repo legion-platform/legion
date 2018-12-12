@@ -236,7 +236,7 @@ def deploy(Map deployParams=null) {
     deploytimeout = deployParams.get('deploytimeout', 300)
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
-    env.MODEL_VERSION = modelVersion()
+    env.MODEL_VERSION = legionProperties()['modelVersion']
 
     echo 'MODEL_ID = ' + env.MODEL_ID
     echo 'MODEL_FILE_NAME = ' + env.MODEL_FILE_NAME
