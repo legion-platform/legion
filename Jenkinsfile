@@ -12,6 +12,30 @@ def chartNames = null
 pipeline {
     agent any
 
+    options{
+            buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '15'))
+            disableConcurrentBuilds()
+        }
+    environment {
+            /// Input parameters
+            //Enable docker cache parameter
+            param_enable_docker_cache = "${params.EnableDockerCache}"
+            //Build major version release and optionally push it to public repositories
+            param_stable_release = "${params.StableRelease}"
+            //Release version to tag all artifacts to
+            param_release_version = "${params.ReleaseVersion}"
+            //Git Branch to build package from
+            param_git_branch = "${params.GitBranch}"
+            //Docker registry to build package from
+            param_docker_registry = "${params.DockerRegistry}"
+            ///Job parameters
+            infraBuildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
+            oauth2ProxyDockerimage = "k8s-oauth2-proxy"
+            kubeFluentdDockerimage = "k8s-kube-fluentd"
+            kubeElbSecurityDockerimage = "k8s-kube-elb-security"
+            sharedLibPath = "deploy/legionPipeline.groovy"
+    }
+
     stages {
         stage('Checkout and set build vars') {
             steps {
@@ -348,6 +372,33 @@ EOL
                         cd k8s/airflow
                         docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${params.PyPiRepository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
+                    }
+                }
+                stage('Build kube-fluentd') {
+                    steps {
+                        dir ("${buildWorkspace}/kube-fluentd") {
+                            sh """
+                            docker build ${Globals.dockerCacheArg} -t legion/${kubeFluentdDockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            """
+                        }
+                    }
+                }
+                stage('Build kube-elb-security') {
+                    steps {
+                        dir ("${buildWorkspace}/kube-elb-security") {
+                            sh """
+                            docker build ${Globals.dockerCacheArg} -t legion/${kubeElbSecurityDockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            """
+                        }
+                    }
+                }
+                stage('Build oauth2-proxy') {
+                    steps {
+                        dir ("${buildWorkspace}/oauth2-proxy") {
+                            sh """
+                            docker build ${Globals.dockerCacheArg} -t legion/${oauth2ProxyDockerimage}:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            """
+                        }
                     }
                 }
                 stage("Build Fluentd Docker image") {
