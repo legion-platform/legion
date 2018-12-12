@@ -42,8 +42,6 @@
 - name: Pre run with dumping
   shell: helm --kube-context {{ cluster_name }} install legion-helm/airflow --name airflow-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
   register: helm_airflow_install_output
-  args:
-    chdir: ../helms
 
 - name: Save pre run result
   copy:
@@ -52,8 +50,6 @@
 
 - name: Install airflow chart
   shell: helm --kube-context {{ cluster_name }} install legion-helm/airflow --name airflow-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
-  args:
-    chdir: ../helms
 
 - name: Dump current HELM status
   shell: helm --kube-context {{ cluster_name }} status airflow-{{ enclave }}

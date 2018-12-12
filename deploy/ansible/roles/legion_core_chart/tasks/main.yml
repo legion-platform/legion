@@ -91,8 +91,6 @@
 - name: Pre run with dumping
   shell: helm --kube-context {{ cluster_name }} install legion-helm/legion-core --name legion-core --version={{ legion_version }} --debug --dry-run -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
   register: helm_core_install_output
-  args:
-    chdir: ../helms
 
 - name: Save pre run result
   copy:
@@ -101,8 +99,6 @@
 
 - name: Install legion core chart
   shell: helm --kube-context {{ cluster_name }} install legion-helm/legion-core --name legion-core --version={{ legion_version }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
-  args:
-    chdir: ../helms
 
 - name: Label default namespace with legion-component=core
   shell: kubectl --context {{ cluster_name }} label ns default legion-component=core --overwrite
