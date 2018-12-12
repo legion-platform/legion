@@ -47,7 +47,6 @@ from legion.k8s.definitions import \
 from docker_registry_client import DockerRegistryClient
 from typing import NamedTuple
 
-
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None
 KUBERNETES_SERVICE_ACCOUNT_NAMESPACE_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/namespace'
@@ -164,7 +163,7 @@ def get_docker_image_labels(image):
         if image_attributes.host == os.getenv('MODEL_IMAGES_REGISTRY_HOST'):
             registry_host = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
         else:
-            if '443' in image_attributes.host:
+            if urllib3.util.parse_url(image_attributes.host).port == 443:
                 registry_host = 'https://{}'.format(image_attributes.host)
             else:
                 registry_host = 'http://{}'.format(image_attributes.host)
