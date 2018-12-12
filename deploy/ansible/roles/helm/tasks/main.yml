@@ -60,6 +60,11 @@
     sleep 1
     helm --kube-context {{ cluster_name }} init --service-account tiller
   when: helm_list_initial_status.failed and helm_list_status.stdout.find('could not find a ready tiller') == -1
+  register: install_tiller
+
+- name: Install helms client
+  shell: "helm init --client-only"
+  when: install_tiller.skipped
 
 - name: Install helm repos
   shell: |
