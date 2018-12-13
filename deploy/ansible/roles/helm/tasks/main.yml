@@ -64,7 +64,7 @@
 
 - name: Install helms client
   shell: "helm init --client-only"
-  when: install_tiller.skipped
+  when: install_tiller is skipped
 
 - name: Install helm repos
   shell: |
