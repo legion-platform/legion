@@ -60,13 +60,14 @@ pipeline {
                 cleanWs()
                 checkout scm
                 script {
+                    legion = load "${sharedLibPath}"
                     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                     Globals.rootCommit = Globals.rootCommit.trim()
                     def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
                     def date = new Date()
                     def buildDate = dateFormat.format(date)
 
-                    Globals.dockerCacheArg = (param_enable_docker_cache) ? '' : '--no-cache'
+                    Globals.dockerCacheArg = (env.param_enable_docker_cache) ? '' : '--no-cache'
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
                     println(Globals.dockerLabels)
@@ -75,9 +76,9 @@ pipeline {
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
                     /// Define build version
-                    if (param_stable_release) {
-                        if (param_release_version){
-                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                    if (env.param_stable_release) {
+                        if (env.param_release_version){
+                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
                             exit 1
@@ -90,7 +91,7 @@ pipeline {
 
                     env.BuildVersion = Globals.buildVersion
 
-                    currentBuild.description = "${Globals.buildVersion} ${param_git_branch}"
+                    currentBuild.description = "${Globals.buildVersion} ${env.param_git_branch}"
                     print("Build version " + Globals.buildVersion)
                     print('Building shared artifact')
                     envFile = 'file.env'
@@ -103,23 +104,23 @@ pipeline {
                     sh "rm -f $envFile"
 
                     /// Set Git Tag in case of stable release
-                    if (param_stable_release) {
+                    if (env.param_stable_release) {
                         stage('Set GIT release Tag'){
-                            if (param_push_git_tag){
+                            if (env.param_push_git_tag){
                                 print('Set Release tag')
                                 sh """
-                                if [ `git tag |grep -x ${param_release_version}` ]; then
-                                    if [ ${param_force_tag_push} = "true" ]; then
+                                if [ `git tag |grep -x ${env.param_release_version}` ]; then
+                                    if [ ${env.param_force_tag_push} = "true" ]; then
                                         echo 'Removing existing git tag'
-                                        git tag -d ${param_release_version}
-                                        git push origin :refs/tags/${param_release_version}
+                                        git tag -d ${env.param_release_version}
+                                        git push origin :refs/tags/${env.param_release_version}
                                     else
                                         echo 'Specified tag already exists!'
                                         exit 1
                                     fi
                                 fi
-                                git tag ${param_release_version}
-                                git push origin ${param_release_version}
+                                git tag ${env.param_release_version}
+                                git push origin ${env.param_release_version}
                                 """
                             } else {
                                 print("Skipping release git tag push")
@@ -136,7 +137,7 @@ pipeline {
                  credentialsId: 'nexus-local-repository',
                  usernameVariable: 'USERNAME',
                  passwordVariable: 'PASSWORD']]) {
-                    sh "docker login -u ${USERNAME} -p ${PASSWORD} ${param_docker_registry}"
+                    sh "docker login -u ${USERNAME} -p ${PASSWORD} ${env.param_docker_registry}"
                 }
             }
         }
@@ -172,14 +173,14 @@ pipeline {
                             sh """
                             curl -v -u $USERNAME:$PASSWORD \
                             --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                            ${param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
+                            ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
                             """
                             script {
-                                if (param_stable_release){
+                                if (env.param_stable_release){
                                     sh """
                                     curl -v -u $USERNAME:$PASSWORD \
                                     --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                    ${param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
+                                    ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
                                     """
                                 }
                             }
@@ -249,24 +250,24 @@ pipeline {
                                 sh """cat > /tmp/.pypirc << EOL
 [distutils]
 index-servers =
-  ${param_local_pypi_distribution_target_name}
+  ${env.param_local_pypi_distribution_target_name}
 
-[${param_local_pypi_distribution_target_name}]
-repository=${param_pypi_repository.split('/').dropRight(1).join('/')}/
+[${env.param_local_pypi_distribution_target_name}]
+repository=${env.param_pypi_repository.split('/').dropRight(1).join('/')}/
 username=${env.USERNAME}
 password=${env.PASSWORD}
 EOL
 """
                             }
                             sh """
-                            twine upload -r ${param_local_pypi_distribution_target_name} '/src/legion/dist/legion-${Globals.buildVersion}.*'
-                            twine upload -r ${param_local_pypi_distribution_target_name} '/src/legion_test/dist/legion_test-${Globals.buildVersion}.*'
-                            twine upload -r ${param_local_pypi_distribution_target_name} '/src/legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*'
+                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion/dist/legion-${Globals.buildVersion}.*'
+                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_test/dist/legion_test-${Globals.buildVersion}.*'
+                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*'
                             """
 
-                            if (param_stable_release) {
+                            if (env.param_stable_release) {
                                 stage('Upload Legion package to pypi.org'){
-                                    if (param_upload_legion_package){
+                                    if (env.param_upload_legion_package){
                                         withCredentials([[
                                         $class: 'UsernamePasswordMultiBinding',
                                         credentialsId: 'pypi-repository',
@@ -275,15 +276,15 @@ EOL
                                             sh """cat > /tmp/.pypirc << EOL
 [distutils]
 index-servers =
-  ${param_test_pypi_distribution_target_name}
-  ${param_public_pypi_distribution_target_name}
+  ${env.param_test_pypi_distribution_target_name}
+  ${env.param_public_pypi_distribution_target_name}
 
-[${param_test_pypi_distribution_target_name}]
+[${env.param_test_pypi_distribution_target_name}]
 repository=https://test.pypi.org/legacy/
 username=${env.USERNAME}
 password=${env.PASSWORD}
 
-[${param_public_pypi_distribution_target_name}]
+[${env.param_public_pypi_distribution_target_name}]
 repository=https://upload.pypi.org/legacy/
 username=${env.USERNAME}
 password=${env.PASSWORD}
@@ -291,7 +292,7 @@ EOL
 """
                                         }
                                         sh """
-                                        twine upload -r ${param_pypi_distribution_target_name} '/src/legion/dist/legion-${Globals.buildVersion}.*'
+                                        twine upload -r ${env.param_pypi_distribution_target_name} '/src/legion/dist/legion-${Globals.buildVersion}.*'
                                         """
                                     } else {
                                         print("Skipping package upload")
@@ -335,7 +336,7 @@ EOL
                     cd base-python-image
                     docker build ${Globals.dockerCacheArg} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
                     """
-                    UploadDockerImage('base-python-image')
+                    legion.uploadDockerImage('base-python-image', "${Globals.buildVersion}")
                 }
             }
         }
@@ -345,7 +346,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/grafana
-                        docker build ${Globals.dockerCacheArg} --build-arg pip_extra_index_params=" --extra-index-url ${param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -367,7 +368,7 @@ EOL
                         sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
 
                         cd k8s/edge
-                        docker build ${Globals.dockerCacheArg} --build-arg pip_extra_index_params="--extra-index-url ${param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -375,7 +376,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/jenkins
-                        docker build ${Globals.dockerCacheArg} --build-arg update_center_url="" --build-arg update_center_experimental_url="${param_jenkins_plugins_repository}" --build-arg update_center_download_url="${param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -394,7 +395,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/edi
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -402,7 +403,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/airflow
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -410,7 +411,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/fluentd
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -584,7 +585,7 @@ EOL
                                 script {
                                     for (chart in chartNames){
                                        sh"""
-                                       curl -u ${USERNAME}:${PASSWORD} ${param_nexus_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                                       curl -u ${USERNAME}:${PASSWORD} ${env.param_nexus_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
                                        """
                                     }
                                 }
@@ -592,10 +593,10 @@ EOL
                         }
                         dir ("${WORKSPACE}/legion-helm-charts") {
                             script{
-                                if (param_stable_release) {
+                                if (env.param_stable_release) {
                                     stage('Publish helm charts to Public repo'){
                                         //checkout repo with existing charts  (needed for generating correct repo index file )
-                                        git branch: "${param_helm_repo_git_branch}", poll: false, url: "${param_helm_repo_git_url}"
+                                        git branch: "${env.param_helm_repo_git_branch}", poll: false, url: "${env.param_helm_repo_git_url}"
                                         //move packed charts to folder (where repo was checkouted)
                                         for (chart in chartNames){
                                             sh"""
@@ -609,7 +610,7 @@ EOL
                                         git add index.yaml
                                         git status
                                         git commit -m "Release ${Globals.buildVersion}"
-                                        git push origin ${param_helm_repo_git_branch}
+                                        git push origin ${env.param_helm_repo_git_branch}
                                         """
                                     }
                                 }
@@ -622,17 +623,17 @@ EOL
         stage("CI Stage") {
             steps {
                 script {
-                    if (param_stable_release) {
+                    if (env.param_stable_release) {
                         stage('Update Legion version string'){
-                            if (param_update_version_string){
+                            if (env.param_update_version_string){
                                 print('Update Legion package version string')
                                 def nextVersion
                                 //Check if we explicitly specified the next verison to start working on after release
-                                if (param_next_version){
-                                    nextVersion = param_next_version
+                                if (env.param_next_version){
+                                    nextVersion = env.param_next_version
                                 } else {
                                     //If it's not specified just update second octet of the current one, e.g 0.1.0->0.2.0
-                                    def ver_parsed = param_release_version.split("\\.")
+                                    def ver_parsed = env.param_release_version.split("\\.")
                                     ver_parsed[1] = ver_parsed[1].toInteger() + 1
                                     nextVersion = ver_parsed.join(".")
                                 }
@@ -650,7 +651,7 @@ EOL
                         }
 
                         stage('Update Master branch'){
-                            if (param_update_master){
+                            if (env.param_update_master){
                                 sh """
                                 git reset --hard
                                 git checkout develop
