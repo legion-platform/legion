@@ -363,6 +363,16 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
 }
 
+def BuildTestBareModel(modelId, modelVersion, versionNumber) {
+    sh """
+    cd tests/test-bare-model-api
+    docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" \
+                                           --build-arg model_id="${modelId}" \
+                                           --build-arg model_version="${modelVersion}" \
+                                           -t legion/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion} \
+                                           ${Globals.dockerLabels} .
+    """
+}
 
 def uploadDockerImage(String imageName, String buildVersion) {
     if (params.StableRelease) {

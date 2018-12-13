@@ -29,7 +29,7 @@ pipeline {
         //Docker registry to build package from
         param_docker_registry = "${params.DockerRegistry}"
         ///Job parameters
-        buildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
+        infraBuildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
         oauth2ProxyDockerimage = "k8s-oauth2-proxy"
         kubeFluentdDockerimage = "k8s-kube-fluentd"
         kubeElbSecurityDockerimage = "k8s-kube-elb-security"
