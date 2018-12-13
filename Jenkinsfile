@@ -418,7 +418,7 @@ EOL
                 /// Infra images which are used during cluster creation
                 stage('Build kube-fluentd') {
                     steps {
-                        dir("${infraBuildWorkspace}/k8s-kube-fluentd") {
+                        dir("${infraBuildWorkspace}/kube-fluentd") {
                             sh """
                             docker build ${Globals.dockerCacheArg} -t legion/k8s-kube-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
@@ -427,7 +427,7 @@ EOL
                 }
                 stage('Build kube-elb-security') {
                     steps {
-                        dir("${infraBuildWorkspace}/k8s-elb-security") {
+                        dir("${infraBuildWorkspace}/kube-elb-security") {
                             sh """
                             docker build ${Globals.dockerCacheArg} -t legion/k8s-kube-elb-security:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
@@ -437,7 +437,7 @@ EOL
                 stage('Build oauth2-proxy') {
                     steps {
                         script {
-                            dir("${infraBuildWorkspace}/k8s-oauth2-proxy") {
+                            dir("${infraBuildWorkspace}/oauth2-proxy") {
                                 sh """
                                 docker build ${Globals.dockerCacheArg} -t legion/k8s-oauth2-proxy:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                                 """
