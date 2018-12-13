@@ -363,7 +363,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
 }
 
-def BuildTestBareModel(modelId, modelVersion, versionNumber) {
+def buildTestBareModel(modelId, modelVersion, versionNumber) {
     sh """
     cd tests/test-bare-model-api
     docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" \

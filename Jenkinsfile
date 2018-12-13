@@ -381,11 +381,13 @@ EOL
                 }
                 stage("Build Bare models") {
                     steps {
-                        legion.BuildTestBareModel("demo-abc-model", "1.0", "1")
-                        legion.BuildTestBareModel("demo-abc-model", "1.1", "2")
-                        legion.BuildTestBareModel("edi-test-model", "1.2", "3")
-                        legion.BuildTestBareModel("feedback-test-model", "1.0", "4")
-                        legion.BuildTestBareModel("command-test-model", "1.0", "5")
+                        script {
+                            legion.buildTestBareModel("demo-abc-model", "1.0", "1")
+                            legion.buildTestBareModel("demo-abc-model", "1.1", "2")
+                            legion.buildTestBareModel("edi-test-model", "1.2", "3")
+                            legion.buildTestBareModel("feedback-test-model", "1.0", "4")
+                            legion.buildTestBareModel("command-test-model", "1.0", "5")
+                        }
                     }
                 }
                 stage("Build Edi Docker image") {
@@ -494,7 +496,9 @@ EOL
             parallel {
                 stage('Upload Grafana Docker Image') {
                     steps {
-                        legion.uploadDockerImage('k8s-grafana', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-grafana', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Ansible Docker Image') {
@@ -504,51 +508,69 @@ EOL
                 }
                 stage('Upload Edge Docker Image') {
                     steps {
-                        legion.uploadDockerImage('k8s-edge', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-edge', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Jenkins Docker image') {
                     steps {
-                        legion.uploadDockerImage('k8s-jenkins', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-jenkins', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Bare models') {
                     steps {
-                        legion.uploadDockerImage('test-bare-model-api-model-1', "${Globals.buildVersion}")
-                        legion.uploadDockerImage('test-bare-model-api-model-2', "${Globals.buildVersion}")
-                        legion.uploadDockerImage('test-bare-model-api-model-3', "${Globals.buildVersion}")
-                        legion.uploadDockerImage('test-bare-model-api-model-4', "${Globals.buildVersion}")
-                        legion.uploadDockerImage('test-bare-model-api-model-5', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('test-bare-model-api-model-1', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('test-bare-model-api-model-2', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('test-bare-model-api-model-3', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('test-bare-model-api-model-4', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('test-bare-model-api-model-5', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Edi Docker image') {
                     steps {
-                        legion.uploadDockerImage('k8s-edi', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-edi', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Airflow Docker image') {
                     steps {
-                        legion.uploadDockerImage('k8s-airflow', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-airflow', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Fluentd Docker image') {
                     steps {
-                        legion.uploadDockerImage('k8s-fluentd', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-fluentd', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload oauth2-proxy Docker Image') {
                     steps {
-                        legion.uploadDockerImage('k8s-oauth2-proxy', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-oauth2-proxy', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload kube-fluentd Docker Image') {
                     steps {
-                        legion.uploadDockerImage('k8s-kube-fluentd', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-kube-fluentd', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload kube-elb-security Docker Image') {
                     steps {
-                        legion.uploadDockerImage('k8s-kube-elb-security', "${Globals.buildVersion}")
+                        script {
+                            legion.uploadDockerImage('k8s-kube-elb-security', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Deploy helm charts'){
