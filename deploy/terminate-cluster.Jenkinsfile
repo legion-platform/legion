@@ -1,24 +1,45 @@
-node {
-    def legion
-    try {
-        stage('Checkout GIT'){
-            def scmVars = checkout scm
+pipeline {
+    agent any
+
+    environment {
+        //Input parameters
+        param_git_branch = "${params.GitBranch}"
+        param_profile = "${params.Profile}"
+        param_legion_version = "${params.LegionVersion}"
+        param_keep_jenkins_volume = "${params.keepJenkinsVolume}"
+        param_docker_repo = "${params.DockerRepo}"
+        //Job parameters
+        sharedLibPath = "deploy/legionPipeline.groovy"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+                script {
+                    legion = load "${env.sharedLibPath}"
+                    legion.buildDescription()
+                }
+            }
         }
-
-        legion = load 'deploy/legionPipeline.groovy'
-
-        legion.buildDescription()
 
         stage('Terminate Cluster') {
-            legion.terminateCluster()
+            steps {
+                script {
+                    legion.terminateCluster()
+                }
+            }
         }
     }
-    catch (e) {
-        // If there was an exception thrown, the build failed
-        currentBuild.result = "FAILED"
-        throw e
-    } finally {
-        // Success or failure, always send notifications
-        legion.notifyBuild(currentBuild.result)
+
+    post {
+        always {
+            script {
+                legion = load "${sharedLibPath}"
+                legion.notifyBuild(currentBuild.currentResult)
+            }
+            deleteDir()
+        }
     }
 }

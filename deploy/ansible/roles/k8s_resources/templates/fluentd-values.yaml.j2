@@ -19,5 +19,5 @@ annotations:
   iam.amazonaws.com/role: {{ cluster_name }}-fluentd-role
 
 image:
-  repository: {{ legion_infra_registry }}/k8s-kube-fluentd
-  tag: {{ legion_infra_version }}
+  repository: {{ docker_repo }}/k8s-kube-fluentd
+  tag: {{ legion_version }}

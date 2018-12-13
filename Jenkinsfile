@@ -60,7 +60,7 @@ pipeline {
                 cleanWs()
                 checkout scm
                 script {
-                    legion = load "${sharedLibPath}"
+                    legion = load "${env.sharedLibPath}"
                     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                     Globals.rootCommit = Globals.rootCommit.trim()
                     def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
@@ -340,6 +340,11 @@ EOL
                 }
             }
         }
+        stage("Build Ansible Docker image") {
+            steps {
+                sh "docker build ${Globals.dockerCacheArg} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile ."
+            }
+        }    
         stage("Build Docker images & Helms") {
             parallel {
                 stage("Build Grafana Docker image") {
@@ -350,13 +355,7 @@ EOL
                         """
                     }
                 }
-                stage("Build Ansible Docker image") {
-                    steps {
-                        sh """
-                        docker build ${Globals.dockerCacheArg} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
-                        """
-                    }
-                }
+
                 stage("Build Edge Docker image") {
                     steps {
                         sh """
@@ -418,7 +417,7 @@ EOL
                 /// Infra images which are used during cluster creation
                 stage('Build kube-fluentd') {
                     steps {
-                        dir("${infraBuildWorkspace}/kube-fluentd") {
+                        dir("${env.infraBuildWorkspace}/kube-fluentd") {
                             sh """
                             docker build ${Globals.dockerCacheArg} -t legion/k8s-kube-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
@@ -427,7 +426,7 @@ EOL
                 }
                 stage('Build kube-elb-security') {
                     steps {
-                        dir("${infraBuildWorkspace}/kube-elb-security") {
+                        dir("${env.infraBuildWorkspace}/kube-elb-security") {
                             sh """
                             docker build ${Globals.dockerCacheArg} -t legion/k8s-kube-elb-security:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
@@ -437,7 +436,7 @@ EOL
                 stage('Build oauth2-proxy') {
                     steps {
                         script {
-                            dir("${infraBuildWorkspace}/oauth2-proxy") {
+                            dir("${env.infraBuildWorkspace}/oauth2-proxy") {
                                 sh """
                                 docker build ${Globals.dockerCacheArg} -t legion/k8s-oauth2-proxy:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                                 """
@@ -504,7 +503,9 @@ EOL
                 }
                 stage('Upload Ansible Docker Image') {
                     steps {
-                        UploadDockerImage('k8s-ansible')
+                        script {
+                            legion.uploadDockerImage('k8s-ansible', "${Globals.buildVersion}")
+                        }
                     }
                 }
                 stage('Upload Edge Docker Image') {
@@ -585,7 +586,7 @@ EOL
                                 script {
                                     for (chart in chartNames){
                                        sh"""
-                                       curl -u ${USERNAME}:${PASSWORD} ${env.param_nexus_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                                       curl -u ${USERNAME}:${PASSWORD} ${env.param_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
                                        """
                                     }
                                 }
@@ -644,7 +645,7 @@ EOL
                                 sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
                                 git commit -a -m "Bump Legion version to ${nextVersion}" && git push origin develop
                                 """
-}
+                            }
                             else {
                                 print("Skipping version string update")
                             }
@@ -672,7 +673,7 @@ EOL
     post {
         always {
             script {
-                legion = load sharedLibPath
+                legion = load "${sharedLibPath}"
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

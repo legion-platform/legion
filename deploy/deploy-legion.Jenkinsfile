@@ -1,55 +1,85 @@
-node {
-    def legion
-    def commitID
-    def tags = "${params.TestsTags}"
-    try{
-        stage('Checkout GIT'){
-            def scmVars = checkout scm
-            commitID = scmVars.GIT_COMMIT
+pipeline {
+    agent any
+
+    environment {
+        //Input parameters
+        param_git_branch = "${params.GitBranch}"
+        param_profile = "${params.Profile}"
+        param_legion_version = "${params.LegionVersion}"
+        param_deploy_legion = "${params.DeployLegion}"
+        param_create_jenkins_tests = "${params.CreateJenkinsTests}"
+        param_use_regression_tests = "${params.UseRegressionTests}"
+        param_tests_tags = "${params.TestsTags}"
+        param_pypi_repo = "${params.PypiRepo}"
+        param_docker_repo = "${params.DockerRepo}"
+        param_helm_repo = "${params.HelmRepo}"
+        //Job parameters
+        sharedLibPath = "deploy/legionPipeline.groovy"
+        commitID = null
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+                script {
+                    legion = load "${env.sharedLibPath}"
+                    legion.buildDescription()
+                    commitID = env.GIT_COMMIT
+                }
+            }
         }
-
-        legion = load 'deploy/legionPipeline.groovy'
-
-        legion.buildDescription()
 
         stage('Install tools package'){
-            legion.installTools()
+            steps{
+                script {
+                    legion.installTools()
+                }
+            }
         }
-
         
         stage('Deploy Legion') {
-            if (params.DeployLegion){
-                legion.deployLegion()
+            when {
+                expression {return param_deploy_legion == "true" }
             }
-            else {
-                print("Skipping Legion Deployment")
+            steps {
+                script {
+                    legion.deployLegion()
+                }
             }
         }
         
-        stage('Create jenkins jobs'){
-            if (params.CreateJenkinsTests){
-                legion.createjenkinsJobs(commitID)
+        stage('Create jenkins jobs') {
+            when {
+                expression { return param_create_jenkins_tests == "true" }
             }
-            else {
-                println('Skipping Jenkins Jobs creation')
+            steps {
+                script {
+                    legion.createjenkinsJobs(commitID)
+                }
             }
         }
 
         stage('Run regression tests'){
-            if (params.UseRegressionTests){
-                legion.runRobotTests(tags)
+            when {
+                expression { return param_use_regression_tests == "true" }
             }
-            else {
-                println('Skipped due to UseRegressionTests property')
+            steps {
+                script {
+                    legion.runRobotTests(env.param_tests_tags ?: "")
+                }
             }
         }
     }
-    catch (e) {
-        // If there was an exception thrown, the build failed
-        currentBuild.result = "FAILED"
-        throw e
-    } finally {
-        // Success or failure, always send notifications
-        legion.notifyBuild(currentBuild.result)
+
+    post {
+        always {
+            script {
+                legion = load "${sharedLibPath}"
+                legion.notifyBuild(currentBuild.currentResult)
+            }
+            deleteDir()
+        }
     }
 }

@@ -14,13 +14,16 @@ pipeline {
         param_docker_repo = "${params.DockerRepo}"
         param_helm_repo = "${params.HelmRepo}"
         param_build_legion_job_name = "${params.BuildLegionJobName}"
+        param_terminate_cluster_job_name = "${params.TerminateClusterJobName}"
+        param_create_cluster_job_name = "${params.CreateClusterJobName}"
         param_deploy_legion_job_name = "${params.DeployLegionJobName}"
+        param_deploy_legion_enclave_job_name = "${params.DeployLegionEnclaveJobName}"
+        param_terminate_legioin_enclave_job_name = "${params.TerminateLegionEnclaveJobName}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         legionVersion = null
         commitID = null
     }
-
 
     stages {
         stage('Checkout') {
@@ -78,6 +81,32 @@ pipeline {
             }
         }
 
+        stage('Terminate Cluster if exists') {
+            steps {
+                script {
+                    result = build job: env.param_terminate_cluster_job_name, propagate: true, wait: true, parameters: [
+                            [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
+                            string(name: 'LegionVersion', value: legionVersion),
+                            string(name: 'Profile', value: env.param_profile),
+                            string(name: 'LegionVersion', value: legionVersion),
+                    ]
+                }
+            }
+        }
+
+        stage('Create Cluster') {
+            steps {
+                script {
+                    result = build job: env.param_create_cluster_job_name, propagate: true, wait: true, parameters: [
+                            [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
+                            string(name: 'Profile', value: env.param_profile),
+                            string(name: 'LegionVersion', value: legionVersion),
+                            booleanParam(name: 'SkipKops', value: false)
+                    ]
+                }
+            }
+        }
+
         stage('Deploy Legion & run tests') {
             steps {
                 script {
@@ -85,7 +114,7 @@ pipeline {
                             [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
                             string(name: 'Profile', value: env.param_profile),
                             string(name: 'LegionVersion', value: legionVersion),
-                            string(name: 'TestsTags', value: env.param_tests_tags),
+                            string(name: 'TestsTags', value: env.param_tests_tags ?: ""),
                             booleanParam(name: 'DeployLegion', value: true),
                             booleanParam(name: 'CreateJenkinsTests', value: true),
                             booleanParam(name: 'UseRegressionTests', value: true)
@@ -93,6 +122,34 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy Legion Enclave') {
+            steps {
+                script {
+                    result = build job: env.param_deploy_legion_enclave_job_name, propagate: true, wait: true, parameters: [
+                            [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
+                            string(name: 'Profile', value: env.param_profile),
+                            string(name: 'TestsTags', value: env.param_tests_tags ?: ""),
+                            string(name: 'LegionVersion', value: legionVersion),
+                            string(name: 'EnclaveName', value: 'enclave-ci')
+                    ]
+                }
+            }
+        }
+
+        stage('Terminate Legion Enclave') {
+            steps {
+                script {
+                    result = build job: env.param_terminate_legioin_enclave_job_name, propagate: true, wait: true, parameters: [
+                            [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
+                            string(name: 'Profile', value: env.param_profile),
+                            string(name: 'LegionVersion', value: legionVersion),
+                            string(name: 'EnclaveName', value: 'enclave-ci')
+                    ]
+                }
+            }
+        }
+    }
 
     post {
         always {
