@@ -93,7 +93,7 @@ class TestK8S(unittest2.TestCase):
             'efg': 'ghk'
         }
         with self.assertRaises(Exception) as raised_exception:
-            with LegionTestContainer(image='registry', port=5000) as registry_container:
+            with LegionTestContainer(image='registry:2.6.1', port=5000) as registry_container:
                 labels = self._build_test_model_labels()
                 image_name = 'legion/test-image:1.0-180713070916.1.bad661d'
                 self._build_bare_docker_image(image_name, labels)
@@ -108,7 +108,7 @@ class TestK8S(unittest2.TestCase):
 
     def test_get_labels_from_docker_image_exception(self):
 
-        with LegionTestContainer(image='registry', port=5000) as registry_container:
+        with LegionTestContainer(image='registry:2.6.1', port=5000) as registry_container:
             labels = self._build_test_model_labels()
             image_name = 'legion/test-image'
             image_ref = '1.0-123'
