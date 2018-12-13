@@ -15,31 +15,19 @@
 #
 FROM {{DOCKER_BASE_IMAGE_ID}}
 
-RUN apt-get update && apt-get install -y \
-    ca-certificates apt-transport-https nginx \
-    supervisor
-
 EXPOSE {{MODEL_PORT}}
 
-RUN pip3 install --disable-pip-version-check --upgrade uwsgi
+RUN pip3 install --disable-pip-version-check 'uwsgi==2.0.17.1'
 
-# forward request and error logs to docker log collector
-RUN ln -sf /dev/stdout /var/log/nginx/access.log \
-	&& ln -sf /dev/stderr /var/log/nginx/error.log
-
-# Make NGINX run on the foreground
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
-
-COPY nginx.conf /etc/nginx/conf.d/
 COPY uwsgi.ini /etc/uwsgi/
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 ENTRYPOINT []
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
+CMD ["/usr/local/bin/uwsgi", "--strict", "--ini", "/etc/uwsgi/uwsgi.ini"]
 WORKDIR /app
 
 RUN {{CREATE_SYMLINK_COMMAND|safe}}
 
 ENV MODEL_FILE="{{MODEL_FILE}}" \
     MODEL_ID="{{MODEL_ID}}" \
-    VERBOSE="true"
+    VERBOSE="true" \
+    MODEL_PORT="{{MODEL_PORT}}"
