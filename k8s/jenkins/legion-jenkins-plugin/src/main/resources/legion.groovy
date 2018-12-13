@@ -236,12 +236,13 @@ def deploy(Map deployParams=null) {
     deploytimeout = deployParams.get('deploytimeout', 300)
     env.MODEL_ID = modelId()
     env.MODEL_FILE_NAME = modelFileName()
+    env.MODEL_VERSION = legionProperties()['modelVersion']
 
     echo 'MODEL_ID = ' + env.MODEL_ID
     echo 'MODEL_FILE_NAME = ' + env.MODEL_FILE_NAME
 
     sh """
-    legionctl undeploy --ignore-not-found ${env.MODEL_ID}
+    legionctl undeploy --ignore-not-found ${env.MODEL_ID} --model-version ${env.MODEL_VERSION}
     legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --model-iam-role=${modelIamRole} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
     legionctl inspect
     """
