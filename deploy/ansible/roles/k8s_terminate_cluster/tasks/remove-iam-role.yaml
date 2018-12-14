@@ -1,6 +1,6 @@
 
 - name: get list of attached policies for  {{ iam_role }} role
-  shell: "aws iam list-role-policies --role-name {{ iam_role }} | grep {{ cluster_name }} | tr -d '\"' | tr -d ' '"
+  shell: "aws --region {{ aws_region }} iam list-role-policies --role-name {{ iam_role }} | grep {{ cluster_name }} | tr -d '\"' | tr -d ' '"
   register: role_policies
 
 - name: remove {{ iam_role }} policies

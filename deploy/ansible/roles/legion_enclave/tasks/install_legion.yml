@@ -15,11 +15,6 @@
   shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
   when: "legion_deployed"
 
-- name: Update dependencies of legion chart
-  shell: helm --kube-context {{ cluster_name }} dependency update
-  args:
-    chdir: ../helms/legion
-
 - name: Create legion configuration (values) file
   template:
     src: legion-values.yaml.j2
@@ -31,8 +26,6 @@
 - name: Pre run with dumping
   shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   register: helm_legion_install_output
-  args:
-    chdir: ../helms
 
 - name: Save pre run result
   copy:
@@ -41,8 +34,6 @@
 
 - name: Install legion chart
   shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
-  args:
-    chdir: ../helms
 
 - name: Dump current HELM status
   shell: "helm --kube-context {{ cluster_name }} status legion-{{ enclave }}"

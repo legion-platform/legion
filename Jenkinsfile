@@ -295,6 +295,13 @@ EOL
                         """
                     }
                 }
+                stage("Build Ansible Docker image") {
+                    steps {
+                        sh """
+                        docker build ${Globals.dockerCacheArg} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
+                        """
+                    }
+                }
                 stage("Build Edge Docker image") {
                     steps {
                         sh """
@@ -417,6 +424,11 @@ EOL
                 stage('Upload Grafana Docker Image') {
                     steps {
                         UploadDockerImage('k8s-grafana')
+                    }
+                }
+                stage('Upload Ansible Docker Image') {
+                    steps {
+                        UploadDockerImage('k8s-ansible')
                     }
                 }
                 stage('Upload Edge Docker Image') {

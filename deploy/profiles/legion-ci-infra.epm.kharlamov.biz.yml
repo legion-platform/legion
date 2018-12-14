@@ -39,6 +39,7 @@ airflow_rds_size: "50"
 # Kops
 cluster_name: legion-ci-infra.epm.kharlamov.biz
 state_store: s3://legion-cluster
+cluster_ssh_public_key_path: /opt/deploy/legion/legion_id_rsa.pub
 
 private_network: '172.31'
 cluster_zones:
@@ -62,7 +63,6 @@ default_cluster_roles:
 persistent_jenkins_volume: true
 ssh_public_key: ~/.ssh/id_rsa.pub
 certificate_email: legion@epam.com
-git_key: "/home/jenkins/deploy.cert"
 cert_dir: "/etc/dynssl"
 use_https: "yes"
 use_https_for_tests: "yes"

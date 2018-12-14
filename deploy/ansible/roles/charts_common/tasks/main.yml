@@ -1,4 +1,11 @@
 ---
+
+- name: Export kubernetes cluster config using kops
+  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
+
+- name: Init Helm
+  shell: helm --kube-context {{ cluster_name }} init
+
 - name: Add helm repositories
   shell: helm --kube-context {{ cluster_name }} repo add {{ item }}
   with_items:

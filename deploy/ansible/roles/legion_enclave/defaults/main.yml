@@ -1,6 +1,4 @@
 ---
-deploy_key_owner: jenkins
-deploys_key_group: jenkins
 root_domain: "{{ enclave }}.{{ base_domain }}"
 domain_delimiter: "-"
 namespace: "{{ enclave }}"
