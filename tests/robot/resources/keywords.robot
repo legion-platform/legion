@@ -15,7 +15,7 @@ Library             legion_test.robot.Process
 *** Keywords ***
 Connect to enclave Grafana
     [Arguments]           ${enclave}
-    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}                      ${SERVICE_ACCOUNT}          ${SERVICE_PASSWORD}
+    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}    ${SERVICE_ACCOUNT}     ${SERVICE_PASSWORD}
 
 Connect to Jenkins endpoint
     Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}
@@ -168,20 +168,21 @@ Build enclave EDGE URL
     [Return]              ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}
 
 Get token from EDI
-    [Documentation]  get token for the EDGE session
-    [Arguments]         ${enclave}
-    ${resp} =       Check valid http response    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token
-    Log                   ${resp}
+    [Documentation]  get token from EDI for the EDGE session
+    [Arguments]     ${enclave}   ${model_id}   ${model_version}
+    &{data} =    Create Dictionary    model_id=${model_id}    version=${model_version}
+    &{resp} =       Execute post request    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
+    Log                   ${resp["text"]}
     Should not be empty   ${resp}
-    &{token} =      Evaluate    json.loads('''${resp}''')    json
+    &{token} =      Evaluate    json.loads('''${resp["text"]}''')    json
     Log                   ${token}
-    Set Suite Variable     ${TOKEN}    ${token['token']}
+    Set Suite Variable    ${TOKEN}    ${token['token']}
 
 Check model started
     [Documentation]  check if model run in container by http request
     [Arguments]           ${enclave}   ${model_id}  ${model_ver}
     Log                   request url is ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
-                          Get token from EDI    ${enclave}
+                          Get token from EDI    ${enclave}   ${model_id}   ${model_ver}
     ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info    token=${TOKEN}
     Log                   ${resp}
     Should not be empty   ${resp}
@@ -194,7 +195,6 @@ Verify model info from edi
     Should Be Equal  ${target_model[2]}    ${model_version}   invalid model version
     Should Be Equal  ${target_model[3]}    ${scale_num}       invalid actual scales
     Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
-#    Should Be Empty  ${target_model[5]}                       got some errors ${target_model[5]}
 
 Test model pipeline result
     [Arguments]          ${model_name}                      ${enclave}
@@ -206,7 +206,7 @@ Test model pipeline result
     ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
     ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
     ${edge}=             Build enclave EDGE URL             ${enclave}
-    Get token from EDI   ${enclave}
+    Get token from EDI   ${enclave}   ${model_id}   ${model_version}
     ${model_info} =      Get model info       ${model_id}  ${model_version}  ${edge}  ${TOKEN}
     Log                  Model info is ${model_info}
     ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}

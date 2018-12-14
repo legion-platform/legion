@@ -63,7 +63,7 @@ RUN python3 -m compileall /usr/lib/python3.6/site-packages
 # Staff
 ADD start.sh /start.sh
 ADD statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
-ADD invalid_tokens.lua /usr/local/share/lua/5.3/invalid_tokens.lua
+ADD blacklisted_tokens.lua /usr/local/share/lua/5.3/blacklisted_tokens.lua
 ADD static /static
 
 ADD nginx.conf.ltmpl /nginx.conf.ltmpl

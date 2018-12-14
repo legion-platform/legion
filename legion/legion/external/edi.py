@@ -234,7 +234,7 @@ class EdiClient:
 
         return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
 
-    def get_token(self, version=None):
+    def get_token(self, model_id, version):
         """
         Get API token
 
@@ -243,10 +243,10 @@ class EdiClient:
         :return: str -- return API Token
         """
         payload = {}
-        if version:
-            payload['version'] = version
+        payload['model_id'] = model_id
+        payload['version'] = version
 
-        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='GET', payload=payload)
+        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='POST', payload=payload)
         if response and 'token' in response:
             return response['token']
 

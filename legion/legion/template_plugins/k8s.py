@@ -35,8 +35,9 @@ def enclave_configmap_monitor(template_system, var_name="var"):
     LOGGER.info('Starting configmap monitor in namespace {}'.format(namespace))
 
     config_map = K8SConfigMapStorage.retrive(
-        storage_name="legion-{}-invalid-tokens".format(namespace),
+        storage_name="legion-{}-blacklisted-tokens".format(namespace),
         k8s_namespace=namespace)
+
     LOGGER.info("initial value is {}".format(config_map.data))
 
     for event, new_state in config_map.watch():

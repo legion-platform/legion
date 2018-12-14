@@ -19,16 +19,16 @@ function _M.check_token()
     local auth_header = ngx.var.http_Authorization
 
     local _, _, token = string.find(auth_header, "Bearer%s+(.+)")
-    if _M.invalid_tokens[token] ~= nil then
+    if _M.blacklisted_tokens[token] ~= nil then
         ngx.log(ngx.WARN, "Invalid token")
         ngx.exit(ngx.HTTP_UNAUTHORIZED)
     end
 end
 
-function _M.init(invalid_tokens)
-    _M.invalid_tokens = {}
-    for invalid_token in string.gmatch(invalid_tokens, "%S+") do
-        _M.invalid_tokens[invalid_token] = true
+function _M.init(blacklisted_tokens)
+    _M.blacklisted_tokens = {}
+    for blacklisted_token in string.gmatch(blacklisted_tokens, "%S+") do
+        _M.blacklisted_tokens[blacklisted_token] = true
     end
 end
 

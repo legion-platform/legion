@@ -10,7 +10,7 @@ rules:
 - apiGroups: [""] # core API group
   resources: ["configmaps"]
   verbs: ["create", "get", "patch", "update"]
-  resourceNames: ["{{ .Release.Name }}-invalid-tokens"]
+  resourceNames: ["{{ .Release.Name }}-blacklisted-tokens"]
 - apiGroups: [""] # core API group
   resources: ["configmaps"]
   verbs: ["list", "watch"]

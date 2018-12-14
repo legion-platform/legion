@@ -251,7 +251,7 @@ def requested_fields(*fields):
         def decorated_function(*args, **kwargs):
             for field in fields:
                 if field not in kwargs:
-                    raise Exception('Requested field %s s not set' % field)
+                    raise Exception('Requested field %s is not set' % field)
 
             return method(*args, **kwargs)
 

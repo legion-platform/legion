@@ -54,8 +54,8 @@ http{
 
     local statistics_sender = require "statistics_sender"
     statistics_sender.init(host, port, namespace)
-    local invalid_tokens = require "invalid_tokens"
-    invalid_tokens.init("{{ tokens['invalid-tokens'] }}")
+    local invalid_tokens = require "blacklisted_tokens"
+    invalid_tokens.init("{{ tokens['blacklisted-tokens'] }}")
   }
 
   server {
@@ -85,8 +85,11 @@ http{
     location /api/model/{{ model_endpoint.url }} {
         access_by_lua '
             local jwt = require("nginx-jwt")
-            jwt.auth()
-            local invalid_tokens = require "invalid_tokens"
+            jwt.auth({
+                model_id=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.id }}") end,
+                version=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.version }}") end
+            })
+            local invalid_tokens = require "blacklisted_tokens"
             invalid_tokens.check_token()
         ';
 

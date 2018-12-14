@@ -28,7 +28,7 @@ class ModelTaskSet(TaskSet):
 
     def on_start(self):
         self._model_client = ModelClient('recognize_digits', '1.0',
-                                         token=build_client().get_token('1.0'),
+                                         token=build_client().get_token('recognize_digits', '1.0'),
                                          use_relative_url=True, http_client=self.client)
 
 
