@@ -21,7 +21,7 @@ import logging
 
 import legion.docker_bootup
 from legion.serving.pyserve import serve_model
-from legion.external.edi import add_edi_arguments
+from legion.external.edi import add_edi_arguments, add_arguments_for_wait_operation
 from legion.edi.deploy import \
     build_model, \
     deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
@@ -40,7 +40,7 @@ def list_dependencies(args):
     :return: None
     """
     dependencies = legion.utils.get_list_of_requirements()
-    for (name, version) in dependencies:
+    for name, version in dependencies:
         print('{}=={}'.format(name, version))
 
 
@@ -72,8 +72,6 @@ if __name__ == '__main__':
                                    type=str, help='docker image')
     deploy_k8s_parser.add_argument('--model-iam-role',
                                    type=str, help='IAM role to be used at model pod')
-    deploy_k8s_parser.add_argument('--image-for-k8s',
-                                   type=str, help='docker image for kubernetes deployment')
     deploy_k8s_parser.add_argument('--scale',
                                    default=1,
                                    type=int, help='count of instances')
@@ -83,11 +81,7 @@ if __name__ == '__main__':
     deploy_k8s_parser.add_argument('--readinesstimeout',
                                    default=2,
                                    type=int, help='model startup timeout for readiness probe')
-    deploy_k8s_parser.add_argument('--no-wait',
-                                   action='store_true', help='no wait until pods will be ready')
-    deploy_k8s_parser.add_argument('--timeout',
-                                   default=300,
-                                   type=int, help='timeout in s. for wait (if no-wait is off)')
+    add_arguments_for_wait_operation(deploy_k8s_parser)
     add_edi_arguments(deploy_k8s_parser)
     deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
 
@@ -111,11 +105,7 @@ if __name__ == '__main__':
                                   type=int, help='new count of replicas')
     scale_k8s_parser.add_argument('--model-version',
                                   type=str, help='model version')
-    scale_k8s_parser.add_argument('--no-wait',
-                                  action='store_true', help='no wait until scale will be finished')
-    scale_k8s_parser.add_argument('--timeout',
-                                  default=300,
-                                  type=int, help='timeout in s. for wait (if no-wait is off)')
+    add_arguments_for_wait_operation(scale_k8s_parser)
     add_edi_arguments(scale_k8s_parser)
     scale_k8s_parser.set_defaults(func=scale_kubernetes)
 
@@ -130,11 +120,7 @@ if __name__ == '__main__':
                                      type=int, help='removal grace period')
     undeploy_k8s_parser.add_argument('--ignore-not-found',
                                      action='store_true', help='ignore if cannot found pod')
-    undeploy_k8s_parser.add_argument('--no-wait',
-                                     action='store_true', help='no wait until pods will be removed')
-    undeploy_k8s_parser.add_argument('--timeout',
-                                     default=300,
-                                     type=int, help='timeout in s. for wait (if no-wait is off)')
+    add_arguments_for_wait_operation(undeploy_k8s_parser)
     add_edi_arguments(undeploy_k8s_parser)
     undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
 

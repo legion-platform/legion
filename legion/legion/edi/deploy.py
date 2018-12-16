@@ -20,10 +20,7 @@ Deploy logic for legion
 import logging
 import os
 import time
-import re
 
-import docker
-import docker.errors
 import legion.config
 import legion.containers.docker
 import legion.containers.headers

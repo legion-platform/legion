@@ -265,9 +265,9 @@ def add_edi_arguments(parser):
     """
     Add EDI arguments parser
 
-    :param parser:
-    :type parser:
-    :return:
+    :param parser: add arguments to it
+    :type parser: argparse.ArgumentParser
+    :return: None
     """
     parser.add_argument('--edi',
                         type=str, help='EDI server host')
@@ -277,6 +277,21 @@ def add_edi_arguments(parser):
                         type=str, help='EDI server password')
     parser.add_argument('--token',
                         type=str, help='EDI server token')
+
+
+def add_arguments_for_wait_operation(parser):
+    """
+    Add arguments of wait operation in the parser
+
+    :param parser: add arguments to it
+    :type parser: argparse.ArgumentParser
+    :return: None
+    """
+    parser.add_argument('--no-wait',
+                        action='store_true', help='no wait until scale will be finished')
+    parser.add_argument('--timeout',
+                        default=300,
+                        type=int, help='timeout in s. for wait (if no-wait is off)')
 
 
 def build_client(args=None):
