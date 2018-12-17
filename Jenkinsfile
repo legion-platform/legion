@@ -378,7 +378,14 @@ EOL
                     steps {
                         sh """
                         cd /src/legion
-                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --with-coverage --cover-package legion --with-xunit --cover-html  --logging-level DEBUG -v || true
+                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --processes=10 \
+                                                                                            --process-timeout=600 \
+                                                                                            --with-coverage \
+                                                                                            --cover-package legion \
+                                                                                            --with-xunitmp \
+                                                                                            --cover-html \
+                                                                                            --logging-level DEBUG \
+                                                                                            -v || true
                         cd -
                         cp /src/legion/nosetests.xml legion/nosetests.xml
                         """

@@ -31,6 +31,8 @@ MODEL_ID = 'test-model'
 
 
 class TestMetrics(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     def test_metrics_name_building(self):
         metric = metrics.Metric.TEST_ACCURACY
         model_id = 'test-model'

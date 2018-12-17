@@ -15,27 +15,17 @@
 #
 from __future__ import print_function
 
-import sys
 import os
+import sys
 from unittest import mock
 
 import unittest2
-import unittest.mock
-from werkzeug.datastructures import FileMultiDict
 
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import patch_environ, ModelServeTestBuild, EDITestServer, \
+from legion_test_utils import EDITestServer, \
     mock_swagger_function_response_from_file as m_func, \
-    persist_swagger_function_response_to_file as p_func, \
     build_sequential_resource_name_generator
-from legion_test_models import create_simple_summation_model_by_df, \
-    create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
-    create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
-    create_simple_summation_model_lists_with_files_info
-
-import legion.serving.pyserve as pyserve
-import legion.k8s.services
 
 DOCKER_IMAGE_LABELS = {
     'com.epam.legion.model.id': 'demo-abc-model',
@@ -44,6 +34,8 @@ DOCKER_IMAGE_LABELS = {
 
 
 class TestEDI(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     def test_edi_inspect_all_detail(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \

@@ -47,6 +47,8 @@ def patch_env_host_user_password(host='localhost', protocol='http', user='', pas
 
 
 class TestUtilsExternalFile(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         self._work_directory = tempfile.mkdtemp()
 

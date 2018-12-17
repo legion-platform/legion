@@ -19,6 +19,8 @@ import unittest2
 
 
 class TestUtilsTextOperations(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     def test_name_normalization(self):
         examples = (
             ('Test name!', 'Test-name'),

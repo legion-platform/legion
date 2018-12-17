@@ -30,6 +30,8 @@ from legion_test_utils import ModelLocalContainerExecutionContext, build_distrib
 
 
 class TestDeploy(unittest2.TestCase):
+    _multiprocess_shared_ = True
+
     @classmethod
     def setUpClass(cls):
         """
