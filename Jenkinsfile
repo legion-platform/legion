@@ -195,42 +195,37 @@ pipeline {
                     }
                     steps {
                         sh '''
-                        cd legion
-                        pycodestyle --show-source --show-pep8 legion
-                        pycodestyle --show-source --show-pep8 tests --ignore E402,E126,W503,E731
-                        pydocstyle --source legion
+                        pycodestyle --show-source --show-pep8 legion/legion
+                        pycodestyle --show-source --show-pep8 legion/tests --ignore E402,E126,W503,E731
+                        pydocstyle --source legion/legion
 
-                        TERM="linux" pylint --persistent=n legion > legion-pylint.log || exit 0
-                        TERM="linux" pylint --persistent=n tests >> legion-pylint.log || exit 0
-                        cd ..
+                        pycodestyle --show-source --show-pep8 legion_airflow/legion_airflow
+                        pycodestyle --show-source --show-pep8 legion_airflow/tests
+                        pydocstyle legion_airflow/legion_airflow
+
+                        # Because of https://github.com/PyCQA/pylint/issues/352 or need to fix PYTHONPATH in unit tests
+                        touch legion/tests/__init__.py
+
+                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion/legion > legion-pylint.log
+                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion/tests >> legion-pylint.log
+
+                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_airflow/legion_airflow >> legion-pylint.log
+                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_airflow/tests >> legion-pylint.log
+                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_test/legion_test >> legion-pylint.log
+                        # Because of https://github.com/PyCQA/pylint/issues/352 or need to fix PYTHONPATH in unit tests
+                        rm -rf legion/tests/__init__.py
                         '''
 
-                        archiveArtifacts 'legion/legion-pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion/legion-pylint.log']], unHealthy: ''
-
-                        sh '''
-                        cd legion_airflow
-                        pycodestyle --show-source --show-pep8 legion_airflow
-                        pycodestyle --show-source --show-pep8 tests
-                        pydocstyle legion_airflow
-
-                        TERM="linux" pylint --persistent=n legion_airflow > legion_airflow-pylint.log || exit 0
-                        TERM="linux" pylint --persistent=n tests >> legion_airflow-pylint.log || exit 0
-                        cd ..
-                        '''
-
-                        archiveArtifacts 'legion_airflow/legion_airflow-pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_airflow/legion_airflow-pylint.log']], unHealthy: ''
-
-                        sh '''
-                        cd legion_test
-
-                        TERM="linux" pylint --persistent=n legion_test > legion_test-pylint.log || exit 0
-                        cd ..
-                        '''
-
-                        archiveArtifacts 'legion_test/legion_test-pylint.log'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '',  excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[   parserName: 'PyLint', pattern: 'legion_test/legion_test-pylint.log']], unHealthy: ''
+                        archiveArtifacts 'legion-pylint.log'
+                        step([
+                            $class                     : 'WarningsPublisher',
+                            parserConfigurations       : [[
+                                                                  parserName: 'PYLint',
+                                                                  pattern   : 'legion-pylint.log'
+                                                          ]],
+                            unstableTotalAll           : '100',
+                            usePreviousBuildAsReference: true
+                        ])
                     }
                 }
                 stage("Upload Legion package") {
