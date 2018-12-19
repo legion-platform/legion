@@ -14,8 +14,6 @@ secrets:
     enabled: false
     key_prefix: ''
     conn_id: ''
-    secret_access_key: ''
-    access_key_id: ''
 
 connections:
 

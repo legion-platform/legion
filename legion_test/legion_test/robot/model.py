@@ -25,6 +25,9 @@ class Model:
     """
     Model API class
     """
+    def __init__(self):
+        self._last_response_id = None
+        self._last_response = None
 
     @staticmethod
     def get_model_info(model_id, model_version, edge, token):
@@ -52,8 +55,7 @@ class Model:
 
         return response.json()
 
-    @staticmethod
-    def invoke_model_api(model_id, model_version, edge, token, endpoint, **payload):
+    def invoke_model_feedback(self, model_id, model_version, edge, token, request_id, **payload):
         """
         Invoke model through API
 
@@ -61,12 +63,16 @@ class Model:
         :param model_version: model version
         :param edge: edge url
         :param token: model API JWT token
-        :param endpoint: name of endpoint
+        :param request_id: request ID
         :param payload: payload dict
         :return: dict -- response
         """
-        headers = {"Authorization": "Bearer {}".format(token)}
-        url = '{}/api/model/{}/{}/invoke/{}'.format(edge, model_id, model_version, endpoint)
+        headers = {
+            'Authorization': 'Bearer {}'.format(token),
+            'Request-ID': request_id
+        }
+
+        url = '{}/api/model/{}/{}/feedback'.format(edge, model_id, model_version)
 
         print('Requesting {} with data = {} in POST mode'.format(url, payload))
 
@@ -80,6 +86,59 @@ class Model:
             raise Exception('Returned wrong status code: {}'.format(response.status_code))
 
         return response.json()
+
+    def invoke_model_api(self, model_id, model_version, edge, token, endpoint, request_id=None, **payload):
+        """
+        Invoke model through API
+
+        :param model_id: model ID
+        :param model_version: model version
+        :param edge: edge url
+        :param token: model API JWT token
+        :param endpoint: name of endpoint
+        :param request_id: (Optional) request ID
+        :param payload: payload dict
+        :return: dict -- response
+        """
+        if request_id == 'None':
+            request_id = None
+
+        headers = {'Authorization': 'Bearer {}'.format(token)}
+        if request_id:
+            headers['Request-ID'] = request_id
+
+        url = '{}/api/model/{}/{}/invoke/{}'.format(edge, model_id, model_version, endpoint)
+
+        print('Requesting {} with data = {} in POST mode'.format(url, payload))
+
+        response = requests.post(
+            url,
+            data=payload,
+            headers=headers
+        )
+
+        if response.status_code != 200:
+            raise Exception('Returned wrong status code: {}'.format(response.status_code))
+
+        self._last_response_id = response.headers.get('Request-ID')
+        self._last_response = response.json()
+        return self._last_response
+
+    def get_model_api_last_response(self):
+        """
+        Get model last response
+
+        :return: dict -- last response
+        """
+        return self._last_response
+
+    def get_model_api_last_response_id(self):
+        """
+        Get last model response ID
+
+        :return: str -- last response ID
+        """
+        return self._last_response_id
 
     @staticmethod
     def get_model_api_properties(model_id, model_version, edge, token):
@@ -145,7 +204,7 @@ class Model:
         :return: None
         """
         def check():
-            result = Model.invoke_model_api(model_id, model_version, edge, token, endpoint, **payload)
+            result = Model.invoke_model_api(model_id, model_version, edge, token, endpoint, None, **payload)
             actual_value = result.get(result_field)
             print('Got result of invocation: actual value = {!r}, desired value = {!r}'
                   .format(actual_value, desired_value))

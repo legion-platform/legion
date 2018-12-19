@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM openresty/openresty:1.13.6.2-alpine
+FROM openresty/openresty:1.13.6.2-alpine-fat
 
 ENV DUMB_INIT_VERSION 1.2.0
 
@@ -21,14 +21,21 @@ ENV DUMB_INIT_VERSION 1.2.0
 RUN set -ex \
   && apk add --no-cache --virtual .install-deps openssl libffi-dev openssl-dev \
        python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
-       ca-certificates gnupg openssl git curl luarocks5.3 \
-  && luarocks-5.3 install lua-resty-statsd 3.0.3-1 \
+       ca-certificates gnupg openssl git curl \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64" \
   && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/sha256sums" \
   && grep "dumb-init_${DUMB_INIT_VERSION}_amd64$" sha256sums | sha256sum -c \
   && rm sha256sums \
   && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
   && chmod +x /usr/bin/dumb-init
+
+RUN    luarocks install lua-resty-statsd          3.0.3-1 \
+    && luarocks install lua-cmsgpack              0.4.0 \
+    && luarocks install lua-cjson                 2.1.0.6-1 \
+    && luarocks install basexx                    0.4.0-1 \
+    && luarocks install lua-resty-jwt             0.2.0-0 \
+    && luarocks install lua-resty-jit-uuid        0.0.7-1 \
+    && luarocks install lua-resty-reqargs         1.4-1
 
 # Section (till nginx-jwt installation) below is a temporal approach to decrease build time and the source of Pipfile's - legion/Pipfile* that have been copied here
 # This workaround should be removed as soon as #226 is done
@@ -39,16 +46,6 @@ COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
 
 RUN pipenv install --system --deploy --python python3.6
-
-# Checkout nginx-jwt v.1.0.0
-RUN git clone https://github.com/auth0/nginx-jwt.git \
-    && cd nginx-jwt \
-    && git checkout v1.0.0 \
-    && ./scripts/build_deps.sh \
-    && cp lib/basexx.lua /usr/local/share/lua/5.3/basexx.lua \
-    && cp nginx-jwt.lua /usr/local/share/lua/5.3/nginx-jwt.lua \
-    && cp -r lib/resty /usr/local/share/lua/5.3/resty \
-    && cd - && rm -rf nginx-jwt
 
 # Install Legion
 ARG pip_extra_index_params=""
@@ -62,9 +59,13 @@ RUN python3 -m compileall /usr/lib/python3.6/site-packages
 
 # Staff
 ADD start.sh /start.sh
-ADD statistics_sender.lua /usr/local/share/lua/5.3/statistics_sender.lua
-ADD blacklisted_tokens.lua /usr/local/share/lua/5.3/blacklisted_tokens.lua
 ADD static /static
+ADD nginx-jwt.lua \
+    statistics_sender.lua \
+    blacklisted_tokens.lua \
+    fluentd_logger.lua \
+    edge.lua \
+      /usr/local/openresty/luajit/
 
 ADD nginx.conf.ltmpl /nginx.conf.ltmpl
 

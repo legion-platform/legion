@@ -1,0 +1,49 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-fluentd-config"
+data:
+  fluent.conf: |
+    <source>
+      @type forward
+      port 24224
+      bind 0.0.0.0
+    </source>
+
+    # Add time as a regular field
+    <filter *>
+      @type record_transformer
+      <record>
+        time ${time}
+      </record>
+    </filter>
+
+    # Default
+    <match *>
+      @type s3
+      # Connection
+      s3_bucket {{ .Values.feedback.s3.bucket }}
+      s3_region {{ .Values.feedback.s3.region }}
+
+      # Storing
+      path {{ .Values.feedback.s3.path }}
+      time_slice_format {{ .Values.feedback.s3.time_slice_format }}
+      time_slice_wait {{ .Values.feedback.s3.time_slice_wait }}
+      s3_object_key_format %{path}%{time_slice}_%{index}.%{file_extension}
+      utc
+      store_as {{ .Values.feedback.s3.store_as }}
+
+      # Buffering
+      <buffer tag,time,model_id,model_version>
+        @type file
+        path {{ .Values.feedback.s3.buffering.path }}/default
+        timekey {{ .Values.feedback.s3.buffering.timekey }}
+        timekey_wait {{ .Values.feedback.s3.buffering.timekey_wait }}
+        timekey_use_utc true
+      </buffer>
+
+      # Formatting
+      <format>
+        @type {{ .Values.feedback.s3.format }}
+      </format>
+    </match>

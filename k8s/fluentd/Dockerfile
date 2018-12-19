@@ -16,38 +16,5 @@
 
 FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
 
-# Add testing repo for python3.6
-RUN echo "deb http://http.us.debian.org/debian/ testing main" >> /etc/apt/sources.list
-
-# Install fluentd-s3 plugin, legion requirements and clean up apt cache
-RUN gem install fluent-plugin-s3 -v '~>1.1.4' && \
-    gem install aws-sdk -v '3.0.0' && \
-    apt-get update && apt-get install -y --no-install-recommends python3 \
-      g++ apt-utils python3-dev python3-pip python3-setuptools file wget git \
-      libtiff5-dev libjpeg62-turbo-dev zlib1g-dev \
-      libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
-      tcl8.6-dev tk8.6-dev python-tk python3-tk procps locales && \
-      apt-get clean && apt-get autoclean
-
-# setup locale
-RUN sed --in-place '/en_US.UTF-8/s/^#//' /etc/locale.gen && locale-gen
-ENV LANG en_US.UTF-8 
-ENV LANGUAGE en_US:en 
-ENV LC_ALL en_US.UTF-8
-
-RUN pip3 install --disable-pip-version-check --no-cache-dir "numpy==1.14.3"
-
-# Copy bootstrap script
-COPY run.sh /run.sh
-RUN chmod a+x /run.sh
-
-# Copy template
-COPY fluentd.t /etc/fluent/fluentd.t
-
-# Install legion
-ARG pip_extra_index_params=""
-ARG pip_legion_version_string=""
-
-RUN pip3 install $pip_extra_index_params legion$pip_legion_version_string
-
-CMD /run.sh $FLUENTD_ARGS
+# Install fluentd-s3 plugin
+RUN gem install -N fluent-plugin-s3 -v '~>1.1.4'

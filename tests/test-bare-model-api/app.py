@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -48,7 +48,13 @@ def model_info(model, version):
 @app.route('/api/model/<model>/<version>/invoke', methods=['GET', 'POST'])
 @app.route('/api/model/<model>/<version>/invoke/<endpoint>', methods=['GET', 'POST'])
 def model_invoke(model, version, endpoint=None):
-    return jsonify(result=42.0)
+    arguments = request.form
+    result = 42.0
+
+    if 'str' in arguments and 'copies' in arguments:
+        result = arguments['str'] * int(arguments['copies'])
+
+    return jsonify(result=result)
 
 
 if __name__ == '__main__':

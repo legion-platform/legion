@@ -21,6 +21,8 @@ import datetime
 import socket
 import requests
 import time
+import json
+import operator
 
 
 class Utils:
@@ -281,6 +283,29 @@ class Utils:
         return {"login": static_user['email'], "password": static_user['password']}
 
     @staticmethod
+    def parse_json_string(str):
+        """
+        Parse JSON string
+
+        :param str: JSON string
+        :type str: str
+        :return: dict -- object
+        """
+        return json.loads(str)
+
+
+    @staticmethod
+    def get_current_time(time_template):
+        """
+        Get templated time
+
+        :param time_template: time template
+        :type time_template: str
+        :return: None or str -- time from template
+        """
+        return datetime.datetime.utcnow().strftime(time_template)
+
+    @staticmethod
     def wait_up_to_second(second, time_template=None):
         """
         Wait up to second then generate time from template
@@ -304,4 +329,44 @@ class Utils:
             time.sleep(sleep_time)
 
         if time_template:
-            return datetime.datetime.utcnow().strftime(time_template)
+            return Utils.get_current_time(time_template)
+
+    @staticmethod
+    def order_list_of_dicts_by_key(list_of_dicts, field_key):
+        """
+        Order list of dictionaries by key as integer
+
+        :param list_of_dicts: list of dictionaries
+        :type list_of_dicts: List[dict]
+        :param field_key: key to be ordered by
+        :type field_key: str
+        :return: List[dict] -- ordered list
+        """
+        return sorted(list_of_dicts, key=lambda item: int(item[field_key]))
+
+    @staticmethod
+    def concatinate_list_of_dicts_field(list_of_dicts, field_key):
+        """
+        Concatinate list of dicts field to string
+
+        :param list_of_dicts: list of dictionaries
+        :type list_of_dicts: List[dict]
+        :param field_key: key of field to be concatinated
+        :type field_key: str
+        :return: str -- concatinated string
+        """
+        return ''.join([item[field_key] for item in list_of_dicts])
+
+    @staticmethod
+    def repeat_string_n_times(string, count):
+        """
+        Repeat string N times
+
+        :param string: string to be repeated
+        :type string: str
+        :param count: count
+        :type count: int
+        :return: str -- result string
+        """
+        return string * int(count)
+
