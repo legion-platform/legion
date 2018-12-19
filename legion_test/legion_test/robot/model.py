@@ -187,8 +187,7 @@ class Model:
             raise Exception('Property {} has not been updated to desired value {}'
                             .format(prop_name, desired_value))
 
-    @staticmethod
-    def ensure_model_api_call_result_field_is_correct(model_id, model_version, edge, token, endpoint,
+    def ensure_model_api_call_result_field_is_correct(self, model_id, model_version, edge, token, endpoint,
                                                       result_field, desired_value, **payload):
         """
         Get model properties through model API
@@ -204,7 +203,7 @@ class Model:
         :return: None
         """
         def check():
-            result = Model.invoke_model_api(model_id, model_version, edge, token, endpoint, None, **payload)
+            result = self.invoke_model_api(model_id, model_version, edge, token, endpoint, None, **payload)
             actual_value = result.get(result_field)
             print('Got result of invocation: actual value = {!r}, desired value = {!r}'
                   .format(actual_value, desired_value))
