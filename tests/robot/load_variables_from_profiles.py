@@ -33,6 +33,7 @@ def get_variables(arg):
     variables['TEST_MODEL_IMAGE_1'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 1)
     variables['TEST_MODEL_IMAGE_2'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 2)
     variables['TEST_MODEL_IMAGE_3'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 3)
+    variables['TEST_MODEL_IMAGE_4'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 4)
     variables['TEST_MODEL_IMAGE_5'] = legion_test.test_assets.get_test_bare_model_api_image(variables, 5)
 
     return variables

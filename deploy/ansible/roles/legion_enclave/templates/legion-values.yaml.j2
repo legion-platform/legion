@@ -1,5 +1,6 @@
 rootDomain: {{ root_domain }}
 enclaveName: "{{ enclave }}"
+clusterName: "{{ cluster_name }}"
 namespace: default
 
 log_level: {{ log_level }}
@@ -11,6 +12,18 @@ package:
   baseImage:
     repository: "{{ docker_repo }}/base-python-image"
     tag: "{{ legion_version }}"
+
+feedback:
+  replicas: "{{ collector.replicas }}"
+
+  image:
+    repository: "{{ docker_repo }}/k8s-fluentd"
+    tag: "{{ legion_version }}"
+
+  s3:
+    bucket: "{{ legion_data_s3_bucket }}"
+    region: "{{ collector.region }}"
+    path: "model_log/${tag}/${model_id}/${model_version}/year=%Y/month=%m/day=%d/"
 
 grafana:
   image:

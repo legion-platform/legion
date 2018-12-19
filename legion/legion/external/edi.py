@@ -318,10 +318,13 @@ def build_client(args=None):
             token = args.token
 
     if not host:
+        host = os.environ.get(*legion.config.EDI_URL)
+
+    if not host:
         try:
             host = legion.k8s.Enclave(os.environ.get("NAMESPACE")).edi_service.url
         except Exception:
-            host = os.environ.get(*legion.config.EDI_URL)
+            LOGGER.warning('Cannot get EDI URL from K8S API')
 
     if not user or not password:
         user = os.environ.get(*legion.config.EDI_USER)

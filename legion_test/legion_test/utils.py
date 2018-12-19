@@ -31,12 +31,12 @@ def wait_until(condition, iteration_duration=5, iterations=10):
     :type iteration_duration: int
     :param iterations: maximum count of iterations
     :type iterations: int
-    :return: True or False -- is condition result has been changed to True
+    :return: object or False -- result or False
     """
     for _ in range(iterations):
         result = condition()
         if result:
-            return True
+            return result
 
         time.sleep(iteration_duration)
 

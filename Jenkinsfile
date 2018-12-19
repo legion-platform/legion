@@ -330,6 +330,7 @@ EOL
                         BuildTestBareModel("demo-abc-model", "1.0", "1")
                         BuildTestBareModel("demo-abc-model", "1.1", "2")
                         BuildTestBareModel("edi-test-model", "1.2", "3")
+                        BuildTestBareModel("feedback-test-model", "1.0", "4")
                         BuildTestBareModel("command-test-model", "1.0", "5")
                     }
                 }
@@ -442,6 +443,7 @@ EOL
                         UploadDockerImage('test-bare-model-api-model-1')
                         UploadDockerImage('test-bare-model-api-model-2')
                         UploadDockerImage('test-bare-model-api-model-3')
+                        UploadDockerImage('test-bare-model-api-model-4')
                         UploadDockerImage('test-bare-model-api-model-5')
                     }
                 }

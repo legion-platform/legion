@@ -1,0 +1,68 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-fluentd"
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-fluentd"
+spec:
+  replicas: {{ .Values.feedback.replicas }}
+  selector:
+    matchLabels:
+      component: "{{ .Release.Name }}-fluentd"
+  template:
+    metadata:
+      annotations:
+        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclaveName }}-collector-role"
+      labels:
+        component: "{{ .Release.Name }}-fluentd"
+    spec:
+      containers:
+      - name: fluentd
+        image: "{{ .Values.feedback.image.repository }}:{{ .Values.feedback.image.tag }}"
+        PullPolicy: "{{ .Values.feedback.image.pullPolicy }}"
+        resources:
+          requests:
+            cpu: "300m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "1024Mi"
+        env:
+        - name: FLUENTD_ARGS
+          value: -c /opt/fluent-config/fluent.conf
+        ports:
+        - containerPort: 24224
+          name: input
+          protocol: TCP
+        - containerPort: 24224
+          name: input-udp
+          protocol: UDP
+        volumeMounts:
+        - name: fluentd-config
+          mountPath: /opt/fluent-config
+      volumes:
+      - name: fluentd-config
+        configMap:
+          name: "{{ .Release.Name }}-fluentd-config"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-fluentd"
+  labels:
+    component: "{{ .Release.Name }}-fluentd"
+spec:
+  selector:
+    component: "{{ .Release.Name }}-fluentd"
+  ports:
+  - name: input
+    port: 24224
+    targetPort: 24224
+    protocol: TCP
+  - name: input-udp
+    port: 24224
+    targetPort: 24224
+    protocol: UDP

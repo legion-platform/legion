@@ -18,6 +18,10 @@ spec:
         component: "{{ .Release.Name }}-edge"
     spec:
       serviceAccountName: "{{ .Release.Name }}-edge"
+      volumes:
+      - name: edge-scripts
+        configMap:
+          name: "{{ .Release.Name }}-edge-scripts"
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
@@ -34,6 +38,10 @@ spec:
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
           value: "8125"
+        - name: FLUENTD_HOST
+          value: "127.0.0.1"
+        - name: FLUENTD_PORT
+          value: "24224"
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
@@ -59,6 +67,21 @@ spec:
             port: 80
           initialDelaySeconds: 15
           periodSeconds: 20
+      - name: logger
+        image: "fluent/fluent-bit:0.14"
+        command: ["bash"]
+        args:
+          - /opt/edge-scripts/start-fluentbit.sh
+        env:
+        - name: EXTERNAL_FLUENTD_HOST
+          value: "{{ .Release.Name }}-fluentd.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+        - name: EXTERNAL_FLUENTD_PORT
+          value: "24224"
+        - name: FLUENTD_CONFIG
+          value: "/opt/edge-scripts/fluentd-config.config"
+        volumeMounts:
+        - name: edge-scripts
+          mountPath: /opt/edge-scripts
       - name: dns
         image: "janeczku/go-dnsmasq:release-1.0.7"
         args:
@@ -93,6 +116,28 @@ spec:
   - name: api
     port: 80
     protocol: TCP
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-edge-scripts"
+data:
+  fluentd-config.config: |-
+    [INPUT]
+        Name                forward
+        Listen              0.0.0.0
+        Port                24224
+        Buffer_Max_Size     2Mb
+        Buffer_Chunk_Size   2Kb
+
+    [OUTPUT]
+        Name                forward
+        Match               *
+        Host                ${EXTERNAL_FLUENTD_HOST}
+        Port                ${EXTERNAL_FLUENTD_PORT}
+  start-fluentbit.sh: |-
+    #!/bin/sh
+    /fluent-bit/bin/fluent-bit -c $FLUENTD_CONFIG
 ---
 {{- if .Values.edge.ingress.enabled -}}
 apiVersion: extensions/v1beta1

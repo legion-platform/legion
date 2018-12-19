@@ -47,7 +47,7 @@ def get_variables(arg=None):
     if not profile:
         raise Exception('Cannot get profile - {} env variable is not set'.format(PROFILE_ENVIRON_KEY))
 
-    profile = os.path.join(arg, '{}.yml'.format(profile))
+    profile = os.path.abspath(os.path.join(arg, '{}.yml'.format(profile)))
     if not os.path.exists(profile):
         raise Exception('Cannot get profile - file not found {}'.format(profile))
 

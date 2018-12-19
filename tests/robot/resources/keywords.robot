@@ -195,6 +195,127 @@ Check model started
     Should not be empty   ${resp}
     [Return]              ${resp}
 
+Invoke deployed model
+    [Documentation]  call model invoke endpoint
+    [Arguments]           ${enclave}   ${model_id}  ${model_ver}  ${request_id}=None  ${endpoint}=default  &{arguments}
+    ${edge}=              Build enclave EDGE URL    ${enclave}
+    Get token from EDI    ${enclave}   ${model_id}  ${model_ver}
+    ${resp}=              Invoke model API  ${model_id}  ${model_ver}  ${edge}  ${TOKEN}  ${endpoint}  ${request_id}  &{arguments}
+    [Return]              ${resp}
+
+Send feedback for deployed model
+    [Documentation]  call model feedback endpoint
+    [Arguments]           ${enclave}   ${model_id}  ${model_ver}  ${request_id}  &{arguments}
+    ${edge}=              Build enclave EDGE URL    ${enclave}
+    Get token from EDI    ${enclave}   ${model_id}  ${model_ver}
+    ${resp}=              Invoke model feedback  ${model_id}  ${model_ver}  ${edge}  ${TOKEN}  ${request_id}  &{arguments}
+    [Return]              ${resp}
+
+Validate model API meta log entry
+    [Documentation]  check that model API log entry contains all required keys
+    [Arguments]      ${log_entry}
+    Dictionary Should Contain Key   ${log_entry}  request_id
+    Dictionary Should Contain Key   ${log_entry}  request_http_method
+    Dictionary Should Contain Key   ${log_entry}  request_http_headers
+    Dictionary Should Contain Key   ${log_entry}  request_host
+    Dictionary Should Contain Key   ${log_entry}  request_uri
+    Dictionary Should Contain Key   ${log_entry}  request_get_args
+    Dictionary Should Contain Key   ${log_entry}  response_duration
+    Dictionary Should Contain Key   ${log_entry}  response_http_headers
+    Dictionary Should Contain Key   ${log_entry}  response_body_chunk_count
+    Dictionary Should Contain Key   ${log_entry}  response_status
+    Dictionary Should Contain Key   ${log_entry}  model_id
+    Dictionary Should Contain Key   ${log_entry}  model_version
+
+Validate model API meta log entry Request ID
+    [Documentation]  check that model API log entry Request ID is correct
+    [Arguments]      ${log_entry}   ${excpected_request_id}
+    ${actual_request_id}=           Get From Dictionary       ${log_entry}     request_id
+    Should Be Equal                 ${actual_request_id}      ${excpected_request_id}
+
+Validate model API meta log entry HTTP method
+    [Documentation]  check that model API log entry HTTP method is correct
+    [Arguments]      ${log_entry}   ${excpected_value}
+    ${http_method}=                 Get From Dictionary       ${log_entry}     request_http_method
+    Should Be Equal                 ${http_method}            ${excpected_value}
+
+Validate model API meta log entry POST arguments
+    [Documentation]  check that model API log entry POST arguments are correct
+    [Arguments]      ${log_entry}   &{excpected_values}
+    ${actual_post_args}=    Get From Dictionary       ${log_entry}     request_post_args
+    Dictionaries Should Be Equal    ${actual_post_args}    ${excpected_values}
+
+Validate model API meta ID and version
+    [Documentation]  check that model API ID and version is correct
+    [Arguments]      ${log_entry}   ${excpected_model_id}   ${excpected_model_version}
+    ${actual_model_id}=            Get From Dictionary       ${log_entry}     model_id
+    ${actual_model_version}=       Get From Dictionary       ${log_entry}     model_version
+    Should Be Equal                ${actual_model_id}        ${excpected_model_id}
+    Should Be Equal                ${actual_model_version}   ${excpected_model_version}
+
+Get count of invocation chunks from model API meta log entry response
+    [Documentation]  check that model API log entry response is correct
+    [Arguments]      ${log_entry}
+    ${chunk_count}=  Get From Dictionary       ${log_entry}     response_body_chunk_count
+    [Return]         ${chunk_count}
+
+Validate model API response
+    [Documentation]  check that model API response is correct
+    [Arguments]      ${actual_response}   &{excpected_values}
+    Dictionaries Should Be Equal    ${actual_response}    ${excpected_values}
+
+Validate model API body log entry
+    [Documentation]  check that model API body log entry contains all required keys
+    [Arguments]      ${log_entry}
+    Dictionary Should Contain Key   ${log_entry}  request_id
+    Dictionary Should Contain Key   ${log_entry}  response_chunk_id
+    Dictionary Should Contain Key   ${log_entry}  response_content
+    Dictionary Should Contain Key   ${log_entry}  model_id
+    Dictionary Should Contain Key   ${log_entry}  model_version
+
+Validate model API body log entry for all entries
+    [Documentation]  check that model API body log entries contains all required keys
+    [Arguments]      ${log_entries}
+    :FOR    ${log_entry}    IN    @{log_entries}
+    \    Validate model API body log entry    ${log_entry}
+
+Get model API body content from all entries
+    [Documentation]  get model API body content from all entries
+    [Arguments]      ${log_entries}
+    @{ordered_log_entries}=  Order list of dicts by key       ${log_entries}          response_chunk_id
+    ${content}=              Concatinate list of dicts field  ${ordered_log_entries}  response_content
+    Log                      ${content}
+    ${parsed_content}=       Parse JSON string  ${content}
+    [Return]  ${parsed_content}
+
+Validate model feedback log entry
+    [Documentation]  check that model feedback log entry contains all required keys
+    [Arguments]      ${log_entry}
+    Dictionary Should Contain Key   ${log_entry}  request_id
+    Dictionary Should Contain Key   ${log_entry}  feedback_payload
+    Dictionary Should Contain Key   ${log_entry}  model_id
+    Dictionary Should Contain Key   ${log_entry}  model_version
+
+Validate model feedback log entry Request ID
+    [Documentation]  check that model feedback log entry Request ID is correct
+    [Arguments]      ${log_entry}   ${excpected_request_id}
+    ${actual_request_id}=           Get From Dictionary       ${log_entry}     request_id
+    Should Be Equal                 ${actual_request_id}      ${excpected_request_id}
+
+Validate model feedback log entry params
+    [Documentation]  check that model feedback log entry params
+    [Arguments]      ${log_entry}   &{excpected_values}
+    ${actual_post_args}=    Get From Dictionary       ${log_entry}     feedback_payload
+    Dictionaries Should Be Equal    ${actual_post_args}    ${excpected_values}
+
+Validate model feedback ID and version
+    [Documentation]  check that model feedback ID and version is correct
+    [Arguments]      ${log_entry}   ${excpected_model_id}   ${excpected_model_version}
+    ${actual_model_id}=            Get From Dictionary       ${log_entry}     model_id
+    ${actual_model_version}=       Get From Dictionary       ${log_entry}     model_version
+    Should Be Equal                ${actual_model_id}        ${excpected_model_id}
+    Should Be Equal                ${actual_model_version}   ${excpected_model_version}
+
 Verify model info from edi
     [Arguments]      ${target_model}       ${model_id}        ${model_image}      ${model_version}    ${scale_num}
     Should Be Equal  ${target_model[0]}    ${model_id}        invalid model id

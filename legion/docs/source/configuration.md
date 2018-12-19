@@ -154,7 +154,7 @@ airflow:
   - connection_id: s3_conn
     connection_type: S3
     extra: {"bucket_prefix": "epm-legion-data"}
-  
+
   # SMTP credentials for email notifications
   email:
     smtp_host: smtp.post.domain
@@ -175,12 +175,6 @@ airflow:
     token: example
   webserver:
     email_backend: "etl.slack.send_notification" # set email_backend to empty for Slack disabling notifications
-
-# Fluentd configuration for event log collection
-fluentd:
-  aws: # Credentials for storing data on S3
-    secret_access_key: AWS_SEC_KEY
-    access_key_id: AWS_KEY_ID
 
 external_access_sgs: # list of AWS SG that should be added on ELB
   - sg-00000000
