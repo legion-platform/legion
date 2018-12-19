@@ -168,7 +168,8 @@ def get_docker_image_labels(image):
             else:
                 registry_host = 'http://{}'.format(image_attributes.host)
     except Exception as err:
-        raise LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
+        LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
+        raise err
 
     try:
         registry_client = DockerRegistryClient(
@@ -246,15 +247,18 @@ def parse_docker_image_url(image_url):
         try:
             host = image_attrs_list.group(1)
         except Exception as err:
-            raise LOGGER.error('Image url doesn\'t contain host pattern: {}'.format(err))
+            LOGGER.error('Image url doesn\'t contain host pattern: {}'.format(err))
+            raise err
         try:
             repo = image_attrs_list.group(2)
         except Exception as err:
-            raise LOGGER.error('Image url doesn\'t contain repo pattern: {}'.format(err))
+            LOGGER.error('Image url doesn\'t contain repo pattern: {}'.format(err))
+            raise err
         try:
             ref = image_attrs_list.group(3)
         except Exception as err:
-            raise LOGGER.error('Image url doesn\'t contain ref pattern: {}'.format(err))
+            LOGGER.error('Image url doesn\'t contain ref pattern: {}'.format(err))
+            raise err
 
         image_attributes = ImageAttributes(
             host=host,
@@ -265,8 +269,9 @@ def parse_docker_image_url(image_url):
         LOGGER.info('Image attributes: {}'.format(image_attributes))
 
     except Exception as err:
-        raise LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
+        LOGGER.error('Can\'t get image attributes from image url {}: {}.'.format(
             image_url,
             err))
+        raise err
 
     return image_attributes

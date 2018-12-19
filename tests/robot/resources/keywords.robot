@@ -28,6 +28,13 @@ Connect to enclave Flower
     [Arguments]           ${enclave}
     Connect to Flower    ${HOST_PROTOCOL}://flower-${enclave}.${HOST_BASE_DOMAIN}
 
+Shell
+    [Arguments]           ${command}
+    ${result}=            Run Process without PIPE   ${command}    shell=True
+    Log                   stdout = ${result.stdout}
+    Log                   stderr = ${result.stderr}
+    [Return]              ${result}
+
     # --------- INSPECT COMMAND SECTION -----------
 Run EDI inspect enclave and check result
     [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output

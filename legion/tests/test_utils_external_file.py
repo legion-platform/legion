@@ -98,7 +98,7 @@ class TestUtilsExternalFile(unittest2.TestCase):
             self.assertFalse(utils.is_local_resource(path), 'Detected as local: %s' % path)
 
         for path in wrong_resources:
-            with self.assertRaises(Exception):
+            with self.assertRaisesRegex(Exception, 'Unknown or unavailable resource'):
                 utils.is_local_resource(path)
 
     def test_external_file_reader_http_example(self):
@@ -128,7 +128,6 @@ class TestUtilsExternalFile(unittest2.TestCase):
         self.assertFalse(os.path.exists(local_path))
 
     def test_external_file_reader_local(self):
-
         with utils.ExternalFileReader(self._temp_file_path) as reader:
             self.assertEqual(os.path.abspath(self._temp_file_path), os.path.abspath(reader.path))
 

@@ -430,7 +430,7 @@ class Model:
         :type endpoint_name: str
         :return: None
         """
-        if not hasattr(apply_func, '__call__'):
+        if not callable(apply_func):
             raise Exception('Provided non-callable object as apply_function')
 
         if column_types:

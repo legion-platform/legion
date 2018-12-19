@@ -327,21 +327,10 @@ EOL
                 }
                 stage("Build Bare models") {
                     steps {
-                        // Build test-bare-model-api-model-1
-                        sh """
-                        cd tests/test-bare-model-api
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.0" -t legion/test-bare-model-api-model-1:${Globals.buildVersion} ${Globals.dockerLabels} .
-                        """
-                        // Build test-bare-model-api-model-2
-                        sh """
-                        cd tests/test-bare-model-api
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="demo-abc-model" --build-arg model_version="1.1" -t legion/test-bare-model-api-model-2:${Globals.buildVersion} ${Globals.dockerLabels} .
-                        """
-                        // Build test-bare-model-api-model-3
-                        sh """
-                        cd tests/test-bare-model-api
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" --build-arg model_id="edi-test-model" --build-arg model_version="1.2" -t legion/test-bare-model-api-model-3:${Globals.buildVersion} ${Globals.dockerLabels} .
-                        """
+                        BuildTestBareModel("demo-abc-model", "1.0", "1")
+                        BuildTestBareModel("demo-abc-model", "1.1", "2")
+                        BuildTestBareModel("edi-test-model", "1.2", "3")
+                        BuildTestBareModel("command-test-model", "1.0", "5")
                     }
                 }
                 stage("Build Edi Docker image") {
@@ -453,6 +442,7 @@ EOL
                         UploadDockerImage('test-bare-model-api-model-1')
                         UploadDockerImage('test-bare-model-api-model-2')
                         UploadDockerImage('test-bare-model-api-model-3')
+                        UploadDockerImage('test-bare-model-api-model-5')
                     }
                 }
                 stage('Upload Edi Docker image') {
@@ -601,4 +591,15 @@ def UploadDockerImage(imageName) {
     } else {
         UploadDockerImageLocal(imageName)
     }
+}
+
+def BuildTestBareModel(modelId, modelVersion, versionNumber) {
+    sh """
+    cd tests/test-bare-model-api
+    docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" \
+                                           --build-arg model_id="${modelId}" \
+                                           --build-arg model_version="${modelVersion}" \
+                                           -t legion/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion} \
+                                           ${Globals.dockerLabels} .
+    """
 }
