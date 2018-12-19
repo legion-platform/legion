@@ -412,6 +412,7 @@ def build_df(columns_map, input_values, return_dict=False):
         return values
 
     data_frame = pd.DataFrame([values])
+    data_frame = data_frame[list(columns_map.keys())]
     data_frame = data_frame.astype(types)
     return data_frame
 
