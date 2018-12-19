@@ -38,6 +38,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestK8S(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     @classmethod
     def setUpClass(cls):
         cls.data_directory = os.path.join(os.path.dirname(__file__), 'data')

@@ -38,6 +38,8 @@ import legion.serving.pyserve as pyserve
 
 
 class TestModelApiEndpoints(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     MODEL_ID = 'temp'
     MODEL_VERSION = '1.8'
 

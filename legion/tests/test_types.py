@@ -24,6 +24,8 @@ import pandas as pd
 
 
 class TestTypes(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     def assertValidImage(self, object, width, height):
         if not isinstance(object, PYTHON_Image.Image):
             raise AssertionError('Object of type %s is not an image' % (type(object),))

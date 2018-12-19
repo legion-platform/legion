@@ -9,7 +9,24 @@ There are 2 test categories in legion:
 ## Running unit tests
 There are some dependencies for running unit tests:
 * You should install Python 3.6, docker (allow non-root user use docker)
-* You should make develop version of legion package `python setup.py develop`
+* You should build base python image:
+```bash
+cd base-python-image
+docker build --network host -t legion/base-python-image:latest .
+```
+* You should create virtualenv and donwload main and develop dependencies
+* You should make develop version of legion package:
+```bash
+cd legion
+python setup.py develop
+python setup.py collect_data
+```
+
+Run tests:
+```bash
+cd legion/tests
+nosetests --processes=10 --process-timeout=600
+```
 
 ### Writing unit test with mocking Kubernetes API
 In order to allow developers write unit tests that contains mocking of Kubernetes client API functions
@@ -38,13 +55,38 @@ To write **new tests** with Kubernetes API mocks you have to:
 
 
 ## Running system/integration tests
-You should meet all requirements for unit tests
-You should add extra dependencies:
-    * kops, kubectl binaries
-    * aws credentials
-Firstly, you should export kops context `kops export kubecfg --name legion-test.epm.kharlamov.biz --state s3://legion-cluster`
+We set up robot tests for `legion-test` cluster in the example below.
+Do not forget change your cluster url and legion version.
 
-Then, you have to start tests.
+* You should meet all requirements for unit tests
+* You should add extra dependencies:
+    1. kops, kubectl binaries
+    2. aws credentials
+* You should export kops context `kops export kubecfg --name legion-test.epm.kharlamov.biz --state s3://legion-cluster`
+* Create the `.secret.yaml` file
+```yaml
+dex:
+  enabled: true
+  config:
+    staticPasswords:
+      - email: tests-user@legion.com
+        password: ~
+```
+* Export the following environment variables:
+```bash
+export PROFILE="legion-test.epm.kharlamov.biz"
+export LEGION_VERSION="0.10.0-20181213084714.1329.6ba06cc"
+export PATH_TO_COOKIES="credentials.secret"
+export CLUSTER_NAME="legion-test.epm.kharlamov.biz"
+export CREDENTIAL_SECRETS=".secrets.yaml"
+export ROBOT_OPTIONS="-v PATH_TO_PROFILES_DIR:../../deploy/profiles"
+```
+
+* Finally, start the robot tests, for example:
+```bash
+cd tests/robot
+robot tests/3_edi_one_model/3.0_check_edi_one_model.robot
+```
 
 > To start app in telepresence you have to start app in special prepared environment. 
 > `telepresence --also-proxy nexus-local.cc.epm.kharlamov.biz --method vpn-tcp --run bash`

@@ -19,6 +19,8 @@ import unittest2
 
 
 class TestUtilsOther(unittest2.TestCase):
+    _multiprocess_can_split_ = True
+
     def test_lambda_analyzing(self):
         lamb = lambda x: x**2
         description = utils.get_function_description(lamb)
