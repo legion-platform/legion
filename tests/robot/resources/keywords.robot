@@ -177,11 +177,11 @@ Build enclave EDGE URL
 Get token from EDI
     [Documentation]  get token from EDI for the EDGE session
     [Arguments]     ${enclave}   ${model_id}   ${model_version}
-    &{data} =    Create Dictionary    model_id=${model_id}    version=${model_version}
-    &{resp} =       Execute post request    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
+    &{data} =             Create Dictionary    model_id=${model_id}    model_version=${model_version}
+    &{resp} =             Execute post request    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
     Log                   ${resp["text"]}
     Should not be empty   ${resp}
-    &{token} =      Evaluate    json.loads('''${resp["text"]}''')    json
+    &{token} =  Evaluate  json.loads('''${resp["text"]}''')    json
     Log                   ${token}
     Set Suite Variable    ${TOKEN}    ${token['token']}
 
