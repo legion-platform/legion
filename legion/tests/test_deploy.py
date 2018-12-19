@@ -241,6 +241,18 @@ class TestDeploy(unittest2.TestCase):
 
             self.assertEqual(context.client.invoke(x=1)['code'], 0, 'invalid invocation result')
 
+    def test_columns_ordering(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.copy_model('columns_model')
+            model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'columns-model', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
+            image_id, _ = context.build_model_container(model_file)
+
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertEqual(context.client.invoke(c=3, b=2, a=1)['result'],
+                             ['c', 'b', 'a'], 'invalid invocation result')
+
 
 if __name__ == '__main__':
     unittest2.main()
