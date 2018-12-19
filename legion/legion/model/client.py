@@ -197,7 +197,7 @@ class ModelClient:
         Build POST and FILE fields for request due their type
 
         :param parameters: dict -- invoke parameters
-        :return: tuple[dict, dict] -- POST and FILE dictionaries in tuple
+        :return: tuple[list, dict] -- POST list and FILE dictionary in tuple
         """
         post_fields_dict = {k: v for (k, v) in parameters.items() if not isinstance(v, bytes)}
         post_files = {k: v for (k, v) in parameters.items() if isinstance(v, bytes)}
