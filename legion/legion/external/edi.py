@@ -65,7 +65,8 @@ class EdiClient:
         :param headers: dict[str, str] or None
         :return: :py:class:`requests.Response` -- response
         """
-        return requests.request(action.lower(), url, data=data, headers=headers)
+        request_data = {'params' if action == 'GET' else 'data': data}
+        return requests.request(action.lower(), url, headers=headers, **request_data)
 
     def _query(self, url_template, payload=None, action='GET'):
         """

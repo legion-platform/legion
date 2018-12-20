@@ -155,19 +155,30 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertIsInstance(result, dict, 'Result not a dict')
             self.assertDictEqual(result, {'x': a + b})
 
-    def test_model_invoke_summation_with_df_and_get_post_method(self):
+    def test_model_invoke_summation_with_df_post_request(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
-                                                      model_version=self.MODEL_VERSION) + '?a={}'.format(a)
-            response = model.client.post(url, data={'b': b})
+            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                                             model_version=self.MODEL_VERSION),
+                                         data={'a': a, 'b': b})
             result = self._parse_json_response(response)
 
             self.assertIsInstance(result, dict, 'Result not a dict')
             self.assertDictEqual(result, {'x': a + b})
+
+    def test_ignore_url_parameters_in_post_request(self):
+        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            a = randint(1, 1000)
+            b = randint(1, 1000)
+
+            with self.assertRaisesRegex(Exception, 'Missed value for column a'):
+                url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                                                          model_version=self.MODEL_VERSION) + '?a={}'.format(a)
+                model.client.post(url, data={'b': b})
 
     def test_model_not_found_page(self):
         with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,

@@ -219,7 +219,6 @@ Validate model API meta log entry
     Dictionary Should Contain Key   ${log_entry}  request_http_headers
     Dictionary Should Contain Key   ${log_entry}  request_host
     Dictionary Should Contain Key   ${log_entry}  request_uri
-    Dictionary Should Contain Key   ${log_entry}  request_get_args
     Dictionary Should Contain Key   ${log_entry}  response_duration
     Dictionary Should Contain Key   ${log_entry}  response_http_headers
     Dictionary Should Contain Key   ${log_entry}  response_body_chunk_count

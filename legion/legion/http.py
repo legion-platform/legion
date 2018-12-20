@@ -122,18 +122,15 @@ def parse_request(input_request):
     :type input_request: :py:class:`Flask.request`
     :return: dict with requested fields
     """
-    result = {}
-
-    # Fill in URL parameters
-    result.update(parse_multi_dict(input_request.args))
-
-    # Fill in POST parameters
-    result.update(parse_multi_dict(input_request.form))
-
-    # Fill in Files:
-    result.update(parse_multi_dict(input_request.files, lambda file: file.read()))
-
-    return result
+    if input_request.method == 'GET':
+        return parse_multi_dict(input_request.args)
+    elif input_request.method == 'POST':
+        return {
+            **parse_multi_dict(input_request.form),
+            **parse_multi_dict(input_request.files, lambda file: file.read())
+        }
+    else:
+        raise ValueError('Unexpected http method: {}'.format(input_request.method))
 
 
 def prepare_response(response):
