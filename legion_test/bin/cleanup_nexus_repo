@@ -33,8 +33,8 @@ Options = NamedTuple('Options', [
     ('build_name', str)
 ])
 
-NEXUS_SEARCH_URL = '{host}/service/siesta/rest/beta/search'
-NEXUS_DELETE_URL = '{host}/service/siesta/rest/beta/components/{resource}'
+NEXUS_SEARCH_URL = '{host}/service/rest/v1/components'
+NEXUS_DELETE_URL = '{host}/service/rest/v1/components/{resource}'
 
 
 def get_builds(nexus_url, repository, user, password, build_name):
@@ -59,17 +59,21 @@ def get_builds(nexus_url, repository, user, password, build_name):
 
     builds = []
     try:
-        log.info('Fetching Nexus artifacts')
-        r = requests.get(NEXUS_SEARCH_URL.format(host=nexus_url), params=search_filters, auth=(user, password)).json()
-        builds.extend(r.get("items"))
+        url = NEXUS_SEARCH_URL.format(host=nexus_url)
+        log.info('Fetching Nexus artifacts from URL {}'.format(url))
+        response = requests.get(url, params=search_filters, auth=(user, password))
+        response_data = response.json()
+        builds.extend(response_data.get("items"))
 
-        while r.get('continuationToken') is not None:
-            search_filters["continuationToken"] = r.get('continuationToken')
-            r = requests.get(
-                NEXUS_SEARCH_URL.format(host=nexus_url),
-                params=search_filters,
-                auth=(user, password)).json()
-            builds.extend(r.get("items"))
+        continuation_token = response_data.get('continuationToken')
+
+        while continuation_token is not None:
+            log.info('Fetching Nexus artifacts from URL {} (from {})'.format(url, continuation_token))
+            search_filters["continuationToken"] = continuation_token
+            response = requests.get(url, params=search_filters, auth=(user, password))
+            response_data = response.json()
+            builds.extend(response_data.get("items"))
+            continuation_token = response_data.get('continuationToken')
 
     except requests.exceptions.RequestException as e:
         log.error('Error fetching Nexus artifacts: {}'.format(e))
