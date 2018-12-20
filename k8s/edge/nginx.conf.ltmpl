@@ -92,7 +92,7 @@ http {
             local jwt = require("nginx-jwt")
             jwt.auth({
                 model_id=function (val) return jwt.table_contains(val, model_id) end,
-                version=function (val) return jwt.table_contains(val, model_version) end
+                model_version=function (val) return jwt.table_contains(val, model_version) end
             })
             local blacklisted_tokens = require "blacklisted_tokens"
             blacklisted_tokens.check_token()
