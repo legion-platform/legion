@@ -250,7 +250,7 @@ class TestDeploy(unittest2.TestCase):
             image_id, _ = context.build_model_container(model_file)
 
         with ModelLocalContainerExecutionContext(image_id) as context:
-            self.assertEqual(context.client.invoke(c=3, b=2, a=1)['result'],
+            self.assertEqual(context.client.invoke(a=3, b=2, c=1)['result'],
                              ['c', 'b', 'a'], 'invalid invocation result')
 
 
