@@ -13,25 +13,23 @@ def installTools(){
 }
 
 def buildDescription(){
-   currentBuild.description = "${params.Profile} ${params.GitBranch}"
+   currentBuild.description = "${env.param_profile} ${env.param_git_branch}"
 }
 
 def createCluster() {
     withCredentials([
-    file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
                     stage('Create cluster') {
                         sh """
                         cd /opt/legion/deploy/ansible && ansible-playbook create-cluster.yml \
                         --vault-password-file=${vault} \
-                        --extra-vars "profile=${params.Profile} \
-                        legion_version=${params.LegionVersion} \
-                        legion_infra_version=${params.LegionInfraVersion} \
-                        skip_kops=${params.Skip_kops} \
-                        helm_repo=${params.HelmRepo} \
-                        legion_infra_registry=${params.LegionInfraRegistry}"
+                        --extra-vars "profile=${env.param_profile} \
+                        legion_version=${env.param_legion_version} \
+                        skip_kops=${env.param_skip_kops} \
+                        helm_repo=${env.param_helm_repo}"
                         """
                     }
                 }
@@ -42,16 +40,16 @@ def createCluster() {
 
 def terminateCluster() {
     withCredentials([
-    file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create cluster') {
                         sh """
                         cd /opt/legion/deploy/ansible && ansible-playbook terminate-cluster.yml \
                         --vault-password-file=${vault} \
-                        --extra-vars "profile=${params.Profile} \
-                        keep_jenkins_volume=${params.keepJenkinsVolume}"
+                        --extra-vars "profile=${env.param_profile} \
+                        keep_jenkins_volume=${env.param_keep_jenkins_volume}"
                         """
                     }
                 }
@@ -62,19 +60,19 @@ def terminateCluster() {
 
 def deployLegion() {
     withCredentials([
-    file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
                         cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
                         --vault-password-file=${vault} \
-                        --extra-vars "profile=${params.Profile} \
-                        legion_version=${params.LegionVersion} \
-                        pypi_repo=${params.PypiRepo} \
-                        helm_repo=${params.HelmRepo} \
-                        docker_repo=${params.DockerRepo}"
+                        --extra-vars "profile=${env.param_profile} \
+                        legion_version=${env.param_legion_version}  \
+                        pypi_repo=${env.param_pypi_repo} \
+                        helm_repo=${env.param_helm_repo} \
+                        docker_repo=${env.param_docker_repo}"
                         """
                     }
                 }
@@ -84,7 +82,6 @@ def deployLegion() {
 }
 
 def createjenkinsJobs(String commitID) {
-    env.commitID = commitID
     def creds
     sh '''
     cd legion_test
@@ -93,56 +90,56 @@ def createjenkinsJobs(String commitID) {
     ../.venv/bin/python setup.py develop
     '''
     withAWS(credentials: 'kops') {
-        withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            def output = sh(script:'''
+        withCredentials([file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+            def output = sh(script:"""
             cd .venv/bin
-            export PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
-            export PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
-            export CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
-            export CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
-            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
-            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+            export PATH_TO_PROFILES_DIR=\"../../deploy/profiles\"
+            export PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
+            export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
+            export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
+            echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
+            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
 
-            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
-            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
+            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
 
-            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
 
-            export PATH=./:$PATH DISPLAY=:99
-            export PROFILE=${Profile}
+            export PATH=./:\$PATH DISPLAY=:99
+            export PROFILE=${env.param_profile}
 
             echo ----
             ./jenkins_dex_client
-            ''', returnStdout: true)
+            """, returnStdout: true)
             creds = output.split('----')[1].split('\n')
             env.jenkins_user = creds[1]
             env.jenkins_pass = creds[2]
             env.jenkins_token = creds[3]
         }
     }
-    sh '''
+    sh """
     cd .venv/bin
     ./create_example_jobs \
-    "https://jenkins.${Profile}" \
+    \"https://jenkins.${env.param_profile}\" \
     ../../examples \
     ../../ \
-    "https://github.com/legion-platform/legion.git" \
+    \"https://github.com/legion-platform/legion.git\" \
     ${commitID} \
     --connection-timeout 600 \
-    --git-root-key "legion-root-key" \
+    --git-root-key \"legion-root-key\" \
     --model-host "" \
-    --dynamic-model-prefix "DYNAMIC MODEL" \
+    --dynamic-model-prefix \"DYNAMIC MODEL\" \
     --jenkins-user "${jenkins_user}" \
     --jenkins-password "${jenkins_pass}" \
     --jenkins-cookies "${jenkins_token}" \
-    '''
+    """
 }
 
 def runRobotTests(tags="") {
     def nose_report = 0
     def robot_report = 0
     withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+    	withCredentials([file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
             def tags_list = tags.toString().trim().split(',')
             def robot_tags = []
             def nose_tags = []
@@ -159,7 +156,7 @@ def runRobotTests(tags="") {
                 }
             env.robot_tags= robot_tags.join(" ")
             env.nose_tags = nose_tags.join(" ")
-            sh '''
+            sh """
             cd legion
             ../.venv/bin/python setup.py develop
             cd ..
@@ -174,40 +171,40 @@ def runRobotTests(tags="") {
             rm -f *.xml
             ../../.venv/bin/pip install yq
 
-            PATH_TO_PROFILES_DIR="${PROFILES_PATH:-../../deploy/profiles}/"
-            PATH_TO_PROFILE_FILE="${PATH_TO_PROFILES_DIR}$Profile.yml"
-            PATH_TO_COOKIES="${PATH_TO_PROFILES_DIR}cookies.dat"
-            CLUSTER_NAME=$(yq -r .cluster_name $PATH_TO_PROFILE_FILE)
-            CLUSTER_STATE_STORE=$(yq -r .state_store $PATH_TO_PROFILE_FILE)
-            echo "Loading kubectl config from $CLUSTER_STATE_STORE for cluster $CLUSTER_NAME"
-            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
+            PATH_TO_PROFILES_DIR=\"../../deploy/profiles\"
+            PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
+            PATH_TO_COOKIES=\"\$PATH_TO_PROFILES_DIR/cookies.dat\"
 
-            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
-            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
+            export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
+            export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
+            echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
+            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
 
-            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
+            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
 
-            PATH=../../.venv/bin:$PATH DISPLAY=:99 \
-            PROFILE=$Profile LEGION_VERSION=$LegionVersion \
-            jenkins_dex_client --path-to-profiles $PATH_TO_PROFILES_DIR > $PATH_TO_COOKIES
+            kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
 
-            PATH=../../.venv/bin:$PATH DISPLAY=:99 \
-            PROFILE=$Profile LEGION_VERSION=$LegionVersion PATH_TO_COOKIES=$PATH_TO_COOKIES \
-            ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 4 --variable PATH_TO_PROFILES_DIR:$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter $robot_tags --outputdir . tests/**/*.robot || true
+            PATH=../../.venv/bin:\$PATH DISPLAY=:99 \
+            PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} \
+            jenkins_dex_client --path-to-profiles \$PATH_TO_PROFILES_DIR > \$PATH_TO_COOKIES
 
-            echo "Starting python tests"
+            echo ${env.robot_tags}
+
+            # Run Robot tests
+            PATH=../../.venv/bin:\$PATH DISPLAY=:99 \
+            PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} PATH_TO_COOKIES=\$PATH_TO_COOKIES \
+            ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 4 --variable PATH_TO_PROFILES_DIR:\$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter ${env.robot_tags} --outputdir . tests/**/*.robot || true
+
+            echo \"Starting python tests\"
             cd ../python
+            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
+            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
 
-            kops export kubecfg --name $CLUSTER_NAME --state $CLUSTER_STATE_STORE
-
-            export CREDENTIAL_SECRETS=./${CLUSTER_NAME}_${Profile}.yaml
-
-            aws s3 cp $CLUSTER_STATE_STORE/vault/$Profile ./${CLUSTER_NAME}_${Profile}
-            ansible-vault decrypt --vault-password-file=${vault} --output ${CREDENTIAL_SECRETS} ./${CLUSTER_NAME}_${Profile}
-
-            PROFILE=$Profile PATH_TO_PROFILES_DIR=$PATH_TO_PROFILES_DIR LEGION_VERSION=$LegionVersion \
-            ../../.venv/bin/nosetests $nose_tags --with-xunit --logging-level DEBUG -v || true
-            '''
+            PROFILE=${env.param_profile} PATH_TO_PROFILES_DIR=\$PATH_TO_PROFILES_DIR LEGION_VERSION=${env.param_legion_version} \
+            ../../.venv/bin/nosetests ${env.nose_tags} --with-xunit --logging-level DEBUG -v || true
+            """
             robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
             nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
             if (robot_report.toInteger() > 0) {
@@ -245,20 +242,20 @@ def runRobotTests(tags="") {
 
 def deployLegionEnclave() {
     withCredentials([
-        file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+        file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
                         cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
                         --vault-password-file=${vault} \
-                        --extra-vars "profile=${params.Profile} \
-                        legion_version=${params.LegionVersion} \
-                        pypi_repo=${params.PypiRepo} \
-                        docker_repo=${params.DockerRepo} \
-                        helm_repo=${params.HelmRepo} \
-                        enclave_name=${params.EnclaveName}"
+                        --extra-vars "profile=${env.param_profile} \
+                        legion_version=${env.param_legion_version} \
+                        pypi_repo=${env.param_pypi_repo} \
+                        docker_repo=${env.param_docker_repo} \
+                        helm_repo=${env.param_helm_repo} \
+                        enclave_name=${env.param_enclave_name}"
                         """
                     }
                 }
@@ -270,16 +267,16 @@ def deployLegionEnclave() {
 def terminateLegionEnclave() {
     dir('deploy/ansible'){
         withCredentials([
-            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
+            file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    docker.image("${params.DockerRepo}/k8s-ansible:${params.LegionVersion}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                         stage('Terminate Legion Enclave') {
                             sh """
                             cd /opt/legion/deploy/ansible && ansible-playbook terminate-legion-enclave.yml \
                             --vault-password-file=${vault} \
-                            --extra-vars "profile=${params.Profile} \
-                            enclave_name=${params.EnclaveName}"
+                            --extra-vars "profile=${env.param_profile} \
+                            enclave_name=${env.param_enclave_name}"
                             """
                         }
                     }
@@ -299,30 +296,21 @@ def notifyBuild(String buildStatus = 'STARTED') {
     def currentBuildResultSuccessful = buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS'
     def previousBuildResultSuccessful = previousBuildResult == 'SUCCESSFUL' || previousBuildResult == 'SUCCESS'
 
-    def masterOrDevelopBuild = params.GitBranch == 'origin/develop' || params.GitBranch == 'origin/master'
+    def masterOrDevelopBuild = env.param_git_branch == 'origin/develop' || env.param_git_branch == 'origin/master'
 
     print("NOW SUCCESSFUL: ${currentBuildResultSuccessful}, PREV SUCCESSFUL: ${previousBuildResultSuccessful}, MASTER OR DEV: ${masterOrDevelopBuild}")
 
     // Default values
     def colorCode = '#FF0000'
     def arguments = ""
-    if (params.Skip_kops != null) {
-        arguments = arguments + "\nskip kops *${params.Skip_kops}*"
-    }
-    if (params.LegionVersion) {
-        arguments = arguments + "\nversion *${params.LegionVersion}*"
-    }
-    if (params.DeployLegion != null && params.CreateJenkinsTests != null && params.UseRegressionTests != null) {
-        arguments = arguments + "\nDeploy *${params.DeployLegion}*, Create Jenkins tests *${params.CreateJenkinsTests}*, Use regression tests *${params.UseRegressionTests}*"
-    }
-    if (params.EnclaveName) {
-        arguments = arguments + "\nEnclave *${params.EnclaveName}*"
+    if (env.param_legion_version) {
+        arguments = arguments + "\nversion *${env.param_legion_version}*"
     }
     def mailSubject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
     def summary = """\
     @here Job *${env.JOB_NAME}* #${env.BUILD_NUMBER} - *${buildStatus}* (previous: ${previousBuildResult}) \n
     Branch: *${GitBranch}* \n
-    Profile: *<https://${env.Profile}|${env.Profile}>* \n
+    Profile: *<https://${env.param_profile}|${env.param_profile}>* \n
     Arguments: ${arguments} \n
     Manage: <${env.BUILD_URL}|Open>, <${env.BUILD_URL}/consoleFull|Full logs>, <${env.BUILD_URL}/parameters/|Parameters>
     """.stripIndent()
@@ -363,25 +351,35 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
 }
 
+def buildTestBareModel(modelId, modelVersion, versionNumber) {
+    sh """
+    cd tests/test-bare-model-api
+    docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" \
+                                           --build-arg model_id="${modelId}" \
+                                           --build-arg model_version="${modelVersion}" \
+                                           -t legion/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion} \
+                                           ${Globals.dockerLabels} .
+    """
+}
 
 def uploadDockerImage(String imageName, String buildVersion) {
-    if (params.StableRelease) {
+    if (env.param_stable_release) {
         sh """
         # Push stable image to local registry
-        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:${buildVersion}
-        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:latest
-        docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
-        docker push ${params.DockerRegistry}/${imageName}:latest
+        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_registry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_registry}/${imageName}:latest
+        docker push ${env.param_docker_registry}/${imageName}:${buildVersion}
+        docker push ${env.param_docker_registry}/${imageName}:latest
         # Push stable image to DockerHub
-        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:${buildVersion}
-        docker tag legion/${imageName}:${buildVersion} ${params.DockerHubRegistry}/${imageName}:latest
-        docker push ${params.DockerHubRegistry}/${imageName}:${buildVersion}
-        docker push ${params.DockerHubRegistry}/${imageName}:latest
+        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_hub_registry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_hub_registry}/${imageName}:latest
+        docker push ${env.param_docker_hub_registry}/${imageName}:${buildVersion}
+        docker push ${env.param_docker_hub_registry}/${imageName}:latest
         """
     } else {
         sh """
-        docker tag legion/${imageName}:${buildVersion} ${params.DockerRegistry}/${imageName}:${buildVersion}
-        docker push ${params.DockerRegistry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_registry}/${imageName}:${buildVersion}
+        docker push ${env.param_docker_registry}/${imageName}:${buildVersion}
         """
     }
 }
