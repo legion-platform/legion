@@ -626,25 +626,19 @@ EOL
                 script {
                     if (env.param_stable_release) {
                         stage('Update Legion version string'){
+                            //Update version.py file in legion package with new version string
                             if (env.param_update_version_string){
                                 print('Update Legion package version string')
-                                def nextVersion
-                                //Check if we explicitly specified the next verison to start working on after release
                                 if (env.param_next_version){
-                                    nextVersion = env.param_next_version
+                                    sh """
+                                    git reset --hard
+                                    git checkout develop
+                                    sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
+                                    git commit -a -m "Bump Legion version to ${nextVersion}" && git push origin develop
+                                    """
                                 } else {
-                                    //If it's not specified just update second octet of the current one, e.g 0.1.0->0.2.0
-                                    def ver_parsed = env.param_release_version.split("\\.")
-                                    ver_parsed[1] = ver_parsed[1].toInteger() + 1
-                                    nextVersion = ver_parsed.join(".")
+                                    throw new Exception("next_version must be specified with update_version_string parameter")
                                 }
-                                //Update version.py file in legion package with new version string
-                                sh """
-                                git reset --hard
-                                git checkout develop
-                                sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
-                                git commit -a -m "Bump Legion version to ${nextVersion}" && git push origin develop
-                                """
                             }
                             else {
                                 print("Skipping version string update")
