@@ -138,7 +138,9 @@ curl -X GET \
 
 * **Data Params**
 
-  `key=[str]` - argument for model invocation. Can be passed in URL params or in data params. List of required params can be gathered from model info (for strict models) or from model specification (for non strict models)
+  `key=[str]` - argument for model invocation. Can be passed in URL params in case of using `GET` method or in data
+  params in case of using `POST` method. List of required params can be gathered from model info (for strict models) or
+  from model specification (for non strict models)
 
 * **Success Response:**
   

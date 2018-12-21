@@ -694,7 +694,9 @@ def build_requests_mock_function(test_client):
     :return: Callable[[str, str, dict[str, str], dict[str, str]], requests.Response]
     """
     def func(action, url, data=None, headers=None):
-        test_response = test_client.open(url, method=action, data=data, headers=headers)
+        request_data = {'query_string' if action == 'GET' else 'data': data}
+        test_response = test_client.open(url, method=action, headers=headers, **request_data)
+
         return build_requests_reponse_from_flask_client_response(test_response, url)
     return func
 

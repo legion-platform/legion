@@ -115,16 +115,16 @@ end
 
 function _M.catch_model_api_call(model_id, model_version)
     local request_http_headers = ngx.req.get_headers()
-    local requestID = request_http_headers["Request-ID"]
+    local request_id = request_http_headers["Request-ID"]
+    local http_method = ngx.req.get_method()
     request_http_headers["authorization"] = nil
 
     local data = {
-        request_id = requestID,
-        request_http_method = ngx.req.get_method(),
+        request_id = request_id,
+        request_http_method = http_method,
         request_http_headers = request_http_headers,
         request_host = ngx.var.HOST,
         request_uri = ngx.var.uri,
-        request_get_args = ngx.req.get_uri_args(),
         response_duration = ngx.var.upstream_response_time,
         response_http_headers = ngx.resp.get_headers(),
         response_body_chunk_count = ngx.var.model_api_chunk_count,
@@ -134,7 +134,10 @@ function _M.catch_model_api_call(model_id, model_version)
     }
 
     local content_type = ngx.var.content_type or ""
-    if string.sub(content_type, 1, 33) == "application/x-www-form-urlencoded" then
+    if http_method == 'GET' then
+        data['request_get_args'] = ngx.req.get_uri_args()
+    elseif string.sub(content_type, 1, 33) == "application/x-www-form-urlencoded"
+            and http_method == 'POST' then
         data["request_post_args"] = ngx.req.get_post_args()
     end
 
