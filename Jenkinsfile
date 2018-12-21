@@ -78,7 +78,7 @@ pipeline {
 
                     /// Define build version
                     if (env.param_stable_release) {
-                        if (env.param_release_version){
+                        if (env.param_release_version ){
                             Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
@@ -103,34 +103,40 @@ pipeline {
                     """
                     archiveArtifacts envFile
                     sh "rm -f $envFile"
+                }
+            }
+        }
 
-                    /// Set Git Tag in case of stable release
+        // Set Git Tag in case of stable release
+        stage('Set GIT release Tag'){
+            steps {
+                script {
                     if (env.param_stable_release) {
-                        stage('Set GIT release Tag'){
-                            if (env.param_push_git_tag){
-                                print('Set Release tag')
-                                sh """
-                                if [ `git tag |grep -x ${env.param_release_version}` ]; then
-                                    if [ ${env.param_force_tag_push} = "true" ]; then
-                                        echo 'Removing existing git tag'
-                                        git tag -d ${env.param_release_version}
-                                        git push origin :refs/tags/${env.param_release_version}
-                                    else
-                                        echo 'Specified tag already exists!'
-                                        exit 1
-                                    fi
+                        if (env.param_push_git_tag == "true"){
+                            print('Set Release tag')
+                            sh """
+                            echo ${env.param_push_git_tag}
+                            if [ `git tag |grep -x ${env.param_release_version}` ]; then
+                                if [ ${env.param_force_tag_push} = "true" ]; then
+                                    echo 'Removing existing git tag'
+                                    git tag -d ${env.param_release_version}
+                                    git push origin :refs/tags/${env.param_release_version}
+                                else
+                                    echo 'Specified tag already exists!'
+                                    exit 1
                                 fi
-                                git tag ${env.param_release_version}
-                                git push origin ${env.param_release_version}
-                                """
-                            } else {
-                                print("Skipping release git tag push")
-                            }
+                            fi
+                            git tag ${env.param_release_version}
+                            git push origin ${env.param_release_version}
+                            """
+                        } else {
+                            print("Skipping release git tag push")
                         }
                     }
                 }
             }
         }
+
         stage("Docker login") {
             steps {
                 withCredentials([[
@@ -263,7 +269,7 @@ EOL
 
                             if (env.param_stable_release) {
                                 stage('Upload Legion package to pypi.org'){
-                                    if (env.param_upload_legion_package){
+                                    if (env.param_upload_legion_package == "true"){
                                         withCredentials([[
                                         $class: 'UsernamePasswordMultiBinding',
                                         credentialsId: 'pypi-repository',
@@ -623,7 +629,7 @@ EOL
                     if (env.param_stable_release) {
                         stage('Update Legion version string'){
                             //Update version.py file in legion package with new version string
-                            if (env.param_update_version_string){
+                            if (env.param_update_version_string == "true" ){
                                 print('Update Legion package version string')
                                 if (env.param_next_version){
                                     sh """
@@ -642,7 +648,7 @@ EOL
                         }
 
                         stage('Update Master branch'){
-                            if (env.param_update_master){
+                            if (env.param_update_master == "true"){
                                 sh """
                                 git reset --hard
                                 git checkout develop
