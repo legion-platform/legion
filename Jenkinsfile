@@ -223,7 +223,7 @@ pipeline {
                                                                   parserName: 'PYLint',
                                                                   pattern   : 'legion-pylint.log'
                                                           ]],
-                            unstableTotalAll           : '100',
+                            unstableTotalAll           : '99999',
                             usePreviousBuildAsReference: true
                         ])
                     }
