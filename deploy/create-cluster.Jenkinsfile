@@ -30,8 +30,7 @@ pipeline {
         stage('Create Kubernetes Cluster') {
             steps {
                 script {
-                    mounts = legion.ansibleContainerMount()
-                    legion.createCluster(mounts)
+                    legion.createCluster()
                 }
             }
         }
