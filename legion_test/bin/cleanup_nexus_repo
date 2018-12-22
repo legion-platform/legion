@@ -20,6 +20,7 @@ import datetime
 import argparse
 import re
 import logging
+import sys
 from typing import NamedTuple
 
 
@@ -62,6 +63,8 @@ def get_builds(nexus_url, repository, user, password, build_name):
         url = NEXUS_SEARCH_URL.format(host=nexus_url)
         log.info('Fetching Nexus artifacts from URL {}'.format(url))
         response = requests.get(url, params=search_filters, auth=(user, password))
+        if response.status_code != 200:
+                raise Exception("Non 200 response from Nexus!")
         response_data = response.json()
         builds.extend(response_data.get("items"))
 
@@ -71,12 +74,15 @@ def get_builds(nexus_url, repository, user, password, build_name):
             log.info('Fetching Nexus artifacts from URL {} (from {})'.format(url, continuation_token))
             search_filters["continuationToken"] = continuation_token
             response = requests.get(url, params=search_filters, auth=(user, password))
+            if response.status_code != 200:
+                raise Exception("Non 200 response from Nexus!")
             response_data = response.json()
             builds.extend(response_data.get("items"))
             continuation_token = response_data.get('continuationToken')
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         log.error('Error fetching Nexus artifacts: {}'.format(e))
+        raise
 
     return builds
 
@@ -85,11 +91,11 @@ def filter_builds_by_date(builds, remaining_days):
     """
     Filter builds based on date in version string
 
-    :param builds: Linst of Nexus components
+    :param builds: List of Nexus components
     :type builds: list
     :param remaining_days: Number of days to leave the builds
     :type remaining_days: int
-    :return: list[dict, dict] List of Nexus components older than remainin_days
+    :return: list[dict, dict] List of Nexus components older than remaining_days
     """
     remaining_date = datetime.datetime.now() - datetime.timedelta(remaining_days)
     builds_to_del = []
@@ -127,16 +133,19 @@ def delete_builds(nexus_url, user, password, builds, dry_run):
     else:
         for build in builds:
             try:
-                requests.delete(NEXUS_DELETE_URL.format(
+                log.info("Deleting {}-{}-{}...".format(
+                        build.get("name"),
+                        build.get("version"),
+                        build.get("id")))
+                response = requests.delete(NEXUS_DELETE_URL.format(
                     host=nexus_url,
                     resource=build.get("id")),
                     auth=(user, password))
-                log.info("{}-{}-{}: Deleted".format(
-                    build.get("name"),
-                    build.get("version"),
-                    build.get("id")))
+                if response.status_code != 200:
+                    raise Exception("Non 200 response from Nexus!")
             except Exception as e:
-                log.error(e)
+                log.error("Error deleting artifact from Nexus: {}".format(e))
+                raise
 
 
 def work(options):
@@ -150,7 +159,7 @@ def work(options):
     """
 
     for repo in options.repositories:
-        log.info('Cleaninig up {} Nexus repository'.format(repo))
+        log.info('Cleaning up {} Nexus repository'.format(repo))
         try:
             builds_to_del = filter_builds_by_date(get_builds(
                 options.nexus_url,
@@ -168,10 +177,12 @@ def work(options):
                         options.dry_run)
                 except Exception as e:
                     log.error('Can\'t delete artifacts for {} repository: {}'.format(repo, e))
+                    raise
             else:
                 log.warning("No artifacts matching the filter found in {} repository".format(repo))
         except Exception as e:
-            log.error('Error fetching list of buils for {} repository: {} '.format(repo, e))
+            log.error('Error fetching list of builds for {} repository: {} '.format(repo, e))
+            raise
 
 
 if __name__ == '__main__':
@@ -204,4 +215,8 @@ if __name__ == '__main__':
         log_level = logging.ERROR
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    work(arguments)
+    try:
+        work(arguments)
+    except Exception as e:
+        log.error('Error removing Nexus artifacts: {}'.format(e))
+        sys.exit(1)
