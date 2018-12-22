@@ -16,12 +16,17 @@ def buildDescription(){
    currentBuild.description = "${env.param_profile} ${env.param_git_branch}"
 }
 
-def createCluster() {
+def ansibleContainerMount() {
+    ("${param_debug_run}" == "true" ) ? "${WORKSPACE}/deploy:/opt/legion/deploy" : "${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles"
+}
+
+def createCluster(mounts) {
+    print(mounts)
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${mounts} -v /etc/ssl:/etc/ssl -u root") {
                     stage('Create cluster') {
                         sh """
                         cd /opt/legion/deploy/ansible && ansible-playbook create-cluster.yml \
@@ -63,7 +68,7 @@ def deployLegion() {
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${param_debug_run} ? ${WORKSPACE}/deploy:/opt/legion/deploy : ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
                         cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \

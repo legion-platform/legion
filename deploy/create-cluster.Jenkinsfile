@@ -9,6 +9,8 @@ pipeline {
         param_legion_version = "${params.LegionVersion}"
         param_docker_repo = "${params.DockerRepo}"
         param_helm_repo = "${params.HelmRepo}"
+        param_debug_run = "${params.DebugRun}"
+        
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
     }
@@ -28,7 +30,8 @@ pipeline {
         stage('Create Kubernetes Cluster') {
             steps {
                 script {
-                    legion.createCluster()
+                    mounts = legion.ansibleContainerMount()
+                    legion.createCluster(mounts)
                 }
             }
         }
