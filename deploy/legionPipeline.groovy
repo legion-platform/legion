@@ -16,11 +16,8 @@ def buildDescription(){
    currentBuild.description = "${env.param_profile} ${env.param_git_branch}"
 }
 
-def ansibleContainerMount() {
-    ("${param_debug_run}" == "true" ) ? "${WORKSPACE}/deploy:/opt/legion/deploy" : "${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles"
-}
-
 def createCluster() {
+    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
@@ -35,8 +32,8 @@ def createCluster() {
                         else
                             cd /opt/legion/deploy/ansible 
                         fi
-                        pwd
-                        #ansible-playbook create-cluster.yml \
+                        ansible-playbook create-cluster.yml \
+                        ${verbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version} \
@@ -51,6 +48,7 @@ def createCluster() {
 }
 
 def terminateCluster() {
+    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
@@ -58,7 +56,15 @@ def terminateCluster() {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create cluster') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook terminate-cluster.yml \
+                        set -e
+                        # Run ansible from workspace for debug or from baked code inside container
+                        if [ ${param_debug_run} = 'true' ]; then
+                            cd ${WORKSPACE}/deploy/ansible
+                        else
+                            cd /opt/legion/deploy/ansible 
+                        fi
+                        ansible-playbook terminate-cluster.yml \
+                        ${verbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         keep_jenkins_volume=${env.param_keep_jenkins_volume}"
@@ -71,6 +77,7 @@ def terminateCluster() {
 }
 
 def deployLegion() {
+    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
@@ -78,7 +85,15 @@ def deployLegion() {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${param_debug_run} ? ${WORKSPACE}/deploy:/opt/legion/deploy : ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
+                        set -e
+                        # Run ansible from workspace for debug or from baked code inside container
+                        if [ ${param_debug_run} = 'true' ]; then
+                            cd ${WORKSPACE}/deploy/ansible
+                        else
+                            cd /opt/legion/deploy/ansible 
+                        fi
+                        ansible-playbook deploy-legion.yml \
+                        ${verbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version}  \
@@ -253,6 +268,7 @@ def runRobotTests(tags="") {
 }
 
 def deployLegionEnclave() {
+    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
         file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
@@ -260,7 +276,15 @@ def deployLegionEnclave() {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
+                        set -e
+                        # Run ansible from workspace for debug or from baked code inside container
+                        if [ ${param_debug_run} = 'true' ]; then
+                            cd ${WORKSPACE}/deploy/ansible
+                        else
+                            cd /opt/legion/deploy/ansible 
+                        fi
+                        ansible-playbook deploy-legion.yml \
+                        ${verbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version} \
@@ -277,6 +301,7 @@ def deployLegionEnclave() {
 }
 
 def terminateLegionEnclave() {
+    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     dir('deploy/ansible'){
         withCredentials([
             file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
@@ -285,7 +310,15 @@ def terminateLegionEnclave() {
                     docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                         stage('Terminate Legion Enclave') {
                             sh """
-                            cd /opt/legion/deploy/ansible && ansible-playbook terminate-legion-enclave.yml \
+                            set -e
+                            # Run ansible from workspace for debug or from baked code inside container
+                            if [ ${param_debug_run} = 'true' ]; then
+                                cd ${WORKSPACE}/deploy/ansible
+                            else
+                                cd /opt/legion/deploy/ansible 
+                            fi
+                            ansible-playbook terminate-legion-enclave.yml \
+                            ${verbose} \
                             --vault-password-file=${vault} \
                             --extra-vars "profile=${env.param_profile} \
                             enclave_name=${env.param_enclave_name}"
