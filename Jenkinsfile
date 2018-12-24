@@ -63,14 +63,17 @@ pipeline {
                     legion = load "${env.sharedLibPath}"
                     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                     Globals.rootCommit = Globals.rootCommit.trim()
+                    println("Root commit: " + Globals.rootCommit)
+
                     def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
                     def date = new Date()
                     def buildDate = dateFormat.format(date)
 
-                    Globals.dockerCacheArg = (env.param_enable_docker_cache) ? '' : '--no-cache'
+                    Globals.dockerCacheArg = (env.param_enable_docker_cache.toBoolean()) ? '' : '--no-cache'
+                    println("Docker cache args: " + Globals.dockerCacheArg)
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
-                    println(Globals.dockerLabels)
+                    println("Docker labels: " + Globals.dockerLabels)
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
