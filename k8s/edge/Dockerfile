@@ -13,21 +13,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM openresty/openresty:1.13.6.2-alpine-fat
+FROM openresty/openresty:1.13.6.2-bionic
 
-ENV DUMB_INIT_VERSION 1.2.0
-
-# Dumb-init, python3, lua
-RUN set -ex \
-  && apk add --no-cache --virtual .install-deps openssl libffi-dev openssl-dev \
-       python3 python3-dev bash g++ zlib zlib-dev jpeg jpeg-dev \
-       ca-certificates gnupg openssl git curl \
-  && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64" \
-  && wget "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/sha256sums" \
-  && grep "dumb-init_${DUMB_INIT_VERSION}_amd64$" sha256sums | sha256sum -c \
-  && rm sha256sums \
-  && mv dumb-init_${DUMB_INIT_VERSION}_amd64 /usr/bin/dumb-init \
-  && chmod +x /usr/bin/dumb-init
+RUN apt update -y && \
+    apt install -y openssl libffi-dev libssl-dev \
+       python3 python3-dev python3-pip g++ \
+       ca-certificates gnupg openssl git curl dumb-init
 
 RUN    luarocks install lua-resty-statsd          3.0.3-1 \
     && luarocks install lua-cmsgpack              0.4.0 \
@@ -37,15 +28,14 @@ RUN    luarocks install lua-resty-statsd          3.0.3-1 \
     && luarocks install lua-resty-jit-uuid        0.0.7-1 \
     && luarocks install lua-resty-reqargs         1.4-1
 
-# Section (till nginx-jwt installation) below is a temporal approach to decrease build time and the source of Pipfile's - legion/Pipfile* that have been copied here
-# This workaround should be removed as soon as #226 is done
-RUN ln -sf /usr/bin/python3.6 /usr/bin/python3
-RUN pip3 install --disable-pip-version-check --upgrade pip==9.0.3 pipenv==2018.10.13
+RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
 COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
 
-RUN pipenv install --system --deploy --python python3.6
+ENV LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
+RUN pipenv install -v --system --deploy --three
 
 # Install Legion
 ARG pip_extra_index_params=""
@@ -55,7 +45,7 @@ RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_str
 
 WORKDIR /
 
-RUN python3 -m compileall /usr/lib/python3.6/site-packages
+RUN python3 -m compileall /usr/local/lib/python3.6/dist-packages
 
 # Staff
 ADD start.sh /start.sh
