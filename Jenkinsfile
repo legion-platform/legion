@@ -48,6 +48,7 @@ pipeline {
             param_jenkins_plugins_repository_store = "${params.JenkinsPluginsRepositoryStore}"
             param_jenkins_plugins_repository = "${params.JenkinsPluginsRepository}"
             param_docker_registry = "${params.DockerRegistry}"
+            param_docker_hub_registry = "${params.DockerHubRegistry}"
             ///Job parameters
             localDocumentationStorage = "/www/docs/"
             infraBuildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
@@ -63,21 +64,24 @@ pipeline {
                     legion = load "${env.sharedLibPath}"
                     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                     Globals.rootCommit = Globals.rootCommit.trim()
+                    println("Root commit: " + Globals.rootCommit)
+
                     def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
                     def date = new Date()
                     def buildDate = dateFormat.format(date)
 
-                    Globals.dockerCacheArg = (env.param_enable_docker_cache) ? '' : '--no-cache'
+                    Globals.dockerCacheArg = (env.param_enable_docker_cache.toBoolean()) ? '' : '--no-cache'
+                    println("Docker cache args: " + Globals.dockerCacheArg)
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
-                    println(Globals.dockerLabels)
+                    println("Docker labels: " + Globals.dockerLabels)
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
                     /// Define build version
                     if (env.param_stable_release) {
-                        if (env.param_release_version){
+                        if (env.param_release_version ){
                             Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
@@ -102,34 +106,40 @@ pipeline {
                     """
                     archiveArtifacts envFile
                     sh "rm -f $envFile"
+                }
+            }
+        }
 
-                    /// Set Git Tag in case of stable release
+        // Set Git Tag in case of stable release
+        stage('Set GIT release Tag'){
+            steps {
+                script {
                     if (env.param_stable_release) {
-                        stage('Set GIT release Tag'){
-                            if (env.param_push_git_tag){
-                                print('Set Release tag')
-                                sh """
-                                if [ `git tag |grep -x ${env.param_release_version}` ]; then
-                                    if [ ${env.param_force_tag_push} = "true" ]; then
-                                        echo 'Removing existing git tag'
-                                        git tag -d ${env.param_release_version}
-                                        git push origin :refs/tags/${env.param_release_version}
-                                    else
-                                        echo 'Specified tag already exists!'
-                                        exit 1
-                                    fi
+                        if (env.param_push_git_tag.toBoolean()){
+                            print('Set Release tag')
+                            sh """
+                            echo ${env.param_push_git_tag}
+                            if [ `git tag |grep -x ${env.param_release_version}` ]; then
+                                if [ ${env.param_force_tag_push} = "true" ]; then
+                                    echo 'Removing existing git tag'
+                                    git tag -d ${env.param_release_version}
+                                    git push origin :refs/tags/${env.param_release_version}
+                                else
+                                    echo 'Specified tag already exists!'
+                                    exit 1
                                 fi
-                                git tag ${env.param_release_version}
-                                git push origin ${env.param_release_version}
-                                """
-                            } else {
-                                print("Skipping release git tag push")
-                            }
+                            fi
+                            git tag ${env.param_release_version}
+                            git push origin ${env.param_release_version}
+                            """
+                        } else {
+                            print("Skipping release git tag push")
                         }
                     }
                 }
             }
         }
+
         stage("Docker login") {
             steps {
                 withCredentials([[
@@ -262,7 +272,7 @@ EOL
 
                             if (env.param_stable_release) {
                                 stage('Upload Legion package to pypi.org'){
-                                    if (env.param_upload_legion_package){
+                                    if (env.param_upload_legion_package.toBoolean()){
                                         withCredentials([[
                                         $class: 'UsernamePasswordMultiBinding',
                                         credentialsId: 'pypi-repository',
@@ -303,7 +313,7 @@ EOL
             agent {
                 docker {
                     image "legion-docker-agent:${env.BUILD_NUMBER}"
-                    args "-v ${LocalDocumentationStorage}:${localDocumentationStorage}"
+                    args "-v ${localDocumentationStorage}:${localDocumentationStorage}"
                 }
             }
             steps {
@@ -443,7 +453,7 @@ EOL
                     agent {
                         docker {
                             image "legion-docker-agent:${env.BUILD_NUMBER}"
-                            args "-v ${LocalDocumentationStorage}:${LocalDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
+                            args "-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
                         }
                     }
                     steps {
@@ -622,7 +632,7 @@ EOL
                     if (env.param_stable_release) {
                         stage('Update Legion version string'){
                             //Update version.py file in legion package with new version string
-                            if (env.param_update_version_string){
+                            if (env.param_update_version_string.toBoolean()){
                                 print('Update Legion package version string')
                                 if (env.param_next_version){
                                     sh """
@@ -641,7 +651,7 @@ EOL
                         }
 
                         stage('Update Master branch'){
-                            if (env.param_update_master){
+                            if (env.param_update_master.toBoolean()){
                                 sh """
                                 git reset --hard
                                 git checkout develop

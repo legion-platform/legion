@@ -5,7 +5,7 @@ pipeline {
         //Input parameters
         param_git_branch = "${params.GitBranch}"
         param_profile = "${params.Profile}"
-        param_legion_version = "${params.LegionVersion}"
+        param_enable_docker_cache = "${params.EnableDockerCache}"
         param_deploy_legion = "${params.DeployLegion}"
         param_create_jenkins_tests = "${params.CreateJenkinsTests}"
         param_use_regression_tests = "${params.UseRegressionTests}"
@@ -43,6 +43,7 @@ pipeline {
                 script {
                     result = build job: env.param_build_legion_job_name, propagate: true, wait: true, parameters: [
                             [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
+                            string(name: 'EnableDockerCache', value: env.param_enable_docker_cache)
                     ]
 
                     buildNumber = result.getNumber()
