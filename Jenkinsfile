@@ -64,14 +64,17 @@ pipeline {
                     legion = load "${env.sharedLibPath}"
                     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
                     Globals.rootCommit = Globals.rootCommit.trim()
+                    println("Root commit: " + Globals.rootCommit)
+
                     def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
                     def date = new Date()
                     def buildDate = dateFormat.format(date)
 
-                    Globals.dockerCacheArg = (env.param_enable_docker_cache == "true") ? '' : '--no-cache'
+                    Globals.dockerCacheArg = (env.param_enable_docker_cache.toBoolean()) ? '' : '--no-cache'
+                    println("Docker cache args: " + Globals.dockerCacheArg)
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
-                    println(Globals.dockerLabels)
+                    println("Docker labels: " + Globals.dockerLabels)
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
@@ -112,7 +115,7 @@ pipeline {
             steps {
                 script {
                     if (env.param_stable_release) {
-                        if (env.param_push_git_tag == "true"){
+                        if (env.param_push_git_tag.toBoolean()){
                             print('Set Release tag')
                             sh """
                             echo ${env.param_push_git_tag}
@@ -269,7 +272,7 @@ EOL
 
                             if (env.param_stable_release) {
                                 stage('Upload Legion package to pypi.org'){
-                                    if (env.param_upload_legion_package == "true"){
+                                    if (env.param_upload_legion_package.toBoolean()){
                                         withCredentials([[
                                         $class: 'UsernamePasswordMultiBinding',
                                         credentialsId: 'pypi-repository',
@@ -629,7 +632,7 @@ EOL
                     if (env.param_stable_release) {
                         stage('Update Legion version string'){
                             //Update version.py file in legion package with new version string
-                            if (env.param_update_version_string == "true" ){
+                            if (env.param_update_version_string.toBoolean()){
                                 print('Update Legion package version string')
                                 if (env.param_next_version){
                                     sh """
@@ -648,7 +651,7 @@ EOL
                         }
 
                         stage('Update Master branch'){
-                            if (env.param_update_master == "true"){
+                            if (env.param_update_master.toBoolean()){
                                 sh """
                                 git reset --hard
                                 git checkout develop
