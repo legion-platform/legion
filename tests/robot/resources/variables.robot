@@ -14,6 +14,8 @@ ${TEST_MODEL_1_VERSION}             1.0
 ${TEST_MODEL_2_VERSION}             1.1
 ${TEST_MODEL_3_VERSION}             1.2
 ${TEST_MODEL_5_VERSION}             1.0
+${TEST_MODEL_6_ID}                  auth-test-model
+${TEST_MODEL_6_VERSION}             1.0
 ${TEST_MODEL_VERSION}               1.0
 ${TEST_MODEL_RESULT}                42.0
 ${FEEDBACK_TAG}                     tag1

@@ -392,6 +392,7 @@ EOL
                             legion.buildTestBareModel("edi-test-model", "1.2", "3")
                             legion.buildTestBareModel("feedback-test-model", "1.0", "4")
                             legion.buildTestBareModel("command-test-model", "1.0", "5")
+                            legion.buildTestBareModel("auth-test-model", "1.0", "6")
                         }
                     }
                 }
@@ -535,6 +536,7 @@ EOL
                             legion.uploadDockerImage('test-bare-model-api-model-3', "${Globals.buildVersion}")
                             legion.uploadDockerImage('test-bare-model-api-model-4', "${Globals.buildVersion}")
                             legion.uploadDockerImage('test-bare-model-api-model-5', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('test-bare-model-api-model-6', "${Globals.buildVersion}")
                         }
                     }
                 }
