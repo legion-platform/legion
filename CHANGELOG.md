@@ -6,6 +6,7 @@
 - Add tests for incorrect legionctl usage [\#367](https://github.com/legion-platform/legion/issues/367)
 
 ### Changed
+- Rename version to model_version in JWT & EDI [\#666](https://github.com/legion-platform/legion/issues/666)
 - Model API invocation logic switch [\#671](https://github.com/legion-platform/legion/issues/671)
 - Bind Infra and Legion versions for CI [\#649](https://github.com/legion-platform/legion/issues/649)
 - Configurable airflow workers cpu and memory limits [\#639](https://github.com/legion-platform/legion/issues/639)
@@ -15,6 +16,13 @@
 - Speed up CI cycle [\#375](https://github.com/legion-platform/legion/issues/375)
 
 ### Fixed
+- Test model overlaps in Robot Framework suits #1 and #4 [\#691](https://github.com/legion-platform/legion/issues/691)
+- Release preparation hotfixes [\#677](https://github.com/legion-platform/legion/issues/677)
+- CI Job Build Artifacts always uses docker cache. Disabling is not working [\#684](https://github.com/legion-platform/legion/issues/684)
+- Fix nexus cleanup script for CI/CD [\#675](https://github.com/legion-platform/legion/issues/675)
+- Problem with importing of pandas on edge service [\#685](https://github.com/legion-platform/legion/issues/685)
+- Fix build and deploy pipeline [\#700](https://github.com/legion-platform/legion/issues/700)
+- Undeploy one of multiversion model removes dashboard for all models [\#544](https://github.com/legion-platform/legion/issues/544)
 - Upgrade pylint due to failures [\#664](https://github.com/legion-platform/legion/issues/664)
 - Add keeping order of pd.DataFrame for export\_df  [\#656](https://github.com/legion-platform/legion/issues/656)
 - Fix docker-registry unit test's mock [\#654](https://github.com/legion-platform/legion/issues/654)
