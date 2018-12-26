@@ -16,29 +16,36 @@ def buildDescription(){
    currentBuild.description = "${env.param_profile} ${env.param_git_branch}"
 }
 
+def ansibleDebugRunCheck(String debugRun) {
+    // Run ansible playbooks and helm charts from sources in workspace and use verbose output for debug purposes
+    if (debugRun == "true" ) {
+      ansibleHome =  "${WORKSPACE}/deploy/ansible"
+      ansibleVerbose = '-vvv'
+      helmLocalSrc = 'true'
+    } else {
+      ansibleHome = env.ansibleHome
+      ansibleVerbose = env.ansibleVerbose
+      helmLocalSrc = env.helmLocalSrc
+    }
+}
+
 def createCluster() {
-    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=${ansibleHome} -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
                     stage('Create cluster') {
                         sh """
-                        set -e
-                        # Run ansible from workspace for debug or from baked code inside container
-                        if [ ${param_debug_run} = 'true' ]; then
-                            cd ${WORKSPACE}/deploy/ansible
-                        else
-                            cd /opt/legion/deploy/ansible 
-                        fi
+                        cd ${ansibleHome} && \
                         ansible-playbook create-cluster.yml \
-                        ${verbose} \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version} \
                         skip_kops=${env.param_skip_kops} \
-                        helm_repo=${env.param_helm_repo}"
+                        helm_repo=${env.param_helm_repo} \
+                        helm_local_src=${helmLocalSrc}" 
                         """
                     }
                 }
@@ -48,26 +55,20 @@ def createCluster() {
 }
 
 def terminateCluster() {
-    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=${ansibleHome} -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create cluster') {
                         sh """
-                        set -e
-                        # Run ansible from workspace for debug or from baked code inside container
-                        if [ ${param_debug_run} = 'true' ]; then
-                            cd ${WORKSPACE}/deploy/ansible
-                        else
-                            cd /opt/legion/deploy/ansible 
-                        fi
+                        cd ${ansibleHome} && \
                         ansible-playbook terminate-cluster.yml \
-                        ${verbose} \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
-                        keep_jenkins_volume=${env.param_keep_jenkins_volume}"
+                        keep_jenkins_volume=${env.param_keep_jenkins_volume} \
+                        helm_local_src=${helmLocalSrc}"
                         """
                     }
                 }
@@ -77,29 +78,23 @@ def terminateCluster() {
 }
 
 def deployLegion() {
-    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${param_debug_run} ? ${WORKSPACE}/deploy:/opt/legion/deploy : ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=${ansibleHome} -v ${param_debug_run} ? ${WORKSPACE}/deploy:/opt/legion/deploy : ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
-                        set -e
-                        # Run ansible from workspace for debug or from baked code inside container
-                        if [ ${param_debug_run} = 'true' ]; then
-                            cd ${WORKSPACE}/deploy/ansible
-                        else
-                            cd /opt/legion/deploy/ansible 
-                        fi
+                        cd ${ansibleHome} && \
                         ansible-playbook deploy-legion.yml \
-                        ${verbose} \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version}  \
                         pypi_repo=${env.param_pypi_repo} \
                         helm_repo=${env.param_helm_repo} \
-                        docker_repo=${env.param_docker_repo}"
+                        docker_repo=${env.param_docker_repo} \
+                        helm_local_src=${helmLocalSrc}"
                         """
                     }
                 }
@@ -268,30 +263,24 @@ def runRobotTests(tags="") {
 }
 
 def deployLegionEnclave() {
-    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     withCredentials([
         file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=${ansibleHome} -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
-                        set -e
-                        # Run ansible from workspace for debug or from baked code inside container
-                        if [ ${param_debug_run} = 'true' ]; then
-                            cd ${WORKSPACE}/deploy/ansible
-                        else
-                            cd /opt/legion/deploy/ansible 
-                        fi
+                        cd ${ansibleHome} && \
                         ansible-playbook deploy-legion.yml \
-                        ${verbose} \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version} \
                         pypi_repo=${env.param_pypi_repo} \
                         docker_repo=${env.param_docker_repo} \
                         helm_repo=${env.param_helm_repo} \
-                        enclave_name=${env.param_enclave_name}"
+                        enclave_name=${env.param_enclave_name} \
+                        helm_local_src=${helmLocalSrc}"
                         """
                     }
                 }
@@ -301,24 +290,17 @@ def deployLegionEnclave() {
 }
 
 def terminateLegionEnclave() {
-    def verbose = ("${param_debug_run}" == 'true') ? '-vvv' : ''
     dir('deploy/ansible'){
         withCredentials([
             file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=${ansibleHome} -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                         stage('Terminate Legion Enclave') {
                             sh """
-                            set -e
-                            # Run ansible from workspace for debug or from baked code inside container
-                            if [ ${param_debug_run} = 'true' ]; then
-                                cd ${WORKSPACE}/deploy/ansible
-                            else
-                                cd /opt/legion/deploy/ansible 
-                            fi
+                            cd ${ansibleHome} && \
                             ansible-playbook terminate-legion-enclave.yml \
-                            ${verbose} \
+                            ${ansibleVerbose} \
                             --vault-password-file=${vault} \
                             --extra-vars "profile=${env.param_profile} \
                             enclave_name=${env.param_enclave_name}"

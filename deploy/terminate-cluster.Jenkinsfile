@@ -8,8 +8,11 @@ pipeline {
         param_legion_version = "${params.LegionVersion}"
         param_keep_jenkins_volume = "${params.keepJenkinsVolume}"
         param_docker_repo = "${params.DockerRepo}"
+        param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
     }
 
     stages {
@@ -27,6 +30,7 @@ pipeline {
         stage('Terminate Cluster') {
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
                     legion.terminateCluster()
                 }
             }

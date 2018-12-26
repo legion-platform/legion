@@ -13,6 +13,9 @@ pipeline {
         
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
     }
 
     stages {
@@ -30,6 +33,7 @@ pipeline {
         stage('Create Kubernetes Cluster') {
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
                     legion.createCluster()
                 }
             }
@@ -42,7 +46,6 @@ pipeline {
                 legion = load "${sharedLibPath}"
                 legion.notifyBuild(currentBuild.currentResult)
             }
-            deleteDir()
         }
     }
 }

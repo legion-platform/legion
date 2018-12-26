@@ -15,10 +15,14 @@ pipeline {
         param_helm_repo = "${params.HelmRepo}"
         param_build_legion_job_name = "${params.BuildLegionJobName}"
         param_deploy_legion_job_name = "${params.DeployLegionJobName}"
+        param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         legionVersion = null
         commitID = null
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
     }
 
 

@@ -19,10 +19,14 @@ pipeline {
         param_deploy_legion_job_name = "${params.DeployLegionJobName}"
         param_deploy_legion_enclave_job_name = "${params.DeployLegionEnclaveJobName}"
         param_terminate_legioin_enclave_job_name = "${params.TerminateLegionEnclaveJobName}"
+        param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         legionVersion = null
         commitID = null
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
     }
 
     stages {

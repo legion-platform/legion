@@ -39,7 +39,7 @@ airflow_rds_size: "50"
 # Kops
 cluster_name: legion-ci-infra.epm.kharlamov.biz
 state_store: s3://legion-cluster
-cluster_ssh_public_key_path: /opt/deploy/legion/legion_id_rsa.pub
+cluster_ssh_public_key_path: "{{ tmp_dir }}/legion_id_rsa.pub"
 
 private_network: '172.31'
 cluster_zones:
