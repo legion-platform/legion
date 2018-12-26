@@ -71,6 +71,21 @@ class Grafana:
         if not self._client.is_dashboard_exists(model_id):
             raise Exception('Dashboard not exists')
 
+    def dashboard_should_not_exists(self, model_id):
+        """
+        Check that dashboard for model does not exist
+
+        :param model_id: model ID
+        :type model_id: str
+        :raises: Exception
+        :return: None
+        """
+        if not self._client:
+            raise Exception('Grafana client has not been initialized')
+
+        if self._client.is_dashboard_exists(model_id):
+            raise Exception('Dashboard exists')
+
     def metric_should_be_presented(self, model_id, model_version):
         """
         Check that requests count metric for model exists
