@@ -14,6 +14,8 @@
 - Pin versions of python 3d party dependencies used by Legion [\#503](https://github.com/legion-platform/legion/issues/503)
 - Execute Legion unit tests in parallel where it is possible [\#474](https://github.com/legion-platform/legion/issues/474)
 - Speed up CI cycle [\#375](https://github.com/legion-platform/legion/issues/375)
+- Remove nginx from the model image [\#101](https://github.com/legion-platform/legion/issues/101)
+- Remove file\_change\_monitor plugin of legion-template [\#667](https://github.com/legion-platform/legion/issues/667)
 
 ### Fixed
 - Test model overlaps in Robot Framework suits #1 and #4 [\#691](https://github.com/legion-platform/legion/issues/691)
@@ -36,9 +38,6 @@
 - Update Kubernetes to 1.10.11 due to CVE-2018-1002105 [\#642](https://github.com/legion-platform/legion/issues/642)
 - Generate API token per model [\#563](https://github.com/legion-platform/legion/issues/563)
 - Add Authentication for feedback API [\#635](https://github.com/legion-platform/legion/issues/635)
-
-### Deprecated
-- Remove file\_change\_monitor plugin of legion-template [\#667](https://github.com/legion-platform/legion/issues/667)
 
 
 ## [0.9.0](https://github.com/legion-platform/legion/tree/0.9.0) (2018-12-03)
