@@ -10,7 +10,6 @@ pipeline {
         param_docker_repo = "${params.DockerRepo}"
         param_helm_repo = "${params.HelmRepo}"
         param_debug_run = "${params.DebugRun}"
-        
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         ansibleHome =  "/opt/legion/deploy/ansible"

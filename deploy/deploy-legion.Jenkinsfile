@@ -25,7 +25,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                cleanWs()
+                // cleanWs()
                 checkout scm
                 script {
                     legion = load "${env.sharedLibPath}"
@@ -84,7 +84,6 @@ pipeline {
                 legion = load "${sharedLibPath}"
                 legion.notifyBuild(currentBuild.currentResult)
             }
-            deleteDir()
         }
     }
 }
