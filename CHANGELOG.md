@@ -1,30 +1,36 @@
-## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2018-12-22)
+## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2018-12-27)
 
 ### Added
-- Model HTTP API request & response logging [\#624](https://github.com/legion-platform/legion/issues/624) 
-- Create CI build pipeline for cluster infrastructure components to produce set of deliverable infrastructure units  [\#566](https://github.com/legion-platform/legion/issues/566) 
-- Add tests for incorrect legionctl usage [\#367](https://github.com/legion-platform/legion/issues/367) 
+- Model HTTP API request & response logging [\#624](https://github.com/legion-platform/legion/issues/624)
+- Create CI build pipeline for cluster infrastructure components to produce set of deliverable infrastructure units  [\#566](https://github.com/legion-platform/legion/issues/566)
+- Add tests for incorrect legionctl usage [\#367](https://github.com/legion-platform/legion/issues/367)
 
 ### Changed
-- Bind Infra and Legion versions for CI [\#649](https://github.com/legion-platform/legion/issues/649) 
-- Configurable airflow workers cpu and memory limits [\#639](https://github.com/legion-platform/legion/issues/639) 
-- Posibility to define Jenkins jobs using DSL scripts [\#609](https://github.com/legion-platform/legion/issues/609) 
-- Pin versions of python 3d party dependencies used by Legion [\#503](https://github.com/legion-platform/legion/issues/503) 
-- Execute Legion unit tests in parallel where it is possible [\#474](https://github.com/legion-platform/legion/issues/474) 
-- Speed up CI cycle [\#375](https://github.com/legion-platform/legion/issues/375) 
+- Model API invocation logic switch [\#671](https://github.com/legion-platform/legion/issues/671)
+- Bind Infra and Legion versions for CI [\#649](https://github.com/legion-platform/legion/issues/649)
+- Configurable airflow workers cpu and memory limits [\#639](https://github.com/legion-platform/legion/issues/639)
+- Posibility to define Jenkins jobs using DSL scripts [\#609](https://github.com/legion-platform/legion/issues/609)
+- Pin versions of python 3d party dependencies used by Legion [\#503](https://github.com/legion-platform/legion/issues/503)
+- Execute Legion unit tests in parallel where it is possible [\#474](https://github.com/legion-platform/legion/issues/474)
+- Speed up CI cycle [\#375](https://github.com/legion-platform/legion/issues/375)
 
 ### Fixed
-- Fix docker-registry unit test's mock [\#654](https://github.com/legion-platform/legion/issues/654) 
-- Legionctl doesn't check model version during undeploy [\#651](https://github.com/legion-platform/legion/issues/651) 
-- SSL check doesn't pass on kubeapi ELB [\#647](https://github.com/legion-platform/legion/issues/647) 
-- Check airflow test dags failed: no explicit wait for the end of their work [\#641](https://github.com/legion-platform/legion/issues/641) 
-- Nexus unstable test:  StaleElementReferenceException  [\#626](https://github.com/legion-platform/legion/issues/626) 
+- Upgrade pylint due to failures [\#664](https://github.com/legion-platform/legion/issues/664)
+- Add keeping order of pd.DataFrame for export\_df  [\#656](https://github.com/legion-platform/legion/issues/656)
+- Fix docker-registry unit test's mock [\#654](https://github.com/legion-platform/legion/issues/654)
+- Legionctl doesn't check model version during undeploy [\#651](https://github.com/legion-platform/legion/issues/651)
+- SSL check doesn't pass on kubeapi ELB [\#647](https://github.com/legion-platform/legion/issues/647)
+- Check airflow test dags failed: no explicit wait for the end of their work [\#641](https://github.com/legion-platform/legion/issues/641)
+- Nexus unstable test:  StaleElementReferenceException  [\#626](https://github.com/legion-platform/legion/issues/626)
 
 ### Security
-- Potential security vulnerabilities with "urllib3" Python package [\#658](https://github.com/legion-platform/legion/issues/658) 
-- Update Kubernetes to 1.10.11 due to CVE-2018-1002105 [\#642](https://github.com/legion-platform/legion/issues/642) 
-- Generate API token per model [\#563](https://github.com/legion-platform/legion/issues/563) 
-- Add Authentication for feedback API [\#635](https://github.com/legion-platform/legion/issues/635) 
+- Potential security vulnerabilities with "urllib3" Python package [\#658](https://github.com/legion-platform/legion/issues/658)
+- Update Kubernetes to 1.10.11 due to CVE-2018-1002105 [\#642](https://github.com/legion-platform/legion/issues/642)
+- Generate API token per model [\#563](https://github.com/legion-platform/legion/issues/563)
+- Add Authentication for feedback API [\#635](https://github.com/legion-platform/legion/issues/635)
+
+### Deprecated
+- Remove file\_change\_monitor plugin of legion-template [\#667](https://github.com/legion-platform/legion/issues/667)
 
 
 ## [0.9.0](https://github.com/legion-platform/legion/tree/0.9.0) (2018-12-03)
