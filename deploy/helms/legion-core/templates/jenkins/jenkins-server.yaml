@@ -86,22 +86,32 @@ spec:
         - name: EXTERNAL_RESOURCE_PROTOCOL
           value: "http"
         - name: EXTERNAL_RESOURCE_HOST
-          value: "{{ .Release.Name }}-nexus.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}:8081/repository/raw"
+          value: "{{ .Values.connections.nexus_raw.url }}"
         - name: EXTERNAL_RESOURCE_USER
-          value: "admin"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins
+              key: externalResourceUser
         - name: EXTERNAL_RESOURCE_PASSWORD
-          value: "{{ .Values.secrets.nexus.admin }}"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins
+              key: externalResourcePassword
         # Storage of docker images with models
-        - name: MODEL_IMAGES_REGISTRY_HOST
-          value: "localhost:31111"
-        - name: MODEL_IMAGES_REGISTRY
-          value: "localhost:31111/legion_model/"
-        - name: NEXUS_DOCKER_REGISTRY
-          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
+        - name: CLUSTER_PREFIX
+          value: "{{ .Values.cluster_prefix }}"
+        - name: DOCKER_REGISTRY
+          value: "{{ .Values.connections.docker.url }}"
         - name: DOCKER_REGISTRY_USER
-          value: "admin"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins
+              key: dockerRegistryUser
         - name: DOCKER_REGISTRY_PASSWORD
-          value: "{{ .Values.secrets.nexus.admin }}"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-jenkins
+              key: dockerRegistryPassword
         # Model configuration
         - name: GRAPHITE_HOST
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
@@ -133,32 +143,32 @@ spec:
         - name: OPENID_CLIENTID
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-jenkins-openid
+              name: {{ .Release.Name }}-jenkins
               key: clientId
         - name: OPENID_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-jenkins-openid
+              name: {{ .Release.Name }}-jenkins
               key: clientSecret
         - name: OPENID_TOKEN_SERVER_URL
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-jenkins-openid
+              name: {{ .Release.Name }}-jenkins
               key: tokenServerUrl
         - name: OPENID_AUTH_SERVER_URL
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-jenkins-openid
+              name: {{ .Release.Name }}-jenkins
               key: authServerUrl
         - name: OPENID_ADMIN_GROUPS
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-jenkins-openid
+              name: {{ .Release.Name }}-jenkins
               key: adminGroups
         - name: OPENID_READ_ONLY_GROUPS
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-jenkins-openid
+              name: {{ .Release.Name }}-jenkins
               key: readOnlyGroups
         {{- end }}
         ports:

@@ -53,12 +53,20 @@ spec:
           value: "5000"
         - name: VERBOSE
           value: "1"
-        - name: NEXUS_DOCKER_REGISTRY
-          value: "http://legion-core-nexus.default.svc.{{ .Values.localDomain }}:8081/repository/docker-hosted"
+        - name: DOCKER_REGISTRY
+          value: "{{ .Values.connections.docker.url }}"
+        - name: DOCKER_REGISTRY_PROTOCOL
+          value: "{{ .Values.connections.docker.protocol }}"
         - name: DOCKER_REGISTRY_USER
-          value: "admin"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-cluster-secrets
+              key: nexus.user
         - name: DOCKER_REGISTRY_PASSWORD
-          value: "{{ .Values.secrets.nexus.admin }}"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-cluster-secrets
+              key: nexus.password
         - name: MODEL_IMAGES_REGISTRY_HOST
           value: "localhost:31111"
         - name: K8S_API_RETRY_NUMBER_MAX_LIMIT

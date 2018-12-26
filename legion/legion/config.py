@@ -465,16 +465,14 @@ MODEL_IMAGES_REGISTRY_HOST = ConfigVariableDeclaration('MODEL_IMAGES_REGISTRY_HO
                                                        False)
 
 # Configuration about storing built docker images
-NEXUS_DOCKER_REGISTRY = ConfigVariableDeclaration('NEXUS_DOCKER_REGISTRY', None, str,
-                                                  'Name of default nexus registry for saving built models',
-                                                  True)
+DOCKER_REGISTRY = ConfigVariableDeclaration('DOCKER_REGISTRY', None, str,
+                                            'Name of default nexus registry for saving built models', True)
 DOCKER_REGISTRY_USER = ConfigVariableDeclaration('DOCKER_REGISTRY_USER', None, str,
-                                                 'Docker API user (for saving built model images)',
-                                                 True)
+                                                 'Docker API user (for saving built model images)', True)
 DOCKER_REGISTRY_PASSWORD = ConfigVariableDeclaration('DOCKER_REGISTRY_PASSWORD', None, str,
-                                                     'Docker API password (for saving built model images)',
-                                                     True)
-
+                                                     'Docker API password (for saving built model images)', True)
+DOCKER_REGISTRY_PROTOCOL = ConfigVariableDeclaration('DOCKER_REGISTRY_PROTOCOL', 'https', str,
+                                                     'Docker registry protocol: https/http', True)
 
 # EDI server configuration
 CLUSTER_CONFIG_PATH = ConfigVariableDeclaration('CLUSTER_CONFIG_PATH', None, str,
