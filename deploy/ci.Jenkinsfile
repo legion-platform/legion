@@ -155,17 +155,10 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                stage('Terminate Cluster') {
-                    steps {
-                        script {
-                            result = build job: env.param_terminate_cluster_job_name, propagate: true, wait: true, parameters: [
-                                    [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
-                                    string(name: 'LegionVersion', value: legionVersion),
-                                    string(name: 'Profile', value: env.param_profile),
-                            ]
-                        }
-                    }
-                }
+                result = build job: env.param_terminate_cluster_job_name, propagate: true, wait: true, parameters: [
+                        [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
+                        string(name: 'LegionVersion', value: legionVersion),
+                        string(name: 'Profile', value: env.param_profile)]
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()
