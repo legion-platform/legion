@@ -46,13 +46,13 @@ Get token from EDI without version parameter
     &{json} =   Evaluate    json.loads('''${resp["text"]}''')    json
     Log          ${json}
     ${items} = 	 Get Dictionary Items    ${json}
-    Should be equal as strings   ${items}    ['error', True, 'exception', 'Requested field version is not set']
+    Should be equal as strings   ${items}    ['error', True, 'exception', 'Requested field model_version is not set']
 
 Get token from EDI without model_id parameter
     [Documentation]  Try to get token from EDI without model_id parameter
     [Setup]   NONE
     [Tags]  edi  cli  enclave  edi_token
-    &{data} =    Create Dictionary    version=${TEST_MODEL_3_VERSION}
+    &{data} =    Create Dictionary    model_version=${TEST_MODEL_3_VERSION}
     &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
     Log          ${resp}
     Should not be empty   ${resp}

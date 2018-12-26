@@ -25,7 +25,7 @@ Checking property update callback
     [Tags]  jenkins  models  enclave  props  apps
     Connect to Jenkins endpoint
     ${model_id}    ${model_version} =   Test model pipeline result   ${MODEL_WITH_PROPS}   ${MODEL_TEST_ENCLAVE}
-    Log   Model with id = ${model_id} and version = ${model_version} has been deployed
+    Log   Model with id = ${model_id} and model_version = ${model_version} has been deployed
     ${edge}=        Build enclave EDGE URL  ${MODEL_TEST_ENCLAVE}
                     Get token from EDI      ${MODEL_TEST_ENCLAVE}   ${model_id}    ${model_version}
 
