@@ -13,7 +13,6 @@ metadata:
     {{- range $key, $value := .Values.nexus.ingress.annotations }}
       {{ $key }}: {{ $value | quote }}
     {{- end }}
-    {{- template "dex-ingress-annotations" . }}
 spec:
   rules:
     - host: "{{ .Values.nexus.ingress.domain.partial }}.{{ .Values.rootDomain }}"
