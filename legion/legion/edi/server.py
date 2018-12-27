@@ -107,6 +107,7 @@ def root():
     return render_template('index.html',
                            token=token)
 
+
 @blueprint.route(build_blueprint_url(EDI_API_ROOT), methods=['GET'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
