@@ -421,7 +421,7 @@ def load_cluster_config(application):
 
     application.config['ENCLAVE'] = get_application_enclave(application)
     application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(application.config['CLUSTER_SECRETS_PATH'])
-    # application.config['GRAFANA_CLIENT'] = get_application_grafana(application)
+    application.config['GRAFANA_CLIENT'] = get_application_grafana(application)
     application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 
 
