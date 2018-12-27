@@ -19,6 +19,7 @@
 - Remove file\_change\_monitor plugin of legion-template [\#667](https://github.com/legion-platform/legion/issues/667)
 
 ### Fixed
+- Param param_update_version_string is missed in Release CI stage [\#706](https://github.com/legion-platform/legion/issues/706)
 - Add missed CI post stage [\#697](https://github.com/legion-platform/legion/issues/697)
 - Test model overlaps in Robot Framework suits #1 and #4 [\#691](https://github.com/legion-platform/legion/issues/691)
 - Release preparation hotfixes [\#677](https://github.com/legion-platform/legion/issues/677)
