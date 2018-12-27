@@ -24,7 +24,7 @@ import legion.k8s
 import legion.external.grafana
 import legion.http
 import legion.model
-from flask import Flask, Blueprint, render_template
+from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
 import os
 import jwt
@@ -35,6 +35,7 @@ blueprint = Blueprint('apiserver', __name__)
 TEMPLATES_FOLDER = os.path.abspath(os.path.join(
     os.path.dirname(__file__), os.pardir, 'templates', 'edi')
 )
+AUTH_COOKIE_NAME = '_oauth2_proxy'
 
 EDI_VERSION = '1.0'
 EDI_ROOT = '/'
@@ -102,7 +103,9 @@ def root():
 
     :return: dict -- root information
     """
-    return render_template('index.html')
+    token = request.cookies.get(AUTH_COOKIE_NAME, 'INVALID COOKIE')
+    return render_template('index.html',
+                           token=token)
 
 @blueprint.route(build_blueprint_url(EDI_API_ROOT), methods=['GET'])
 @legion.http.provide_json_response
