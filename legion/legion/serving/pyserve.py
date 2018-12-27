@@ -122,7 +122,10 @@ def model_invoke(model_id, model_version, endpoint='default'):
 
     output = model.endpoints[endpoint].invoke(input_dict)
     response = legion.http.prepare_response(output)
+    response.headers[legion.containers.headers.MODEL_ID] = model_id
+    response.headers[legion.containers.headers.MODEL_VERSION] = model_version
     response.headers[legion.containers.headers.MODEL_ENDPOINT] = endpoint
+
     return response
 
 
