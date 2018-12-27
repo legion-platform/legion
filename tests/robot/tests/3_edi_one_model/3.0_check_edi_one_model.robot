@@ -24,7 +24,7 @@ Get token from EDI with valid parameters
     [Documentation]  Try to get token from EDI with valid parameters
     [Setup]   NONE
     [Tags]  edi  cli  enclave  edi_token
-    &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    version=${TEST_MODEL_3_VERSION}
+    &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}
     &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
     Log          ${resp}
     Should not be empty   ${resp}
