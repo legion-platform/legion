@@ -36,6 +36,8 @@ pipeline {
             param_upload_legion_package = "${params.UploadLegionPackage}"
             //Set next releases version explicitly
             param_next_version = "${params.NextVersion}"
+            // Update version string
+            param_update_version_string = "${params.UpdateVersionString}"
             //Artifacts storage parameters
             param_helm_repo_git_url = "${params.HelmRepoGitUrl}"
             param_helm_repo_git_branch = "${params.HelmRepoGitBranch}"
