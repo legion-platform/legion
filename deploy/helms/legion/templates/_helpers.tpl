@@ -5,7 +5,7 @@ Create dex Ingress auth annotations
 */}}
 {{- define "dex-ingress-annotations" }}
     {{- if .Values.auth.enabled -}}
-    {{- range $key, $value := .Values.edi.auth.annotations }}
+    {{- range $key, $value := .Values.auth.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     {{- end }}
