@@ -10,7 +10,7 @@ class Globals {
 def chartNames = null
 
 pipeline {
-    agent any
+    agent { label 'jenkins-agent-m5xl'}
 
     options{
             buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
@@ -155,7 +155,8 @@ pipeline {
         }
         stage('Build Agent Docker Image') {
             steps {
-                sh "docker build ${Globals.dockerCacheArg} -t legion-docker-agent:${env.BUILD_NUMBER} -f pipeline.Dockerfile ."
+                sh "docker build ${Globals.dockerCacheArg} -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile ."
+                legion.uploadDockerImage('legion-docker-agen', "${Globals.buildVersion}")
             }
         }
         stage('Build dependencies') {
@@ -202,7 +203,7 @@ pipeline {
                 stage('Run Python code analyzers') {
                     agent {
                         docker {
-                            image "legion-docker-agent:${env.BUILD_NUMBER}"
+                            image "legion/legion-docker-agent:${Globals.buildVersion}"
                         }
                     }
                     steps {
@@ -225,7 +226,7 @@ pipeline {
                 stage("Upload Legion package") {
                     agent {
                         docker {
-                            image "legion-docker-agent:${env.BUILD_NUMBER}"
+                            image "legion/legion-docker-agent:${Globals.buildVersion}"
                             args "-e HOME=/tmp"
                         }
                     }
@@ -296,7 +297,7 @@ EOL
         stage('Build docs') {
             agent {
                 docker {
-                    image "legion-docker-agent:${env.BUILD_NUMBER}"
+                    image "legion/legion-docker-agent:${Globals.buildVersion}"
                     args "-v ${localDocumentationStorage}:${localDocumentationStorage}"
                 }
             }
@@ -446,7 +447,7 @@ EOL
                 stage("Run Python tests") {
                     agent {
                         docker {
-                            image "legion-docker-agent:${env.BUILD_NUMBER}"
+                            image "legion/legion-docker-agent:${Globals.buildVersion}"
                             args "-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
                         }
                     }
