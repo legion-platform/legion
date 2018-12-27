@@ -18,6 +18,7 @@
 - Remove file\_change\_monitor plugin of legion-template [\#667](https://github.com/legion-platform/legion/issues/667)
 
 ### Fixed
+- Add missed CI post stage [\#697](https://github.com/legion-platform/legion/issues/697)
 - Test model overlaps in Robot Framework suits #1 and #4 [\#691](https://github.com/legion-platform/legion/issues/691)
 - Release preparation hotfixes [\#677](https://github.com/legion-platform/legion/issues/677)
 - CI Job Build Artifacts always uses docker cache. Disabling is not working [\#684](https://github.com/legion-platform/legion/issues/684)
