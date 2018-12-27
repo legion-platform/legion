@@ -80,7 +80,7 @@ function _M.response_feedback(data)
     ngx.say(json_encoded_response);
 end
 
-function _M.catch_model_api_response_chunk(model_id, model_version, content, eof)
+function _M.catch_model_api_response_chunk(model_id, model_version, model_endpoint, content, eof)
     local http_request_headers = ngx.req.get_headers()
     local requestID = http_request_headers["Request-ID"]
 
@@ -95,7 +95,8 @@ function _M.catch_model_api_response_chunk(model_id, model_version, content, eof
         response_chunk_id = chunk_id,
         response_content = content,
         model_id = model_id,
-        model_version = model_version
+        model_version = model_version,
+        model_endpoint = model_endpoint
     }
 
     ngx.var.model_api_chunk_count = chunk_id + 1

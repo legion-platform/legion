@@ -124,8 +124,9 @@ http {
             -- arg[2] is true if this is the last chunk
 
             local edge = require("edge")
+            local endpoint_header = ngx.header["Model-Endpoint"]
             local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}",
-                                                                  ngx.arg[1], ngx.arg[2])
+                                                                  endpoint_header, ngx.arg[1], ngx.arg[2])
 
             if chunkInfo then
                 local fluentd_logger = require "fluentd_logger"
@@ -175,7 +176,8 @@ http {
 
             -- Request info gathering
             local edge = require("edge")
-            local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", endpoint_header)
+            local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}",
+                                                          endpoint_header)
 
             local fluentd_logger = require "fluentd_logger"
             fluentd_logger.post(ngx.req.start_time(), "request_response", requestInfo)
