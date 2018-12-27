@@ -74,12 +74,6 @@ spec:
         - name: LEGION_BASE_IMAGE_REPOSITORY
           value: "{{ .Values.package.baseImage.repository }}"
         # EDI credentials
-        - name: EDI_USER
-          value: ""
-        - name: EDI_PASSOWRD
-          value: ""
-        - name: EDI_TOKEN
-          value: ""
         # External resource (saving and loading model files)
         - name: EXTERNAL_RESOURCE_PROTOCOL
           value: "http"
