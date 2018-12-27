@@ -89,7 +89,7 @@ pipeline {
                             [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
                             string(name: 'Profile', value: env.param_profile),
                             string(name: 'LegionVersion', value: legionVersion),
-                            string(name: 'TestsTags', value: env.param_tests_tags),
+                            string(name: 'TestsTags', value: env.param_tests_tags ?: ""),
                             booleanParam(name: 'DeployLegion', value: true),
                             booleanParam(name: 'CreateJenkinsTests', value: true),
                             booleanParam(name: 'UseRegressionTests', value: true)

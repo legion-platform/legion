@@ -46,6 +46,7 @@ pipeline {
                 legion = load "${sharedLibPath}"
                 legion.notifyBuild(currentBuild.currentResult)
             }
+            deleteDir()
         }
     }
 }
