@@ -8,15 +8,19 @@ clusterName: ""
 
 log_level: info
 
+auth:
+  enabled: false
+  annotations: {}
+
 feedback:
   replicas: 1
   ingress:
-      annotations: {}
-      domain:
-        partial: feedback
-      tls:
-        enabled: true
-        autoSecretNameDeduction: true
+    annotations: {}
+    domain:
+      partial: feedback
+    tls:
+      enabled: true
+      autoSecretNameDeduction: true
 
   image:
     repository: "legion/k8s-fluentd"
