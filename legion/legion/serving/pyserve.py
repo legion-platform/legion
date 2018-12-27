@@ -22,6 +22,7 @@ import os
 import itertools
 
 import legion.config
+import legion.containers.headers
 import legion.http
 import legion.model
 import legion.pymodel
@@ -120,8 +121,9 @@ def model_invoke(model_id, model_version, endpoint='default'):
         raise Exception('Unknown endpoint {!r}'.format(endpoint))
 
     output = model.endpoints[endpoint].invoke(input_dict)
-
-    return legion.http.prepare_response(output)
+    response = legion.http.prepare_response(output)
+    response.headers[legion.containers.headers.MODEL_ENDPOINT] = endpoint
+    return response
 
 
 @blueprint.route(SERVE_BATCH_DEFAULT.format(model_id='<model_id>', model_version='<model_version>'),

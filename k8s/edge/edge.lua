@@ -103,7 +103,7 @@ function _M.catch_model_api_response_chunk(model_id, model_version, content, eof
     return data
 end
 
-function _M.catch_model_api_call(model_id, model_version)
+function _M.catch_model_api_call(model_id, model_version, model_endpoint)
     local request_http_headers = ngx.req.get_headers()
     local request_id = request_http_headers["Request-ID"]
     local http_method = ngx.req.get_method()
@@ -120,7 +120,8 @@ function _M.catch_model_api_call(model_id, model_version)
         response_body_chunk_count = ngx.var.model_api_chunk_count,
         response_status = ngx.status,
         model_id = model_id,
-        model_version = model_version
+        model_version = model_version,
+        model_endpoint = model_endpoint
     }
 
     local content_type = ngx.var.content_type or ""
