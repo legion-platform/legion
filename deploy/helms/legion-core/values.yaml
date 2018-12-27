@@ -4,6 +4,10 @@ enclaveDeploymentPrefix: "legion-"
 domainDelimiter: "."
 s3BucketName: ""
 
+auth:
+  enabled: false
+  annotations: {}
+
 secrets:
   nexus:
     admin: "jonny"
@@ -16,7 +20,7 @@ jenkins:
     pullPolicy: "Always"
 
   rbac: true
-  
+
   ingress:
     enabled: true
     annotations: {}
