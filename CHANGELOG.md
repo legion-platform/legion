@@ -6,6 +6,7 @@
 - Add tests for incorrect legionctl usage [\#367](https://github.com/legion-platform/legion/issues/367)
 
 ### Changed
+- Update changelog file for 0.10.0 [\#679](https://github.com/legion-platform/legion/issues/679)
 - Rename version to model_version in JWT & EDI [\#666](https://github.com/legion-platform/legion/issues/666)
 - Model API invocation logic switch [\#671](https://github.com/legion-platform/legion/issues/671)
 - Bind Infra and Legion versions for CI [\#649](https://github.com/legion-platform/legion/issues/649)
