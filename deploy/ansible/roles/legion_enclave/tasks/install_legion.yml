@@ -27,14 +27,17 @@
 - name: Pre run with dumping
   shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   register: helm_legion_install_output
+  when:  helm_local_src != 'true'
 
 - name: Save pre run result
   copy:
     content: "{{ helm_legion_install_output.stdout }}"
     dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.debug"
+  when:  helm_local_src != 'true'
 
 - name: Install legion chart
   shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
+  when:  helm_local_src != 'true'
 
 # OR install charts from local soures in case of debug flag
 - name: Pre run with dumping
@@ -42,18 +45,19 @@
   register: helm_legion_install_output
   args:
     chdir: ../helms
-  when:  "{{ helm_local_src == 'true' }}"
+  when: helm_local_src == 'true'
 
 - name: Save pre run result
   copy:
     content: "{{ helm_legion_install_output.stdout }}"
     dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.debug"
+  when: helm_local_src == 'true'
 
 - name: Install legion chart
   shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
   args:
     chdir: ../helms
-  when:  "{{ helm_local_src == 'true' }}"
+  when: helm_local_src == 'true'
 
 - name: Dump current HELM status
   shell: "helm --kube-context {{ cluster_name }} status legion-{{ enclave }}"

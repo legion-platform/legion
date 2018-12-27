@@ -10,13 +10,12 @@
 # Install charts from remote repo
 - name: Install Kube-elb-security
   command: "helm --kube-context {{ cluster_name }} install legion-helm/kube-elb-security --name kube-elb-security --version={{ legion_version }} --namespace kube-system --set image.repository={{ docker_repo }}/kube-elb-security --set iam_role=masters.{{ cluster_name }},image.repository={{ docker_repo }}/k8s-kube-elb-security,image.tag={{ legion_version }} --wait"
-  when: dex.enabled and helm_kube_elb_security_status.stdout.find("DEPLOYED") == -1
+  when: dex.enabled and helm_kube_elb_security_status.stdout.find("DEPLOYED") == -1 and helm_local_src != 'true'
   tags: dex
-
 # OR install charts from local soures in case of debug flag
 - name: Install Kube-elb-security
   command: "helm --kube-context {{ cluster_name }} install kube-elb-security --name kube-elb-security --namespace kube-system --set image.repository={{ docker_repo }}/kube-elb-security --set iam_role=masters.{{ cluster_name }},image.repository={{ docker_repo }}/k8s-kube-elb-security,image.tag={{ legion_version }} --wait"
-  when: dex.enabled and helm_kube_elb_security_status.stdout.find("DEPLOYED") == -1 and  "{{ helm_local_src == 'true' }}"
+  when: dex.enabled and helm_kube_elb_security_status.stdout.find("DEPLOYED") == -1 and helm_local_src == 'true'
   tags: dex
   args:
     chdir: ../helms

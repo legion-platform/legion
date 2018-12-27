@@ -73,10 +73,10 @@
 # Install charts from remote repo
 - name: Install kube-fluentd chart
   shell: helm --kube-context {{ cluster_name }} install legion-helm/kube-fluentd --name kube-fluentd --version={{ legion_version }} --namespace=kube-system --wait --timeout 600 -f  {{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml
-  
+  when: helm_local_src != 'true'
 # OR install charts from local soures in case of debug flag
 - name: Install kube-fluentd chart
   shell: helm --kube-context {{ cluster_name }} install kube-fluentd --name kube-fluentd --namespace=kube-system --wait --timeout 600 -f  {{ tmp_dir }}/fluentd-values.{{ cluster_name }}.yaml
   args:
     chdir: ../helms
-  when:  "{{ helm_local_src == 'true' }}"
+  when: helm_local_src == 'true'

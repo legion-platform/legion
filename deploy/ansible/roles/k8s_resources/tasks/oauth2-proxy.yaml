@@ -15,11 +15,10 @@
 # Install charts from remote repo
 - name: Install Dex oauth2-proxy
   command: "helm --kube-context {{ cluster_name }} install legion-helm/oauth2-proxy --name dex-oauth2-proxy --version={{ legion_version }} --namespace kube-system -f {{ tmp_dir }}/oauth2-proxy.{{ cluster_name }}.yml"
-  when: dex.enabled
-
+  when: dex.enabled and helm_local_src != 'true'
 # OR install charts from local soures in case of debug flag
 - name: Install Dex oauth2-proxy
   command: "helm --kube-context {{ cluster_name }} install oauth2-proxy --name dex-oauth2-proxy --namespace kube-system -f {{ tmp_dir }}/oauth2-proxy.{{ cluster_name }}.yml"
-  when: dex.enabled and  "{{ helm_local_src == 'true' }}"
+  when: dex.enabled and helm_local_src == 'true'
   args:
     chdir: ../helms
