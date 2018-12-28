@@ -161,6 +161,7 @@ pipeline {
                 }
             }
         }
+
         stage('Build dependencies') {
             parallel {
                 stage('Build Jenkins plugin') {
@@ -224,64 +225,63 @@ pipeline {
                         }
                     }
                 }
-
                 stage("Upload Legion package") {
-                    agent {
-                        docker {
-                            image "legion/legion-docker-agent:${Globals.buildVersion}"
-                            args "-e HOME=/tmp"
-                        }
-                    }
                     steps {
                         script {
-                            withCredentials([[
-                             $class: 'UsernamePasswordMultiBinding',
-                             credentialsId: 'nexus-local-repository',
-                             usernameVariable: 'USERNAME',
-                             passwordVariable: 'PASSWORD']]) {
-                                sh """cat > /tmp/.pypirc << EOL
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-u root") {
+                                withCredentials([[
+                                $class: 'UsernamePasswordMultiBinding',
+                                credentialsId: 'nexus-local-repository',
+                                usernameVariable: 'USERNAME',
+                                passwordVariable: 'PASSWORD']]) {
+                                    sh """
+                                    cat > /tmp/.pypirc << EOL
 [distutils]
 index-servers =
   ${env.param_local_pypi_distribution_target_name}
-
 [${env.param_local_pypi_distribution_target_name}]
 repository=${env.param_pypi_repository.split('/').dropRight(1).join('/')}/
 username=${env.USERNAME}
 password=${env.PASSWORD}
 EOL
 """
-                            }
-                            sh """
-                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion/dist/legion-*'
-                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_test/dist/legion_test-*'
-                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_airflow/dist/legion_airflow-*'
-                            """
+                                }
+                                sh """
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_test/dist/legion_test-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_airflow/dist/legion_airflow-*'
+                                """
 
-                            if (env.param_stable_release) {
-                                stage('Upload Legion package to pypi.org'){
-                                    if (env.param_upload_legion_package.toBoolean()){
-                                        withCredentials([[
-                                        $class: 'UsernamePasswordMultiBinding',
-                                        credentialsId: 'pypi-repository',
-                                        usernameVariable: 'USERNAME',
-                                        passwordVariable: 'PASSWORD']]) {
-                                            sh """cat > /tmp/.pypirc << EOL
+                                if (env.param_stable_release) {
+                                    stage('Upload Legion package to pypi.org'){
+                                        if (env.param_upload_legion_package.toBoolean()){
+                                            withCredentials([[
+                                            $class: 'UsernamePasswordMultiBinding',
+                                            credentialsId: 'pypi-repository',
+                                            usernameVariable: 'USERNAME',
+                                            passwordVariable: 'PASSWORD']]) {
+                                                sh """
+                                                cat > /tmp/.pypirc << EOL
 [distutils]
 index-servers =
-  ${env.param_test_pypi_distribution_target_name}
-  ${env.param_public_pypi_distribution_target_name}
-
+${env.param_test_pypi_distribution_target_name}
+${env.param_public_pypi_distribution_target_name}
 [${env.param_test_pypi_distribution_target_name}]
 repository=https://test.pypi.org/legacy/
 username=${env.USERNAME}
 password=${env.PASSWORD}
-
 [${env.param_public_pypi_distribution_target_name}]
 repository=https://upload.pypi.org/legacy/
 username=${env.USERNAME}
 password=${env.PASSWORD}
 EOL
 """
+                                            }
+                                            sh """
+                                            twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-${Globals.buildVersion}.*'
+                                            """
+                                        } else {
+                                            print("Skipping package upload")
                                         }
                                         sh """
                                         twine upload -r ${env.param_pypi_distribution_target_name} '/src/legion/dist/legion-*'
@@ -294,30 +294,27 @@ EOL
                         }
                     }
                 }
-            }
+            } 
         }
+
         stage('Build docs') {
-            agent {
-                docker {
-                    image "legion/legion-docker-agent:${Globals.buildVersion}"
-                    args "-v ${localDocumentationStorage}:${localDocumentationStorage}"
-                }
-            }
             steps {
                 script {
-                    fullBuildNumber = env.BUILD_NUMBER
-                    fullBuildNumber.padLeft(4, '0')
+                    docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside(" -v ${localDocumentationStorage}:${localDocumentationStorage}") {
+                        fullBuildNumber = env.BUILD_NUMBER
+                        fullBuildNumber.padLeft(4, '0')
 
-                    sh """
-                    cd legion/docs
-                    sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
-                    sed -i 's/\'1.0\'/\'${Globals.buildVersion}\'/' source/conf.py
-                    make html
-                    find build/html -type f -name '*.html' | xargs sed -i -r 's/href=\"(.*)\\.md\"/href=\"\\1.html\"/'
-                    cd ../../
-                    """
+                        sh """
+                        cd legion/docs
+                        sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
+                        sed -i 's/\'1.0\'/\'${Globals.buildVersion}\'/' source/conf.py
+                        make html
+                        find build/html -type f -name '*.html' | xargs sed -i -r 's/href=\"(.*)\\.md\"/href=\"\\1.html\"/'
+                        cd ../../
+                        """
 
-                    sh "cd legion && cp -rf docs/build/html/ \"${localDocumentationStorage}/${Globals.buildVersion}/\""
+                        sh "cd legion && cp -rf docs/build/html/ \"${localDocumentationStorage}/${Globals.buildVersion}/\""
+                    }
                 }
             }
         }
@@ -447,36 +444,34 @@ EOL
                     }
                 }
                 stage("Run Python tests") {
-                    agent {
-                        docker {
-                            image "legion/legion-docker-agent:${Globals.buildVersion}"
-                            args "-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
-                        }
-                    }
                     steps {
-                        sh """
-                        export TEMP_DIRECTORY="\$(pwd)"
-                        cd /src/legion
-                        VERBOSE=true \
-                        DEBUG=true \
-                        BASE_IMAGE_VERSION="${Globals.buildVersion}" \
-                        SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
-                            nosetests --processes=10 \
-                            --process-timeout=600 \
-                            --with-coverage \
-                            --cover-package legion \
-                            --with-xunitmp \
-                            --cover-html \
-                            --logging-level DEBUG \
-                            -v || true
-                        cd -
-                        cp /src/legion/nosetests.xml legion/nosetests.xml
-                        """
-                        junit 'legion/nosetests.xml'
+                        script {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                                sh """
+                                export TEMP_DIRECTORY="\$(pwd)"
+                                cd /src/legion
+                                VERBOSE=true \
+                                DEBUG=true \
+                                BASE_IMAGE_VERSION="${Globals.buildVersion}" \
+                                SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
+                                    nosetests --processes=10 \
+                                    --process-timeout=600 \
+                                    --with-coverage \
+                                    --cover-package legion \
+                                    --with-xunitmp \
+                                    --cover-html \
+                                    --logging-level DEBUG \
+                                    -v || true
+                                cd -
+                                cp /src/legion/nosetests.xml legion/nosetests.xml
+                                """
+                                junit 'legion/nosetests.xml'
 
-                        sh """
-                        cp -rf /src/legion/cover \"${localDocumentationStorage}/${Globals.buildVersion}-cover\"
-                        """
+                                sh """
+                                cp -rf /src/legion/cover \"${localDocumentationStorage}/${Globals.buildVersion}-cover\"
+                                """
+                            }
+                        }
                     }
                 }
                 stage('Package helm charts'){
