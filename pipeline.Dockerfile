@@ -32,9 +32,13 @@ RUN cd /src/requirements/legion_airflow && pipenv install --system --dev
 # Install additional tools for build purposes
 RUN pip install Sphinx==1.8.0 sphinx_rtd_theme==0.4.1 sphinx-autobuild==0.7.1 recommonmark==0.4.0 twine==1.11.0 ansible==2.6.4 awscli==1.16.19
 
+# Install Helm
+ENV HELM_VERSION=v2.10.0
+ADD https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz /tmp/helm/
+RUN tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
+    mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
+
 # Add sources
-
-
 ADD legion /src/legion
 RUN cd /src/legion \
   && python setup.py collect_data \

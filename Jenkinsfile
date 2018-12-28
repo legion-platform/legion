@@ -10,7 +10,7 @@ class Globals {
 def chartNames = null
 
 pipeline {
-    agent { label 'jenkins-agent-m5xl'}
+    agent { label 'ec2agent'}
 
     options{
             buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
@@ -52,7 +52,6 @@ pipeline {
             param_docker_registry = "${params.DockerRegistry}"
             param_docker_hub_registry = "${params.DockerHubRegistry}"
             ///Job parameters
-            localDocumentationStorage = "/www/docs/"
             infraBuildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
             sharedLibPath = "deploy/legionPipeline.groovy"
     }
@@ -300,7 +299,7 @@ EOL
         stage('Build docs') {
             steps {
                 script {
-                    docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside(" -v ${localDocumentationStorage}:${localDocumentationStorage}") {
+                    docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
                         sh """
                         cd legion/docs
                         sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
@@ -311,7 +310,6 @@ EOL
                         """
 
                         sh "tar -czf legion_docs_${Globals.buildVersion}.tar.gz legion/docs/build/html/"
-                        sh "pwd && ls -lsa"
                         archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
                     }
                 }
@@ -446,7 +444,7 @@ EOL
                 stage("Run Python tests") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                 sh """
                                 export TEMP_DIRECTORY="\$(pwd)"
                                 cd /src/legion
@@ -467,25 +465,29 @@ EOL
                                 """
                                 junit 'legion/nosetests.xml'
 
-                                sh """
-                                cp -rf /src/legion/cover \"${localDocumentationStorage}/${Globals.buildVersion}-cover\"
-                                """
+                                sh "tar -czf legion_cover_${Globals.buildVersion}.tar.gz /src/legion/cover/"
+                                archiveArtifacts artifacts: "legion_cover_${Globals.buildVersion}.tar.gz"
+                                
                             }
                         }
                     }
                 }
                 stage('Package helm charts'){
-                    steps{
-                        dir ("${WORKSPACE}/deploy/helms") {
-                            script {
-                                chartNames = sh(returnStdout: true, script: 'ls').split()
-                                println (chartNames)
-                                for (chart in chartNames){
-                                    sh"""
-                                    sed -i 's@^version: .*\$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
-                                    #Show package list, debug purposes
-                                    helm package ${chart}
-                                    """
+                    steps {
+                        script {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                                dir ("${WORKSPACE}/deploy/helms") {
+                                    chartNames = sh(returnStdout: true, script: 'ls').split()
+                                    println (chartNames)
+                                    for (chart in chartNames){
+                                        sh"""
+                                        sed -i 's@^version: .*\$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
+                                        # Init local Helm repo
+                                        helm init --client-only
+                                        # Create chart packages
+                                        helm package ${chart}
+                                        """
+                                    }
                                 }
                             }
                         }
