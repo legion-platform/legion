@@ -14,7 +14,6 @@
 --   limitations under the License.
 --
 local os = require("os")
-local uuid = require "resty.jit-uuid"
 local cjson = require("cjson")
 
 local _M = {}
@@ -26,15 +25,6 @@ function _M.get_config(name, default)
     else
         return default
     end
-end
-
-
-function _M.init_worker()
-    uuid.seed()
-end
-
-function _M.generate_request_id()
-    return uuid()
 end
 
 function _M.get_model_id_and_version_from_feedback_url()

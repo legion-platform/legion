@@ -56,11 +56,6 @@ http {
     fluentd_logger.new(fluentd_host, fluentd_port)
   }
 
-  init_worker_by_lua_block {
-      local edge = require "edge"
-      edge.init_worker()
-  }
-
   server {
     listen 80 default_server;
     server_name _;
@@ -139,6 +134,7 @@ http {
 
         access_by_lua_block {
             local edge = require("edge")
+            local request_id_generator = require("request_id_generator")
 
             -- JWT validation
             local jwt = require("nginx-jwt")
@@ -152,7 +148,7 @@ http {
             -- RequestID generation if it is missed
             local requestID = ngx.req.get_headers()["Request-ID"]
             if not requestID then
-               requestID = edge.generate_request_id()
+               requestID = request_id_generator.generate_request_id()
                ngx.req.set_header("Request-ID", requestID)
                ngx.log(ngx.INFO, "Request ID has been generated: "..requestID)
             end
