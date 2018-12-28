@@ -155,8 +155,10 @@ pipeline {
         }
         stage('Build Agent Docker Image') {
             steps {
-                sh "docker build ${Globals.dockerCacheArg} -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile ."
-                legion.uploadDockerImage('legion-docker-agen', "${Globals.buildVersion}")
+                script {
+                    sh "docker build ${Globals.dockerCacheArg} -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile ."
+                    legion.uploadDockerImage('legion-docker-agent', "${Globals.buildVersion}")
+                }
             }
         }
         stage('Build dependencies') {
@@ -201,28 +203,28 @@ pipeline {
                     }
                 }
                 stage('Run Python code analyzers') {
-                    agent {
-                        docker {
-                            image "legion/legion-docker-agent:${Globals.buildVersion}"
+                    steps {
+                        script{
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                                sh '''
+                                bash analyze_code.sh
+                                '''
+
+                                archiveArtifacts 'legion-pylint.log'
+                                step([
+                                    $class                     : 'WarningsPublisher',
+                                    parserConfigurations       : [[
+                                                                        parserName: 'PYLint',
+                                                                        pattern   : 'legion-pylint.log'
+                                                                ]],
+                                    unstableTotalAll           : '0',
+                                    usePreviousBuildAsReference: true
+                                ])
+                            }
                         }
                     }
-                    steps {
-                        sh '''
-                        bash analyze_code.sh
-                        '''
-
-                        archiveArtifacts 'legion-pylint.log'
-                        step([
-                            $class                     : 'WarningsPublisher',
-                            parserConfigurations       : [[
-                                                                  parserName: 'PYLint',
-                                                                  pattern   : 'legion-pylint.log'
-                                                          ]],
-                            unstableTotalAll           : '0',
-                            usePreviousBuildAsReference: true
-                        ])
-                    }
                 }
+
                 stage("Upload Legion package") {
                     agent {
                         docker {
