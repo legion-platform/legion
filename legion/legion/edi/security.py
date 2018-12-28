@@ -13,6 +13,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+"""
+Security logic for legion
+"""
+
 import configparser
 import logging
 import os
@@ -54,7 +58,7 @@ def _get_config_location():
 
 def _check_credentials(args):
     """
-    Makes a request to the server to make sure that credentials are correct
+    Make a request to the server to make sure that credentials are correct
 
     :param args: argparse.ArgumentParser
     """
@@ -100,7 +104,6 @@ def login(args):
     :param args: argparse.ArgumentParser
     :return: None
     """
-
     _check_credentials(args)
     _save_credentials(args.edi, args.token)
 
@@ -109,7 +112,7 @@ def login(args):
 
 def get_security_params_from_config():
     """
-    return dict with edi url and token from config.
+    Return dict with edi url and token from config.
     If an exception occurs during parsing of config or config file doesn't exist then
     return empty dict
 
