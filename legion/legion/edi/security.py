@@ -22,6 +22,7 @@ import logging
 import os
 from pathlib import Path
 
+from legion import config
 from legion.external import edi
 
 _DEFAULT_CONFIG_PATH = Path.home().joinpath('.legion/config')
@@ -49,9 +50,9 @@ def _get_config_location():
     Return the config path.
     LEGION_CONFIG can override path value
 
-    :return: Path
+    :return: Path -- config path
     """
-    config_path_from_env = os.getenv('LEGION_CONFIG')
+    config_path_from_env = os.getenv(*config.LEGION_CONFIG)
 
     return Path(config_path_from_env) if config_path_from_env else _DEFAULT_CONFIG_PATH
 
@@ -60,7 +61,9 @@ def _check_credentials(args):
     """
     Make a request to the server to make sure that credentials are correct
 
-    :param args: argparse.ArgumentParser
+    :param args: command arguments with .namespace
+    :type args: argparse.Namespace
+    :return None
     """
     # url and token must presents in args
     edi_clint = edi.build_client(args)
@@ -101,7 +104,8 @@ def login(args):
     """
     Check that credentials is correct and save to the config
 
-    :param args: argparse.ArgumentParser
+    :param args: command arguments
+    :type args: argparse.Namespace
     :return: None
     """
     _check_credentials(args)
@@ -116,20 +120,17 @@ def get_security_params_from_config():
     If an exception occurs during parsing of config or config file doesn't exist then
     return empty dict
 
-    :return: dict[str, str]
+    :return: dict[str, str] -- config
     """
     config_path = _get_config_location()
 
-    if not config_path.exists():
-        LOG.debug(f"Can't find the config file: {config_path}")
-        return {}
+    if config_path.exists():
+        try:
+            config = configparser.ConfigParser()
+            config.read(_get_config_location())
 
-    try:
-        config = configparser.ConfigParser()
-        config.read(_get_config_location())
-
-        return dict(config['security'])
-    except Exception as e:
-        LOG.debug(f'Exception during parsing of legion config {e}')
+            return dict(config['security'])
+        except Exception as e:
+            LOG.debug(f'Exception during parsing of legion config {e}')
 
     return {}

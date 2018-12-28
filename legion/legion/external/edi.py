@@ -37,7 +37,7 @@ class EdiClient:
     EDI client
     """
 
-    def __init__(self, base, token='', retries=3):
+    def __init__(self, base, token=None, retries=3):
         """
         Build client
 
@@ -85,11 +85,10 @@ class EdiClient:
         """
         sub_url = url_template.format(version=self._version)
         target_url = self._base.strip('/') + sub_url
-        cookies = {'_oauth2_proxy': self._token}
+        cookies = {'_oauth2_proxy': self._token} if self._token else {}
 
         left_retries = self._retries if self._retries > 0 else 1
         raised_exception = None
-
         while left_retries > 0:
             try:
                 LOGGER.debug('Requesting {}'.format(target_url))
@@ -108,8 +107,8 @@ class EdiClient:
                 self._base, raised_exception
             ))
 
-        # We assume if content type equals html then it's a dex
-        if 'text/html' in response.headers['Content-Type']:
+        # We assume if there were redirects then credentials are out of date
+        if response.history:
             LOGGER.debug(f'Status code: "{response.status_code}", Response: "{response.text}"')
 
             parse_result = urlparse(target_url)
@@ -310,13 +309,14 @@ def build_client(args=None):
             token = args.token
 
     if not host or not token:
+        host = host or os.environ.get(*legion.config.EDI_URL)
+        token = token or os.environ.get(*legion.config.EDI_TOKEN)
+
+    if not host and not token:
         config = security.get_security_params_from_config()
 
-        host = host or config.get('host')
-        token = token or config.get('token')
-
-    if not host:
-        host = os.environ.get(*legion.config.EDI_URL)
+        host = config.get('host')
+        token = config.get('token')
 
     if not host:
         try:

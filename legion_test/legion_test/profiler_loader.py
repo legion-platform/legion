@@ -20,6 +20,7 @@ Variables loader (from profiles/{env.PROFILE}.yml and /{env.CREDENTIAL_SECRETS}.
 import os
 
 import yaml
+from legion_test.robot import dex_client
 from legion_test.robot.dex_client import init_session_id, init_session_id_from_data
 
 PROFILE_ENVIRON_KEY = 'PROFILE'
@@ -112,6 +113,9 @@ def get_variables(arg=None):
             init_session_id_from_data(cookies_data)
         variables['STATIC_USER_EMAIL'] = static_user['email']
         variables['STATIC_USER_PASS'] = static_user['password']
+
+        variables['DEX_TOKEN'] = dex_client.get_token()
+        variables['DEX_COOKIES'] = dex_client.get_session_cookies()
     else:
         variables['STATIC_USER_EMAIL'] = ''
         variables['STATIC_USER_PASS'] = ''
