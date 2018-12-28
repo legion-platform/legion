@@ -97,7 +97,7 @@ def _save_credentials(edi, token):
     with config_path.open("w") as config_file:
         config.write(config_file)
 
-    LOG.debug(f'Save config {config} to the file {config_path}')
+    LOG.debug('Save config {} to the file {}'.format(config, config_path))
 
 
 def login(args):
@@ -131,6 +131,6 @@ def get_security_params_from_config():
 
             return dict(config['security'])
         except Exception as e:
-            LOG.debug(f'Exception during parsing of legion config {e}')
+            LOG.debug('Exception during parsing of legion config {}'.format(e))
 
     return {}

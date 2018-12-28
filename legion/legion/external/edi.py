@@ -109,13 +109,14 @@ class EdiClient:
 
         # We assume if there were redirects then credentials are out of date
         if response.history:
-            LOGGER.debug(f'Status code: "{response.status_code}", Response: "{response.text}"')
+            LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
 
             parse_result = urlparse(target_url)
 
             raise Exception(
-                f'Credentials are not correct. You should open {parse_result.scheme}://{parse_result.netloc}'
-                f' url in a browser to get fresh token'
+                'Credentials are not correct. You should open {}://{} url in a browser to get fresh token'.format(
+                    parse_result.scheme, parse_result.netloc
+                )
             )
 
         try:
