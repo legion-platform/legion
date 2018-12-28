@@ -86,7 +86,7 @@ class Grafana:
         if self._client.is_dashboard_exists(model_id):
             raise Exception('Dashboard exists')
 
-    def metric_should_be_presented(self, model_id, model_version):
+    def metric_should_be_presented(self, model_id, model_version, model_endpoint='default'):
         """
         Check that requests count metric for model exists
 
@@ -94,6 +94,8 @@ class Grafana:
         :type model_id: str
         :param model_version: model version
         :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
         :raises: Exception
         :return: None
         """
@@ -107,8 +109,9 @@ class Grafana:
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        model_identifier = '{}.{}'.format(normalize_name(model_id, dns_1035=True),
-                                          normalize_name(model_version, dns_1035=True))
+        model_identifier = '{}.{}.{}'.format(normalize_name(model_id, dns_1035=True),
+                                             normalize_name(model_version, dns_1035=True),
+                                             normalize_name(model_endpoint, dns_1035=True))
 
         target = 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_identifier)
 
