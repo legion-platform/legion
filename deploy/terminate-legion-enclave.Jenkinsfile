@@ -8,8 +8,11 @@ pipeline {
         param_legion_version = "${params.LegionVersion}"
         aram_enclave_name = "${params.EnclaveName}"
         param_docker_repo = "${params.DockerRepo}"
+        param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
     }
 
     stages {
@@ -27,6 +30,7 @@ pipeline {
         stage('Terminate Legion Enclave') {
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
                     legion.terminateLegionEnclave()
                 }
             }

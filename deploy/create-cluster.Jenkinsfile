@@ -9,8 +9,12 @@ pipeline {
         param_legion_version = "${params.LegionVersion}"
         param_docker_repo = "${params.DockerRepo}"
         param_helm_repo = "${params.HelmRepo}"
+        param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
     }
 
     stages {
@@ -28,6 +32,7 @@ pipeline {
         stage('Create Kubernetes Cluster') {
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
                     legion.createCluster()
                 }
             }

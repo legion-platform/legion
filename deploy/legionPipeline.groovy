@@ -16,20 +16,36 @@ def buildDescription(){
    currentBuild.description = "${env.param_profile} ${env.param_git_branch}"
 }
 
+def ansibleDebugRunCheck(String debugRun) {
+    // Run ansible playbooks and helm charts from sources in workspace and use verbose output for debug purposes
+    if (debugRun == "true" ) {
+      ansibleHome =  "${WORKSPACE}/deploy/ansible"
+      ansibleVerbose = '-vvv'
+      helmLocalSrc = 'true'
+    } else {
+      ansibleHome = env.ansibleHome
+      ansibleVerbose = env.ansibleVerbose
+      helmLocalSrc = env.helmLocalSrc
+    }
+}
+
 def createCluster() {
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
                     stage('Create cluster') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook create-cluster.yml \
+                        cd ${ansibleHome} && \
+                        ansible-playbook create-cluster.yml \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version} \
                         skip_kops=${env.param_skip_kops} \
-                        helm_repo=${env.param_helm_repo}"
+                        helm_repo=${env.param_helm_repo} \
+                        helm_local_src=${helmLocalSrc}" 
                         """
                     }
                 }
@@ -43,13 +59,16 @@ def terminateCluster() {
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
-                    stage('Create cluster') {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    stage('Terminate cluster') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook terminate-cluster.yml \
+                        cd ${ansibleHome} && \
+                        ansible-playbook terminate-cluster.yml \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
-                        keep_jenkins_volume=${env.param_keep_jenkins_volume}"
+                        keep_jenkins_volume=${env.param_keep_jenkins_volume} \
+                        helm_local_src=${helmLocalSrc}"
                         """
                     }
                 }
@@ -63,16 +82,19 @@ def deployLegion() {
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
+                        cd ${ansibleHome} && \
+                        ansible-playbook deploy-legion.yml \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version}  \
                         pypi_repo=${env.param_pypi_repo} \
                         helm_repo=${env.param_helm_repo} \
-                        docker_repo=${env.param_docker_repo}"
+                        docker_repo=${env.param_docker_repo} \
+                        helm_local_src=${helmLocalSrc}"
                         """
                     }
                 }
@@ -245,17 +267,20 @@ def deployLegionEnclave() {
         file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Deploy Legion') {
                         sh """
-                        cd /opt/legion/deploy/ansible && ansible-playbook deploy-legion.yml \
+                        cd ${ansibleHome} && \
+                        ansible-playbook deploy-legion.yml \
+                        ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
                         legion_version=${env.param_legion_version} \
                         pypi_repo=${env.param_pypi_repo} \
                         docker_repo=${env.param_docker_repo} \
                         helm_repo=${env.param_helm_repo} \
-                        enclave_name=${env.param_enclave_name}"
+                        enclave_name=${env.param_enclave_name} \
+                        helm_local_src=${helmLocalSrc}"
                         """
                     }
                 }
@@ -270,10 +295,12 @@ def terminateLegionEnclave() {
             file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
             withAWS(credentials: 'kops') {
                 wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                    docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                         stage('Terminate Legion Enclave') {
                             sh """
-                            cd /opt/legion/deploy/ansible && ansible-playbook terminate-legion-enclave.yml \
+                            cd ${ansibleHome} && \
+                            ansible-playbook terminate-legion-enclave.yml \
+                            ${ansibleVerbose} \
                             --vault-password-file=${vault} \
                             --extra-vars "profile=${env.param_profile} \
                             enclave_name=${env.param_enclave_name}"

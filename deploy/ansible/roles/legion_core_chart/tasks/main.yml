@@ -88,18 +88,42 @@
   loop_control:
     loop_var: enclave
 
+# Install charts from remote repo
 - name: Pre run with dumping
   shell: helm --kube-context {{ cluster_name }} install legion-helm/legion-core --name legion-core --version={{ legion_version }} --debug --dry-run -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
   register: helm_core_install_output
+  when: helm_local_src != 'true'
 
 - name: Save pre run result
   copy:
     content: "{{ helm_core_install_output.stdout }}"
     dest: "{{ tmp_dir }}/helm.core.{{ cluster_name }}.debug"
+  when: helm_local_src != 'true'
 
 - name: Install legion core chart
   shell: helm --kube-context {{ cluster_name }} install legion-helm/legion-core --name legion-core --version={{ legion_version }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
+  when: helm_local_src != 'true'
 
+# OR install charts from local soures in case of debug flag
+- name: Pre run with dumping
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --debug --dry-run -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
+  register: helm_core_install_output
+  args:
+    chdir: ../helms
+  when: helm_local_src == 'true'
+
+- name: Save pre run result
+  copy:
+    content: "{{ helm_core_install_output.stdout }}"
+    dest: "{{ tmp_dir }}/helm.core.{{ cluster_name }}.debug"
+  when: helm_local_src == 'true'
+
+- name: Install legion core chart
+  shell: helm --kube-context {{ cluster_name }} install legion-core --name legion-core --wait --timeout 600 -f  {{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml
+  args:
+    chdir: ../helms
+  when: helm_local_src == 'true'
+ 
 - name: Label default namespace with legion-component=core
   shell: kubectl --context {{ cluster_name }} label ns default legion-component=core --overwrite
 

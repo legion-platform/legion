@@ -39,17 +39,41 @@
     secret_fernet_key: "{{ fernet_key_output.stdout }}"
     secret_flask: "{{ flask_key_output.stdout }}"
 
+# Install charts from remote repo
 - name: Pre run with dumping
   shell: helm --kube-context {{ cluster_name }} install legion-helm/airflow --name airflow-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
   register: helm_airflow_install_output
+  when:  helm_local_src != 'true'
 
 - name: Save pre run result
   copy:
     content: "{{ helm_airflow_install_output.stdout }}"
     dest: "{{ tmp_dir }}/helm.airflow.{{ cluster_name }}.debug"
+  when:  helm_local_src != 'true'
 
 - name: Install airflow chart
   shell: helm --kube-context {{ cluster_name }} install legion-helm/airflow --name airflow-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
+  when:  helm_local_src != 'true'
+
+# OR install charts from local soures in case of debug flag
+- name: Pre run with dumping
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
+  register: helm_airflow_install_output
+  args:
+    chdir: ../helms
+  when:  helm_local_src == 'true'
+
+- name: Save pre run result
+  copy:
+    content: "{{ helm_airflow_install_output.stdout }}"
+    dest: "{{ tmp_dir }}/helm.airflow.{{ cluster_name }}.debug"
+  when: helm_local_src == 'true'
+
+- name: Install airflow chart
+  shell: helm --kube-context {{ cluster_name }} install airflow --name airflow-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/airflow-values.{{ cluster_name }}.yaml
+  args:
+    chdir: ../helms
+  when: helm_local_src == 'true'
 
 - name: Dump current HELM status
   shell: helm --kube-context {{ cluster_name }} status airflow-{{ enclave }}
