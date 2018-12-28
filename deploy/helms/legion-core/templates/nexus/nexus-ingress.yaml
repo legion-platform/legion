@@ -10,9 +10,10 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
   annotations:
-    {{- range $key, $value := .Values.nexus.ingress.annotations }}
-      {{ $key }}: {{ $value | quote }}
-    {{- end }}
+  {{- range $key, $value := .Values.nexus.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- template "dex-ingress-annotations" . }}
 spec:
   rules:
     - host: "{{ .Values.nexus.ingress.domain.partial }}.{{ .Values.rootDomain }}"
