@@ -9,14 +9,16 @@
 </head>
 
 <body>
-    <div class="container">
+    <main class="container">
         <h2 class="theme-heading">Legion EDI</h1>
         <h3>Your personal authorisation token is:</h3>
         <div class="command">
             <pre><code id="auth-token">{{ token }}</code></pre>
         </div>
-
-    </div>
+    </main>
+    <footer>
+        <a href="{{ url_for('.api_root') }}">API</a>
+    </footer>
 </body>
 
 <style>
@@ -57,6 +59,14 @@
         padding: 5px;
         white-space: pre-wrap;
         overflow-wrap: break-word;
+    }
+
+    footer {
+        text-align: center;
+    }
+
+    footer a {
+        color: #4561ff;
     }
 </style>
 </html>
