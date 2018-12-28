@@ -9,7 +9,8 @@ Library             Collections
 Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
 ...                 Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
 Suite Teardown      Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}  ${TEST_COMMAND_MODEL_ID}
-
+*** Variables ***
+${LOCAL_CONFIG}  ./legion/config
 *** Test Cases ***
 Scale. Nonexistent model service
     [Documentation]  The scale command must fail if a model cannot be found by id
@@ -186,23 +187,52 @@ Deploy. Negative timeout with no-wait parameter
 
 Missed the host parameter
     [Documentation]  The inspect command must fail if it does not contain an edi host
-    [Tags]  edi  cli  enclave  kek
+    [Tags]  edi  cli  enclave
     ${res}=  Shell  legionctl inspect --token "${DEX_TOKEN}"
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Failed to connect
 
 Wrong token
     [Documentation]  The inspect command must fail if it does not contain a token
-    [Tags]  edi  cli  enclave  kek
+    [Tags]  edi  cli  enclave
     ${res}=  Shell  legionctl inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
 
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
 
 Without token
-    [Documentation]  The inspect command must fail if it does not contain a token
-    [Tags]  edi  cli  enclave  kek
+    [Documentation]  The inspect command must fail if token is wrong
+    [Tags]  edi  cli  enclave
     ${res}=  Shell  legionctl inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}
 
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Credentials are not correct
+
+Check login command
+    [Documentation]  Check the login command and inspect command
+    [Tags]  edi  cli  enclave
+    [Teardown]  Remove File  ${LOCAL_CONFIG}
+    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl inspect
+             Should be equal  ${res.rc}  ${0}
+
+Login. Wrong token
+    [Documentation]  The login command must fail if token is wrong
+    [Tags]  edi  cli  enclave
+    [Teardown]  Remove File  ${LOCAL_CONFIG}
+    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Credentials are not correct
+
+Login. Override login values
+    [Documentation]  Command line parameters must be overrided by config parameters
+    [Tags]  edi  cli  enclave
+    [Teardown]  Remove File  ${LOCAL_CONFIG}
+    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
