@@ -228,7 +228,7 @@ pipeline {
                 stage("Upload Legion package") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-u root") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
                                 withCredentials([[
                                 $class: 'UsernamePasswordMultiBinding',
                                 credentialsId: 'nexus-local-repository',
@@ -301,9 +301,6 @@ EOL
             steps {
                 script {
                     docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside(" -v ${localDocumentationStorage}:${localDocumentationStorage}") {
-                        fullBuildNumber = env.BUILD_NUMBER
-                        fullBuildNumber.padLeft(4, '0')
-
                         sh """
                         cd legion/docs
                         sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
@@ -313,11 +310,14 @@ EOL
                         cd ../../
                         """
 
-                        sh "cd legion && cp -rf docs/build/html/ \"${localDocumentationStorage}/${Globals.buildVersion}/\""
+                        sh "tar -czf legion_docs_${Globals.buildVersion}.tar.gz legion/docs/build/html/"
+                        sh "pwd && ls -lsa"
+                        archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
                     }
                 }
             }
         }
+
         stage("Build and Upload Base Docker Image") {
             steps {
                 script {
@@ -329,25 +329,26 @@ EOL
                 }
             }
         }
-        stage("Build toolchains"){
-            steps {
-                script {
-                    sh """
-                    docker run --rm --entrypoint "/bin/sh" "legion-docker-agent:${env.BUILD_NUMBER}" -c "cat /src/legion/dist/*.whl" > k8s/toolchains/python/legion-1.1.1-py2.py3-none-any.whl
 
-                    cd k8s/toolchains/python
-                    docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}"  -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
-                    """
-                }
-            }
-        }
-        stage("Build Ansible Docker image") {
-            steps {
-                sh "docker build ${Globals.dockerCacheArg} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile ."
-            }
-        }
+
+
         stage("Build Docker images & Helms") {
             parallel {
+                stage("Build Ansible Docker image") {
+                    steps {
+                        sh "docker build ${Globals.dockerCacheArg} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile ."
+                    }
+                }
+                stage("Build toolchains Docker image"){
+                    steps {
+                        sh """
+                        docker run --rm --entrypoint "/bin/sh" "legion-docker-agent:${env.buildVersion}" -c "cat /src/legion/dist/*.whl" > k8s/toolchains/python/legion-1.1.1-py2.py3-none-any.whl
+
+                        cd k8s/toolchains/python
+                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}"  -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        """
+                    }
+                }
                 stage("Build Grafana Docker image") {
                     steps {
                         sh """
@@ -356,7 +357,6 @@ EOL
                         """
                     }
                 }
-
                 stage("Build Edge Docker image") {
                     steps {
                         sh """
