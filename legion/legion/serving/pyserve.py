@@ -120,9 +120,8 @@ def model_invoke(model_id, model_version, endpoint='default'):
         raise Exception('Unknown endpoint {!r}'.format(endpoint))
 
     output = model.endpoints[endpoint].invoke(input_dict)
-    response = legion.http.prepare_response(output, model_id=model_id, model_version=model_version,
-                                            model_endpoint=endpoint)
-    return response
+    return legion.http.prepare_response(output, model_id=model_id, model_version=model_version,
+                                        model_endpoint=endpoint)
 
 
 @blueprint.route(SERVE_BATCH_DEFAULT.format(model_id='<model_id>', model_version='<model_version>'),
@@ -151,7 +150,8 @@ def model_batch(model_id, model_version, endpoint='default'):
 
     responses = [model.endpoints[endpoint].invoke(input_dict) for input_dict in input_dicts]
 
-    return legion.http.prepare_response(responses)
+    return legion.http.prepare_response(responses, model_id=model_id, model_version=model_version,
+                                        model_endpoint=endpoint)
 
 
 @blueprint.route(SERVE_HEALTH_CHECK)
