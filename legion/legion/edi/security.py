@@ -127,10 +127,10 @@ def get_security_params_from_config():
     if config_path.exists():
         try:
             config = configparser.ConfigParser()
-            config.read(config_path)
+            config.read(str(config_path))
 
             return dict(config['security'])
         except Exception as e:
-            LOG.debug('Exception during parsing of legion config {}'.format(e))
+            LOG.debug('Exception during parsing of legion config {}'.format(e), exc_info=True)
 
     return {}
