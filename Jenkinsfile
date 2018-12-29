@@ -472,7 +472,7 @@ EOL
                         }
                     }
                 }
-                stage('Package helm charts'){
+                stage('Package and upload helm charts'){
                     steps {
                         script {
                             docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
@@ -486,6 +486,42 @@ EOL
                                         helm init --client-only
                                         # Create chart packages
                                         helm package ${chart}
+                                        """
+                                    }
+                                }
+                                withCredentials([[
+                                $class: 'UsernamePasswordMultiBinding',
+                                credentialsId: 'nexus-local-repository',
+                                usernameVariable: 'USERNAME',
+                                passwordVariable: 'PASSWORD']]) {
+                                    dir ("${WORKSPACE}/deploy/helms") {
+                                        script {
+                                            for (chart in chartNames){
+                                            sh"""
+                                            curl -u ${USERNAME}:${PASSWORD} ${env.param_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                                            """
+                                            }
+                                        }
+                                    }
+                                }
+                                dir ("${WORKSPACE}/legion-helm-charts") {
+                                    if (env.param_stable_release) {
+                                        //checkout repo with existing charts  (needed for generating correct repo index file )
+                                        git branch: "${env.param_helm_repo_git_branch}", poll: false, url: "${env.param_helm_repo_git_url}"
+                                        //move packed charts to folder (where repo was checkouted)
+                                        for (chart in chartNames){
+                                            sh"""
+                                            mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
+                                            cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
+                                            git add ${chart}/${chart}-${Globals.buildVersion}.tgz
+                                            """
+                                        }
+                                        sh """
+                                        helm repo index ./
+                                        git add index.yaml
+                                        git status
+                                        git commit -m "Release ${Globals.buildVersion}"
+                                        git push origin ${env.param_helm_repo_git_branch}
                                         """
                                     }
                                 }
@@ -584,50 +620,6 @@ EOL
                     steps {
                         script {
                             legion.uploadDockerImage('python-toolchain')
-                        }
-                    }
-                }
-                stage('Deploy helm charts'){
-                    steps{
-                        withCredentials([[
-                         $class: 'UsernamePasswordMultiBinding',
-                         credentialsId: 'nexus-local-repository',
-                         usernameVariable: 'USERNAME',
-                         passwordVariable: 'PASSWORD']]) {
-                            dir ("${WORKSPACE}/deploy/helms") {
-                                script {
-                                    for (chart in chartNames){
-                                       sh"""
-                                       curl -u ${USERNAME}:${PASSWORD} ${env.param_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
-                                       """
-                                    }
-                                }
-                            }
-                        }
-                        dir ("${WORKSPACE}/legion-helm-charts") {
-                            script{
-                                if (env.param_stable_release) {
-                                    stage('Publish helm charts to Public repo'){
-                                        //checkout repo with existing charts  (needed for generating correct repo index file )
-                                        git branch: "${env.param_helm_repo_git_branch}", poll: false, url: "${env.param_helm_repo_git_url}"
-                                        //move packed charts to folder (where repo was checkouted)
-                                        for (chart in chartNames){
-                                            sh"""
-                                            mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
-                                            cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
-                                            git add ${chart}/${chart}-${Globals.buildVersion}.tgz
-                                            """
-                                        }
-                                        sh """
-                                        helm repo index ./
-                                        git add index.yaml
-                                        git status
-                                        git commit -m "Release ${Globals.buildVersion}"
-                                        git push origin ${env.param_helm_repo_git_branch}
-                                        """
-                                    }
-                                }
-                            }
                         }
                     }
                 }
