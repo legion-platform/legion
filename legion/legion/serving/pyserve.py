@@ -22,7 +22,6 @@ import os
 import itertools
 
 import legion.config
-import legion.containers.headers
 import legion.http
 import legion.model
 import legion.pymodel
@@ -121,11 +120,8 @@ def model_invoke(model_id, model_version, endpoint='default'):
         raise Exception('Unknown endpoint {!r}'.format(endpoint))
 
     output = model.endpoints[endpoint].invoke(input_dict)
-    response = legion.http.prepare_response(output)
-    response.headers[legion.containers.headers.MODEL_ID] = model_id
-    response.headers[legion.containers.headers.MODEL_VERSION] = model_version
-    response.headers[legion.containers.headers.MODEL_ENDPOINT] = endpoint
-
+    response = legion.http.prepare_response(output, model_id=model_id, model_version=model_version,
+                                            model_endpoint=endpoint)
     return response
 
 
