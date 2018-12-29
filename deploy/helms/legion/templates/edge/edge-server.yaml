@@ -34,7 +34,7 @@ spec:
             cpu: "100m"
             memory: "512Mi"
         env:
-        - name: POD_UID
+        - name: POD_UUID
           valueFrom:
             fieldRef:
               fieldPath: metadata.uid

@@ -20,7 +20,7 @@ local _M = {}
 
 
 function _M.reset_seed()
-    local pod_uuid = os.getenv("POD_UID")
+    local pod_uuid = os.getenv("POD_UUID")
     if pod_uuid == Nil then
         pod_uuid = ""
     end
@@ -47,6 +47,7 @@ function _M.reset_seed()
     -- Entire seed
     local seed = pod_uuid_crc32 * 0x1000 * 0x1000 + seed_p2
 
+    ngx.log(ngx.ERR, "POD_UUID = "..pod_uuid.." (CRC32: "..pod_uuid_crc32.."); Time = "..time.."; PID = "..pid.."; WID = "..wid)
     ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..string.format("%x", seed))
 
     math.randomseed(seed)
