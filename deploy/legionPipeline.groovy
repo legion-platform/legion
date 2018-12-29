@@ -216,7 +216,7 @@ def runRobotTests(tags="") {
             # Run Robot tests
             PATH=../../.venv/bin:\$PATH DISPLAY=:99 \
             PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} PATH_TO_COOKIES=\$PATH_TO_COOKIES \
-            ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 4 --variable PATH_TO_PROFILES_DIR:\$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter ${env.robot_tags} --outputdir . tests/**/*.robot || true
+            ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 6 --variable PATH_TO_PROFILES_DIR:\$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter ${env.robot_tags} --outputdir . tests/**/*.robot || true
 
             echo \"Starting python tests\"
             cd ../python
