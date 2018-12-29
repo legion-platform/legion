@@ -130,7 +130,7 @@ Check model API request generation have no duplicates
     \   ${actual_request_id}=          Get model API last response ID
     \   Append To List      ${response_ids}     ${actual_request_id}
 
-    List Should Not Contain Duplicates   ${actual_request_id}
+    List Should Not Contain Duplicates   ${response_ids}
 
 
 Check model API feedback with request ID
