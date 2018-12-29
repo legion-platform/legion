@@ -43,8 +43,7 @@ function _M.push_data(_, time, name, endpoint)
 end
 
 function _M.send_request_statistics(name, latency)
-    local request_http_headers = ngx.req.get_headers()
-    local endpoint = request_http_headers["Model-Endpoint"]
+    local endpoint = ngx.header["Model-Endpoint"]
 
     if model_endpoint == Nil then
         model_endpoint = "default"

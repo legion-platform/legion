@@ -83,7 +83,7 @@ end
 function _M.catch_model_api_response_chunk(model_id, model_version, content, eof)
     local request_http_headers = ngx.req.get_headers()
     local requestID = request_http_headers["Request-ID"]
-    local model_endpoint = request_http_headers["Model-Endpoint"]
+    local model_endpoint = ngx.header["Model-Endpoint"]
 
     if model_endpoint == Nil then
         model_endpoint = "default"
@@ -112,7 +112,7 @@ end
 function _M.catch_model_api_call(model_id, model_version)
     local request_http_headers = ngx.req.get_headers()
     local request_id = request_http_headers["Request-ID"]
-    local model_endpoint = request_http_headers["Model-Endpoint"]
+    local model_endpoint = ngx.header["Model-Endpoint"]
 
     if model_endpoint == Nil then
         model_endpoint = "default"
