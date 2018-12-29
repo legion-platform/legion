@@ -9,6 +9,13 @@ ${SELENIUM_TIMEOUT}         60 seconds    #time to explicite wait for keywords r
 ${SELENIUM_IMPLICIT_WAIT}   5 seconds     #time to wait for a DOM load on page
 ${NEXUS_COMPONENTS_TABLE}   //table[contains(.,'docker')]
 
+ #   LOCATORS
+ ##  DEX AUTH PAGE
+ ${DEX_AUTH_dex_email_login_button}   //button[contains(@class, 'dex-btn theme-btn-provider')]
+ ${DEX_AUTH_login_input}              //*[@id="login"]
+ ${DEX_AUTH_password_input}           //*[@id="password"]
+ ${DEX_AUTH_login_button}             //*[@id="submit-login"]
+
 
 *** Keywords ***
 Start browser
