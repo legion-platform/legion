@@ -80,9 +80,10 @@ function _M.response_feedback(data)
     ngx.say(json_encoded_response);
 end
 
-function _M.catch_model_api_response_chunk(model_id, model_version, model_endpoint, content, eof)
-    local http_request_headers = ngx.req.get_headers()
-    local requestID = http_request_headers["Request-ID"]
+function _M.catch_model_api_response_chunk(model_id, model_version, content, eof)
+    local request_http_headers = ngx.req.get_headers()
+    local requestID = request_http_headers["Request-ID"]
+    local model_endpoint = request_http_headers["Model-Endpoint"]
 
     if eof and string.len(content) == 0 then
         return nil
@@ -104,9 +105,10 @@ function _M.catch_model_api_response_chunk(model_id, model_version, model_endpoi
     return data
 end
 
-function _M.catch_model_api_call(model_id, model_version, model_endpoint)
+function _M.catch_model_api_call(model_id, model_version)
     local request_http_headers = ngx.req.get_headers()
     local request_id = request_http_headers["Request-ID"]
+    local model_endpoint = request_http_headers["Model-Endpoint"]
     local http_method = ngx.req.get_method()
     request_http_headers["authorization"] = nil
 

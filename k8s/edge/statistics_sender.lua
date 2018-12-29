@@ -42,7 +42,10 @@ function _M.push_data(_, time, name, endpoint)
     end
 end
 
-function _M.send_request_statistics(name, endpoint, latency)
+function _M.send_request_statistics(name, latency)
+    local request_http_headers = ngx.req.get_headers()
+    local endpoint = request_http_headers["Model-Endpoint"]
+
     local ok, err = ngx.timer.at(0, _M.push_data, latency, name, endpoint)
     if not ok then
         ngx.log(ngx.ERR, "Failed to create Statsd reporting timer: ", err)
