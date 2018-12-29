@@ -55,8 +55,6 @@ function _M.reset_seed()
 end
 
 function _M.generate_request_id()
-    local wid = ngx.worker.id() -- worker ID
-    ngx.log(ngx.ERR, "Generating request id on worker "..wid)
     return uuid()
 end
 
