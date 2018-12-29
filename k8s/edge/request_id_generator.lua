@@ -21,7 +21,7 @@ local _M = {}
 
 function _M.reset_seed()
     local pod_uuid = os.getenv("POD_UUID")
-    if pod_uuid == Nil then
+    if pod_uuid == nil then
         pod_uuid = ""
     end
 

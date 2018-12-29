@@ -18,6 +18,7 @@
 {{ load_module('legion.template_plugins.enclave_configmap_monitor', var_name='tokens') }}
 
 env JWT_SECRET;
+env POD_UUID;
 
 worker_processes  1;
 
