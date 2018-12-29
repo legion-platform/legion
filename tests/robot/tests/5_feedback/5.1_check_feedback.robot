@@ -118,7 +118,6 @@ Check model API logging with request ID and many chunks
 Check model API request generation have no duplicates
     [Documentation]  Checking that model API request generation does not provide same IDs
     [Tags]  feedback_loop  apps
-    ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
     ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
@@ -126,7 +125,7 @@ Check model API request generation have no duplicates
     ${response_ids}=        Create List
 
     :FOR    ${i}    IN RANGE    ${REQUEST_ID_CHECK_RETRIES}
-    \   ${response}=   Invoke deployed model    ${MODEL_TEST_ENCLAVE}  ${TEST_FEEDBACK_MODEL_ID}  ${TEST_FEEDBACK_MODEL_VERSION}  request_id=${request_id}  a=${a_value}  b=${b_value}
+    \   ${response}=   Invoke deployed model    ${MODEL_TEST_ENCLAVE}  ${TEST_FEEDBACK_MODEL_ID}  ${TEST_FEEDBACK_MODEL_VERSION}  a=${a_value}  b=${b_value}
     \   Validate model API response      ${response}    result=${expected_response}
     \   ${actual_request_id}=          Get model API last response ID
     \   Append To List      ${response_ids}     ${actual_request_id}
