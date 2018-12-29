@@ -15,7 +15,9 @@
 --
 local os = require("os")
 local uuid = require "resty.jit-uuid"
+local str = require "resty.string"
 local _M = {}
+
 
 function _M.reset_seed()
     local pod_uuid = os.getenv("POD_UID")
@@ -23,14 +25,33 @@ function _M.reset_seed()
         pod_uuid = ""
     end
 
-    local pid = ngx.worker.pid()
-    local wid = ngx.worker.id()
+    local pod_uuid_crc32 = ngx.crc32_short(pod_uuid) -- CRC32 of POD ID
 
-    local seed_string = pod_uuid.."-pid-"..pid.."-wid-"..wid
+    local pid = ngx.worker.pid() -- process ID
+    local wid = ngx.worker.id() -- worker ID
+    local time = ngx.time() -- timestamp
 
-    ngx.log(ngx.ERR, "Resetting UUID seed to "..seed_string)
+    --[[
+    Seed structure:
+    |      POD UID CRC 32 hash       | PID| WID|  TIMESTAMP's tail      |
+    |            32 bits             |4bts|4bts|          24bits        |
+    |-------------------------------- ---- ---- ------------------------|
+    |            1st word            |              2nd word            |
+    --]]
 
-    math.randomseed(seed_string)
+    -- First seed word
+    local seed_p1 = bit.blshift(32, pod_uuid_crc32)         -- CRC32(POD_ID) << 32
+    -- Second seed word
+    local seed_p2_pid = bit.blshift(28, bit.band(pid, 0xF)) -- (PID & 0xF) << 28
+    local seed_p2_wid = bit.blshift(24, bit.band(wid, 0xF)) -- (WID & 0xF) << 24
+    local seed_p2_time = bit.band(time, 0x0FFFFFFF)         -- TIMESTAMP & 0x0FFFFFFF
+    local seed_p2 = bit.bor(bit.bor(seed_p2_pid, seed_p2_wid), seed_p2_time)
+    -- Entire seed
+    local seed = bit.bor(seed_p1, seed_p2)
+
+    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..str.to_hex(seed))
+
+    math.randomseed(seed)
 end
 
 function _M.generate_request_id()
