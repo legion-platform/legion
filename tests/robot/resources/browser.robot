@@ -8,6 +8,7 @@ ${BROWSER}                  Firefox
 ${SELENIUM_TIMEOUT}         60 seconds    #time to explicite wait for keywords run
 ${SELENIUM_IMPLICIT_WAIT}   5 seconds     #time to wait for a DOM load on page
 ${NEXUS_COMPONENTS_TABLE}   //table[contains(.,'docker')]
+${NEXUS_HOST}               ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}
 
  #   LOCATORS
  ##  DEX AUTH PAGE
