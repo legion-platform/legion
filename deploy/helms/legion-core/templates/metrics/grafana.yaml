@@ -82,6 +82,7 @@ metadata:
   {{- range $key, $value := .Values.grafana.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
+  {{- template "dex-ingress-annotations" . }}
   labels:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}

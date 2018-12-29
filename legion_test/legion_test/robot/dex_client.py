@@ -67,7 +67,7 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
         if response.status_code != 200:
             raise IOError('Authentication endpoint is unavailable, got {} http code'
                           .format(response.status_code))
-        if response.url.startswith(AUTHENTICATION_HOSTNAME.format(cluster_host)): # if auth form is opened
+        if response.url.startswith(AUTHENTICATION_HOSTNAME.format(cluster_host)):  # if auth form is opened
             match = re.search(REQUEST_ID_REGEXP, response.text)
             if match:
                 request_id = match.group(1)
@@ -103,6 +103,15 @@ def get_session_cookies():
     :return: cookies dict or empty dict if Session ID wasn't found
     """
     return _session_cookies
+
+
+def get_token():
+    """
+    Get token from session cookies that can be used inside Request.
+
+    :return: str -- jwt
+    """
+    return _session_cookies['_oauth2_proxy']
 
 
 def get_jenkins_credentials():

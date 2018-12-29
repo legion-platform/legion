@@ -49,6 +49,7 @@ LOGGER = logging.getLogger(__name__)
 def render_template(template_name, values=None):
     """
     Render template with parameters
+
     :param template_name: name of template without path (all templates should be placed in legion.templates directory)
     :param values: dict template variables or None
     :return: str rendered template

@@ -25,7 +25,7 @@ Get token from EDI with valid parameters
     [Setup]   NONE
     [Tags]  edi  cli  enclave  edi_token
     &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
+    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
     Log          ${resp}
     Should not be empty   ${resp}
     Should be equal as integers    ${resp["code"]}    200
@@ -39,7 +39,7 @@ Get token from EDI without version parameter
     [Setup]   NONE
     [Tags]  edi  cli  enclave  edi_token
     &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
+    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
     Log          ${resp}
     Should not be empty   ${resp}
     Should be equal as integers    ${resp["code"]}    500
@@ -53,7 +53,7 @@ Get token from EDI without model_id parameter
     [Setup]   NONE
     [Tags]  edi  cli  enclave  edi_token
     &{data} =    Create Dictionary    model_version=${TEST_MODEL_3_VERSION}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}
+    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
     Log          ${resp}
     Should not be empty   ${resp}
     Should be equal as integers    ${resp["code"]}    500

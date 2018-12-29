@@ -38,14 +38,18 @@ Checking if all replica sets, stateful sets, replication controllers are up and 
 Check Nexus availability
     [Documentation]  Check Nexus UI availability
     [Tags]  nexus  ui  apps
-    Open Nexus   /
+    Start browser    ${NEXUS_HOST}
+    Login with dex
+    Go To            ${NEXUS_HOST}/
     Wait Nexus componens in menu
 
 Check Nexus Components available
     [Documentation]  Check that Nexus storages (components) are ready
     [Tags]  nexus  ui  apps
+    Start browser    ${NEXUS_HOST}
+    Login with dex
+    Go To            ${NEXUS_HOST}/#browse/browse/components
     @{expectedComponentsNames} =  Create List  docker-hosted  raw
-    Open Nexus                   /#browse/browse/components
     Check components presence in Nexus table  ${expectedComponentsNames}
 
 Check enclave Grafana availability

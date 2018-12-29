@@ -693,11 +693,18 @@ def build_requests_mock_function(test_client):
     :type test_client: :py:class:`flask.test.FlaskClient`
     :return: Callable[[str, str, dict[str, str], dict[str, str]], requests.Response]
     """
-    def func(action, url, data=None, headers=None):
+
+    def func(action, url, data=None, headers=None, cookies=None):
         request_data = {'query_string' if action == 'GET' else 'data': data}
+        server_name = "localhost"
+
+        for k, v in cookies.items():
+            test_client.set_cookie(server_name, k, v)
+
         test_response = test_client.open(url, method=action, headers=headers, **request_data)
 
         return build_requests_reponse_from_flask_client_response(test_response, url)
+
     return func
 
 
