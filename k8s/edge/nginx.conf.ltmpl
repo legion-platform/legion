@@ -123,6 +123,14 @@ http {
             -- arg[1] contains a chunk of response content
             -- arg[2] is true if this is the last chunk
 
+            -- Model-Endpoint generation if it is missing
+            local model_endpoint = ngx.header["Model-Endpoint"]
+            if not model_endpoint then
+                model_endpoint = "default"
+                ngx.header["Model-Endpoint"] = model_endpoint
+                ngx.log(ngx.INFO, "Model Endpoint has been set to "..model_endpoint)
+            end
+
             local edge = require("edge")
             local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", ngx.arg[1], ngx.arg[2])
 
@@ -151,14 +159,6 @@ http {
                requestID = request_id_generator.generate_request_id()
                ngx.req.set_header("Request-ID", requestID)
                ngx.log(ngx.INFO, "Request ID has been generated: "..requestID)
-            end
-
-            -- Model-Endpoint generation if it is missing
-            local model_endpoint = ngx.req.get_headers()["Model-Endpoint"]
-            if not model_endpoint then
-                model_endpoint = "default"
-                ngx.req.set_header("Model-Endpoint", model_endpoint)
-                ngx.log(ngx.INFO, "Model Endpoint has been set to "..model_endpoint)
             end
 
             ngx.header["Request-ID"] = requestID
