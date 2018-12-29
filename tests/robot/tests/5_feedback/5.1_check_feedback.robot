@@ -14,7 +14,7 @@ Suite Setup         Run Keywords
 Suite Teardown      Run EDI undeploy by model version and check         ${MODEL_TEST_ENCLAVE}   ${TEST_FEEDBACK_MODEL_ID}    ${TEST_FEEDBACK_MODEL_VERSION}   ${TEST_MODEL_IMAGE_4}
 
 *** Variables ***
-${REQUEST_ID_CHECK_RETRIES}         100
+${REQUEST_ID_CHECK_RETRIES}         30
 
 *** Test Cases ***
 Check model API logging without request ID and one chunk

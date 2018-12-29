@@ -39,17 +39,15 @@ function _M.reset_seed()
     |            1st word            |              2nd word            |
     --]]
 
-    -- First seed word
-    local seed_p1 = bit.lshift(32, pod_uuid_crc32)         -- CRC32(POD_ID) << 32
     -- Second seed word
     local seed_p2_pid = bit.lshift(28, bit.band(pid, 0xF)) -- (PID & 0xF) << 28
     local seed_p2_wid = bit.lshift(24, bit.band(wid, 0xF)) -- (WID & 0xF) << 24
     local seed_p2_time = bit.band(time, 0x0FFFFFFF)         -- TIMESTAMP & 0x0FFFFFFF
     local seed_p2 = bit.bor(bit.bor(seed_p2_pid, seed_p2_wid), seed_p2_time)
     -- Entire seed
-    local seed = bit.bor(seed_p1, seed_p2)
+    local seed = pod_uuid_crc32 * 0x1000 * 0x1000 + seed_p2
 
-    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..seed)
+    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..string.format("%x", seed))
 
     math.randomseed(seed)
 end
