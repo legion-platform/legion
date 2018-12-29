@@ -10,7 +10,7 @@ Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
 ...                 Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
 Suite Teardown      Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}  ${TEST_COMMAND_MODEL_ID}
 *** Variables ***
-${LOCAL_CONFIG}  ./.legion/config
+${LOCAL_CONFIG}  legion/config
 *** Test Cases ***
 Scale. Nonexistent model service
     [Documentation]  The scale command must fail if a model cannot be found by id
