@@ -34,6 +34,10 @@ spec:
             cpu: "100m"
             memory: "512Mi"
         env:
+        - name: POD_UUID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
         - name: STATSD_HOST
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT

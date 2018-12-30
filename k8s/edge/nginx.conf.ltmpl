@@ -18,6 +18,7 @@
 {{ load_module('legion.template_plugins.enclave_configmap_monitor', var_name='tokens') }}
 
 env JWT_SECRET;
+env POD_UUID;
 
 worker_processes  1;
 
@@ -54,11 +55,6 @@ http {
     local fluentd_host = edge.get_config("FLUENTD_HOST", "127.0.0.1")
     local fluentd_port = edge.get_config("FLUENTD_PORT", "24224")
     fluentd_logger.new(fluentd_host, fluentd_port)
-  }
-
-  init_worker_by_lua_block {
-      local edge = require "edge"
-      edge.init_worker()
   }
 
   server {
@@ -139,6 +135,7 @@ http {
 
         access_by_lua_block {
             local edge = require("edge")
+            local request_id_generator = require("request_id_generator")
 
             -- JWT validation
             local jwt = require("nginx-jwt")
@@ -152,7 +149,7 @@ http {
             -- RequestID generation if it is missed
             local requestID = ngx.req.get_headers()["Request-ID"]
             if not requestID then
-               requestID = edge.generate_request_id()
+               requestID = request_id_generator.generate_request_id()
                ngx.req.set_header("Request-ID", requestID)
                ngx.log(ngx.INFO, "Request ID has been generated: "..requestID)
             end
