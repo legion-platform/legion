@@ -9,6 +9,7 @@ Welcome to legion's documentation!
    usage
    system_architecture
    model_rest_api
+   legionctl
 
 
 .. toctree::

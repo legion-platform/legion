@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>Legion EDI web console</title>
+</head>
+
+<body>
+    <main class="container">
+        <h2 class="theme-heading">Legion EDI</h1>
+        <h3>Your personal authorisation token is:</h3>
+        <div class="command">
+            <pre><code id="auth-token">{{ token }}</code></pre>
+        </div>
+    </main>
+    <footer>
+        <a href="{{ url_for('.api_root') }}">API</a>
+    </footer>
+</body>
+
+<style>
+    body {
+        background-color: #efefef;
+        margin: 45px auto;
+        color: #333;
+        font-family: 'Source Sans Pro', Helvetica, sans-serif;
+    }
+
+    .theme-heading {
+        font-size: 20px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        margin-top: 0;
+    }
+
+    h3 {
+        font-size: 16px;
+    }
+
+    .container {
+        background-color: #fff;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        padding: 30px;
+        margin: 45px auto;
+        max-width: 90%;
+        min-width: 320px;
+        color: #000;
+    }
+
+    div.command {
+        margin-top: 15px;
+    }
+
+    pre {
+        background-color: #eff0f1;
+        padding: 5px;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+    }
+
+    footer {
+        text-align: center;
+    }
+
+    footer a {
+        color: #4561ff;
+    }
+</style>
+</html>

@@ -20,12 +20,14 @@ EDI client
 import json
 import logging
 import os
+from urllib.parse import urlparse
 
 import legion.k8s
 import legion.edi.server
 import legion.config
 import requests
 import requests.exceptions
+from legion.edi import security
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,22 +53,23 @@ class EdiClient:
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
 
-    def _request(self, action, url, data=None, headers=None):
+    def _request(self, action, url, data=None, headers=None, cookies=None):
         """
         Make HTTP request
-
         :param action: request action, e.g. get / post / delete
         :type action: str
         :param url: target URL
         :type url: str
         :param data: (Optional) data to be placed in body of request
-        :param data: dict[str, str] or None
+        :type data: dict[str, str] or None
         :param headers: (Optional) additional HTTP headers
-        :param headers: dict[str, str] or None
+        :type headers: dict[str, str] or None
+        :param cookies: (Optional) HTTP cookies
+        :type cookies: dict[str, str] or None
         :return: :py:class:`requests.Response` -- response
         """
         request_data = {'params' if action == 'GET' else 'data': data}
-        return requests.request(action.lower(), url, headers=headers, **request_data)
+        return requests.request(action.lower(), url, headers=headers, cookies=cookies, **request_data)
 
     def _query(self, url_template, payload=None, action='GET'):
         """
@@ -82,15 +85,15 @@ class EdiClient:
         """
         sub_url = url_template.format(version=self._version)
         target_url = self._base.strip('/') + sub_url
+        cookies = {'_oauth2_proxy': self._token} if self._token else {}
 
         left_retries = self._retries if self._retries > 0 else 1
         raised_exception = None
-
         while left_retries > 0:
             try:
                 LOGGER.debug('Requesting {}'.format(target_url))
-                # TODO: Add sending token (LEGION #313)
-                response = self._request(action, target_url, payload)
+
+                response = self._request(action, target_url, payload, cookies=cookies)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
@@ -103,6 +106,18 @@ class EdiClient:
             raise Exception('Failed to connect to {}. No one retry left. Exception: {}'.format(
                 self._base, raised_exception
             ))
+
+        # We assume if there were redirects then credentials are out of date
+        if response.history:
+            LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
+
+            parse_result = urlparse(target_url)
+
+            raise Exception(
+                'Credentials are not correct. You should open {}://{} url in a browser to get fresh token'.format(
+                    parse_result.scheme, parse_result.netloc
+                )
+            )
 
         try:
             answer = json.loads(response.text)
@@ -245,9 +260,7 @@ class EdiClient:
         :type model_version: str
         :return: str -- return API Token
         """
-        payload = {}
-        payload['model_id'] = model_id
-        payload['model_version'] = model_version
+        payload = {'model_id': model_id, 'model_version': model_version}
 
         response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='POST', payload=payload)
         if response and 'token' in response:
@@ -262,24 +275,6 @@ class EdiClient:
         return "EdiClient({!r})".format(self._base)
 
     __str__ = __repr__
-
-
-def add_edi_arguments(parser):
-    """
-    Add EDI arguments parser
-
-    :param parser: add arguments to it
-    :type parser: argparse.ArgumentParser
-    :return: None
-    """
-    parser.add_argument('--edi',
-                        type=str, help='EDI server host')
-    parser.add_argument('--user',
-                        type=str, help='EDI server user')
-    parser.add_argument('--password',
-                        type=str, help='EDI server password')
-    parser.add_argument('--token',
-                        type=str, help='EDI server token')
 
 
 def add_arguments_for_wait_operation(parser):
@@ -311,32 +306,24 @@ def build_client(args=None):
         if args.edi:
             host = args.edi
 
-        if args.user:
-            user = args.user
-
-        if args.password:
-            password = args.password
-
         if args.token:
             token = args.token
 
-    if not host:
-        host = os.environ.get(*legion.config.EDI_URL)
+    if not host or not token:
+        host = host or os.environ.get(*legion.config.EDI_URL)
+        token = token or os.environ.get(*legion.config.EDI_TOKEN)
+
+    if not host and not token:
+        config = security.get_security_params_from_config()
+
+        host = config.get('host')
+        token = config.get('token')
 
     if not host:
         try:
             host = legion.k8s.Enclave(os.environ.get("NAMESPACE")).edi_service.url
         except Exception:
             LOGGER.warning('Cannot get EDI URL from K8S API')
-
-    if not user or not password:
-        user = os.environ.get(*legion.config.EDI_USER)
-        password = os.environ.get(*legion.config.EDI_PASSWORD)
-
-    # TODO: Password and user now are ignored. Add auth mechanism (LEGION #313)
-
-    if not token:
-        token = os.environ.get(*legion.config.EDI_TOKEN)
 
     client = EdiClient(host, token)
     return client

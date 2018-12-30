@@ -23,6 +23,9 @@ pipeline {
         sharedLibPath = "deploy/legionPipeline.groovy"
         legionVersion = null
         commitID = null
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
     }
 
     stages {

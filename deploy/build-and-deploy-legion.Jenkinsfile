@@ -15,10 +15,14 @@ pipeline {
         param_helm_repo = "${params.HelmRepo}"
         param_build_legion_job_name = "${params.BuildLegionJobName}"
         param_deploy_legion_job_name = "${params.DeployLegionJobName}"
+        param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         legionVersion = null
         commitID = null
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
     }
 
 
@@ -85,7 +89,7 @@ pipeline {
                             [$class: 'GitParameterValue', name: 'GitBranch', value: env.param_git_branch],
                             string(name: 'Profile', value: env.param_profile),
                             string(name: 'LegionVersion', value: legionVersion),
-                            string(name: 'TestsTags', value: env.param_tests_tags),
+                            string(name: 'TestsTags', value: env.param_tests_tags ?: ""),
                             booleanParam(name: 'DeployLegion', value: true),
                             booleanParam(name: 'CreateJenkinsTests', value: true),
                             booleanParam(name: 'UseRegressionTests', value: true)

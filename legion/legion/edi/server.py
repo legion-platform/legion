@@ -24,16 +24,22 @@ import legion.k8s
 import legion.external.grafana
 import legion.http
 import legion.model
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
+import os
 import jwt
 from datetime import datetime, timedelta
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
+TEMPLATES_FOLDER = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), os.pardir, 'templates', 'edi')
+)
+AUTH_COOKIE_NAME = '_oauth2_proxy'
 
 EDI_VERSION = '1.0'
 EDI_ROOT = '/'
+EDI_API_ROOT = '/api/'
 EDI_DEPLOY = '/api/{version}/deploy'
 EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
@@ -91,9 +97,21 @@ def return_model_deployments(model_deployments):
 
 
 @blueprint.route(build_blueprint_url(EDI_ROOT), methods=['GET'])
+def root():
+    """
+    Root endpoint for authorisation
+
+    :return: dict -- root information
+    """
+    token = request.cookies.get(AUTH_COOKIE_NAME, 'INVALID COOKIE')
+    return render_template('index.html',
+                           token=token)
+
+
+@blueprint.route(build_blueprint_url(EDI_API_ROOT), methods=['GET'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-def root():
+def api_root():
     """
     Root API endpoint
 
@@ -190,7 +208,7 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
 
 
     :param model: model id
-    :type model: str
+    :type model: strset jinja folder
     :param version: (Optional) specific model version
     :type version: str or None
     :param grace_period: grace period for removing
@@ -351,13 +369,16 @@ def generate_token(model_id, model_version):
 
 def create_application():
     """
-    Create Flask application and register blueprints
+    Create Flask application, register blueprints and templates folder
 
     :return: :py:class:`Flask.app` -- Flask application instance
     """
-    application = Flask(__name__, static_url_path='')
+    application = Flask(__name__,
+                        static_url_path='',
+                        template_folder=TEMPLATES_FOLDER)
 
     application.register_blueprint(blueprint)
+    application.create_jinja_environment()
 
     return application
 

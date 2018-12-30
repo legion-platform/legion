@@ -54,6 +54,7 @@ ADD nginx-jwt.lua \
     statistics_sender.lua \
     blacklisted_tokens.lua \
     fluentd_logger.lua \
+    request_id_generator.lua \
     edge.lua \
       /usr/local/openresty/luajit/
 

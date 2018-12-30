@@ -13,6 +13,9 @@ Suite Setup         Run Keywords
 ...                 Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_4}   ${TEST_FEEDBACK_MODEL_ID}      ${TEST_FEEDBACK_MODEL_VERSION}
 Suite Teardown      Run EDI undeploy by model version and check         ${MODEL_TEST_ENCLAVE}   ${TEST_FEEDBACK_MODEL_ID}    ${TEST_FEEDBACK_MODEL_VERSION}   ${TEST_MODEL_IMAGE_4}
 
+*** Variables ***
+${REQUEST_ID_CHECK_RETRIES}         30
+
 *** Test Cases ***
 Check model API logging without request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - without request ID
@@ -111,6 +114,24 @@ Check model API logging with request ID and many chunks
 
     ${aggregated_log_content}=         Get model API body content from all entries  ${response_log_entries}
     Validate model API response        ${aggregated_log_content}    result=${expected_response}
+
+Check model API request generation have no duplicates
+    [Documentation]  Checking that model API request generation does not provide same IDs
+    [Tags]  feedback_loop  apps
+    ${a_value}=             Generate Random String   4   [LETTERS]
+    ${b_value}=             Generate Random String   4   [LETTERS]
+    ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
+
+    ${response_ids}=        Create List
+
+    :FOR    ${i}    IN RANGE    ${REQUEST_ID_CHECK_RETRIES}
+    \   ${response}=   Invoke deployed model    ${MODEL_TEST_ENCLAVE}  ${TEST_FEEDBACK_MODEL_ID}  ${TEST_FEEDBACK_MODEL_VERSION}  a=${a_value}  b=${b_value}
+    \   Validate model API response      ${response}    result=${expected_response}
+    \   ${actual_request_id}=          Get model API last response ID
+    \   Append To List      ${response_ids}     ${actual_request_id}
+
+    List Should Not Contain Duplicates   ${response_ids}
+
 
 Check model API feedback with request ID
     [Documentation]  Checking that model API feedback is being persisted - without request ID

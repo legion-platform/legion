@@ -20,8 +20,9 @@ import argparse
 import logging
 
 import legion.docker_bootup
+from legion.edi.security import login, add_edi_arguments
 from legion.serving.pyserve import serve_model
-from legion.external.edi import add_edi_arguments, add_arguments_for_wait_operation
+from legion.external.edi import add_arguments_for_wait_operation
 from legion.edi.deploy import \
     build_model, \
     deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
@@ -53,6 +54,11 @@ if __name__ == '__main__':
                         help='get package version',
                         action='store_true')
     subparsers = parser.add_subparsers()
+
+    # --------- LOGIN SECTION -----------
+    login_parser = subparsers.add_parser('login', description='Save edi credentials to the config')
+    add_edi_arguments(login_parser, required=True)
+    login_parser.set_defaults(func=login)
 
     # --------- LOCAL DOCKER SECTION -----------
     build_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '

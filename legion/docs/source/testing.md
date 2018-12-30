@@ -72,12 +72,12 @@ dex:
       - email: tests-user@legion.com
         password: ~
 ```
-* Export the following environment variables:
+* Go to the `tests\robot` directory. Export the following environment variables:
 ```bash
 export PROFILE="legion-test.epm.kharlamov.biz"
 export LEGION_VERSION="0.10.0-20181213084714.1329.6ba06cc"
 export PATH_TO_COOKIES="credentials.secret"
-export CLUSTER_NAME="legion-test.epm.kharlamov.biz"
+export CLUSTER_NAME="${PROFILE}"
 export CREDENTIAL_SECRETS=".secrets.yaml"
 export ROBOT_OPTIONS="-v PATH_TO_PROFILES_DIR:../../deploy/profiles"
 ```
