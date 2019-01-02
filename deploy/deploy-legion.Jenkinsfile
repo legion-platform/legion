@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'ec2agent'}
 
     environment {
         //Input parameters
