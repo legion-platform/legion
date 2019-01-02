@@ -175,6 +175,7 @@ pipeline {
                         [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
                        string(name: 'LegionVersion', value: legionVersion),
                         string(name: 'Profile', value: env.param_profile)]
+                legion.cleanupClusterSg()
                 legion.notifyBuild(currentBuild.currentResult)
                     print('Remove interim merge tag')
                     sh """

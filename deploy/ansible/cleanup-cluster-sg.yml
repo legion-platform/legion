@@ -1,0 +1,63 @@
+---
+##################
+# Revoke Jenkins agent cluster access
+##################
+
+# NOTICE:
+# You Must specify the next variables as extra vars (--extra-vars "XXXX=YYYY") 
+# profile - unique cluster name
+
+- hosts: localhost
+  connection: local
+  gather_facts: True
+  vars_files:
+    - "{{ lookup('env', 'PROFILES_PATH') or '../profiles' }}/{{ profile }}.yml"
+
+  pre_tasks:
+    - name: Download secrets from S3
+      aws_s3:
+        bucket: "{{ secrets_bucket }}"
+        object: "vault/{{ profile }}"
+        dest: "{{ secrets_file }}"
+        mode: get
+
+    - name: Include vars
+      include_vars:
+        file: "{{ secrets_file }}"
+
+  post_tasks:
+    - name: Delete secrets file
+      file:
+        name: "{{ secrets_file }}"
+        state: absent
+
+  tasks:
+    - name: get public IP
+      ipify_facts:
+        timeout: 20
+      register: wan_ip
+
+############### DEBUG
+    - name: Create SG
+      ec2_group:
+        name: "legion_test_sg"
+        vpc_id: "{{ vpc_id }}"
+        region: "{{ aws_region }}"
+        rules:
+          - proto: tcp
+            ports:
+            - 443
+            cidr_ip: "{{ wan_ip }}"
+#################
+
+    - name: sleep
+      pause:
+        minutes: 10
+
+    - name: Get list of rules for SG
+      shell: "aws --region {{ aws_region }} describe-security-groups --group-id {{ k8s_clusters_common_sg }}"
+      register: cluster_sg_info
+
+    - name: Revoke jenkins agent cluster access
+      shell: "aws --region {{ aws_region }} ec2 revoke-security-group-ingress --group-id {{ k8s_clusters_common_sg }} --protocol tcp --port 443 --cidr {{ wan_ip }}/32"
+      when: cluster_sg_info.stdout.find(wan_ip) != -1

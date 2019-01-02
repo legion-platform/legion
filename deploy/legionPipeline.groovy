@@ -335,6 +335,27 @@ def terminateLegionEnclave() {
     }
 }
 
+def cleanupClusterSg() {
+    dir('deploy/ansible'){
+        withCredentials([
+            file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+            withAWS(credentials: 'kops') {
+                wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                    docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/deploy/legion -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                        stage('Cleanup Cluster SG') {
+                            sh """
+                            cd /opt/legion/deploy/ansible && ansible-playbook cleanup-cluster-sg.yml \
+                            --vault-password-file=${vault} \
+                            --extra-vars "profile=${env.param_profile} \
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 def notifyBuild(String buildStatus = 'STARTED') {
     // build status of null means successful
     buildStatus =  buildStatus ?: 'SUCCESSFUL'
