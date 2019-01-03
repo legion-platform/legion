@@ -1,29 +1,42 @@
+- name: create temp directories
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - "{{ tmp_ssl_dir }}"
+    - "{{ tls_cert_dir }}"
 
 - name: Download TLS certificate from S3
+  become: yes
   aws_s3:
     bucket: "{{ secrets_bucket }}"
     object: "vault/certificates/{{ profile }}.tar.gz"
-    dest: "{{ tls_cert_dir }}/{{ profile }}.tar.gz"
+    dest: "{{ tmp_ssl_dir }}/{{ profile }}.tar.gz"
     mode: get
-  ignore_errors: true
+  register: download_certificate_file
+  ignore_errors: True
 
 - name: Extract certificates from the archive
+  become: yes
   unarchive:
-    src: "{{ tls_cert_dir }}/{{ profile }}.tar.gz"
+    src: "{{ tmp_ssl_dir }}/{{ base_domain }}.tar.gz"
     dest: "{{ tls_cert_dir }}"
-  ignore_errors: true
+  when: not download_certificate_file.failed
 
 - name: Calculate date in future for certificate check
   command: python -c 'import datetime; print((datetime.datetime.now() + datetime.timedelta(days={{ tls_check_delta_days }})).strftime("%Y%m%d%H%M%SZ"))'
   register: certificate_check_date
+  when: not download_certificate_file.failed
 
-- name: "Ensure that the existing certificate is still valid in {{ tls_check_delta_days }} days"
-  connection: local
+- name: "Ensure that existing certificate is still valid in {{ tls_check_delta_days }} days"
   openssl_certificate:
-    path: "{{ tls_cert_dir }}/{{ tls_cert_common_name }}.crt"
+    path: "{{ tls_cert_dir }}/{{ tls_fullchain_file_name }}"
     provider: assertonly
     valid_at: "{{ certificate_check_date.stdout }}"
   register: certificate_content_check
+  when: not download_certificate_file.failed
   ignore_errors: True
 
 - name: "Store initial information about files"
@@ -33,4 +46,4 @@
 - name: "Store gathered information about files"
   set_fact:
     valid_certificate_not_exists: false
-  when: exists_certificate_file.stat.exists and not certificate_content_check.failed
+  when: not download_certificate_file.failed and not certificate_content_check.failed

@@ -104,18 +104,23 @@ def deployLegion() {
 }
 
 def UpdateTLSCert() {
-    dir('deploy/ansible'){
-        withCredentials([
-            file(credentialsId: "vault-${params.Profile}", variable: 'vault')]) {
-            withAWS(credentials: 'kops') {
+    withCredentials([
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+        withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                ansiblePlaybook(
-                    playbook: 'update-tls-certificate.yml',
-                    extras: '--vault-password-file=${vault} \
-                            --extra-vars "profile=${Profile} \
-                            vault_pass=${vault}" ',
-                    colorized: true
-                    )
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    stage('Reissue TLS Certificates') {
+                        sh """
+                        cd ${ansibleHome} && \
+                        ansible-playbook update-tls-certificate.yml \
+                        ${ansibleVerbose} \
+                        --vault-password-file=${vault} \
+                        --extra-vars "profile=${env.param_profile} \
+                        vault_pass=${vault} \
+                        docker_repo=${env.param_docker_repo} \
+                        legion_version=${env.param_legion_version}"
+                        """
+                    }
                 }
             }
         }

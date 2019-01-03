@@ -8,8 +8,8 @@
 - include: create_certificate.yaml
   when: valid_certificate_not_exists
 
-- include: challenge.yaml
-  when: valid_certificate_not_exists
+#- include: challenge.yaml
+#  when: valid_certificate_not_exists
 
-- include: upload.yaml
-  when: valid_certificate_not_exists
+#- include: upload.yaml
+#  when: valid_certificate_not_exists

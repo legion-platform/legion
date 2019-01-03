@@ -5,6 +5,8 @@ pipeline {
         //Input parameters
         param_git_branch = "${params.GitBranch}"
         param_profile = "${params.Profile}"
+        param_legion_version = "${params.LegionVersion}"
+        param_docker_repo = "${params.DockerRepo}"
         param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"

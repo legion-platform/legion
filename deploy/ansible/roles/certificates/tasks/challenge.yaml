@@ -5,9 +5,9 @@
     validate_certs: "{{ ler52_acme_certificate_check }}"
     challenge: dns-01
     account_key: "{{ tls_account_key_dir }}/{{ tls_account_key_file_name }}"
-    csr: "{{ tls_cert_dir }}/{{ tls_csr_file_name }}"
-    dest: "{{ tls_cert_dir }}/{{ tls_cert_file_name }}"
-    fullchain_dest: "{{ tls_cert_dir }}/{{ tls_fullchain_file_name }}"
+    csr: "{{ tls_new_cert_dir }}/{{ tls_csr_file_name }}"
+    dest: "{{ tls_new_cert_dir }}/{{ tls_cert_file_name }}"
+    fullchain_dest: "{{ tls_new_cert_dir }}/{{ tls_fullchain_file_name }}"
     account_email: "{{ tls_account_email }}"
     remaining_days: "{{ tls_cert_remaining_days_before_renewal }}"
     terms_agreed: true
@@ -39,9 +39,9 @@
     validate_certs: "{{ ler52_acme_certificate_check }}"
     challenge: dns-01
     account_key: "{{ tls_account_key_dir }}/{{ tls_account_key_file_name }}"
-    csr: "{{ tls_cert_dir }}/{{ tls_csr_file_name }}"
-    dest: "{{ tls_cert_dir }}/{{ tls_cert_file_name }}"
-    fullchain_dest: "{{ tls_cert_dir }}/{{ tls_fullchain_file_name }}"
+    csr: "{{ tls_new_cert_dir }}/{{ tls_csr_file_name }}"
+    dest: "{{ tls_new_cert_dir }}/{{ tls_cert_file_name }}"
+    fullchain_dest: "{{ tls_new_cert_dir }}/{{ tls_fullchain_file_name }}"
     account_email: "{{ tls_account_email }}"
     data: "{{ lets_encrypt_challenge }}"
   connection: local

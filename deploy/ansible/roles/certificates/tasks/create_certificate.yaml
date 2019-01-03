@@ -1,4 +1,4 @@
-- name: install the required dependencies
+- name: install required dependencies
   become: yes
   apt:
     name: "{{ item }}"
@@ -6,78 +6,62 @@
   with_items:
   - openssl
   - python-openssl
-  connection: local
 
-- name: "create the {{ tls_cert_dir }} directory"
+- name: "create {{ tls_new_cert_dir }} directory"
   become: yes
   file:
-    path: "{{ tls_cert_dir }}"
+    path: "{{ tls_new_cert_dir }}"
     state: directory
     owner: "{{ whoami_output.stdout }}"
     mode: 0755
-  connection: local
 
-- name: "create the {{ tls_account_key_dir }} directory"
+- name: "create {{ tls_account_key_dir }} directory"
   become: yes
   file:
     path: "{{ tls_account_key_dir }}"
     owner: "{{ whoami_output.stdout }}"
     mode: 0700
     state: directory
-  connection: local
 
-- name: generate the private key
+- name: generate private key
   openssl_privatekey:
-    path: "{{ tls_cert_dir }}/{{ tls_key_file_name }}"
+    path: "{{ tls_new_cert_dir }}/{{ tls_key_file_name }}"
     size: "{{ tls_key_size }}"
-  connection: local
 
 - name: set the private key file permissions
   become: yes
   file:
-    path: "{{ tls_cert_dir }}/{{ tls_key_file_name }}"
+    path: "{{ tls_new_cert_dir }}/{{ tls_key_file_name }}"
     owner: "{{ whoami_output.stdout }}"
     group: "{{ whoami_output.stdout }}"
     mode: "{{ tls_cert_files_mode }}"
-  connection: local
 
-- name: generate the CSR
+- name: generate CSR
   openssl_csr:
-    path: "{{ tls_cert_dir }}/{{ tls_csr_file_name }}"
-    privatekey_path: "{{ tls_cert_dir }}/{{ tls_key_file_name }}"
+    path: "{{ tls_new_cert_dir }}/{{ tls_csr_file_name }}"
+    privatekey_path: "{{ tls_new_cert_dir }}/{{ tls_key_file_name }}"
     common_name: "{{ tls_cert_common_name }}"
     key_usage: "{{ tls_cert_key_usages }}"
     subject_alt_name: "DNS:{{ tls_cert_common_name }},DNS:*.{{ tls_cert_common_name }}"
   register: generate_csr
-  connection: local
 
 - name: set the CSR file permissions
   become: yes
   file:
-    path: "{{ tls_cert_dir }}/{{ tls_csr_file_name }}"
+    path: "{{ tls_new_cert_dir }}/{{ tls_csr_file_name }}"
     owner: "{{ whoami_output.stdout }}"
     group: "{{ whoami_output.stdout }}"
     mode: "{{ tls_cert_files_mode }}"
-  connection: local
 
-- name: generate the Let's Encrypt account key
+- name: generate Let's Encrypt account key
   openssl_privatekey:
     path: "{{ tls_account_key_dir }}/{{ tls_account_key_file_name }}"
     size: "{{ tls_account_key_size }}"
-  connection: local
 
-- name: set the Let's Encrypt account key file permissions
+- name: set Let's Encrypt account key file permissions
   become: yes
   file:
     path: "{{ tls_account_key_dir }}/{{ tls_account_key_file_name }}"
     owner: "{{ whoami_output.stdout }}"
     mode: 0600
-  connection: local
-
-- name: delete existing certificate
-  become: yes
-  file:
-    path: "{{ tls_cert_dir }}/{{ tls_cert_file_name }}"
-    state: absent
-  when: generate_csr.changed and tls_new_cert_when_csr_changes
-  connection: local
+ 
