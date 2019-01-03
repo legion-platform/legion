@@ -35,14 +35,14 @@ pipeline {
             }
         }
 
-        stage('Install tools package'){
-            steps{
-                script {
-                    legion.installTools()
-                }
-            }
-        }
-        
+//        stage('Install tools package'){
+//            steps{
+//                script {
+//                    legion.installTools()
+//                }
+//            }
+//        }
+
         stage('Deploy Legion') {
             when {
                 expression {return param_deploy_legion == "true" }
@@ -61,6 +61,8 @@ pipeline {
             }
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.authorizeJenkinsAgent()
                     legion.createjenkinsJobs(commitID)
                 }
             }
@@ -72,6 +74,8 @@ pipeline {
             }
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.authorizeJenkinsAgent()
                     legion.runRobotTests(env.param_tests_tags ?: "")
                 }
             }
@@ -82,7 +86,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                legion.cleanupClusterSg()
+                //legion.cleanupClusterSg()
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

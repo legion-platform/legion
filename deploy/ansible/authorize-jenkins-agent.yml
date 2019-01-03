@@ -1,15 +1,11 @@
 ---
 ##################
-# Install Legion 
+# Authorize Jenkins agent at Legion cluster
 ##################
 
 # NOTICE:
 # You Must specify the next variables as extra vars (--extra-vars "XXXX=YYYY") 
 # profile - unique cluster name
-# legion_version - Legion version to deploy
-# Optional arguments:
-# pypi_repo - rewrite pypi repo endpoint
-# docker_repo - rewrite docker registry endpoint
 
 - hosts: localhost
   connection: local
@@ -29,9 +25,20 @@
       include_vars:
         file: "{{ secrets_file }}"
 
+  post_tasks:
+    - name: Delete secrets file
+      file:
+        name: "{{ secrets_file }}"
+        state: absent
+
+  tasks:
     - name: get public IP
       ipify_facts:
         timeout: 20
+
+    - name: Get list of rules for SG
+      shell: "aws --region {{ aws_region }} ec2 describe-security-groups --group-name {{ k8s_clusters_common_sg_name }}"
+      register: cluster_sg_info
 
     - name: Authorize Jenkins agent at Legion cluster
       ec2_group:
@@ -47,21 +54,4 @@
             - 443
             cidr_ip: "{{ ipify_public_ip }}/32"
             rule_desc: jenkins agent cluster access
-
-  post_tasks:
-    - name: Delete secrets file
-      file:
-        name: "{{ secrets_file }}"
-        state: absent
-  
-  roles:
-    - charts_common
-    - helm
-    - legion_core_chart
-
-  tasks:
-    - include_role:
-        name: legion_enclave
-      with_items: "{{ enclaves }}"
-      loop_control:
-        loop_var: enclave
+      when: cluster_sg_info.stdout.find(ipify_public_ip) == -1

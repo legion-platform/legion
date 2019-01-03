@@ -126,57 +126,64 @@ def updateTLSCert() {
 }
 
 def createjenkinsJobs(String commitID) {
-    def creds
-    sh '''
-    cd legion_test
-    ../.venv/bin/pip install -r requirements/base.txt
-    ../.venv/bin/pip install -r requirements/test.txt
-    ../.venv/bin/python setup.py develop
-    '''
-    withAWS(credentials: 'kops') {
-        withCredentials([file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
-            def output = sh(script:"""
-            cd .venv/bin
-            export PATH_TO_PROFILES_DIR=\"../../deploy/profiles\"
-            export PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
-            export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
-            export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
-            echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
-            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
+    withCredentials([
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+        withAWS(credentials: 'kops') {
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                docker.image("${env.param_docker_repo}/legion-docker-agent:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    dir("${WORKSPACE}"){
+                        def creds
+                        //sh '''
+                        //cd legion_test
+                        //../.venv/bin/pip install -r requirements/base.txt
+                        //../.venv/bin/pip install -r requirements/test.txt
+                        //../.venv/bin/python setup.py develop
+                        //'''
+                        def output = sh(script:"""
+                            export PATH_TO_PROFILES_DIR=\"deploy/profiles\"
+                            export PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
+                            export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
+                            export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
+                            echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
+                            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
 
-            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
-            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
+                            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+                            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
 
-            kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
+                            kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
 
-            export PATH=./:\$PATH DISPLAY=:99
-            export PROFILE=${env.param_profile}
+                            export PATH=./:\$PATH DISPLAY=:99
+                            export PROFILE=${env.param_profile}
 
-            echo ----
-            ./jenkins_dex_client
-            """, returnStdout: true)
-            creds = output.split('----')[1].split('\n')
-            env.jenkins_user = creds[1]
-            env.jenkins_pass = creds[2]
-            env.jenkins_token = creds[3]
+                            echo ----
+                            ./jenkins_dex_client
+                            """, returnStdout: true)
+
+                        creds = output.split('----')[1].split('\n')
+                        env.jenkins_user = creds[1]
+                        env.jenkins_pass = creds[2]
+                        env.jenkins_token = creds[3]
+
+                        sh """
+                        create_example_jobs \
+                        \"https://jenkins.${env.param_profile}\" \
+                        ./examples \
+                        ./ \
+                        \"https://github.com/legion-platform/legion.git\" \
+                        ${commitID} \
+                        --connection-timeout 600 \
+                        --git-root-key \"legion-root-key\" \
+                        --model-host "" \
+                        --dynamic-model-prefix \"DYNAMIC MODEL\" \
+                        --jenkins-user "${jenkins_user}" \
+                        --jenkins-password "${jenkins_pass}" \
+                        --jenkins-cookies "${jenkins_token}" \
+                        """
+                    }
+                }
+            }
         }
     }
-    sh """
-    cd .venv/bin
-    ./create_example_jobs \
-    \"https://jenkins.${env.param_profile}\" \
-    ../../examples \
-    ../../ \
-    \"https://github.com/legion-platform/legion.git\" \
-    ${commitID} \
-    --connection-timeout 600 \
-    --git-root-key \"legion-root-key\" \
-    --model-host "" \
-    --dynamic-model-prefix \"DYNAMIC MODEL\" \
-    --jenkins-user "${jenkins_user}" \
-    --jenkins-password "${jenkins_pass}" \
-    --jenkins-cookies "${jenkins_token}" \
-    """
 }
 
 def runRobotTests(tags="") {
@@ -346,6 +353,27 @@ def cleanupClusterSg() {
                         sh """
                         cd ${ansibleHome} && \
                         ansible-playbook cleanup-cluster-sg.yml \
+                        ${ansibleVerbose} \
+                        --vault-password-file=${vault} \
+                        --extra-vars "profile=${env.param_profile}" 
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
+
+def authorizeJenkinsAgent() {
+    withCredentials([
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+        withAWS(credentials: 'kops') {
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    stage('Authorize Jenkins Agent') {
+                        sh """
+                        cd ${ansibleHome} && \
+                        ansible-playbook authorize-jenkins-agent.yml \
                         ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile}" 
