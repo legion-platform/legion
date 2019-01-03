@@ -12,23 +12,6 @@
 - name: Configure the cluster
   shell: "kops create -f {{ tmp_dir }}/kops.{{ cluster_name }}.yaml --state {{ state_store }}"
 
-- name: get public IP
-  ipify_facts:
-    timeout: 20
-  register: wan_ip
-
-- name: Grant cluster access to jenkins agent
-  ec2_group:
-    group_id: "{{ k8s_clusters_common_sg }}"
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ aws_region }}"
-    rules:
-      - proto: tcp
-        ports:
-        - 443
-        cidr_ip: "{{ wan_ip }}"
-        rule_desc: jenkins agent cluster access
-
 - name: Create ssh public key file
   copy:
     content: "{{ cluster_ssh_public_key }}"
