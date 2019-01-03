@@ -1,24 +1,48 @@
-node {
-    def legion
-    try{
+pipeline {
+    agent any
+
+    environment {
+        //Input parameters
+        param_git_branch = "${params.GitBranch}"
+        param_profile = "${params.Profile}"
+        param_debug_run = "${params.DebugRun}"
+        //Job parameters
+        sharedLibPath = "deploy/legionPipeline.groovy"
+        ansibleHome =  "/opt/legion/deploy/ansible"
+        ansibleVerbose = '-v'
+        helmLocalSrc = 'false'
+    }
+
+    stages {
         stage('Checkout GIT'){
-            checkout scm
+            steps {
+                cleanWs()
+                checkout scm
+                script {
+                        legion = load "${env.sharedLibPath}"
+                        legion.buildDescription()
+                }
+            }
         }
-
-        legion = load 'deploy/legionPipeline.groovy'
-
-        legion.buildDescription()
 
         stage('Check and Update TLS Certificates') {
-            legion.UpdateTLSCert()
+            steps {
+                script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.UpdateTLSCert()
+                }
+            }
         }
     }
-    catch (e) {
-        // If there was an exception thrown, the build failed
-        currentBuild.result = "FAILED"
-        throw e
-    } finally {
-        // Success or failure, always send notifications
-        legion.notifyBuild(currentBuild.result)
+
+    post {
+        always {
+            script {
+                legion = load "${sharedLibPath}"
+                legion.notifyBuild(currentBuild.currentResult)
+            }
+            deleteDir()
+        }
     }
 }
+
