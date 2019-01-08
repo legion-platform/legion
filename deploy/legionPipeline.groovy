@@ -103,7 +103,7 @@ def deployLegion() {
     }
 }
 
-def UpdateTLSCert() {
+def updateTLSCert() {
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
@@ -116,9 +116,7 @@ def UpdateTLSCert() {
                         ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
-                        vault_pass=${vault} \
-                        docker_repo=${env.param_docker_repo} \
-                        legion_version=${env.param_legion_version}"
+                        vault_pass=${vault}"
                         """
                     }
                 }

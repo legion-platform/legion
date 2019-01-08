@@ -14,7 +14,7 @@ aws_image: kope.io/k8s-1.9-debian-stretch-amd64-hvm-ebs-2018-05-27
 kubernetes_version: 1.10.11
 
 # TLS defaults
-tls_cert_dir: /etc/ssl/{{ base_domain }}
+tls_cert_dir: /srv/ssl/{{ base_domain }}
 tls_cert_common_name: "{{ base_domain }}"
 tls_key_file_name: "{{ tls_cert_common_name }}.key"
 tls_fullchain_file_name: "{{ tls_cert_common_name }}.fullchain.crt"

@@ -9,5 +9,5 @@
 - include: create-cluster.yaml
   when: skip_kops.find('false') != -1
 
-# Install certificates
+# Install TLS certificates to K8S
 - include: install-tls-cert.yaml
