@@ -182,7 +182,7 @@ class Grafana:
 
         data = response.json()
         if not data:
-            raise Exception('Data is empty')
+            return
 
         datapoints = data[0]['datapoints']
 
