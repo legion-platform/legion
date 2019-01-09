@@ -32,7 +32,7 @@ Checking property update callback
 
     Log   Connecting to Grafana
     Connect to enclave Grafana  ${MODEL_TEST_ENCLAVE}
-    Sleep                15s
+    Sleep   15s
     Metric should not be presented  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_ENDPOINT}
 
     Log   Resetting property to wrong value
@@ -43,6 +43,7 @@ Checking property update callback
     Ensure model property has been updated  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_PROP}  1
     Ensure model API call result field is correct  ${model_id}  ${model_version}  ${edge}  ${TOKEN}  ${MODEL_WITH_PROPS_ENDPOINT}  result  30   a=1  b=2
 
+    Sleep   15s
     Metric should be presented  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_ENDPOINT}
 
     Log   Updating property to another value and invoking model with check
