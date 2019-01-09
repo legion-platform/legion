@@ -36,6 +36,7 @@ Options = NamedTuple('Options', [
 
 NEXUS_SEARCH_URL = '{host}/service/rest/v1/components'
 NEXUS_DELETE_URL = '{host}/service/rest/v1/components/{resource}'
+allowed_responce_codes = [200, 201, 202, 204]
 
 
 def get_builds(nexus_url, repository, user, password, build_name):
@@ -63,7 +64,7 @@ def get_builds(nexus_url, repository, user, password, build_name):
         url = NEXUS_SEARCH_URL.format(host=nexus_url)
         log.info('Fetching Nexus artifacts from URL {}'.format(url))
         response = requests.get(url, params=search_filters, auth=(user, password))
-        if response.status_code != 200:
+        if response.status_code not in allowed_responce_codes:
                 raise Exception("Non 200 response from Nexus!")
         response_data = response.json()
         builds.extend(response_data.get("items"))
@@ -74,7 +75,7 @@ def get_builds(nexus_url, repository, user, password, build_name):
             log.info('Fetching Nexus artifacts from URL {} (from {})'.format(url, continuation_token))
             search_filters["continuationToken"] = continuation_token
             response = requests.get(url, params=search_filters, auth=(user, password))
-            if response.status_code != 200:
+            if response.status_code not in allowed_responce_codes:
                 raise Exception("Non 200 response from Nexus!")
             response_data = response.json()
             builds.extend(response_data.get("items"))
@@ -141,7 +142,7 @@ def delete_builds(nexus_url, user, password, builds, dry_run):
                     host=nexus_url,
                     resource=build.get("id")),
                     auth=(user, password))
-                if response.status_code != 200:
+                if response.status_code not in allowed_responce_codes:
                     raise Exception("Non 200 response from Nexus!")
             except Exception as e:
                 log.error("Error deleting artifact from Nexus: {}".format(e))
