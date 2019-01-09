@@ -64,21 +64,17 @@ http {
 
     chunked_transfer_encoding on;
 
-    # Root location
-    {% if environ['ENABLE_HOME_PAGE'] == 'true' %}
-    location / {
-      root /static;
+    # Root location. Nothing is here
+    location = / {
+      return 200;
     }
-    {% else %}
-    location / {
-      return 404;
-    }
-    {% endif %}
 
+    # For Kubernetes healthchecks
     location = /healthcheck {
       return 200;
     }
 
+    # Models Feedback
     location ~ /api/model/([a-zA-Z0-9\-\.]+)/([a-zA-Z0-9\-\.]+)/feedback {
         access_by_lua_block {
             local edge = require("edge")
