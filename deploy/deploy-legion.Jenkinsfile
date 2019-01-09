@@ -50,6 +50,7 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.authorizeJenkinsAgent()
                     legion.deployLegion()
                 }
             }
@@ -86,7 +87,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                //legion.cleanupClusterSg()
+                legion.cleanupClusterSg()
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

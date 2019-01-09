@@ -170,7 +170,7 @@ pipeline {
                 stage('Build Jenkins plugin') {
                     steps {
                         script{
-                            docker.image("maven:3.5.3-jdk-8").inside("-v $HOME/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
+                            docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
                                 /// Jenkins plugin which will be used in Jenkins Docker container only
                                 sh """
                                 export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")

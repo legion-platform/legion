@@ -187,107 +187,111 @@ def createjenkinsJobs(String commitID) {
 }
 
 def runRobotTests(tags="") {
-    def nose_report = 0
-    def robot_report = 0
-    withAWS(credentials: 'kops') {
-    	withCredentials([file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
-            def tags_list = tags.toString().trim().split(',')
-            def robot_tags = []
-            def nose_tags = []
-            for (item in tags_list) {
-                if (item.startsWith('-')) {
-                    item = item.replace("-","")
-                    robot_tags.add(" -e ${item}")
-                    nose_tags.add(" -a !${item}")
-                    }
-                else if (item?.trim()) {
-                    robot_tags.add(" -i ${item}")
-                    nose_tags.add(" -a ${item}")
+    withCredentials([
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+        withAWS(credentials: 'kops') {
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                docker.image("${env.param_docker_repo}/legion-docker-agent:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    dir("${WORKSPACE}"){
+                        def nose_report = 0
+                        def robot_report = 0
+                        def tags_list = tags.toString().trim().split(',')
+                        def robot_tags = []
+                        def nose_tags = []
+                        for (item in tags_list) {
+                            if (item.startsWith('-')) {
+                                item = item.replace("-","")
+                                robot_tags.add(" -e ${item}")
+                                nose_tags.add(" -a !${item}")
+                                }
+                            else if (item?.trim()) {
+                                robot_tags.add(" -i ${item}")
+                                nose_tags.add(" -a ${item}")
+                                }
+                            }
+                        env.robot_tags= robot_tags.join(" ")
+                        env.nose_tags = nose_tags.join(" ")
+                        sh """
+                        echo "Starting robot tests"
+                        cd tests/robot
+                        rm -f *.xml
+
+                        PATH_TO_PROFILES_DIR=\"../../deploy/profiles\"
+                        PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
+                        PATH_TO_COOKIES=\"\$PATH_TO_PROFILES_DIR/cookies.dat\"
+
+                        export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
+                        export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
+                        echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
+                        export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
+
+                        aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+                        ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
+
+                        kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
+
+                        DISPLAY=:99 \
+                        PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} \
+                        jenkins_dex_client --path-to-profiles \$PATH_TO_PROFILES_DIR > \$PATH_TO_COOKIES
+
+                        echo ${env.robot_tags}
+
+                        # Run Robot tests
+                        DISPLAY=:99 \
+                        PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} PATH_TO_COOKIES=\$PATH_TO_COOKIES \
+                        pabot --verbose --processes 6 --variable PATH_TO_PROFILES_DIR:\$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter ${env.robot_tags} --outputdir . tests/**/*.robot || true
+
+                        echo \"Starting python tests\"
+                        cd ../python
+                        export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
+                        aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+                        ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
+
+                        PROFILE=${env.param_profile} PATH_TO_PROFILES_DIR=\$PATH_TO_PROFILES_DIR LEGION_VERSION=${env.param_legion_version} \
+                        nosetests ${env.nose_tags} --with-xunit --logging-level DEBUG -v || true
+
+                        # Cleanup temp files
+                        rm -rf tests/python/__pycache__
+                        """
+                        
+                        robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
+                        nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
+
+                        if (robot_report.toInteger() > 0) {
+                            step([
+                                $class : 'RobotPublisher',
+                                outputPath : 'tests/robot/',
+                                outputFileName : "*.xml",
+                                disableArchiveOutput : false,
+                                passThreshold : 100,
+                                unstableThreshold: 95.0,
+                                onlyCritical : true,
+                                otherFiles : "*.png",
+                            ])
+                        }
+                        else {
+                            echo "No '*.xml' files for generating robot report"
+                        }
+
+                        if (nose_report.toInteger() > 1) {
+                            junit 'tests/python/nosetests.xml'
+                        }
+                        else {
+                            echo "No ''*.xml' files for generating nosetests report"
+                        }
+
+                        if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && !tags) {
+                            echo "All tests were run but no reports found. Marking build as UNSTABLE"
+                            currentBuild.result = 'UNSTABLE'
+                        }
+                        if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
+                            echo "No tests were run during this build. Marking build as UNSTABLE"
+                            currentBuild.result = 'UNSTABLE'
+                        }
                     }
                 }
-            env.robot_tags= robot_tags.join(" ")
-            env.nose_tags = nose_tags.join(" ")
-            sh """
-            cd legion
-            ../.venv/bin/python setup.py develop
-            cd ..
-
-            cd legion_test
-            ../.venv/bin/pip install -r requirements/base.txt
-            ../.venv/bin/pip install -r requirements/test.txt
-            ../.venv/bin/python setup.py develop
-
-            echo "Starting robot tests"
-            cd ../tests/robot
-            rm -f *.xml
-            ../../.venv/bin/pip install yq
-
-            PATH_TO_PROFILES_DIR=\"../../deploy/profiles\"
-            PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
-            PATH_TO_COOKIES=\"\$PATH_TO_PROFILES_DIR/cookies.dat\"
-
-            export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
-            export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
-            echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
-            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
-
-            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
-            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
-
-            kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
-
-            PATH=../../.venv/bin:\$PATH DISPLAY=:99 \
-            PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} \
-            jenkins_dex_client --path-to-profiles \$PATH_TO_PROFILES_DIR > \$PATH_TO_COOKIES
-
-            echo ${env.robot_tags}
-
-            # Run Robot tests
-            PATH=../../.venv/bin:\$PATH DISPLAY=:99 \
-            PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} PATH_TO_COOKIES=\$PATH_TO_COOKIES \
-            ../../.venv/bin/python3 ../../.venv/bin/pabot --verbose --processes 6 --variable PATH_TO_PROFILES_DIR:\$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter ${env.robot_tags} --outputdir . tests/**/*.robot || true
-
-            echo \"Starting python tests\"
-            cd ../python
-            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
-            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
-            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
-
-            PROFILE=${env.param_profile} PATH_TO_PROFILES_DIR=\$PATH_TO_PROFILES_DIR LEGION_VERSION=${env.param_legion_version} \
-            ../../.venv/bin/nosetests ${env.nose_tags} --with-xunit --logging-level DEBUG -v || true
-            """
-            robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
-            nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
-            if (robot_report.toInteger() > 0) {
-                step([
-                    $class : 'RobotPublisher',
-                    outputPath : 'tests/robot/',
-                    outputFileName : "*.xml",
-                    disableArchiveOutput : false,
-                    passThreshold : 100,
-                    unstableThreshold: 95.0,
-                    onlyCritical : true,
-                    otherFiles : "*.png",
-                ])
-            }
-            else {
-                echo "No '*.xml' files for generating robot report"
             }
         }
-    }
-    if (nose_report.toInteger() > 1) {
-        junit 'tests/python/nosetests.xml'
-    }
-    else {
-        echo "No ''*.xml' files for generating nosetests report"
-    }
-    if (!(nose_report.toInteger() > 1 && robot_report.toInteger() > 0) && !tags) {
-        echo "All tests were run but no reports found. Marking build as UNSTABLE"
-        currentBuild.result = 'UNSTABLE'
-    }
-    if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
-        echo "No tests were run during this build. Marking build as UNSTABLE"
-        currentBuild.result = 'UNSTABLE'
     }
 }
 

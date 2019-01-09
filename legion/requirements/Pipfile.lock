@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e4fb47b511495ab82e03ee0ef630fc5dfb4cead2c6353f504af4cdc684136a34"
+            "sha256": "0976eb85e8e4e1a071276dca1fc37e1b7391449ea26db523af402ac9be263c16"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -462,21 +462,6 @@
             "index": "pypi",
             "version": "==4.4.1"
         },
-        "docker-registry-client": {
-            "hashes": [
-                "sha256:8482efc9ec9ec708dfb74193cdfa530eee23c93596c63d704c5a3702b049e58f",
-                "sha256:cb6c1c5e72e091ada9b32499c8529850e247bafb2202bc31bbe45e9710bf9038"
-            ],
-            "index": "pypi",
-            "version": "==0.5.2"
-        },
-        "ecdsa": {
-            "hashes": [
-                "sha256:40d002cf360d0e035cf2cb985e1308d41aaa087cbfc135b2dc2d844296ea546c",
-                "sha256:64cf1ee26d1cde3c73c6d7d107f835fed7c6a2904aef9eac223d57ad800c43fa"
-            ],
-            "version": "==0.13"
-        },
         "flask": {
             "hashes": [
                 "sha256:2ea22336f6d388b4b242bc3abf8a01244a8aa3e236e7407469ef78c16ba355dd",
@@ -567,12 +552,6 @@
             ],
             "index": "pypi",
             "version": "==2.10"
-        },
-        "jws": {
-            "hashes": [
-                "sha256:0e3d4cb06ae7c5c1d16d357b4e7acb5c5ecab0cccb3a4b998035b85052488053"
-            ],
-            "version": "==0.1.3"
         },
         "lazy-object-proxy": {
             "hashes": [
