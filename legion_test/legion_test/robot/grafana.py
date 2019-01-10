@@ -17,7 +17,7 @@
 Robot test library - grafana
 """
 from legion_test.grafana import GrafanaClient
-from legion_test.utils import normalize_name
+from legion_test.utils import normalize_name, wait_until
 from legion_test.robot.dex_client import get_session_cookies
 import requests
 
@@ -154,9 +154,33 @@ class Grafana:
         else:
             raise Exception('Cannot find any value > 0')
 
+    def ensure_metric_present(self, model_id, model_version, model_endpoint='default'):
+        """
+        Ensure that requests count metric for model exists
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :raises: Exception
+        :return: None
+        """
+        def is_metric_present():
+            try:
+                self.metric_should_be_presented(model_id, model_version, model_endpoint=model_endpoint)
+            except Exception as e:
+                print('Got metric_should_be_presented exception: {}'.format(e))
+                return False
+            return True
+
+        if not wait_until(is_metric_present, 5, 3):
+            raise Exception('Metric is not present')
+
     def metric_should_not_be_presented(self, model_id, model_version, model_endpoint='default'):
         """
-        Check that requests count metric for model does not exist
+        Check that requests count metric for model not exists
 
         :param model_id: model ID
         :type model_id: str
@@ -176,4 +200,28 @@ class Grafana:
 
         for val, time in datapoints:
             if val is not None and val > 0:
-                raise Exception('Metric is presented')
+                raise Exception('Metric is present')
+
+    def ensure_metric_not_present(self, model_id, model_version, model_endpoint='default'):
+        """
+        Ensure that requests count metric for model not exists
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :raises: Exception
+        :return: None
+        """
+        def is_metric_present():
+            try:
+                self.metric_should_not_be_presented(model_id, model_version, model_endpoint=model_endpoint)
+            except Exception as e:
+                print('Got metric_should_not_be_presented exception: {}'.format(e))
+                return True
+            return False
+
+        if wait_until(is_metric_present, 5, 3):
+            raise Exception('Metric is not present')
