@@ -38,6 +38,8 @@ pipeline {
             param_next_version = "${params.NextVersion}"
             // Update version string
             param_update_version_string = "${params.UpdateVersionString}"
+            // Release version to be used as docker cache source
+            param_docker_cache_source = "${params.DockerCacheSource}"
             //Artifacts storage parameters
             param_helm_repo_git_url = "${params.HelmRepoGitUrl}"
             param_helm_repo_git_branch = "${params.HelmRepoGitBranch}"
@@ -157,8 +159,8 @@ pipeline {
                 script {
                     sh """
                     docker pull python:3.6 || true
-                    docker pull ${env.param_docker_registry}/legion-docker-agent:latest || true
-                    docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:latest -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile .
+                    docker pull ${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} || true
+                    docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile .
                     """
                     legion.uploadDockerImage('legion-docker-agent', "${Globals.buildVersion}")
                 }
@@ -327,8 +329,8 @@ EOL
                     sh """
                     cd base-python-image
                     docker pull ubuntu:16.04 || true
-                    docker pull ${env.param_docker_registry}/base-python-image:latest || true
-                    docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:16.04 --cache-from=${env.param_docker_registry}/base-python-image:latest -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
+                    docker pull ${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} || true
+                    docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:16.04 --cache-from=${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
                     """
                     legion.uploadDockerImage('base-python-image')
                 }
@@ -372,7 +374,8 @@ EOL
                     steps {
                         sh """
                         docker pull ubuntu:18.04 || true
-                        docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:18.04 --cache-from=legion/k8s-ansible:latest -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
+                        docker pull legion/k8s-ansible:${env.param_docker_cache_source} ||true
+                        docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:18.04 --cache-from=legion/k8s-ansible:${env.param_docker_cache_source} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
                         """
                     }
                 }
@@ -391,8 +394,8 @@ EOL
                         sh """
                         cd k8s/grafana || true
                         docker pull grafana/grafana:4.5.0 || true
-                        docker pull ${env.param_docker_registry}/k8s-grafana:latest
-                        docker build ${Globals.dockerCacheArg} --cache-from=grafana/grafana:4.5.0 --cache-from=${env.param_docker_registry}/k8s-grafana:latest --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker pull ${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source}
+                        docker build ${Globals.dockerCacheArg} --cache-from=grafana/grafana:4.5.0 --cache-from=${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -400,9 +403,9 @@ EOL
                     steps {
                         sh """
                         cd k8s/edge
-                        docker pull ${env.param_docker_registry}/k8s-edge:latest || true
+                        docker pull ${env.param_docker_registry}/k8s-edge:${env.param_docker_cache_source} || true
                         docker pull openresty/openresty:1.13.6.2-bionic || true
-                        docker build ${Globals.dockerCacheArg} --cache-from=openresty/openresty:1.13.6.2-bionic --cache-from=${env.param_docker_registry}/k8s-edge:latest --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker build ${Globals.dockerCacheArg} --cache-from=openresty/openresty:1.13.6.2-bionic --cache-from=${env.param_docker_registry}/k8s-edge:${env.param_docker_cache_source} --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -411,8 +414,8 @@ EOL
                         sh """
                         cd k8s/jenkins
                         docker pull jenkins/jenkins:2.121.3 || true
-                        docker pull ${env.param_docker_registry}/k8s-jenkins:latest || true
-                        docker build ${Globals.dockerCacheArg} --cache-from=jenkins/jenkins:2.121.3 --cache-from=${env.param_docker_registry}/k8s-jenkins:latest --build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker pull ${env.param_docker_registry}/k8s-jenkins:${env.param_docker_cache_source} || true
+                        docker build ${Globals.dockerCacheArg} --cache-from=jenkins/jenkins:2.121.3 --cache-from=${env.param_docker_registry}/k8s-jenkins:${env.param_docker_cache_source} --build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -420,8 +423,8 @@ EOL
                     steps {
                         sh """
                         cd k8s/edi
-                        docker pull ${env.param_docker_registry}/k8s-edi:latest || true
-                        docker build ${Globals.dockerCacheArg} --cache-from=legion/base-python-image:${Globals.buildVersion} --cache-from=${env.param_docker_registry}/k8s-edi:latest --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker pull ${env.param_docker_registry}/k8s-edi:${env.param_docker_cache_source} || true
+                        docker build ${Globals.dockerCacheArg} --cache-from=legion/base-python-image:${Globals.buildVersion} --cache-from=${env.param_docker_registry}/k8s-edi:${env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -429,8 +432,8 @@ EOL
                     steps {
                         sh """
                         cd k8s/airflow
-                        docker pull ${env.param_docker_registry}/k8s-airflow:latest || true
-                        docker build ${Globals.dockerCacheArg} --cache-from=legion/base-python-image:${Globals.buildVersion} --cache-from=${env.param_docker_registry}/k8s-airflow:latest --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker pull ${env.param_docker_registry}/k8s-airflow:${env.param_docker_cache_source} || true
+                        docker build ${Globals.dockerCacheArg} --cache-from=legion/base-python-image:${Globals.buildVersion} --cache-from=${env.param_docker_registry}/k8s-airflow:${env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -439,8 +442,8 @@ EOL
                         sh """
                         cd k8s/fluentd
                         docker pull k8s.gcr.io/fluentd-elasticsearch:v2.0.4 || true
-                        docker pull ${env.param_docker_registry}/k8s-fluentd:latest || true
-                        docker build ${Globals.dockerCacheArg} --cache-from=k8s.gcr.io/fluentd-elasticsearch:v2.0.4 --cache-from=${env.param_docker_registry}/k8s-fluentd:latest --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker pull ${env.param_docker_registry}/k8s-fluentd:${env.param_docker_cache_source} || true
+                        docker build ${Globals.dockerCacheArg} --cache-from=k8s.gcr.io/fluentd-elasticsearch:v2.0.4 --cache-from=${env.param_docker_registry}/k8s-fluentd:${env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -450,8 +453,8 @@ EOL
                         dir("${env.infraBuildWorkspace}/kube-fluentd") {
                             sh """
                             docker pull fluent/fluentd-kubernetes-daemonset:v1.2-debian-syslog || true
-                            docker pull ${env.param_docker_registry}/k8s-kube-fluentd:latest || true
-                            docker build ${Globals.dockerCacheArg} --cache-from=fluent/fluentd-kubernetes-daemonset:v1.2-debian-syslog --cache-from=${env.param_docker_registry}/k8s-kube-fluentd:latest -t legion/k8s-kube-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            docker pull ${env.param_docker_registry}/k8s-kube-fluentd:${env.param_docker_cache_source} || true
+                            docker build ${Globals.dockerCacheArg} --cache-from=fluent/fluentd-kubernetes-daemonset:v1.2-debian-syslog --cache-from=${env.param_docker_registry}/k8s-kube-fluentd:${env.param_docker_cache_source} -t legion/k8s-kube-fluentd:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
                     }
@@ -460,10 +463,10 @@ EOL
                     steps {
                         dir("${env.infraBuildWorkspace}/kube-elb-security") {
                             sh """
-                            docker pull ${env.param_docker_registry}/kube-elb-security:latest || true
+                            docker pull ${env.param_docker_registry}/kube-elb-security:${env.param_docker_cache_source} || true
                             docker pull alpine:3.8 || true
                             docker pull golang:1.10-alpine || true
-                            docker build ${Globals.dockerCacheArg} --cache-from=alpine:3.8 --cache-from=golang:1.10-alpine --cache-from=${env.param_docker_registry}/k8s-kube-elb-security:latest -t legion/k8s-kube-elb-security:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                            docker build ${Globals.dockerCacheArg} --cache-from=alpine:3.8 --cache-from=golang:1.10-alpine --cache-from=${env.param_docker_registry}/k8s-kube-elb-security:${env.param_docker_cache_source} -t legion/k8s-kube-elb-security:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                             """
                         }
                     }
@@ -473,10 +476,10 @@ EOL
                         script {
                             dir("${env.infraBuildWorkspace}/oauth2-proxy") {
                                 sh """
-                                docker pull ${env.param_docker_registry}/k8s-oauth2-proxy:latest || true
+                                docker pull ${env.param_docker_registry}/k8s-oauth2-proxy:${env.param_docker_cache_source} || true
                                 docker pull alpine:3.8 || true
                                 docker pull golang:1.10-alpine || true
-                                docker build ${Globals.dockerCacheArg} --cache-from=alpine:3.8 --cache-from=golang:1.10-alpine --cache-from=${env.param_docker_registry}/k8s-oauth2-proxy:latest -t legion/k8s-oauth2-proxy:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
+                                docker build ${Globals.dockerCacheArg} --cache-from=alpine:3.8 --cache-from=golang:1.10-alpine --cache-from=${env.param_docker_registry}/k8s-oauth2-proxy:${env.param_docker_cache_source} -t legion/k8s-oauth2-proxy:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                                 """
                             }
                         }
