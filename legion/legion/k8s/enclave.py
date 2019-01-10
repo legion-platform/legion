@@ -23,8 +23,6 @@ import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
-import urllib3
-import urllib3.exceptions
 
 import legion.containers.headers
 import legion.config
@@ -165,20 +163,6 @@ class Enclave:
         self._load_services()
         return self._graphite_service
 
-    @property
-    def models(self):
-        """
-        Return a dict of Models services.
-
-        :return: dict[:py:class:`legion.k8s.ModelIdVersion`, :py:class:`legion.k8s.ModelService`] -- deployed models
-        """
-        models = {}
-        for service in legion.k8s.services.find_all_services(namespace=self.name):
-            if legion.k8s.services.ModelService.is_model_service(service):
-                model_service = legion.k8s.services.ModelService(service)
-                models[model_service.id_and_version] = model_service
-        return models
-
     def get_models(self, model_id=None, model_version=None):
         """
         Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
@@ -189,12 +173,24 @@ class Enclave:
         :type model_version: str or None
         :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
         """
-        items = [
-            model_service
-            for id_and_version, model_service in self.models.items()
-            if model_id in (id_and_version.id, '*', None) and model_version in (id_and_version.version, None, '*')
-        ]
+        items = [legion.k8s.services.ModelService(service) for service in
+                 legion.k8s.services.find_model_services_by(self.name, model_id, model_version)]
+
         return sorted(items, key=lambda ms: '{}/{}'.format(ms.id, ms.version))
+
+    def get_model(self, model_id, model_version):
+        """
+        Get model by model id and model version. Return None if there is no the model
+
+        :param model_id: model id
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :return: Optional[:py:class:`legion.k8s.ModelService`] -- founded model service
+        """
+        service = legion.k8s.services.find_model_service(self.name, model_id, model_version)
+
+        return legion.k8s.services.ModelService(service) if service else None
 
     def get_models_strict(self, model_id, model_version=None, ignore_not_found=False):
         """
@@ -277,7 +273,7 @@ class Enclave:
 
     def deploy_model(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
         """
-        Deploy new model
+        Deploy new model. Return True if model is deployed
 
         :param image: docker image with model
         :type image: str
@@ -289,7 +285,7 @@ class Enclave:
         :type livenesstimeout: int
         :param readinesstimeout: model pod startup timeout (used readiness probe)
         :type readinesstimeout: int
-        :return: :py:class:`legion.k8s.services.ModelService` -- model service
+        :return: (bool, :py:class:`legion.k8s.services.ModelService`) -- model service
         """
         if count < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
@@ -311,9 +307,11 @@ class Enclave:
             model_properties_default_values
         )
 
-        if self.get_models(image_meta_information.model_id, image_meta_information.model_version):
-            raise Exception('Duplicating model id and version (id={}, version={})'
-                            .format(image_meta_information.model_id, image_meta_information.model_version))
+        model = self.get_model(image_meta_information.model_id, image_meta_information.model_version)
+        if model:
+            LOGGER.info('Same model already has been deployed - skipping')
+
+            return False, model
 
         # REFACTOR, maybe we should remove that
         container_env_variables = {
@@ -392,9 +390,8 @@ class Enclave:
         retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
 
         deployment_ready = legion.utils.ensure_function_succeed(
-            lambda: image_meta_information.k8s_name in [
-                item.metadata.name
-                for item in extensions_v1beta1.list_namespaced_deployment(self.namespace).items],
+            lambda: legion.k8s.services.find_model_deployment(self.name, image_meta_information.model_id,
+                                                              image_meta_information.model_version),
             retries, retry_timeout, boolean_check=True
         )
 
@@ -425,9 +422,9 @@ class Enclave:
             namespace=self.namespace)
 
         service_ready = legion.utils.ensure_function_succeed(
-            lambda: image_meta_information.k8s_name in [
-                item.metadata.name
-                for item in core_v1api.list_namespaced_service(self.namespace).items],
+            lambda: legion.k8s.services.find_model_service(self.namespace,
+                                                           image_meta_information.model_id,
+                                                           image_meta_information.model_version),
             retries, retry_timeout, boolean_check=True
         )
 
@@ -437,7 +434,7 @@ class Enclave:
             )
 
         LOGGER.info('Building model service object')
-        return legion.k8s.services.ModelService(k8s_service)
+        return True, legion.k8s.services.ModelService(k8s_service)
 
     def watch_models(self):
         """
@@ -448,7 +445,7 @@ class Enclave:
         for event_type, service in self.watch_services():
             if legion.k8s.services.ModelService.is_model_service(service.k8s_service):
                 model_service = legion.k8s.services.ModelService(service.k8s_service)
-                yield (event_type, model_service)
+                yield event_type, model_service
 
     def watch_model_service_endpoints_state(self):
         """
@@ -482,7 +479,7 @@ class Enclave:
 
             return result
 
-        for (event_type, model_service) in self.watch_models():
+        for event_type, model_service in self.watch_models():
             model_endpoint = legion.k8s.services.ModelServiceEndpoint(model_service)
 
             if event_type == legion.k8s.EVENT_ADDED:
@@ -511,8 +508,8 @@ class Enclave:
                                                namespace=self.namespace,
                                                filter_callable=legion.k8s.services.Service.is_legion_service,
                                                object_constructor=legion.k8s.services.Service)
-        for (event_type, event_object) in watch.stream:
-            yield (event_type, event_object)
+        for event_type, event_object in watch.stream:
+            yield event_type, event_object
 
     @staticmethod
     def watch_enclaves():
