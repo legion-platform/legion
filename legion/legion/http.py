@@ -149,11 +149,16 @@ def prepare_response(response_data, model_id=None, model_version=None, model_end
     :return: bytes
     """
     response = flask.jsonify(response_data)
-    response.headers[legion.containers.headers.MODEL_ID] = legion.utils.normalize_name(model_id, dns_1035=True)
-    response.headers[legion.containers.headers.MODEL_VERSION] = legion.utils.normalize_name(
-        model_version, dns_1035=True)
-    response.headers[legion.containers.headers.MODEL_ENDPOINT] = legion.utils.normalize_name(
-        model_endpoint, dns_1035=True)
+    if model_id:
+        response.headers[legion.containers.headers.MODEL_ID] = legion.utils.normalize_name(model_id, dns_1035=True)
+
+    if model_version:
+        response.headers[legion.containers.headers.MODEL_VERSION] = legion.utils.normalize_name(
+            model_version, dns_1035=True)
+
+    if model_endpoint:
+        response.headers[legion.containers.headers.MODEL_ENDPOINT] = legion.utils.normalize_name(
+            model_endpoint, dns_1035=True)
 
     return response
 
