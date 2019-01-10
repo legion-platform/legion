@@ -40,6 +40,10 @@
       shell: "aws --region {{ aws_region }} ec2 describe-security-groups --group-name {{ k8s_clusters_common_sg_name }}"
       register: cluster_sg_info
 
-    - name: Revoke jenkins agent cluster access
+    - name: Revoke jenkins agent cluster access to 443 port
       shell: "aws --region {{ aws_region }} ec2 revoke-security-group-ingress --group-name {{ k8s_clusters_common_sg_name }} --protocol tcp --port 443 --cidr {{ ipify_public_ip }}/32"
+      when: cluster_sg_info.stdout.find(ipify_public_ip) != -1
+
+    - name: Revoke jenkins agent cluster access to 80 port
+      shell: "aws --region {{ aws_region }} ec2 revoke-security-group-ingress --group-name {{ k8s_clusters_common_sg_name }} --protocol tcp --port 80 --cidr {{ ipify_public_ip }}/32"
       when: cluster_sg_info.stdout.find(ipify_public_ip) != -1

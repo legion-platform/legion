@@ -5,7 +5,7 @@ ENV DOCKERVERSION=18.03.1-ce
 
 # Install python package dependencies and docker CLI
 RUN apt-get update && apt-get install -y software-properties-common \
-	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
+	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git jq=1.5+dfsg-1.3 xvfb \
 	&& apt-get clean all
   && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKERVERSION}.tgz \
   && tar xzvf docker-${DOCKERVERSION}.tgz --strip 1 -C /usr/local/bin docker/docker \
@@ -15,7 +15,10 @@ RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.
 
 # Install Geckodriver for selenium tests
 ENV GECKO_VERSION=0.18.0
-ADD https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz /usr/local/bin/geckodriver
+ADD https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz /tmp/geckodriver.tar.gz
+RUN tar xzf /tmp/geckodriver.tar.gz -C /tmp/ && \
+    mv /tmp/geckodriver /usr/local/bin/geckodriver && \
+    rm -rf /tmp/geckodriver*
 RUN chmod a+x /usr/local/bin/geckodriver
 
 # Install Kops
@@ -50,7 +53,8 @@ ADD legion_airflow/requirements/Pipfile.lock /src/requirements/legion_airflow/Pi
 RUN cd /src/requirements/legion_airflow && pipenv install --system --dev
 
 # Install additional tools for build purposes
-RUN pip install Sphinx==1.8.0 sphinx_rtd_theme==0.4.1 sphinx-autobuild==0.7.1 recommonmark==0.4.0 twine==1.11.0 ansible==2.6.4 awscli==1.16.19
+RUN pip install Sphinx==1.8.0 sphinx_rtd_theme==0.4.1 sphinx-autobuild==0.7.1 \
+    recommonmark==0.4.0 twine==1.11.0 ansible==2.6.4 awscli==1.16.19 yq==2.7.2
 
 # Add sources
 

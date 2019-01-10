@@ -52,6 +52,7 @@
           - proto: tcp
             ports:
             - 443
+            - 80
             cidr_ip: "{{ ipify_public_ip }}/32"
             rule_desc: jenkins agent cluster access
       when: cluster_sg_info.stdout.find(ipify_public_ip) == -1
