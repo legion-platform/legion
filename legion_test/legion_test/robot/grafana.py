@@ -86,6 +86,48 @@ class Grafana:
         if self._client.is_dashboard_exists(model_id):
             raise Exception('Dashboard exists')
 
+    def _get_model_metric(self, model_id, model_version, model_endpoint='default'):
+        """
+        Gets model metric data and returns it
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :return: list[dict], list with dict with metrics
+        """
+
+        url = '{}/api/datasources/proxy/1/render'.format(self._url)
+
+        auth = None
+        if self._user and self._password:
+            auth = (self._user, self._password)
+
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        model_identifier = '{}.{}.{}'.format(normalize_name(model_id, dns_1035=True),
+                                             normalize_name(model_version, dns_1035=True),
+                                             normalize_name(model_endpoint, dns_1035=True))
+
+        target = 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_identifier)
+
+        payload = {
+            'target': target,
+            'from': '-60min',
+            'until': 'now',
+            'format': 'json',
+            'cacheTimeout': 0,
+            'maxDataPoints': 1000
+        }
+
+        response = requests.post(url, data=payload, headers=headers, auth=auth, cookies=get_session_cookies())
+        print('Loading {} metrics. Data: {}'.format(target, response.text))
+
+        return response.json()
+
     def metric_should_be_presented(self, model_id, model_version, model_endpoint='default'):
         """
         Check that requests count metric for model exists
@@ -99,35 +141,8 @@ class Grafana:
         :raises: Exception
         :return: None
         """
-        url = '{}/api/datasources/proxy/1/render'.format(self._url)
 
-        auth = None
-        if self._user and self._password:
-            auth = (self._user, self._password)
-
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-
-        model_identifier = '{}.{}.{}'.format(normalize_name(model_id, dns_1035=True),
-                                             normalize_name(model_version, dns_1035=True),
-                                             normalize_name(model_endpoint, dns_1035=True))
-
-        target = 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_identifier)
-
-        payload = {
-            'target': target,
-            'from': '-5min',
-            'until': 'now',
-            'format': 'json',
-            'cacheTimeout': 0,
-            'maxDataPoints': 1000
-        }
-
-        response = requests.post(url, data=payload, headers=headers, auth=auth, cookies=get_session_cookies())
-        print('Loading {} metrics. Data: {}'.format(target, response.text))
-
-        data = response.json()
+        data = self._get_model_metric(model_id, model_version, model_endpoint=model_endpoint)
         if not data:
             raise Exception('Data is empty')
 
@@ -141,7 +156,7 @@ class Grafana:
 
     def metric_should_not_be_presented(self, model_id, model_version, model_endpoint='default'):
         """
-        Check that requests count metric for model exists
+        Check that requests count metric for model does not exist
 
         :param model_id: model ID
         :type model_id: str
@@ -152,35 +167,8 @@ class Grafana:
         :raises: Exception
         :return: None
         """
-        url = '{}/api/datasources/proxy/1/render'.format(self._url)
 
-        auth = None
-        if self._user and self._password:
-            auth = (self._user, self._password)
-
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-
-        model_identifier = '{}.{}.{}'.format(normalize_name(model_id, dns_1035=True),
-                                             normalize_name(model_version, dns_1035=True),
-                                             normalize_name(model_endpoint, dns_1035=True))
-
-        target = 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_identifier)
-
-        payload = {
-            'target': target,
-            'from': '-5min',
-            'until': 'now',
-            'format': 'json',
-            'cacheTimeout': 0,
-            'maxDataPoints': 1000
-        }
-
-        response = requests.post(url, data=payload, headers=headers, auth=auth, cookies=get_session_cookies())
-        print('Loading {} metrics. Data: {}'.format(target, response.text))
-
-        data = response.json()
+        data = self._get_model_metric(model_id, model_version, model_endpoint=model_endpoint)
         if not data:
             return
 
