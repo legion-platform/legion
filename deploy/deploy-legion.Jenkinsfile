@@ -35,13 +35,14 @@ pipeline {
             }
         }
 
-//        stage('Install tools package'){
-//            steps{
-//                script {
-//                    legion.installTools()
-//                }
-//            }
-//        }
+        stage('Authorize Jenkins Agent') {
+            steps {
+                script {
+                    legion.authorizeJenkinsAgent()
+                }
+            }
+        }
+
 
         stage('Deploy Legion') {
             when {
@@ -50,7 +51,6 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
-                    legion.authorizeJenkinsAgent()
                     legion.deployLegion()
                 }
             }
@@ -63,7 +63,6 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
-                    legion.authorizeJenkinsAgent()
                     legion.createjenkinsJobs(commitID)
                 }
             }
@@ -76,7 +75,6 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
-                    legion.authorizeJenkinsAgent()
                     legion.runRobotTests(env.param_tests_tags ?: "")
                 }
             }
