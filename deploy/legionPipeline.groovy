@@ -34,7 +34,7 @@ def createCluster() {
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -v /etc/ssl:/etc/ssl -u root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create cluster') {
                         sh """
                         cd ${ansibleHome} && \
@@ -95,6 +95,28 @@ def deployLegion() {
                         helm_repo=${env.param_helm_repo} \
                         docker_repo=${env.param_docker_repo} \
                         helm_local_src=${helmLocalSrc}"
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
+
+def updateTLSCert() {
+    withCredentials([
+    file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
+        withAWS(credentials: 'kops') {
+            wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
+                    stage('Reissue TLS Certificates') {
+                        sh """
+                        cd ${ansibleHome} && \
+                        ansible-playbook update-tls-certificate.yml \
+                        ${ansibleVerbose} \
+                        --vault-password-file=${vault} \
+                        --extra-vars "profile=${env.param_profile} \
+                        vault_pass=${vault}"
                         """
                     }
                 }

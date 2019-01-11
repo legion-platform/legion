@@ -1,0 +1,20 @@
+---
+
+- name: Create an archive with generated certificates
+  archive:
+    path:
+      - "{{ tls_new_cert_dir }}/{{ tls_key_file_name }}"
+      - "{{ tls_new_cert_dir }}/{{ tls_cert_common_name }}"
+      - "{{ tls_new_cert_dir }}/{{ tls_fullchain_file_name }}"
+    dest: "{{ tls_new_cert_dir }}/{{ profile }}.tar.gz"
+    format: gz
+
+- name: Encrypt TLS crtificates archive
+  shell: "ansible-vault encrypt {{ tls_new_cert_dir }}/{{ profile }}.tar.gz --vault-password-file={{ vault_pass }}"
+
+- name: Upload TLS certificate to S3
+  aws_s3:
+    bucket: "{{ secrets_bucket }}"
+    object: "vault/certificates/{{ profile }}.tar.gz"
+    src: "{{ tls_new_cert_dir }}/{{ profile }}.tar.gz"
+    mode: put
