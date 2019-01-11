@@ -14,11 +14,12 @@ Test Setup          Run Keywords
 Test Teardown       Run Keywords
 ...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}    AND
 ...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}   ${TEST_MODEL_IMAGE_2}
+Force Tags          edi  cli  enclave  multi_versions
 
 *** Test Cases ***
 Check EDI deploy 2 models with different versions but the same id
     [Setup]         NONE
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
@@ -29,7 +30,7 @@ Check EDI deploy 2 models with different versions but the same id
                     Should contain                  ${resp}                 "model_version": "${TEST_MODEL_2_VERSION}"
 
 Check EDI undeploy 1 of 2 models with different versions but the same id
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
@@ -42,7 +43,7 @@ Check EDI undeploy 1 of 2 models with different versions but the same id
                     Dashboard should exists         ${TEST_MODEL_ID}
 
 Check EDI undeploy all model instances by version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
@@ -67,13 +68,13 @@ Check EDI undeploy all model instances by version
                     Dashboard should not exists     ${TEST_MODEL_ID}
 
 Check EDI undeploy 1 of 2 models without version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI undeploy without version     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}         2
                     Should contain                  ${resp.stderr}     Please specify version of model
 
 Check EDI scale up 1 of 2 models with different versions but the same id
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
@@ -85,7 +86,7 @@ Check EDI scale up 1 of 2 models with different versions but the same id
                     Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
 
 Check EDI scale down 1 of 2 models with different versions but the same id
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
@@ -107,71 +108,70 @@ Check EDI scale down 1 of 2 models with different versions but the same id
                     Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
 
 Check EDI scale up 1 of 2 models by invalid version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}121
                     Should Be Equal As Integers     ${resp.rc}              2
                     Should contain                  ${resp.stderr}          No one model can be found
 
 Check EDI scale up 1 of 2 models without version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=        Run EDI scale                   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2
                     Should Be Equal As Integers     ${resp.rc}              2
                     Should contain                  ${resp.stderr}          Please specify version of model
 
 Check EDI model inspect by model id return 2 models
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model id          ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}          0
                     Should contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_1}
                     Should contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by model version return 1 model
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model version     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers     ${resp.rc}          0
                     Should contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_1}
                     Should not contain              ${resp.stdout}      ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by model id and version return 1 model
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}      ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers                 ${resp.rc}         0
                     Should contain                              ${resp.stdout}     ${TEST_MODEL_IMAGE_1}
                     Should not contain                          ${resp.stdout}     ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by invalid model id
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model id          ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test
                     Should Be Equal As Integers     ${resp.rc}          0
                     Should be empty                 ${resp.stdout}
 
 Check EDI model inspect by invalid model version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model version     ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_1_VERSION}test
                     Should Be Equal As Integers     ${resp.rc}        0
                     Should be empty                 ${resp.stdout}
 
 Check EDI model inspect by invalid model id and invalid version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}test
                     Should Be Equal As Integers                 ${resp.rc}          0
                     Should be empty                             ${resp.stdout}
 
 Check EDI model inspect by invalid model id and valid version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}
                     Should Be Equal As Integers                 ${resp.rc}          0
                     Should be empty                             ${resp.stdout}
 
 Check EDI model inspect by valid model id and invalid version
-    [Tags]  edi  cli  enclave  multi_versions  apps
+    [Tags]  apps
     ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}test
                     Should Be Equal As Integers                 ${resp.rc}          0
                     Should be empty                             ${resp.stdout}
 
 Check EDI scale up all instances for 2 models(diff versions) by versions=*
     [Documentation]  Try to scale up 2 models with different versions but the same id by all versions through EDI console
-    [Tags]  edi  cli  enclave  multi_versions
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   '*'
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
@@ -184,7 +184,6 @@ Check EDI scale up all instances for 2 models(diff versions) by versions=*
 
 Check EDI model inspect by model id=* return all models
     [Documentation]  Try to inspect 2 models by all ids through EDI console
-    [Tags]  edi  cli  enclave  multi_versions
     ${resp}=        Run EDI inspect by model id    ${MODEL_TEST_ENCLAVE}   '*'
                     Should Be Equal As Integers    ${resp.rc}         0
                     Should contain                 ${resp.stdout}     ${TEST_MODEL_IMAGE_1}
@@ -192,7 +191,6 @@ Check EDI model inspect by model id=* return all models
 
 Check EDI model inspect by model version=* return all models
     [Documentation]  Try to inspect 2 models by all versions through EDI console
-    [Tags]  edi  cli  enclave  multi_versions
     ${resp}=        Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    '*'
                     Should Be Equal As Integers    ${resp.rc}        0
                     Should contain                 ${resp.stdout}    ${TEST_MODEL_IMAGE_1}
