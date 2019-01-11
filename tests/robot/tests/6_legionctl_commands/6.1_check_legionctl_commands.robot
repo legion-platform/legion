@@ -211,6 +211,8 @@ Login. Override login values
 
 Get token from EDI
     [Documentation]  Try to get token from EDI
-    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_EDI_MODEL_ID} --model-version {TEST_MODEL_3_VERESION} --token {DEX_TOKEN}
+    [Setup]   Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    [Teardown]  Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}  ${TEST_COMMAND_MODEL_ID}
+    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_COMMAND_MODEL_ID} --model-version {TEST_MODEL_5_VERSION} --token {DEX_TOKEN}
               Should be equal  ${res.rc}  ${0}
               Should not be empty   ${token}
