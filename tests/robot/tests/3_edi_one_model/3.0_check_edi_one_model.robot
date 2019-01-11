@@ -35,14 +35,6 @@ Get token from EDI with valid parameters
     Should not be empty   ${token["token"]}
     Should not be empty   ${token["exp"]}
 
-Get token from EDI with valid parameters using legionctl
-    [Documentation]  Try to get token from EDI with valid parameters
-    [Setup]   NONE
-    [Tags]  edi  cli  enclave  edi_token
-    &{token} =    Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_EDI_MODEL_ID} --model-version {TEST_MODEL_3_VERESION} --token {DEX_TOKEN}
-    Log          ${token}
-    Should not be empty   ${token}
-
 Get token from EDI without version parameter
     [Documentation]  Try to get token from EDI without version parameter
     [Setup]   NONE

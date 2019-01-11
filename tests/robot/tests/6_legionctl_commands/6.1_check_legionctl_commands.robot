@@ -208,3 +208,9 @@ Login. Override login values
     ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
+
+Get token from EDI
+    [Documentation]  Try to get token from EDI
+    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_EDI_MODEL_ID} --model-version {TEST_MODEL_3_VERESION} --token {DEX_TOKEN}
+              Should be equal  ${res.rc}  ${0}
+              Should not be empty   ${token}
