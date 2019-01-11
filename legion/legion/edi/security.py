@@ -134,3 +134,14 @@ def get_security_params_from_config():
             LOG.debug('Exception during parsing of legion config {}'.format(e), exc_info=True)
 
     return {}
+
+
+def generate_token(args):
+    """
+    Generate JWT for specified model
+    :param args: command arguments
+    :type args: argparse.Namespace
+    :return: str -- token
+    """
+    edi_client = edi.build_client(args)
+    return edi_client.get_token(args.model_id, args.model_version)
