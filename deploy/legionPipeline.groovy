@@ -249,6 +249,7 @@ def runRobotTests(tags="") {
 
                             # Cleanup temp files
                             rm -rf tests/python/__pycache__
+                            rm -rf tests/robot/pabot_results
                             """
 
                             robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
@@ -372,15 +373,13 @@ def authorizeJenkinsAgent() {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
-                    stage('Authorize Jenkins Agent') {
-                        sh """
-                        cd ${ansibleHome} && \
-                        ansible-playbook authorize-jenkins-agent.yml \
-                        ${ansibleVerbose} \
-                        --vault-password-file=${vault} \
-                        --extra-vars "profile=${env.param_profile}" 
-                        """
-                    }
+                    sh """
+                    cd ${ansibleHome} && \
+                    ansible-playbook authorize-jenkins-agent.yml \
+                    ${ansibleVerbose} \
+                    --vault-password-file=${vault} \
+                    --extra-vars "profile=${env.param_profile}" 
+                    """
                 }
             }
         }
