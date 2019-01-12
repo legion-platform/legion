@@ -49,11 +49,11 @@ class TestMetrics(unittest2.TestCase):
         build_number = 10
         metric = metrics.Metric.TEST_ACCURACY
         value = 30.0
+        timestamp = time.time()
         host, port, namespace = metrics.get_metric_endpoint()
 
         with patch_environ({env.BUILD_NUMBER[0]: build_number}):
-            with patch('legion.metrics.send_tcp') as send_tcp_mock:
-                timestamp = int(time.time())
+            with patch('legion.metrics.send_tcp') as send_tcp_mock, patch('time.time', return_value=timestamp):
                 metrics.send_metric(model_id, metric, value)
 
                 self.assertTrue(len(send_tcp_mock.call_args_list) == 2, '2 calls founded')
@@ -68,11 +68,11 @@ class TestMetrics(unittest2.TestCase):
 
                 self.assertEqual(call_with_metric[0], '{}.{}.metrics.{}'.format(namespace, model_id, metric.value))
                 self.assertEqual(float(call_with_metric[1]), value)
-                self.assertEqual(call_with_metric[2], str(timestamp))
+                self.assertEqual(call_with_metric[2], str(int(timestamp)))
 
                 self.assertEqual(call_with_build_number[0], '{}.{}.metrics.build'.format(namespace, model_id))
                 self.assertEqual(int(float(call_with_build_number[1])), build_number)
-                self.assertEqual(call_with_build_number[2], str(timestamp))
+                self.assertEqual(call_with_build_number[2], str(int(timestamp)))
 
     def test_default_endpoint_detection(self):
         host, port, namespace = metrics.get_metric_endpoint()
