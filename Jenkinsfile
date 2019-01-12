@@ -366,13 +366,6 @@ EOL
                 stage("Build Edge Docker image") {
                     steps {
                         sh """
-                        rm -rf k8s/edge/static/docs
-                        cp -rf ${localDocumentationStorage}/${Globals.buildVersion}/ k8s/edge/static/docs/
-                        build_time=`date -u +'%d.%m.%Y %H:%M:%S'`
-                        sed -i "s/{VERSION}/${Globals.buildVersion}/" k8s/edge/static/index.html
-                        sed -i "s/{COMMIT}/${Globals.rootCommit}/" k8s/edge/static/index.html
-                        sed -i "s/{BUILD_INFO}/#${env.BUILD_NUMBER} \$build_time UTC/" k8s/edge/static/index.html
-
                         cd k8s/edge
                         docker build ${Globals.dockerCacheArg} --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edge:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """

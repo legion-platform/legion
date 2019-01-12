@@ -49,7 +49,6 @@ RUN python3 -m compileall /usr/local/lib/python3.6/dist-packages
 
 # Staff
 ADD start.sh /start.sh
-ADD static /static
 ADD nginx-jwt.lua \
     statistics_sender.lua \
     blacklisted_tokens.lua \
