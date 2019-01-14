@@ -23,10 +23,10 @@ spec:
         imagePullPolicy: "{{ .Values.grafana.image.pullPolicy }}"
         resources:
           requests:
-            cpu: "50m"
+            cpu: "250m"
             memory: "128Mi"
           limits:
-            cpu: "200m"
+            cpu: "500m"
             memory: "512Mi"
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
