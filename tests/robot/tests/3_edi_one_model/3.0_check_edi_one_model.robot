@@ -21,48 +21,6 @@ Check EDI availability in all enclaves
     \                       Should Be Equal As Integers   ${edi_state.rc}     0
     [Teardown]              NONE
 
-Get token from EDI with valid parameters
-    [Documentation]  Try to get token from EDI with valid parameters
-    [Setup]   NONE
-    [Tags]  edi_token
-    &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
-    Log          ${resp}
-    Should not be empty   ${resp}
-    Should be equal as integers    ${resp["code"]}    200
-    &{token} =   Evaluate    json.loads('''${resp["text"]}''')    json
-    Log          ${token}
-    Should not be empty   ${token["token"]}
-    Should not be empty   ${token["exp"]}
-
-Get token from EDI without version parameter
-    [Documentation]  Try to get token from EDI without version parameter
-    [Setup]   NONE
-    [Tags]  edi_token
-    &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
-    Log          ${resp}
-    Should not be empty   ${resp}
-    Should be equal as integers    ${resp["code"]}    500
-    &{json} =   Evaluate    json.loads('''${resp["text"]}''')    json
-    Log          ${json}
-    ${items} = 	 Get Dictionary Items    ${json}
-    Should be equal as strings   ${items}    ['error', True, 'exception', 'Requested field model_version is not set']
-
-Get token from EDI without model_id parameter
-    [Documentation]  Try to get token from EDI without model_id parameter
-    [Setup]   NONE
-    [Tags]  edi_token
-    &{data} =    Create Dictionary    model_version=${TEST_MODEL_3_VERSION}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
-    Log          ${resp}
-    Should not be empty   ${resp}
-    Should be equal as integers    ${resp["code"]}    500
-    &{json} =    Evaluate    json.loads('''${resp["text"]}''')    json
-    Log          ${json}
-    ${items} = 	 Get Dictionary Items    ${json}
-    Should be equal as strings   ${items}   ['error', True, 'exception', 'Requested field model_id is not set']
-
 Check EDI deploy procedure
     [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
     [Documentation]  Try to deploy dummy model through EDI console
