@@ -211,18 +211,16 @@ Login. Override login values
 
 Get token from EDI
     [Documentation]  Try to get token from EDI
-    [Setup]   Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
-    [Teardown]  Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}  ${TEST_COMMAND_MODEL_ID}
-    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_COMMAND_MODEL_ID} --model-version {TEST_MODEL_5_VERSION} --token {DEX_TOKEN}
+    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token ${DEX_TOKEN}
               Should be equal  ${res.rc}  ${0}
               Should not be empty   ${token}
 
-    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_COMMAND_MODEL_ID} --model-version '99.1' --token {DEX_TOKEN}
+    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --model-version '99.1' --token ${DEX_TOKEN}
               Should not be equal  ${res.rc}  ${0}
 
-    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id invalid-model-name --model-version {TEST_MODEL_5_VERSION} --token {DEX_TOKEN}
+    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id invalid-model-name --model-version ${TEST_MODEL_5_VERSION} --token ${DEX_TOKEN}
               Should not be equal  ${res.rc}  ${0}
 
-    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id {TEST_COMMAND_MODEL_ID} --model-version {TEST_MODEL_5_VERSION} --token 'invalid-token'
+    ${res} =  Shell  legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token 'invalid-token'
               Should not be equal  ${res.rc}  ${0}
 
