@@ -147,7 +147,6 @@ def createjenkinsJobs(String commitID) {
 
                                 kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
 
-                                export PATH=./:\$PATH DISPLAY=:99
                                 export PROFILE=${env.param_profile}
 
                                 echo ----
@@ -226,12 +225,14 @@ def runRobotTests(tags="") {
                             ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
 
                             kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
+                            
+                            # Start Xvfb server in background
+                            Xvfb :99 -ac &
 
+                            # Get Auth cookies
                             DISPLAY=:99 \
                             PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} \
                             jenkins_dex_client --path-to-profiles \$PATH_TO_PROFILES_DIR > \$PATH_TO_COOKIES
-
-                            echo ${env.robot_tags}
 
                             # Run Robot tests
                             DISPLAY=:99 \

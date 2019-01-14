@@ -17,14 +17,15 @@ RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.
 
 # Install updated firefox version
 ENV FIREFOX_VERSION=64.0.2
-ADD https://download.mozilla.org/?product=firefox-64.0.2&os=linux64&lang=en-US /tmp/firefox.tar.bz2
+ADD https://download.mozilla.org/?product=firefox-62.0.2&os=linux64&lang=en-US /tmp/firefox.tar.bz2
 RUN mkdir /opt/firefox && \
     tar xjf /tmp/firefox.tar.bz2 -C /opt/firefox/ && \
-    ln -s /opt/firefox/firefox/firefox /usr/lib/firefox-esr/firefox && \
+    rm -rf /usr/bin/firefox && \
+    ln -s /opt/firefox/firefox/firefox /usr/bin/firefox && \
     rm -rf /tmp/firefox.tar.bz2
     
 # Install Geckodriver for selenium tests
-ENV GECKO_VERSION=0.23.0
+ENV GECKO_VERSION=0.22.0
 ADD https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz /tmp/geckodriver.tar.gz
 RUN tar xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
     rm -rf /tmp/geckodriver*
