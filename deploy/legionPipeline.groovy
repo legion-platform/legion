@@ -246,10 +246,6 @@ def runRobotTests(tags="") {
 
                             PROFILE=${env.param_profile} PATH_TO_PROFILES_DIR=\$PATH_TO_PROFILES_DIR LEGION_VERSION=${env.param_legion_version} \
                             nosetests ${env.nose_tags} --with-xunit --logging-level DEBUG -v || true
-
-                            # Cleanup temp files
-                            rm -rf tests/python/__pycache__
-                            rm -rf tests/robot/pabot_results
                             """
 
                             robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
@@ -285,7 +281,14 @@ def runRobotTests(tags="") {
                             if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
                                 echo "No tests were run during this build. Marking build as UNSTABLE"
                                 currentBuild.result = 'UNSTABLE'
-                            }
+                            }     
+
+                            sh """
+                            # Cleanup temp files
+                            rm -rf tests/python/__pycache__
+                            rm -rf tests/robot/__pycache__
+                            rm -rf tests/robot/pabot_results
+                            """         
                         }
                     }
                 }

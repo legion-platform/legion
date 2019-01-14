@@ -6,7 +6,8 @@ ENV DOCKERVERSION=18.03.1-ce
 # Install python package dependencies and docker CLI
 RUN apt-get update && apt-get install -y software-properties-common \
 	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git  \
-  jq=1.5+dfsg-1.3 xvfb=2:1.19.2-1+deb9u5 firefox-esr=60.4.0esr-1~deb9u1 \
+  jq=1.5+dfsg-1.3 xvfb=2:1.19.2-1+deb9u5 \
+  firefox-esr=60.4.0esr-1~deb9u1 \
 	&& apt-get clean all
   && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKERVERSION}.tgz \
   && tar xzvf docker-${DOCKERVERSION}.tgz --strip 1 -C /usr/local/bin docker/docker \
@@ -23,10 +24,9 @@ RUN mkdir /opt/firefox && \
     rm -rf /tmp/firefox.tar.bz2
     
 # Install Geckodriver for selenium tests
-ENV GECKO_VERSION=0.18.0
+ENV GECKO_VERSION=0.23.0
 ADD https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz /tmp/geckodriver.tar.gz
-RUN tar xzf /tmp/geckodriver.tar.gz -C /tmp/ && \
-    mv /tmp/geckodriver /usr/local/bin/geckodriver && \
+RUN tar xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
     rm -rf /tmp/geckodriver*
 RUN chmod a+x /usr/local/bin/geckodriver
 
