@@ -41,6 +41,17 @@ Check Nexus availability
     Start browser    ${NEXUS_HOST}
     Login with dex
     Go To            ${NEXUS_HOST}/
+    Wait Nexus componens in menu
+
+# NOTICE: Disable due to forthcoming Nexus decomission
+#Check Nexus Components available
+#    [Documentation]  Check that Nexus storages (components) are ready
+#    [Tags]  nexus  ui  apps
+#    Start browser    ${NEXUS_HOST}
+#    Login with dex
+#    Go To            ${NEXUS_HOST}/#browse/browse/components
+#    @{expectedComponentsNames} =  Create List  docker-hosted  raw
+#    Check components presence in Nexus table  ${expectedComponentsNames}
 
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave
