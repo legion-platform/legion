@@ -179,7 +179,7 @@ Get token from EDI
     [Documentation]  get token from EDI for the EDGE session
     [Arguments]     ${enclave}   ${model_id}   ${model_version}
     ${resp} =               Shell                   legionctl generate-token ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${model_id} --model-version ${model_version} --token ${DEX_TOKEN}
-    Should be equal         ${res.rc}  ${0}
+    Should be equal         ${resp.rc}  0
     ${token} =              ${resp.stdout}
     Log                     ${token}
     Set Suite Variable      ${TOKEN}   ${token}
