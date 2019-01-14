@@ -38,5 +38,5 @@ legionctl inspect
 
 To get json web model token for a model, you can use a command:
 ```bash
-legionctl generate-token --edi <edi-url> --token <your-token> --model-id <model-id> --model-version <model-version>
+legionctl generate-token --edi <edi-url> --model-id <model-id> --model-version <model-version>
 ```
