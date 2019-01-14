@@ -5,7 +5,7 @@ robotframework==3.0.2
 robotframework-selenium2library==3.0.0
 robotframework-pabot==0.44
 requests>=2.14
-PyYAML==3.12
+PyYAML==4.2b4
 kubernetes==6.0.0
 aionotify==0.2.0
 pyopenssl==18.0.0
