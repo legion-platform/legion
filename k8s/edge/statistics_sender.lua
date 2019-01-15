@@ -17,7 +17,7 @@ local _M = {}
 local Statsd = require("resty_statsd")
 
 
-function _M.push_data(_, time, name)
+function _M.push_data(_, time, name, endpoint)
     local host = _M.host
     local port = _M.port
     local namespace = _M.namespace
@@ -33,8 +33,8 @@ function _M.push_data(_, time, name)
     local ok = false
 
     if conn ~= Nil then
-        ok, err = conn:increment(name..".request.count", 1, 1)
-        ok, err = conn:timer(name..".request.time", time)
+        ok, err = conn:increment(name.."."..endpoint..".request.count", 1, 1)
+        ok, err = conn:timer(name.."."..endpoint..".request.time", time)
     end
 
     if err ~= Nil then
@@ -43,7 +43,13 @@ function _M.push_data(_, time, name)
 end
 
 function _M.send_request_statistics(name, latency)
-    local ok, err = ngx.timer.at(0, _M.push_data, latency, name)
+    local endpoint = ngx.header["Model-Endpoint"]
+
+    if model_endpoint == Nil then
+        model_endpoint = "default"
+    end
+
+    local ok, err = ngx.timer.at(0, _M.push_data, latency, name, endpoint)
     if not ok then
         ngx.log(ngx.ERR, "Failed to create Statsd reporting timer: ", err)
         return

@@ -81,8 +81,13 @@ function _M.response_feedback(data)
 end
 
 function _M.catch_model_api_response_chunk(model_id, model_version, content, eof)
-    local http_request_headers = ngx.req.get_headers()
-    local requestID = http_request_headers["Request-ID"]
+    local request_http_headers = ngx.req.get_headers()
+    local requestID = request_http_headers["Request-ID"]
+    local model_endpoint = ngx.header["Model-Endpoint"]
+
+    if model_endpoint == Nil then
+        model_endpoint = "default"
+    end
 
     if eof and string.len(content) == 0 then
         return nil
@@ -95,7 +100,8 @@ function _M.catch_model_api_response_chunk(model_id, model_version, content, eof
         response_chunk_id = chunk_id,
         response_content = content,
         model_id = model_id,
-        model_version = model_version
+        model_version = model_version,
+        model_endpoint = model_endpoint
     }
 
     ngx.var.model_api_chunk_count = chunk_id + 1
@@ -106,6 +112,12 @@ end
 function _M.catch_model_api_call(model_id, model_version)
     local request_http_headers = ngx.req.get_headers()
     local request_id = request_http_headers["Request-ID"]
+    local model_endpoint = ngx.header["Model-Endpoint"]
+
+    if model_endpoint == Nil then
+        model_endpoint = "default"
+    end
+
     local http_method = ngx.req.get_method()
     request_http_headers["authorization"] = nil
 
@@ -120,7 +132,8 @@ function _M.catch_model_api_call(model_id, model_version)
         response_body_chunk_count = ngx.var.model_api_chunk_count,
         response_status = ngx.status,
         model_id = model_id,
-        model_version = model_version
+        model_version = model_version,
+        model_endpoint = model_endpoint
     }
 
     local content_type = ngx.var.content_type or ""

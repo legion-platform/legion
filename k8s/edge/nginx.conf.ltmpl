@@ -119,9 +119,16 @@ http {
             -- arg[1] contains a chunk of response content
             -- arg[2] is true if this is the last chunk
 
+            -- Model-Endpoint generation if it is missing
+            local model_endpoint = ngx.header["Model-Endpoint"]
+            if not model_endpoint then
+                model_endpoint = "default"
+                ngx.header["Model-Endpoint"] = model_endpoint
+                ngx.log(ngx.INFO, "Model Endpoint has been set to "..model_endpoint)
+            end
+
             local edge = require("edge")
-            local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}",
-                                                                  ngx.arg[1], ngx.arg[2])
+            local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", ngx.arg[1], ngx.arg[2])
 
             if chunkInfo then
                 local fluentd_logger = require "fluentd_logger"

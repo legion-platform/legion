@@ -17,7 +17,7 @@
 Robot test library - grafana
 """
 from legion_test.grafana import GrafanaClient
-from legion_test.utils import normalize_name
+from legion_test.utils import normalize_name, wait_until
 from legion_test.robot.dex_client import get_session_cookies
 import requests
 
@@ -86,17 +86,18 @@ class Grafana:
         if self._client.is_dashboard_exists(model_id):
             raise Exception('Dashboard exists')
 
-    def metric_should_be_presented(self, model_id, model_version):
+    def _get_model_metric(self, model_id, model_version, model_endpoint='default'):
         """
-        Check that requests count metric for model exists
-
+        Gets model metric data and returns it
         :param model_id: model ID
         :type model_id: str
         :param model_version: model version
         :type model_version: str
-        :raises: Exception
-        :return: None
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :return: list[dict], list with dict with metrics
         """
+
         url = '{}/api/datasources/proxy/1/render'.format(self._url)
 
         auth = None
@@ -107,8 +108,9 @@ class Grafana:
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        model_identifier = '{}.{}'.format(normalize_name(model_id, dns_1035=True),
-                                          normalize_name(model_version, dns_1035=True))
+        model_identifier = '{}.{}.{}'.format(normalize_name(model_id, dns_1035=True),
+                                             normalize_name(model_version, dns_1035=True),
+                                             normalize_name(model_endpoint, dns_1035=True))
 
         target = 'highestMax(stats.legion.model.{}.request.count, 1)'.format(model_identifier)
 
@@ -124,7 +126,23 @@ class Grafana:
         response = requests.post(url, data=payload, headers=headers, auth=auth, cookies=get_session_cookies())
         print('Loading {} metrics. Data: {}'.format(target, response.text))
 
-        data = response.json()
+        return response.json()
+
+    def metric_should_be_presented(self, model_id, model_version, model_endpoint='default'):
+        """
+        Check that requests count metric for model exists
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :raises: Exception
+        :return: None
+        """
+
+        data = self._get_model_metric(model_id, model_version, model_endpoint=model_endpoint)
         if not data:
             raise Exception('Data is empty')
 
@@ -135,3 +153,75 @@ class Grafana:
                 break
         else:
             raise Exception('Cannot find any value > 0')
+
+    def ensure_metric_present(self, model_id, model_version, model_endpoint='default'):
+        """
+        Ensure that requests count metric for model exists
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :raises: Exception
+        :return: None
+        """
+        def is_metric_present():
+            try:
+                self.metric_should_be_presented(model_id, model_version, model_endpoint=model_endpoint)
+            except Exception as e:
+                print('Got metric_should_be_presented exception: {}'.format(e))
+                return False
+            return True
+
+        if not wait_until(is_metric_present, 5, 3):
+            raise Exception('Metric is not present')
+
+    def metric_should_not_be_presented(self, model_id, model_version, model_endpoint='default'):
+        """
+        Check that requests count metric for model not exists
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :raises: Exception
+        :return: None
+        """
+
+        data = self._get_model_metric(model_id, model_version, model_endpoint=model_endpoint)
+        if not data:
+            return
+
+        datapoints = data[0]['datapoints']
+
+        for val, time in datapoints:
+            if val is not None and val > 0:
+                raise Exception('Metric is present')
+
+    def ensure_metric_not_present(self, model_id, model_version, model_endpoint='default'):
+        """
+        Ensure that requests count metric for model not exists
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param model_endpoint: model endpoint
+        :type model_endpoint: str
+        :raises: Exception
+        :return: None
+        """
+        def is_metric_present():
+            try:
+                self.metric_should_not_be_presented(model_id, model_version, model_endpoint=model_endpoint)
+            except Exception as e:
+                print('Got metric_should_not_be_presented exception: {}'.format(e))
+                return True
+            return False
+
+        if wait_until(is_metric_present, 5, 3):
+            raise Exception('Metric is not present')

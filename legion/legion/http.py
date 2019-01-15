@@ -22,6 +22,7 @@ import logging
 import urllib
 
 import legion.config
+import legion.containers.headers
 import legion.utils
 
 import flask
@@ -133,15 +134,33 @@ def parse_request(input_request):
         raise ValueError('Unexpected http method: {}'.format(input_request.method))
 
 
-def prepare_response(response):
+def prepare_response(response_data, model_id=None, model_version=None, model_endpoint=None):
     """
     Produce an HTTP response from dict/list
 
-    :param response: dict/list with data
-    :type response: dict[str, any] or list[any]
+    :param response_data: dict/list with data
+    :type response_data: dict[str, any] or list[any]
+    :param model_id: model id
+    :type model_id: str
+    :param model_version: model version
+    :type model_version: str
+    :param model_endpoint: model endpoint
+    :type model_endpoint: str
     :return: bytes
     """
-    return flask.jsonify(response)
+    response = flask.jsonify(response_data)
+    if model_id:
+        response.headers[legion.containers.headers.MODEL_ID] = legion.utils.normalize_name(model_id, dns_1035=True)
+
+    if model_version:
+        response.headers[legion.containers.headers.MODEL_VERSION] = legion.utils.normalize_name(
+            model_version, dns_1035=True)
+
+    if model_endpoint:
+        response.headers[legion.containers.headers.MODEL_ENDPOINT] = legion.utils.normalize_name(
+            model_endpoint, dns_1035=True)
+
+    return response
 
 
 def provide_json_response(method):
