@@ -144,4 +144,6 @@ def generate_token(args):
     :return: str -- token
     """
     edi_client = edi.build_client(args)
-    return edi_client.get_token(args.model_id, args.model_version)
+    token = edi_client.get_token(args.model_id, args.model_version)
+    print(token)
+    return token
