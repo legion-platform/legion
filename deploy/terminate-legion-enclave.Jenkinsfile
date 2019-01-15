@@ -6,7 +6,7 @@ pipeline {
         param_git_branch = "${params.GitBranch}"
         param_profile = "${params.Profile}"
         param_legion_version = "${params.LegionVersion}"
-        aram_enclave_name = "${params.EnclaveName}"
+        param_enclave_name = "${params.EnclaveName}"
         param_docker_repo = "${params.DockerRepo}"
         param_debug_run = "${params.DebugRun}"
         //Job parameters
@@ -31,6 +31,7 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.authorizeJenkinsAgent()
                     legion.terminateLegionEnclave()
                 }
             }
@@ -41,7 +42,8 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                legion.cleanupClusterSg()
+                cleanupContainerVersion = param_legion_version ?: cleanupContainerVersion
+                legion.cleanupClusterSg(cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

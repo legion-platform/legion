@@ -103,6 +103,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
+                legion.cleanupClusterSg(cleanupContainerVersion)
                 legion.cleanupClusterSg()
                 legion.notifyBuild(currentBuild.currentResult)
             }
