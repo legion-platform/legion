@@ -178,7 +178,7 @@ Build enclave EDGE URL
 Get token from EDI
     [Documentation]  get token from EDI for the EDGE session
     [Arguments]     ${enclave}   ${model_id}   ${model_version}
-    ${resp} =               Shell                   legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${model_id} --model-version ${model_version} --token ${DEX_TOKEN}
+    ${resp} =               Run Process without PIPE  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${model_id} --model-version ${model_version} --token "${DEX_TOKEN}"    shell=True
     Should be equal         ${resp.rc}  0
     ${token} =              ${resp.stdout}
     Log                     ${token}
