@@ -180,9 +180,9 @@ Get token from EDI
     [Arguments]           ${enclave}    ${model_id}    ${model_version}
     ${resp} =             Run Process without PIPE  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${model_id} --model-version ${model_version} --token "${DEX_TOKEN}"    shell=True
     Should be equal as integers       ${resp.rc}  0
-    ${token} =            ${resp.stdout}
-    Log                   ${token}
-    Set Suite Variable    ${TOKEN}   ${token}
+    Log                   stdout = ${resp.stdout}
+    Log                   stderr = ${resp.stderr}
+    Set Suite Variable    ${TOKEN}   ${resp.stdout}
 
 Check model started
     [Documentation]  check if model run in container by http request
