@@ -16,6 +16,7 @@ pipeline {
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
         helmLocalSrc = 'false'
+        cleanupContainerVersion = "latest"
     }
 
     stages {
@@ -45,8 +46,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                cleanupContainerVersion = param_legion_version ?: cleanupContainerVersion
-                legion.cleanupClusterSg(cleanupContainerVersion)
+                legion.cleanupClusterSg(param_legion_version ?: cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

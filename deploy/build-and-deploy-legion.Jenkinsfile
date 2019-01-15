@@ -20,6 +20,7 @@ pipeline {
         sharedLibPath = "deploy/legionPipeline.groovy"
         legionVersion = null
         commitID = null
+        cleanupContainerVersion = "latest"
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
         helmLocalSrc = 'false'
@@ -103,8 +104,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                legion.cleanupClusterSg(cleanupContainerVersion)
-                legion.cleanupClusterSg()
+                legion.cleanupClusterSg(param_legion_version ?: cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

@@ -29,25 +29,6 @@
       include_vars:
         file: "{{ secrets_file }}"
 
-    - name: get public IP
-      ipify_facts:
-        timeout: 20
-
-    - name: Authorize Jenkins agent at Legion cluster
-      ec2_group:
-        name: "{{ k8s_clusters_common_sg_name }}"
-        vpc_id: "{{ vpc_id }}"
-        region: "{{ aws_region }}"
-        description: "Legion clusters shared SG"
-        purge_rules: false
-        purge_rules_egress: false
-        rules:
-          - proto: tcp
-            ports:
-            - 443
-            cidr_ip: "{{ ipify_public_ip }}/32"
-            rule_desc: jenkins agent cluster access
-
   post_tasks:
     - name: Delete secrets file
       file:
