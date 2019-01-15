@@ -15,6 +15,10 @@
   shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
   when: "legion_deployed"
 
+- name: Generate JWT Secret
+  set_fact:
+    enclave_jwt_secret: "{{ lookup('password', '/dev/null length=16 chars=ascii_letters') }}"
+
 - name: Create legion configuration (values) file
   template:
     src: legion-values.yaml.j2
