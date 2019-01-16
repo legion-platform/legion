@@ -60,8 +60,7 @@ install_hooks()
     git secrets --install -f
 
     echo "Git secrets have been configured"
-    echo "Configuration: "
-    git secrets --list
+    echo "To see the configuration please run: git secrets --list"
 
     echo "Adding to post-checkout & post-merge hooks script invoking of $ME with argument install_hooks"
     echo "#!/usr/bin/env bash" > .git/hooks/post-checkout
