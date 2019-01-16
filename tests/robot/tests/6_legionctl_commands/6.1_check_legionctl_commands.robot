@@ -215,13 +215,7 @@ Get token from EDI
               Should be equal  ${res.rc}  ${0}
               Should not be empty   ${res.stdout}
 
-    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --model-version '99.1' --token "${DEX_TOKEN}"
-              Should not be equal  ${res.rc}  ${0}
-
     ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --token "${DEX_TOKEN}"
-              Should not be equal  ${res.rc}  ${0}
-
-    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id invalid-model-name --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
               Should not be equal  ${res.rc}  ${0}
 
     ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
