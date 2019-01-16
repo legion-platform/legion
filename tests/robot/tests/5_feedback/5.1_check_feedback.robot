@@ -12,6 +12,7 @@ Suite Setup         Run Keywords
 ...                 Choose cluster context  ${CLUSTER_NAME}   AND
 ...                 Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_4}   ${TEST_FEEDBACK_MODEL_ID}      ${TEST_FEEDBACK_MODEL_VERSION}
 Suite Teardown      Run EDI undeploy by model version and check         ${MODEL_TEST_ENCLAVE}   ${TEST_FEEDBACK_MODEL_ID}    ${TEST_FEEDBACK_MODEL_VERSION}   ${TEST_MODEL_IMAGE_4}
+Force Tags          feedback_loop  apps
 
 *** Variables ***
 ${REQUEST_ID_CHECK_RETRIES}         30
@@ -19,7 +20,7 @@ ${REQUEST_ID_CHECK_RETRIES}         30
 *** Test Cases ***
 Check model API logging without request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - without request ID
-    [Tags]  feedback_loop  fluentd  aws  apps
+    [Tags]  fluentd  aws
     Choose bucket           ${FEEDBACK__BUCKET}
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
@@ -50,7 +51,7 @@ Check model API logging without request ID and one chunk
 
 Check model API logging with request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - with specified request ID
-    [Tags]  feedback_loop  fluentd  aws  apps
+    [Tags]  fluentd  aws
     Choose bucket           ${FEEDBACK__BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
@@ -84,7 +85,7 @@ Check model API logging with request ID and one chunk
 
 Check model API logging with request ID and many chunks
     [Documentation]  Checking that model API log is being persisted - with specified request ID
-    [Tags]  feedback_loop  fluentd  aws  apps
+    [Tags]  fluentd  aws
     Choose bucket           ${FEEDBACK__BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${expected_response}=   Repeat string N times    ${TEST_MODEL_ARG_STR}   ${TEST_MODEL_ARG_COPIES}
@@ -117,7 +118,6 @@ Check model API logging with request ID and many chunks
 
 Check model API request generation have no duplicates
     [Documentation]  Checking that model API request generation does not provide same IDs
-    [Tags]  feedback_loop  apps
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
     ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
@@ -135,7 +135,7 @@ Check model API request generation have no duplicates
 
 Check model API feedback with request ID
     [Documentation]  Checking that model API feedback is being persisted - without request ID
-    [Tags]  feedback_loop  fluentd  aws  apps
+    [Tags]  fluentd  aws
     Choose bucket           ${FEEDBACK__BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
