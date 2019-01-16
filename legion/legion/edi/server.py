@@ -176,10 +176,8 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
         if app.config['REGISTER_ON_GRAFANA']:
             LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
                         .format(model_service.id, model_service.version))
-            if not app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version):
-                app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
-            else:
-                LOGGER.info('Registration on Grafana has been skipped - dashboard exists')
+
+            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
         else:
             LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
 
@@ -229,12 +227,11 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
             other_versions_exist = len(app.config['ENCLAVE'].get_models(model_service.id)) > 1
             LOGGER.info('Removing model\'s dashboard from Grafana (id={}, version={})'
                         .format(model_service.id, model_service.version))
-            if app.config['GRAFANA_CLIENT'].is_dashboard_exists(model_service.id, model_service.version) \
-                    and not other_versions_exist:
-                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id,
-                                                                        model_service.version)
+
+            if not other_versions_exist:
+                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id, model_service.version)
             else:
-                LOGGER.info('Removing model\'s dashboard from Grafana has been skipped')
+                LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - there are other model')
         else:
             LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - disabled in configuration')
 

@@ -18,12 +18,15 @@ Graphana API functional for working with models
 """
 
 import json
+import logging
 import os
 
 import legion.config
 from legion.utils import render_template
 
 import requests
+
+LOGGER = logging.getLogger(__name__)
 
 
 class GrafanaClient:
@@ -66,17 +69,19 @@ class GrafanaClient:
 
         auth = None
         if self._user and self._password:
-            auth = (self._user, self._password)
+            auth = self._user, self._password
 
-        response = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth)
+        resp = requests.request(action.lower(), full_url, json=payload, headers=headers, auth=auth)
 
-        if response.status_code in (401, 403):
+        if resp.status_code in (401, 403):
             raise Exception('Auth failed')
 
-        if response.status_code != 200:
-            raise Exception('Wrong answer for url = %s: %s' % (full_url, repr(response)))
+        if resp.status_code != 200:
+            raise Exception('Wrong answer for [url="{}", status="{}", text="{}"]'.format(
+                full_url, resp.status_code, resp.text)
+            )
 
-        answer = json.loads(response.text)
+        answer = resp.json()
 
         return answer
 
@@ -100,21 +105,12 @@ class GrafanaClient:
         :type model_id: str or None
         :return: None
         """
-        if self.is_dashboard_exists(model_id, model_version):
-            dashboard = self.get_model_dashboard(model_id, model_version)
+        dashboard = self.get_model_dashboard(model_id, model_version)
+        if dashboard:
             self.delete_dashboard(dashboard['uri'])
-
-    def is_dashboard_exists(self, model_id, model_version):
-        """
-        Check if model's dashboard exists
-
-        :param model_id: model id
-        :type model_id: str
-        :param model_version: model version
-        :type model_id: str or None
-        :return: bool -- is dashboard exists
-        """
-        return self.get_model_dashboard(model_id, model_version) is not None
+            LOGGER.info('"{}" model dashboard is deleted'.format(model_id))
+        else:
+            LOGGER.info('"{}" model dashboard already was deleted'.format(model_id))
 
     def get_model_dashboard(self, model_id, model_version):
         """
@@ -127,10 +123,8 @@ class GrafanaClient:
         :return: dict with dashboard information or None
         """
         data = self._query('/api/search/?tag=model_{}'.format(model_id))
-        if not data:
-            return None
 
-        return data[0]
+        return data[0] if data else None
 
     def create_dashboard_for_model(self, model_id, model_version=None):
         """
