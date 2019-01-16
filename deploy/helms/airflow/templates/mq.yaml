@@ -16,7 +16,7 @@ spec:
       port: 6379
       targetPort: node
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-redis"
@@ -25,11 +25,17 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-redis"
+    app: "{{ .Release.Name }}-redis"
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      component: "{{ .Release.Name }}-redis"
+      app: "{{ .Release.Name }}-redis"
   template:
     metadata:
       labels:
+        component: "{{ .Release.Name }}-redis"
         app: "{{ .Release.Name }}-redis"
     spec:
       restartPolicy: Always

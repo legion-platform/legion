@@ -16,7 +16,7 @@ spec:
       port: 5555
       targetPort: flower
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-flower"
@@ -25,11 +25,17 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-flower"
+    app: "{{ .Release.Name }}-airflow-flower"
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      component: "{{ .Release.Name }}-flower"
+      app: "{{ .Release.Name }}-airflow-flower"
   template:
     metadata:
       labels:
+        component: "{{ .Release.Name }}-flower"
         app: "{{ .Release.Name }}-airflow-flower"
     spec:
       restartPolicy: Always
