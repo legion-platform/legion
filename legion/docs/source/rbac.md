@@ -9,7 +9,7 @@ Legion package can be used for introspection and modification of Legion state in
 
 #### Deploying new models
 * `CoreV1Api.list_namespaced_service`
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
+* `ExtensionsV1beta1Api.read_namespaced_deployment`
 * `ExtensionsV1beta1Api.create_namespaced_deployment`
 * `CoreV1Api.create_namespaced_service`
 
@@ -34,7 +34,7 @@ This function will be called on accessing public URL for service, uses in EDI to
 
 #### Inspecting models 
 This function will be called on access deployment, scale, desired scale, status, image
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
+* `ExtensionsV1beta1Api.read_namespaced_deployment`
 
 #### Scaling models
 * `ExtensionsV1beta1Api.patch_namespaced_deployment`
@@ -42,6 +42,7 @@ This function will be called on access deployment, scale, desired scale, status,
 #### Deleting models
 * `AppsV1beta1Api.delete_namespaced_deployment`
 * `CoreV1Api.delete_namespaced_service`
+* `CoreV1Api.read_namespaced_service`
 
 ### Properties system
 #### Finding properties in enclave
@@ -86,7 +87,7 @@ This function will be called on access deployment, scale, desired scale, status,
 
 ### Services	
 ##### legion.k8s.services.ModelService._load_data
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
+* `ExtensionsV1beta1Api.read_namespaced_deployment`
 	
 ##### legion.k8s.services.ModelService.scale
 * `ExtensionsV1beta1Api.patch_namespaced_deployment`
@@ -94,12 +95,13 @@ This function will be called on access deployment, scale, desired scale, status,
 ##### legion.k8s.services.ModelService.delete
 * `AppsV1beta1Api.delete_namespaced_deployment`
 * `CoreV1Api.delete_namespaced_service`
+* `CoreV1Api.read_namespaced_service`
 
 ##### legion.k8s.services.find_model_deployment
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
+* `ExtensionsV1beta1Api.read_namespaced_deployment`
 	
 ##### legion.k8s.services.find_all_models_deployments
-* `ExtensionsV1beta1Api.list_namespaced_deployment`
+* `ExtensionsV1beta1Api.read_namespaced_deployment`
 * `ExtensionsV1beta1Api.list_deployment_for_all_namespaces`
 	
 ##### legion.k8s.services.find_all_services

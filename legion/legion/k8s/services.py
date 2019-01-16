@@ -21,20 +21,20 @@ import os
 
 import kubernetes
 import kubernetes.client
+import kubernetes.client.rest
 import kubernetes.config
 import kubernetes.config.config_exception
-
+import legion.containers.headers
+import legion.k8s.enclave
+import legion.k8s.exceptions
+import legion.k8s.utils
 import legion.model
 from legion.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
-import legion.k8s.enclave
-import legion.containers.headers
-from legion.k8s.definitions import ModelIdVersion
 from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
-from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
 from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
-import legion.k8s.utils
-from legion.utils import normalize_name, ensure_function_succeed
-import legion.k8s.exceptions
+from legion.k8s.definitions import ModelIdVersion
+from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
+from legion.utils import ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
 
@@ -280,14 +280,7 @@ class ModelService(Service):
 
         :return: bool
         """
-        client = legion.k8s.utils.build_client()
-
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-
-        all_deployments = extension_api.list_namespaced_deployment(self._k8s_service.metadata.namespace)
-        return next((deployment for deployment in all_deployments.items
-                     if deployment.metadata.labels.get(DOMAIN_MODEL_ID) == self.id
-                     and deployment.metadata.labels.get(DOMAIN_MODEL_VERSION) == self.version), None)
+        return find_model_deployment(self.namespace, self.id, self.version)
 
     def _load_deployment_data(self):
         """
@@ -358,15 +351,7 @@ class ModelService(Service):
 
         :return: bool -- has services been deleted
         """
-        client = legion.k8s.utils.build_client()
-        core_v1api = kubernetes.client.CoreV1Api(client)
-
-        actual_services = [
-            item.metadata.name
-            for item
-            in core_v1api.list_namespaced_service(self.namespace).items
-        ]
-        return self.k8s_service.metadata.name not in actual_services
+        return not legion.k8s.services.find_model_service(self.namespace, self.id, self.version)
 
     def check_deployment_is_deleted(self):
         """
@@ -374,15 +359,7 @@ class ModelService(Service):
 
         :return: bool -- has deployment been deleted
         """
-        client = legion.k8s.utils.build_client()
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-
-        actual_deployments = [
-            item.metadata.name
-            for item
-            in extension_api.list_namespaced_deployment(self.namespace).items
-        ]
-        return self.deployment.metadata.name not in actual_deployments
+        return not legion.k8s.services.find_model_deployment(self.namespace, self.id, self.version)
 
     def delete(self, grace_period_seconds=0):
         """
@@ -492,7 +469,8 @@ class ModelService(Service):
         """
         return 'ModelService for model {} version {}'.format(self.id, self.version)
 
-    __repr__ = name = __str__
+    __repr__ = __str__
+    name = property(__str__)
 
 
 class ModelServiceEndpoint:
@@ -568,61 +546,99 @@ class ModelServiceEndpoint:
         return self.url == other.url
 
 
-def find_model_deployment(model_id, namespace='default'):
-    """
-    Find model deployment by model id
+def _generate_model_labels(model_id=None, model_version=None):
+    """Generate kubernetes labels by model id and version.
+    If parameters equal None or * then it will not be included in label selector
 
     :param model_id: model id
-    :type model_id: str
+    :type model_id: str or None
+    :param model_version: model version
+    :type model_version: str or None
+    :return str - label selector
+    """
+    label_selector = '{}=model'.format(LEGION_COMPONENT_LABEL)
+    if model_id and model_id != "*":
+        label_selector += ',{}={}'.format(DOMAIN_MODEL_ID, model_id)
+    if model_version and model_version != "*":
+        label_selector += ',{}={}'.format(DOMAIN_MODEL_VERSION, model_version)
+
+    return label_selector
+
+
+def find_model_deployment(namespace, model_id, model_version):
+    """
+    Find one model deployment. Return None if there is no the deployment
+
     :param namespace: namespace
     :type namespace: str
+    :param model_id: model id
+    :type model_id: str
+    :param model_version: model version
+    :type model_version: str
+
     :return: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
     """
     client = legion.k8s.utils.build_client()
-
     extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-    all_deployments = extension_api.list_namespaced_deployment(namespace)
 
-    type_label_name = normalize_name(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
-    type_label_value = 'model'
+    try:
+        return extension_api.read_namespaced_deployment(
+            legion.k8s.utils.normalize_k8s_name(model_id, model_version),
+            namespace
+        )
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            return None
 
-    model_id_name = normalize_name(legion.containers.headers.DOMAIN_MODEL_ID)
-    model_id_value = normalize_name(model_id)
-
-    for deployment in all_deployments.items:
-        if deployment.metadata.labels.get(type_label_name) == type_label_value \
-                and deployment.metadata.labels.get(model_id_name) == model_id_value:
-            return deployment
-
-    return None
+        raise e
 
 
-def find_all_models_deployments(namespace='default'):
+def find_model_services_by(namespace, model_id=None, model_version=None):
     """
-    Find all models deployments
+    Find all models services
 
     :param namespace: namespace
-    :type namespace: str or none for all
-    :return: list[:py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`]
+    :type namespace: str or none
+    :param model_id: model id
+    :type model_id: str or None
+    :param model_version: model version
+    :type model_version: str or None
+    :return: list[:py:class:`kubernetes.client.models.v1_service.V1Service`]
     """
     client = legion.k8s.utils.build_client()
+    core_v1api = kubernetes.client.CoreV1Api(client)
 
-    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-    if namespace:
-        all_deployments = extension_api.list_namespaced_deployment(namespace)
-    else:
-        all_deployments = extension_api.list_deployment_for_all_namespaces()
+    services = core_v1api.list_namespaced_service(namespace,
+                                                  label_selector=_generate_model_labels(model_id, model_version))
 
-    type_label_name = normalize_name(legion.containers.headers.DOMAIN_CONTAINER_TYPE)
-    type_label_value = 'model'
+    return services.items
 
-    model_deployments = [
-        deployment
-        for deployment in all_deployments.items
-        if deployment.metadata.labels.get(type_label_name) == type_label_value
-    ]
 
-    return model_deployments
+def find_model_service(namespace, model_id, model_version):
+    """
+    Find model service by model id and version
+
+    :param namespace: namespace
+    :type namespace: str
+    :param model_id: model id
+    :type model_id: str
+    :param model_version: model version
+    :type model_version: str
+    :return: Optional[:py:class:`kubernetes.client.models.v1_service.V1Service`]
+    """
+    client = legion.k8s.utils.build_client()
+    core_v1api = kubernetes.client.CoreV1Api(client)
+
+    try:
+        return core_v1api.read_namespaced_service(
+            legion.k8s.utils.normalize_k8s_name(model_id, model_version),
+            namespace
+        )
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            return None
+
+        raise e
 
 
 def find_all_services(namespace='', component=''):
@@ -630,7 +646,7 @@ def find_all_services(namespace='', component=''):
     Find all services details by criteria
 
     :param namespace: namespace
-    :type namespace: str or none for all
+    :type namespace: str or none
     :param component: filter by specified component value, or none for all
     :type component: str
     :return: list[V1Service]

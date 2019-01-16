@@ -18,17 +18,17 @@ Flask app
 """
 
 import logging
+import os
+from datetime import datetime, timedelta
 
+import jwt
 import legion.config
-import legion.k8s
 import legion.external.grafana
 import legion.http
+import legion.k8s
 import legion.model
 from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
-import os
-import jwt
-from datetime import datetime, timedelta
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
@@ -159,20 +159,11 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
     LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r} and \
                 {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, model_iam_role))
 
-    # Build dictionary with information about deployed models
-    deployed_models = app.config['ENCLAVE'].get_models()
-    deployed_models_by_image = {service.image: service for service in deployed_models}
+    is_deployed, model_service = app.config['ENCLAVE'].deploy_model(
+        image, model_iam_role, count, livenesstimeout, readinesstimeout
+    )
 
-    if image in deployed_models_by_image.keys():  # if model already deployed - return its deployment information
-        LOGGER.info('Same model already has been deployed - skipping')
-        model_service = deployed_models_by_image[image]
-        model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
-    else:
-        model_service = app.config['ENCLAVE'].deploy_model(image, model_iam_role, count,
-                                                           livenesstimeout, readinesstimeout)
-        LOGGER.info('Model (id={}, version={}) has been deployed'
-                    .format(model_service.id, model_service.version))
-
+    if is_deployed:
         if app.config['REGISTER_ON_GRAFANA']:
             LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
                         .format(model_service.id, model_service.version))
@@ -181,9 +172,7 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
         else:
             LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
 
-        model_deployment = legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
-
-    return return_model_deployments([model_deployment])
+    return return_model_deployments([legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)])
 
 
 @blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])

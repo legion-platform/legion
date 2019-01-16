@@ -225,12 +225,25 @@ def get_meta_from_docker_labels(labels):
     kubernetes_labels[legion.containers.headers.DOMAIN_MODEL_VERSION] = model_version
 
     return ModelContainerMetaInformation(
-        k8s_name=normalize_name('model-{}-{}'.format(model_id, model_version), dns_1035=True),
+        k8s_name=normalize_k8s_name(model_id, model_version),
         model_id=model_id,
         model_version=model_version,
         kubernetes_labels=kubernetes_labels,
         kubernetes_annotations=labels
     )
+
+
+def normalize_k8s_name(model_id, model_version):
+    """
+    Convert model id and version to normalize k8s name
+
+    :param model_id: model id
+    :type model_id: str or None
+    :param model_version: model version
+    :type model_version: str or None
+    :return str - normalize k8s name
+    """
+    return normalize_name('model-{}-{}'.format(model_id, model_version), dns_1035=True)
 
 
 def parse_docker_image_url(image_url):

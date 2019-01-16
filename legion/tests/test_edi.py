@@ -24,8 +24,9 @@ import unittest2
 sys.path.extend(os.path.dirname(__file__))
 
 from legion_test_utils import EDITestServer, \
-    mock_swagger_function_response_from_file as m_func, \
-    build_sequential_resource_name_generator
+    mock_swagger_function_response_from_file as m_func
+
+from kubernetes.client.rest import ApiException
 
 DOCKER_IMAGE_LABELS = {
     'com.epam.legion.model.id': 'demo-abc-model',
@@ -38,9 +39,9 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_all_detail(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect()
                 # Test count of returned models
@@ -86,9 +87,9 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_by_model_id(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('demo-abc-model')
                 # Test count of returned models
@@ -134,9 +135,8 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_by_model_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect(version='1.0')
                 # Test count of returned models
@@ -163,9 +163,8 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_by_model_id_and_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('demo-abc-model', '1.0')
                 # Test count of returned models
@@ -192,9 +191,7 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_return_none_for_invalid_model_id(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('fake_model_id')
                 # Test count of returned models
@@ -203,9 +200,9 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_return_none_for_invalid_model_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+                        'demo_abc_models_1_0_and_1_1'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect(version='fake_version')
                 # Test count of returned models
@@ -214,9 +211,9 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_filter_empty_results(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+                        'demo_abc_models_1_0_and_1_1'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('unexisted-model-id')
                 # Test count of returned models
@@ -224,16 +221,10 @@ class TestEDI(unittest2.TestCase):
                 self.assertEqual(len(models_info), 0)
 
     def test_edi_deploy_one_model(self):
-        services_rg = build_sequential_resource_name_generator([
-            'no_models', 'no_models', 'two_models_1_id_and_2_versions'
-        ])
-        deployments_rg = build_sequential_resource_name_generator([
-            'two_models_scaled_to_2', 'two_models_1_id_and_2_versions'
-        ])
-
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', services_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', deployments_rg), \
+            with m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), 'demo_abc_model_1_0']), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment', 'deploy_done'), \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
@@ -266,26 +257,25 @@ class TestEDI(unittest2.TestCase):
                 self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_deploy_model_with_scale_1(self):
-        services_rg = build_sequential_resource_name_generator([
-            'no_models', 'no_models', 'two_models_1_id_and_2_versions'
-        ])
-        deployments_rg = build_sequential_resource_name_generator([
-            'two_models_scaled_to_2', 'two_models_1_id_and_2_versions'
-        ])
-
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', services_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', deployments_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment', 'deploy_done'), \
+            with m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), 'demo_abc_model_1_0']), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment',
+                        'deploy_done') as cnd_mock, \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None), \
                  mock.patch('legion.k8s.utils.get_docker_image_labels', return_value=DOCKER_IMAGE_LABELS):
                 deployments = edi.edi_client.deploy(
-                    '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', 1)
+                    '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', count=1)
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
+
+                _, deployment_spec = cnd_mock.call_args
+                self.assertEqual(1, deployment_spec['body'].spec.replicas)
+
                 # Check deployed models fields
                 expected_result = {
                     'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
@@ -308,26 +298,26 @@ class TestEDI(unittest2.TestCase):
                 self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_deploy_model_with_scale_2(self):
-        services_rg = build_sequential_resource_name_generator([
-            'no_models', 'no_models', 'two_models_1_id_and_2_versions'
-        ])
-        deployments_rg = build_sequential_resource_name_generator([
-            'two_models_scaled_to_2', 'two_models_scaled_to_2'
-        ])
-
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', services_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', deployments_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment', 'deploy_done'), \
+            with m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), 'demo_abc_model_1_0']), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        'demo_abc_model_1_0_scaled_to_2'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment',
+                        'deploy_done') as cnd_mock, \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None), \
                  mock.patch('legion.k8s.utils.get_docker_image_labels', return_value=DOCKER_IMAGE_LABELS):
                 deployments = edi.edi_client.deploy(
-                    '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', 2)
+                    '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', count=2)
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
+
+                _, deployment_spec = cnd_mock.call_args
+                self.assertEqual(2, deployment_spec['body'].spec.replicas)
+
                 # Check deployed models fields
                 expected_result = {
                     'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
@@ -351,26 +341,20 @@ class TestEDI(unittest2.TestCase):
 
     def test_negative_edi_deploy_scale_with_0(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None):
+            with mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.deploy(
-                        '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', 0)
+                        '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', count=0)
                 except Exception as e:
                     self.assertEqual(str(e),
                                      "Got error from server: 'Invalid scale parameter: should be greater then 0'")
 
     def test_edi_undeploy_model_by_id(self):
-        services_rg = build_sequential_resource_name_generator([
-            'one_model', 'no_models'
-        ])
-        deployments_rg = build_sequential_resource_name_generator([
-            'one_model', 'no_models'
-        ])
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', services_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', deployments_rg), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.CoreV1Api.read_namespaced_service', ApiException(404)), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', ApiException(404)]), \
                  m_func('kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
                         'model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
@@ -402,7 +386,7 @@ class TestEDI(unittest2.TestCase):
 
     def test_negative_edi_undeploy_by_invalid_model_id(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.undeploy('invalid-id')
@@ -412,16 +396,19 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_scale_up(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_0_scaled_to_2']), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'one_model_scaled_to_2'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'one_model_scaled_to_2'), \
+                        'demo_abc_model_1_0_scaled_to_2') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale('demo-abc-model', 2)
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
+
+                _, _, deployment_spec = pnd_mock.call_args[0]
+                self.assertEqual(2, deployment_spec.spec.replicas)
+
                 # Check scaled model fields
                 expected_result = {
                     'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
@@ -445,16 +432,19 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_scale_down(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'one_model_scaled_to_2'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0_scaled_to_2', 'demo_abc_model_1_0']), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'one_model_scaled_to_1'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
+                        'demo_abc_model_1_0_scaled_to_1') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale('demo-abc-model', 1)
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
+
+                _, _, deployment_spec = pnd_mock.call_args[0]
+                self.assertEqual(1, deployment_spec.spec.replicas)
+
                 # Check scaled model fields
                 expected_result = {
                     'image': '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a',
@@ -478,10 +468,8 @@ class TestEDI(unittest2.TestCase):
 
     def test_negative_edi_scale_to_0(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'one_model_scaled_to_2'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 0)
@@ -491,11 +479,7 @@ class TestEDI(unittest2.TestCase):
 
     def test_negative_edi_invalid_model_id(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'one_model'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'one_model_scaled_to_2'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('invalid_id', 1)
@@ -505,9 +489,9 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_all_models_by_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
                 deployments = edi.edi_client.inspect(model='demo-abc-model', version='*')
@@ -558,9 +542,9 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_inspect_all_models_by_id(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
                 deployments = edi.edi_client.inspect(model='*')
@@ -611,11 +595,7 @@ class TestEDI(unittest2.TestCase):
 
     def test_negative_edi_scale_without_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'one_model_scaled_to_2'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 2)
@@ -625,12 +605,8 @@ class TestEDI(unittest2.TestCase):
 
     def test_negative_edi_undeploy_without_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
-                        'model_deleted'), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None):
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 mock.patch('legion.k8s.utils.build_client', return_value=None) as ddd:
                 try:
                     edi.edi_client.scale('demo-abc-model', 2)
                 except Exception as e:
@@ -638,16 +614,13 @@ class TestEDI(unittest2.TestCase):
                                      "Got error from server: 'Please specify version of model'")
 
     def test_edi_undeploy_all_models_by_version(self):
-        services_rg = build_sequential_resource_name_generator([
-            'two_models_1_id_and_2_versions', 'no_models', 'no_models'
-        ])
-        deployments_rg = build_sequential_resource_name_generator([
-            'two_models_1_id_and_2_versions', 'no_models', 'two_models_1_id_and_2_versions', 'no_models'
-        ])
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', services_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        deployments_rg), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), ApiException(404)]), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', ApiException(404),
+                         'demo_abc_model_1_1', ApiException(404)]), \
                  m_func('kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
                         'last_model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
@@ -702,19 +675,25 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_scale_all_models_by_version(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), ApiException(404)]), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_0_scaled_to_2',
+                         'demo_abc_model_1_1', 'demo_abc_model_1_1_scaled_to_2']), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'last_model_scaled_to_2'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_scaled_to_2'), \
+                        'last_model_scaled_to_2') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
                 deployments = edi.edi_client.scale(model='demo-abc-model', count=2, version='*')
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 2)
+
+                for args in pnd_mock.call_args_list:
+                    _, _, deployment_spec = args[0]
+                    self.assertEqual(2, deployment_spec.spec.replicas)
+
                 # Validate scaled models
                 # Test model #1 fields
                 expected_result = {
@@ -759,20 +738,25 @@ class TestEDI(unittest2.TestCase):
 
     def test_edi_scale_all_models_by_id(self):
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service',
-                        'two_models_1_id_and_2_versions'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_1_id_and_2_versions'), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), ApiException(404)]), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', 'demo_abc_model_1_0_scaled_to_2',
+                         'demo_abc_model_1_1', 'demo_abc_model_1_1_scaled_to_2']), \
                  m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
-                        'last_model_scaled_to_2'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
-                        'two_models_scaled_to_2'), \
+                        'last_model_scaled_to_2') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
                 deployments = edi.edi_client.scale(model='*', count=2)
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 2)
+
+                for args in pnd_mock.call_args_list:
+                    _, _, deployment_spec = args[0]
+                    self.assertEqual(2, deployment_spec.spec.replicas)
+
                 # Validate scaled models
                 # Test model #1 fields
                 expected_result = {
@@ -793,6 +777,7 @@ class TestEDI(unittest2.TestCase):
                     'status': deployments[0].status,
                     'namespace': deployments[0].namespace
                 }
+
                 self.assertDictEqual(expected_result, actual_result)
                 # Test model #2 fields
                 expected_result = {
@@ -816,15 +801,13 @@ class TestEDI(unittest2.TestCase):
                 self.assertDictEqual(expected_result, actual_result)
 
     def test_edi_undeploy_all_models_by_id(self):
-        services_rg = build_sequential_resource_name_generator([
-            'two_models_1_id_and_2_versions', 'no_models', 'no_models'
-        ])
-        deployments_rg = build_sequential_resource_name_generator([
-            'two_models_1_id_and_2_versions', 'no_models', 'two_models_1_id_and_2_versions', 'no_models'
-        ])
         with EDITestServer() as edi:
-            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', services_rg), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment', deployments_rg), \
+            with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
+                 m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
+                        [ApiException(404), ApiException(404)]), \
+                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                        ['demo_abc_model_1_0', ApiException(404),
+                         'demo_abc_model_1_1', ApiException(404)]), \
                  m_func(
                      'kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
                      'last_model_deleted'), \

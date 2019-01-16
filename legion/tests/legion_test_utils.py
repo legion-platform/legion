@@ -196,12 +196,15 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
     Mock swagger client function with response from file
 
     :param function: name of function to mock, e.g. kubernetes.client.CoreV1Api.list_namespaced_service
-    :type function: str
+    :type function: str or BaseException
     :param test_resource_name: name of test response (is used in file naming), e.g. two_models OR
                                function that returns this string
-    :type test_resource_name: str or Callable[[], str]
+    :type test_resource_name: str or Callable[[], str or BaseException]
     :return: Any -- response
     """
+    if isinstance(test_resource_name, list):
+        test_resource_name = build_sequential_resource_name_generator(test_resource_name)
+
     def response_catcher(*args, **kwargs):
         print('Trying to return mocked answer for {}'.format(function))
         # Very verbose test debugging:
@@ -210,10 +213,14 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
 
         if callable(test_resource_name):
             current_test_resource_name = test_resource_name()
-        elif isinstance(test_resource_name, str):
+        elif isinstance(test_resource_name, (str, BaseException)):
             current_test_resource_name = test_resource_name
         else:
             raise Exception('Invalid type of argument ({}). Should be callable or string')
+
+        # This helps to emulate kubernetes exception
+        if isinstance(current_test_resource_name, BaseException):
+            raise current_test_resource_name
 
         searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function,
                                                             current_test_resource_name))
