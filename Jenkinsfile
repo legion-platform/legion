@@ -374,8 +374,8 @@ EOL
                     steps {
                         sh """
                         docker pull ubuntu:18.04 || true
-                        docker pull legion/k8s-ansible:${env.param_docker_cache_source} ||true
-                        docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:18.04 --cache-from=legion/k8s-ansible:${env.param_docker_cache_source} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
+                        docker pull ${env.param_docker_registry}/k8s-ansible:${env.param_docker_cache_source} ||true
+                        docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:18.04 --cache-from=${env.param_docker_registry}/k8s-ansible:${env.param_docker_cache_source} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
                         """
                     }
                 }
@@ -392,7 +392,7 @@ EOL
                 stage("Build Grafana Docker image") {
                     steps {
                         sh """
-                        cd k8s/grafana || true
+                        cd k8s/grafana
                         docker pull grafana/grafana:4.5.0 || true
                         docker pull ${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source}
                         docker build ${Globals.dockerCacheArg} --cache-from=grafana/grafana:4.5.0 --cache-from=${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
