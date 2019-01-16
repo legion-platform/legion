@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-worker"
@@ -7,13 +7,19 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-worker"
+    app: "{{ .Release.Name }}-airflow-worker"
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      component: "{{ .Release.Name }}-worker"
+      app: "{{ .Release.Name }}-airflow-worker"
   template:
     metadata:
       annotations:
         iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
+        component: "{{ .Release.Name }}-worker"
         app: "{{ .Release.Name }}-airflow-worker"
     spec:
       serviceAccountName: "{{ .Release.Name }}-airflow-worker"

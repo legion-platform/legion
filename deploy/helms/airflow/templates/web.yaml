@@ -16,7 +16,7 @@ spec:
       port: 8080
       targetPort: web
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-web"
@@ -25,13 +25,19 @@ metadata:
     release: {{ .Release.Name | quote }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-web"
+    app: "{{ .Release.Name }}-airflow-web"
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      component: "{{ .Release.Name }}-web"
+      app: "{{ .Release.Name }}-airflow-web"
   template:
     metadata:
       annotations:
         iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclave }}-airflow-role"
       labels:
+        component: "{{ .Release.Name }}-web"
         app: "{{ .Release.Name }}-airflow-web"
     spec:
       restartPolicy: Always
@@ -82,6 +88,7 @@ spec:
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 5
+          failureThreshold: 12
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
@@ -89,6 +96,7 @@ spec:
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 5
+          failureThreshold: 24
           timeoutSeconds: 10
       volumes:
       - name: airflow-config-dir
