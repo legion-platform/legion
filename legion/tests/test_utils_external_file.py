@@ -26,6 +26,7 @@ import legion.config
 import legion.utils as utils
 import legion.containers.docker
 import requests.auth
+import responses
 import unittest2
 
 # Extend PYTHONPATH in order to import test tools and models
@@ -101,31 +102,26 @@ class TestUtilsExternalFile(unittest2.TestCase):
             with self.assertRaisesRegex(Exception, 'Unknown or unavailable resource'):
                 utils.is_local_resource(path)
 
-    def test_external_file_reader_http_example(self):
-        resource = 'http://example.com/index.html'
+    @responses.activate
+    def _test_external_file_reader(self, url):
+        body = 'Example' * 200
+        responses.add('GET', url, body=body, stream=True)
 
-        with utils.ExternalFileReader(resource) as reader:
+        with utils.ExternalFileReader(url) as reader:
             self.assertTrue(os.path.exists(reader.path))
             local_path = reader.path
 
             with open(reader.path, 'r') as page:
                 content = page.read()
-                self.assertTrue('Example' in content)
+                self.assertEqual(body, content)
 
         self.assertFalse(os.path.exists(local_path))
+
+    def test_external_file_reader_http_example(self):
+        self._test_external_file_reader('http://example.com/index.html')
 
     def test_external_file_reader_https_example(self):
-        resource = 'https://example.com/index.html'
-
-        with utils.ExternalFileReader(resource) as reader:
-            self.assertTrue(os.path.exists(reader.path))
-            local_path = reader.path
-
-            with open(reader.path, 'r') as page:
-                content = page.read()
-                self.assertTrue('Example' in content)
-
-        self.assertFalse(os.path.exists(local_path))
+        self._test_external_file_reader('https://example.com/index.html')
 
     def test_external_file_reader_local(self):
         with utils.ExternalFileReader(self._temp_file_path) as reader:

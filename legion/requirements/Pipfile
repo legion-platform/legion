@@ -32,6 +32,7 @@ locustio = "==0.8.1"
 coverage = "==4.4.1"
 docker-registry-client = "==0.5.2"
 nose-xunitmp = "==0.4.0"
+responses = "==0.10.5"
 
 [requires]
 python_version = "3.6"
