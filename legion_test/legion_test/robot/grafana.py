@@ -116,7 +116,7 @@ class Grafana:
 
         payload = {
             'target': target,
-            'from': '-5min',
+            'from': '-60min',
             'until': 'now',
             'format': 'json',
             'cacheTimeout': 0,
