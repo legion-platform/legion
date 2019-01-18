@@ -222,3 +222,7 @@ Get token from EDI
     ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
               Should not be equal   ${res.rc}  ${0}
               Should contain        ${res.stderr}  Requested field model_id is not set
+
+    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-version ${TEST_MODEL_5_VERSION} --token wrong-token
+              Should not be equal   ${res.rc}  ${0}
+              Should contain        ${res.stderr}  Credentials are not correct
