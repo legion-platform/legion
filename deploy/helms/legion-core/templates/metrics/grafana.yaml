@@ -1,6 +1,6 @@
 {{- if .Values.grafana.enabled }}
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-grafana"
   labels:

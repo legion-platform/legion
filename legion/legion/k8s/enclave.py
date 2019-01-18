@@ -365,23 +365,23 @@ class Enclave:
                 service_account_name=legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
             ))
 
-        deployment_spec = kubernetes.client.ExtensionsV1beta1DeploymentSpec(
+        deployment_spec = kubernetes.client.V1DeploymentSpec(
             replicas=count,
             template=pod_template)
 
-        deployment = kubernetes.client.ExtensionsV1beta1Deployment(
-            api_version="extensions/v1beta1",
+        deployment = kubernetes.client.V1Deployment(
+            api_version="apps/v1",
             kind="Deployment",
             metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
                                                     annotations=pod_annotations,
                                                     labels=image_meta_information.kubernetes_labels),
             spec=deployment_spec)
 
-        extensions_v1beta1 = kubernetes.client.ExtensionsV1beta1Api(client)
+        extensions_v1 = kubernetes.client.AppsV1Api(client)
 
         LOGGER.info('Creating deployment {} in namespace {}'.format(image_meta_information.k8s_name,
                                                                     self.namespace))
-        extensions_v1beta1.create_namespaced_deployment(
+        extensions_v1.create_namespaced_deployment(
             body=deployment,
             namespace=self.namespace)
 

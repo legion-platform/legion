@@ -269,7 +269,7 @@ class ModelService(Service):
         """
         Get model deployment
 
-        :return: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
+        :return: :py:class:`kubernetes.client.models.v1_deployment.V1Deployment`
         """
         self._load_deployment_data()
         return self._deployment
@@ -576,10 +576,10 @@ def find_model_deployment(namespace, model_id, model_version):
     :param model_version: model version
     :type model_version: str
 
-    :return: :py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`
+    :return: :py:class:`kubernetes.client.models.v1_deployment.V1Deployment`
     """
     client = legion.k8s.utils.build_client()
-    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+    extension_api = kubernetes.client.AppsV1Api(client)
 
     try:
         return extension_api.read_namespaced_deployment(

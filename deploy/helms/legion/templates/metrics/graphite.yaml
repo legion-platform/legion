@@ -24,8 +24,8 @@ data:
       ]
     }
 ---
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-graphite"
   labels:

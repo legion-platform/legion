@@ -1,6 +1,6 @@
 {{- if .Values.edi.enabled }}
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
@@ -15,6 +15,7 @@ spec:
   template:
     metadata:
       labels:
+        mathLabels:
         component: "{{ .Release.Name }}-edi"
     spec:
       serviceAccountName: "{{ .Release.Name }}-edi"
