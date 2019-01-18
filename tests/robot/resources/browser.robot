@@ -33,15 +33,3 @@ Login with dex
      Input Text 	                            xpath: ${DEX_AUTH_login_input} 	    ${STATIC_USER_EMAIL}
      Input Text 	                            xpath: ${DEX_AUTH_password_input} 	${STATIC_USER_PASS}
      Click Button                            xpath: ${DEX_AUTH_login_button}
-
-Wait Nexus componens in menu
-    Wait Until Element Is Visible   xpath: //span[contains(@class, 'x-tree-node-text') and contains(text(), "Components")]
-
-Check components presence in Nexus table
-    [Arguments]  ${list_of_components}
-    Wait Until Page Contains Element  ${NEXUS_COMPONENTS_TABLE}
-    Wait Until Element Is Visible   ${NEXUS_COMPONENTS_TABLE}
-    :FOR  ${item}  IN  @{list_of_components}
-    \  Wait Until Page Contains Element  ${NEXUS_COMPONENTS_TABLE}
-    \  Wait Until Element Is Visible   ${NEXUS_COMPONENTS_TABLE}
-    \  Table Should Contain   ${NEXUS_COMPONENTS_TABLE}  ${item}
