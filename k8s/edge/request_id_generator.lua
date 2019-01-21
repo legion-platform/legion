@@ -45,10 +45,11 @@ function _M.reset_seed()
     local seed_p2_time = bit.band(time, 0x0FFFFFFF)         -- TIMESTAMP & 0x0FFFFFFF
     local seed_p2 = bit.bor(bit.bor(seed_p2_pid, seed_p2_wid), seed_p2_time)
     -- Entire seed
-    local seed = pod_uuid_crc32 * 0x1000 * 0x1000 + seed_p2
+    local seed = ngx.crc32_short(tostring(pod_uuid_crc32)..tostring(seed_p2))
 
-    ngx.log(ngx.ERR, "POD_UUID = "..pod_uuid.." (CRC32: "..pod_uuid_crc32.."); Time = "..time.."; PID = "..pid.."; WID = "..wid)
-    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..string.format("%x", seed))
+
+    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..string.format("%x", seed).."POD_UUID = "..pod_uuid..
+            " (CRC32: "..pod_uuid_crc32.."); Time = "..time.."; PID = "..pid.."; WID = "..wid)
 
     math.randomseed(seed)
 end
