@@ -15,7 +15,6 @@ spec:
   template:
     metadata:
       labels:
-        mathLabels:
         component: "{{ .Release.Name }}-edi"
     spec:
       serviceAccountName: "{{ .Release.Name }}-edi"

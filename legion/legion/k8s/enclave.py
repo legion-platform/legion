@@ -367,7 +367,8 @@ class Enclave:
 
         deployment_spec = kubernetes.client.V1DeploymentSpec(
             replicas=count,
-            template=pod_template)
+            template=pod_template,
+            selector=image_meta_information.kubernetes_labels)
 
         deployment = kubernetes.client.V1Deployment(
             api_version="apps/v1",

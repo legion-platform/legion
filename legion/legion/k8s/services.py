@@ -331,7 +331,7 @@ class ModelService(Service):
 
         client = legion.k8s.utils.build_client()
 
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(client)
 
         old_scale = self.deployment.spec.replicas
         self.deployment.spec.replicas = new_scale
@@ -339,7 +339,7 @@ class ModelService(Service):
         LOGGER.info('Scaling service {} in namespace {} from {} to {} replicas'
                     .format(self.deployment.metadata.name, self.deployment.metadata.namespace, old_scale, new_scale))
 
-        extension_api.patch_namespaced_deployment(self.deployment.metadata.name,
+        apps_api.patch_namespaced_deployment(self.deployment.metadata.name,
                                                   self.deployment.metadata.namespace,
                                                   self.deployment)
 
@@ -371,7 +371,7 @@ class ModelService(Service):
         """
         client = legion.k8s.utils.build_client()
 
-        api_instance = kubernetes.client.AppsV1beta1Api(client)
+        api_instance = kubernetes.client.AppsV1Api(client)
         core_v1api = kubernetes.client.CoreV1Api(client)
 
         body = kubernetes.client.V1DeleteOptions(propagation_policy='Background',
@@ -579,10 +579,10 @@ def find_model_deployment(namespace, model_id, model_version):
     :return: :py:class:`kubernetes.client.models.v1_deployment.V1Deployment`
     """
     client = legion.k8s.utils.build_client()
-    extension_api = kubernetes.client.AppsV1Api(client)
+    apps_api = kubernetes.client.AppsV1Api(client)
 
     try:
-        return extension_api.read_namespaced_deployment(
+        return apps_api.read_namespaced_deployment(
             legion.k8s.utils.normalize_k8s_name(model_id, model_version),
             namespace
         )

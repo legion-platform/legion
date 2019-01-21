@@ -108,11 +108,11 @@ class K8s:
         """
         client = self.build_client()
 
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(client)
         if namespace is None:
-            replica_sets = extension_api.list_replica_set_for_all_namespaces()
+            replica_sets = apps_api.list_replica_set_for_all_namespaces()
         else:
-            replica_sets = extension_api.list_namespaced_replica_set(namespace)
+            replica_sets = apps_api.list_namespaced_replica_set(namespace)
 
         for item in replica_sets.items:
             if item.metadata.labels.get('app', '') == replica_set_name:
@@ -190,8 +190,8 @@ class K8s:
         :rtype int
         """
         client = self.build_client()
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        apps_api = kubernetes.client.AppsV1Api(client)
+        scale_data = apps_api.read_namespaced_deployment_scale(deployment_name, namespace)
         print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         if scale_data is not None:
             return scale_data.status.replicas
@@ -232,12 +232,12 @@ class K8s:
         if not isinstance(replicas, int) or replicas <= 0:
             raise ValueError('"replicas" argument should be a positive number, but got "%s"' % replicas)
         client = self.build_client()
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        apps_api = kubernetes.client.AppsV1Api(client)
+        scale_data = apps_api.read_namespaced_deployment_scale(deployment_name, namespace)
         print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         scale_data.spec.replicas = replicas
         print("Setting replica to {} for {} in {} enclave".format(replicas, deployment_name, namespace))
-        extension_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
+        apps_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
         print("Replica to {} for {} in {} enclave was set up".format(replicas, deployment_name, namespace))
 
     def update_model_property_key(self, namespace, model_id, model_version, key, value):
