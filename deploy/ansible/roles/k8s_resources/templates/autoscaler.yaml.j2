@@ -144,9 +144,9 @@ spec:
             - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
             - --expander=least-waste
-            - --scan-interval=60s
-            - --scale-down-delay-after-add=1m
-            - --scale-down-unneeded-time=1m
+            - --scan-interval=3m
+            - --scale-down-delay-after-add=10s
+            - --scale-down-unneeded-time=10s
             - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{ cluster_name }}
           env:
             - name: AWS_REGION
