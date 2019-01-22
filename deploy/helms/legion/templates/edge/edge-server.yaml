@@ -11,7 +11,8 @@ metadata:
 spec:
   replicas: {{ .Values.edge.replicas }}
   selector:
-    component: "{{ .Release.Name }}-edge"
+    matchLabels:
+      component: "{{ .Release.Name }}-edge"
   template:
     metadata:
       labels:

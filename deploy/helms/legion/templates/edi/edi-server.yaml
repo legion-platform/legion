@@ -11,7 +11,8 @@ metadata:
 spec:
   replicas: {{ .Values.edi.replicas }}
   selector:
-    component: "{{ .Release.Name }}-edi"
+    matchLabels:
+      component: "{{ .Release.Name }}-edi"
   template:
     metadata:
       labels:

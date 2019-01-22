@@ -28,6 +28,9 @@ metadata:
     component: "{{ .Release.Name }}-postgres"
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-airflow-db"
   template:
     metadata:
       labels:
