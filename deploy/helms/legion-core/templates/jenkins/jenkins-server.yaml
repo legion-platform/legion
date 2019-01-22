@@ -43,7 +43,8 @@ metadata:
 spec:
   replicas: 1
   selector:
-    component: "{{ .Release.Name }}-jenkins"
+    matchLabels:
+      component: "{{ .Release.Name }}-jenkins"
   template:
     metadata:
       annotations:
