@@ -340,8 +340,8 @@ class ModelService(Service):
                     .format(self.deployment.metadata.name, self.deployment.metadata.namespace, old_scale, new_scale))
 
         apps_api.patch_namespaced_deployment(self.deployment.metadata.name,
-                                                  self.deployment.metadata.namespace,
-                                                  self.deployment)
+                                             self.deployment.metadata.namespace,
+                                             self.deployment)
 
         self.reload_cache()
 
