@@ -17,24 +17,25 @@
 legion k8s enclave class
 """
 import logging
-import os
 
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
-
-import legion.containers.headers
 import legion.config
-from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
+import legion.containers.headers
+import legion.k8s.properties
+import legion.k8s.services
+import legion.k8s.utils
+import legion.k8s.watch
+import legion.utils
+from flask import current_app as app
+from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL, ModelDeploymentDescription
 from legion.k8s.definitions import \
     LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI, \
     LEGION_COMPONENT_NAME_GRAFANA, LEGION_COMPONENT_NAME_GRAPHITE
-import legion.k8s.watch
-import legion.k8s.utils
-import legion.k8s.services
-import legion.k8s.properties
-import legion.utils
+from legion.k8s.services import ModelService, DeployModelParams
+from legion.model import client
 
 LOGGER = logging.getLogger(__name__)
 
@@ -100,10 +101,10 @@ class Enclave:
 
         self._data_loaded = True
 
-        self._edi_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_EDI)
-        self._api_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_API)
-        self._grafana_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_GRAFANA)
-        self._graphite_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_GRAPHITE)
+        self._edi_service = legion.k8s.services.get_service(self.namespace, LEGION_COMPONENT_NAME_EDI)
+        self._api_service = legion.k8s.services.get_service(self.namespace, LEGION_COMPONENT_NAME_API)
+        self._grafana_service = legion.k8s.services.get_service(self.namespace, LEGION_COMPONENT_NAME_GRAFANA)
+        self._graphite_service = legion.k8s.services.get_service(self.namespace, LEGION_COMPONENT_NAME_GRAPHITE)
 
     @property
     def name(self):
@@ -173,8 +174,19 @@ class Enclave:
         :type model_version: str or None
         :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
         """
-        items = [legion.k8s.services.ModelService(service) for service in
-                 legion.k8s.services.find_model_services_by(self.name, model_id, model_version)]
+        k8s_services = legion.k8s.services.find_model_services_by(self.namespace, model_id, model_version)
+
+        if not k8s_services:
+            return []
+
+        # Reduce number of http request to the k8s, load all needed deployments ahead
+        k8s_deployments = {
+            deployment.metadata.name: deployment for deployment in
+            legion.k8s.services.find_model_deployments_by(self.namespace, model_id, model_version)
+        }
+
+        items = [legion.k8s.services.ModelService(service, k8s_deployments.get(service.metadata.name))
+                 for service in k8s_services]
 
         return sorted(items, key=lambda ms: '{}/{}'.format(ms.id, ms.version))
 
@@ -188,7 +200,7 @@ class Enclave:
         :type model_version: str
         :return: Optional[:py:class:`legion.k8s.ModelService`] -- founded model service
         """
-        service = legion.k8s.services.find_model_service(self.name, model_id, model_version)
+        service = legion.k8s.services.find_model_service(self.namespace, model_id, model_version)
 
         return legion.k8s.services.ModelService(service) if service else None
 
@@ -271,9 +283,55 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
+    def _create_dashboard(self, model_service):
+        """
+        Create grafana dashboard for specific model
+
+        :param model_service: model service
+        :type model_service: ModelService
+        :return None
+        """
+        if app.config['REGISTER_ON_GRAFANA']:
+            LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
+                        .format(model_service.id, model_service.version))
+
+            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
+        else:
+            LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
+
+    def _delete_dashboard(self, model_service):
+        """
+        Delete grafana dashboard for specific model
+
+        :param model_service: model service
+        :type model_service: ModelService
+        :return None
+        """
+        if app.config['REGISTER_ON_GRAFANA']:
+            other_versions_exist = len(self.get_models(model_service.id)) > 1
+            LOGGER.info('Removing model\'s dashboard from Grafana (id={}, version={})'
+                        .format(model_service.id, model_service.version))
+
+            if not other_versions_exist:
+                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id, model_service.version)
+            else:
+                LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - there are other model')
+        else:
+            LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - disabled in configuration')
+
     def deploy_model(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
         """
-        Deploy new model. Return True if model is deployed
+        Deploy new model
+
+        K8S API functions will be invoked in the next order:
+        - CoreV1Api.list_namespaced_service (to get information about actual model services)
+        If there is deployed model with same image:
+          - ExtensionsV1beta1Api.read_namespaced_deployment (to get information of service's deployment)
+        if there is no any deployed model with same image:
+          - ExtensionsV1beta1Api.create_namespaced_deployment (to create model deployment)
+          - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that model deployment has been created)
+          - CoreV1Api.create_namespaced_service (to create model service)
+          - CoreV1Api.list_namespaced_service (to ensure that model service has been created)
 
         :param image: docker image with model
         :type image: str
@@ -285,12 +343,13 @@ class Enclave:
         :type livenesstimeout: int
         :param readinesstimeout: model pod startup timeout (used readiness probe)
         :type readinesstimeout: int
-        :return: (bool, :py:class:`legion.k8s.services.ModelService`) -- model service
+        :return: ModelDeploymentDescription
         """
+        LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r} and \
+                {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, model_iam_role))
         if count < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
 
-        client = legion.k8s.utils.build_client()
         LOGGER.info('Gathering docker labels from image {}'.format(image))
         labels = legion.k8s.utils.get_docker_image_labels(image)
         image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
@@ -307,134 +366,120 @@ class Enclave:
             model_properties_default_values
         )
 
-        model = self.get_model(image_meta_information.model_id, image_meta_information.model_version)
-        if model:
+        model_service = self.get_model(image_meta_information.model_id, image_meta_information.model_version)
+        if model_service:
             LOGGER.info('Same model already has been deployed - skipping')
 
-            return False, model
-
-        # REFACTOR, maybe we should remove that
-        container_env_variables = {
-            legion.config.STATSD_HOST[0]: self.graphite_service.internal_domain,
-            legion.config.STATSD_PORT[0]: str(self.graphite_service.internal_port)
-        }
-
-        http_get_object = kubernetes.client.V1HTTPGetAction(
-            path='/healthcheck',
-            port=legion.config.LEGION_PORT[1]
-        )
-
-        livenessprobe = kubernetes.client.V1Probe(
-            failure_threshold=10,
-            http_get=http_get_object,
-            initial_delay_seconds=livenesstimeout,
-            period_seconds=10,
-            timeout_seconds=2
-        )
-
-        readinessprobe = kubernetes.client.V1Probe(
-            failure_threshold=5,
-            http_get=http_get_object,
-            initial_delay_seconds=readinesstimeout,
-            period_seconds=10,
-            timeout_seconds=2
-        )
-
-        container = kubernetes.client.V1Container(
-            name='model',
-            image=image,
-            image_pull_policy='Always',
-            env=[
-                kubernetes.client.V1EnvVar(name=k, value=str(v))
-                for k, v in container_env_variables.items()
-            ],
-            liveness_probe=livenessprobe,
-            readiness_probe=readinessprobe,
-            ports=[
-                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1],
-                                                  name='api', protocol='TCP')
-            ])
-
-        pod_annotations = image_meta_information.kubernetes_annotations
-        pod_annotations['iam.amazonaws.com/role'] = model_iam_role
-
-        pod_template = kubernetes.client.V1PodTemplateSpec(
-            metadata=kubernetes.client.V1ObjectMeta(annotations=pod_annotations,
-                                                    labels=image_meta_information.kubernetes_labels),
-            spec=kubernetes.client.V1PodSpec(
-                containers=[container],
-                service_account_name=legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
-            ))
-
-        deployment_spec = kubernetes.client.ExtensionsV1beta1DeploymentSpec(
-            replicas=count,
-            template=pod_template)
-
-        deployment = kubernetes.client.ExtensionsV1beta1Deployment(
-            api_version="extensions/v1beta1",
-            kind="Deployment",
-            metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
-                                                    annotations=pod_annotations,
-                                                    labels=image_meta_information.kubernetes_labels),
-            spec=deployment_spec)
-
-        extensions_v1beta1 = kubernetes.client.ExtensionsV1beta1Api(client)
-
-        LOGGER.info('Creating deployment {} in namespace {}'.format(image_meta_information.k8s_name,
-                                                                    self.namespace))
-        extensions_v1beta1.create_namespaced_deployment(
-            body=deployment,
-            namespace=self.namespace)
-
-        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
-        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
-
-        deployment_ready = legion.utils.ensure_function_succeed(
-            lambda: legion.k8s.services.find_model_deployment(self.name, image_meta_information.model_id,
-                                                              image_meta_information.model_version),
-            retries, retry_timeout, boolean_check=True
-        )
-
-        if not deployment_ready:
-            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
-                'Cannot create deployment {}'.format(image_meta_information.k8s_name)
-            )
-
-        # Creating a service
-        service_spec = kubernetes.client.V1ServiceSpec(
-            selector=image_meta_information.kubernetes_labels,
-            ports=[kubernetes.client.V1ServicePort(name='api', protocol='TCP', port=5000, target_port='api')])
-
-        service = kubernetes.client.V1Service(
-            api_version='v1',
-            kind='Service',
-            metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
-                                                    annotations=image_meta_information.kubernetes_annotations,
-                                                    labels=image_meta_information.kubernetes_labels),
-            spec=service_spec)
-
-        core_v1api = kubernetes.client.CoreV1Api(client)
-
-        LOGGER.info('Creating service {} in namespace {}'.format(image_meta_information.k8s_name,
-                                                                 self.namespace))
-        k8s_service = core_v1api.create_namespaced_service(
-            body=service,
-            namespace=self.namespace)
-
-        service_ready = legion.utils.ensure_function_succeed(
-            lambda: legion.k8s.services.find_model_service(self.namespace,
-                                                           image_meta_information.model_id,
-                                                           image_meta_information.model_version),
-            retries, retry_timeout, boolean_check=True
-        )
-
-        if not service_ready:
-            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
-                'Cannot create service {}'.format(image_meta_information.k8s_name)
-            )
+            return ModelDeploymentDescription.build_from_model_service(model_service)
 
         LOGGER.info('Building model service object')
-        return True, legion.k8s.services.ModelService(k8s_service)
+        deploy_model_params = DeployModelParams(
+            self.namespace, image, image_meta_information, count, self.graphite_service.internal_domain,
+            str(self.graphite_service.internal_port), model_iam_role, livenesstimeout, readinesstimeout
+        )
+        model_service = ModelService.create(deploy_model_params)
+
+        self._create_dashboard(model_service)
+
+        return ModelDeploymentDescription.build_from_model_service(model_service)
+
+    def undeploy_model(self, model, version=None, grace_period=0, ignore_not_found=False):
+        """
+        Undeploy model
+
+        K8S API functions will be invoked in the next order:
+          - CoreV1Api.list_namespaced_service (to get information about actual model services by model id and version)
+        Per each service that should be undeployed (N-times):
+          - ExtensionsV1beta1Api.read_namespaced_deployment (to get info about model)
+          - Deletion of grafana dashboard
+          - CoreV1Api.delete_namespaced_service (to remove model service)
+          - CoreV1Api.read_namespaced_service (to ensure that service has been removed)
+          - AppsV1beta1Api.delete_namespaced_deployment (to remove model deployment)
+          - ExtensionsV1beta1Api.read_namespaced_deployment (to ensure that deployment has been removed)
+
+        :param model: model id
+        :type model: str
+        :param version: (Optional) specific model version
+        :type version: str or None
+        :param grace_period: grace period for removing
+        :type grace_period: int
+        :param ignore_not_found: (Optional) ignore exception if cannot find models
+        :type ignore_not_found: bool
+        :return: iterator[ModelDeploymentDescription] - undeployed model
+        """
+        LOGGER.info('Command: undeploy model with id={}, version={} with grace period {}s'
+                    .format(model, version, grace_period))
+
+        LOGGER.info('Gathering information about models with id={} version={}'
+                    .format(model, version))
+        model_services = self.get_models_strict(model, version, ignore_not_found)
+
+        for model_service in model_services:
+            model_info = ModelDeploymentDescription.build_from_model_service(model_service)
+
+            self._delete_dashboard(model_service)
+            model_service.delete(grace_period)
+
+            yield model_info
+
+    def scale_model(self, model_id, count, model_version=None):
+        """
+        Scale model deployments
+
+        K8S API functions will be invoked in the next order:
+          - CoreV1Api.list_namespaced_service (to get information about actual model services by model id and version)
+        Per each service that should be undeployed (N-times):
+          - ExtensionsV1beta1Api.read_namespaced_deployment (to get model deployment)
+          - ExtensionsV1beta1Api.patch_namespaced_deployment (to update number of replicas)
+          - ExtensionsV1beta1Api.read_namespaced_deployment (to refresh model deployment)
+
+        :param model_id: model id
+        :type model_id: str
+        :param count: number of replicas
+        :type count: int
+        :param model_version: model version
+        :type model_version: str
+        :return iterator[ModelDeploymentDescription] - scaled model
+        """
+        LOGGER.info('Command: scale model with id={}, version={} to {} replicas'.format(model_id, model_version, count))
+
+        for model_service in self.get_models_strict(model_id, model_version):
+            LOGGER.info('Changing scale for model (id={}, version={}) from {} to {}'
+                        .format(model_service.id, model_service.version, model_service.scale, count))
+            model_service.scale = count
+
+            yield ModelDeploymentDescription.build_from_model_service(model_service)
+
+    def inspect_models(self, model_id=None, model_version=None):
+        """
+        Scale model deployments
+
+        K8S API functions will be invoked in the next order:
+          - CoreV1Api.list_namespaced_service (to get information about actual model services by model id and version)
+        Per each service that should be undeployed (N-times):
+          - ExtensionsV1beta1Api.read_namespaced_deployment (to get info about model deployment)
+
+        :param model_id: model id
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :return iterator[ModelDeploymentDescription] - scaled model
+        """
+        LOGGER.info('Command: inspect model with id={}, version={}'.format(model_id, model_version))
+
+        for model_service in self.get_models(model_id, model_version):
+            try:
+                model_client = legion.model.ModelClient.build_from_model_service(model_service)
+
+                yield ModelDeploymentDescription.build_from_model_service(model_service, True,
+                                                                          {'result': model_client.info()})
+            except legion.k8s.UnknownDeploymentForModelService:
+                LOGGER.debug('Ignoring error about unknown deployment for model service {!r}'.format(model_service))
+            except Exception as model_api_exception:
+                LOGGER.error('Cannot connect to model <{}> endpoint to get info: {}'.format(model_service,
+                                                                                            model_api_exception))
+                yield ModelDeploymentDescription.build_from_model_service(model_service, False,
+                                                                          {'exception': str(model_api_exception)})
 
     def watch_models(self):
         """
@@ -544,7 +589,7 @@ class Enclave:
         body = kubernetes.client.V1DeleteOptions(propagation_policy='Foreground',
                                                  grace_period_seconds=grace_period_seconds)
 
-        core_api.delete_namespace(self.name, body)
+        core_api.delete_namespace(self.namespace, body)
 
 
 def find_enclaves():

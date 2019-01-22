@@ -1,4 +1,3 @@
-from argparse import Namespace
 import logging
 import contextlib
 import time
@@ -205,6 +204,9 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
     if isinstance(test_resource_name, list):
         test_resource_name = build_sequential_resource_name_generator(test_resource_name)
 
+    if isinstance(test_resource_name, (str, BaseException)):
+        test_resource_name = build_sequential_resource_name_generator([test_resource_name])
+
     def response_catcher(*args, **kwargs):
         print('Trying to return mocked answer for {}'.format(function))
         # Very verbose test debugging:
@@ -213,8 +215,6 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
 
         if callable(test_resource_name):
             current_test_resource_name = test_resource_name()
-        elif isinstance(test_resource_name, (str, BaseException)):
-            current_test_resource_name = test_resource_name
         else:
             raise Exception('Invalid type of argument ({}). Should be callable or string')
 

@@ -26,7 +26,7 @@
         "uid": "afcfda72-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
-        "clusterIP": "1.2.3.4",
+        "clusterIP": "1.0.0.0",
         "ports": [
           {
             "name": "api",
@@ -73,7 +73,7 @@
         "uid": "be75fad1-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
-        "clusterIP": "1.2.3.4",
+        "clusterIP": "1.1.0.0",
         "ports": [
           {
             "name": "api",

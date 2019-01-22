@@ -119,16 +119,15 @@ class TestK8SModelOperations(unittest2.TestCase):
 
         self.assertFalse(enclave.get_models(TEST_MODEL_ID, TEST_MODEL_VERSION), 'model already deployed')
 
-        is_deployed, model_service = enclave.deploy_model(TEST_IMAGE)
+        model_deployment = enclave.deploy_model(TEST_IMAGE)
 
-        self.assertTrue(is_deployed, 'model already deployed')
         self.assertTrue(
             legion_test.utils.wait_until(lambda: enclave.get_models(TEST_MODEL_ID, TEST_MODEL_VERSION)),
             'model service for model {} {} not found after deploy'.format(TEST_MODEL_ID, TEST_MODEL_VERSION)
         )
 
-        self.assertEqual(model_service.id, TEST_MODEL_ID)
-        self.assertEqual(model_service.version, TEST_MODEL_VERSION)
+        self.assertEqual(model_deployment.model, TEST_MODEL_ID)
+        self.assertEqual(model_deployment.version, TEST_MODEL_VERSION)
 
     @attr('k8s', 'models', 'apps')
     def test_bare_model_deploy_undeploy(self):
@@ -141,15 +140,14 @@ class TestK8SModelOperations(unittest2.TestCase):
 
         self.assertFalse(enclave.get_models(TEST_MODEL_ID, TEST_MODEL_VERSION), 'model already deployed')
 
-        is_deployed, model_service = enclave.deploy_model(TEST_IMAGE)
+        model_deployment = enclave.deploy_model(TEST_IMAGE)
 
-        self.assertTrue(is_deployed, 'model already deployed')
         self.assertTrue(
             legion_test.utils.wait_until(lambda: enclave.get_models(TEST_MODEL_ID, TEST_MODEL_VERSION)),
             'model service for model {} {} not found after deploy'.format(TEST_MODEL_ID, TEST_MODEL_VERSION)
         )
 
-        model_service.delete()
+        enclave.undeploy_model(model_deployment.model, model_deployment.version)
 
         self.assertTrue(
             legion_test.utils.wait_until(lambda: not enclave.get_models(TEST_MODEL_ID, TEST_MODEL_VERSION)),
@@ -174,14 +172,13 @@ class TestK8SModelOperations(unittest2.TestCase):
             enclave = self._get_test_enclave()
             self.assertFalse(is_test_model_in_last_state(), 'state has been found but model has not been deployed yet')
 
-            is_deployed, model_service = enclave.deploy_model(TEST_IMAGE)
+            model_deployment = enclave.deploy_model(TEST_IMAGE)
 
-            self.assertTrue(is_deployed, 'model already deployed')
             self.assertTrue(legion_test.utils.wait_until(lambda: is_test_model_in_last_state()),
                             'state has not been found but model has been deployed')
 
             # Delete new model
-            model_service.delete()
+            enclave.undeploy_model(model_deployment.model, model_deployment.version)
             self.assertTrue(legion_test.utils.wait_until(lambda: not is_test_model_in_last_state()),
                             'state has been found but model has been removed')
 
@@ -193,15 +190,15 @@ class TestK8SModelOperations(unittest2.TestCase):
         :return: None
         """
         enclave = self._get_test_enclave()
-        is_deployed, model_service = enclave.deploy_model(TEST_IMAGE)
+        model_deployment = enclave.deploy_model(TEST_IMAGE)
 
-        self.assertTrue(is_deployed, 'model already deployed')
+        self.assertIsInstance(model_deployment.model, str, 'cannot get model id')
+        self.assertGreater(len(model_deployment.model), 0, 'empty model id string')
 
-        self.assertIsInstance(model_service.id, str, 'cannot get model id')
-        self.assertGreater(len(model_service.id), 0, 'empty model id string')
+        self.assertIsInstance(model_deployment.version, str, 'cannot get model version')
+        self.assertGreater(len(model_deployment.version), 0, 'empty model version string')
 
-        self.assertIsInstance(model_service.version, str, 'cannot get model version')
-        self.assertGreater(len(model_service.version), 0, 'empty model version string')
+        model_service = enclave.get_model(model_deployment.model, model_deployment.version)
 
         self.assertIsNotNone(model_service.deployment, 'cannot get model deployment')
 
@@ -233,9 +230,8 @@ class TestK8SModelOperations(unittest2.TestCase):
         :return: None
         """
         enclave = self._get_test_enclave()
-        is_deployed, model_service = enclave.deploy_model(TEST_IMAGE)
-
-        self.assertTrue(is_deployed, 'model already deployed')
+        model_deployment = enclave.deploy_model(TEST_IMAGE)
+        model_service = enclave.get_model(model_deployment.model, model_deployment.version)
 
         legion_test.utils.wait_until(lambda: model_service.reload_cache() or model_service.scale > 0)
 

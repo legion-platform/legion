@@ -18,25 +18,40 @@ legion k8s services classes
 """
 import logging
 import os
+import typing
 
 import kubernetes
 import kubernetes.client
 import kubernetes.client.rest
 import kubernetes.config
 import kubernetes.config.config_exception
+import legion.config
 import legion.containers.headers
 import legion.k8s.enclave
 import legion.k8s.exceptions
 import legion.k8s.utils
 import legion.model
 from legion.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
-from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
+from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT, \
+    ModelContainerMetaInformation
 from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 from legion.k8s.definitions import ModelIdVersion
 from legion.k8s.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
 from legion.utils import ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
+
+
+class DeployModelParams(typing.NamedTuple):
+    namespace: str
+    image: str
+    image_meta_information: ModelContainerMetaInformation
+    count: int
+    graphite_internal_domain: str
+    graphite_internal_port: str
+    model_iam_role: typing.Optional[str] = None
+    livenesstimeout: typing.Optional[int] = 2
+    readinesstimeout: typing.Optional[int] = 2
 
 
 class Service:
@@ -212,18 +227,156 @@ class ModelService(Service):
     Data-structure for describing model service
     """
 
-    def __init__(self, k8s_service):
+    def __init__(self, k8s_service, k8s_deployment=None):
         """
         Build model service structure from K8S Service
 
         :param k8s_service: K8S service
         :type k8s_service: V1Service
+        :param k8s_deployment: K8S deployment
+        :type k8s_deployment: ExtensionsV1beta1Deployment
         """
         super().__init__(k8s_service)
+
         self._model_id = k8s_service.metadata.labels.get(DOMAIN_MODEL_ID)
         self._model_version = k8s_service.metadata.labels.get(DOMAIN_MODEL_VERSION)
 
-        self._deployment = None
+        self._deployment = k8s_deployment
+
+    @classmethod
+    def create(cls, deploy_model_params):
+        """
+        Create ModelService from DeployModelParams
+
+        :param deploy_model_params: deploy model parameters
+        :type deploy_model_params: DeployModelParams
+        :return: ModelService
+        """
+        client = legion.k8s.utils.build_client()
+        image_meta_information = deploy_model_params.image_meta_information
+
+        # TODO: REFACTOR, maybe we should remove that
+        container_env_variables = {
+            legion.config.STATSD_HOST[0]: deploy_model_params.graphite_internal_domain,
+            legion.config.STATSD_PORT[0]: deploy_model_params.graphite_internal_port
+        }
+
+        http_get_object = kubernetes.client.V1HTTPGetAction(
+            path='/healthcheck',
+            port=legion.config.LEGION_PORT[1]
+        )
+
+        livenessprobe = kubernetes.client.V1Probe(
+            failure_threshold=10,
+            http_get=http_get_object,
+            initial_delay_seconds=deploy_model_params.livenesstimeout,
+            period_seconds=10,
+            timeout_seconds=2
+        )
+
+        readinessprobe = kubernetes.client.V1Probe(
+            failure_threshold=5,
+            http_get=http_get_object,
+            initial_delay_seconds=deploy_model_params.readinesstimeout,
+            period_seconds=10,
+            timeout_seconds=2
+        )
+
+        container = kubernetes.client.V1Container(
+            name='model',
+            image=deploy_model_params.image,
+            image_pull_policy='Always',
+            env=[
+                kubernetes.client.V1EnvVar(name=k, value=str(v))
+                for k, v in container_env_variables.items()
+            ],
+            liveness_probe=livenessprobe,
+            readiness_probe=readinessprobe,
+            ports=[
+                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1],
+                                                  name='api', protocol='TCP')
+            ])
+
+        pod_annotations = image_meta_information.kubernetes_annotations
+        pod_annotations['iam.amazonaws.com/role'] = deploy_model_params.model_iam_role
+
+        pod_template = kubernetes.client.V1PodTemplateSpec(
+            metadata=kubernetes.client.V1ObjectMeta(annotations=pod_annotations,
+                                                    labels=image_meta_information.kubernetes_labels),
+            spec=kubernetes.client.V1PodSpec(
+                containers=[container],
+                service_account_name=legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
+            ))
+
+        deployment_spec = kubernetes.client.ExtensionsV1beta1DeploymentSpec(
+            replicas=deploy_model_params.count,
+            template=pod_template)
+
+        deployment = kubernetes.client.ExtensionsV1beta1Deployment(
+            api_version="extensions/v1beta1",
+            kind="Deployment",
+            metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
+                                                    annotations=pod_annotations,
+                                                    labels=image_meta_information.kubernetes_labels),
+            spec=deployment_spec)
+
+        extensions_v1beta1 = kubernetes.client.ExtensionsV1beta1Api(client)
+
+        LOGGER.info('Creating deployment {} in namespace {}'.format(image_meta_information.k8s_name,
+                                                                    deploy_model_params.namespace))
+        k8s_deployment = extensions_v1beta1.create_namespaced_deployment(
+            body=deployment,
+            namespace=deploy_model_params.namespace)
+
+        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
+        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
+
+        deployment_ready = legion.utils.ensure_function_succeed(
+            lambda: legion.k8s.services.find_model_deployment(deploy_model_params.namespace,
+                                                              image_meta_information.model_id,
+                                                              image_meta_information.model_version),
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not deployment_ready:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create deployment {}'.format(image_meta_information.k8s_name)
+            )
+
+        # Creating a service
+        service_spec = kubernetes.client.V1ServiceSpec(
+            selector=image_meta_information.kubernetes_labels,
+            ports=[kubernetes.client.V1ServicePort(name='api', protocol='TCP', port=5000, target_port='api')])
+
+        service = kubernetes.client.V1Service(
+            api_version='v1',
+            kind='Service',
+            metadata=kubernetes.client.V1ObjectMeta(name=image_meta_information.k8s_name,
+                                                    annotations=image_meta_information.kubernetes_annotations,
+                                                    labels=image_meta_information.kubernetes_labels),
+            spec=service_spec)
+
+        core_v1api = kubernetes.client.CoreV1Api(client)
+
+        LOGGER.info('Creating service {} in namespace {}'.format(image_meta_information.k8s_name,
+                                                                 deploy_model_params.namespace))
+        k8s_service = core_v1api.create_namespaced_service(
+            body=service,
+            namespace=deploy_model_params.namespace)
+
+        service_ready = legion.utils.ensure_function_succeed(
+            lambda: legion.k8s.services.find_model_service(deploy_model_params.namespace,
+                                                           image_meta_information.model_id,
+                                                           image_meta_information.model_version),
+            retries, retry_timeout, boolean_check=True
+        )
+
+        if not service_ready:
+            raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
+                'Cannot create service {}'.format(image_meta_information.k8s_name)
+            )
+
+        return cls(k8s_service, k8s_deployment)
 
     @staticmethod
     def is_model_service(k8s_service):
@@ -339,11 +492,9 @@ class ModelService(Service):
         LOGGER.info('Scaling service {} in namespace {} from {} to {} replicas'
                     .format(self.deployment.metadata.name, self.deployment.metadata.namespace, old_scale, new_scale))
 
-        extension_api.patch_namespaced_deployment(self.deployment.metadata.name,
-                                                  self.deployment.metadata.namespace,
-                                                  self.deployment)
-
-        self.reload_cache()
+        self._deployment = extension_api.patch_namespaced_deployment(self.deployment.metadata.name,
+                                                                     self.deployment.metadata.namespace,
+                                                                     self.deployment)
 
     def check_service_is_deleted(self):
         """
@@ -370,6 +521,7 @@ class ModelService(Service):
         :return: None
         """
         client = legion.k8s.utils.build_client()
+        k8s_name = legion.k8s.utils.normalize_k8s_name(self.id, self.version)
 
         api_instance = kubernetes.client.AppsV1beta1Api(client)
         core_v1api = kubernetes.client.CoreV1Api(client)
@@ -377,8 +529,8 @@ class ModelService(Service):
         body = kubernetes.client.V1DeleteOptions(propagation_policy='Background',
                                                  grace_period_seconds=grace_period_seconds)
 
-        LOGGER.info('Deleting service {} in namespace {}'.format(self.k8s_service.metadata.name, self.namespace))
-        core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name, body=body,
+        LOGGER.info('Deleting service {} in namespace {}'.format(k8s_name, self.namespace))
+        core_v1api.delete_namespaced_service(name=k8s_name, body=body,
                                              namespace=self.namespace)
 
         retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
@@ -391,12 +543,12 @@ class ModelService(Service):
 
         if not service_deleted:
             raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
-                'Cannot remove service {}'.format(self.k8s_service.metadata.name)
+                'Cannot remove service {}'.format(k8s_name)
             )
 
         LOGGER.info('Deleting deployment {} in namespace {} with grace period {}s'
-                    .format(self.deployment.metadata.name, self.namespace, grace_period_seconds))
-        api_instance.delete_namespaced_deployment(name=self.deployment.metadata.name,
+                    .format(k8s_name, self.namespace, grace_period_seconds))
+        api_instance.delete_namespaced_deployment(name=k8s_name,
                                                   namespace=self.namespace, body=body,
                                                   grace_period_seconds=grace_period_seconds,
                                                   propagation_policy='Background')
@@ -408,7 +560,7 @@ class ModelService(Service):
 
         if not deployment_deleted:
             raise legion.k8s.exceptions.KubernetesOperationIsNotConfirmed(
-                'Cannot remove deployment {}'.format(self.deployment.metadata.name)
+                'Cannot remove deployment {}'.format(k8s_name)
             )
 
     @property
@@ -591,6 +743,28 @@ def find_model_deployment(namespace, model_id, model_version):
             return None
 
         raise e
+
+
+def find_model_deployments_by(namespace, model_id=None, model_version=None):
+    """
+    Find all models deployments
+
+    :param namespace: namespace
+    :type namespace: str or none
+    :param model_id: model id
+    :type model_id: str or None
+    :param model_version: model version
+    :type model_version: str or None
+    :return: list[:py:class:`kubernetes.client.models.extensions_v1beta1_deployment.ExtensionsV1beta1Deployment`]
+    """
+    client = legion.k8s.utils.build_client()
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+
+    deployments = extension_api.list_namespaced_deployment(
+        namespace, label_selector=_generate_model_labels(model_id, model_version)
+    )
+
+    return deployments.items
 
 
 def find_model_services_by(namespace, model_id=None, model_version=None):

@@ -133,17 +133,6 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
     """
     Deploy API endpoint
 
-    K8S API functions will be invoked in the next order:
-    - CoreV1Api.list_namespaced_service (to get information about actual model services)
-    If there is deployed model with same image:
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to get information of service's deployment)
-    if there is no any deployed model with same image:
-      - CoreV1Api.list_namespaced_service (to check is there any model with same model id / version)
-      - ExtensionsV1beta1Api.create_namespaced_deployment (to create model deployment)
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that model deployment has been created)
-      - CoreV1Api.create_namespaced_service (to create model service)
-      - CoreV1Api.list_namespaced_service (to ensure that model service has been created)
-
     :param image: Docker image for deploy (for kubernetes deployment and local pull)
     :type image: str
     :param model_iam_role: IAM role to be used at model pod
@@ -154,25 +143,13 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
     :type livenesstimeout: int
     :param readinesstimeout: time in seconds for readiness check
     :type readinesstimeout: int
-    :return: bool -- True
+    :return: list[dict[str, any]] - ModelDeploymentDescription as dict
     """
-    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r} and \
-                {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, model_iam_role))
-
-    is_deployed, model_service = app.config['ENCLAVE'].deploy_model(
+    model_deployment = app.config['ENCLAVE'].deploy_model(
         image, model_iam_role, count, livenesstimeout, readinesstimeout
     )
 
-    if is_deployed:
-        if app.config['REGISTER_ON_GRAFANA']:
-            LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
-                        .format(model_service.id, model_service.version))
-
-            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
-        else:
-            LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
-
-    return return_model_deployments([legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)])
+    return return_model_deployments([model_deployment])
 
 
 @blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
@@ -184,16 +161,6 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     """
     Undeploy API endpoint
 
-    K8S API functions will be invoked in the next order:
-    - CoreV1Api.list_namespaced_service (to get information about actual model services)
-    Per each service that should be undeployed (N-times):
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to get information of service's deployment)
-      - CoreV1Api.delete_namespaced_service (to remove model service)
-      - CoreV1Api.list_namespaced_service (to ensure that service has been removed)
-      - AppsV1beta1Api.delete_namespaced_deployment (to remove deployment)
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that deployment has been removed)
-
-
     :param model: model id
     :type model: strset jinja folder
     :param version: (Optional) specific model version
@@ -202,33 +169,9 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     :type grace_period: int
     :param ignore_not_found: (Optional) ignore exception if cannot find models
     :type ignore_not_found: bool
-    :return: bool -- True
+    :return: list[dict[str, any]] - ModelDeploymentDescription as dict
     """
-    LOGGER.info('Command: undeploy model with id={}, version={} with grace period {}s'
-                .format(model, version, grace_period))
-    model_deployments = []
-    LOGGER.info('Gathering information about models with id={} version={}'
-                .format(model, version))
-    model_services = app.config['ENCLAVE'].get_models_strict(model, version, ignore_not_found)
-
-    for model_service in model_services:
-        if app.config['REGISTER_ON_GRAFANA']:
-            other_versions_exist = len(app.config['ENCLAVE'].get_models(model_service.id)) > 1
-            LOGGER.info('Removing model\'s dashboard from Grafana (id={}, version={})'
-                        .format(model_service.id, model_service.version))
-
-            if not other_versions_exist:
-                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id, model_service.version)
-            else:
-                LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - there are other model')
-        else:
-            LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - disabled in configuration')
-
-        model_deployments.append(
-            legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
-        )
-
-        model_service.delete(grace_period)
+    model_deployments = app.config['ENCLAVE'].undeploy_model(model, version, grace_period, ignore_not_found)
 
     return return_model_deployments(model_deployments)
 
@@ -248,24 +191,11 @@ def scale(model, count, version=None):
     :type count: int
     :param version: (Optional) specific model version
     :type version: str or None
-    :return: bool -- True
+    :return: list[dict[str, any]] - ModelDeploymentDescription as dict
     """
-    LOGGER.info('Command: scale model with id={}, version={} to {} replicas'.format(model, version, count))
-    model_deployments = []
-    LOGGER.info('Gathering information about models with id={} version={}'
-                .format(model, version))
-    model_services = app.config['ENCLAVE'].get_models_strict(model, version)
+    scaled_model_services = app.config['ENCLAVE'].scale_model(model, count, version)
 
-    for model_service in model_services:
-        LOGGER.info('Changing scale for model (id={}, version={}) from {} to {}'
-                    .format(model_service.id, model_service.version, model_service.scale, count))
-        model_service.scale = count
-
-        model_deployments.append(
-            legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)
-        )
-
-    return return_model_deployments(model_deployments)
+    return return_model_deployments(scaled_model_services)
 
 
 @blueprint.route(build_blueprint_url(EDI_INSPECT), methods=['GET'])
@@ -276,37 +206,15 @@ def inspect(model=None, version=None):
     """
     Inspect API endpoint
 
-    :return: dict -- state of cluster models
+    :param model: (Optional) model id
+    :type model: str or None
+    :param version: (Optional) specific model version
+    :type version: str or None
+    :return: list[dict[str, any]] - ModelDeploymentDescription as dict
     """
-    LOGGER.info('Command: inspect with model={}, version={}'.format(model, version))
-    model_deployments = []
-    LOGGER.info('Gathering information about models with id={} version={}'
-                .format(model, version))
-    model_services = app.config['ENCLAVE'].get_models(model, version)
+    model_services = app.config['ENCLAVE'].inspect_models(model, version)
 
-    for model_service in model_services:
-        try:
-            model_api_info = {}
-
-            model_client = legion.model.ModelClient.build_from_model_service(model_service)
-
-            try:
-                model_api_info['result'] = model_client.info()
-                model_api_ok = True
-            except Exception as model_api_exception:
-                LOGGER.error('Cannot connect to model <{}> endpoint to get info: {}'.format(model_service,
-                                                                                            model_api_exception))
-                model_api_info['exception'] = str(model_api_exception)
-                model_api_ok = False
-
-            model_deployments.append(legion.k8s.ModelDeploymentDescription.build_from_model_service(
-                model_service,
-                model_api_ok, model_api_info
-            ))
-        except legion.k8s.UnknownDeploymentForModelService:
-            LOGGER.debug('Ignoring error about unknown deployment for model service {!r}'.format(model_service))
-
-    return return_model_deployments(model_deployments)
+    return return_model_deployments(model_services)
 
 
 @blueprint.route(build_blueprint_url(EDI_INFO), methods=['GET'])
