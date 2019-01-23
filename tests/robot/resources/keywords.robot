@@ -9,7 +9,6 @@ Library             legion_test.robot.K8s
 Library             legion_test.robot.Jenkins
 Library             legion_test.robot.Utils
 Library             legion_test.robot.Grafana
-Library             legion_test.robot.Airflow
 Library             legion_test.robot.Process
 
 *** Keywords ***
@@ -27,14 +26,6 @@ Connect to main Grafana
 
 Connect to Jenkins endpoint
     Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}
-
-Connect to enclave Airflow
-    [Arguments]           ${enclave}
-    Connect to Airflow    ${HOST_PROTOCOL}://airflow-${enclave}.${HOST_BASE_DOMAIN}
-
-Connect to enclave Flower
-    [Arguments]           ${enclave}
-    Connect to Flower    ${HOST_PROTOCOL}://flower-${enclave}.${HOST_BASE_DOMAIN}
 
 Shell
     [Arguments]           ${command}
@@ -417,34 +408,3 @@ Secured component domain should be accessible by valid credentials
     ${auth_page} =   Get From Dictionary   ${response}    response_text
     Should contain   ${auth_page}    ${component}
     Should not contain   ${auth_page}    Invalid Email Address and password
-
-Invoke and check test dags for valid status code
-    [Arguments]   ${enclave}
-    [Documentation]  Check test dags for valid status code
-    Connect to enclave Airflow                           ${enclave}
-    :FOR    ${dag}      IN      @{TEST_DAGS}
-    \   ${ready} =            Is dag ready    ${dag}
-    \   Should Be True 	      ${ready} == True    Dag ${dag} was not ready
-    \   ${tasks} =            Find Airflow Tasks  ${dag}
-# Temporary disabling triggering Airflow tasks as it fails Airflow test
-# TODO: Need to rewrite this logic as a part of Airflow upgrade.
-#    \   Run airflow task and validate stderr      ${tasks}   ${dag}
-    \   Wait dag finished     ${dag}
-    \   ${failed_dags} =      Get failed Airflow DAGs
-    \   Should Not Contain    ${failed_dags}      ${dag}
-    \   ${succeeded_dags} =   Get succeeded Airflow DAGs
-    \   Should not be empty   ${succeeded_dags}
-
-Run airflow task and validate stderr
-    [Arguments]   ${tasks}   ${dag}
-    [Documentation]  Check airflow tasks for valid status code
-    :FOR    ${task}     IN      @{tasks}
-    \   ${date_time} =      Get Current Date  result_format='%Y-%m-%d %H:%M:%S'
-    \   ${status} =         Trigger Airflow task    ${dag}  ${task}  ${date_time}
-    \   Should Be Equal     ${status}   ${None}
-
-Set replicas num
-    [Arguments]   ${replicas_num}
-    :FOR  ${enclave}    IN    @{ENCLAVES}
-    \   Set deployment replicas   ${replicas_num}  airflow-${enclave}-worker  ${enclave}
-        Wait deployment replicas count   airflow-${enclave}-worker  namespace=${enclave}  expected_replicas_num=${replicas_num}

@@ -35,8 +35,6 @@ node_extra_min: 0
 node_extra_max: 2
 
 vpc_id: vpc-5729c13e
-airflow_rds_shape: "db.t2.medium"
-airflow_rds_size: "50"
 
 # Kops
 cluster_name: legion-test.epm.kharlamov.biz
@@ -81,16 +79,6 @@ enclaves:
 storageclass: efs
 legion_data_bucket_prefix: epm-legion-data
 legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"
-airflow_dags_dir: '/airflow-dags'
-airflow_dags_pvc: legion-airflow-dags
-airflow_s3_logs_path: 'airflow-logs/'
-airflow_s3_logs_url: "s3://{{ legion_data_s3_bucket }}/{{ airflow_s3_logs_path }}"
-airflow_expected_output: 'expected-data/'
-airflow_pvc: 200m
-airflow_worker_cpu_requests: "1500m"
-airflow_worker_cpu_limits: "2000m"
-airflow_worker_mem_requests: "1000Mi"
-airflow_worker_mem_limits: "2500Mi"
 max_token_ttl_minutes: 259200  # 60*24*180, 180 days
 
 collector:

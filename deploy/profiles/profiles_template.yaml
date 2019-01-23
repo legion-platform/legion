@@ -65,26 +65,6 @@ enclaves: ~ # list of enclaves which will be automatically deployed after Legion
 legion_data_bucket_prefix: ~ # S3 bucket name prefix
 legion_data_s3_bucket: ~ # s3 bucket for enclave data
 
-# Airflow specific configuration
-airflow_dags_dir: ~                                        # Name of Aitflow DAGs directory
-airflow_dags_pvc: ~                                    # Name of Airflow DAGs PVC which will be created in Cluster
-airflow_s3_logs_path: ~                           # Path at S3 for airflow log
-airflow_s3_logs_url: ~                             # S3 url for storing Airflow logs, it should contain bucket name and key. E.g.: airflow_s3_logs_url: "s3://{{ legion_data_s3_bucket }}/{{ airflow_s3_logs_path }}"
-airflow_pvc: ~                                                        # Airflow PVC size (for storing DAGs code)
-
-# Airflow RDS configuration
-airflow_rds_shape: ~                                        # shape for Airflow RDS
-airflow_rds_size: ~                                                   # size of Airflow RDS in GB
-
-# Airflow DAGs configuration [?]
-airflow_expected_output: ~                                # Configuration for Airflow DAGs
-
-# Airflow worker pod limits
-airflow_worker_cpu_requests: ~
-airflow_worker_cpu_limits: ~
-airflow_worker_mem_requests: ~
-airflow_worker_mem_limits: ~
-
 # Kube fluentd properties
 # Cluster logs
 kube_fluentd:

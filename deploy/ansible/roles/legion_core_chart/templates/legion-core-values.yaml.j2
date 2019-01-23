@@ -31,8 +31,6 @@ jenkins:
 
     size: {{ jenkins_volume_size | default('20') }}Gi
 
-  dags_volume_pvc: "{{ airflow_dags_pvc }}"
-  airflow_dags_directory: "{{ airflow_dags_dir }}"
   image:
     repository: "{{ docker_repo }}/k8s-jenkins"
     tag: "{{ legion_version }}"
@@ -42,12 +40,6 @@ jenkins:
   ingress:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
-
-  airflow:
-    enabled: true
-    rest_url: 'http://airflow-web:8080/admin/rest_api'
-    s3_url: "s3://{{ legion_data_s3_bucket }}/"
-    expected_output: '{{ airflow_expected_output }}'
 
   openId:
     enable: {{ dex.enabled | default(false) | bool }}

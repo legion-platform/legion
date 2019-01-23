@@ -13,6 +13,5 @@ hosts
 .terraform/
 
 # Chart dependencies
-/helms/airflow/charts/
 /helms/legion/charts/
 /helms/legion-core/charts/

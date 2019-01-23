@@ -32,14 +32,6 @@ jenkins:
     storageClass: ""
     size: 20Gi
 
-  airflow:
-    enabled: false
-    rest_url: ''
-    s3_url: ''
-    expected_output: ''
-
-    dags_volume_pvc: ''
-
   openId:
     enable: false
     clientId: ~

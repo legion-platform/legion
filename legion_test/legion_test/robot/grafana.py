@@ -16,13 +16,10 @@
 """
 Robot test library - grafana
 """
-import time
-
-import requests
-
 from legion_test.grafana import GrafanaClient
 from legion_test.utils import normalize_name, wait_until
 from legion_test.robot.dex_client import get_session_cookies
+import requests
 
 
 class Grafana:
@@ -30,7 +27,7 @@ class Grafana:
     Grafana client for robot tests
     """
 
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+    ROBOT_LIBRARY_SCOPE = 'TEST SUITE'
 
     def __init__(self):
         """
@@ -40,7 +37,6 @@ class Grafana:
         self._user = None  # type: str
         self._password = None  # type: str
         self._client = None  # type: legion_test.grafana.GrafanaClient
-        self._start_time = time.time()
 
     def connect_to_grafana(self, domain, user, password):
         """
@@ -120,8 +116,7 @@ class Grafana:
 
         payload = {
             'target': target,
-            # Add 10 seconds to cover a corner case
-            'from': '-{}s'.format(int(time.time() - self._start_time) + 10),
+            'from': '-5min',
             'until': 'now',
             'format': 'json',
             'cacheTimeout': 0,
@@ -129,7 +124,6 @@ class Grafana:
         }
 
         response = requests.post(url, data=payload, headers=headers, auth=auth, cookies=get_session_cookies())
-        print('Current time: {}. Start time: {}. Payload: {}'.format(time.time(), self._start_time, payload))
         print('Loading {} metrics. Data: {}'.format(target, response.text))
 
         return response.json()

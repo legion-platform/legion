@@ -255,7 +255,6 @@ EOL
                                 sh """
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_test/dist/legion_test-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_airflow/dist/legion_airflow-*'
                                 """
 
                                 if (env.param_stable_release) {
@@ -386,17 +385,6 @@ EOL
                             sh """
                             cd k8s/edi
                             docker build ${Globals.dockerCacheArg} --cache-from=legion/base-python-image:${Globals.buildVersion} --cache-from=${env.param_docker_registry}/k8s-edi:${env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-edi:${Globals.buildVersion} ${Globals.dockerLabels} .
-                            """
-                        }
-                    }
-                }
-                stage("Build Airflow Docker image") {
-                    steps {
-                        script {
-                            legion.pullDockerCache([], 'k8s-airflow')
-                            sh """
-                            cd k8s/airflow
-                            docker build ${Globals.dockerCacheArg} --cache-from=legion/base-python-image:${Globals.buildVersion} --cache-from=${env.param_docker_registry}/k8s-airflow:${env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-airflow:${Globals.buildVersion} ${Globals.dockerLabels} .
                             """
                         }
                     }
@@ -588,13 +576,6 @@ EOL
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-edi')
-                        }
-                    }
-                }
-                stage('Upload Airflow Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-airflow')
                         }
                     }
                 }

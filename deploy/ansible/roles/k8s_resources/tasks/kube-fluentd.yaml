@@ -54,7 +54,7 @@
   retries: 10
   delay: 5
 
-- name: Attach Airflow S3 accesse policy to the role
+- name: Attach fluentd S3 accesse policy to the role
   iam_policy:
     iam_type: role
     iam_name: "{{ cluster_name }}-fluentd-role"
