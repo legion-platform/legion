@@ -208,3 +208,21 @@ Login. Override login values
     ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
+
+Get token from EDI
+    [Documentation]  Try to get token from EDI
+    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
+              Should be equal       ${res.rc}  ${0}
+              Should not be empty   ${res.stdout}
+
+    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${TEST_COMMAND_MODEL_ID} --token "${DEX_TOKEN}"
+              Should not be equal   ${res.rc}  ${0}
+              Should contain        ${res.stderr}  Requested field model_version is not set
+
+    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
+              Should not be equal   ${res.rc}  ${0}
+              Should contain        ${res.stderr}  Requested field model_id is not set
+
+    ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-version ${TEST_MODEL_5_VERSION} --token wrong-token
+              Should not be equal   ${res.rc}  ${0}
+              Should contain        ${res.stderr}  Credentials are not correct

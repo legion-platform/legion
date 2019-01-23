@@ -20,7 +20,7 @@ import argparse
 import logging
 
 import legion.docker_bootup
-from legion.edi.security import login, add_edi_arguments
+from legion.edi.security import login, add_edi_arguments, generate_token
 from legion.serving.pyserve import serve_model
 from legion.external.edi import add_arguments_for_wait_operation
 from legion.edi.deploy import \
@@ -55,10 +55,16 @@ if __name__ == '__main__':
                         action='store_true')
     subparsers = parser.add_subparsers()
 
-    # --------- LOGIN SECTION -----------
+    # --------- SECURITY SECTION -----------
     login_parser = subparsers.add_parser('login', description='Save edi credentials to the config')
     add_edi_arguments(login_parser, required=True)
     login_parser.set_defaults(func=login)
+
+    generate_token_parser = subparsers.add_parser('generate-token', description='generate JWT token for model')
+    generate_token_parser.add_argument('--model-id', type=str, help='Model ID')
+    generate_token_parser.add_argument('--model-version', type=str, help='Model version')
+    add_edi_arguments(generate_token_parser)
+    generate_token_parser.set_defaults(func=generate_token)
 
     # --------- LOCAL DOCKER SECTION -----------
     build_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '

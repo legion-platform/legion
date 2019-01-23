@@ -177,14 +177,12 @@ Build enclave EDGE URL
 
 Get token from EDI
     [Documentation]  get token from EDI for the EDGE session
-    [Arguments]     ${enclave}   ${model_id}   ${model_version}
-    &{data} =             Create Dictionary    model_id=${model_id}    model_version=${model_version}
-    &{resp} =             Execute post request    ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN}/api/1.0/generate_token  data=${data}  cookies=${DEX_COOKIES}
-    Log                   ${resp["text"]}
-    Should not be empty   ${resp}
-    &{token} =  Evaluate  json.loads('''${resp["text"]}''')    json
-    Log                   ${token}
-    Set Suite Variable    ${TOKEN}    ${token['token']}
+    [Arguments]           ${enclave}    ${model_id}    ${model_version}
+    ${resp} =             Run Process without PIPE  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${model_id} --model-version ${model_version} --token "${DEX_TOKEN}"    shell=True
+    Should be equal as integers       ${resp.rc}  0
+    Log                   stdout = ${resp.stdout}
+    Log                   stderr = ${resp.stderr}
+    Set Suite Variable    ${TOKEN}   ${resp.stdout}
 
 Check model started
     [Documentation]  check if model run in container by http request
