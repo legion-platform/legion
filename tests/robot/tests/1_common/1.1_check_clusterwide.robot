@@ -56,7 +56,7 @@ Check Vertical Scailing
     :FOR  ${enclave}    IN    @{ENCLAVES}
     \  Connect to Jenkins endpoint
         Run Jenkins job                  PERF TEST Vertical-Scaling   Enclave=${enclave}
-        Wait Jenkins job                 PERF TEST Vertical-Scaling   780
+        Wait Jenkins job                 PERF TEST Vertical-Scaling   900
         Last Jenkins job is successful   PERF TEST Vertical-Scaling
 
     Get cluster nodes and their count    after
