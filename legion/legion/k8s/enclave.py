@@ -379,11 +379,11 @@ class Enclave:
                                                     labels=image_meta_information.kubernetes_labels),
             spec=deployment_spec)
 
-        extensions_v1 = kubernetes.client.AppsV1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(client)
 
         LOGGER.info('Creating deployment {} in namespace {}'.format(image_meta_information.k8s_name,
                                                                     self.namespace))
-        extensions_v1.create_namespaced_deployment(
+        apps_api.create_namespaced_deployment(
             body=deployment,
             namespace=self.namespace)
 
