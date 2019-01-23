@@ -9,8 +9,8 @@ Legion package can be used for introspection and modification of Legion state in
 
 #### Deploying new models
 * `CoreV1Api.list_namespaced_service`
-* `ExtensionsV1beta1Api.read_namespaced_deployment`
-* `ExtensionsV1beta1Api.create_namespaced_deployment`
+* `AppsV1Api.read_namespaced_deployment`
+* `AppsV1Api.create_namespaced_deployment`
 * `CoreV1Api.create_namespaced_service`
 
 #### Inspecting 
@@ -101,8 +101,8 @@ This function will be called on access deployment, scale, desired scale, status,
 * `ExtensionsV1beta1Api.read_namespaced_deployment`
 	
 ##### legion.k8s.services.find_all_models_deployments
-* `ExtensionsV1beta1Api.read_namespaced_deployment`
-* `ExtensionsV1beta1Api.list_deployment_for_all_namespaces`
+* `AppsV1Api.read_namespaced_deployment`
+* `AppsV1Api.list_deployment_for_all_namespaces`
 	
 ##### legion.k8s.services.find_all_services
 * `CoreV1Api.list_namespaced_service`
