@@ -7,6 +7,7 @@ data:
   configure-cloud.groovy: |-
     import org.csanchez.jenkins.plugins.kubernetes.*
     import jenkins.model.*
+    import hudson.model.*
 
     cloud = new KubernetesCloud(
         'kubernetes', // name
@@ -22,6 +23,13 @@ data:
 
     Jenkins.getInstance().clouds.replace(cloud)
     Jenkins.getInstance().save()
+
+    // Set number of executors
+    Hudson hudson = Hudson.getInstance()
+    hudson.setNumExecutors(15)
+    hudson.setNodes(hudson.getNodes())
+    hudson.save()
+
 ---
 apiVersion: v1
 kind: ReplicationController
