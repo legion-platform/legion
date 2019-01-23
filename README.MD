@@ -39,7 +39,7 @@ Legion provides:
 
 ## Changelog
 
-Please find it here [CHANGELOG](legion/CHANGELOG.md)
+Please find it here [CHANGELOG](CHANGELOG.md)
 
 ## Contact Us
 If you are interested in contribution to Legion feel free to create a pull request or create an issue report.
