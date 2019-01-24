@@ -22,7 +22,6 @@ import socket
 import requests
 import time
 import json
-import operator
 
 
 class Utils:
@@ -291,7 +290,6 @@ class Utils:
         """
         return json.loads(str)
 
-
     @staticmethod
     def get_current_time(time_template):
         """
@@ -302,6 +300,32 @@ class Utils:
         :return: None or str -- time from template
         """
         return datetime.datetime.utcnow().strftime(time_template)
+
+    @staticmethod
+    def get_future_time(offset, time_template):
+        """
+        Get templated time on `offset` seconds in future
+
+        :param offset: time offset from current time in seconds
+        :type offset: int
+        :param time_template: time template
+        :type time_template: str
+        :return: str -- time from template
+        """
+        return (datetime.datetime.utcnow() +
+                datetime.timedelta(seconds=offset)).strftime(time_template)
+
+    @staticmethod
+    def get_datetime_from_timestamp(timestamp, time_template):
+        """
+        Get datetime as string from timestamp
+        :param timestamp: timestamp
+        :type timestamp: timestamp
+        :param time_template: time template
+        :type time_template: str
+        :return: str -- datetime from template
+        """
+        return datetime.datetime.utcfromtimestamp(timestamp)
 
     @staticmethod
     def wait_up_to_second(second, time_template=None):

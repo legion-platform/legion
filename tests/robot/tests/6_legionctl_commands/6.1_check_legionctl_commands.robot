@@ -226,3 +226,12 @@ Get token from EDI
     ${res} =  Shell  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-version ${TEST_MODEL_5_VERSION} --token wrong-token
               Should not be equal   ${res.rc}  ${0}
               Should contain        ${res.stderr}  Credentials are not correct
+
+Get token from EDI with expiration date set
+    [Documentation]  Try to get token from EDI and set it`s expiration date
+    ${expiration_date} =    Get future time         60  "%Y-%m-%dT%H:%M:%S"
+    ${res} =                Shell                   legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --expiration-date ${expiration_date} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
+                            Should be equal         ${res.rc}  0
+    ${data} =               Parse JSON string       ${res.stdout}
+    ${res_exp_date} =       Get datetime from timestamp  ${data["exp"]}
+                            Should be equal         ${res_exp_date}  ${expiration_date}
