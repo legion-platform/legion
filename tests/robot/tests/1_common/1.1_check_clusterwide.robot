@@ -61,4 +61,4 @@ Check Vertical Scailing
 
     Get cluster nodes and their count    after
     Should Not Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
-    Wait node scale down           ${NODES_COUNT_BEFORE}
+    Wait node scale down           ${NODES_COUNT_BEFORE}  900

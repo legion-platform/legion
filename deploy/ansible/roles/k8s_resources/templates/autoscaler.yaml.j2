@@ -144,7 +144,7 @@ spec:
             - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
             - --expander=least-waste
-            - --scan-interval=3m
+            - --scan-interval=150s
             - --scale-down-delay-after-add=10s
             - --scale-down-unneeded-time=10s
             - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{ cluster_name }}

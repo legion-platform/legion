@@ -14,11 +14,11 @@ tmp_dir: /tmp/
 
 # AWS 
 aws_region: us-east-2
-node_autoscaler_min: 3
+node_autoscaler_min: 4
 node_autoscaler_max: 5
 bastion_shape: t2.micro
-master_shape: m5.xlarge
-node_shape: m5.xlarge
+master_shape: m4.xlarge
+node_shape: m4.xlarge
 
 # Ohio high memory instances
 node_extra_shapes:
