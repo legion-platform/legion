@@ -12,7 +12,7 @@ rules:
   resources: ["configmaps", "secrets"]
   verbs: ["list", "create", "get", "patch", "update"]
 - apiGroups: ["extensions"]
-  resources: ["deployments", "ingresses"]
+  resources: ["ingresses"]
   verbs:  ["list", "create", "patch", "get"]
 - apiGroups: ["apps"]
   resources: ["deployments"]
