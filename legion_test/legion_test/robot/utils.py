@@ -307,13 +307,13 @@ class Utils:
         Get templated time on `offset` seconds in future
 
         :param offset: time offset from current time in seconds
-        :type offset: int
+        :type offset: str
         :param time_template: time template
         :type time_template: str
         :return: str -- time from template
         """
         return (datetime.datetime.utcnow() +
-                datetime.timedelta(seconds=offset)).strftime(time_template)
+                datetime.timedelta(seconds=int(offset))).strftime(time_template)
 
     @staticmethod
     def get_datetime_from_timestamp(timestamp, time_template):
