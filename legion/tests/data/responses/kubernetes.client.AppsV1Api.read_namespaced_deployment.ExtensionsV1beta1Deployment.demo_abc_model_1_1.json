@@ -23,7 +23,7 @@
     "name": "model-demo-abc-model-1-1",
     "namespace": "debug-enclave",
     "resourceVersion": "349727",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-1",
+    "selfLink": "/apis/apps/v1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-1",
     "uid": "be7252b9-e294-11e8-9de3-12a89ae87206"
   },
   "spec": {

@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "v1",
   "items": [
     {
       "metadata": {
@@ -24,7 +24,7 @@
         "name": "model-demo-abc-model-1-0",
         "namespace": "debug-enclave",
         "resourceVersion": "349707",
-        "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-0",
+        "selfLink": "/apis/apps/v1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-0",
         "uid": "afc8e10a-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
@@ -166,7 +166,7 @@
         "name": "model-demo-abc-model-1-1",
         "namespace": "debug-enclave",
         "resourceVersion": "349727",
-        "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-1",
+        "selfLink": "/apis/apps/v1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-1",
         "uid": "be7252b9-e294-11e8-9de3-12a89ae87206"
       },
       "spec": {
@@ -289,6 +289,6 @@
   "kind": "DeploymentList",
   "metadata": {
     "resourceVersion": "349729",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments"
+    "selfLink": "/apis/apps/v1/namespaces/debug-enclave/deployments"
   }
 }
