@@ -327,9 +327,9 @@ def info():
 @blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model_id=str, model_version=str)
+@legion.http.populate_fields(model_id=str, model_version=str, expiration_date=int)
 @legion.http.requested_fields('model_id', 'model_version')
-def generate_token(model_id, model_version):
+def generate_token(model_id, model_version, expiration_date=None):
     """
     Generate JWT token
 
@@ -337,12 +337,18 @@ def generate_token(model_id, model_version):
     """
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
     jwt_exp_date = None
-    jwt_created_date = datetime.now()
-    if 'jwt.exp.datetime' in app.config['JWT_CONFIG']:
+    jwt_exp_date_str = None
+    if expiration_date:
+        jwt_exp_date_str = expiration_date
+    elif 'jwt.exp.datetime' in app.config['JWT_CONFIG']:
+        jwt_exp_date_str = app.config['JWT_CONFIG']['jwt.exp.datetime']
+
+    if jwt_exp_date_str:
         try:
-            jwt_exp_date = datetime.strptime(app.config['JWT_CONFIG']['jwt.exp.datetime'], "%Y-%m-%dT%H:%M:%S")
+            jwt_exp_date = datetime.strptime(jwt_exp_date_str, "%Y-%m-%dT%H:%M:%S")
         except ValueError:
             pass
+
     if not jwt_exp_date or jwt_exp_date < datetime.now():
         jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
         jwt_exp_date = datetime.utcnow() + jwt_life_length
