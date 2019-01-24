@@ -325,7 +325,7 @@ class Utils:
         :type time_template: str
         :return: str -- datetime from template
         """
-        return datetime.datetime.utcfromtimestamp(timestamp)
+        return datetime.datetime.utcfromtimestamp(timestamp).strftime(time_template)
 
     @staticmethod
     def wait_up_to_second(second, time_template=None):
