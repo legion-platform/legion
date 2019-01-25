@@ -327,7 +327,7 @@ def info():
 @blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model_id=str, model_version=str, expiration_date=int)
+@legion.http.populate_fields(model_id=str, model_version=str, expiration_date=str)
 @legion.http.requested_fields('model_id', 'model_version')
 def generate_token(model_id, model_version, expiration_date=None):
     """
