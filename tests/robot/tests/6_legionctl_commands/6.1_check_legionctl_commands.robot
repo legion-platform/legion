@@ -229,9 +229,22 @@ Get token from EDI
 
 Get token from EDI with expiration date set
     [Documentation]  Try to get token from EDI and set it`s expiration date
-    ${expiration_date} =    Get future time         60  "%Y-%m-%dT%H:%M:%S"
-    ${res} =                Shell                   legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --expiration-date ${expiration_date} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
-                            Should be equal         ${res.rc}  0
-    ${data} =               Parse JSON string       ${res.stdout}
-    ${res_exp_date} =       Get datetime from timestamp  ${data["exp"]}
-                            Should be equal         ${res_exp_date}  ${expiration_date}
+    ${token_ttl} =          15
+    ${expiration_date} =    Get future time           ${token_ttl}  "%Y-%m-%dT%H:%M:%S"
+    ${res} =                Shell                     legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --expiration-date ${expiration_date} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
+                            Should be equal           ${res.rc}  ${0}
+
+    ${token} =              ${res.stdout}
+
+    &{res} =                Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}    ${token}
+                            Dictionary Should Contain Item    ${res}    response_code    200
+    ${auth_page} =          Get From Dictionary   ${res}    response_text
+                            Should not contain    ${auth_page}    401 Authorization Required
+                            Sleep                 ${token_ttl}s
+    &{res} =                Get component auth page    ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}    ${token}
+                            Dictionary Should Contain Item    ${res}    response_code    401
+    ${auth_page} =          Get From Dictionary   ${res}    response_text
+                            Should contain        ${auth_page}    401 Authorization Required
+
+
+
