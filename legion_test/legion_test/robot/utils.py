@@ -316,16 +316,9 @@ class Utils:
                 datetime.timedelta(seconds=int(offset))).strftime(time_template)
 
     @staticmethod
-    def get_datetime_from_timestamp(timestamp, time_template):
-        """
-        Get datetime as string from timestamp
-        :param timestamp: timestamp
-        :type timestamp: timestamp
-        :param time_template: time template
-        :type time_template: str
-        :return: str -- datetime from template
-        """
-        return datetime.datetime.utcfromtimestamp(timestamp).strftime(time_template)
+    def reformat_time(time_str, initial_format, target_format):
+        datetime_obj = datetime.datetime.strptime(time_str, initial_format)
+        return datetime.datetime.strftime(datetime_obj, target_format)
 
     @staticmethod
     def wait_up_to_second(second, time_template=None):
