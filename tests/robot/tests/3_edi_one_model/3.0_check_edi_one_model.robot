@@ -38,18 +38,22 @@ Get token from EDI with valid parameters
 Get token from EDI and set expiration date
     [Documentation]  Try to get token from EDI with valid parameters and expiration date set
     [Setup]   NONE
-    [Tags]  edi_token
-    ${expiration_date} =  Get future time  60  "%Y-%m-%dT%H:%M:%S"
-    &{data} =    Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}    expiration_date=${expiration_date}
-    &{resp} =    Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
-    Log          ${resp}
-    Should not be empty   ${resp}
+    [Tags]  edi_token  unique
+    ${date_format}  Set variable  %Y-%m-%dT%H:%M:%S
+    ${expiration_date} =  Get future time  60  ${date_format}
+    Log           ${expiration_date}
+    &{data} =     Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}    expiration_date=${expiration_date}
+    Log           ${data}
+    &{resp} =     Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
+    Log           ${resp}
+    Should not be empty    ${resp}
     Should be equal as integers    ${resp["code"]}    200
-    &{token} =   Evaluate    json.loads('''${resp["text"]}''')    json
-    Log          ${token}
-    Should not be empty   ${token["token"]}
-    Should not be empty   ${token["exp"]}
-    should be equal       ${token["exp"]}  ${expiration_date}
+    &{token} =    Evaluate    json.loads('''${resp["text"]}''')    json
+    Log           ${token}
+    Should not be empty       ${token["token"]}
+    Should not be empty       ${token["exp"]}
+    ${res_expiration_date} =  Reformat time    ${token["exp"]}    %a, %d %b %Y %H:%M:%S GMT    ${date_format}
+    Should be equal           ${res_expiration_date}    ${expiration_date}
 
 Get token from EDI without version parameter
     [Documentation]  Try to get token from EDI without version parameter
