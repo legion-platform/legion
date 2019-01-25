@@ -696,11 +696,11 @@ def find_all_ingresses(namespace='', component=''):
     """
     client = legion.k8s.utils.build_client()
 
-    apps_api = kubernetes.client.AppsV1Api(client)
+    extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
     if namespace:
-        all_ingresses = apps_api.list_namespaced_ingress(namespace)
+        all_ingresses = extension_api.list_namespaced_ingress(namespace)
     else:
-        all_ingresses = apps_api.list_ingress_for_all_namespaces()
+        all_ingresses = extension_api.list_ingress_for_all_namespaces()
 
     if component:
         all_ingresses = [
