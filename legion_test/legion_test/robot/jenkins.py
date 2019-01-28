@@ -69,7 +69,7 @@ class Jenkins:
         """
         self._client = None  # type: jenkins.Jenkins
 
-    def connect_to_jenkins(self, domain, user=None, password=None, dex_cookies={}, timeout=10):
+    def connect_to_jenkins(self, domain, user=None, password=None, dex_cookies=None, timeout=10):
         """
         Connect to Jenkins server
 

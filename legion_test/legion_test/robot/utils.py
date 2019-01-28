@@ -307,15 +307,15 @@ class Utils:
         return {"login": static_user['email'], "password": static_user['password']}
 
     @staticmethod
-    def parse_json_string(str):
+    def parse_json_string(string):
         """
         Parse JSON string
 
-        :param str: JSON string
-        :type str: str
+        :param string: JSON string
+        :type string: str
         :return: dict -- object
         """
-        return json.loads(str)
+        return json.loads(string)
 
     @staticmethod
     def get_current_time(time_template):

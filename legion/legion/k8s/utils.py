@@ -19,8 +19,6 @@ legion k8s utils functions
 import os
 import logging
 
-import docker
-import docker.errors
 import kubernetes
 import kubernetes.client
 import kubernetes.config
@@ -253,7 +251,7 @@ def parse_docker_image_url(image_url):
     :type image_url: str
     :return: namedtuple[str, Any]
     """
-    image_attrs_regexp = '(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
+    image_attrs_regexp = r'(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
     try:
         image_attrs_list = re.search(image_attrs_regexp, image_url)
 

@@ -19,7 +19,6 @@ Python model
 import json
 import sys
 import os
-import time
 import zipfile
 
 import logging
@@ -443,7 +442,7 @@ class Model:
             def prepare_func(input_dict):
                 """
                 Return input value (default prepare function)
-                :param x: dict of values
+                :param input_dict: dict of values
                 :return: dict of values
                 """
                 return input_dict
@@ -528,7 +527,7 @@ class Model:
 
         return self._on_property_change_callback
 
-    def on_property_change(self, callable):
+    def on_property_change(self, callback):
         """
         Set property change callback
 
@@ -536,7 +535,7 @@ class Model:
         :type callback: :py:class:`Callable[[], None]`
         :return: None
         """
-        self._on_property_change_callback = callable
+        self._on_property_change_callback = callback
         self._on_property_change_callback_loaded = True
 
     @property

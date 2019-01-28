@@ -46,7 +46,7 @@ class Airflow:
         self.root_url = None  # Airflow Rest API Base url, type: str
         self.dex_cookies = None  # Dex cookies for Airflow Rest API calls, type: dict
 
-    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3, dex_cookies={}):
+    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3, dex_cookies=None):
         """
         Connect to Airflow Rest API
 
@@ -86,7 +86,7 @@ class Airflow:
             :param path: Path within API.
             :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
             :param use_rest_api_root: (optional) Indicated, if Rest API Plugin Context Root should be added
-            :param \*\*kwargs: Optional arguments that ``request`` takes.
+            :param **kwargs: Optional arguments that ``request`` takes.
             :return: json-encoded content of a response, if any.
             :rtype: dict
             """

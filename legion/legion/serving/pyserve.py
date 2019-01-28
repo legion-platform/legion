@@ -27,7 +27,7 @@ import legion.model
 import legion.pymodel
 import legion.k8s.properties
 import legion.k8s.utils
-from flask import Flask, Blueprint, request, jsonify, redirect, render_template
+from flask import Flask, Blueprint, request, jsonify, redirect
 from flask import current_app as app
 
 LOGGER = logging.getLogger(__name__)

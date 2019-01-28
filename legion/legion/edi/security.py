@@ -71,14 +71,14 @@ def _check_credentials(args):
     edi_clint.info()
 
 
-def _save_credentials(edi, token):
+def _save_credentials(edi_url, token):
     """
     Save credentials to the config file.
     If file or dir doesn't exist then it will be created.
     While we store only security parameters, func can override existed parameters
 
-    :param edi: edi url
-    :type edi: str
+    :param edi_url: edi url
+    :type edi_url: str
     :param token: dex token
     :type token: str
     :return None
@@ -88,16 +88,16 @@ def _save_credentials(edi, token):
     config_path.parent.mkdir(mode=0o775, parents=True, exist_ok=True)
     config_path.touch(mode=0o600, exist_ok=True)
 
-    config = configparser.ConfigParser()
-    config['security'] = {
-        'host': edi,
+    config_parser = configparser.ConfigParser()
+    config_parser['security'] = {
+        'host': edi_url,
         'token': token
     }
 
     with config_path.open("w") as config_file:
-        config.write(config_file)
+        config_parser.write(config_file)
 
-    LOG.debug('Save config {} to the file {}'.format(config, config_path))
+    LOG.debug('Save config {} to the file {}'.format(config_parser, config_path))
 
 
 def login(args):
@@ -126,10 +126,10 @@ def get_security_params_from_config():
 
     if config_path.exists():
         try:
-            config = configparser.ConfigParser()
-            config.read(str(config_path))
+            config_parser = configparser.ConfigParser()
+            config_parser.read(str(config_path))
 
-            return dict(config['security'])
+            return dict(config_parser['security'])
         except Exception as e:
             LOG.debug('Exception during parsing of legion config {}'.format(e), exc_info=True)
 

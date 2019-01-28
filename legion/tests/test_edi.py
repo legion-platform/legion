@@ -606,7 +606,7 @@ class TestEDI(unittest2.TestCase):
     def test_negative_edi_undeploy_without_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None) as ddd:
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 2)
                 except Exception as e:

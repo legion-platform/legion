@@ -17,7 +17,7 @@
 from requests.sessions import Session
 import re
 
-REQUEST_ID_REGEXP = re.compile('/auth/local\?req=([^"]+)')
+REQUEST_ID_REGEXP = re.compile(r'/auth/local\?req=([^"]+)')
 AUTHENTICATION_PATH = 'https://dex.{}/auth/local?req={}'
 AUTHENTICATION_HOSTNAME = 'https://dex.{}/'
 PARAM_NAME_LOGIN = 'login'

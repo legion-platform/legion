@@ -18,7 +18,6 @@ legion k8s functions
 """
 import logging
 import os
-import json
 
 import docker
 import docker.errors
@@ -185,11 +184,10 @@ def build_docker_image(client, model_id, model_file, labels,
             symlink_holder = '/'
 
         # Remove old workspace (if exists), create path to old workspace's parent, create symlink
-        symlink_create_command = 'rm -rf "{}" && mkdir -p "{}" && ln -s "{}" "{}"'.format(
+        symlink_create_command = 'rm -rf "{0}" && mkdir -p "{1}" && ln -s "{2}" "{0}"'.format(
             workspace_path,
             symlink_holder,
-            target_workspace,
-            workspace_path
+            target_workspace
         )
 
         print('Executing {!r}'.format(symlink_create_command))
@@ -209,7 +207,6 @@ def build_docker_image(client, model_id, model_file, labels,
             file.write(docker_file_content)
 
         LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
-        logs = None
         try:
             image, logs = client.images.build(
                 tag=docker_image_tag,

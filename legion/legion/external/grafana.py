@@ -105,21 +105,19 @@ class GrafanaClient:
         :type model_id: str or None
         :return: None
         """
-        dashboard = self.get_model_dashboard(model_id, model_version)
+        dashboard = self.get_model_dashboard(model_id)
         if dashboard:
             self.delete_dashboard(dashboard['uri'])
             LOGGER.info('"{}" model dashboard is deleted'.format(model_id))
         else:
             LOGGER.info('"{}" model dashboard already was deleted'.format(model_id))
 
-    def get_model_dashboard(self, model_id, model_version):
+    def get_model_dashboard(self, model_id):
         """
         Search for model's dashboard
 
         :param model_id: model id
         :type model_id: str
-        :param model_version: model version
-        :type model_id: str or None
         :return: dict with dashboard information or None
         """
         data = self._query('/api/search/?tag=model_{}'.format(model_id))

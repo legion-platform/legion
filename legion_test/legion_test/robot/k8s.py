@@ -252,11 +252,11 @@ class K8s:
         :return: None
         """
         storage_name = legion.utils.model_properties_storage_name(model_id, model_version)
-        property = legion.k8s.properties.K8SConfigMapStorage(storage_name, namespace)
+        model_property = legion.k8s.properties.K8SConfigMapStorage(storage_name, namespace)
 
-        property.load()
-        property[key] = value
-        property.save()
+        model_property.load()
+        model_property[key] = value
+        model_property.save()
 
     def get_cluster_nodes(self):
         """

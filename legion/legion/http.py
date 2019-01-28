@@ -19,7 +19,6 @@ Flask package
 import functools
 import os
 import logging
-import urllib
 
 import legion.config
 import legion.containers.headers
@@ -55,14 +54,14 @@ def encode_http_params(data):
         raise ValueError('Invalid argument')
 
 
-def parse_multi_dict(multi_dict, map=None):
+def parse_multi_dict(multi_dict, map_func=None):
     """
     Parse MultiDict object and detect lists if they presents (using [] in the end of name)
 
     :param multi_dict: request data
     :type multi_dict: :py:class:`werkzeug.datastructures.MultiDict`
-    :param map: function to map all values
-    :type map: function VAL -> NEW VAL
+    :param map_func: function to map all values
+    :type map_func: function VAL -> NEW VAL
     :return: dict[str, Any] or dict[str, list[Any]]
     """
     result = {}
@@ -71,12 +70,12 @@ def parse_multi_dict(multi_dict, map=None):
         if len(k) > 2 and k.endswith('[]'):
             key = k[:-2]
             result[key] = multi_dict.getlist(k)
-            if map:
-                result[key] = [map(val) for val in result[key]]
+            if map_func:
+                result[key] = [map_func(val) for val in result[key]]
         else:
             result[k] = multi_dict[k]
-            if map:
-                result[k] = map(result[k])
+            if map_func:
+                result[k] = map_func(result[k])
 
     return result
 
