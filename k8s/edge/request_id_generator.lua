@@ -39,13 +39,15 @@ function _M.reset_seed()
     |            1st string          | + |              2nd string          | + |            3rd string          |
     --]]
 
-    -- Second seed word
+    -- Second seed string
     local seed_p2_pid = bit.lshift(28, bit.band(pid, 0xF)) -- (PID & 0xF) << 28
     local seed_p2_wid = bit.lshift(24, bit.band(wid, 0xF)) -- (WID & 0xF) << 24
     local seed_p2_time = bit.band(time, 0x0FFFFFFF)         -- TIMESTAMP & 0x0FFFFFFF
     local seed_p2 = bit.bor(bit.bor(seed_p2_pid, seed_p2_wid), seed_p2_time)
+    -- Third seed string
     local random_stream = io.open("/dev/urandom", "r")
     local random_data = tostring(random_stream:read(32))
+    random_stream:close()
     -- Entire seed
     local seed = ngx.crc32_short(tostring(pod_uuid_crc32)..tostring(seed_p2)..random_data)
 
