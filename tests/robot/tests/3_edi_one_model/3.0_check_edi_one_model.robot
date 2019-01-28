@@ -40,7 +40,7 @@ Get token from EDI and set expiration date
     [Setup]   NONE
     [Tags]  edi_token  unique
     ${date_format}  Set variable  %Y-%m-%dT%H:%M:%S
-    ${expiration_date} =  Get future time  60  ${date_format}
+    ${expiration_date} =  Get future time  ${60}  ${date_format}
     Log           ${expiration_date}
     &{data} =     Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}    expiration_date=${expiration_date}
     Log           ${data}

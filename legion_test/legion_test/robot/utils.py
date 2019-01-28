@@ -220,7 +220,7 @@ class Utils:
 
     @staticmethod
     def ensure_component_auth_page_requires_authorization(url, jenkins=False, token=None,
-                                                          iteration_duration=5, iterations=10):
+                                                          iteration_duration=1, iterations=5):
         """
         Ensures component main auth page requires authorization
 

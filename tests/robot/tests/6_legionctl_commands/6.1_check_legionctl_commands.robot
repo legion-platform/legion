@@ -229,8 +229,7 @@ Get token from EDI
 
 Get token from EDI with expiration date set
     [Documentation]  Try to get token from EDI and set it`s expiration date
-    ${token_ttl} =          Set variable              5
-    ${expiration_date} =    Get future time           ${token_ttl}  %Y-%m-%dT%H:%M:%S
+    ${expiration_date} =    Get future time           ${5}  %Y-%m-%dT%H:%M:%S
     Log  ${expiration_date}
     ${res} =                Shell                     legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --expiration-date ${expiration_date} --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --token "${DEX_TOKEN}"
                             Should be equal           ${res.rc}  ${0}
@@ -241,7 +240,7 @@ Get token from EDI with expiration date set
     ${auth_page} =          Get From Dictionary       ${res}    response_text
                             Should not contain        ${auth_page}    401 Authorization Required
 
-    Ensure component auth page requires authorization   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}  ${token}  1   ${token_ttl}
+    Ensure component auth page requires authorization   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}  ${token}
 
 
 
