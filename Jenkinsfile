@@ -342,6 +342,7 @@ EOL
                     sh """
                     cd base-python-image
                     docker build ${Globals.dockerCacheArg} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
+                    docker tag legion/base-python-image:${Globals.buildVersion} legion/base-python-image:${env.BUILD_NUMBER}
                     """
                     legion.uploadDockerImage('base-python-image', "${Globals.buildVersion}")
                 }
@@ -377,18 +378,6 @@ EOL
                         cd k8s/jenkins
                         docker build ${Globals.dockerCacheArg} --build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" -t legion/k8s-jenkins:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
-                    }
-                }
-                stage("Build Bare models") {
-                    steps {
-                        script {
-                            legion.buildTestBareModel("demo-abc-model", "1.0", "1")
-                            legion.buildTestBareModel("demo-abc-model", "1.1", "2")
-                            legion.buildTestBareModel("edi-test-model", "1.2", "3")
-                            legion.buildTestBareModel("feedback-test-model", "1.0", "4")
-                            legion.buildTestBareModel("command-test-model", "1.0", "5")
-                            legion.buildTestBareModel("auth-test-model", "1.0", "6")
-                        }
                     }
                 }
                 stage("Build Edi Docker image") {
@@ -523,15 +512,23 @@ EOL
                         }
                     }
                 }
-                stage('Upload Bare models') {
+                stage("Build and upload test models") {
+                    agent {
+                        docker {
+                            image "legion/base-python-image:${env.BUILD_NUMBER}"
+                            args "-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
+                        }
+                    }
                     steps {
                         script {
-                            legion.uploadDockerImage('test-bare-model-api-model-1', "${Globals.buildVersion}")
-                            legion.uploadDockerImage('test-bare-model-api-model-2', "${Globals.buildVersion}")
-                            legion.uploadDockerImage('test-bare-model-api-model-3', "${Globals.buildVersion}")
-                            legion.uploadDockerImage('test-bare-model-api-model-4', "${Globals.buildVersion}")
-                            legion.uploadDockerImage('test-bare-model-api-model-5', "${Globals.buildVersion}")
-                            legion.uploadDockerImage('test-bare-model-api-model-6', "${Globals.buildVersion}")
+                            sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
+
+                            legion.buildAndUploadTestBareModel("demo-abc-model", "1.0", "1")
+                            legion.buildAndUploadTestBareModel("demo-abc-model", "1.1", "2")
+                            legion.buildAndUploadTestBareModel("edi-test-model", "1.2", "3")
+                            legion.buildAndUploadTestBareModel("feedback-test-model", "1.0", "4")
+                            legion.buildAndUploadTestBareModel("command-test-model", "1.0", "5")
+                            legion.buildAndUploadTestBareModel("auth-test-model", "1.0", "6")
                         }
                     }
                 }

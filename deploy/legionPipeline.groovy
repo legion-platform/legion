@@ -400,14 +400,15 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
 }
 
-def buildTestBareModel(modelId, modelVersion, versionNumber) {
+def buildAndUploadTestBareModel(modelId, modelVersion, versionNumber) {
     sh """
-    cd tests/test-bare-model-api
-    docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}" \
-                                           --build-arg model_id="${modelId}" \
-                                           --build-arg model_version="${modelVersion}" \
-                                           -t legion/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion} \
-                                           ${Globals.dockerLabels} .
+    cd tests/models
+    rm -rf robot.model || true
+    python3 simple.py --id "${modelId}" --version "${modelVersion}"
+
+    legionctl build \
+              --push-to-registry "${env.param_docker_registry}/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion}" \
+              robot.model
     """
 }
 
