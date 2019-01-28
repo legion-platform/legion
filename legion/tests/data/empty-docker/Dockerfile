@@ -1,3 +1,3 @@
-FROM alpine:3.5@sha256:b894cf1fe97eec6905af1761bff0a7c3e03a214d0271a76eaf42985ece38845c
+FROM alpine:3.8@sha256:46e71df1e5191ab8b8034c5189e325258ec44ea739bba1e5645cff83c9048ff1
 
 CMD "trap : TERM INT; sleep infinity & wait"

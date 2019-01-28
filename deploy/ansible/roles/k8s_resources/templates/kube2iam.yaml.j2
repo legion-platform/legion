@@ -47,7 +47,7 @@ spec:
       tolerations:
       - operator: "Exists"
       containers:
-        - image: "jtblin/kube2iam:0.10.6:@sha256:14d508d0beede6633a5b8f0c66d4201d7c2bd1b7ab91aea32a2569a427a84a7e"
+        - image: "jtblin/kube2iam:0.10.4@sha256:3e75d7e23bd46c97b2573c8232ce35a8bf445bf05ed3022aca558e77db9af110"
           name: kube2iam
           args:
             - "--base-role-arn=arn:aws:iam::{{ aws.account_id }}:role/"
