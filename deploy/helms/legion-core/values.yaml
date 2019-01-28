@@ -60,7 +60,7 @@ nexus:
 
   image:
     repository: "cavemandaveman/nexus"
-    tag: "3.6.0-02"
+    tag: "3.6.0-02@sha256:f97c7180e9321aea96a5a7214a7e009580abfdaf41a815a25cbf498fd10cf924"
 
   resources: {}
 

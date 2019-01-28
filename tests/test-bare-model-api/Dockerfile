@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-FROM python:3.6-alpine3.7
+FROM python:3.6-alpine3.7@sha256:386ecd80510e1ebecbca17b2efa74f3029fa7dce882b5132cf6ee3bd17cf108a
 
 COPY . /app
 WORKDIR /app

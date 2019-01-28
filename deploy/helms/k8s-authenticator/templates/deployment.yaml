@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}-nginx
-          image: nginx:stable
+          image: "nginx:1.14.2@sha256:076f4da07f35a19c792ad7a25858d6516566301016081ff95cb5514042b4d671"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             requests:
