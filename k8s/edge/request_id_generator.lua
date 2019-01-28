@@ -33,23 +33,28 @@ function _M.reset_seed()
 
     --[[
     Seed structure:
-    |      POD UID CRC 32 hash       | PID| WID|  TIMESTAMP's tail      |
-    |            32 bits             |4bts|4bts|          24bits        |
-    |-------------------------------- ---- ---- ------------------------|
-    |            1st word            |              2nd word            |
+    |      POD UID CRC 32 hash       | + | PID| WID|  TIMESTAMP's tail      | + |      Bytes from /dev/urandom   |
+    |            32 bits             | + |4bts|4bts|          24bits        | + |            32 bytes            |
+    |--------------------------------| + |---- ---- ------------------------| + |--------------------------------|
+    |            1st string          | + |              2nd string          | + |            3rd string          |
     --]]
 
-    -- Second seed word
+    -- Second seed string
     local seed_p2_pid = bit.lshift(28, bit.band(pid, 0xF)) -- (PID & 0xF) << 28
     local seed_p2_wid = bit.lshift(24, bit.band(wid, 0xF)) -- (WID & 0xF) << 24
     local seed_p2_time = bit.band(time, 0x0FFFFFFF)         -- TIMESTAMP & 0x0FFFFFFF
     local seed_p2 = bit.bor(bit.bor(seed_p2_pid, seed_p2_wid), seed_p2_time)
+    -- Third seed string
+    local random_stream = io.open("/dev/urandom", "r")
+    local random_data = tostring(random_stream:read(32))
+    random_stream:close()
     -- Entire seed
-    local seed = ngx.crc32_short(tostring(pod_uuid_crc32)..tostring(seed_p2))
+    local seed = ngx.crc32_short(tostring(pod_uuid_crc32)..tostring(seed_p2)..random_data)
 
 
-    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..string.format("%x", seed).."POD_UUID = "..pod_uuid..
-            " (CRC32: "..pod_uuid_crc32.."); Time = "..time.."; PID = "..pid.."; WID = "..wid)
+    ngx.log(ngx.ERR, "Resetting UUID seed to 0x"..string.format("%x", seed)..": POD_UUID = "..pod_uuid..
+            " (CRC32: "..pod_uuid_crc32.."); Time = "..time.."; PID = "..pid.."; WID = "..wid..
+            "; Random = "..random_data.." (CRC32: "..ngx.crc32_short(random_data))
 
     math.randomseed(seed)
 end
