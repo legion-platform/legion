@@ -23,6 +23,8 @@ import requests
 import time
 import json
 
+from legion_test.utils import wait_until
+
 
 class Utils:
     """
@@ -217,6 +219,32 @@ class Utils:
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
+    def ensure_component_auth_page_requires_authorization(url, jenkins=False, token=None,
+                                                          iteration_duration=5, iterations=10):
+        """
+        Ensures component main auth page requires authorization
+
+        :param url: component url
+        :type url: str
+        :param jenkins: if jenkins service is under test
+        :type jenkins: boolean
+        :param token: token for the authorization
+        :type token: str
+        :param iteration_duration: duration between checks in seconds
+        :type iteration_duration: int
+        :param iterations: maximum count of iterations
+        :type iterations: int
+        """
+        def is_page_unavailable():
+            res = Utils.get_component_auth_page(url, jenkins=jenkins, token=token)
+            if res['response_code'] == 401 and 'Authorization Required' in res['response_text']:
+                return True
+            return False
+
+        if not wait_until(is_page_unavailable, iteration_duration=iteration_duration, iterations=iterations):
+            raise Exception('Auth page is available')
+
+    @staticmethod
     def post_credentials_to_auth(component_url, cluster_host, creds, jenkins=False):
         """
         Get session id and send post request with credentials to authorize
@@ -307,13 +335,13 @@ class Utils:
         Get templated time on `offset` seconds in future
 
         :param offset: time offset from current time in seconds
-        :type offset: str
+        :type offset: int
         :param time_template: time template
         :type time_template: str
         :return: str -- time from template
         """
         return (datetime.datetime.utcnow() +
-                datetime.timedelta(seconds=int(offset))).strftime(time_template)
+                datetime.timedelta(seconds=offset)).strftime(time_template)
 
     @staticmethod
     def reformat_time(time_str, initial_format, target_format):

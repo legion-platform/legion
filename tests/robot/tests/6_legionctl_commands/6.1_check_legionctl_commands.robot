@@ -236,15 +236,12 @@ Get token from EDI with expiration date set
                             Should be equal           ${res.rc}  ${0}
                             Log  ${res.stdout}
     ${token} =              Set variable              ${res.stdout}
-    &{res} =                Get component auth page   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}    ${token}
+    &{res} =                Get component auth page   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}  ${token}
                             Dictionary Should Contain Item    ${res}    response_code    200
     ${auth_page} =          Get From Dictionary       ${res}    response_text
                             Should not contain        ${auth_page}    401 Authorization Required
-                            Sleep                     ${token_ttl}s
-    &{res} =                Get component auth page   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}    ${token}
-                            Dictionary Should Contain Item    ${res}    response_code    401
-    ${auth_page} =          Get From Dictionary       ${res}    response_text
-                            Should contain            ${auth_page}    401 Authorization Required
+
+    Ensure component auth page requires authorization   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${EMPTY}  ${token}  1   ${token_ttl}
 
 
 
