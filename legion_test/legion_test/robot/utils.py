@@ -219,8 +219,7 @@ class Utils:
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
-    def ensure_component_auth_page_requires_authorization(url, jenkins=False, token=None,
-                                                          iteration_duration=1, iterations=5):
+    def ensure_component_auth_page_requires_authorization(url, token=None, iteration_duration=1, iterations=5):
         """
         Ensures component main auth page requires authorization
 
@@ -236,7 +235,7 @@ class Utils:
         :type iterations: int
         """
         def is_page_unavailable():
-            res = Utils.get_component_auth_page(url, jenkins=jenkins, token=token)
+            res = Utils.get_component_auth_page(url, token=token)
             if res['response_code'] == 401 and 'Authorization Required' in res['response_text']:
                 return True
             return False
