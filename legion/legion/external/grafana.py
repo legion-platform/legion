@@ -95,14 +95,12 @@ class GrafanaClient:
         """
         self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
 
-    def remove_dashboard_for_model(self, model_id, model_version):
+    def remove_dashboard_for_model(self, model_id):
         """
         Remove model's dashboard
 
         :param model_id: model id
         :type model_id: str
-        :param model_version: model version
-        :type model_id: str or None
         :return: None
         """
         dashboard = self.get_model_dashboard(model_id)
@@ -134,7 +132,7 @@ class GrafanaClient:
         :type model_id: str or None
         :return: None
         """
-        self.remove_dashboard_for_model(model_id, model_version)
+        self.remove_dashboard_for_model(model_id)
 
         json_string = render_template('grafana-dashboard.json.tmpl', {
             'MODEL_ID': model_id,

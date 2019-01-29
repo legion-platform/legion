@@ -20,7 +20,11 @@ from __future__ import unicode_literals
 from sys import version_info
 
 import flask_login
-from flask_login import current_user
+from flask_login import (current_user,
+                         logout_user,
+                         login_required,
+                         login_user)
+
 from flask import flash
 
 from flask import url_for, redirect
