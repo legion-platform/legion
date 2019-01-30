@@ -19,7 +19,6 @@ import os
 import os.path
 
 import unittest2
-import docker.errors
 import logging
 
 import legion.k8s
@@ -28,6 +27,8 @@ import legion.config
 import legion.containers.docker
 import legion.containers.headers
 import legion.utils
+
+REGISTRY_IMAGE = 'registry:2.6.1@sha256:5eaafa2318aa0c4c52f95077c2a68bed0b13f6d2b464835723d4de1484052299'
 
 try:
     from .legion_test_utils import LegionTestContainer
@@ -90,12 +91,8 @@ class TestK8S(unittest2.TestCase):
         self.assertDictEqual(config, valid)
 
     def test_get_labels_from_docker_image_exception_on_missed(self):
-        labels = {
-            'abc': 'def',
-            'efg': 'ghk'
-        }
         with self.assertRaises(Exception) as raised_exception:
-            with LegionTestContainer(image='registry:2.6.1', port=5000) as registry_container:
+            with LegionTestContainer(image=REGISTRY_IMAGE, port=5000) as registry_container:
                 labels = self._build_test_model_labels()
                 image_name = 'legion/test-image:1.0-180713070916.1.bad661d'
                 self._build_bare_docker_image(image_name, labels)
@@ -109,8 +106,7 @@ class TestK8S(unittest2.TestCase):
                 self.assertTrue(raised_exception.exception.args[0].startswith('Missed one of '), 'wrong exception text')
 
     def test_get_labels_from_docker_image_exception(self):
-
-        with LegionTestContainer(image='registry:2.6.1', port=5000) as registry_container:
+        with LegionTestContainer(image=REGISTRY_IMAGE, port=5000) as registry_container:
             labels = self._build_test_model_labels()
             image_name = 'legion/test-image'
             image_ref = '1.0-123'
@@ -127,7 +123,6 @@ class TestK8S(unittest2.TestCase):
     def test_get_meta_from_docker_labels(self):
         source_model_id = 'abc'
         source_model_version = '1.2'
-        expected_model_version = '1-2'
 
         labels = self._build_test_model_labels(source_model_id, source_model_version)
         image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)

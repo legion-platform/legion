@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-FROM jenkins/jenkins:2.121.3
+FROM jenkins/jenkins:2.121.3@sha256:8d4a5ad1ed1b5c4b5c5a73ba5341eaa18953afabac2703a77921ae1abd5cd822
 
 USER root
 RUN apt-get update && apt-get install --yes \
