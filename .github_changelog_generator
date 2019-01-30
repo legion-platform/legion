@@ -1,5 +1,5 @@
 output=CHANGELOG.md
-unreleased=false
+unreleased=true
 exclude-tags=pre-adhoc-commits,0.6.1-rc1,0.7.0-RC1,0.9.0.1,0.9.0rc1,0.9.0rc2,0.9.0rc3,iq/rc-1,tag/285-workers-sync-mechanism
 issues-wo-labels=false
 pull-requests=false
