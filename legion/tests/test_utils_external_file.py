@@ -102,10 +102,10 @@ class TestUtilsExternalFile(unittest2.TestCase):
             with self.assertRaisesRegex(Exception, 'Unknown or unavailable resource'):
                 utils.is_local_resource(path)
 
-    @responses.activate
+    @responses.activate  # pylint: disable=E1101
     def _test_external_file_reader(self, url):
         body = 'Example' * 200
-        responses.add('GET', url, body=body, stream=True)
+        responses.add('GET', url, body=body, stream=True)  # pylint: disable=E1101
 
         with utils.ExternalFileReader(url) as reader:
             self.assertTrue(os.path.exists(reader.path))

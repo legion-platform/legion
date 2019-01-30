@@ -47,7 +47,7 @@ def build_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Image` docker image
     """
-    client = legion.containers.docker.build_docker_client(args)
+    client = legion.containers.docker.build_docker_client()
 
     with ExternalFileReader(args.model_file) as external_reader:
         if not os.path.exists(external_reader.path):
@@ -56,7 +56,7 @@ def build_model(args):
         container = legion.pymodel.Model.load(external_reader.path)
         model_id = container.model_id
 
-        image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
+        image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id)
 
         LOGGER.info('Building docker image...')
         image = legion.containers.docker.build_docker_image(
@@ -77,7 +77,7 @@ def build_model(args):
         return image
 
 
-def inspect_kubernetes(args):
+def inspect_kubernetes(args):  # pylint: disable=R0912
     """
     Inspect kubernetes
 

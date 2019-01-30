@@ -21,10 +21,11 @@ import json
 import logging
 import os
 
+import requests
+
 import legion.config
 from legion.utils import render_template
 
-import requests
 
 LOGGER = logging.getLogger(__name__)
 

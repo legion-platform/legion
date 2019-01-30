@@ -32,7 +32,7 @@ import legion.utils
 LOGGER = logging.getLogger(__name__)
 
 
-def build_docker_client(args=None):
+def build_docker_client():
     """
     Create docker client
 
@@ -55,7 +55,7 @@ def get_docker_container_id_from_cgroup_line(line):
     parts = line.split('/')
 
     try:
-        if 'docker' in parts:
+        if 'docker' in parts:  # pylint: disable=R1705
             docker_pos = parts.index('docker')
             return parts[docker_pos + 1]
         elif 'kubepods' in parts:
@@ -73,8 +73,8 @@ def get_current_docker_container_id():
 
     :return: str -- current container id
     """
-    with open('/proc/self/cgroup') as f:
-        lines = [line.strip('\n') for line in f]
+    with open('/proc/self/cgroup') as file:
+        lines = [line.strip('\n') for line in file]
         longest_line = max(lines, key=len)
         return get_docker_container_id_from_cgroup_line(longest_line)
 
@@ -208,7 +208,7 @@ def build_docker_image(client, model_id, model_file, labels,
 
         LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
         try:
-            image, logs = client.images.build(
+            image, _ = client.images.build(
                 tag=docker_image_tag,
                 nocache=True,
                 path=temp_directory.path,
@@ -224,7 +224,7 @@ def build_docker_image(client, model_id, model_file, labels,
         return image
 
 
-def generate_docker_labels_for_image(model_file, model_id, args):
+def generate_docker_labels_for_image(model_file, model_id):
     """
     Generate docker image labels from model file
 

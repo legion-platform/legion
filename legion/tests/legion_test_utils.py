@@ -219,7 +219,7 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
 
         # This helps to emulate kubernetes exception
         if isinstance(current_test_resource_name, BaseException):
-            raise current_test_resource_name
+            raise current_test_resource_name  # pylint: disable=E0702
 
         searched_files = glob.glob('{}/{}.*.{}.json'.format(TEST_RESPONSES_LOCATION, function,
                                                             current_test_resource_name))
@@ -264,7 +264,7 @@ class LegionTestContainer:
         :type port: int
         """
 
-        self._docker_client = legion.containers.docker.build_docker_client(None)
+        self._docker_client = legion.containers.docker.build_docker_client()
         self._image = image
         self._port = port
 
@@ -373,7 +373,7 @@ class ModelDockerBuilderContainerContext:
         self._docker_tag = 'legion/base-python-image:{}'.format(self._docker_image_version)
         self._docker_base_image = None
         self._docker_container = None
-        self._docker_client = legion.containers.docker.build_docker_client(None)
+        self._docker_client = legion.containers.docker.build_docker_client()
         self._docker_volume = None
 
         # Legion python package
@@ -782,7 +782,7 @@ class ModelLocalContainerExecutionContext:
         :type model_image: str
         """
         self._image_id = model_image
-        self._docker_client = legion.containers.docker.build_docker_client(None)
+        self._docker_client = legion.containers.docker.build_docker_client()
 
         self._image = self._docker_client.images.get(self._image_id)
 

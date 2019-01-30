@@ -95,10 +95,10 @@ class ModelEndpoint:
         data_frame = legion.model.types.build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
-        data_frame = self.prepare(data_frame)
+        data_frame = self.prepare(data_frame)  # pylint: disable=E1102
 
         LOGGER.info('Applying function with DataFrame: %s' % str(data_frame))
-        response = self.apply(data_frame)
+        response = self.apply(data_frame)  # pylint: disable=E1102
         LOGGER.info('Returning response: %s' % str(response))
 
         return response
@@ -439,7 +439,7 @@ class Model:
                 raise Exception('Bad param_types / input_data_frame provided')
 
         if prepare_func is None:
-            def prepare_func(input_dict):
+            def prepare_func(input_dict):  # pylint: disable=E0102
                 """
                 Return input value (default prepare function)
                 :param input_dict: dict of values

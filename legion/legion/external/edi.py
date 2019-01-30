@@ -22,11 +22,12 @@ import logging
 import os
 from urllib.parse import urlparse
 
+import requests
+import requests.exceptions
+
 import legion.k8s
 import legion.edi.server
 import legion.config
-import requests
-import requests.exceptions
 from legion.edi import security
 
 LOGGER = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ class EdiClient:
         self._version = legion.edi.server.EDI_VERSION
         self._retries = retries
 
-    def _request(self, action, url, data=None, headers=None, cookies=None):
+    def _request(self, action, url, data=None, headers=None, cookies=None):  # pylint: disable=R0201, R0913
         """
         Make HTTP request
         :param action: request action, e.g. get / post / delete
@@ -173,7 +174,8 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2,  # pylint: disable=R0913
+               readinesstimeout=2):
         """
         Deploy API endpoint
 
@@ -250,7 +252,7 @@ class EdiClient:
 
         return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
 
-    def get_token(self, model_id, model_version, expiration_date=None):
+    def get_token(self, model_id, model_version, expiration_date=None):  # pylint: disable=R1710
         """
         Get API token
 

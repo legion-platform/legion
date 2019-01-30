@@ -130,8 +130,8 @@ def get_security_params_from_config():
             config_parser.read(str(config_path))
 
             return dict(config_parser['security'])
-        except Exception as e:
-            LOG.debug('Exception during parsing of legion config {}'.format(e), exc_info=True)
+        except Exception as exception:
+            LOG.debug('Exception during parsing of legion config {}'.format(exception), exc_info=True)
 
     return {}
 

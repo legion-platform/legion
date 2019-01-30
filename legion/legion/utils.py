@@ -20,7 +20,7 @@ import datetime
 import contextlib
 import os
 import getpass
-import distutils.dir_util
+import distutils.dir_util  # pylint: disable=E0611,E0401
 import re
 import logging
 import shutil
@@ -33,12 +33,12 @@ import tempfile
 import zipfile
 import inspect
 
-import legion.config
-import legion.containers.headers
-
 import requests
 import requests.auth
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+import legion.config
+import legion.containers.headers
 
 
 KUBERNETES_STRING_LENGTH_LIMIT = 63
@@ -593,7 +593,7 @@ def get_installed_packages():
     import pkg_resources
     return sorted([
         (item.key, item.version)
-        for item in pkg_resources.working_set
+        for item in pkg_resources.working_set  # pylint: disable=E1133
     ], key=lambda item: item[0])
 
 

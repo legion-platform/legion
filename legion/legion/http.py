@@ -19,15 +19,16 @@ Flask package
 import functools
 import os
 import logging
+from urllib.parse import parse_qs
+
+import flask
+from requests.compat import urlencode
+from requests.utils import to_key_val_list
 
 import legion.config
 import legion.containers.headers
 import legion.utils
 
-import flask
-from requests.compat import urlencode
-from requests.utils import to_key_val_list
-from urllib.parse import parse_qs
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,14 +45,13 @@ def encode_http_params(data):
         return urlencode(data)
     elif hasattr(data, '__iter__'):
         result = []
-        for k, vs in to_key_val_list(data):
-            if vs is not None:
+        for key, value in to_key_val_list(data):
+            if value is not None:
                 result.append(
-                    (k.encode('utf-8') if isinstance(k, str) else k,
-                     vs.encode('utf-8') if isinstance(vs, str) else vs))
+                    (key.encode('utf-8') if isinstance(key, str) else key,
+                     value.encode('utf-8') if isinstance(value, str) else value))
         return urlencode(result, doseq=True)
-    else:
-        raise ValueError('Invalid argument')
+    raise ValueError('Invalid argument')
 
 
 def parse_multi_dict(multi_dict, map_func=None):
@@ -129,8 +129,7 @@ def parse_request(input_request):
             **parse_multi_dict(input_request.form),
             **parse_multi_dict(input_request.files, lambda file: file.read())
         }
-    else:
-        raise ValueError('Unexpected http method: {}'.format(input_request.method))
+    raise ValueError('Unexpected http method: {}'.format(input_request.method))
 
 
 def prepare_response(response_data, model_id=None, model_version=None, model_endpoint=None):

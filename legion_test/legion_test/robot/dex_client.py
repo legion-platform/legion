@@ -78,7 +78,8 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
             data = {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password}
             response = session.post(url, data)
             if response.status_code != 200:
-                raise IOError('Unable to authorise, got {} http code from {} for the query to {} with data, response {}'
+                raise IOError('Unable to authorise, got {} http code from {} '  # pylint: disable=E1305
+                              'for the query to {} with data, response {}'
                               .format(response.status_code, auth_endpoint_url.format(cluster_host),
                                       url, data, response.text))
 

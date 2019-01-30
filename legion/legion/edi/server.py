@@ -22,16 +22,19 @@ import os
 from datetime import datetime, timedelta
 
 import jwt
+
+from flask import Flask, Blueprint, render_template, request
+from flask import current_app as app
+
 import legion.config
 import legion.external.grafana
 import legion.http
 import legion.k8s
 import legion.model
-from flask import Flask, Blueprint, render_template, request
-from flask import current_app as app
+
 
 LOGGER = logging.getLogger(__name__)
-blueprint = Blueprint('apiserver', __name__)
+blueprint = Blueprint('apiserver', __name__)  # pylint: disable=C0103
 TEMPLATES_FOLDER = os.path.abspath(os.path.join(
     os.path.dirname(__file__), os.pardir, 'templates', 'edi')
 )
@@ -81,7 +84,7 @@ def authenticate(user, password):
 
         return False
 
-    # TODO: Add LDAP authorisation
+    # TODO: Add LDAP authorisation  # pylint:disable=W0511
     return False
 
 
