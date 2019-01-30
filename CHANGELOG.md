@@ -1,4 +1,4 @@
-## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-01-29)
+## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-01-30)
 
 ### Added
 - Model HTTP API request & response logging [\#624](https://github.com/legion-platform/legion/issues/624)
@@ -26,6 +26,7 @@
 - Remove unstable UI test for Nexus deprecated [\#741](https://github.com/legion-platform/legion/issues/741)
 
 ### Fixed
+- EDGE generates same request IDs after configuration reloads [\#762](https://github.com/legion-platform/legion/issues/762)
 - Param param_update_version_string is missed in Release CI stage [\#706](https://github.com/legion-platform/legion/issues/706)
 - Add missed CI post stage [\#697](https://github.com/legion-platform/legion/issues/697)
 - Test model overlaps in Robot Framework suits #1 and #4 [\#691](https://github.com/legion-platform/legion/issues/691)
