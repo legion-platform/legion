@@ -344,8 +344,30 @@ class Utils:
 
     @staticmethod
     def reformat_time(time_str, initial_format, target_format):
+        """
+        Convert date/time string from initial_format to target_format
+        :param time_str: date/time string
+        :type time_str: str
+        :param initial_format: initial format of date/time string
+        :type initial_format: str
+        :param target_format: format to convert date/time object to
+        :type target_format: str
+        :return: str -- date/time string according to target_format
+        """
         datetime_obj = datetime.datetime.strptime(time_str, initial_format)
         return datetime.datetime.strftime(datetime_obj, target_format)
+
+    @staticmethod
+    def get_timestamp_from_string(time_string, string_format):
+        """
+        Get timestamp from date/time string
+        :param time_string: date/time string
+        :type time_string: str
+        :param string_format: format of time_string
+        :type string_format: str
+        :return: float -- timestamp
+        """
+        return datetime.datetime.strptime(time_string, string_format).timestamp()
 
     @staticmethod
     def wait_up_to_second(second, time_template=None):

@@ -349,7 +349,11 @@ def generate_token(model_id, model_version, expiration_date=None):
         except ValueError:
             pass
 
-    if not jwt_exp_date or jwt_exp_date < datetime.now():
+    max_jwt_exp_date = datetime.utcnow() + timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.max.length.minutes']))
+    if jwt_exp_date and jwt_exp_date > max_jwt_exp_date:
+        jwt_exp_date = max_jwt_exp_date
+        LOGGER.info('Maximum token TTL exceeded. Token expiration date set to %s', max_jwt_exp_date)
+    elif not jwt_exp_date or jwt_exp_date < datetime.now():
         jwt_life_length = timedelta(minutes=int(app.config['JWT_CONFIG']['jwt.length.minutes']))
         jwt_exp_date = datetime.utcnow() + jwt_life_length
     token = jwt.encode({'exp': jwt_exp_date,

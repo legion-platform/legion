@@ -198,4 +198,5 @@ secrets:
   nexus:
     admin: "jonny"
   token_ttl_minutes: "120"
+  max_token_ttl_minutes: ~
   token_exp_datetime: ~

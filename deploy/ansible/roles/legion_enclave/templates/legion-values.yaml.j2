@@ -72,4 +72,5 @@ edi:
 secrets:
   token_secret: "{{ enclave_jwt_secret }}"
   token_ttl_minutes: "{{ api.jwt_ttl_minutes | default('120') }}"
+  max_token_ttl_minutes: "{{ max_token_ttl_minutes | default('259200') }}"
   token_exp_datetime: "{{ api.jwt_exp_datetime | default('') }}"
