@@ -55,7 +55,7 @@ def get_docker_container_id_from_cgroup_line(line):
     parts = line.split('/')
 
     try:
-        if 'docker' in parts:  # pylint: disable=R1705
+        if 'docker' in parts:
             docker_pos = parts.index('docker')
             return parts[docker_pos + 1]
         elif 'kubepods' in parts:

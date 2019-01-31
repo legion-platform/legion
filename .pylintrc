@@ -4,5 +4,16 @@ max-line-length=120
 [BASIC]
 const-rgx=(([A-Z_][A-Za-z0-9_]*)|(__.*__))$
 
+[MISCELLANEOUS]
+
+notes=TODO
+
 [MESSAGES CONTROL]
-disable=W1202,C0330
+# W1202 - Use % formatting in logging functions and pass the % parameters as arguments
+# C0330 - wrong continued indentation
+# R1710 - Either all return statements in a function should return an expression, or none of them should.
+# R0201 - method could be a function
+# R0913 - Too many arguments
+# R1705 - Unnecessary else after return
+disable=W1202,C0330,R1710,R0201,R0913,R1705
+good-names=blueprint,id

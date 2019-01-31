@@ -34,7 +34,7 @@ import legion.model
 
 
 LOGGER = logging.getLogger(__name__)
-blueprint = Blueprint('apiserver', __name__)  # pylint: disable=C0103
+blueprint = Blueprint('apiserver', __name__)
 TEMPLATES_FOLDER = os.path.abspath(os.path.join(
     os.path.dirname(__file__), os.pardir, 'templates', 'edi')
 )
@@ -84,7 +84,7 @@ def authenticate(user, password):
 
         return False
 
-    # TODO: Add LDAP authorisation  # pylint:disable=W0511
+    # TODO: Add LDAP authorisation
     return False
 
 

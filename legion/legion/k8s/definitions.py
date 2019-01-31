@@ -73,7 +73,7 @@ class ModelIdVersion:
         self._version = model_version
 
     @property
-    def id(self):  # pylint: disable=C0103
+    def id(self):
         """
         Get model ID
 
