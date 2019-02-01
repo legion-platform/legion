@@ -63,6 +63,8 @@ if __name__ == '__main__':
     generate_token_parser = subparsers.add_parser('generate-token', description='generate JWT token for model')
     generate_token_parser.add_argument('--model-id', type=str, help='Model ID')
     generate_token_parser.add_argument('--model-version', type=str, help='Model version')
+    generate_token_parser.add_argument('--expiration-date', type=str,
+                                       help='Token expiration date in utc: %Y-%m-%dT%H:%M:%S')
     add_edi_arguments(generate_token_parser)
     generate_token_parser.set_defaults(func=generate_token)
 

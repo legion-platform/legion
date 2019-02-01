@@ -94,6 +94,7 @@ airflow_worker_cpu_requests: "1500m"
 airflow_worker_cpu_limits: "2000m"
 airflow_worker_mem_requests: "1000Mi"
 airflow_worker_mem_limits: "2500Mi"
+max_token_ttl_minutes: 259200  # 60*24*180, 180 days
 
 collector:
   replicas: 1

@@ -35,6 +35,47 @@ Get token from EDI with valid parameters
     Should not be empty   ${token["token"]}
     Should not be empty   ${token["exp"]}
 
+Get token from EDI with expiration date set
+    [Documentation]  Try to get token from EDI with valid parameters and expiration date set
+    [Setup]   NONE
+    [Tags]  edi_token
+    ${date_format}  Set variable  %Y-%m-%dT%H:%M:%S
+    ${expiration_date} =  Get future time  ${60}  ${date_format}
+    Log           ${expiration_date}
+    &{data} =     Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}    expiration_date=${expiration_date}
+    Log           ${data}
+    &{resp} =     Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
+    Log           ${resp}
+    Should not be empty    ${resp}
+    Should be equal as integers    ${resp["code"]}    200
+    &{token} =    Evaluate    json.loads('''${resp["text"]}''')    json
+    Log           ${token}
+    Should not be empty       ${token["token"]}
+    Should not be empty       ${token["exp"]}
+    ${res_expiration_date} =  Reformat time    ${token["exp"]}    %a, %d %b %Y %H:%M:%S GMT    ${date_format}
+    Should be equal           ${res_expiration_date}    ${expiration_date}
+
+Get token from EDI with too long expiration date set
+    [Documentation]  Try to get token from EDI with valid parameters and expiration date set
+    [Setup]   NONE
+    [Tags]  edi_token
+    ${date_format}  Set variable  %Y-%m-%dT%H:%M:%S
+    ${expiration_date_str} =  Get future time  ${31104000}  ${date_format}  # 360 days
+    Log           ${expiration_date_str}
+    &{data} =     Create Dictionary    model_id=${TEST_EDI_MODEL_ID}    model_version=${TEST_MODEL_3_VERSION}    expiration_date=${expiration_date_str}
+    Log           ${data}
+    &{resp} =     Execute post request    ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/generate_token    data=${data}  cookies=${DEX_COOKIES}
+    Log           ${resp}
+    Should not be empty    ${resp}
+    Should be equal as integers    ${resp["code"]}    200
+    &{token} =    Evaluate    json.loads('''${resp["text"]}''')    json
+    Log           ${token}
+    Should not be empty       ${token["token"]}
+    Should not be empty       ${token["exp"]}
+    ${res_expiration_date} =  Get timestamp from string    ${token["exp"]}           %a, %d %b %Y %H:%M:%S GMT
+    ${expiration_date} =      Get timestamp from string    ${expiration_date_str}    ${date_format}
+    Should be true            ${res_expiration_date} < ${expiration_date}
+
 Get token from EDI without version parameter
     [Documentation]  Try to get token from EDI without version parameter
     [Setup]   NONE

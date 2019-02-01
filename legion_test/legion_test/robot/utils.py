@@ -22,7 +22,8 @@ import socket
 import requests
 import time
 import json
-import operator
+
+from legion_test.utils import wait_until
 
 
 class Utils:
@@ -218,6 +219,31 @@ class Utils:
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
+    def ensure_component_auth_page_requires_authorization(url, token=None, iteration_duration=1, iterations=5):
+        """
+        Ensures component main auth page requires authorization
+
+        :param url: component url
+        :type url: str
+        :param jenkins: if jenkins service is under test
+        :type jenkins: boolean
+        :param token: token for the authorization
+        :type token: str
+        :param iteration_duration: duration between checks in seconds
+        :type iteration_duration: int
+        :param iterations: maximum count of iterations
+        :type iterations: int
+        """
+        def is_page_unavailable():
+            res = Utils.get_component_auth_page(url, token=token)
+            if res['response_code'] == 401 and 'Authorization Required' in res['response_text']:
+                return True
+            return False
+
+        if not wait_until(is_page_unavailable, iteration_duration=iteration_duration, iterations=iterations):
+            raise Exception('Auth page is available')
+
+    @staticmethod
     def post_credentials_to_auth(component_url, cluster_host, creds, jenkins=False):
         """
         Get session id and send post request with credentials to authorize
@@ -291,7 +317,6 @@ class Utils:
         """
         return json.loads(str)
 
-
     @staticmethod
     def get_current_time(time_template):
         """
@@ -302,6 +327,47 @@ class Utils:
         :return: None or str -- time from template
         """
         return datetime.datetime.utcnow().strftime(time_template)
+
+    @staticmethod
+    def get_future_time(offset, time_template):
+        """
+        Get templated time on `offset` seconds in future
+
+        :param offset: time offset from current time in seconds
+        :type offset: int
+        :param time_template: time template
+        :type time_template: str
+        :return: str -- time from template
+        """
+        return (datetime.datetime.utcnow() +
+                datetime.timedelta(seconds=offset)).strftime(time_template)
+
+    @staticmethod
+    def reformat_time(time_str, initial_format, target_format):
+        """
+        Convert date/time string from initial_format to target_format
+        :param time_str: date/time string
+        :type time_str: str
+        :param initial_format: initial format of date/time string
+        :type initial_format: str
+        :param target_format: format to convert date/time object to
+        :type target_format: str
+        :return: str -- date/time string according to target_format
+        """
+        datetime_obj = datetime.datetime.strptime(time_str, initial_format)
+        return datetime.datetime.strftime(datetime_obj, target_format)
+
+    @staticmethod
+    def get_timestamp_from_string(time_string, string_format):
+        """
+        Get timestamp from date/time string
+        :param time_string: date/time string
+        :type time_string: str
+        :param string_format: format of time_string
+        :type string_format: str
+        :return: float -- timestamp
+        """
+        return datetime.datetime.strptime(time_string, string_format).timestamp()
 
     @staticmethod
     def wait_up_to_second(second, time_template=None):
