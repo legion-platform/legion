@@ -6,7 +6,8 @@ const-rgx=(([A-Z_][A-Za-z0-9_]*)|(__.*__))$
 
 [MISCELLANEOUS]
 
-notes=TODO
+# do not remove this. This line makes pylint to ignore TODO, FIXME
+notes=
 
 [MESSAGES CONTROL]
 # W1202 - Use % formatting in logging functions and pass the % parameters as arguments
