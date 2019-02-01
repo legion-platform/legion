@@ -13,9 +13,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import legion.utils as utils
-
 import unittest2
+
+import legion.utils as utils
 
 
 class TestUtilsTextOperations(unittest2.TestCase):

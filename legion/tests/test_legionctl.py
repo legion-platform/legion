@@ -3,9 +3,9 @@ import configparser
 import logging
 import os
 import unittest
-from pathlib import Path
 from unittest import mock
 from unittest.mock import patch
+from pathlib import Path
 
 import urllib3
 from legion.edi import security

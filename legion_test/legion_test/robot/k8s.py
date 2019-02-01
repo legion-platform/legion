@@ -229,7 +229,7 @@ class K8s:
         :type namespace: str
         :return: None
         """
-        if type(replicas) != int or replicas <= 0:
+        if not isinstance(replicas, int) or replicas <= 0:
             raise ValueError('"replicas" argument should be a positive number, but got "%s"' % replicas)
         client = self.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)

@@ -15,12 +15,13 @@
 #
 from __future__ import print_function
 
+import base64
+
 import unittest2
+from PIL import Image as PYTHON_Image
+import pandas as pd
 
 import legion.model.types as types
-from PIL import Image as PYTHON_Image
-import base64
-import pandas as pd
 
 
 class TestTypes(unittest2.TestCase):

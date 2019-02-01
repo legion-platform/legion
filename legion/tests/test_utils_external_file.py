@@ -22,12 +22,13 @@ import tempfile
 import logging
 from unittest.mock import patch
 
-import legion.config
-import legion.utils as utils
-import legion.containers.docker
 import requests.auth
 import responses
 import unittest2
+
+import legion.config
+import legion.utils as utils
+import legion.containers.docker
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))

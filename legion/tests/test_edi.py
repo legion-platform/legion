@@ -23,10 +23,9 @@ import unittest2
 
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import EDITestServer, \
-    mock_swagger_function_response_from_file as m_func
-
 from kubernetes.client.rest import ApiException
+
+from legion_test_utils import EDITestServer, mock_swagger_function_response_from_file as m_func
 
 DOCKER_IMAGE_LABELS = {
     'com.epam.legion.model.id': 'demo-abc-model',

@@ -21,14 +21,16 @@ import logging
 import os
 import itertools
 
+from flask import Flask, Blueprint, request, jsonify, redirect
+from flask import current_app as app
+
 import legion.config
 import legion.http
 import legion.model
 import legion.pymodel
 import legion.k8s.properties
 import legion.k8s.utils
-from flask import Flask, Blueprint, request, jsonify, redirect
-from flask import current_app as app
+
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('pyserve', __name__)

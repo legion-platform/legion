@@ -24,5 +24,15 @@ notes=
 # C0103 - Variable name doesn't conform to snake_case naming style
 # W0613 - Unused argument
 # W0612 - Unused variable
-disable=W1202,C0330,R1710,R0201,R0913,R1705,W0603,W1201,W0212,W0107,W0641,C0103,W0613,W0612
+# R0914 - Too many local variables
+# R0902 - Too many instance attributes
+# R0903 - Too many few methods
+# R0904 - Too many public methods
+# R0912 - Too many branches
+# R0801 - Similar lines in files
+# C1801 - Do not use `len(SEQUENCE)` to determine if a sequence is empty
+# C0111 - Missing module docstring
+# C0413 - Import should be placed at the top of the module
+# R0401 - Cyclic import
+disable=W1202,C0330,R1710,R0201,R0913,R1705,W0603,W1201,W0212,W0107,W0641,C0103,W0613,W0612,R0914,R0902,R0903,R0904,R0801,C1801,C0111,C0413,R0912,R0401
 good-names=blueprint,id

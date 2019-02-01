@@ -19,9 +19,9 @@ Robot test library - utils
 
 import datetime
 import socket
-import requests
 import time
 import json
+import requests
 
 from legion_test.utils import wait_until
 
@@ -433,4 +433,3 @@ class Utils:
         :return: str -- result string
         """
         return string * int(count)
-

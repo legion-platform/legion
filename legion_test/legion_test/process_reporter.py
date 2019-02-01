@@ -38,7 +38,8 @@ handler.setFormatter(logging.Formatter('\n%(asctime)s - %(levelname)s - %(messag
 LOGGER.addHandler(handler)
 
 
-class ExecutionTimeoutException(Exception): pass
+class ExecutionTimeoutException(Exception):
+    pass
 
 
 @contextlib.contextmanager

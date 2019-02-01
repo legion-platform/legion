@@ -15,7 +15,6 @@
 #
 from __future__ import print_function
 
-import unittest2
 import unittest.mock
 import json
 from random import randint
@@ -23,8 +22,9 @@ import urllib.parse
 from io import BytesIO
 import sys
 import os
-
 from werkzeug.datastructures import FileMultiDict
+
+import unittest2
 
 sys.path.extend(os.path.dirname(__file__))
 

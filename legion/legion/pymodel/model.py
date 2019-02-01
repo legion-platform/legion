@@ -20,8 +20,10 @@ import json
 import sys
 import os
 import zipfile
-
 import logging
+
+import dill
+
 import legion.config
 import legion.containers.headers
 import legion.model
@@ -30,9 +32,6 @@ import legion.model.types
 import legion.metrics
 from legion.utils import model_properties_storage_name, send_header_to_stderr, \
     extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
-
-
-import dill
 
 
 LOGGER = logging.getLogger(__name__)

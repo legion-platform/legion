@@ -93,12 +93,12 @@ class Jenkins:
                                        timeout=int(timeout))
         if not dex_cookies:
             self._client.crumb = {'crumbRequestField': 'Cookie',
-                            'crumb': ';'.join(['{}={}'.format(k,v)
-                                          for (k,v) in get_session_cookies().items()])}
+                                  'crumb': ';'.join(['{}={}'.format(k, v)
+                                          for (k, v) in get_session_cookies().items()])}
         else:
             self._client.crumb = {'crumbRequestField': 'Cookie',
-                            'crumb': ';'.join(['{}={}'.format(k,v)
-                                          for (k,v) in dex_cookies.items()])}
+                                  'crumb': ';'.join(['{}={}'.format(k, v)
+                                          for (k, v) in dex_cookies.items()])}
         user = self._client.get_whoami()
         print('Hello %s from Jenkins' % (user['fullName']))
         self._client.wait_for_normal_op(10)

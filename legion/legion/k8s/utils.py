@@ -18,16 +18,18 @@ legion k8s utils functions
 """
 import os
 import logging
+import json
+import re
+from typing import NamedTuple
 
+import yaml
+import urllib3
+import urllib3.exceptions
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
-import urllib3
-import urllib3.exceptions
-import yaml
-import json
-import re
+from docker_registry_client import DockerRegistryClient
 
 import legion
 import legion.containers.docker
@@ -42,8 +44,6 @@ from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE, \
     ModelContainerMetaInformation
-from docker_registry_client import DockerRegistryClient
-from typing import NamedTuple
 
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None

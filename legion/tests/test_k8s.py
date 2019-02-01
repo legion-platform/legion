@@ -17,9 +17,9 @@ from __future__ import print_function
 
 import os
 import os.path
+import logging
 
 import unittest2
-import logging
 
 import legion.k8s
 import legion.k8s.utils

@@ -14,8 +14,8 @@
 #    limitations under the License.
 #
 """Dex authentication client."""
-from requests.sessions import Session
 import re
+from requests.sessions import Session
 
 REQUEST_ID_REGEXP = re.compile(r'/auth/local\?req=([^"]+)')
 AUTHENTICATION_PATH = 'https://dex.{}/auth/local?req={}'

@@ -15,9 +15,9 @@
 #
 from __future__ import print_function
 
-import legion.model
-
 import pandas
+
+import legion.model
 
 
 def create_simple_summation_model_by_df(model_id, model_version, path):

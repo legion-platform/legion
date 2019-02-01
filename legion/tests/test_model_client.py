@@ -15,9 +15,9 @@
 #
 from __future__ import print_function
 
-import unittest2
 import os
 import sys
+import unittest2
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
