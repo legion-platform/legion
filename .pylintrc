@@ -6,7 +6,7 @@ const-rgx=(([A-Z_][A-Za-z0-9_]*)|(__.*__))$
 
 [MISCELLANEOUS]
 
-# do not remove this. This line makes pylint to ignore TODO, FIXME
+# do not remove this. This line makes pylint to ignore FIXME,XXX,TODO
 notes=
 
 [MESSAGES CONTROL]
@@ -16,5 +16,13 @@ notes=
 # R0201 - method could be a function
 # R0913 - Too many arguments
 # R1705 - Unnecessary else after return
-disable=W1202,C0330,R1710,R0201,R0913,R1705
+# W0603 - Using the global statement
+# W1201 - Specify string format arguments as logging function parameters
+# W0212 - Access to a protected member _content of a client class
+# W0107 - Unnecessary pass statement
+# W0641 - Possibly unused variable
+# C0103 - Variable name doesn't conform to snake_case naming style
+# W0613 - Unused argument
+# W0612 - Unused variable
+disable=W1202,C0330,R1710,R0201,R0913,R1705,W0603,W1201,W0212,W0107,W0641,C0103,W0613,W0612
 good-names=blueprint,id

@@ -178,7 +178,7 @@ class Utils:
             raise Exception('Unexpected case happen!')
 
     @staticmethod
-    def execute_post_request(url, data=None, json=None, cookies=None):
+    def execute_post_request(url, data=None, json_data=None, cookies=None):
         """
         Execute post request
 
@@ -186,13 +186,13 @@ class Utils:
         :type url: str
         :param data: data to send in request
         :type data: dict
-        :param json: json data to send in request
-        :type json: dict
+        :param json_data: json data to send in request
+        :type json_data: dict
         :param cookies: cookies to send in request
         :type cookies: dict
         :return:  str -- response text
         """
-        response = requests.post(url, json=json, data=data, cookies=cookies)
+        response = requests.post(url, json=json_data, data=data, cookies=cookies)
 
         return {"text": response.text, "code": response.status_code}
 

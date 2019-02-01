@@ -21,7 +21,7 @@ import logging
 import time
 import json
 import threading
-import typing
+import typing  # pylint: disable=W0611
 
 import kubernetes
 import kubernetes.client

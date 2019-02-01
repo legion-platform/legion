@@ -727,6 +727,7 @@ class EDITestServer:
 
         self.application = None
         self.http_client = None
+        self.edi_client = None
 
     def __enter__(self):
         """
@@ -792,6 +793,7 @@ class ModelLocalContainerExecutionContext:
         self.container = None
         self.container_id = None
         self.model_port = None
+        self.model_information = None
         self.client = None
 
     def __enter__(self):

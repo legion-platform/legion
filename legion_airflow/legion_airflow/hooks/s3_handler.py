@@ -31,7 +31,7 @@ class S3TaskHandlerWithIAM(S3TaskHandler):
                 return S3Hook(remote_conn_id)
             else:
                 return S3Hook()
-        except Exception as e:
+        except Exception:
             self.log.error(
                 'Could not create an S3Hook with connection id "%s". '
                 'Please make sure that airflow[s3] is installed and '
