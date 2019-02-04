@@ -1,4 +1,4 @@
-## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-02-04)
+## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-02-05)
 
 ### Added
 - Model HTTP API request & response logging [\#624](https://github.com/legion-platform/legion/issues/624)
