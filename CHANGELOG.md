@@ -1,4 +1,4 @@
-## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-01-30)
+## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-02-04)
 
 ### Added
 - Model HTTP API request & response logging [\#624](https://github.com/legion-platform/legion/issues/624)
@@ -6,6 +6,7 @@
 - Add tests for incorrect legionctl usage [\#367](https://github.com/legion-platform/legion/issues/367)
 - Deploy ansible and helm from sources [\#682](https://github.com/legion-platform/legion/issues/682)
 - Add EDI authentication authorization in legionctl [\#313](https://github.com/legion-platform/legion/issues/313)
+- Parameterize expiration date in API token generation [\#538](https://github.com/legion-platform/legion/issues/538)
 
 ### Changed
 - Update changelog file for 0.10.0 [\#679](https://github.com/legion-platform/legion/issues/679)
@@ -24,6 +25,7 @@
 - Remove documentation from EDGE [\#721](https://github.com/legion-platform/legion/issues/721)
 - Store model metrics separately for each endpoint [\#263](https://github.com/legion-platform/legion/issues/263)
 - Remove unstable UI test for Nexus deprecated [\#741](https://github.com/legion-platform/legion/issues/741)
+- Pin all third-party docker images with sha [\#761](https://github.com/legion-platform/legion/issues/761)
 
 ### Fixed
 - EDGE generates same request IDs after configuration reloads [\#762](https://github.com/legion-platform/legion/issues/762)
