@@ -208,7 +208,7 @@ def build_docker_image(client, model_id, model_file, labels,
 
         LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
         try:
-            image, logs = client.images.build(
+            image, _ = client.images.build(
                 tag=docker_image_tag,
                 nocache=True,
                 path=temp_directory.path,

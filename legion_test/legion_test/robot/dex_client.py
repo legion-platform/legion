@@ -86,7 +86,7 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):
                 _session_cookies[cookie_name] = session.cookies.get(cookie_name)
-        if len(_session_cookies) == 0:
+        if not _session_cookies:
             raise ValueError('Cant find any session ID in Cookies')
 
     response = session.get(JENKINS_PROFILE_URL.format(cluster_host, login))

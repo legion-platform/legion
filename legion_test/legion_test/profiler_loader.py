@@ -86,7 +86,7 @@ def get_variables(arg=None):
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
-    variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if len(variables['ENCLAVES']) > 0 else 'UNKNOWN_ENCLAVE'
+    variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if variables['ENCLAVES'] else 'UNKNOWN_ENCLAVE'
 
     cookies = os.getenv(PATH_TO_COOKIES_FILE)
     cookies_data = None

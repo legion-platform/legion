@@ -196,7 +196,7 @@ class S3:
                             if len(all_data) >= required_count and required_count != 0:
                                 return all_data
 
-            if len(all_data) > 0 and required_count == 0:
+            if all_data and required_count == 0:
                 return all_data
 
         result = legion_test.utils.wait_until(check_function,

@@ -204,7 +204,7 @@ def mock_swagger_function_response_from_file(function, test_resource_name):
     if isinstance(test_resource_name, list):
         test_resource_name = build_sequential_resource_name_generator(test_resource_name)
 
-    def response_catcher(*args, **kwargs):
+    def response_catcher(*args, **kwargs):  # pylint: disable=W0613
         print('Trying to return mocked answer for {}'.format(function))
         # Very verbose test debugging:
         # call_stack = inspect.stack()

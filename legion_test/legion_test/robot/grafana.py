@@ -154,7 +154,7 @@ class Grafana:
 
         datapoints = data[0]['datapoints']
 
-        for val, timestamp in datapoints:
+        for val, _ in datapoints:
             if val is not None and val > 0:
                 break
         else:
@@ -204,7 +204,7 @@ class Grafana:
 
         datapoints = data[0]['datapoints']
 
-        for val, timestamp in datapoints:
+        for val, _ in datapoints:
             if val is not None and val > 0:
                 raise Exception('Metric is present')
 

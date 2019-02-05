@@ -123,7 +123,7 @@ class Jenkins:
             raise Exception('Jenkins client has not been initialized')
         job_info = self._client.get_job_info(job_name, 4)
 
-        if len(parameters) == 0:
+        if not parameters:
             properties = job_info['property']
             parameters = [x for x in properties if x['_class'] == 'hudson.model.ParametersDefinitionProperty']
             if len(parameters) != 1:
@@ -300,7 +300,7 @@ class Jenkins:
 
         required_keys = {'modelId', 'modelVersion', 'modelPath'}
         missed_keys = required_keys - set(data.keys())
-        if len(missed_keys) > 0:
+        if missed_keys:
             raise Exception('Missed model meta information keys: {}'.format(', '.join(missed_keys)))
 
         return data
