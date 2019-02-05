@@ -77,7 +77,7 @@ def build_model(args):
         return image
 
 
-def inspect_kubernetes(args):  # pylint: disable=R0912
+def inspect_kubernetes(args):
     """
     Inspect kubernetes
 

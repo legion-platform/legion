@@ -41,10 +41,15 @@ def fetch_model_meta_from_jenkins(client, job_name):
     job_info = client.get_job_info(job_name, 4)
     folder_url, short_name = client._get_job_folder(job_name)
     build_number = job_info['lastBuild']['id']
+    url_variables = {
+        'folder_url': folder_url,
+        'short_name': short_name,
+        'build_number': build_number
+    }
 
     try:
         response = client.jenkins_open(Request(
-            client._build_url(JOB_MODEL_ID, locals())
+            client._build_url(JOB_MODEL_ID, url_variables)
         ))
         if response:
             return json.loads(response)
