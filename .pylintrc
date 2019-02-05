@@ -30,5 +30,6 @@ notes=
 # C0111 - Missing module docstring
 # C0413 - Import should be placed at the top of the module
 # R0401 - Cyclic import
-disable=W1202,C0330,R1710,R0201,R0913,R1705,W0603,W1201,W0212,W0107,C0103,R0914,R0902,R0903,R0904,R0801,C0111,C0413,R0912,R0401
+# W0703 - Catching too general exception
+disable=W1202,C0330,R1710,R0201,R0913,R1705,W0603,W1201,W0212,W0107,C0103,R0914,R0902,R0903,R0904,R0801,C0111,C0413,R0912,R0401,W0703
 good-names=blueprint,id
