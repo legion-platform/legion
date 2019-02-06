@@ -12,8 +12,8 @@ spec:
       additionalSecurityGroups: {{ external_access_sgs|to_yaml }}
   authorization:
     rbac: {}
-  kubeAPIServer:
-    authorizationRbacSuperUser: admin
+#  kubeAPIServer:
+#    authorizationRbacSuperUser: admin
 {% if dex.enabled == true %}
     oidcClientID: {{ dex.config.client_id }}
     oidcGroupsClaim: groups
