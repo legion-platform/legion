@@ -267,9 +267,9 @@ EOL
 """
                             }
                             sh """
-                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion/dist/legion-${Globals.buildVersion}.*'
-                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_test/dist/legion_test-${Globals.buildVersion}.*'
-                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_airflow/dist/legion_airflow-${Globals.buildVersion}.*'
+                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion/dist/legion-*'
+                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_test/dist/legion_test-*'
+                            twine upload -r ${env.param_local_pypi_distribution_target_name} '/src/legion_airflow/dist/legion_airflow-*'
                             """
 
                             if (env.param_stable_release) {
@@ -299,7 +299,7 @@ EOL
 """
                                         }
                                         sh """
-                                        twine upload -r ${env.param_pypi_distribution_target_name} '/src/legion/dist/legion-${Globals.buildVersion}.*'
+                                        twine upload -r ${env.param_pypi_distribution_target_name} '/src/legion/dist/legion-*'
                                         """
                                     } else {
                                         print("Skipping package upload")
