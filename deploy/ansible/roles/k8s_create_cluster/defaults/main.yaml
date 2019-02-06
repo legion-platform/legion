@@ -5,7 +5,7 @@ kops_download_path: "https://github.com/kubernetes/kops/releases/download/{{ kop
 kops_darwin_download_path: "https://github.com/kubernetes/kops/releases/download/{{ kops_version }}/kops-darwin-amd64"
 kops_sha256sum: "c4dfcb3f2b76f39b9b4fa3f784f4154077453d09"
 
-kubectl_version: "v1.10.6"
+kubectl_version: "v1.11.6"
 kubectl_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/linux/amd64"
 kubectl_darwin_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/darwin/amd64"
 
