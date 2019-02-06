@@ -1,4 +1,4 @@
-## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-02-05)
+## [0.10.0](https://github.com/legion-platform/legion/tree/0.10.0) (2019-02-06)
 
 ### Added
 - Model HTTP API request & response logging [\#624](https://github.com/legion-platform/legion/issues/624)
@@ -28,6 +28,7 @@
 - Pin all third-party docker images with sha [\#761](https://github.com/legion-platform/legion/issues/761)
 
 ### Fixed
+- Legion deployment from pubic repositories [\#776](https://github.com/legion-platform/legion/issues/776)
 - EDGE generates same request IDs after configuration reloads [\#762](https://github.com/legion-platform/legion/issues/762)
 - Param param_update_version_string is missed in Release CI stage [\#706](https://github.com/legion-platform/legion/issues/706)
 - Add missed CI post stage [\#697](https://github.com/legion-platform/legion/issues/697)
