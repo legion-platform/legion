@@ -108,7 +108,7 @@ airflow_expected_output: 'expected-data/'                                # Confi
 # Addons configuration
 storageclass: efs              # Which storage use in PVCs
 dashboard:                     # Kubernetes dashboard configuration
-  version: "1.8.3"             # Dashboard version
+  version: "1.10.1"             # Dashboard version
   insecure: true               # Allow insecure access
 
 # Dex
