@@ -176,7 +176,7 @@ pipeline {
                                 mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
                                 mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
                                 """
-                                
+
                                 archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
 
                                 withCredentials([[
@@ -337,7 +337,7 @@ EOL
                         }
                     }
                 }
-                
+
             }
         }
         stage("Build toolchains Docker image"){
@@ -354,17 +354,6 @@ EOL
         }
         stage("Build Docker images & Run Tests") {
             parallel {
-                stage("Build Grafana Docker image") {
-                    steps {
-                        script {
-                            legion.pullDockerCache(['grafana/grafana:4.5.0'], 'k8s-grafana')
-                            sh """
-                            cd k8s/grafana
-                            docker build ${Globals.dockerCacheArg} --cache-from=grafana/grafana:4.5.0 --cache-from=${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
-                            """
-                        }
-                    }
-                }
                 stage("Build Edge Docker image") {
                     steps {
                         script {
@@ -484,7 +473,7 @@ EOL
                                     --cover-html \
                                     --logging-level DEBUG \
                                     -v || true
-                                
+
                                 cd -
                                 cp /src/legion/nosetests.xml legion/nosetests.xml
                                 tar -czf legion/legion_coverage_${Globals.buildVersion}.tar.gz /src/legion/cover
@@ -505,17 +494,17 @@ EOL
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock --net host") {
                                 dir ("${WORKSPACE}/deploy/helms") {
                                     chartNames = sh(returnStdout: true, script: 'ls').split()
                                     println (chartNames)
                                     for (chart in chartNames){
-                                        sh"""
-                                        sed -i 's@^version: .*\$@version: ${Globals.buildVersion}@g' ${chart}/Chart.yaml
-                                        # Init local Helm repo
-                                        helm init --client-only
-                                        # Create chart packages
-                                        helm package ${chart}
+                                        sh """
+                                            export HELM_HOME="\$(pwd)"
+
+                                            helm init --client-only
+                                            helm dependency update "${chart}"
+                                            helm package --version "${Globals.buildVersion}" "${chart}"
                                         """
                                     }
                                 }
@@ -556,13 +545,6 @@ EOL
                                     }
                                 }
                             }
-                        }
-                    }
-                }
-                stage('Upload Grafana Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-grafana')
                         }
                     }
                 }
