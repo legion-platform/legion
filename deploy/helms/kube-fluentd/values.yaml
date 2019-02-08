@@ -15,7 +15,6 @@ SERVICES_LOGS_PREFIX: cluster_logs
 image:
   repository: legionplatform/k8s-kube-fluentd
   tag: latest
-  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""

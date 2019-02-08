@@ -38,7 +38,6 @@ spec:
         component: "{{ .Release.Name }}-redis"
         app: "{{ .Release.Name }}-redis"
     spec:
-      restartPolicy: Always
       containers:
       - name: redis
         image: "redis:3@sha256:7b0a40301bc1567205e6461c5bf94c38e1e1ad0169709e49132cafc47f6b51f3"
