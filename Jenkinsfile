@@ -289,11 +289,6 @@ EOL
                                         } else {
                                             print("Skipping package upload")
                                         }
-                                        sh """
-                                        twine upload -r ${env.param_pypi_distribution_target_name} '/src/legion/dist/legion-*'
-                                        """
-                                    } else {
-                                        print("Skipping package upload")
                                     }
                                 }
                             }
