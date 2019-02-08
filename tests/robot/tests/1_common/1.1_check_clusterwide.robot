@@ -41,8 +41,8 @@ Check Nexus availability
     Start browser    ${NEXUS_HOST}
     Login with dex
     Go To            ${NEXUS_HOST}/
-    Wait Nexus componens in menu
 
+# Wait for Nexus components in menu
 # NOTICE: Disable due to forthcoming Nexus decomission
 #Check Nexus Components available
 #    [Documentation]  Check that Nexus storages (components) are ready
