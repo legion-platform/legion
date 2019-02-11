@@ -49,7 +49,6 @@ spec:
       containers:
       - name: graphite
         image: "{{ .Values.graphite.image.repository }}:{{ .Values.graphite.image.tag }}"
-        imagePullPolicy: "{{ .Values.graphite.image.pullPolicy }}"
         resources:
           requests:
             cpu: "50m"

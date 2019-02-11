@@ -23,7 +23,6 @@ spec:
         app: "{{ .Release.Name }}-airflow-worker"
     spec:
       serviceAccountName: "{{ .Release.Name }}-airflow-worker"
-      restartPolicy: Always
       containers:
       - name: worker
         image: "{{ .Values.image }}"
