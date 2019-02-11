@@ -75,6 +75,10 @@ spec:
           value: "{{ .Values.edi.k8s_api_retry_delay_sec }}"
         - name: REGISTER_ON_GRAFANA
           value: "true"
+        - name: MODEL_K8S_MEMORY
+          value: "{{ .Values.model_resources.mem }}"
+        - name: MODEL_K8S_CPU
+          value: "{{ .Values.model_resources.cpu }}"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket
