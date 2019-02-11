@@ -4,7 +4,7 @@ apiVersion: v1
 metadata:
   name: "{{ .Release.Name }}-graphite-config"
 data:
-  config_udp.js: |-
+  config.js: |-
     {
       "graphiteHost": "127.0.0.1",
       "graphitePort": 2003,
@@ -57,9 +57,9 @@ spec:
             cpu: "200m"
             memory: "512Mi"
         volumeMounts:
-        - mountPath: /opt/statsd/config_udp.js
+        - mountPath: /opt/statsd/config.js
           name: config
-          subPath: config_udp.js
+          subPath: config.js
         ports:
         - containerPort: 80
           name: http
