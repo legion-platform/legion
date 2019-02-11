@@ -40,7 +40,6 @@ spec:
         component: "{{ .Release.Name }}-web"
         app: "{{ .Release.Name }}-airflow-web"
     spec:
-      restartPolicy: Always
       containers:
       - name: web
         image: "{{ .Values.image }}"

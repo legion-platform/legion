@@ -7,7 +7,6 @@ replicaCount: 2
 image:
   repository: legionplatform/k8s-dex
   tag: latest
-  pullPolicy: IfNotPresent
 
 issuer: https://dex.domain.com
 

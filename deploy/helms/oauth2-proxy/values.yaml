@@ -7,7 +7,6 @@ replicaCount: 1
 image:
   repository: legionplatform/k8s-oauth2-proxy
   tag: latest
-  pullPolicy: IfNotPresent
 
 config:
   provider: iodc

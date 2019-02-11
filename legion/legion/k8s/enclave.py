@@ -343,7 +343,6 @@ class Enclave:
         container = kubernetes.client.V1Container(
             name='model',
             image=image,
-            image_pull_policy='Always',
             env=[
                 kubernetes.client.V1EnvVar(name=k, value=str(v))
                 for k, v in container_env_variables.items()
