@@ -25,7 +25,6 @@ spec:
       containers:
       - name: nginx
         image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
-        imagePullPolicy: "{{ .Values.edge.image.pullPolicy }}"
         resources:
           requests:
             cpu: "50m"

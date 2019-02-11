@@ -34,7 +34,6 @@ spec:
       containers:
       - name: edi
         image: "{{ .Values.edi.image.repository }}:{{ .Values.edi.image.tag }}"
-        imagePullPolicy: "{{ .Values.edi.image.pullPolicy }}"
         resources:
           requests:
             cpu: "50m"

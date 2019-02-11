@@ -22,7 +22,6 @@ spec:
         component: "{{ .Release.Name }}-scheduler"
         app: "{{ .Release.Name }}-airflow-scheduler"
     spec:
-      restartPolicy: Always
       containers:
       - name: scheduler
         image: "{{ .Values.image }}"

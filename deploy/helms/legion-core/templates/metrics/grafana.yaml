@@ -20,7 +20,6 @@ spec:
       containers:
       - name: grafana
         image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
-        imagePullPolicy: "{{ .Values.grafana.image.pullPolicy }}"
         resources:
           requests:
             cpu: "250m"

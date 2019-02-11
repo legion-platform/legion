@@ -10,6 +10,7 @@
   shell: helm --kube-context {{ cluster_name }} repo add {{ item }}
   with_items:
     - default http://storage.googleapis.com/kubernetes-charts/
+    - legion-helm {{ helm_repo }}
 
 - name: Update helm repositories
   shell: helm --kube-context {{ cluster_name }} repo update

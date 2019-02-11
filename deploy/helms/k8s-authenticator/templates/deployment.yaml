@@ -22,7 +22,6 @@ spec:
       containers:
         - name: {{ .Chart.Name }}-nginx
           image: "nginx:1.14.2@sha256:076f4da07f35a19c792ad7a25858d6516566301016081ff95cb5514042b4d671"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             requests:
               cpu: "50m"
@@ -56,7 +55,6 @@ spec:
             limits:
               cpu: "100m"
               memory: "512Mi"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: [ "--config", "config.yaml" ]
           ports:
             - name: http
