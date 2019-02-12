@@ -17,7 +17,6 @@ jenkins:
   image:
     repository: "legion/k8s-jenkins"
     tag: "latest"
-    pullPolicy: "Always"
 
   rbac: true
 
@@ -112,7 +111,6 @@ grafana:
   image:
     repository: "legion/k8s-grafana"
     tag: "latest"
-    pullPolicy: "Always"
 
   # graphite: "aaaa"
 

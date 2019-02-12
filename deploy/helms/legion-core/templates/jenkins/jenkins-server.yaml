@@ -57,7 +57,6 @@ spec:
       containers:
       - name: jenkins
         image: "{{ .Values.jenkins.image.repository }}:{{ .Values.jenkins.image.tag }}"
-        imagePullPolicy: "{{ .Values.jenkins.image.pullPolicy }}"
         resources:
           requests:
             cpu: "450m"

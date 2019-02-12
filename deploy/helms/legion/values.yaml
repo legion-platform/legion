@@ -25,7 +25,6 @@ feedback:
   image:
     repository: "legion/k8s-fluentd"
     tag: "latest"
-    pullPolicy: "Always"
 
   s3:
     bucket: "none"
@@ -51,7 +50,6 @@ edi:
   image:
     repository: "legion/edi"
     tag: "latest"
-    pullPolicy: "Always"
 
   rbac: true
 
@@ -75,7 +73,6 @@ edge:
   image:
     repository: "legion/k8s-edge"
     tag: "latest"
-    pullPolicy: "Always"
 
   ingress:
     enabled: true
@@ -91,7 +88,6 @@ jenkins:
   image:
     repository: "legion/k8s-jenkins"
     tag: "latest"
-    pullPolicy: "Always"
 
   rbac: true
 
@@ -119,14 +115,12 @@ graphite:
   image:
     repository: "hopsoft/graphite-statsd"
     tag: "v0.9.15-phusion0.9.18@sha256:b4d170e1c31b7474adb5e91fa789e50bb15f003fe6e6717393a597142815efdd"
-    pullPolicy: "Always"
 
 grafana:
   enabled: true
   image:
     repository: "legion/k8s-grafana"
     tag: "latest"
-    pullPolicy: "Always"
 
   # graphite: "aaaa"
 
