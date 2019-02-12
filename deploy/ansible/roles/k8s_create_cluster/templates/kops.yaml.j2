@@ -34,6 +34,7 @@ spec:
 {% endif %}
 {% endfor %}
     name: main
+    version: 3.1.11   
   - etcdMembers:
 {% for zone in cluster_zones %}
 {% if zone.zone_name in k8s_master_zones %}
@@ -42,6 +43,7 @@ spec:
 {% endif %}
 {% endfor %}
     name: events
+    version: 3.1.11
   iam:
     allowContainerRegistry: true
     legacy: false
