@@ -26,7 +26,7 @@ pipeline {
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
         helmLocalSrc = 'false'
-        mergeTag = "ci/${env.JOB_NAME}/${env.BUILD_NUMBER}"
+        mergeTag = "ci/${params.GitBranch}"
     }
 
     stages {
