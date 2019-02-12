@@ -25,13 +25,6 @@ spec:
         - name: nexus
           image: "{{ .Values.nexus.image.repository }}:{{ .Values.nexus.image.tag }}"
           imagePullPolicy: {{ .Values.nexus.image.pullPolicy }}
-          resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "300m"
-            memory: "1024Mi"
           lifecycle:
             postStart:
               exec:

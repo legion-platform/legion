@@ -31,7 +31,6 @@ spec:
             limits:
               cpu: "200m"
               memory: "512Mi"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "/kube-elb-security"
           - "-alsologtostderr"
