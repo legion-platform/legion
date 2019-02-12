@@ -12,5 +12,5 @@
     group: root
     mode: 0755
     force: yes
-#    sha256sum: "{{ kops_sha256sum }}"
+    sha256sum: "{{ kops_sha256sum }}"
   become: true

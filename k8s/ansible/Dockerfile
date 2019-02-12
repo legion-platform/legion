@@ -35,7 +35,7 @@ ADD https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-li
 RUN chmod a+x /usr/local/bin/kops
 
 # Install kubectl
-ENV KUBECTL_VERSION=v1.10.6
+ENV KUBECTL_VERSION=v1.11.6
 ADD https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod a+x /usr/local/bin/kubectl
 

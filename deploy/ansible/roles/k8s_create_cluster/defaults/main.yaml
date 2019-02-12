@@ -3,16 +3,13 @@
 kops_version: "1.11.0"
 kops_download_path: "https://github.com/kubernetes/kops/releases/download/{{ kops_version }}/kops-linux-amd64"
 kops_darwin_download_path: "https://github.com/kubernetes/kops/releases/download/{{ kops_version }}/kops-darwin-amd64"
-kops_sha256sum: "c4dfcb3f2b76f39b9b4fa3f784f4154077453d09"
+kops_sha256sum: "3804b9975955c0f0a903ab0a81cf80459ad00375a42c08f2c959d81c5b246fe2"
 
 kubectl_version: "v1.11.6"
 kubectl_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/linux/amd64"
 kubectl_darwin_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/darwin/amd64"
 
 aws_image:  kope.io/k8s-1.11-debian-stretch-amd64-hvm-ebs-2018-08-17
-# kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
-# kope.io/k8s-1.9-debian-stretch-amd64-hvm-ebs-2018-05-27
-# Used 1.9 image due to issues with protokube on m5 instances 
 kubernetes_version: 1.11.6
 
 # TLS defaults
