@@ -24,7 +24,7 @@ def create_simple_summation_model_by_df(model_id, model_version, path):
     def apply(x):
         a = x.iloc[0]['a']
         b = x.iloc[0]['b']
-        return {'x': int(a + b)}
+        return {'x': a + b}
 
     df = pandas.DataFrame([{
         'a': 1,
@@ -36,7 +36,7 @@ def create_simple_summation_model_by_df(model_id, model_version, path):
 
 def create_simple_summation_model_by_df_with_prepare(model_id, model_version, path):
     def apply(x):
-        return {'x': int(x['a'] + x['b'])}
+        return {'x': x['a'] + x['b']}
 
     df = pandas.DataFrame([{
         'a': 1,
@@ -51,7 +51,7 @@ def create_simple_summation_model_by_df_with_prepare(model_id, model_version, pa
 
 def create_simple_summation_model_by_types(model_id, model_version, path):
     def apply(x):
-        return {'x': int(x['a'] + x['b'])}
+        return {'x': x['a'] + x['b']}
 
     parameters = {
         'a': legion.model.int32,
