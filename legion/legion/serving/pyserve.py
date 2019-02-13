@@ -21,8 +21,10 @@ import logging
 import os
 import itertools
 
-from flask import Flask, Blueprint, request, jsonify, redirect
+from flask import Flask, Blueprint, request, jsonify, redirect, json
 from flask import current_app as app
+import numpy as np
+import pandas as pd
 
 import legion.config
 import legion.http
@@ -30,7 +32,6 @@ import legion.model
 import legion.pymodel
 import legion.k8s.properties
 import legion.k8s.utils
-
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('pyserve', __name__)
@@ -281,6 +282,27 @@ def init_model(application):
                     'or model does not contain required props')
 
 
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, value):
+        """
+        Used by json lib to serialize numpy int and float values
+        Ex. json.dumps(some_data_with_numpy_values, default=json_numpy_serializer)
+        :param value: np.floating, np.integer
+        :return: float, int
+        """
+        if isinstance(value, pd.Series):
+            values_list = value.tolist()
+            # return single value, because int(pd.Series) returns `int` if pd.Series contains single element
+            if len(values_list) == 1:
+                return values_list[0]
+            return values_list
+        if isinstance(value, np.integer):
+            return int(value)
+        if isinstance(value, np.float):
+            return float(value)
+        return super().default(value)
+
+
 def create_application():
     """
     Create Flask application and register blueprints
@@ -289,6 +311,7 @@ def create_application():
     """
     static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
     application = Flask(__name__, static_url_path='', static_path=static_folder)
+    application.json_encoder = CustomJSONEncoder
 
     application.register_blueprint(blueprint)
 
