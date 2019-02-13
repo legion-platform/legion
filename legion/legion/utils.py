@@ -326,7 +326,7 @@ def copy_directory_contents(source_directory, target_directory):
     :type target_directory: str
     :return: None
     """
-    distutils.dir_util.copy_tree(source_directory, target_directory)
+    distutils.dir_util.copy_tree(source_directory, target_directory)  # pylint: disable=E1101
 
 
 def save_file(temp_file, target_file, remove_after_delete=False):
