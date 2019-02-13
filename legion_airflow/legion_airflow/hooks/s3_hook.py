@@ -31,7 +31,7 @@ class S3Hook(K8SBaseHook):
     STOP_FILE_POSTFIX = '.STOP'
     STOP_FILE_NAME = 'STOP'
 
-    def __init__(self, conn_id: str = None, *args, **kwargs):
+    def __init__(self, conn_id: str = None, *args, **kwargs):  # pylint: disable=W0231,W1113
         """
         Initialize S3Hook.
 

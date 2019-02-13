@@ -19,9 +19,9 @@ Robot test library - utils
 
 import datetime
 import socket
-import requests
 import time
 import json
+import requests
 
 from legion_test.utils import wait_until
 
@@ -178,7 +178,7 @@ class Utils:
             raise Exception('Unexpected case happen!')
 
     @staticmethod
-    def execute_post_request(url, data=None, json=None, cookies=None):
+    def execute_post_request(url, data=None, json_data=None, cookies=None):
         """
         Execute post request
 
@@ -186,13 +186,13 @@ class Utils:
         :type url: str
         :param data: data to send in request
         :type data: dict
-        :param json: json data to send in request
-        :type json: dict
+        :param json_data: json data to send in request
+        :type json_data: dict
         :param cookies: cookies to send in request
         :type cookies: dict
         :return:  str -- response text
         """
-        response = requests.post(url, json=json, data=data, cookies=cookies)
+        response = requests.post(url, json=json_data, data=data, cookies=cookies)
 
         return {"text": response.text, "code": response.status_code}
 
@@ -307,15 +307,15 @@ class Utils:
         return {"login": static_user['email'], "password": static_user['password']}
 
     @staticmethod
-    def parse_json_string(str):
+    def parse_json_string(string):
         """
         Parse JSON string
 
-        :param str: JSON string
-        :type str: str
+        :param string: JSON string
+        :type string: str
         :return: dict -- object
         """
-        return json.loads(str)
+        return json.loads(string)
 
     @staticmethod
     def get_current_time(time_template):
@@ -433,4 +433,3 @@ class Utils:
         :return: str -- result string
         """
         return string * int(count)
-

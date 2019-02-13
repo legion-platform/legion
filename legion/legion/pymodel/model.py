@@ -19,10 +19,11 @@ Python model
 import json
 import sys
 import os
-import time
 import zipfile
-
 import logging
+
+import dill
+
 import legion.config
 import legion.containers.headers
 import legion.model
@@ -31,9 +32,6 @@ import legion.model.types
 import legion.metrics
 from legion.utils import model_properties_storage_name, send_header_to_stderr, \
     extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
-
-
-import dill
 
 
 LOGGER = logging.getLogger(__name__)
@@ -96,10 +94,10 @@ class ModelEndpoint:
         data_frame = legion.model.types.build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
-        data_frame = self.prepare(data_frame)
+        data_frame = self.prepare(data_frame)  # pylint: disable=E1102
 
         LOGGER.info('Applying function with DataFrame: %s' % str(data_frame))
-        response = self.apply(data_frame)
+        response = self.apply(data_frame)  # pylint: disable=E1102
         LOGGER.info('Returning response: %s' % str(response))
 
         return response
@@ -440,10 +438,10 @@ class Model:
                 raise Exception('Bad param_types / input_data_frame provided')
 
         if prepare_func is None:
-            def prepare_func(input_dict):
+            def prepare_func(input_dict):  # pylint: disable=E0102
                 """
                 Return input value (default prepare function)
-                :param x: dict of values
+                :param input_dict: dict of values
                 :return: dict of values
                 """
                 return input_dict
@@ -528,7 +526,7 @@ class Model:
 
         return self._on_property_change_callback
 
-    def on_property_change(self, callable):
+    def on_property_change(self, callback):
         """
         Set property change callback
 
@@ -536,7 +534,7 @@ class Model:
         :type callback: :py:class:`Callable[[], None]`
         :return: None
         """
-        self._on_property_change_callback = callable
+        self._on_property_change_callback = callback
         self._on_property_change_callback_loaded = True
 
     @property

@@ -18,10 +18,11 @@ import sys
 import time
 from unittest.mock import patch
 
+import unittest2
+
 import legion.config as env
 import legion.metrics as metrics
 import legion.model
-import unittest2
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))

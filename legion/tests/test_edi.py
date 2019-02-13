@@ -23,10 +23,9 @@ import unittest2
 
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import EDITestServer, \
-    mock_swagger_function_response_from_file as m_func
-
 from kubernetes.client.rest import ApiException
+
+from legion_test_utils import EDITestServer, mock_swagger_function_response_from_file as m_func
 
 DOCKER_IMAGE_LABELS = {
     'com.epam.legion.model.id': 'demo-abc-model',
@@ -606,7 +605,7 @@ class TestEDI(unittest2.TestCase):
     def test_negative_edi_undeploy_without_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None) as ddd:
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 2)
                 except Exception as e:

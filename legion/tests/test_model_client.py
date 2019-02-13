@@ -15,9 +15,9 @@
 #
 from __future__ import print_function
 
-import unittest2
 import os
 import sys
+import unittest2
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
@@ -34,14 +34,14 @@ class TestModelClient(unittest2.TestCase):
     MODEL_VERSION = '1.8'
 
     def test_image_loading(self):
-        image = self.data_directory = os.path.join(os.path.dirname(__file__), 'data', 'nine.png')
+        image = os.path.join(os.path.dirname(__file__), 'data', 'nine.png')
         result = legion.model.client.load_image(image)
         self.assertIsInstance(result, bytes)
 
     def test_image_loading_wrong(self):
-        image = self.data_directory = os.path.join(os.path.dirname(__file__), 'data', 'nine-text.yaml')
+        image = os.path.join(os.path.dirname(__file__), 'data', 'nine-text.yaml')
         with self.assertRaises(Exception):
-            result = legion.model.client.load_image(image)
+            legion.model.client.load_image(image)
 
     def test_client_building(self):
         client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION, host='localhost')

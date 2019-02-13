@@ -15,9 +15,9 @@
 #
 from __future__ import print_function
 
-import legion.model
-
 import pandas
+
+import legion.model
 
 
 def create_simple_summation_model_by_df(model_id, model_version, path):
@@ -35,12 +35,6 @@ def create_simple_summation_model_by_df(model_id, model_version, path):
 
 
 def create_simple_summation_model_by_df_with_prepare(model_id, model_version, path):
-    def prepare(x):
-        return {
-            'a': x.iloc[0]['a'],
-            'b': x.iloc[0]['b']
-        }
-
     def apply(x):
         return {'x': int(x['a'] + x['b'])}
 

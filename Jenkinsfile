@@ -221,8 +221,6 @@ pipeline {
                         TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion/legion > legion-pylint.log
                         TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion/tests >> legion-pylint.log
 
-                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_airflow/legion_airflow >> legion-pylint.log
-                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_airflow/tests >> legion-pylint.log
                         TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_test/legion_test >> legion-pylint.log
                         # Because of https://github.com/PyCQA/pylint/issues/352 or need to fix PYTHONPATH in unit tests
                         rm -rf legion/tests/__init__.py
@@ -235,7 +233,7 @@ pipeline {
                                                                   parserName: 'PYLint',
                                                                   pattern   : 'legion-pylint.log'
                                                           ]],
-                            unstableTotalAll           : '99999',
+                            unstableTotalAll           : '0',
                             usePreviousBuildAsReference: true
                         ])
                     }

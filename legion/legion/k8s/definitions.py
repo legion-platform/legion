@@ -17,6 +17,7 @@
 legion k8s definitions functions
 """
 import typing
+import json
 
 LEGION_SYSTEM_LABEL = 'legion.system'
 LEGION_SYSTEM_VALUE = 'yes'
@@ -59,17 +60,17 @@ class ModelIdVersion:
     Holder for model ID and version
     """
 
-    def __init__(self, id, version):
+    def __init__(self, model_id, model_version):
         """
         Build model ID and version holder
 
-        :param id: model ID
-        :type id: str
-        :param version: model version
-        :type version: str
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
         """
-        self._id = id
-        self._version = version
+        self._id = model_id
+        self._version = model_version
 
     @property
     def id(self):

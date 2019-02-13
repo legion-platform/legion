@@ -452,9 +452,9 @@ def deduce_param_types(data_frame, optional_dictionary=None):
     :return: dict[str, :py:class:`legion.types.ColumnInformation`]
     """
     if optional_dictionary:
-        return _get_column_types((data_frame, optional_dictionary))
+        return get_column_types((data_frame, optional_dictionary))
 
-    return _get_column_types(data_frame)
+    return get_column_types(data_frame)
 
 
 int8 = ColumnInformation(Integer, np.int8)

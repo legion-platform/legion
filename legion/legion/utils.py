@@ -20,7 +20,7 @@ import datetime
 import contextlib
 import os
 import getpass
-import distutils.dir_util
+import distutils.dir_util  # pylint: disable=E0611,E0401
 import re
 import logging
 import shutil
@@ -33,13 +33,12 @@ import tempfile
 import zipfile
 import inspect
 
-import legion.config
-import legion.containers.headers
-
-import docker
 import requests
 import requests.auth
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+import legion.config
+import legion.containers.headers
 
 
 KUBERNETES_STRING_LENGTH_LIMIT = 63
@@ -230,9 +229,9 @@ def normalize_name(name, dns_1035=False, kubernetes_compatible=False):
     :return: str -- normalized name
     """
     invalid_delimiters = ' ', '_', '+'
-    invalid_chars = '[^a-zA-Z0-9\-\.]'
+    invalid_chars = r'[^a-zA-Z0-9\-\.]'
     if dns_1035:
-        invalid_chars = '[^a-zA-Z0-9\-]'
+        invalid_chars = r'[^a-zA-Z0-9\-]'
         invalid_delimiters = ' ', '_', '+', '.'
 
     for char in invalid_delimiters:
@@ -327,7 +326,7 @@ def copy_directory_contents(source_directory, target_directory):
     :type target_directory: str
     :return: None
     """
-    distutils.dir_util.copy_tree(source_directory, target_directory)
+    distutils.dir_util.copy_tree(source_directory, target_directory)  # pylint: disable=E1101
 
 
 def save_file(temp_file, target_file, remove_after_delete=False):
@@ -573,7 +572,7 @@ def get_list_of_requirements():
     """
     file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'Pipfile.lock')
     if not os.path.exists(file_path):
-        raise Exception('File with requirements ({}) is not exists', file_path)
+        raise Exception('File with requirements ({}) is not exists'.format(file_path))
 
     with open(file_path, 'r') as file_stream:
         file_data = json.load(file_stream)
@@ -594,7 +593,7 @@ def get_installed_packages():
     import pkg_resources
     return sorted([
         (item.key, item.version)
-        for item in pkg_resources.working_set
+        for item in pkg_resources.working_set  # pylint: disable=E1133
     ], key=lambda item: item[0])
 
 

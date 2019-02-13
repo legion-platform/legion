@@ -21,10 +21,11 @@ import json
 import logging
 import os
 
+import requests
+
 import legion.config
 from legion.utils import render_template
 
-import requests
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,31 +96,27 @@ class GrafanaClient:
         """
         self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
 
-    def remove_dashboard_for_model(self, model_id, model_version):
+    def remove_dashboard_for_model(self, model_id):
         """
         Remove model's dashboard
 
         :param model_id: model id
         :type model_id: str
-        :param model_version: model version
-        :type model_id: str or None
         :return: None
         """
-        dashboard = self.get_model_dashboard(model_id, model_version)
+        dashboard = self.get_model_dashboard(model_id)
         if dashboard:
             self.delete_dashboard(dashboard['uri'])
             LOGGER.info('"{}" model dashboard is deleted'.format(model_id))
         else:
             LOGGER.info('"{}" model dashboard already was deleted'.format(model_id))
 
-    def get_model_dashboard(self, model_id, model_version):
+    def get_model_dashboard(self, model_id):
         """
         Search for model's dashboard
 
         :param model_id: model id
         :type model_id: str
-        :param model_version: model version
-        :type model_id: str or None
         :return: dict with dashboard information or None
         """
         data = self._query('/api/search/?tag=model_{}'.format(model_id))
@@ -136,7 +133,7 @@ class GrafanaClient:
         :type model_id: str or None
         :return: None
         """
-        self.remove_dashboard_for_model(model_id, model_version)
+        self.remove_dashboard_for_model(model_id)
 
         json_string = render_template('grafana-dashboard.json.tmpl', {
             'MODEL_ID': model_id,

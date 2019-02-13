@@ -22,11 +22,12 @@ import logging
 import os
 from urllib.parse import urlparse
 
+import requests
+import requests.exceptions
+
 import legion.k8s
 import legion.edi.server
 import legion.config
-import requests
-import requests.exceptions
 from legion.edi import security
 
 LOGGER = logging.getLogger(__name__)
@@ -305,7 +306,7 @@ def build_client(args=None):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
-    host, user, password, token = None, None, None, None
+    host, token = None, None
 
     if args:
         if args.edi:

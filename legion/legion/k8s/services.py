@@ -74,6 +74,7 @@ class Service:
         self._port = api_ports[0]
 
         self._ingress_data_loaded = False
+        self._ingress = None
 
         self._public_url = None
 
@@ -385,7 +386,7 @@ class ModelService(Service):
         retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
 
         service_deleted = ensure_function_succeed(
-            lambda: self.check_service_is_deleted(),
+            self.check_service_is_deleted,
             retries, retry_timeout, boolean_check=True
         )
 
@@ -402,7 +403,7 @@ class ModelService(Service):
                                                   propagation_policy='Background')
 
         deployment_deleted = ensure_function_succeed(
-            lambda: self.check_deployment_is_deleted(),
+            self.check_deployment_is_deleted,
             retries, retry_timeout, boolean_check=True
         )
 

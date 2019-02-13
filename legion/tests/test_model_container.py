@@ -74,7 +74,7 @@ def prepare_pd(x):
 
 
 def apply_pd(x):
-    assert type(x) == pandas.DataFrame
+    assert isinstance(x, pandas.DataFrame)
 
     assert x['d_int'].dtype == numpy.int
     assert x['d_float'].dtype == numpy.float
