@@ -54,9 +54,9 @@ def normalize_name(name, dns_1035=False):
     :return: str -- normalized name
     """
     invalid_delimiters = ' ', '_', '+'
-    invalid_chars = '[^a-zA-Z0-9\-\.]'
+    invalid_chars = r'[^a-zA-Z0-9\-\.]'
     if dns_1035:
-        invalid_chars = '[^a-zA-Z0-9\-]'
+        invalid_chars = r'[^a-zA-Z0-9\-]'
         invalid_delimiters = ' ', '_', '+', '.'
 
     for char in invalid_delimiters:

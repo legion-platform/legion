@@ -18,10 +18,11 @@ Robot test library - grafana
 """
 import time
 
+import requests
+
 from legion_test.grafana import GrafanaClient
 from legion_test.utils import normalize_name, wait_until
 from legion_test.robot.dex_client import get_session_cookies
-import requests
 
 
 class Grafana:
@@ -153,7 +154,7 @@ class Grafana:
 
         datapoints = data[0]['datapoints']
 
-        for val, time in datapoints:
+        for val, _ in datapoints:
             if val is not None and val > 0:
                 break
         else:
@@ -203,7 +204,7 @@ class Grafana:
 
         datapoints = data[0]['datapoints']
 
-        for val, time in datapoints:
+        for val, _ in datapoints:
             if val is not None and val > 0:
                 raise Exception('Metric is present')
 

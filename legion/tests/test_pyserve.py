@@ -15,7 +15,6 @@
 #
 from __future__ import print_function
 
-import unittest2
 import unittest.mock
 import json
 from random import randint
@@ -23,12 +22,13 @@ import urllib.parse
 from io import BytesIO
 import sys
 import os
-
 from werkzeug.datastructures import FileMultiDict
+
+import unittest2
 
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import patch_environ, ModelServeTestBuild
+from legion_test_utils import ModelServeTestBuild
 from legion_test_models import create_simple_summation_model_by_df, \
     create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
     create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \

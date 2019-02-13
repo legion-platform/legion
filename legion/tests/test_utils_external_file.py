@@ -22,12 +22,13 @@ import tempfile
 import logging
 from unittest.mock import patch
 
-import legion.config
-import legion.utils as utils
-import legion.containers.docker
 import requests.auth
 import responses
 import unittest2
+
+import legion.config
+import legion.utils as utils
+import legion.containers.docker
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
@@ -102,10 +103,10 @@ class TestUtilsExternalFile(unittest2.TestCase):
             with self.assertRaisesRegex(Exception, 'Unknown or unavailable resource'):
                 utils.is_local_resource(path)
 
-    @responses.activate
+    @responses.activate  # pylint: disable=E1101
     def _test_external_file_reader(self, url):
         body = 'Example' * 200
-        responses.add('GET', url, body=body, stream=True)
+        responses.add('GET', url, body=body, stream=True)  # pylint: disable=E1101
 
         with utils.ExternalFileReader(url) as reader:
             self.assertTrue(os.path.exists(reader.path))

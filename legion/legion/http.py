@@ -19,16 +19,16 @@ Flask package
 import functools
 import os
 import logging
-import urllib
+from urllib.parse import parse_qs
+
+import flask
+from requests.compat import urlencode
+from requests.utils import to_key_val_list
 
 import legion.config
 import legion.containers.headers
 import legion.utils
 
-import flask
-from requests.compat import urlencode
-from requests.utils import to_key_val_list
-from urllib.parse import parse_qs
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,24 +45,23 @@ def encode_http_params(data):
         return urlencode(data)
     elif hasattr(data, '__iter__'):
         result = []
-        for k, vs in to_key_val_list(data):
-            if vs is not None:
+        for key, value in to_key_val_list(data):
+            if value is not None:
                 result.append(
-                    (k.encode('utf-8') if isinstance(k, str) else k,
-                     vs.encode('utf-8') if isinstance(vs, str) else vs))
+                    (key.encode('utf-8') if isinstance(key, str) else key,
+                     value.encode('utf-8') if isinstance(value, str) else value))
         return urlencode(result, doseq=True)
-    else:
-        raise ValueError('Invalid argument')
+    raise ValueError('Invalid argument')
 
 
-def parse_multi_dict(multi_dict, map=None):
+def parse_multi_dict(multi_dict, map_func=None):
     """
     Parse MultiDict object and detect lists if they presents (using [] in the end of name)
 
     :param multi_dict: request data
     :type multi_dict: :py:class:`werkzeug.datastructures.MultiDict`
-    :param map: function to map all values
-    :type map: function VAL -> NEW VAL
+    :param map_func: function to map all values
+    :type map_func: function VAL -> NEW VAL
     :return: dict[str, Any] or dict[str, list[Any]]
     """
     result = {}
@@ -71,12 +70,12 @@ def parse_multi_dict(multi_dict, map=None):
         if len(k) > 2 and k.endswith('[]'):
             key = k[:-2]
             result[key] = multi_dict.getlist(k)
-            if map:
-                result[key] = [map(val) for val in result[key]]
+            if map_func:
+                result[key] = [map_func(val) for val in result[key]]
         else:
             result[k] = multi_dict[k]
-            if map:
-                result[k] = map(result[k])
+            if map_func:
+                result[k] = map_func(result[k])
 
     return result
 
@@ -130,8 +129,7 @@ def parse_request(input_request):
             **parse_multi_dict(input_request.form),
             **parse_multi_dict(input_request.files, lambda file: file.read())
         }
-    else:
-        raise ValueError('Unexpected http method: {}'.format(input_request.method))
+    raise ValueError('Unexpected http method: {}'.format(input_request.method))
 
 
 def prepare_response(response_data, model_id=None, model_version=None, model_endpoint=None):

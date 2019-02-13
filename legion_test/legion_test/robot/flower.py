@@ -55,7 +55,7 @@ class Flower:
         """Sends a GET request.
             :param path: Path within API.
             :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
-            :param \*\*kwargs: Optional arguments that ``request`` takes.
+            :param **kwargs: Optional arguments that ``request`` takes.
             :return: json-encoded content of a response, if any.
             :param parse_json: Indicates, if response should be parsed into Json
             :type parse_json: bool

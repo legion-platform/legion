@@ -22,13 +22,16 @@ import os
 from datetime import datetime, timedelta
 
 import jwt
+
+from flask import Flask, Blueprint, render_template, request
+from flask import current_app as app
+
 import legion.config
 import legion.external.grafana
 import legion.http
 import legion.k8s
 import legion.model
-from flask import Flask, Blueprint, render_template, request
-from flask import current_app as app
+
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
@@ -218,7 +221,7 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
                         .format(model_service.id, model_service.version))
 
             if not other_versions_exist:
-                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id, model_service.version)
+                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id)
             else:
                 LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - there are other model')
         else:

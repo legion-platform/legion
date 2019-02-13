@@ -19,13 +19,13 @@ Model HTTP API client and utils
 
 import os
 import json
+
 import requests
+from PIL import Image as PYTHON_Image
 
 import legion.config
 import legion.http
 from legion.utils import normalize_name
-
-from PIL import Image as PYTHON_Image
 
 
 def load_image(path):
@@ -204,7 +204,7 @@ class ModelClient:
 
         post_fields_list = []
         for (k, v) in post_fields_dict.items():
-            if isinstance(v, tuple) or isinstance(v, list):
+            if isinstance(v, (tuple, list)):
                 for item in v:
                     post_fields_list.append((k + '[]', str(item)))
             else:

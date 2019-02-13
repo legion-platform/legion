@@ -28,7 +28,7 @@ try:
     LOGGER.debug('Docker bootup got configuration: host={!r} port={!r}'.format(host, port))
 
     if host and port:
-        import pydevd
+        import pydevd  # pylint: disable=F0401
 
         try:
             port = int(port)

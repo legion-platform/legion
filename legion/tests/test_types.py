@@ -15,24 +15,25 @@
 #
 from __future__ import print_function
 
+import base64
+
 import unittest2
+from PIL import Image as PYTHON_Image
+import pandas as pd
 
 import legion.model.types as types
-from PIL import Image as PYTHON_Image
-import base64
-import pandas as pd
 
 
 class TestTypes(unittest2.TestCase):
     _multiprocess_can_split_ = True
 
-    def assertValidImage(self, object, width, height):
-        if not isinstance(object, PYTHON_Image.Image):
-            raise AssertionError('Object of type %s is not an image' % (type(object),))
+    def assertValidImage(self, obj, width, height):
+        if not isinstance(obj, PYTHON_Image.Image):
+            raise AssertionError('Object of type %s is not an image' % (type(obj),))
 
-        if width and height and (object.width != width or object.height != height):
+        if width and height and (obj.width != width or obj.height != height):
             raise AssertionError('Image size (%d, %d) not equals to (%d, %d)' %
-                                 (object.width, object.height, width, height))
+                                 (obj.width, obj.height, width, height))
 
     def test_bool_conversions(self):
         self.assertEqual(types.Bool.parse('true'), True)

@@ -150,7 +150,8 @@ class S3:
         """
         lag = kwargs.get('lag', '01:00')
         lag_as_date = datetime.datetime.strptime(lag, '%H:%M')
-        lag_as_delta = datetime.timedelta(hours=lag_as_date.hour, minutes=lag_as_date.minute, seconds=lag_as_date.second)
+        lag_as_delta = datetime.timedelta(hours=lag_as_date.hour, minutes=lag_as_date.minute,
+                                          seconds=lag_as_date.second)
         times = [
             datetime.datetime.utcnow(),
             datetime.datetime.utcnow() - lag_as_delta
@@ -195,7 +196,7 @@ class S3:
                             if len(all_data) >= required_count and required_count != 0:
                                 return all_data
 
-            if len(all_data) > 0 and required_count == 0:
+            if all_data and required_count == 0:
                 return all_data
 
         result = legion_test.utils.wait_until(check_function,
