@@ -1,9 +1,17 @@
 FROM python:3.6@sha256:4f309bf7925db6e21f7f1b7db99aa76576007441136f5e22d4fc422491255872
 
-RUN apt-get update && apt-get install -y software-properties-common \
-	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
-	&& apt-get clean all
+# Docker CLI (without engine, is used for testing)
+ENV DOCKERVERSION=18.03.1-ce
 
+# Install python package dependencies and docker CLI
+RUN apt-get update && apt-get install -y software-properties-common \
+  && apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
+  && apt-get clean all \
+  && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKERVERSION}.tgz \
+  && tar xzvf docker-${DOCKERVERSION}.tgz --strip 1 -C /usr/local/bin docker/docker \
+  && rm docker-${DOCKERVERSION}.tgz
+
+# Install python management tools
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
 # Install requirements for legion package

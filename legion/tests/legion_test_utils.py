@@ -8,6 +8,8 @@ import tarfile
 import io
 import json
 import glob
+import pty
+import re
 import subprocess
 from unittest.mock import patch
 import importlib
@@ -17,7 +19,9 @@ import docker
 import docker.types
 import docker.errors
 import docker.client
+import responses
 import requests
+import requests.adapters
 
 import legion.config
 import legion.containers.docker
@@ -26,7 +30,7 @@ from legion.model import ModelClient
 import legion.model.client
 import legion.serving.pyserve as pyserve
 import legion.edi.server as ediserve
-from legion.utils import remove_directory
+from legion.utils import remove_directory, ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
 TEST_MODELS_LOCATION = os.path.join(os.path.dirname(__file__), 'test_models')
@@ -74,6 +78,34 @@ def get_latest_distribution():
     list_of_files = glob.glob('%s/*.whl' % (dist_dir,))
     latest_file = max(list_of_files, key=os.path.getctime)
     return latest_file
+
+
+@contextlib.contextmanager
+def multi_context(*cms):
+    """
+    Build multiple context managers
+
+    :param cms: context managers
+    :return: None
+    """
+    with contextlib.ExitStack() as stack:
+        yield [stack.enter_context(cls()) for cls in cms]
+
+
+@contextlib.contextmanager
+def patch_config(new_config):
+    """
+    Patch configuration
+
+    :param new_config: new configuration values
+    :type new_config: dict[str, str]
+    :return: None
+    """
+    contexts = [
+        patch('legion.config.' + key, new_value) for (key, new_value) in new_config.items()
+    ]
+    with contextlib.ExitStack() as stack:
+        yield [stack.enter_context(inst) for inst in contexts]
 
 
 def patch_environ(values, flush_existence=False):
@@ -324,6 +356,179 @@ class LegionTestContainer:
                                  exc_info=removing_exception)
 
 
+class ManagedProcessContext:
+    """
+    Context manager for start and control process with stdout / stderr as a file streams
+    """
+
+    STREAM_DEBUG_SLICE = 1024
+
+    def __init__(self, *args, streams_location=None, **kwargs):
+        self._streams_location = streams_location
+        self._process = None
+
+        self._args = args
+        self._kwargs = kwargs
+
+        self._read_stdout_callback = None
+        self._read_stdout_finished_mark = 0
+        self._read_stderr_callback = None
+        self._read_stderr_finished_mark = 0
+
+        self._last_stdin_command = None
+        self._stdin_buffer = ''
+
+        self._pty_master, self._pty_slave = None, None
+
+        self._streams_finished_mark = None
+
+    def _prepare_stream(self, stream_name, args_holder):
+        if stream_name not in self._kwargs:
+            stream_folder = self._streams_location
+            if not stream_folder:
+                stream_folder = os.getcwd()
+            stream_file = os.path.join(stream_folder, stream_name)
+
+            if os.path.exists(stream_file):
+                print('Overwritting file {!r}'.format(stream_name))
+
+            stream = open(stream_file, 'w')
+            args_holder[stream_name] = stream
+
+            def read_callback():
+                with open(stream_file, 'r') as read_stream:
+                    return read_stream.read()
+
+            setattr(self, '_read_{}_callback'.format(stream_name), read_callback)
+
+    def _start_process(self):
+        args = self._args[:]
+        kwargs = self._kwargs.copy()
+
+        self._prepare_stream('stdout', kwargs)
+        self._prepare_stream('stderr', kwargs)
+        if 'stdin' not in kwargs:
+            self._pty_master, self._pty_slave = pty.openpty()
+            kwargs['stdin'] = self._pty_slave
+            kwargs['preexec_fn'] = os.setsid
+            kwargs['close_fds'] = True
+
+        self._process = subprocess.Popen(*args, **kwargs)
+        if self._pty_slave:
+            os.close(self._pty_slave)
+
+    def mark_streams_finished(self):
+        self._streams_finished_mark = self._calculate_all_streams_hash()
+        self._read_stdout_finished_mark = len(self.stdout)
+        self._read_stderr_finished_mark = len(self.stderr)
+
+    def wait_streams_changed(self, retries=4, timeout=1):
+        def check_function():
+            current_mark = self._calculate_all_streams_hash()
+            return current_mark != self._streams_finished_mark
+
+        data = ensure_function_succeed(check_function, retries, timeout, boolean_check=True)
+        if not data:
+            raise Exception('There are no updates in streams')
+        return True
+
+    def get_stream_changed_data(self, stream_name='stdout'):
+        current_data = getattr(self, stream_name)
+        if not current_data:
+            return ''
+
+        old_mark = getattr(self, '_read_{}_finished_mark'.format(stream_name))
+
+        return current_data[old_mark:]
+
+    def _calculate_stream_hash(self, stream_name):
+        return hash(getattr(self, stream_name))
+
+    def _calculate_all_streams_hash(self):
+        return self._calculate_stream_hash('stdout') + self._calculate_stream_hash('stderr')
+
+    @property
+    def process(self):
+        return self._process
+
+    @property
+    def stdout(self):
+        if self._read_stdout_callback:
+            return self._read_stdout_callback()
+
+        return self.process.stdout
+
+    @property
+    def stderr(self):
+        if self._read_stderr_callback:
+            return self._read_stderr_callback()
+
+        return self.process.stderr
+
+    def wait_stream_output(self, needle_string_pattern, stream='stdout', retries=60, timeout=5):
+        regex_patter = re.compile(needle_string_pattern)
+        ending = ''
+
+        def check_function():
+            nonlocal ending
+            lines = getattr(self, stream)
+            if not lines or not isinstance(lines, str):
+                return None
+
+            ending = lines[-ManagedProcessContext.STREAM_DEBUG_SLICE:]
+
+            lines = lines.splitlines(False)
+            last_line = lines[-1]
+            if regex_patter.findall(last_line):
+                return last_line
+            else:
+                return None
+
+        data = ensure_function_succeed(check_function, retries, timeout)
+        if not data:
+            raise Exception('There is no {!r} text in stream {!r}. Ending: {!r}'.format(
+                needle_string_pattern, stream, ending
+            ))
+        return data
+
+    def write_to_stdin(self, message, end='\n'):
+        if self._pty_master:
+            command = self._last_stdin_command = message + end
+            self._stdin_buffer += command
+            os.write(self._pty_master, command.encode('utf-8'))
+
+    @property
+    def last_stdin_command(self):
+        return self._last_stdin_command if self._last_stdin_command else ''
+
+    def debug_output(self):
+        stdout = self.stdout
+        stderr = self.stderr
+        if stdout and isinstance(stdout, str):
+            print('------\nSTDOUT of container: \n{}'.format(
+                stdout[-ManagedProcessContext.STREAM_DEBUG_SLICE:]
+            ))
+        if stderr and isinstance(stderr, str):
+            print('------\nSTDERR of container: \n{}'.format(
+                stderr[-ManagedProcessContext.STREAM_DEBUG_SLICE:]
+            ))
+        if self._stdin_buffer:
+            print('------\nSTDIN of container: \n{}'.format(
+                self._stdin_buffer[-ManagedProcessContext.STREAM_DEBUG_SLICE:]
+            ))
+
+    def __enter__(self):
+        self._start_process()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.process:
+            self.debug_output()
+            if self._pty_master:
+                os.write(self._pty_master, b'\004\004')  # send Ctrl-D x2
+            self._process.kill()
+
+
 def print_docker_container_logs(container):
     """
     Print docker container logs to stdout
@@ -340,6 +545,19 @@ def print_docker_container_logs(container):
         print('Cannot get logs of container: {}'.format(container_log_access_exception))
 
 
+@contextlib.contextmanager
+def gather_stdout_stderr():
+    """
+    Context manager that temporarily redirects stdout/stderr to StringIO buffers
+
+    :return: (io.StringIO, io.StringIO) -- temporarily buffers
+    """
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+        yield stdout, stderr
+
+
 def is_environ_should_be_passed(environ_name):
     """
     Is environ for tests? (should be copied)
@@ -351,10 +569,12 @@ def is_environ_should_be_passed(environ_name):
     return environ_name.startswith('PYDEVD_') or environ_name == 'VERBOSE'
 
 
-def build_environ_for_test_environments():
+def build_environ_for_test_environments(for_building_env=False):
     """
     Build dict with environ variables that can be used in tests
 
+    :param for_building_env: (Optional) for building containers
+    :type for_building_env: bool
     :return: dict[str, str] -- environment variables
     """
     new_environ = {
@@ -362,24 +582,35 @@ def build_environ_for_test_environments():
         if is_environ_should_be_passed(key)
     }
 
+    if for_building_env:
+        new_environ['MODEL_FILE'] = '/model.bin'
+
     return new_environ
 
 
+def get_mocked_model_path(model_name):
+    """
+    Get path to model's directory
+
+    :param model_name: name of model file without .py
+    :type model_name: str
+    :return: str -- path to model's directory
+    """
+    path = os.path.join(TEST_MODELS_LOCATION, model_name)
+    if not os.path.exists(path):
+        raise Exception('Unknown model {!r}. Path not exists: {!r}'.format(model_name, path))
+    return path
+
+
 class ModelDockerBuilderContainerContext:
-    def __init__(self,
-                 python_wheel_path=None):
+    def __init__(self):
         # Base python Docker image
         self._docker_image_version = os.environ.get('BASE_IMAGE_VERSION', 'latest')
-        self._docker_tag = 'legion/base-python-image:{}'.format(self._docker_image_version)
+        self._docker_tag = 'legion/python-toolchain:{}'.format(self._docker_image_version)
         self._docker_base_image = None
         self._docker_container = None
         self._docker_client = legion.containers.docker.build_docker_client()
         self._docker_volume = None
-
-        # Legion python package
-        self._python_wheel_path = python_wheel_path
-        if not self._python_wheel_path:
-            self._python_wheel_path = get_latest_distribution()
 
     def _prepare_base_docker_container(self):
         """
@@ -404,25 +635,13 @@ class ModelDockerBuilderContainerContext:
             command='sleep 99999',  # keep container running for 99999 seconds
             detach=True,  # in the background
             remove=True,  # remove automatically after kill
-            environment=build_environ_for_test_environments(),  # pass required environment variables from host machine
+            environment=build_environ_for_test_environments(True),  # pass environment variables from host machine
             network_mode='host',  # host network is required because we need to connect to pydevd server
             mounts=[
                 docker_socket_mount,
                 workspace_mount
             ]
         )
-
-    def _setup_legion_wheel_in_docker_container(self):
-        """
-        Copy and install latest Legion wheel (should be prepared with `python setup.py bdist_wheel`)
-
-        :return: None
-        """
-        filename = os.path.basename(self._python_wheel_path)
-        self.copy_file(self._python_wheel_path, '/{}'.format(filename))
-
-        command = 'pip3 install /{}'.format(filename)
-        self.exec(command)
 
     def _shutdown_docker_container(self):
         """
@@ -440,7 +659,6 @@ class ModelDockerBuilderContainerContext:
     def __enter__(self):
         try:
             self._prepare_base_docker_container()
-            self._setup_legion_wheel_in_docker_container()
         except Exception as container_prepare_exception:
             self._shutdown_docker_container()
             print_docker_container_logs(self._docker_container)
@@ -539,11 +757,7 @@ class ModelDockerBuilderContainerContext:
         :type model_name: str
         :return: None
         """
-        path = os.path.join(TEST_MODELS_LOCATION, model_name)
-        if not os.path.exists(path):
-            raise Exception('Unknown model {!r}. Path not exists: {!r}'.format(model_name, path))
-
-        self.copy_directory(path, self.workspace)
+        self.copy_directory(get_mocked_model_path(model_name), self.workspace)
 
     def execute_model(self, python_file='run.py'):
         """
@@ -573,15 +787,19 @@ class ModelDockerBuilderContainerContext:
 
         return model_id, model_version, model_file, output
 
-    def build_model_container(self, binary_model_file):
+    def build_model_container(self, binary_model_file=None):
         """
         Build model container from model binary with legionctl build
 
-        :param binary_model_file: path to binary model file
+        :param binary_model_file: (Optional) path to binary model file
         :type binary_model_file: str
         :return: tuple[str, str] -- Docker image sha, output of execution
         """
-        command = 'legionctl build "{}"'.format(binary_model_file)
+        command = 'legionctl build'
+
+        if binary_model_file:
+            command += ' --model-file "{}"'.format(binary_model_file)
+
         output = self.exec(command, workdir=self.workspace)
 
         tag = None
@@ -590,7 +808,7 @@ class ModelDockerBuilderContainerContext:
             if line.startswith(legion.containers.headers.STDERR_PREFIX):
                 line = line[len(legion.containers.headers.STDERR_PREFIX):]
                 header, value = line.split(':', maxsplit=1)
-                if header == legion.containers.headers.IMAGE_TAG_LOCAL:
+                if header == legion.containers.headers.IMAGE_ID_LOCAL:
                     _, tag = value.split(':')
 
         return tag, output
@@ -639,11 +857,10 @@ class ModelServeTestBuild:
 
             print('Creating pyserve')
             additional_environment = {
-                legion.config.REGISTER_ON_GRAFANA[0]: 'false',
-                legion.config.MODEL_ID[0]: self._model_id,
-                legion.config.MODEL_FILE[0]: self._model_path
+                'REGISTER_ON_GRAFANA': False,
+                'MODEL_FILE': self._model_path
             }
-            with patch_environ(additional_environment):
+            with patch_config(additional_environment):
                 self.application = pyserve.init_application(None)
                 self.application.testing = True
                 self.client = self.application.test_client()
@@ -693,7 +910,7 @@ def build_requests_reponse_from_flask_client_response(test_response, url):
 
 def build_requests_mock_function(test_client):
     """
-    Build function that shoul replace requests.request function in tests
+    Build function that should replace requests.request function to Flask test client invocation in tests
 
     :param test_client: test flask client
     :type test_client: :py:class:`flask.test.FlaskClient`
@@ -736,25 +953,25 @@ class EDITestServer:
         :return: self
         """
         additional_environment = {
-            legion.config.CLUSTER_SECRETS_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'secrets'),
-            legion.config.JWT_CONFIG_PATH[0]: os.path.join(TEST_DATA_LOCATION, 'jwt_config'),
-            legion.config.REGISTER_ON_GRAFANA[0]: 'false',
-            legion.config.STATSD_HOST[0]: "graphite",
-            legion.config.STATSD_PORT[0]: str(80)
+            'CLUSTER_SECRETS_PATH': os.path.join(TEST_DATA_LOCATION, 'secrets'),
+            'JWT_CONFIG_PATH': os.path.join(TEST_DATA_LOCATION, 'jwt_config'),
+            'STATSD_HOST': 'graphite',
+            'STATSD_PORT': 80
         }
 
         test_enclave = legion.k8s.enclave.Enclave(self._enclave_name)
         test_enclave._data_loaded = True
 
-        with patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
-               patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
-                 patch('legion.edi.server.get_application_grafana', lambda *x: None), \
-                   patch_environ(additional_environment):  # noqa
+        with patch_config(additional_environment), \
+                patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
+                   patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
+                     patch('legion.edi.server.get_application_grafana', lambda *x: None), \
+                       patch_environ(additional_environment):  # noqa
             self.application = ediserve.init_application(None)
 
         self.application.testing = True
         self.http_client = self.application.test_client()
-        self.edi_client = legion.external.edi.EdiClient('')
+        self.edi_client = legion.external.edi.RemoteEdiClient('')
         self.edi_client._request = build_requests_mock_function(self.http_client)
 
         return self
@@ -813,7 +1030,8 @@ class ModelLocalContainerExecutionContext:
 
             container_labels = legion.containers.docker.generate_docker_labels_for_container(self._image)
 
-            ports = {'{}/tcp'.format(os.getenv(*legion.config.LEGION_PORT)): 0}
+            api_port_name = '{}/tcp'.format(legion.config.LEGION_PORT)
+            ports = {api_port_name: 0}
 
             self.container = self._docker_client.containers.run(self._image_id,
                                                                 stdout=True,
@@ -839,14 +1057,14 @@ class ModelLocalContainerExecutionContext:
             LOGGER.info('OK')
 
             LOGGER.info('Detecting bound ports')
-            ports_information = [item for sublist in self.container.attrs['NetworkSettings']['Ports'].values()
-                                 for item in sublist]
-            ports_information = [int(x['HostPort']) for x in ports_information]
-            LOGGER.info('Detected ports: {}'.format(', '.join(str(port) for port in ports_information)))
+            api_port_information = self.container.attrs['NetworkSettings']['Ports'].get(api_port_name)
+            if not api_port_information:
+                raise Exception('Port for API has not been registered')
 
-            if len(ports_information) != 1:
-                raise Exception('Should be only one bound port')
-            self.model_port = ports_information[0]
+            if len(api_port_information) != 1:
+                raise Exception('API port should have exact one binding')
+
+            self.model_port = int(api_port_information[0]['HostPort'])
             LOGGER.info('Model port: {}'.format(self.model_port))
 
             LOGGER.info('Building client')
@@ -885,3 +1103,80 @@ class ModelLocalContainerExecutionContext:
 
         if args[0]:
             raise args[0]
+
+
+_CATCH_LIST_FOR_HTTP_API_JSON_MOCKS = []
+
+
+def add_response_from_file(url, file_name, method=responses.GET):
+    global _CATCH_LIST_FOR_HTTP_API_JSON_MOCKS
+    _CATCH_LIST_FOR_HTTP_API_JSON_MOCKS.append(file_name)
+
+    LOGGER.debug('Adding response for {} {} from file {}'.format(method, url, file_name))
+
+    path = os.path.join(TEST_RESPONSES_LOCATION, '{}.json'.format(file_name))
+    if not os.path.exists(path):
+        LOGGER.debug('Could not find file {} (responses dataset)'.format(path))
+        return
+
+    with open(path, 'r') as data_stream:
+        data = data_stream.read()
+
+    if data:
+        data = json.loads(data)
+    else:
+        data = None
+
+    responses.add(
+        method, url,
+        json=data
+    )
+
+
+@contextlib.contextmanager
+def catch_http_api_json_calls(*paths, target=None):
+    if not target:
+        target = 'requests.adapters.HTTPAdapter.send'
+
+    if not paths:
+        # If paths are not provided: load from _CATCH_LIST_FOR_HTTP_API_JSON_MOCKS buffer
+        # Each call of add_response_from_file() will add path to this buffer
+        paths = _CATCH_LIST_FOR_HTTP_API_JSON_MOCKS
+
+    paths_iter = iter(paths)
+
+    old_adapter_send = requests.adapters.HTTPAdapter.send
+
+    def unbound_on_send(adapter, request, *a, **kwargs):
+        result = old_adapter_send(adapter, request, *a, **kwargs)
+        LOGGER.debug('Trying to persist result of {} {}'.format(request.method, request.url))
+        try:
+            path = next(paths_iter)
+        except StopIteration:
+            raise Exception('Could not find path to save results of {} {}'.format(request.method, request.url))
+
+        full_path = os.path.join(TEST_RESPONSES_LOCATION, '{}.json'.format(path))
+
+        LOGGER.debug('Response for {} {} has been persisted to {}'.format(request.method, request.url, full_path))
+
+        with open(full_path, 'w') as output_stream:
+            json.dump(result.json(), output_stream, indent=2)
+
+        return result
+
+    patcher = patch(target, new=unbound_on_send)
+    patcher.start()
+    yield
+    patcher.stop()
+
+
+def activate_http_api_json_calls_catcher(*paths, target=None):
+    global _CATCH_LIST_FOR_HTTP_API_JSON_MOCKS
+    _CATCH_LIST_FOR_HTTP_API_JSON_MOCKS.clear()
+
+    def wrapper(func):
+        def wrapped(*args, **kwargs):
+            with catch_http_api_json_calls(*paths, target=target):
+                return func(*args, **kwargs)
+        return wrapped
+    return wrapper

@@ -116,7 +116,7 @@ class TestK8SIntrospection(unittest2.TestCase):
         url = enclave.edi_service.public_url
         self.assertIsNotNone(url)
 
-        client = legion.external.EdiClient(url, token=VARIABLES['DEX_TOKEN'])
+        client = legion.external.RemoteEdiClient(url, token=VARIABLES['DEX_TOKEN'])
         info = client.info()
         self.assertIsInstance(info, dict)
 

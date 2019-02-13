@@ -16,17 +16,13 @@
 """
 Security logic for legion
 """
-
-import configparser
 import logging
-import os
-from pathlib import Path
 
-from legion import config
+import legion.config
 from legion.external import edi
 
-_DEFAULT_CONFIG_PATH = Path.home().joinpath('.legion/config')
 LOG = logging.getLogger(__name__)
+SECURITY_SECTION_NAME = 'security'
 
 
 def add_edi_arguments(parser, required=False):
@@ -34,7 +30,7 @@ def add_edi_arguments(parser, required=False):
     Add EDI arguments parser
 
     :param parser: add arguments to it
-    :type parser: argparse.ArgumentParser
+    :type parser: :py:class:`argparse.ArgumentParser`
     :param required: (Optional) mark edi arguments as required if it equals True
     :type required: bool
     :return: None
@@ -45,24 +41,12 @@ def add_edi_arguments(parser, required=False):
                         type=str, help='EDI server token', required=required)
 
 
-def _get_config_location():
-    """
-    Return the config path.
-    LEGION_CONFIG can override path value
-
-    :return: Path -- config path
-    """
-    config_path_from_env = os.getenv(*config.LEGION_CONFIG)
-
-    return Path(config_path_from_env) if config_path_from_env else _DEFAULT_CONFIG_PATH
-
-
 def _check_credentials(args):
     """
     Make a request to the server to make sure that credentials are correct
 
     :param args: command arguments with .namespace
-    :type args: argparse.Namespace
+    :type args: :py:class:`argparse.Namespace`
     :return None
     """
     # url and token must presents in args
@@ -83,21 +67,8 @@ def _save_credentials(edi_url, token):
     :type token: str
     :return None
     """
-    config_path = _get_config_location()
-
-    config_path.parent.mkdir(mode=0o775, parents=True, exist_ok=True)
-    config_path.touch(mode=0o600, exist_ok=True)
-
-    config_parser = configparser.ConfigParser()
-    config_parser['security'] = {
-        'host': edi_url,
-        'token': token
-    }
-
-    with config_path.open("w") as config_file:
-        config_parser.write(config_file)
-
-    LOG.debug('Save config {} to the file {}'.format(config_parser, config_path))
+    legion.config.update_config_file(EDI_URL=edi_url,
+                                     EDI_TOKEN=token)
 
 
 def login(args):
@@ -112,37 +83,3 @@ def login(args):
     _save_credentials(args.edi, args.token)
 
     LOG.info('Success! Credentials were saved.')
-
-
-def get_security_params_from_config():
-    """
-    Return dict with edi url and token from config.
-    If an exception occurs during parsing of config or config file doesn't exist then
-    return empty dict
-
-    :return: dict[str, str] -- config
-    """
-    config_path = _get_config_location()
-
-    if config_path.exists():
-        try:
-            config_parser = configparser.ConfigParser()
-            config_parser.read(str(config_path))
-
-            return dict(config_parser['security'])
-        except Exception as exception:
-            LOG.debug('Exception during parsing of legion config {}'.format(exception), exc_info=True)
-
-    return {}
-
-
-def generate_token(args):
-    """
-    Generate JWT for specified model
-    :param args: command arguments
-    :type args: argparse.Namespace
-    :return: str -- token
-    """
-    edi_client = edi.build_client(args)
-    token = edi_client.get_token(args.model_id, args.model_version, args.expiration_date)
-    print(token)

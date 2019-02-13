@@ -207,23 +207,7 @@ pipeline {
                     }
                     steps {
                         sh '''
-                        pycodestyle --show-source --show-pep8 legion/legion
-                        pycodestyle --show-source --show-pep8 legion/tests --ignore E402,E126,W503,E731
-                        pydocstyle --source legion/legion
-
-                        pycodestyle --show-source --show-pep8 legion_airflow/legion_airflow
-                        pycodestyle --show-source --show-pep8 legion_airflow/tests
-                        pydocstyle legion_airflow/legion_airflow
-
-                        # Because of https://github.com/PyCQA/pylint/issues/352 or need to fix PYTHONPATH in unit tests
-                        touch legion/tests/__init__.py
-
-                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion/legion > legion-pylint.log
-                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion/tests >> legion-pylint.log
-
-                        TERM="linux" pylint --exit-zero --output-format=parseable --reports=no legion_test/legion_test >> legion-pylint.log
-                        # Because of https://github.com/PyCQA/pylint/issues/352 or need to fix PYTHONPATH in unit tests
-                        rm -rf legion/tests/__init__.py
+                        bash analyze_code.sh
                         '''
 
                         archiveArtifacts 'legion-pylint.log'
@@ -345,11 +329,23 @@ EOL
                 }
             }
         }
+        stage("Build toolchains"){
+            steps {
+                script {
+                    sh """
+                    docker run --rm --entrypoint "/bin/sh" "legion-docker-agent:${env.BUILD_NUMBER}" -c "cat /src/legion/dist/*.whl" > k8s/toolchains/python/legion-1.1.1-py2.py3-none-any.whl
+
+                    cd k8s/toolchains/python
+                    docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}"  -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    """
+                }
+            }
+        }
         stage("Build Ansible Docker image") {
             steps {
                 sh "docker build ${Globals.dockerCacheArg} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile ."
             }
-        }    
+        }
         stage("Build Docker images & Helms") {
             parallel {
                 stage("Build Grafana Docker image") {
@@ -452,15 +448,20 @@ EOL
                     }
                     steps {
                         sh """
+                        export TEMP_DIRECTORY="\$(pwd)"
                         cd /src/legion
-                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --processes=10 \
-                                                                                            --process-timeout=600 \
-                                                                                            --with-coverage \
-                                                                                            --cover-package legion \
-                                                                                            --with-xunitmp \
-                                                                                            --cover-html \
-                                                                                            --logging-level DEBUG \
-                                                                                            -v || true
+                        VERBOSE=true \
+                        DEBUG=true \
+                        BASE_IMAGE_VERSION="${Globals.buildVersion}" \
+                        SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
+                            nosetests --processes=10 \
+                            --process-timeout=600 \
+                            --with-coverage \
+                            --cover-package legion \
+                            --with-xunitmp \
+                            --cover-html \
+                            --logging-level DEBUG \
+                            -v || true
                         cd -
                         cp /src/legion/nosetests.xml legion/nosetests.xml
                         """
@@ -572,6 +573,13 @@ EOL
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-kube-elb-security', "${Globals.buildVersion}")
+                        }
+                    }
+                }
+                stage('Upload python-toolchain Docker Image') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('python-toolchain', "${Globals.buildVersion}")
                         }
                     }
                 }

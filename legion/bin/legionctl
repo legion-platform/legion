@@ -15,160 +15,20 @@
 #    limitations under the License.
 #
 import sys
-import os
-import argparse
 import logging
 
-import legion.docker_bootup
-from legion.edi.security import login, add_edi_arguments, generate_token
-from legion.serving.pyserve import serve_model
-from legion.external.edi import add_arguments_for_wait_operation
-from legion.edi.deploy import \
-    build_model, \
-    deploy_kubernetes, undeploy_kubernetes, scale_kubernetes, inspect_kubernetes, \
-    VALID_INSPECT_FORMATS
+from legion.cli import build_parser
 import legion.utils
-
-ROOT_LOGGER = logging.getLogger()
-
-
-def list_dependencies(args):
-    """
-    Print package dependencies
-
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: None
-    """
-    dependencies = legion.utils.get_list_of_requirements()
-    for name, version in dependencies:
-        print('{}=={}'.format(name, version))
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='legion Command-Line Interface')
-    parser.add_argument('--verbose',
-                        help='verbose log output',
-                        action='store_true')
-    parser.add_argument('--version',
-                        help='get package version',
-                        action='store_true')
-    subparsers = parser.add_subparsers()
-
-    # --------- SECURITY SECTION -----------
-    login_parser = subparsers.add_parser('login', description='Save edi credentials to the config')
-    add_edi_arguments(login_parser, required=True)
-    login_parser.set_defaults(func=login)
-
-    generate_token_parser = subparsers.add_parser('generate-token', description='generate JWT token for model')
-    generate_token_parser.add_argument('--model-id', type=str, help='Model ID')
-    generate_token_parser.add_argument('--model-version', type=str, help='Model version')
-    generate_token_parser.add_argument('--expiration-date', type=str,
-                                       help='Token expiration date in utc: %Y-%m-%dT%H:%M:%S')
-    add_edi_arguments(generate_token_parser)
-    generate_token_parser.set_defaults(func=generate_token)
-
-    # --------- LOCAL DOCKER SECTION -----------
-    build_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '
-                                                              'in the docker container)')
-    build_parser.add_argument('model_file',
-                              type=str, help='serialized model file name')
-    build_parser.add_argument('--docker-image-tag',
-                              type=str, help='docker image tag')
-    build_parser.add_argument('--push-to-registry',
-                              type=str, help='docker registry address')
-    build_parser.set_defaults(func=build_model)
-
-    # --------- KUBERNETES SECTION -----------
-    deploy_k8s_parser = subparsers.add_parser('deploy',
-                                              description='deploys a model into a kubernetes cluster')
-    deploy_k8s_parser.add_argument('image',
-                                   type=str, help='docker image')
-    deploy_k8s_parser.add_argument('--model-iam-role',
-                                   type=str, help='IAM role to be used at model pod')
-    deploy_k8s_parser.add_argument('--scale',
-                                   default=1,
-                                   type=int, help='count of instances')
-    deploy_k8s_parser.add_argument('--livenesstimeout',
-                                   default=2,
-                                   type=int, help='model startup timeout for liveness probe')
-    deploy_k8s_parser.add_argument('--readinesstimeout',
-                                   default=2,
-                                   type=int, help='model startup timeout for readiness probe')
-    add_arguments_for_wait_operation(deploy_k8s_parser)
-    add_edi_arguments(deploy_k8s_parser)
-    deploy_k8s_parser.set_defaults(func=deploy_kubernetes)
-
-    inspect_k8s_parser = subparsers.add_parser('inspect',
-                                               description='get information about currently deployed models')
-    inspect_k8s_parser.add_argument('--model-id',
-                                    type=str, help='model ID')
-    inspect_k8s_parser.add_argument('--model-version',
-                                    type=str, help='model version')
-    inspect_k8s_parser.add_argument('--format',
-                                    default=VALID_INSPECT_FORMATS[0],
-                                    choices=VALID_INSPECT_FORMATS, help='output format')
-    add_edi_arguments(inspect_k8s_parser)
-    inspect_k8s_parser.set_defaults(func=inspect_kubernetes)
-
-    scale_k8s_parser = subparsers.add_parser('scale',
-                                             description='change count of model pods')
-    scale_k8s_parser.add_argument('model_id',
-                                  type=str, help='model ID')
-    scale_k8s_parser.add_argument('scale',
-                                  type=int, help='new count of replicas')
-    scale_k8s_parser.add_argument('--model-version',
-                                  type=str, help='model version')
-    add_arguments_for_wait_operation(scale_k8s_parser)
-    add_edi_arguments(scale_k8s_parser)
-    scale_k8s_parser.set_defaults(func=scale_kubernetes)
-
-    undeploy_k8s_parser = subparsers.add_parser('undeploy',
-                                                description='undeploy model deployment')
-    undeploy_k8s_parser.add_argument('model_id',
-                                     type=str, help='model ID')
-    undeploy_k8s_parser.add_argument('--model-version',
-                                     type=str, help='model version')
-    undeploy_k8s_parser.add_argument('--grace-period',
-                                     default=0,
-                                     type=int, help='removal grace period')
-    undeploy_k8s_parser.add_argument('--ignore-not-found',
-                                     action='store_true', help='ignore if cannot found pod')
-    add_arguments_for_wait_operation(undeploy_k8s_parser)
-    add_edi_arguments(undeploy_k8s_parser)
-    undeploy_k8s_parser.set_defaults(func=undeploy_kubernetes)
-
-    # --------- SERVING SECTION -----------
-    pyserve_parser = subparsers.add_parser('pyserve', description='serve a python model')
-    pyserve_parser.add_argument('--model_file',
-                                type=str)
-    pyserve_parser.add_argument('--model-id',
-                                type=str)
-    pyserve_parser.add_argument('--legion-addr',
-                                type=str)
-    pyserve_parser.add_argument('--legion-port',
-                                type=int)
-    pyserve_parser.add_argument('--debug',
-                                type=legion.utils.string_to_bool)
-    pyserve_parser.set_defaults(func=serve_model)
-
-    # --------- UTILS SECTION -----------
-    list_dependencies_parser = subparsers.add_parser('list-dependencies', description='list package dependencies')
-    list_dependencies_parser.set_defaults(func=list_dependencies)
-
-    # --------- END OF SECTIONS -----------
+    parser, _ = build_parser()
     args = parser.parse_args(sys.argv[1:])
 
     v = vars(args)
 
-    if args.verbose or legion.utils.string_to_bool(os.getenv('VERBOSE', '')):
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.ERROR
-
-    logging.basicConfig(level=log_level, 
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        stream=sys.stderr)
+    legion.cli.configure_logging(args)
+    root_logger = logging.getLogger()
 
     try:
         if args.version:
@@ -180,5 +40,5 @@ if __name__ == '__main__':
                 parser.print_help()
                 sys.exit(1)
     except Exception as exception:
-        ROOT_LOGGER.exception(exception)
+        root_logger.exception(exception)
         sys.exit(2)

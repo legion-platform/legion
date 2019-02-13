@@ -157,9 +157,9 @@ def build_client(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`legion.grafana.GrafanaClient`
     """
-    host = os.environ.get(*legion.config.GRAFANA_URL)
-    user = os.environ.get(*legion.config.GRAFANA_USER)
-    password = os.environ.get(*legion.config.GRAFANA_PASSWORD)
+    host = legion.config.GRAFANA_URL
+    user = legion.config.GRAFANA_USER
+    password = legion.config.GRAFANA_PASSWORD
 
     if args.grafana_server:
         host = args.grafana_server

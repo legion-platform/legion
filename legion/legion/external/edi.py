@@ -16,24 +16,123 @@
 """
 EDI client
 """
-
+import abc
 import json
 import logging
-import os
 from urllib.parse import urlparse
 
-import requests
 import requests.exceptions
 
 import legion.k8s
 import legion.edi.server
 import legion.config
-from legion.edi import security
+import legion.containers.docker
+import legion.containers.definitions
+import legion.containers.local_deploy
+
+import requests
+import requests.exceptions
 
 LOGGER = logging.getLogger(__name__)
 
 
-class EdiClient:
+class EdiClient(metaclass=abc.ABCMeta):
+    """
+    Base edi client
+    """
+
+    @abc.abstractmethod
+    def inspect(self, model=None, version=None):
+        """
+        Perform inspect query on EDI server
+
+        :param model: model id
+        :type model: str
+        :param version: (Optional) model version
+        :type version: str
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+        """
+        pass
+
+    @abc.abstractmethod
+    def info(self):
+        """
+        Perform info query on EDI server
+
+        :return: dict[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+        """
+        pass
+
+    @abc.abstractmethod
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None):
+        """
+        Deploy API endpoint
+
+        :param image: Docker image for deploy (for kubernetes deployment and local pull)
+        :type image: str
+        :param model_iam_role: (Optional) IAM role to be used at model pod (for cluster mode deploy)
+        :type model_iam_role: str
+        :param count: (Optional) count of pods to create (for cluster mode deploy)
+        :type count: int
+        :param livenesstimeout: (Optional) model pod startup timeout (used in liveness probe) (for cluster mode deploy)
+        :type livenesstimeout: int
+        :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
+        :type readinesstimeout: int
+        :param local_port: (Optional) port to deploy model on (for local mode deploy)
+        :type local_port: int
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
+        """
+        pass
+
+    @abc.abstractmethod
+    def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
+        """
+        Undeploy API endpoint
+
+        :param model: model id
+        :type model: str
+        :param grace_period: grace period for removing
+        :type grace_period: int
+        :param version: (Optional) model version
+        :type version: str
+        :param ignore_not_found: (Optional) ignore if cannot find models
+        :type ignore_not_found: bool
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
+        """
+        pass
+
+    @abc.abstractmethod
+    def scale(self, model, count, version=None):
+        """
+        Scale model
+
+        :param model: model id
+        :type model: str
+        :param count: count of pods to create
+        :type count: int
+        :param version: (Optional) model version
+        :type version: str
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_token(self, model_id, model_version, expiration_date):
+        """
+        Get API token
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
+        :type expiration_date: str
+        :return: str -- return API Token
+        """
+        pass
+
+
+class RemoteEdiClient(EdiClient):
     """
     EDI client
     """
@@ -174,20 +273,22 @@ class EdiClient:
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None):
         """
         Deploy API endpoint
 
         :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
-        :param model_iam_role: IAM role to be used at model pod
+        :param model_iam_role: (Optional) IAM role to be used at model pod (for cluster mode deploy)
         :type model_iam_role: str
-        :param count: count of pods to create
+        :param count: (Optional) count of pods to create (for cluster mode deploy)
         :type count: int
-        :param livenesstimeout: model pod startup timeout (used in liveness probe)
+        :param livenesstimeout: (Optional) model pod startup timeout (used in liveness probe) (for cluster mode deploy)
         :type livenesstimeout: int
-        :param readinesstimeout: model pod startup timeout (used readiness probe)
+        :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
         :type readinesstimeout: int
+        :param local_port: (Optional) port to deploy model on (for local mode deploy)
+        :type local_port: int
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
@@ -283,6 +384,109 @@ class EdiClient:
     __str__ = __repr__
 
 
+class LocalEdiClient(EdiClient):
+    def inspect(self, model=None, version=None):
+        """
+        Perform inspect query on EDI server
+
+        :param model: model id
+        :type model: str
+        :param version: (Optional) model version
+        :type version: str
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+        """
+        client = legion.containers.docker.build_docker_client()
+        return legion.containers.local_deploy.get_models(client, model, version)
+
+    def info(self):
+        """
+        Perform info query on EDI server
+
+        :return: dict[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+        """
+        LOGGER.debug('Returning {} as a information for local deployment server')
+        return {}
+
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None):
+        """
+        Deploy API endpoint
+
+        :param image: Docker image for deploy (for kubernetes deployment and local pull)
+        :type image: str
+        :param model_iam_role: (Optional) IAM role to be used at model pod (for cluster mode deploy)
+        :type model_iam_role: str
+        :param count: (Optional) count of pods to create (for cluster mode deploy)
+        :type count: int
+        :param livenesstimeout: (Optional) model pod startup timeout (used in liveness probe) (for cluster mode deploy)
+        :type livenesstimeout: int
+        :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
+        :type readinesstimeout: int
+        :param local_port: (Optional) port to deploy model on (for local mode deploy)
+        :type local_port: int
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
+        """
+        client = legion.containers.docker.build_docker_client()
+        return legion.containers.local_deploy.deploy_model(client, image, local_port=local_port)
+
+    def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
+        """
+        Undeploy API endpoint
+
+        :param model: model id
+        :type model: str
+        :param grace_period: grace period for removing
+        :type grace_period: int
+        :param version: (Optional) model version
+        :type version: str
+        :param ignore_not_found: (Optional) ignore if cannot find models
+        :type ignore_not_found: bool
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
+        """
+        client = legion.containers.docker.build_docker_client()
+        return legion.containers.local_deploy.undeploy_model(client, model, version, ignore_not_found)
+
+    def scale(self, model, count, version=None):
+        """
+        Scale model
+
+        :param model: model id
+        :type model: str
+        :param count: count of pods to create
+        :type count: int
+        :param version: (Optional) model version
+        :type version: str
+        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
+        """
+        raise Exception('Scale command is not supported for local deployment')
+
+    def get_token(self, model_id, model_version, expiration_date=None):
+        """
+        Get API token
+
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
+        :type expiration_date: str
+        :return: str -- return API Token
+        """
+        LOGGER.debug('Returning empty token for local-deployed model {!r} version {!r} (exp data: {})'.format(
+            model_id, model_version, expiration_date
+        ))
+        return ''
+
+    def __repr__(self):
+        """
+        Get string representation of object
+
+        :return: str -- string representation
+        """
+        return 'LocalEdiClient()'
+
+    __str__ = __repr__
+
+
 def add_arguments_for_wait_operation(parser):
     """
     Add arguments of wait operation in the parser
@@ -309,6 +513,9 @@ def build_client(args=None):
     host, token = None, None
 
     if args:
+        if 'local' in args and args.local:
+            return LocalEdiClient()
+
         if args.edi:
             host = args.edi
 
@@ -316,20 +523,18 @@ def build_client(args=None):
             token = args.token
 
     if not host or not token:
-        host = host or os.environ.get(*legion.config.EDI_URL)
-        token = token or os.environ.get(*legion.config.EDI_TOKEN)
-
-    if not host and not token:
-        config = security.get_security_params_from_config()
-
-        host = config.get('host')
-        token = config.get('token')
+        host = host or legion.config.EDI_URL
+        token = token or legion.config.EDI_TOKEN
 
     if not host:
-        try:
-            host = legion.k8s.Enclave(os.environ.get("NAMESPACE")).edi_service.url
-        except Exception:
-            LOGGER.warning('Cannot get EDI URL from K8S API')
+        if legion.config.NAMESPACE:
+            try:
+                host = legion.k8s.Enclave(legion.config.NAMESPACE).edi_service.url
+            except Exception as exc_info:
+                LOGGER.warning('Cannot get EDI URL from K8S API: {}'.format(exc_info))
 
-    client = EdiClient(host, token)
+    if host:
+        client = RemoteEdiClient(host, token)
+    else:
+        raise Exception('EDI endpoint is not configured')
     return client

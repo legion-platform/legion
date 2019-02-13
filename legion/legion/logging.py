@@ -19,11 +19,9 @@ Logging controller
 """
 
 import logging
-import os
 import sys
 
 import legion.config
-import legion.utils
 
 ROOT_LOGGER = logging.getLogger()
 
@@ -50,7 +48,7 @@ def set_log_level(target=None):
     if target:
         log_level = target
     else:
-        if legion.utils.string_to_bool(os.getenv('VERBOSE', '')):
+        if legion.config.DEBUG:
             log_level = logging.DEBUG
         else:
             log_level = logging.ERROR

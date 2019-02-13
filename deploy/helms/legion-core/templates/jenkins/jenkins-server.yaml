@@ -108,6 +108,8 @@ spec:
           value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
         - name: STATSD_PORT
           value: "8125"
+        - name: MODEL_TRAIN_METRICS_ENABLED
+          value: "true"
         - name: CLUSTER_NAME
           value: {{ .Values.clusterName }}
         - name: S3_BUCKET_NAME

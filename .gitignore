@@ -16,6 +16,10 @@
 keys/
 cover/
 
+.DS_Store
+*.whl
+
+legion-activate.sh
 legion/legion/data/Pipfile.lock
 
 test.model
@@ -137,3 +141,5 @@ keys/
 tests/robot/*.html
 tests/robot/*.xml
 tests/python/cover/*
+
+legion/tests/__init__\.py

@@ -16,15 +16,11 @@
 from __future__ import print_function
 
 import os
-import sys
 import unittest2
+from unittest.mock import patch
 
-# Extend PYTHONPATH in order to import test tools and models
-sys.path.extend(os.path.dirname(__file__))
-
-from legion_test_utils import patch_environ
-import legion.config
 import legion.model.client
+import legion.config
 
 
 class TestModelClient(unittest2.TestCase):
@@ -62,7 +58,7 @@ class TestModelClient(unittest2.TestCase):
         self.assertEqual(client.build_invoke_url('abcd'), root_url + '/invoke/abcd')
 
     def test_client_building_from_env(self):
-        with patch_environ({legion.config.MODEL_SERVER_URL[0]: 'test:10'}):
+        with patch('legion.config.MODEL_SERVER_URL', 'test:10'):
             client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION)
             root_url = 'test:10/api/model/{}/{}'.format(self.MODEL_ID, self.MODEL_VERSION)
             self.assertEqual(client.api_url, root_url)

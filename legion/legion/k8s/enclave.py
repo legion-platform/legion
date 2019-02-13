@@ -198,7 +198,7 @@ class Enclave:
         If more that one model would be found with unstrict criterion - exception would be raised
         If no one model would be found - exception would be raised
 
-        param model_id: model id or * for all models
+        :param model_id: model id or * for all models
         :type model_id: str
         :param model_version: (Optional) model version
         :type model_version: str
@@ -314,14 +314,15 @@ class Enclave:
             return False, model
 
         # REFACTOR, maybe we should remove that
+        # TODO: Check
         container_env_variables = {
-            legion.config.STATSD_HOST[0]: self.graphite_service.internal_domain,
-            legion.config.STATSD_PORT[0]: str(self.graphite_service.internal_port)
+            'STATSD_HOST': self.graphite_service.internal_domain,
+            'STATSD_PORT': str(self.graphite_service.internal_port)
         }
 
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
-            port=legion.config.LEGION_PORT[1]
+            port=legion.config.LEGION_PORT
         )
 
         livenessprobe = kubernetes.client.V1Probe(
@@ -350,7 +351,7 @@ class Enclave:
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,
             ports=[
-                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT[1],
+                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT,
                                                   name='api', protocol='TCP')
             ])
 
@@ -385,8 +386,8 @@ class Enclave:
             body=deployment,
             namespace=self.namespace)
 
-        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
-        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
+        retries = legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT
+        retry_timeout = legion.config.K8S_API_RETRY_DELAY_SEC
 
         deployment_ready = legion.utils.ensure_function_succeed(
             lambda: legion.k8s.services.find_model_deployment(self.name, image_meta_information.model_id,
