@@ -11,6 +11,7 @@ metadata:
     nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
     nginx.ingress.kubernetes.io/configuration-snippet: |
       auth_request_set $token $upstream_http_authorization;
+      set_escape_uri $escaped_request_uri $request_uri;
       proxy_set_header Authorization $token;
 {% endif %}
   labels:
