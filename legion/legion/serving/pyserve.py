@@ -285,10 +285,9 @@ def init_model(application):
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, value):
         """
-        Used by json lib to serialize numpy int and float values
-        Ex. json.dumps(some_data_with_numpy_values, default=json_numpy_serializer)
+        Redefined method, allows json to encode values of types np.integer, np.float, pd.Series
         :param value: np.floating, np.integer
-        :return: float, int
+        :return: float, int, List[int], List[float]
         """
         if isinstance(value, pd.Series):
             values_list = value.tolist()
