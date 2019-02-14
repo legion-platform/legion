@@ -8,7 +8,7 @@ metadata:
   name: cluster-autoscaler
   namespace: kube-system
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cluster-autoscaler
@@ -33,7 +33,7 @@ rules:
   resources: ["nodes"]
   verbs: ["watch","list","get","update"]
 - apiGroups: [""]
-  resources: ["pods","services","replicationcontrollers","persistentvolumeclaims","persistentvolumes"]
+  resources: ["pods","services","persistentvolumeclaims","persistentvolumes"]
   verbs: ["watch","list","get"]
 - apiGroups: ["extensions"]
   resources: ["replicasets","daemonsets"]
@@ -49,7 +49,7 @@ rules:
   verbs: ["watch","list","get"]
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: cluster-autoscaler
@@ -67,7 +67,7 @@ rules:
   verbs: ["delete","get","update"]
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cluster-autoscaler
@@ -84,7 +84,7 @@ subjects:
     namespace: kube-system
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cluster-autoscaler
@@ -102,7 +102,7 @@ subjects:
     namespace: kube-system
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cluster-autoscaler
