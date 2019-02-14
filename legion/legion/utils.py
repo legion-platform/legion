@@ -39,8 +39,6 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 import legion.config
 import legion.containers.headers
-import legion.config
-import legion.containers.headers
 
 
 KUBERNETES_STRING_LENGTH_LIMIT = 63

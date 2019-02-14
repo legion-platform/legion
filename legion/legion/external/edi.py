@@ -21,8 +21,6 @@ import json
 import logging
 from urllib.parse import urlparse
 
-import requests.exceptions
-
 import legion.k8s
 import legion.edi.server
 import legion.config

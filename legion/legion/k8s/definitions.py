@@ -18,6 +18,8 @@ legion k8s definitions functions
 """
 import typing
 
+from legion.containers.definitions import STATUS_OK, STATUS_FAIL, STATUS_WARN
+from legion.containers.definitions import ModelIdVersion, ModelDeploymentDescription
 
 LEGION_SYSTEM_LABEL = 'legion.system'
 LEGION_SYSTEM_VALUE = 'yes'

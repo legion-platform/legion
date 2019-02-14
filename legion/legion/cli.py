@@ -73,7 +73,7 @@ def build_model(args):
     :type args: :py:class:`argparse.Namespace`
     :return: :py:class:`docker.model.Image` docker image
     """
-    client = legion.containers.docker.build_docker_client(args)
+    client = legion.containers.docker.build_docker_client()
 
     model_file = args.model_file
     if not model_file:
@@ -90,7 +90,7 @@ def build_model(args):
         model_id = container.model_id
         model_version = container.model_version
 
-        image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id, args)
+        image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id)
 
         LOGGER.info('Building docker image...')
 
