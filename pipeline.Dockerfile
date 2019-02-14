@@ -1,34 +1,34 @@
 FROM python:3.6@sha256:4f309bf7925db6e21f7f1b7db99aa76576007441136f5e22d4fc422491255872
 
-# Docker CLI (without engine, is used for testing)
-ENV DOCKERVERSION=18.03.1-ce
-
 # Install python package dependencies and docker CLI
 RUN apt-get update && apt-get install -y software-properties-common \
 	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git  \
   jq=1.5+dfsg-1.3 xvfb=2:1.19.2-1+deb9u5 \
   firefox-esr=60.5.0esr-1~deb9u1 \
 	&& apt-get clean all
-  && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKERVERSION}.tgz \
-  && tar xzvf docker-${DOCKERVERSION}.tgz --strip 1 -C /usr/local/bin docker/docker \
-  && rm docker-${DOCKERVERSION}.tgz
 
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
+# Docker CLI (without engine, is used for testing)
+ENV DOCKER_VERSION=18.03.1-ce
+RUN  curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+  && tar xzvf docker-${DOCKER_VERSION}.tgz --strip 1 -C /usr/local/bin docker/docker \
+  && rm docker-${DOCKER_VERSION}.tgz
+
 # Install updated firefox version
 ENV FIREFOX_VERSION=64.0.2
-ADD https://download.mozilla.org/?product=firefox-${FIREFOX_VERSION}&os=linux64&lang=en-US /tmp/firefox.tar.bz2
+ADD https://download.mozilla.org/?product=firefox-${FIREFOX_VERSION}&os=linux64&lang=en-US firefox.tar.bz2
 RUN mkdir /opt/firefox && \
-    tar xjf /tmp/firefox.tar.bz2 -C /opt/firefox/ && \
+    tar xjf firefox.tar.bz2 -C /opt/firefox/ && \
     rm -rf /usr/bin/firefox && \
     ln -s /opt/firefox/firefox/firefox /usr/bin/firefox && \
-    rm -rf /tmp/firefox.tar.bz2
+    rm -rf firefox.tar.bz2
     
 # Install Geckodriver for selenium tests
 ENV GECKO_VERSION=0.22.0
-ADD https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz /tmp/geckodriver.tar.gz
-RUN tar xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
-    rm -rf /tmp/geckodriver*
+ADD https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz geckodriver.tar.gz
+RUN tar xzf geckodriver.tar.gz -C /usr/local/bin/ && \
+    rm -rf geckodriver*
 RUN chmod a+x /usr/local/bin/geckodriver
 
 # Install Kops

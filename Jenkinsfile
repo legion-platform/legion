@@ -331,37 +331,6 @@ EOL
             }
         }
 
-<<<<<<< 13d9b2d32654013dca90078cedfb76225464fa0c
-
-=======
-        stage("Run Python tests") {
-            steps {
-                script {
-                    docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                        sh """
-                        cd /src/legion
-                        VERBOSE=true BASE_IMAGE_VERSION="${Globals.buildVersion}" nosetests --processes=10 \
-                                                                                            --process-timeout=600 \
-                                                                                            --with-coverage \
-                                                                                            --cover-package legion \
-                                                                                            --with-xunitmp \
-                                                                                            --cover-html \
-                                                                                            --logging-level DEBUG \
-                                                                                            -v || true
-                        cd -
-                        cp /src/legion/nosetests.xml legion/nosetests.xml
-                        """
-                        junit 'legion/nosetests.xml'
-
-                        sh "tar -czf legion_cover_${Globals.buildVersion}.tar.gz /src/legion/cover/"
-                        archiveArtifacts artifacts: "legion_cover_${Globals.buildVersion}.tar.gz"
-                        
-                    }
-                }
-            }
-        }
->>>>>>> [#703] pull cache images
-
         stage("Build Docker images & Helms") {
             parallel {
                 stage("Build Ansible Docker image") {
@@ -376,7 +345,7 @@ EOL
                 stage("Build toolchains Docker image"){
                     steps {
                         sh """
-                        docker run --rm --entrypoint "/bin/sh" "legion-docker-agent:${env.buildVersion}" -c "cat /src/legion/dist/*.whl" > k8s/toolchains/python/legion-1.1.1-py2.py3-none-any.whl
+                        docker run --rm --entrypoint /bin/sh legion/legion-docker-agent:${Globals.buildVersion} -c 'cat /src/legion/dist/*.whl' > k8s/toolchains/python/legion-1.1.1-py2.py3-none-any.whl
 
                         cd k8s/toolchains/python
                         docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}"  -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
@@ -388,7 +357,7 @@ EOL
                         sh """
                         cd k8s/grafana
                         docker pull grafana/grafana:4.5.0 || true
-                        docker pull ${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source}
+                        docker pull ${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} || true
                         docker build ${Globals.dockerCacheArg} --cache-from=grafana/grafana:4.5.0 --cache-from=${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
@@ -521,7 +490,6 @@ EOL
                         }
                     }
                 }
-                
                 stage('Package and upload helm charts'){
                     steps {
                         script {
