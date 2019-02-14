@@ -30,7 +30,7 @@ class Model:
         self._last_response = None
 
     @staticmethod
-    def get_model_info(model_id, model_version, edge, token):
+    def get_model_info(edge, token, model_id, model_version=None):
         """
         Invoke model through API
 
@@ -41,7 +41,10 @@ class Model:
         :return: dict -- response
         """
         headers = {"Authorization": "Bearer {}".format(token)}
-        url = '{}/api/model/{}/{}/info'.format(edge, model_id, model_version)
+        if model_version:
+            url = '{}/api/model/{}/{}/info'.format(edge, model_id, model_version)
+        else:
+            url = '{}/api/model/{}/info'.format(edge, model_id)
 
         print('Requesting {} in GET mode'.format(url))
 

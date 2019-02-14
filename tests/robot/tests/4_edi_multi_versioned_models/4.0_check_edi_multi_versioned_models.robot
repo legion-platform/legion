@@ -195,3 +195,27 @@ Check EDI model inspect by model version=* return all models
                     Should Be Equal As Integers    ${resp.rc}        0
                     Should contain                 ${resp.stdout}    ${TEST_MODEL_IMAGE_1}
                     Should contain                 ${resp.stdout}    ${TEST_MODEL_IMAGE_2}
+
+Check default model urls
+    [Setup]  NONE
+    [Tags]  apps
+    ${edge}=             Build enclave EDGE URL     ${MODEL_TEST_ENCLAVE}
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+
+    ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
+                    Should Be Equal As Integers     ${resp.rc}         0
+    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_1_VERSION}
+
+    ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
+                    Should Be Equal As Integers     ${resp.rc}         0
+    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}  ${TEST_MODEL_2_VERSION}
+                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_2_VERSION}"
+
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    Run Keyword And Expect Error  Returned wrong status code: 400  Get model info  ${edge}  ${TOKEN}  ${TEST_MODEL_ID}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_2_VERSION}

@@ -17,6 +17,7 @@
 legion k8s enclave class
 """
 import logging
+from collections import Counter
 
 import kubernetes
 import kubernetes.client
@@ -462,21 +463,19 @@ class Enclave:
             :type endpoints_to_normalize: set[:py:class:`legion.k8s.services.ModelServiceEndpoint`]
             :return list[:py:class:`legion.k8s.services.ModelServiceEndpoint`] -- endpoints with default
             """
-            result = []
-            default_endpoints_models = {}
+            model_endpoints = []
+            unspecified_version_endpoints = []
+            model_id_counter = Counter(x.model_service.id for x in endpoints_to_normalize)
 
             for endpoint in endpoints_to_normalize:
-                model_id = endpoint.model_service.id
+                model_endpoints.append(endpoint)
 
-                # TODO: Change in future, add default model choosing algorithm
-                default_endpoints_models[model_id] = endpoint
-                result.append(endpoint)
+                if model_id_counter[endpoint.model_service.id] == 1:
+                    model_endpoints.append(endpoint.build_default())
+                else:
+                    unspecified_version_endpoints.append(endpoint.build_default())
 
-            # Append defaults to the end
-            for default_endpoint in default_endpoints_models.values():
-                result.append(default_endpoint.build_default())
-
-            return result
+            return model_endpoints, unspecified_version_endpoints
 
         for event_type, model_service in self.watch_models():
             model_endpoint = legion.k8s.services.ModelServiceEndpoint(model_service)
