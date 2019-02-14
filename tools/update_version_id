@@ -73,7 +73,7 @@ def get_base_version(file):
     return base_version.group(1)
 
 
-def patch_version_file(file, build_version, git_revision, build_id, build_user, date_string):
+def patch_version_file(file, build_version, git_revision, build_user, date_string):
     """
     Update local version for file
 
@@ -83,8 +83,6 @@ def patch_version_file(file, build_version, git_revision, build_id, build_user, 
     :type build_version: str
     :param git_revision: build version string
     :type git_revision: str
-    :param build_id: build id
-    :type build_id: str
     :param build_user: build user id
     :type build_user: str
     :param date_string: build time
@@ -98,7 +96,6 @@ def patch_version_file(file, build_version, git_revision, build_id, build_user, 
     content = re.sub(SEARCH_PATTERN, '__version__ = \'{}\''.format(build_version), content, flags=re.MULTILINE)
     content = ''.join((content,
         '__git_revision__ = \'{}\'\n'.format(git_revision),
-        '__build_id__ = \'{}\'\n'.format(build_id),
         '__build_user__ = \'{}\'\n'.format(build_user),
         '__build_date__ = \'{}\'\n'.format(date_string)))
 
@@ -127,16 +124,15 @@ def work(args):
     else:
         git_revision = args.git_revision
 
-    build_id = args.build_id
     build_user = args.build_user
 
     if not args.build_version:
-        local_version_string = '%s.%s.%s' % (date_string, str(build_id), git_revision)
+        local_version_string = '%s.%s' % (date_string, git_revision)
         build_version = '{}-{}'.format(get_base_version(args.version_file), local_version_string)
     else:
         build_version = args.build_version
 
-    patch_version_file(args.version_file, build_version, git_revision, build_id, build_user, date_string)
+    patch_version_file(args.version_file, build_version, git_revision, build_user, date_string)
 
     print(build_version)
 
@@ -144,7 +140,6 @@ def work(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Version file updater (adds time, build id, commit id to version)')
     parser.add_argument('version_file', type=str, help='Path to version file')
-    parser.add_argument('build_id', type=int, help='Set build id')
     parser.add_argument('build_user', type=str, help='Set build user')
     parser.add_argument('--build-version', type=str, help='Explicitly specify new Legion build version')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')
