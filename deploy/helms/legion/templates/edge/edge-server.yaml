@@ -1,6 +1,6 @@
 {{- if .Values.edge.enabled }}
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-edge"
   labels:
@@ -11,7 +11,8 @@ metadata:
 spec:
   replicas: {{ .Values.edge.replicas }}
   selector:
-    component: "{{ .Release.Name }}-edge"
+    matchLabels:
+      component: "{{ .Release.Name }}-edge"
   template:
     metadata:
       labels:

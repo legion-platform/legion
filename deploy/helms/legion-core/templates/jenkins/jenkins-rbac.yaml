@@ -1,7 +1,7 @@
 {{ if .Values.jenkins.enabled -}}
 {{ if .Values.jenkins.rbac -}}
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
     heritage: {{ .Release.Service | quote }}
@@ -24,7 +24,7 @@ rules:
   verbs: ["get"]
 ---
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
     heritage: {{ .Release.Service | quote }}

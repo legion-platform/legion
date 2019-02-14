@@ -1,7 +1,7 @@
 {{ if .Values.edi.enabled -}}
 {{ if .Values.edi.rbac -}}
 kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "{{ .Release.Name }}-edi"
 rules:
@@ -12,14 +12,14 @@ rules:
   resources: ["configmaps", "secrets"]
   verbs: ["list", "create", "get", "patch", "update"]
 - apiGroups: ["extensions"]
-  resources: ["deployments", "ingresses"]
+  resources: ["ingresses"]
   verbs:  ["list", "create", "patch", "get"]
 - apiGroups: ["apps"]
   resources: ["deployments"]
-  verbs:  ["list", "delete", "patch", "get"]
+  verbs:  ["list", "delete", "patch", "get", "create"]
 ---
 kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "{{ .Release.Name }}-edi"
 subjects:

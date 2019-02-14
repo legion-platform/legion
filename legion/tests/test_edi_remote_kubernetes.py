@@ -39,7 +39,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_all_detail(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect()
@@ -87,7 +87,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_by_model_id(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('demo-abc-model')
@@ -135,7 +135,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_by_model_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect(version='1.0')
                 # Test count of returned models
@@ -163,7 +163,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_by_model_id_and_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('demo-abc-model', '1.0')
                 # Test count of returned models
@@ -200,7 +200,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_return_none_for_invalid_model_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.list_namespaced_deployment',
                         'demo_abc_models_1_0_and_1_1'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect(version='fake_version')
@@ -211,7 +211,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_filter_empty_results(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'no_models'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.list_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.list_namespaced_deployment',
                         'demo_abc_models_1_0_and_1_1'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 models_info = edi.edi_client.inspect('unexisted-model-id')
@@ -223,8 +223,8 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), 'demo_abc_model_1_0']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment', 'deploy_done'), \
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.AppsV1Api.create_namespaced_deployment', 'deploy_done'), \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None), \
@@ -259,8 +259,8 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), 'demo_abc_model_1_0']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.AppsV1Api.create_namespaced_deployment',
                         'deploy_done') as cnd_mock, \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
@@ -300,9 +300,9 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), 'demo_abc_model_1_0']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         'demo_abc_model_1_0_scaled_to_2'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.create_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.create_namespaced_deployment',
                         'deploy_done') as cnd_mock, \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
@@ -352,9 +352,9 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
                  m_func('kubernetes.client.CoreV1Api.read_namespaced_service', ApiException(404)), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', ApiException(404)]), \
-                 m_func('kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.delete_namespaced_deployment',
                         'model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
@@ -396,9 +396,9 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_scale_up(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_0_scaled_to_2']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.patch_namespaced_deployment',
                         'demo_abc_model_1_0_scaled_to_2') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale('demo-abc-model', 2)
@@ -432,9 +432,9 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_scale_down(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0_scaled_to_2', 'demo_abc_model_1_0']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.patch_namespaced_deployment',
                         'demo_abc_model_1_0_scaled_to_1') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale('demo-abc-model', 1)
@@ -468,7 +468,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_negative_edi_scale_to_0(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_model_1_0'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment', 'demo_abc_model_1_0'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None):
                 try:
                     edi.edi_client.scale('demo-abc-model', 0)
@@ -489,7 +489,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_all_models_by_version(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
@@ -542,7 +542,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
     def test_edi_inspect_all_models_by_id(self):
         with EDITestServer() as edi:
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
@@ -617,10 +617,10 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), ApiException(404)]), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', ApiException(404),
                          'demo_abc_model_1_1', ApiException(404)]), \
-                 m_func('kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.delete_namespaced_deployment',
                         'last_model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
                  mock.patch('legion.k8s.utils.is_code_run_in_cluster', return_value=None), \
@@ -677,10 +677,10 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), ApiException(404)]), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_0_scaled_to_2',
                          'demo_abc_model_1_1', 'demo_abc_model_1_1_scaled_to_2']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.patch_namespaced_deployment',
                         'last_model_scaled_to_2') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
@@ -740,10 +740,10 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), ApiException(404)]), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_0_scaled_to_2',
                          'demo_abc_model_1_1', 'demo_abc_model_1_1_scaled_to_2']), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.patch_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.patch_namespaced_deployment',
                         'last_model_scaled_to_2') as pnd_mock, \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
                  mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
@@ -804,11 +804,11 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  m_func('kubernetes.client.CoreV1Api.read_namespaced_service',
                         [ApiException(404), ApiException(404)]), \
-                 m_func('kubernetes.client.ExtensionsV1beta1Api.read_namespaced_deployment',
+                 m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', ApiException(404),
                          'demo_abc_model_1_1', ApiException(404)]), \
                  m_func(
-                     'kubernetes.client.apis.apps_v1beta1_api.AppsV1beta1Api.delete_namespaced_deployment',
+                     'kubernetes.client.AppsV1Api.delete_namespaced_deployment',
                      'last_model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
