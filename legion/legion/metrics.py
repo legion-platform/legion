@@ -156,11 +156,11 @@ def send_metric(model_id, metric, value):
 
     host, port, namespace = get_metric_endpoint()
 
-    metric_name = '%s.%s' % (namespace, get_metric_name(metric, model_id))
-    message = "%s %f %d\n" % (metric_name, float(value), int(time.time()))
+    metric_name = '{}.{}'.format(namespace, get_metric_name(metric, model_id))
+    message = "{} {} {}\n".format(metric_name, float(value), int(time.time()))
     send_tcp(host, port, message)
 
     build_no = get_build_number()
-    metric_name = '%s.%s' % (namespace, get_metric_name('build', model_id))
-    message = "%s %f %d\n" % (metric_name, build_no, int(time.time()))
+    metric_name = '{}.{}'.format(namespace, get_metric_name('build', model_id))
+    message = "{} {} {}\n".format(metric_name, build_no, int(time.time()))
     send_tcp(host, port, message)

@@ -19,7 +19,6 @@ Graphana API functional for working with models
 
 import json
 import logging
-import os
 
 import requests
 

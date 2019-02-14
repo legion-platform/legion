@@ -1,3 +1,4 @@
+# pylint: disable=C0302
 import logging
 import contextlib
 import time
@@ -127,23 +128,23 @@ def patch_environ(values, flush_existence=False):
     return patch('os.environ', new_values)
 
 
-def build_sequential_resource_name_generator(responses):
+def build_sequential_resource_name_generator(responses_list):
     """
     Build function that can sequential return name of responses
 
-    :param responses: list of responses
-    :type responses: list[str]
+    :param responses_list: list of responses
+    :type responses_list: list[str]
     :return: Callable[[], str] -- function that generates name of responses
     """
     i = 0
 
     def func():
         nonlocal i
-        if i >= len(responses):
+        if i >= len(responses_list):
             raise Exception('Function is called #{} time, but have only {} variant(s)'.format(
-                i + 1, len(responses)
+                i + 1, len(responses_list)
             ))
-        value = responses[i]
+        value = responses_list[i]
         i += 1
         return value
     return func
@@ -453,14 +454,14 @@ class ManagedProcessContext:
 
     @property
     def stdout(self):
-        if self._read_stdout_callback:
+        if self._read_stdout_callback and callable(self._read_stdout_callback):
             return self._read_stdout_callback()
 
         return self.process.stdout
 
     @property
     def stderr(self):
-        if self._read_stderr_callback:
+        if self._read_stderr_callback and callable(self._read_stderr_callback):
             return self._read_stderr_callback()
 
         return self.process.stderr

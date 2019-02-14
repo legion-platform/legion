@@ -412,12 +412,12 @@ def sandbox(args):
     print('To activate run {!r} from command line'.format(path_to_activate))
 
 
-def list_dependencies(args):
+def list_dependencies(_):
     """
     Print package dependencies
 
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
+    :param _: command arguments
+    :type _: :py:class:`argparse.Namespace`
     :return: None
     """
     dependencies = legion.utils.get_list_of_requirements()
@@ -514,12 +514,12 @@ def config_get_all(args):
             _print_variable_information(name, args.show_secrets)
 
 
-def config_path(args):
+def config_path(_):
     """
     Get configuration storage path
 
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
+    :param _: command arguments
+    :type _: :py:class:`argparse.Namespace`
     :return: None
     """
     print(legion.config.get_config_file_path())
@@ -543,7 +543,7 @@ def configure_logging(args):
                         stream=sys.stderr)
 
 
-def build_parser():
+def build_parser():  # pylint: disable=R0915
     """
     Build parser for CLI
 
@@ -572,15 +572,15 @@ def build_parser():
     generate_token_parser.set_defaults(func=generate_token)
 
     # --------- LOCAL DOCKER SECTION -----------
-    build_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '
-                                                              'in the docker container)')
-    build_parser.add_argument('--model-file',
-                              type=str, help='serialized model file name')
-    build_parser.add_argument('--docker-image-tag',
-                              type=str, help='docker image tag')
-    build_parser.add_argument('--push-to-registry',
-                              type=str, help='docker registry address')
-    build_parser.set_defaults(func=build_model)
+    build_model_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '
+                                                                    'in the docker container)')
+    build_model_parser.add_argument('--model-file',
+                                    type=str, help='serialized model file name')
+    build_model_parser.add_argument('--docker-image-tag',
+                                    type=str, help='docker image tag')
+    build_model_parser.add_argument('--push-to-registry',
+                                    type=str, help='docker registry address')
+    build_model_parser.set_defaults(func=build_model)
 
     # --------- KUBERNETES SECTION -----------
     deploy_parser = subparsers.add_parser('deploy',

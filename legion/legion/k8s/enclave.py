@@ -17,7 +17,6 @@
 legion k8s enclave class
 """
 import logging
-import os
 
 import kubernetes
 import kubernetes.client

@@ -19,9 +19,10 @@ Robot test library - jenkins
 import time
 import json
 
-import jenkins
 from six.moves.urllib.request import Request
 from six.moves.urllib.error import HTTPError
+import jenkins
+
 from legion_test.robot.dex_client import get_session_cookies, get_jenkins_credentials
 
 JOB_MODEL_ID = '%(folder_url)sjob/%(short_name)s/%(build_number)s/model/json'

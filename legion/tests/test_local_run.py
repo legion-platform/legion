@@ -13,11 +13,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import docker
 import os
 import sys
 import logging
 
+import docker
 import unittest2
 
 import legion.cli

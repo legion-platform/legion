@@ -17,8 +17,6 @@
 legion k8s functions
 """
 import logging
-import os
-import json
 
 import docker
 import docker.errors

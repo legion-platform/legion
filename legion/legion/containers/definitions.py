@@ -19,8 +19,6 @@ legion k8s definitions functions
 import logging
 import json
 
-import docker.models.containers
-
 import legion.config
 import legion.containers.headers
 
@@ -36,17 +34,17 @@ class ModelIdVersion:
     Holder for model ID and version
     """
 
-    def __init__(self, id, version):
+    def __init__(self, model_id, model_version):
         """
         Build model ID and version holder
 
-        :param id: model ID
-        :type id: str
-        :param version: model version
-        :type version: str
+        :param model_id: model ID
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
         """
-        self._id = id
-        self._version = version
+        self._id = model_id
+        self._version = model_version
 
     @property
     def id(self):
@@ -200,8 +198,8 @@ class ModelDeploymentDescription:
         for name, info in binded_ports.items():
             if name.startswith('{}/'.format(legion.config.LEGION_PORT)):
                 if not info:
-                    LOGGER.debug('Port {} has not been bound for container'.format(legion.config.LEGION_PORT,
-                                                                                   docker_container_info.id))
+                    LOGGER.debug('Port {} has not been bound for container {}'.format(legion.config.LEGION_PORT,
+                                                                                      docker_container_info.id))
                 else:
                     local_port = int(info[0]['HostPort'])
 

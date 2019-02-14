@@ -30,8 +30,10 @@ sys.path.extend(os.path.dirname(__file__))
 
 
 from legion_test_utils import \
-    add_response_from_file, \
-    activate_http_api_json_calls_catcher  # Could be used for catching responses (should replace responses.activate)
+    add_response_from_file
+
+# Next function could be used for catching responses (should replace responses.activate)
+# -> activate_http_api_json_calls_catcher
 
 
 DOCKER_INSPECT_API_CALL = '/containers/json?limit=-1&all=0&size=0&trunc_cmd=0'
@@ -302,18 +304,6 @@ class TestEDILocalUndeploy(TestEDILocal):
             self.client.undeploy(model=MODEL_A_ID)
 
         self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
-
-    @responses.activate
-    def test_undeploy_correct(self):
-        self._register_model_a_inspect()
-
-        add_response_from_file(self.prefix + '/containers/{}/stop'.format(MODEL_A_CONTAINER),
-                               'local_deploy_docker_container_a_stop',
-                               responses.POST)
-
-        affected_models = self.client.undeploy(model=MODEL_A_ID)
-        self.assertEqual(len(affected_models), 1, 'could not find one model')
-        self.assertEqual(affected_models[0], MODEL_A_DEPLOYMENT_DESCRIPTION)
 
     @responses.activate
     def test_undeploy_correct(self):
