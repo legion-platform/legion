@@ -324,9 +324,8 @@ EOL
                     sh """
                     cd base-python-image
                     docker build ${Globals.dockerCacheArg} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
-                    docker tag legion/base-python-image:${Globals.buildVersion} legion/base-python-image:${env.BUILD_NUMBER}
                     """
-                    legion.uploadDockerImage('base-python-image', "${Globals.buildVersion}")
+                    legion.uploadDockerImage('base-python-image')
                 }
             }
         }
@@ -428,6 +427,22 @@ EOL
                         }
                     }
                 }
+                stage("Build test models") {
+                    steps {
+                        script {
+                            docker.image("legion-docker-agent:${env.BUILD_NUMBER}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                                sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
+
+                                legion.buildTestBareModel("demo-abc-model", "1.0", "1")
+                                legion.buildTestBareModel("demo-abc-model", "1.1", "2")
+                                legion.buildTestBareModel("edi-test-model", "1.2", "3")
+                                legion.buildTestBareModel("feedback-test-model", "1.0", "4")
+                                legion.buildTestBareModel("command-test-model", "1.0", "5")
+                                legion.buildTestBareModel("auth-test-model", "1.0", "6")
+                            }
+                        }
+                    }
+                }
                 stage("Run Python tests") {
                     agent {
                         docker {
@@ -486,97 +501,89 @@ EOL
                 stage('Upload Grafana Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-grafana', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-grafana')
                         }
                     }
                 }
                 stage('Upload Ansible Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-ansible', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-ansible')
                         }
                     }
                 }
                 stage('Upload Edge Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-edge', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-edge')
                         }
                     }
                 }
                 stage('Upload Jenkins Docker image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-jenkins', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-jenkins')
                         }
                     }
                 }
-                stage("Build and upload test models") {
-                    agent {
-                        docker {
-                            image "legion/base-python-image:${env.BUILD_NUMBER}"
-                            args "-v ${localDocumentationStorage}:${localDocumentationStorage} -v /var/run/docker.sock:/var/run/docker.sock -u root --net host"
-                        }
-                    }
+                stage("Upload test models") {
                     steps {
                         script {
-                            sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
-
-                            legion.buildAndUploadTestBareModel("demo-abc-model", "1.0", "1")
-                            legion.buildAndUploadTestBareModel("demo-abc-model", "1.1", "2")
-                            legion.buildAndUploadTestBareModel("edi-test-model", "1.2", "3")
-                            legion.buildAndUploadTestBareModel("feedback-test-model", "1.0", "4")
-                            legion.buildAndUploadTestBareModel("command-test-model", "1.0", "5")
-                            legion.buildAndUploadTestBareModel("auth-test-model", "1.0", "6")
+                            legion.uploadDockerImage("test-bare-model-api-model-1")
+                            legion.uploadDockerImage("test-bare-model-api-model-2")
+                            legion.uploadDockerImage("test-bare-model-api-model-3")
+                            legion.uploadDockerImage("test-bare-model-api-model-4")
+                            legion.uploadDockerImage("test-bare-model-api-model-5")
+                            legion.uploadDockerImage("test-bare-model-api-model-6")
                         }
                     }
                 }
                 stage('Upload Edi Docker image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-edi', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-edi')
                         }
                     }
                 }
                 stage('Upload Airflow Docker image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-airflow', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-airflow')
                         }
                     }
                 }
                 stage('Upload Fluentd Docker image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-fluentd', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-fluentd')
                         }
                     }
                 }
                 stage('Upload oauth2-proxy Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-oauth2-proxy', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-oauth2-proxy')
                         }
                     }
                 }
                 stage('Upload kube-fluentd Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-kube-fluentd', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-kube-fluentd')
                         }
                     }
                 }
                 stage('Upload kube-elb-security Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-kube-elb-security', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('k8s-kube-elb-security')
                         }
                     }
                 }
                 stage('Upload python-toolchain Docker Image') {
                     steps {
                         script {
-                            legion.uploadDockerImage('python-toolchain', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('python-toolchain')
                         }
                     }
                 }

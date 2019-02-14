@@ -400,36 +400,37 @@ def notifyBuild(String buildStatus = 'STARTED') {
 
 }
 
-def buildAndUploadTestBareModel(modelId, modelVersion, versionNumber) {
+def buildTestBareModel(modelId, modelVersion, versionNumber) {
     sh """
-    cd tests/models
-    rm -rf robot.model || true
-    python3 simple.py --id "${modelId}" --version "${modelVersion}"
+        cd tests/models
+        rm -rf robot.model || true
+        mkdir /app || true
+        python3 simple.py --id "${modelId}" --version "${modelVersion}"
 
-    legionctl build \
-              --push-to-registry "${env.param_docker_registry}/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion}" \
-              robot.model
+        legionctl --verbose build \
+                  --docker-image-tag "legion/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion}" \
+                  --model-file robot.model
     """
 }
 
-def uploadDockerImage(String imageName, String buildVersion) {
+def uploadDockerImage(String imageName) {
     if (env.param_stable_release) {
         sh """
         # Push stable image to local registry
-        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_registry}/${imageName}:${buildVersion}
-        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_registry}/${imageName}:latest
-        docker push ${env.param_docker_registry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${Globals.buildVersion} ${env.param_docker_registry}/${imageName}:${Globals.buildVersion}
+        docker tag legion/${imageName}:${Globals.buildVersion} ${env.param_docker_registry}/${imageName}:latest
+        docker push ${env.param_docker_registry}/${imageName}:${Globals.buildVersion}
         docker push ${env.param_docker_registry}/${imageName}:latest
         # Push stable image to DockerHub
-        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_hub_registry}/${imageName}:${buildVersion}
-        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_hub_registry}/${imageName}:latest
-        docker push ${env.param_docker_hub_registry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${Globals.buildVersion} ${env.param_docker_hub_registry}/${imageName}:${Globals.buildVersion}
+        docker tag legion/${imageName}:${Globals.buildVersion} ${env.param_docker_hub_registry}/${imageName}:latest
+        docker push ${env.param_docker_hub_registry}/${imageName}:${Globals.buildVersion}
         docker push ${env.param_docker_hub_registry}/${imageName}:latest
         """
     } else {
         sh """
-        docker tag legion/${imageName}:${buildVersion} ${env.param_docker_registry}/${imageName}:${buildVersion}
-        docker push ${env.param_docker_registry}/${imageName}:${buildVersion}
+        docker tag legion/${imageName}:${Globals.buildVersion} ${env.param_docker_registry}/${imageName}:${Globals.buildVersion}
+        docker push ${env.param_docker_registry}/${imageName}:${Globals.buildVersion}
         """
     }
 }
