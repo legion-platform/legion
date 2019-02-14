@@ -30,12 +30,12 @@ RUN apt-get install -y \
 RUN mkdir -p /etc/ansible/ && /bin/echo -e "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
 
 # Install Kops
-ENV KOPS_VERSION=1.10.0
+ENV KOPS_VERSION=1.11.0
 ADD https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 /usr/local/bin/kops
 RUN chmod a+x /usr/local/bin/kops
 
 # Install kubectl
-ENV KUBECTL_VERSION=v1.10.6
+ENV KUBECTL_VERSION=v1.11.6
 ADD https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod a+x /usr/local/bin/kubectl
 
