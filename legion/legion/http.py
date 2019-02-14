@@ -17,7 +17,6 @@
 Flask package
 """
 import functools
-import os
 import logging
 from urllib.parse import parse_qs
 
@@ -290,52 +289,18 @@ def apply_cli_args(application, args):
             application.config[argument.upper()] = value
 
 
-def apply_env_argument(application, name, cast=None):
+def copy_configuration(application):
     """
-    Update application config if ENV variable exists
-
-    :param application: Flask app instance
-    :type application: :py:class:`Flask.app`
-    :param name: environment variable name
-    :type name: str
-    :param cast: casting of str variable
-    :type cast: Callable[[str], Any]
-    :return: None
-    """
-    if name in os.environ:
-        value = os.getenv(name)
-        if cast:
-            value = cast(value)
-
-        application.config[name] = value
-
-
-def apply_env_args(application):
-    """
-    Set Flask app instance configuration from environment
+    Set Flask app instance configuration from legion.config (internal file and ENV)
 
     :param application: Flask app instance
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    apply_env_argument(application, legion.config.MODEL_ID[0])
-    apply_env_argument(application, legion.config.MODEL_FILE[0])
-
-    apply_env_argument(application, legion.config.LEGION_ADDR[0])
-    apply_env_argument(application, legion.config.LEGION_PORT[0], cast=int)
-
-    apply_env_argument(application, legion.config.DEBUG[0], legion.utils.string_to_bool)
-
-    apply_env_argument(application, legion.config.REGISTER_ON_GRAFANA[0], legion.utils.string_to_bool)
-
-    apply_env_argument(application, legion.config.NAMESPACE[0])
-
-    apply_env_argument(application, legion.config.LEGION_API_ADDR[0])
-    apply_env_argument(application, legion.config.LEGION_API_PORT[0], cast=int)
-
-    apply_env_argument(application, legion.config.CLUSTER_CONFIG_PATH[0])
-    apply_env_argument(application, legion.config.CLUSTER_SECRETS_PATH[0])
-    apply_env_argument(application, legion.config.JWT_CONFIG_PATH[0])
+    for name in legion.config.ALL_VARIABLES:
+        value = getattr(legion.config, name)
+        if value is not None:
+            application.config[name] = value
 
 
 def configure_application(application, args):
@@ -354,10 +319,11 @@ def configure_application(application, args):
     application.config.from_pyfile('config_default.py')
 
     # 3rd priority: config from file (path to file from ENV)
-    application.config.from_envvar(legion.config.FLASK_APP_SETTINGS_FILES[0], True)
+    if legion.config.FLASK_APP_SETTINGS_FILES:
+        application.config.from_pyfile(legion.config.FLASK_APP_SETTINGS_FILES, True)
 
-    # 2nd priority: config from ENV variables
-    apply_env_args(application)
+    # 2nd priority: config from Legion File, ENV variables
+    copy_configuration(application)
 
     # 1st priority: config from CLI args
     if args:

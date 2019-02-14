@@ -1,6 +1,6 @@
 # Legionctl
 
-`legionctl` is a command line tool that allows you to manage an edi service.
+LegionCTL (`legionctl`) is a command line interface for manipulating with models (external deployed, local deployed and building process).
 
 ## Basic
 

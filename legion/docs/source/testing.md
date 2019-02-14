@@ -15,11 +15,18 @@ cd base-python-image
 docker build --network host -t legion/base-python-image:latest .
 ```
 * You should create virtualenv and donwload main and develop dependencies
-* You should make develop version of legion package:
+* You should make develop & wheel versions of legion package:
 ```bash
 cd legion
 python setup.py develop
 python setup.py collect_data
+```
+* You should make toolchains
+```bash
+rm -f k8s/toolchains/python/*.whl
+cp $(find . -name "*.whl" -print0 | xargs -0 ls -1 -t | head -1) k8s/toolchains/python/
+cd k8s/toolchains/python
+docker build --network host -t legion/python-toolchain:latest .
 ```
 
 Run tests:

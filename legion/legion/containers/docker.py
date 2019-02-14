@@ -193,7 +193,7 @@ def build_docker_image(client, model_id, model_file, labels,
         print('Executing {!r}'.format(symlink_create_command))
 
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
-            'MODEL_PORT': legion.config.LEGION_PORT[1],
+            'MODEL_PORT': legion.config.LEGION_PORT,
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
             'MODEL_FILE': target_model_file,
@@ -295,8 +295,8 @@ def push_image_to_registry(client, image, external_image_name):
         version = image_name[version_delimiter + 1:]
         image_name = image_name[:version_delimiter]
 
-    docker_registry_user = os.getenv(*legion.config.DOCKER_REGISTRY_USER)
-    docker_registry_password = os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD)
+    docker_registry_user = legion.config.DOCKER_REGISTRY_USER
+    docker_registry_password = legion.config.DOCKER_REGISTRY_PASSWORD
     auth_config = None
 
     if docker_registry_user and docker_registry_password:

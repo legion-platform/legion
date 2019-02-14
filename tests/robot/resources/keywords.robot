@@ -317,27 +317,23 @@ Validate model feedback ID and version
 Verify model info from edi
     [Arguments]      ${target_model}       ${model_id}        ${model_image}      ${model_version}    ${scale_num}
     Should Be Equal  ${target_model[0]}    ${model_id}        invalid model id
-    Should Be Equal  ${target_model[1]}    ${model_image}     invalid model image
-    Should Be Equal  ${target_model[2]}    ${model_version}   invalid model version
-    Should Be Equal  ${target_model[3]}    ${scale_num}       invalid actual scales
-    Should Be Equal  ${target_model[4]}    ${scale_num}       invalid desired scale
+    Should Be Equal  ${target_model[1]}    ${model_version}   invalid model version
+    Should Be Equal  ${target_model[2]}    cluster            invalid deployment mode name
+    Should Be Equal  ${target_model[5]}    ${model_image}     invalid model image
+    Should Be Equal  ${target_model[6]}    ${scale_num}       invalid actual scales
+    Should Be Equal  ${target_model[7]}    ${scale_num}       invalid desired scale
 
 Test model pipeline result
     [Arguments]          ${model_name}                      ${enclave}
     Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
     ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
-    Log                  Model meta is ${model_meta}
-    ${model_path} =      Get From Dictionary                ${model_meta}                 modelPath
+    Log                  Model build meta is ${model_meta}
     ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
     ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
-    ${model_path} =	     Get Regexp Matches	                ${model_path}                 (.*)://[^/]+/(?P<path>.*)   path
     ${edge}=             Build enclave EDGE URL             ${enclave}
     Get token from EDI   ${enclave}   ${model_id}   ${model_version}
     ${model_info} =      Get model info       ${model_id}  ${model_version}  ${edge}  ${TOKEN}
     Log                  Model info is ${model_info}
-    ${model_url} =       Set Variable                       ${HOST_PROTOCOL}://nexus.${HOST_BASE_DOMAIN}/${model_path[0]}
-    Log                  External model URL is ${model_url}
-    Check remote file exists                                ${model_url}                  ${SERVICE_ACCOUNT}          jonny
     Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}
     Sleep                15s

@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+
+function get_free_port() {
+    python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.bind(('0.0.0.0', 0));print(s.getsockname()[1]);s.close()"
+}
+
+PORTS=( "PTVSD_PORT" "JUPYTER_PORT" )
+
+for VAR_NAME in "${PORTS[@]}"
+do
+	VAR_VALUE=${!VAR_NAME}
+
+	if [[ -z "${VAR_VALUE}" ]]; then
+        VAR_VALUE=$(get_free_port)
+    fi
+
+    declare $VAR_NAME=$VAR_VALUE
+done
+
+echo "Bootup configuration:"
+echo -e "* Jupyter server: ${GREEN}${JUPYTER_PORT}${NC}"
+
+if [[ -z "${PYDEVD_HOST}" ]] || [[ -z "${PYDEVD_PORT}" ]]; then
+    echo -e "* PYDEVD debugger (reverse connection to host): ${RED}disabled${NC} (you have to define PYDEVD_HOST and PYDEVD_PORT)"
+else
+    echo -e "* PYDEVD debugger (reverse connection to host): ${GREEN}$PYDEVD_HOST:$PYDEVD_PORT${NC}"
+fi
+
+echo -e "* PTVSD debugger: ${GREEN}$PTVSD_PORT${NC}"
+if [[ -z "${PTVSD_WAIT_ATTACH}" ]]; then
+    echo -e "* PTVSD wait-for-attach: ${YELLOW}is not configured${NC} (you may configure it using PTVSD_WAIT_ATTACH)"
+else
+    echo -e "* PTVSD wait-for-attach: ${GREEN}configured to ${PTVSD_WAIT_ATTACH}${NC}"
+fi
+
+echo "Activating legion sandbox using image {{ image }}"
+
+docker run -ti {{ remove_arguments }} \
+   -p $JUPYTER_PORT:$JUPYTER_PORT \
+   -e "JUPYTER_PORT=$JUPYTER_PORT" \
+   -e "PYDEVD_HOST=$PYDEVD_HOST" \
+   -e "PYDEVD_PORT=$PYDEVD_PORT" \
+   -p $PTVSD_PORT:$PTVSD_PORT \
+   -e "PTVSD_PORT=$PTVSD_PORT" \
+   -e "PTVSD_HOST=0.0.0.0" \
+   -e "PTVSD_WAIT_ATTACH=$PTVSD_WAIT_ATTACH" \
+   -e "MODEL_FILE={{ legion_data_directory }}{{ model_file }}" \
+   -v {{ local_fs }}:{{ work_directory }} \
+   -v {{ docker_socket_path }}:/var/run/docker.sock \
+   {{ image }} \
+   sh -c "mkdir -p {{ legion_data_directory }} && cd {{ work_directory }} && bash"

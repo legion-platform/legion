@@ -19,4 +19,4 @@ def calculate(x):
 
 
 legion.model.export_untyped(lambda x: {'code': calculate(x)})
-legion.model.save('native.model')
+legion.model.save()

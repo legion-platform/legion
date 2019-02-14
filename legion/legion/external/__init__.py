@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2019 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,4 +17,4 @@
 Connections to external APIs
 """
 from .grafana import GrafanaClient
-from .edi import EdiClient
+from .edi import RemoteEdiClient, LocalEdiClient, build_client
