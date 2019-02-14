@@ -22,10 +22,6 @@ package:
     repository: "{{ docker_repo }}/base-python-image"
     tag: "{{ legion_version }}"
 
-secrets:
-  nexus:
-    admin: "jonny"
-
 jenkins:
   enabled: true
   persistence:
@@ -98,7 +94,3 @@ connections:
     url: "{{ model_docker_url }}"
     user: "{{ docker.user }}"
     password: "{{ docker.password }}"
-  nexus_raw:
-    url: "{{ model_nexus_raw_url }}"
-    user: "{{ nexus.user }}"
-    password: "{{ nexus.password }}"

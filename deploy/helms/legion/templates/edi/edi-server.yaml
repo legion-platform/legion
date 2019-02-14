@@ -61,12 +61,12 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}-cluster-secrets
-              key: nexus.user
+              key: docker.user
         - name: DOCKER_REGISTRY_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}-cluster-secrets
-              key: nexus.password
+              key: docker.password
         - name: MODEL_IMAGES_REGISTRY_HOST
           value: "localhost:31111"
         - name: K8S_API_RETRY_NUMBER_MAX_LIMIT

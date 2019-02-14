@@ -9,10 +9,6 @@ auth:
   enabled: false
   annotations: {}
 
-secrets:
-  nexus:
-    admin: "jonny"
-
 jenkins:
   enabled: true
   image:
@@ -56,10 +52,6 @@ jenkins:
 connections:
   docker:
     type: proxy
-    url: ~
-    user: ~
-    password: ~
-  nexus_raw:
     url: ~
     user: ~
     password: ~

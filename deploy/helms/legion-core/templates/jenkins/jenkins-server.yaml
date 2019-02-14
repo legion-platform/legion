@@ -81,23 +81,6 @@ spec:
           value: "{{ .Values.package.baseImage.tag }}"
         - name: LEGION_BASE_IMAGE_REPOSITORY
           value: "{{ .Values.package.baseImage.repository }}"
-        # EDI credentials
-        # External resource (saving and loading model files)
-        - name: EXTERNAL_RESOURCE_PROTOCOL
-          value: "http"
-        - name: EXTERNAL_RESOURCE_HOST
-          value: "{{ .Values.connections.nexus_raw.url }}"
-        - name: EXTERNAL_RESOURCE_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-jenkins
-              key: externalResourceUser
-        - name: EXTERNAL_RESOURCE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-jenkins
-              key: externalResourcePassword
-        # Storage of docker images with models
         - name: CLUSTER_PREFIX
           value: "{{ .Values.cluster_prefix }}"
         - name: DOCKER_REGISTRY

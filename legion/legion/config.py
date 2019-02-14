@@ -438,26 +438,9 @@ EDI_TOKEN = ConfigVariableDeclaration('EDI_TOKEN', None, str,
                                       'Token for EDI server authorisation',
                                       True)
 
-# Mechanism for storing model binaries in external storage (will be deprecated)
-EXTERNAL_RESOURCE_USE_BY_DEFAULT = ConfigVariableDeclaration('EXTERNAL_RESOURCE_USE_BY_DEFAULT', False, cast_bool,
-                                                             'Place model binaries on external server if model file '
-                                                             'path is not absolute or is not defined',
-                                                             False)
 LOCAL_DEFAULT_RESOURCE_PREFIX = ConfigVariableDeclaration('LOCAL_DEFAULT_RESOURCE_PREFIX', None, str,
                                                           'Prefix for building local model binary storage path',
                                                           False)
-EXTERNAL_RESOURCE_PROTOCOL = ConfigVariableDeclaration('EXTERNAL_RESOURCE_PROTOCOL', 'https', str,
-                                                       'Protocol HTTP/HTTPS for model binary storing',
-                                                       False)
-EXTERNAL_RESOURCE_HOST = ConfigVariableDeclaration('EXTERNAL_RESOURCE_HOST', 'localhost', str,
-                                                   'Network URL of external model\'s binaries storage',
-                                                   False)
-EXTERNAL_RESOURCE_USER = ConfigVariableDeclaration('EXTERNAL_RESOURCE_USER', None, str,
-                                                   'Name of user for model\'s binaries storage',
-                                                   False)
-EXTERNAL_RESOURCE_PASSWORD = ConfigVariableDeclaration('EXTERNAL_RESOURCE_PASSWORD', None, str,
-                                                       'Password for model\'s binaries storage',
-                                                       False)
 
 # Images registry
 MODEL_IMAGES_REGISTRY_HOST = ConfigVariableDeclaration('MODEL_IMAGES_REGISTRY_HOST', None, str,
