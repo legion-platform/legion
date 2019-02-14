@@ -345,10 +345,9 @@ EOL
                 stage("Build toolchains Docker image"){
                     steps {
                         sh """
-                        docker run --rm --entrypoint /bin/sh legion/legion-docker-agent:${Globals.buildVersion} -c 'cat /src/legion/dist/*.whl' > k8s/toolchains/python/legion-1.1.1-py2.py3-none-any.whl
-
                         cd k8s/toolchains/python
-                        docker build ${Globals.dockerCacheArg} --build-arg version="${Globals.buildVersion}"  -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
+                        docker pull ${env.param_docker_registry}/python-toolchain:{env.param_docker_cache_source} || true
+                        docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:{env.param_docker_cache_source} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} --cache-from=${env.param_docker_registry}/python-toolchain:{env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
                     }
                 }
@@ -356,7 +355,7 @@ EOL
                     steps {
                         sh """
                         cd k8s/grafana
-                        docker pull grafana/grafana:4.5.0 || true
+                        docker pull grafana/grafana:4.5.0
                         docker pull ${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} || true
                         docker build ${Globals.dockerCacheArg} --cache-from=grafana/grafana:4.5.0 --cache-from=${env.param_docker_registry}/k8s-grafana:${env.param_docker_cache_source} --build-arg pip_extra_index_params=" --extra-index-url ${env.param_pypi_repository}" --build-arg pip_legion_version_string="==${Globals.buildVersion}" -t legion/k8s-grafana:${Globals.buildVersion} ${Globals.dockerLabels} .
                         """
