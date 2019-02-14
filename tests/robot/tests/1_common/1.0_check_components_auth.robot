@@ -180,3 +180,14 @@ Check if EDGE don't authorize with other model id valid token
      ${auth_page} =  Get From Dictionary   ${response}    response_text
      Should contain   ${auth_page}    401 Authorization Required
      [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_6_ID}   ${TEST_MODEL_6_VERSION}   ${TEST_MODEL_IMAGE_6}
+
+Service url stay the same after log in
+    [Tags]  apps
+    [Documentation]  Service url stay the same after log in
+    [Template]    Url stay the same after dex log in
+    service_url=https://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/healthcheck?xx=22&yy=33
+    service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/info?xx=22&yy=33
+    service_url=https://airflow-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/admin/airflow/duration?dag_id=example_python_work&days=30&root=
+    service_url=https://flower-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/tasks?x=2&y=3
+    service_url=https://grafana-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/?orgId=1&x=2
+    service_url=https://grafana.${HOST_BASE_DOMAIN}/?orgId=1&x=2

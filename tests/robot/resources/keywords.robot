@@ -13,6 +13,11 @@ Library             legion_test.robot.Airflow
 Library             legion_test.robot.Process
 
 *** Keywords ***
+Url stay the same after dex log in
+    [Arguments]  ${service_url}
+    ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
+    should be equal  ${service_url}  ${resp.url}
+
 Connect to enclave Grafana
     [Arguments]           ${enclave}
     Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}    ${SERVICE_ACCOUNT}     ${SERVICE_PASSWORD}
