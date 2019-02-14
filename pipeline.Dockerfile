@@ -4,7 +4,8 @@ FROM python:3.6@sha256:4f309bf7925db6e21f7f1b7db99aa76576007441136f5e22d4fc42249
 RUN apt-get update && apt-get install -y software-properties-common \
 	&& apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git  \
   jq=1.5+dfsg-1.3 xvfb=2:1.19.2-1+deb9u5 \
-  firefox-esr=60.5.0esr-1~deb9u1 \
+  # firefox is not pinned deliberately because debian repo constantly rotate intermediate releases
+  firefox-esr \
 	&& apt-get clean all
 
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13

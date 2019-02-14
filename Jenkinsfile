@@ -332,6 +332,7 @@ EOL
                         }
                     }
                 }
+                // Build ansible aside from other images because it uses root as context
                 stage("Build Ansible Docker image") {
                     steps {
                         script {
