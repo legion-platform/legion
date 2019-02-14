@@ -108,11 +108,11 @@ class K8s:
         """
         client = self.build_client()
 
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(client)
         if namespace is None:
-            replica_sets = extension_api.list_replica_set_for_all_namespaces()
+            replica_sets = apps_api.list_replica_set_for_all_namespaces()
         else:
-            replica_sets = extension_api.list_namespaced_replica_set(namespace)
+            replica_sets = apps_api.list_namespaced_replica_set(namespace)
 
         for item in replica_sets.items:
             if item.metadata.labels.get('app', '') == replica_set_name:
@@ -149,12 +149,12 @@ class K8s:
 
         raise Exception("Stateful set '%s' wasn't found" % stateful_set_name)
 
-    def replication_controller_is_running(self, replication_controller_name, namespace=None):
+    def deployment_is_running(self, deployment_name, namespace=None):
         """
-        Check that specific named replication controller is okay (no one pending or failed pod)
+        Check that specific named deployment is okay (no one pending or failed pod)
 
-        :param replication_controller_name: name of replication controller
-        :type replication_controller_name: str
+        :param deployment_name: name of replication controller
+        :type deployment_name: str
         :param namespace: name of namespace to look in
         :type namespace: str
         :raises: Exception
@@ -162,21 +162,21 @@ class K8s:
         """
         client = self.build_client()
 
-        core_api = kubernetes.client.CoreV1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(client)
         if namespace is None:
-            replication_controllers = core_api.list_replication_controller_for_all_namespaces()
+            deployments = apps_api.list_deployment_for_all_namespaces()
         else:
-            replication_controllers = core_api.list_namespaced_replication_controller(namespace)
+            deployments = apps_api.list_deployment_for_all_namespaces()
 
-        for item in replication_controllers.items:
-            if item.metadata.labels.get('component', '') == replication_controller_name:
+        for item in deployments.items:
+            if item.metadata.labels.get('component', '') == deployment_name:
                 if item.status.replicas == item.status.ready_replicas:
                     return True
                 else:
-                    raise Exception("Replication controller '%s' is not ready: %d/%d replicas are running"
-                                    % (replication_controller_name, item.status.ready_replicas, item.status.replicas))
+                    raise Exception("Deployment '%s' is not ready: %d/%d replicas are running"
+                                    % (deployment_name, item.status.ready_replicas, item.status.replicas))
 
-        raise Exception("Replication controller '%s' wasn't found" % replication_controller_name)
+        raise Exception("Deployment '%s' wasn't found" % deployment_name)
 
     def get_deployment_replicas(self, deployment_name, namespace='default'):
         """
@@ -190,8 +190,8 @@ class K8s:
         :rtype int
         """
         client = self.build_client()
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        apps_api = kubernetes.client.AppsV1Api(client)
+        scale_data = apps_api.read_namespaced_deployment_scale(deployment_name, namespace)
         print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         if scale_data is not None:
             return scale_data.status.replicas
@@ -232,12 +232,12 @@ class K8s:
         if not isinstance(replicas, int) or replicas <= 0:
             raise ValueError('"replicas" argument should be a positive number, but got "%s"' % replicas)
         client = self.build_client()
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        scale_data = extension_api.read_namespaced_deployment_scale(deployment_name, namespace)
+        apps_api = kubernetes.client.AppsV1Api(client)
+        scale_data = apps_api.read_namespaced_deployment_scale(deployment_name, namespace)
         print("Scale data for {} in {} enclave is {}".format(deployment_name, namespace, scale_data))
         scale_data.spec.replicas = replicas
         print("Setting replica to {} for {} in {} enclave".format(replicas, deployment_name, namespace))
-        extension_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
+        apps_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
         print("Replica to {} for {} in {} enclave was set up".format(replicas, deployment_name, namespace))
 
     def update_model_property_key(self, namespace, model_id, model_version, key, value):

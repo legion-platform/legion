@@ -7,7 +7,7 @@ metadata:
 ---
 apiVersion: v1
 items:
-  - apiVersion: rbac.authorization.k8s.io/v1beta1
+  - apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
     metadata:
       name: kube2iam
@@ -15,7 +15,7 @@ items:
       - apiGroups: [""]
         resources: ["namespaces","pods"]
         verbs: ["get","watch","list"]
-  - apiVersion: rbac.authorization.k8s.io/v1beta1
+  - apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
     metadata:
       name: kube2iam
@@ -30,13 +30,16 @@ items:
 kind: List
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kube2iam
   labels:
     app: kube2iam
 spec:
+  selector:
+    matchLabels:
+      name: kube2iam
   template:
     metadata:
       labels:

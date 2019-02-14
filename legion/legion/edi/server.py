@@ -139,11 +139,11 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
     K8S API functions will be invoked in the next order:
     - CoreV1Api.list_namespaced_service (to get information about actual model services)
     If there is deployed model with same image:
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to get information of service's deployment)
+      - AppsV1Api.list_namespaced_deployment (to get information of service's deployment)
     if there is no any deployed model with same image:
       - CoreV1Api.list_namespaced_service (to check is there any model with same model id / version)
-      - ExtensionsV1beta1Api.create_namespaced_deployment (to create model deployment)
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that model deployment has been created)
+      - AppsV1Api.create_namespaced_deployment (to create model deployment)
+      - AppsV1Api.list_namespaced_deployment (to ensure that model deployment has been created)
       - CoreV1Api.create_namespaced_service (to create model service)
       - CoreV1Api.list_namespaced_service (to ensure that model service has been created)
 
@@ -190,11 +190,11 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     K8S API functions will be invoked in the next order:
     - CoreV1Api.list_namespaced_service (to get information about actual model services)
     Per each service that should be undeployed (N-times):
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to get information of service's deployment)
+      - AppsV1Api.list_namespaced_deployment (to get information of service's deployment)
       - CoreV1Api.delete_namespaced_service (to remove model service)
       - CoreV1Api.list_namespaced_service (to ensure that service has been removed)
       - AppsV1beta1Api.delete_namespaced_deployment (to remove deployment)
-      - ExtensionsV1beta1Api.list_namespaced_deployment (to ensure that deployment has been removed)
+      - AppsV1Api.list_namespaced_deployment (to ensure that deployment has been removed)
 
 
     :param model: model id
