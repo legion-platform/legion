@@ -283,7 +283,7 @@ def init_model(application):
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o):  # pylint: disable=E0202
         """
         Redefined method, allows json to encode values of types np.integer, np.float, pd.Series
         :param o: np.floating, np.integer
