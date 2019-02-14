@@ -14,4 +14,4 @@ def calculate(x):
 calculate({'a': 1.0, 'b': 20.1})
 
 legion.model.export_untyped(lambda x: {'result': int(calculate(x))})
-legion.model.save('abc.model')
+legion.model.save()

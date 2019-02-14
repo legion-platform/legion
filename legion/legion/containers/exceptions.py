@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2019 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,6 +14,21 @@
 #    limitations under the License.
 #
 """
-Connections to external APIs
+legion containers exceptions
 """
-from .base_grafana_client import BaseGrafanaClient
+
+
+class IncompatibleLegionModelDockerImage(Exception):
+    """
+    Exception occurs when user tries to use incompatible docker image (e.g. with missed labels)
+    """
+
+    def __init__(self, message):
+        """
+        Build exception instance
+
+        :param message: description
+        :type message: str
+        """
+        self.message = message
+        super().__init__('Incompatible Legion image: {!r}'.format(self.message))

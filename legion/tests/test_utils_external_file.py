@@ -20,30 +20,28 @@ import sys
 import random
 import tempfile
 import logging
-from unittest.mock import patch
 
-import legion.config
-import legion.utils as utils
-import legion.containers.docker
 import requests.auth
 import responses
 import unittest2
 
+import legion.utils as utils
+
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import LegionTestContainer
+from legion_test_utils import LegionTestContainer, patch_config
 
 
 LOGGER = logging.getLogger(__name__)
 
 
 def patch_env_host_user_password(host='localhost', protocol='http', user='', password=''):
-    return patch.dict('os.environ', {
-        legion.config.EXTERNAL_RESOURCE_HOST[0]: host,
-        legion.config.EXTERNAL_RESOURCE_PROTOCOL[0]: protocol,
-        legion.config.EXTERNAL_RESOURCE_USER[0]: user,
-        legion.config.EXTERNAL_RESOURCE_PASSWORD[0]: password
+    return patch_config({
+        'EXTERNAL_RESOURCE_HOST': host,
+        'EXTERNAL_RESOURCE_PROTOCOL': protocol,
+        'EXTERNAL_RESOURCE_USER': user,
+        'EXTERNAL_RESOURCE_PASSWORD': password
     })
 
 

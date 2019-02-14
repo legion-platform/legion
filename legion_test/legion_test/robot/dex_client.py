@@ -14,10 +14,10 @@
 #    limitations under the License.
 #
 """Dex authentication client."""
-from requests.sessions import Session
 import re
+from requests.sessions import Session
 
-REQUEST_ID_REGEXP = re.compile('/auth/local\?req=([^"]+)')
+REQUEST_ID_REGEXP = re.compile(r'/auth/local\?req=([^"]+)')
 AUTHENTICATION_PATH = 'https://dex.{}/auth/local?req={}'
 AUTHENTICATION_HOSTNAME = 'https://dex.{}/'
 PARAM_NAME_LOGIN = 'login'
@@ -78,14 +78,15 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
             data = {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password}
             response = session.post(url, data)
             if response.status_code != 200:
-                raise IOError('Unable to authorise, got {} http code from {} for the query to {} with data, response {}'
+                raise IOError('Unable to authorise, got {} http code from {} '  # pylint: disable=E1305
+                              'for the query to {} with data, response {}'
                               .format(response.status_code, auth_endpoint_url.format(cluster_host),
                                       url, data, response.text))
 
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):
                 _session_cookies[cookie_name] = session.cookies.get(cookie_name)
-        if len(_session_cookies) == 0:
+        if not _session_cookies:
             raise ValueError('Cant find any session ID in Cookies')
 
     response = session.get(JENKINS_PROFILE_URL.format(cluster_host, login))

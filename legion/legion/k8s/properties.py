@@ -21,7 +21,7 @@ import logging
 import time
 import json
 import threading
-import typing
+import typing  # pylint: disable=W0611
 
 import kubernetes
 import kubernetes.client
@@ -505,7 +505,7 @@ class K8SPropertyStorage:
         :return: None
         """
         LOGGER.info('Properties watch thread has been started')
-        for event, new_data in self.watch():
+        for event, _ in self.watch():
             LOGGER.info('Model have got information that properties storage had got update: {}'.format(event))
             self.emit_update_signal()
         LOGGER.error('Update thread has been finished')

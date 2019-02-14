@@ -17,7 +17,6 @@
 legion k8s services classes
 """
 import logging
-import os
 
 import kubernetes
 import kubernetes.client
@@ -74,6 +73,7 @@ class Service:
         self._port = api_ports[0]
 
         self._ingress_data_loaded = False
+        self._ingress = None
 
         self._public_url = None
 
@@ -381,11 +381,11 @@ class ModelService(Service):
         core_v1api.delete_namespaced_service(name=self.k8s_service.metadata.name, body=body,
                                              namespace=self.namespace)
 
-        retries = int(os.getenv(*legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT))
-        retry_timeout = int(os.getenv(*legion.config.K8S_API_RETRY_DELAY_SEC))
+        retries = legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT
+        retry_timeout = legion.config.K8S_API_RETRY_DELAY_SEC
 
         service_deleted = ensure_function_succeed(
-            lambda: self.check_service_is_deleted(),
+            self.check_service_is_deleted,
             retries, retry_timeout, boolean_check=True
         )
 
@@ -402,7 +402,7 @@ class ModelService(Service):
                                                   propagation_policy='Background')
 
         deployment_deleted = ensure_function_succeed(
-            lambda: self.check_deployment_is_deleted(),
+            self.check_deployment_is_deleted,
             retries, retry_timeout, boolean_check=True
         )
 

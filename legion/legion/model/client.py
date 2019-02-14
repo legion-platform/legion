@@ -16,16 +16,15 @@
 """
 Model HTTP API client and utils
 """
-
-import os
 import json
+
 import requests
+from PIL import Image as PYTHON_Image
 
 import legion.config
+import legion.containers.headers
 import legion.http
 from legion.utils import normalize_name
-
-from PIL import Image as PYTHON_Image
 
 
 def load_image(path):
@@ -76,7 +75,7 @@ class ModelClient:
         if host:
             self._host = host
         else:
-            self._host = os.environ.get(*legion.config.MODEL_SERVER_URL)
+            self._host = legion.config.MODEL_SERVER_URL
 
         if http_client:
             self._http_client = http_client
@@ -204,7 +203,7 @@ class ModelClient:
 
         post_fields_list = []
         for (k, v) in post_fields_dict.items():
-            if isinstance(v, tuple) or isinstance(v, list):
+            if isinstance(v, (tuple, list)):
                 for item in v:
                     post_fields_list.append((k + '[]', str(item)))
             else:

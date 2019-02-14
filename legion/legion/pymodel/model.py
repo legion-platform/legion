@@ -19,10 +19,11 @@ Python model
 import json
 import sys
 import os
-import time
 import zipfile
-
 import logging
+
+import dill
+
 import legion.config
 import legion.containers.headers
 import legion.model
@@ -31,9 +32,6 @@ import legion.model.types
 import legion.metrics
 from legion.utils import model_properties_storage_name, send_header_to_stderr, \
     extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
-
-
-import dill
 
 
 LOGGER = logging.getLogger(__name__)
@@ -96,10 +94,10 @@ class ModelEndpoint:
         data_frame = legion.model.types.build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
-        data_frame = self.prepare(data_frame)
+        data_frame = self.prepare(data_frame)  # pylint: disable=E1102
 
         LOGGER.info('Applying function with DataFrame: %s' % str(data_frame))
-        response = self.apply(data_frame)
+        response = self.apply(data_frame)  # pylint: disable=E1102
         LOGGER.info('Returning response: %s' % str(response))
 
         return response
@@ -369,7 +367,14 @@ class Model:
 
         file_name_has_been_deduced = False
         if not self._path:
-            self._path = deduce_model_file_name(self.model_id, self.model_version)
+            file_name_from_env = legion.config.MODEL_FILE
+            if file_name_from_env:
+                LOGGER.debug('Got target file name from ENV: {!r}'.format(file_name_from_env))
+                self._path = file_name_from_env
+            else:
+                LOGGER.debug('Deducing target file name for model id={!r} version={!r}'
+                             .format(self.model_id, self.model_version))
+                self._path = deduce_model_file_name(self.model_id, self.model_version)
 
         LOGGER.info('Saving model to {}'.format(self._path))
 
@@ -440,10 +445,10 @@ class Model:
                 raise Exception('Bad param_types / input_data_frame provided')
 
         if prepare_func is None:
-            def prepare_func(input_dict):
+            def prepare_func(input_dict):  # pylint: disable=E0102
                 """
                 Return input value (default prepare function)
-                :param x: dict of values
+                :param input_dict: dict of values
                 :return: dict of values
                 """
                 return input_dict
@@ -528,7 +533,7 @@ class Model:
 
         return self._on_property_change_callback
 
-    def on_property_change(self, callable):
+    def on_property_change(self, callback):
         """
         Set property change callback
 
@@ -536,7 +541,7 @@ class Model:
         :type callback: :py:class:`Callable[[], None]`
         :return: None
         """
-        self._on_property_change_callback = callable
+        self._on_property_change_callback = callback
         self._on_property_change_callback_loaded = True
 
     @property
@@ -584,16 +589,16 @@ class Model:
         return {
             'legion.version': legion.__version__,
 
-            'jenkins.build_number': os.environ.get(*legion.config.BUILD_NUMBER),
-            'jenkins.build_id': os.environ.get(*legion.config.BUILD_ID),
-            'jenkins.build_tag': os.environ.get(*legion.config.BUILD_TAG),
-            'jenkins.build_url': os.environ.get(*legion.config.BUILD_URL),
+            'jenkins.build_number': legion.config.BUILD_NUMBER,
+            'jenkins.build_id': legion.config.BUILD_ID,
+            'jenkins.build_tag': legion.config.BUILD_TAG,
+            'jenkins.build_url': legion.config.BUILD_URL,
 
-            'jenkins.git_commit': os.environ.get(*legion.config.GIT_COMMIT),
-            'jenkins.git_branch': os.environ.get(*legion.config.GIT_BRANCH),
+            'jenkins.git_commit': legion.config.GIT_COMMIT,
+            'jenkins.git_branch': legion.config.GIT_BRANCH,
 
-            'jenkins.node_name': os.environ.get(*legion.config.NODE_NAME),
-            'jenkins.job_name': os.environ.get(*legion.config.JOB_NAME)
+            'jenkins.node_name': legion.config.NODE_NAME,
+            'jenkins.job_name': legion.config.JOB_NAME
         }
 
     def send_metric(self, metric, value):

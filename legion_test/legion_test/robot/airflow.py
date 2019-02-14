@@ -17,10 +17,12 @@
 Robot test library - airflow
 """
 import re
-import requests
-from requests.exceptions import RequestException
 import logging
 import time
+
+import requests
+from requests.exceptions import RequestException
+
 from legion_test.robot.dex_client import get_session_cookies
 
 
@@ -46,7 +48,7 @@ class Airflow:
         self.root_url = None  # Airflow Rest API Base url, type: str
         self.dex_cookies = None  # Dex cookies for Airflow Rest API calls, type: dict
 
-    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3, dex_cookies={}):
+    def connect_to_airflow(self, root_url, num_attempts=3, pause_sec=3, dex_cookies=None):
         """
         Connect to Airflow Rest API
 
@@ -86,7 +88,7 @@ class Airflow:
             :param path: Path within API.
             :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
             :param use_rest_api_root: (optional) Indicated, if Rest API Plugin Context Root should be added
-            :param \*\*kwargs: Optional arguments that ``request`` takes.
+            :param **kwargs: Optional arguments that ``request`` takes.
             :return: json-encoded content of a response, if any.
             :rtype: dict
             """
@@ -171,7 +173,6 @@ class Airflow:
         stderr = self._find_lines_in_stderr(status)
         if stderr:
             raise Exception("task {t} failed:\n {e}".format(t=task_id, e=stderr))
-        return
 
     def trigger_airflow_dag(self, dag_id, subdir=None, run_id=None, conf=None, exec_date=None):
         """ Trigger a DAG run
@@ -317,17 +318,17 @@ class Airflow:
 
     def _find_lines_in_stdout(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
-        if type(obj) != str and 'output' in obj:
+        if not isinstance(obj, str) and 'output' in obj:
             obj = obj['output']
-        if type(obj) != str and 'stdout' in obj:
+        if not isinstance(obj, str) and 'stdout' in obj:
             obj = obj['stdout']
         return self._find_lines(obj, first_pattern, second_pattern)
 
     def _find_lines_in_stderr(self, response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
-        if type(obj) != str and 'output' in obj:
+        if not isinstance(obj, str) and 'output' in obj:
             obj = obj['output']
-        if type(obj) != str and 'stderr' in obj:
+        if not isinstance(obj, str) and 'stderr' in obj:
             obj = obj['stderr']
         return self._find_lines(obj, first_pattern, second_pattern)
 
@@ -335,7 +336,7 @@ class Airflow:
     def _find_lines(response, first_pattern=SIMPLE_ROW, second_pattern=None):
         obj = response
         lines = []
-        if type(obj) == str:
+        if isinstance(obj, str):
             for match in first_pattern.finditer(obj):
                 if second_pattern is None:
                     lines.append(match.group(1))

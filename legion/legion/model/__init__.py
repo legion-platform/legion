@@ -16,14 +16,16 @@
 """
 Model functionality
 """
+import legion.pymodel.model
+import legion.k8s.properties
+from legion.utils import normalize_name
+import legion.docker_bootup
+
 from .client import ModelClient, load_image
 from .types import int8, uint8, int16, uint16, int32, uint32, int64, uint64
 from .types import float32, float64
 from .types import string, boolean, image
 
-import legion.pymodel.model
-import legion.k8s.properties
-from legion.utils import normalize_name
 
 MODEL_TYPES = [
     legion.pymodel.model.Model

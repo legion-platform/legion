@@ -14,4 +14,4 @@ def algo_mul(x):
 
 legion.model.export_untyped(lambda x: {'result': int(algo_sum(x))}, endpoint='sum')
 legion.model.export_untyped(lambda x: {'result': int(algo_mul(x))}, endpoint='mul')
-legion.model.save('abc.model')
+legion.model.save()

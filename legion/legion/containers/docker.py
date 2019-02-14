@@ -18,7 +18,6 @@ legion k8s functions
 """
 import logging
 import os
-import json
 
 import docker
 import docker.errors
@@ -33,7 +32,7 @@ import legion.utils
 LOGGER = logging.getLogger(__name__)
 
 
-def build_docker_client(args=None):
+def build_docker_client():
     """
     Create docker client
 
@@ -74,8 +73,8 @@ def get_current_docker_container_id():
 
     :return: str -- current container id
     """
-    with open('/proc/self/cgroup') as f:
-        lines = [line.strip('\n') for line in f]
+    with open('/proc/self/cgroup') as file:
+        lines = [line.strip('\n') for line in file]
         longest_line = max(lines, key=len)
         return get_docker_container_id_from_cgroup_line(longest_line)
 
@@ -185,17 +184,16 @@ def build_docker_image(client, model_id, model_file, labels,
             symlink_holder = '/'
 
         # Remove old workspace (if exists), create path to old workspace's parent, create symlink
-        symlink_create_command = 'rm -rf "{}" && mkdir -p "{}" && ln -s "{}" "{}"'.format(
+        symlink_create_command = 'rm -rf "{0}" && mkdir -p "{1}" && ln -s "{2}" "{0}"'.format(
             workspace_path,
             symlink_holder,
-            target_workspace,
-            workspace_path
+            target_workspace
         )
 
         print('Executing {!r}'.format(symlink_create_command))
 
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
-            'MODEL_PORT': legion.config.LEGION_PORT[1],
+            'MODEL_PORT': legion.config.LEGION_PORT,
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
             'MODEL_FILE': target_model_file,
@@ -209,9 +207,8 @@ def build_docker_image(client, model_id, model_file, labels,
             file.write(docker_file_content)
 
         LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
-        logs = None
         try:
-            image, logs = client.images.build(
+            image, _ = client.images.build(
                 tag=docker_image_tag,
                 nocache=True,
                 path=temp_directory.path,
@@ -227,7 +224,7 @@ def build_docker_image(client, model_id, model_file, labels,
         return image
 
 
-def generate_docker_labels_for_image(model_file, model_id, args):
+def generate_docker_labels_for_image(model_file, model_id):
     """
     Generate docker image labels from model file
 
@@ -298,8 +295,8 @@ def push_image_to_registry(client, image, external_image_name):
         version = image_name[version_delimiter + 1:]
         image_name = image_name[:version_delimiter]
 
-    docker_registry_user = os.getenv(*legion.config.DOCKER_REGISTRY_USER)
-    docker_registry_password = os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD)
+    docker_registry_user = legion.config.DOCKER_REGISTRY_USER
+    docker_registry_password = legion.config.DOCKER_REGISTRY_PASSWORD
     auth_config = None
 
     if docker_registry_user and docker_registry_password:

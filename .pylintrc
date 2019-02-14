@@ -1,0 +1,36 @@
+[FORMAT]
+max-line-length=120
+
+[BASIC]
+const-rgx=(([A-Z_][A-Za-z0-9_]*)|(__.*__))$
+
+[MISCELLANEOUS]
+
+# do not remove this. This line makes pylint to ignore FIXME,XXX,TODO
+notes=
+
+[MESSAGES CONTROL]
+# W1202 - Use % formatting in logging functions and pass the % parameters as arguments
+# C0330 - wrong continued indentation
+# R1710 - Either all return statements in a function should return an expression, or none of them should.
+# R0201 - method could be a function
+# R0913 - Too many arguments
+# R1705 - Unnecessary else after return
+# W0603 - Using the global statement
+# W1201 - Specify string format arguments as logging function parameters
+# W0212 - Access to a protected member _content of a client class
+# W0107 - Unnecessary pass statement
+# C0103 - Variable name doesn't conform to snake_case naming style
+# R0914 - Too many local variables
+# R0902 - Too many instance attributes
+# R0903 - Too many few methods
+# R0904 - Too many public methods
+# R0912 - Too many branches
+# R0801 - Similar lines in files
+# C0111 - Missing module docstring
+# C0413 - Import should be placed at the top of the module
+# R0401 - Cyclic import
+# W0703 - Catching too general exception
+disable=W1202,C0330,R1710,R0201,R0913,R1705,W0603,W1201,W0212,W0107,C0103,R0914,R0902,R0903,R0904,R0801,C0111,C0413,R0912,R0401,W0703
+good-names=blueprint,id
+ignored-modules=responses,distutils,distutils.dir_util

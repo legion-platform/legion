@@ -86,7 +86,7 @@ def get_variables(arg=None):
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
-    variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if len(variables['ENCLAVES']) > 0 else 'UNKNOWN_ENCLAVE'
+    variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if variables['ENCLAVES'] else 'UNKNOWN_ENCLAVE'
 
     cookies = os.getenv(PATH_TO_COOKIES_FILE)
     cookies_data = None
@@ -108,7 +108,8 @@ def get_variables(arg=None):
             data['dex']['config']['staticPasswords']:
         static_user = data['dex']['config']['staticPasswords'][0]
         if not cookies_data:
-            init_session_id(static_user['email'], static_user['password'], data.get('test_base_domain', data['base_domain']))
+            init_session_id(static_user['email'], static_user['password'],
+                            data.get('test_base_domain', data['base_domain']))
         else:
             init_session_id_from_data(cookies_data)
         variables['STATIC_USER_EMAIL'] = static_user['email']

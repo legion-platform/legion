@@ -19,11 +19,9 @@ from __future__ import unicode_literals
 
 from sys import version_info
 
-import flask_login
-from flask_login import (current_user,
-                         logout_user,
-                         login_required,
-                         login_user)
+import flask_login  # pylint: disable=E0401
+from flask_login import current_user, logout_user, login_required, login_user  # pylint: disable=W0611,E0401
+
 from flask import flash
 
 from flask import url_for, redirect

@@ -19,9 +19,10 @@ Robot test library - jenkins
 import time
 import json
 
-import jenkins
 from six.moves.urllib.request import Request
 from six.moves.urllib.error import HTTPError
+import jenkins
+
 from legion_test.robot.dex_client import get_session_cookies, get_jenkins_credentials
 
 JOB_MODEL_ID = '%(folder_url)sjob/%(short_name)s/%(build_number)s/model/json'
@@ -41,10 +42,15 @@ def fetch_model_meta_from_jenkins(client, job_name):
     job_info = client.get_job_info(job_name, 4)
     folder_url, short_name = client._get_job_folder(job_name)
     build_number = job_info['lastBuild']['id']
+    url_variables = {
+        'folder_url': folder_url,
+        'short_name': short_name,
+        'build_number': build_number
+    }
 
     try:
         response = client.jenkins_open(Request(
-            client._build_url(JOB_MODEL_ID, locals())
+            client._build_url(JOB_MODEL_ID, url_variables)
         ))
         if response:
             return json.loads(response)
@@ -69,7 +75,7 @@ class Jenkins:
         """
         self._client = None  # type: jenkins.Jenkins
 
-    def connect_to_jenkins(self, domain, user=None, password=None, dex_cookies={}, timeout=10):
+    def connect_to_jenkins(self, domain, user=None, password=None, dex_cookies=None, timeout=10):
         """
         Connect to Jenkins server
 
@@ -93,12 +99,12 @@ class Jenkins:
                                        timeout=int(timeout))
         if not dex_cookies:
             self._client.crumb = {'crumbRequestField': 'Cookie',
-                            'crumb': ';'.join(['{}={}'.format(k,v)
-                                          for (k,v) in get_session_cookies().items()])}
+                                  'crumb': ';'.join(['{}={}'.format(k, v)
+                                          for (k, v) in get_session_cookies().items()])}
         else:
             self._client.crumb = {'crumbRequestField': 'Cookie',
-                            'crumb': ';'.join(['{}={}'.format(k,v)
-                                          for (k,v) in dex_cookies.items()])}
+                                  'crumb': ';'.join(['{}={}'.format(k, v)
+                                          for (k, v) in dex_cookies.items()])}
         user = self._client.get_whoami()
         print('Hello %s from Jenkins' % (user['fullName']))
         self._client.wait_for_normal_op(10)
@@ -118,7 +124,7 @@ class Jenkins:
             raise Exception('Jenkins client has not been initialized')
         job_info = self._client.get_job_info(job_name, 4)
 
-        if len(parameters) == 0:
+        if not parameters:
             properties = job_info['property']
             parameters = [x for x in properties if x['_class'] == 'hudson.model.ParametersDefinitionProperty']
             if len(parameters) != 1:
@@ -295,7 +301,7 @@ class Jenkins:
 
         required_keys = {'modelId', 'modelVersion', 'modelPath'}
         missed_keys = required_keys - set(data.keys())
-        if len(missed_keys) > 0:
+        if missed_keys:
             raise Exception('Missed model meta information keys: {}'.format(', '.join(missed_keys)))
 
         return data

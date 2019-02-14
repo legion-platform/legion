@@ -18,21 +18,22 @@ legion k8s utils functions
 """
 import os
 import logging
+import json
+import re
+from typing import NamedTuple
 
-import docker
-import docker.errors
+import yaml
+import urllib3
+import urllib3.exceptions
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
-import urllib3
-import urllib3.exceptions
-import yaml
-import json
-import re
+from docker_registry_client import DockerRegistryClient
 
 import legion
 import legion.containers.docker
+import legion.containers.exceptions
 import legion.containers.headers
 import legion.config
 import legion.external.grafana
@@ -44,8 +45,6 @@ from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE, \
     ModelContainerMetaInformation
-from docker_registry_client import DockerRegistryClient
-from typing import NamedTuple
 
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None
@@ -160,8 +159,8 @@ def get_docker_image_labels(image):
 
     # Get nexus registry host from ENV or image url
     try:
-        if image_attributes.host == os.getenv('MODEL_IMAGES_REGISTRY_HOST'):
-            registry_host = os.getenv(legion.config.NEXUS_DOCKER_REGISTRY[0])
+        if image_attributes.host == legion.config.MODEL_IMAGES_REGISTRY_HOST:
+            registry_host = legion.config.NEXUS_DOCKER_REGISTRY
         else:
             if urllib3.util.parse_url(image_attributes.host).port == 443:
                 registry_host = 'https://{}'.format(image_attributes.host)
@@ -174,8 +173,8 @@ def get_docker_image_labels(image):
     try:
         registry_client = DockerRegistryClient(
             host=registry_host,
-            username=os.getenv(*legion.config.DOCKER_REGISTRY_USER),
-            password=os.getenv(*legion.config.DOCKER_REGISTRY_PASSWORD),
+            username=legion.config.DOCKER_REGISTRY_USER,
+            password=legion.config.DOCKER_REGISTRY_PASSWORD,
             api_version=2
         )
         manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
@@ -212,7 +211,7 @@ def get_meta_from_docker_labels(labels):
     model_version = labels.get(legion.containers.headers.DOMAIN_MODEL_VERSION)
 
     if not model_id or not model_version:
-        raise legion.k8s.exceptions.IncompatibleLegionModelDockerImage(
+        raise legion.containers.exceptions.IncompatibleLegionModelDockerImage(
             'Legion docker labels for model image are missed: {}'.format(
                 ', '.join((legion.containers.headers.DOMAIN_MODEL_ID,
                            legion.containers.headers.DOMAIN_MODEL_VERSION,)),
@@ -253,7 +252,7 @@ def parse_docker_image_url(image_url):
     :type image_url: str
     :return: namedtuple[str, Any]
     """
-    image_attrs_regexp = '(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
+    image_attrs_regexp = r'(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
     try:
         image_attrs_list = re.search(image_attrs_regexp, image_url)
 

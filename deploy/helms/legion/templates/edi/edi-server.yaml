@@ -64,6 +64,8 @@ spec:
           value: "{{ .Values.edi.k8s_api_retry_number_max_limit }}"
         - name: K8S_API_RETRY_DELAY_SEC
           value: "{{ .Values.edi.k8s_api_retry_delay_sec }}"
+        - name: REGISTER_ON_GRAFANA
+          value: "true"
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket
