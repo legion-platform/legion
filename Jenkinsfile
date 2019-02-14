@@ -76,7 +76,7 @@ pipeline {
                     println("Docker cache args: " + Globals.dockerCacheArg)
 
                     wrap([$class: 'BuildUser']) {
-                        BUILD_USER = ${BUILD_USER}
+                        BUILD_USER = "${BUILD_USER}"
                     }
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${BUILD_USER} --label build_date=${buildDate}"
                     println("Docker labels: " + Globals.dockerLabels)
