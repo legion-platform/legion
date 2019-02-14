@@ -455,14 +455,14 @@ class ManagedProcessContext:
     @property
     def stdout(self):
         if self._read_stdout_callback and callable(self._read_stdout_callback):
-            return self._read_stdout_callback()
+            return self._read_stdout_callback()  # pylint: disable=E1102
 
         return self.process.stdout
 
     @property
     def stderr(self):
         if self._read_stderr_callback and callable(self._read_stderr_callback):
-            return self._read_stderr_callback()
+            return self._read_stderr_callback()  # pylint: disable=E1102
 
         return self.process.stderr
 
