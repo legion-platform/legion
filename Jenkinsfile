@@ -317,31 +317,37 @@ EOL
             }
         }
         
-        stage("Build and Upload Base Docker Image") {
-            steps {
-                script {
-                    sh """
-                    cd base-python-image
-                    docker pull ubuntu:16.04 || true
-                    docker pull ${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} || true
-                    docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:16.04 --cache-from=${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
-                    """
-                    legion.uploadDockerImage('base-python-image')
+        stage("Build and Upload Base Docker Image & Ansible image ") {
+            parallel {
+                stage ("Build Base python image") {
+                    steps {
+                        script {
+                            sh """
+                            cd base-python-image
+                            docker pull ubuntu:16.04 || true
+                            docker pull ${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} || true
+                            docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:16.04 --cache-from=${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
+                            """
+                            legion.uploadDockerImage('base-python-image', "${Globals.buildVersion}")
+                        }
+                    }
+                }
+                stage("Build Ansible Docker image") {
+                    steps {
+                        script {
+                            sh """
+                            docker pull ubuntu:18.04 || true
+                            docker pull ${env.param_docker_registry}/k8s-ansible:${env.param_docker_cache_source} ||true
+                            docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:18.04 --cache-from=${env.param_docker_registry}/k8s-ansible:${env.param_docker_cache_source} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
+                            """
+                        }
+                    }
                 }
             }
         }
 
         stage("Build Docker images & Helms") {
             parallel {
-                stage("Build Ansible Docker image") {
-                    steps {
-                        sh """
-                        docker pull ubuntu:18.04 || true
-                        docker pull ${env.param_docker_registry}/k8s-ansible:${env.param_docker_cache_source} ||true
-                        docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:18.04 --cache-from=${env.param_docker_registry}/k8s-ansible:${env.param_docker_cache_source} -t legion/k8s-ansible:${Globals.buildVersion} ${Globals.dockerLabels}  -f k8s/ansible/Dockerfile .
-                        """
-                    }
-                }
                 stage("Build toolchains Docker image"){
                     steps {
                         sh """
@@ -409,6 +415,22 @@ EOL
                         """
                     }
                 }
+                stage("Build test models") {
+                    steps {
+                        script {
+                            docker.image("legion-docker-agent:${env.BUILD_NUMBER}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                                sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
+
+                                legion.buildTestBareModel("demo-abc-model", "1.0", "1")
+                                legion.buildTestBareModel("demo-abc-model", "1.1", "2")
+                                legion.buildTestBareModel("edi-test-model", "1.2", "3")
+                                legion.buildTestBareModel("feedback-test-model", "1.0", "4")
+                                legion.buildTestBareModel("command-test-model", "1.0", "5")
+                                legion.buildTestBareModel("auth-test-model", "1.0", "6")
+                            }
+                        }
+                    }
+                }
                 /// Infra images which are used during cluster creation
                 stage('Build kube-fluentd') {
                     steps {
@@ -443,22 +465,6 @@ EOL
                                 docker pull golang:1.10-alpine || true
                                 docker build ${Globals.dockerCacheArg} --cache-from=alpine:3.8 --cache-from=golang:1.10-alpine --cache-from=${env.param_docker_registry}/k8s-oauth2-proxy:${env.param_docker_cache_source} -t legion/k8s-oauth2-proxy:${Globals.buildVersion} ${Globals.dockerLabels} -f Dockerfile .
                                 """
-                            }
-                        }
-                    }
-                }
-                stage("Build test models") {
-                    steps {
-                        script {
-                            docker.image("legion-docker-agent:${env.BUILD_NUMBER}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                                sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
-
-                                legion.buildTestBareModel("demo-abc-model", "1.0", "1")
-                                legion.buildTestBareModel("demo-abc-model", "1.1", "2")
-                                legion.buildTestBareModel("edi-test-model", "1.2", "3")
-                                legion.buildTestBareModel("feedback-test-model", "1.0", "4")
-                                legion.buildTestBareModel("command-test-model", "1.0", "5")
-                                legion.buildTestBareModel("auth-test-model", "1.0", "6")
                             }
                         }
                     }
