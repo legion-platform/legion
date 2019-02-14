@@ -283,23 +283,23 @@ def init_model(application):
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, value):
+    def default(self, o):
         """
         Redefined method, allows json to encode values of types np.integer, np.float, pd.Series
-        :param value: np.floating, np.integer
+        :param o: np.floating, np.integer
         :return: float, int, List[int], List[float]
         """
-        if isinstance(value, pd.Series):
-            values_list = value.tolist()
+        if isinstance(o, pd.Series):
+            values_list = o.tolist()
             # return single value, because int(pd.Series) returns `int` if pd.Series contains single element
             if len(values_list) == 1:
                 return values_list[0]
             return values_list
-        if isinstance(value, np.integer):
-            return int(value)
-        if isinstance(value, np.float):
-            return float(value)
-        return super().default(value)
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.float):
+            return float(o)
+        return super().default(o)
 
 
 def create_application():
