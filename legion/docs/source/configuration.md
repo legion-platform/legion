@@ -1,10 +1,14 @@
 # Configuring
 
-Each cluster that you want to deploy with our Jenkinsfiles and ansible playbooks should be configured using **profiles** and **secrets**.
+Each cluster that you want to deploy with our Jenkinsfiles and ansible playbooks should be configured using **profiles** and **secrets**. For application configuration you may use **CLI configuration interface** or **environment variables configuration**.
 
 **Profile** describes main characteristicts of cluster, such as DNS names, machines shapes (RAM, CPU and etc.) and so on.
 
 **Secret** describes private cluster information, such as credentials for internal and external systems, secret keys and so on.
+
+**CLI configuration interface** is a way to change Legion applications appearance (logging level, auth tokens and etc.) but may control only part of Legion applications configuration.
+
+**Environment variables configuration** allows fully control Legion applications configurations.
 
 ## Profile
 
@@ -29,7 +33,7 @@ env_name: legion-dev    # short name of env, will be added in resource tags
 
 # Ansible variables
 tmp_dir: /tmp/                          # directory for storing temporary files (on host during deploy)
-git_key: "/home/jenkins/deploy.cert"    # SSH Git access key which will be copied to Jenkins in cluster 
+git_key: "/home/jenkins/deploy.cert"    # SSH Git access key which will be copied to Jenkins in cluster
 ssh_public_key: ~/.ssh/id_rsa.pub       # public key which will be copied to cluster
 
 
@@ -52,7 +56,7 @@ node_extra_shapes:         # list of shapes that can be started up during model 
 node_extra_min: 0          # minimum count of nodes for model building
 node_extra_max: 2          # maximum count of nodes for model building
 
-vpc_id: vpc-5729c13e               # VPC id where the cluster will be created 
+vpc_id: vpc-5729c13e               # VPC id where the cluster will be created
 
 
 # Common cluster configuration for KOPS
@@ -102,13 +106,13 @@ airflow_rds_size: "50"                                                   # size 
 
 # Airflow DAGs configuration [?]
 legion_data_bucket_prefix: ~ # S3 bucket name prefix
-legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"                              # Airflow storage location at S3             
+legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"                              # Airflow storage location at S3
 airflow_expected_output: 'expected-data/'                                # Configuration for Airflow DAGs
 
 # Addons configuration
 storageclass: efs              # Which storage use in PVCs
 dashboard:                     # Kubernetes dashboard configuration
-  version: "1.8.3"             # Dashboard version
+  version: "1.10.1"             # Dashboard version
   insecure: true               # Allow insecure access
 
 # Dex
@@ -120,8 +124,8 @@ secrets_bucket: "legion-secrets"               # S3 bucket with secrets
 secrets_file: "/tmp/{{ cluster_name }}-secrets"  # path for temporary storage
 ```
 
-## Secrets 
-Each secret should be encrypted with Ansible vault and uploaded to S3. 
+## Secrets
+Each secret should be encrypted with Ansible vault and uploaded to S3.
 Secret should be stored on a Jenkins like credentials file (for example vault-legion-dev.epm.kharlamov.biz).
 S3 path to secrets builds using next template `{{ secrets_bucket }}/vault/{{ profile }}` for example `legion-secrets/vault/legion-dev.epm.kharlamov.biz`
 
@@ -218,3 +222,44 @@ dex:
   - clusterrolebinding: view
     group: legion-platform:view
 ```
+
+## Application configuration
+Each Legion application has access to configuration variables placed in `legion.config` Python module. Each value has description, default value, casting function (casting to desired type from string value) and cli-controllable-flag (that says could this configuration variable be controlled from CLI or not).
+
+### Example of application configuration value:
+
+```python
+DEBUG = ConfigVariableDeclaration('DEBUG', False, cast_bool,
+                                  'Enable verbose program output',
+                                  True)
+```
+
+Code above says us that variable `legion.config.DEBUG` has default value `False (boolean)`, casts from string as boolean variable (`true`, `1`, `yes`, `y` are equal to `True`) and may be changed from CLI.
+
+### Configuration priorities
+
+At `legion.config` module initialization:
+* Legion code loads default values for each variable.
+* Legion code tries to load INI config file that is placed at `$LEGION_CONFIG` location. (by default `LEGION_CONFIG` = `~/.legion/config`, but could be changed as env. variable). File loading errors (file not found, access denied, file is corrupted) are being ignored. Legion loads only CLI-controllable variables from this config file (from GENERAL section). If value has been loaded from config file, it will override value from previous steps.
+* Legion code parses environment variables with same names (e.g. for variable `legion.config.DEBUG` env. variable `DEBUG` will be parsed) using casting functions. Non-existed env. variables are being ignored. If value has been loaded from env. variable, it will override value from previous steps.
+
+### CLI configuration interface
+To control configuration variables from CLI you may use `legionctl config` tool.
+
+#### Get all variables
+To get all variables you may use `legionctl config get-all`. By default it will print only CLI-configurable variables with masked private fields.
+
+If you want to show all variables (not just CLI-configurable), you may use `--with-system` flag.
+
+If you want to see masked value as-is you may use `--show-secrets` flag.
+
+#### Get specific variable
+To get specific variable you may use `legionctl config get`. It could show not just CLI-configurable variables.
+
+If you want to see masked value as-is you may use `--show-secrets` flag.
+
+#### Set specific variable
+To set configuation variable value you have to use `legion config set KEY VALUE` e.g. `legionctl config set debug true`. Modification of non-CLI-configurable variables will be ignored.
+
+#### Get config file location
+To get actual config file location you may use `legionctl config path`.

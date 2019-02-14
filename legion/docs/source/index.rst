@@ -6,9 +6,11 @@ Welcome to legion's documentation!
    :caption: Contents:
 
    installation
+   configuration
    usage
    system_architecture
    model_rest_api
+   local_run
    legionctl
 
 
@@ -16,12 +18,9 @@ Welcome to legion's documentation!
    :maxdepth: 2
    :caption: Architecture:
 
-   jupyter
-   legion
    grafana_and_graphite
    jenkins
    edge
-   consul
    rbac
 
 .. toctree::

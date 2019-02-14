@@ -20,31 +20,28 @@ import sys
 import random
 import tempfile
 import logging
-from unittest.mock import patch
 
 import requests.auth
 import responses
 import unittest2
 
-import legion.config
 import legion.utils as utils
-import legion.containers.docker
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import LegionTestContainer
+from legion_test_utils import LegionTestContainer, patch_config
 
 
 LOGGER = logging.getLogger(__name__)
 
 
 def patch_env_host_user_password(host='localhost', protocol='http', user='', password=''):
-    return patch.dict('os.environ', {
-        legion.config.EXTERNAL_RESOURCE_HOST[0]: host,
-        legion.config.EXTERNAL_RESOURCE_PROTOCOL[0]: protocol,
-        legion.config.EXTERNAL_RESOURCE_USER[0]: user,
-        legion.config.EXTERNAL_RESOURCE_PASSWORD[0]: password
+    return patch_config({
+        'EXTERNAL_RESOURCE_HOST': host,
+        'EXTERNAL_RESOURCE_PROTOCOL': protocol,
+        'EXTERNAL_RESOURCE_USER': user,
+        'EXTERNAL_RESOURCE_PASSWORD': password
     })
 
 
@@ -103,10 +100,10 @@ class TestUtilsExternalFile(unittest2.TestCase):
             with self.assertRaisesRegex(Exception, 'Unknown or unavailable resource'):
                 utils.is_local_resource(path)
 
-    @responses.activate  # pylint: disable=E1101
+    @responses.activate
     def _test_external_file_reader(self, url):
         body = 'Example' * 200
-        responses.add('GET', url, body=body, stream=True)  # pylint: disable=E1101
+        responses.add('GET', url, body=body, stream=True)
 
         with utils.ExternalFileReader(url) as reader:
             self.assertTrue(os.path.exists(reader.path))

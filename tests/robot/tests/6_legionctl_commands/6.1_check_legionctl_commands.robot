@@ -58,7 +58,7 @@ Scale. Missed the host parameter
     [Documentation]  The scale command must fail if it does not contain an edi host
     ${res}=  Shell  legionctl scale ${TEST_COMMAND_MODEL_ID} 2 --token "${DEX_TOKEN}"
              Should not be equal  ${res.rc}  ${0}
-             Should contain       ${res.stderr}  Failed to connect
+             Should contain       ${res.stderr}  EDI endpoint is not configured
 
 Undeploy. Nonexistent model service
     [Documentation]  The undeploy command must fail if a model cannot be found by id
@@ -167,7 +167,7 @@ Missed the host parameter
     [Documentation]  The inspect command must fail if it does not contain an edi host
     ${res}=  Shell  legionctl --verbose inspect --token "${DEX_TOKEN}"
              Should not be equal  ${res.rc}  ${0}
-             Should contain       ${res.stderr}  Failed to connect
+             Should contain       ${res.stderr}  EDI endpoint is not configured
 
 Wrong token
     [Documentation]  The inspect command must fail if it does not contain a token

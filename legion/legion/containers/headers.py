@@ -24,6 +24,7 @@ MODEL_PATH = 'Model-Path'
 MODEL_VERSION = 'Model-Version'
 MODEL_ENDPOINT = 'Model-Endpoint'
 IMAGE_TAG_EXTERNAL = 'Model-Image-Tag-External'
+IMAGE_ID_LOCAL = 'Model-Image-Id-Local'
 IMAGE_TAG_LOCAL = 'Model-Image-Tag-Local'
 SAVE_STATUS = 'Save-Status'
 

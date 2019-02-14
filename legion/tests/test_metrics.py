@@ -17,16 +17,15 @@ import os
 import sys
 import time
 from unittest.mock import patch
-
 import unittest2
 
-import legion.config as env
+import legion.config
 import legion.metrics as metrics
 import legion.model
 
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
-from legion_test_utils import patch_environ
+from legion_test_utils import patch_config
 
 MODEL_ID = 'test-model'
 
@@ -42,7 +41,7 @@ class TestMetrics(unittest2.TestCase):
 
     def test_metrics_get_build_number(self):
         build_number = 10
-        with patch_environ({env.BUILD_NUMBER[0]: build_number}):
+        with patch_config({'BUILD_NUMBER': build_number}):
             self.assertEqual(metrics.get_build_number(), build_number)
 
     def test_metrics_send(self):
@@ -53,11 +52,17 @@ class TestMetrics(unittest2.TestCase):
         timestamp = time.time()
         host, port, namespace = metrics.get_metric_endpoint()
 
-        with patch_environ({env.BUILD_NUMBER[0]: build_number}):
+        additional_environment = {
+            'BUILD_NUMBER': build_number,
+            'MODEL_TRAIN_METRICS_ENABLED': 'true'
+        }
+
+        with patch_config(additional_environment):
             with patch('legion.metrics.send_tcp') as send_tcp_mock, patch('time.time', return_value=timestamp):
+                timestamp = int(time.time())
                 metrics.send_metric(model_id, metric, value)
 
-                self.assertTrue(len(send_tcp_mock.call_args_list) == 2, '2 calls founded')
+                self.assertTrue(len(send_tcp_mock.call_args_list) == 2, '2 calls have not been founded')
                 for call in send_tcp_mock.call_args_list:
                     self.assertEqual(call[0][0], host)
                     self.assertEqual(call[0][1], port)
@@ -75,11 +80,31 @@ class TestMetrics(unittest2.TestCase):
                 self.assertEqual(int(float(call_with_build_number[1])), build_number)
                 self.assertEqual(call_with_build_number[2], str(int(timestamp)))
 
+    def test_metrics_send_disabled(self):
+        model_id = 'demo'
+        build_number = 10
+        metric = metrics.Metric.TEST_ACCURACY
+        value = 30.0
+
+        additional_environment = {
+            'BUILD_NUMBER': build_number,
+            'MODEL_TRAIN_METRICS_ENABLED': False
+        }
+        with patch_config(additional_environment):
+            with patch('legion.metrics.send_tcp') as send_tcp_mock:
+                metrics.send_metric(model_id, metric, value)
+
+                self.assertTrue(len(send_tcp_mock.call_args_list) == 0, '0 calls have not been founded')
+
     def test_default_endpoint_detection(self):
         host, port, namespace = metrics.get_metric_endpoint()
-        self.assertEqual(host, env.GRAPHITE_HOST[1])
-        self.assertEqual(port, env.GRAPHITE_PORT[1])
-        self.assertEqual(namespace, env.GRAPHITE_NAMESPACE[1])
+        self.assertEqual(host, legion.config.GRAPHITE_HOST)
+        self.assertEqual(port, legion.config.GRAPHITE_PORT)
+        self.assertEqual(namespace, legion.config.GRAPHITE_NAMESPACE)
+
+    def test_default_is_metrics_enabled(self):
+        is_enabled = metrics.is_metrics_enabled()
+        self.assertEqual(is_enabled, legion.config.MODEL_TRAIN_METRICS_ENABLED)
 
     def test_custom_endpoint_detection(self):
         new_host = 'localhost'
@@ -87,11 +112,12 @@ class TestMetrics(unittest2.TestCase):
         new_namespace = 'tes'
 
         additional_environment = {
-            legion.config.GRAPHITE_HOST[0]: new_host,
-            legion.config.GRAPHITE_PORT[0]: str(new_port),
-            legion.config.GRAPHITE_NAMESPACE[0]: new_namespace
+            'GRAPHITE_HOST': new_host,
+            'GRAPHITE_PORT': new_port,
+            'GRAPHITE_NAMESPACE': new_namespace,
+            'MODEL_TRAIN_METRICS_ENABLED': 'true'
         }
-        with patch_environ(additional_environment):
+        with patch_config(additional_environment):
             host, port, namespace = metrics.get_metric_endpoint()
             self.assertEqual(host, new_host)
             self.assertEqual(port, new_port)

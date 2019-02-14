@@ -12,4 +12,4 @@ def calculate(x):
 
 legion.model.export_df(lambda x: {'result': calculate(x)},
                        pd.DataFrame({'c': [3], 'b': [2], 'a': [1]}))
-legion.model.save('abc.model')
+legion.model.save()

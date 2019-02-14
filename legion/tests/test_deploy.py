@@ -25,7 +25,7 @@ import legion.utils
 # Extend PYTHONPATH in order to import test tools and models
 sys.path.extend(os.path.dirname(__file__))
 
-from legion_test_utils import ModelLocalContainerExecutionContext, build_distribution, \
+from legion_test_utils import ModelLocalContainerExecutionContext, \
     ModelDockerBuilderContainerContext
 
 
@@ -40,7 +40,6 @@ class TestDeploy(unittest2.TestCase):
         :return: None
         """
         logging.basicConfig(level=logging.DEBUG)
-        build_distribution()
 
     def test_summation_model_build_and_query(self):
         with ModelDockerBuilderContainerContext() as context:
@@ -48,7 +47,8 @@ class TestDeploy(unittest2.TestCase):
             model_id, model_version, model_file, _ = context.execute_model()
             self.assertEqual(model_id, 'test-summation', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
-            image_id, _ = context.build_model_container(model_file)
+            self.assertIsNotNone(model_file)
+            image_id, _ = context.build_model_container()
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
@@ -83,7 +83,8 @@ class TestDeploy(unittest2.TestCase):
             model_id, model_version, model_file, _ = context.execute_model()
             self.assertEqual(model_id, 'test-math', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
-            image_id, _ = context.build_model_container(model_file)
+            self.assertIsNotNone(model_file)
+            image_id, _ = context.build_model_container()
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
@@ -138,7 +139,8 @@ class TestDeploy(unittest2.TestCase):
             model_id, model_version, model_file, _ = context.execute_model()
             self.assertEqual(model_id, 'complex', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
-            image_id, _ = context.build_model_container(model_file)
+            self.assertIsNotNone(model_file)
+            image_id, _ = context.build_model_container()
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
@@ -203,7 +205,8 @@ class TestDeploy(unittest2.TestCase):
             model_id, model_version, model_file, _ = context.execute_model()
             self.assertEqual(model_id, 'io-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
-            image_id, _ = context.build_model_container(model_file)
+            self.assertIsNotNone(model_file)
+            image_id, _ = context.build_model_container()
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
@@ -226,7 +229,8 @@ class TestDeploy(unittest2.TestCase):
             model_id, model_version, model_file, _ = context.execute_model()
             self.assertEqual(model_id, 'native-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
-            image_id, _ = context.build_model_container(model_file)
+            self.assertIsNotNone(model_file)
+            image_id, _ = context.build_model_container()
 
         with ModelLocalContainerExecutionContext(image_id) as context:
             self.assertDictEqual(context.model_information, {
@@ -246,6 +250,19 @@ class TestDeploy(unittest2.TestCase):
     def test_columns_ordering(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('columns_model')
+            model_id, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_id, 'columns-model', 'incorrect model id')
+            self.assertEqual(model_version, '1.0', 'incorrect model version')
+            self.assertIsNotNone(model_file)
+            image_id, _ = context.build_model_container()
+
+        with ModelLocalContainerExecutionContext(image_id) as context:
+            self.assertEqual(context.client.invoke(a=3, b=2, c=1)['result'],
+                             ['c', 'b', 'a'], 'invalid invocation result')
+
+    def test_with_model_file_declaration(self):
+        with ModelDockerBuilderContainerContext() as context:
+            context.copy_model('columns_model_with_model_file_declaration')
             model_id, model_version, model_file, _ = context.execute_model()
             self.assertEqual(model_id, 'columns-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')

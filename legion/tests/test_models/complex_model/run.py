@@ -43,4 +43,4 @@ def time_callback(x):
 
 legion.model.export_untyped(lambda x: {'result': int(calculate(x))})
 legion.model.export_untyped(lambda x: {'result': time_callback(x)}, endpoint='time')
-legion.model.save('complex.model')
+legion.model.save()

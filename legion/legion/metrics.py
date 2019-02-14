@@ -16,13 +16,16 @@
 """
 Model metrics
 """
-import os
 import socket
+import logging
 import time
 from enum import Enum
 
 import legion.config
 from legion.utils import normalize_name
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Metric(Enum):
@@ -35,15 +38,24 @@ class Metric(Enum):
     TRAINING_LOSS = 'training-loss'
 
 
+def is_metrics_enabled():
+    """
+    Get is sending of metrics is enabled
+
+    :return: bool -- is sending of metrics is enabled or not
+    """
+    return legion.config.MODEL_TRAIN_METRICS_ENABLED
+
+
 def get_metric_endpoint():
     """
     Get metric endpoint
 
     :return: metric server endpoint
     """
-    host = os.getenv(*legion.config.GRAPHITE_HOST)
-    port = int(os.getenv(*legion.config.GRAPHITE_PORT))
-    namespace = os.getenv(*legion.config.GRAPHITE_NAMESPACE)
+    host = legion.config.GRAPHITE_HOST
+    port = legion.config.GRAPHITE_PORT
+    namespace = legion.config.GRAPHITE_NAMESPACE
     return host, port, namespace
 
 
@@ -54,7 +66,7 @@ def get_build_number():
     :return: int -- build number
     """
     try:
-        return int(os.getenv(*legion.config.BUILD_NUMBER))
+        return legion.config.BUILD_NUMBER
     except ValueError:
         raise Exception('Cannot parse build number as integer')
 
@@ -138,13 +150,17 @@ def send_metric(model_id, metric, value):
     :type value: float or int
     :return: None
     """
+    if not is_metrics_enabled():
+        LOGGER.warning('Sending of metric {!r} with value {!r} has been ignored'.format(metric, value))
+        return
+
     host, port, namespace = get_metric_endpoint()
 
-    metric_name = '%s.%s' % (namespace, get_metric_name(metric, model_id))
-    message = "%s %f %d\n" % (metric_name, float(value), int(time.time()))
+    metric_name = '{}.{}'.format(namespace, get_metric_name(metric, model_id))
+    message = "{} {} {}\n".format(metric_name, float(value), int(time.time()))
     send_tcp(host, port, message)
 
     build_no = get_build_number()
-    metric_name = '%s.%s' % (namespace, get_metric_name('build', model_id))
-    message = "%s %f %d\n" % (metric_name, build_no, int(time.time()))
+    metric_name = '{}.{}'.format(namespace, get_metric_name('build', model_id))
+    message = "{} {} {}\n".format(metric_name, build_no, int(time.time()))
     send_tcp(host, port, message)

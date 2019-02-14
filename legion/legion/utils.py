@@ -43,6 +43,7 @@ import legion.containers.headers
 
 KUBERNETES_STRING_LENGTH_LIMIT = 63
 LOGGER = logging.getLogger(__name__)
+MODEL_NAMING_UID_ENV = 'JUPYTERHUB_USER', 'NB_USER', 'BUILD_ID'
 
 
 def render_template(template_name, values=None):
@@ -153,16 +154,29 @@ class TemporaryFolder:
     Temporary folder representation with context manager (temp. directory deletes of context exit)
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, change_cwd=False, **kwargs):
         """
         Build temp. folder representation using tempfile.mkdtemp
 
         :param args: tempfile.mkdtemp args
         :type args: tuple
+        :param change_cwd: (Optional) change CWD to temporary path
+        :type change_cwd: bool
         :param kwargs: tempfile.mkdtemp kwargs
         :type kwargs: dict
         """
-        self._path = tempfile.mkdtemp(*args, **kwargs)
+        self._old_cwd = os.getcwd()
+        self._change_cwd = change_cwd
+        new_kwargs = kwargs.copy()
+
+        temp_directory_override = legion.config.TEMP_DIRECTORY
+        if temp_directory_override:
+            new_kwargs.update({'dir': temp_directory_override})
+
+        LOGGER.debug('Creating temporary directory with args={!r} and kwargs={!r}'.format(args,
+                                                                                          new_kwargs))
+
+        self._path = tempfile.mkdtemp(*args, **new_kwargs)
 
     @property
     def path(self):
@@ -172,6 +186,24 @@ class TemporaryFolder:
         :return: str -- path
         """
         return self._path
+
+    @property
+    def change_cwd(self):
+        """
+        Has directory been changed or not
+
+        :return: bool
+        """
+        return self._change_cwd
+
+    @property
+    def old_cwd(self):
+        """
+        Old CWD
+
+        :return: str
+        """
+        return self._old_cwd
 
     def remove(self):
         """
@@ -187,6 +219,8 @@ class TemporaryFolder:
 
         :return: :py:class:`legion.utils.TemporaryFolder`
         """
+        if self.change_cwd:
+            os.chdir(self.path)
         return self
 
     def __exit__(self, exit_type, value, traceback):
@@ -198,6 +232,8 @@ class TemporaryFolder:
         :param traceback: -
         :return: None
         """
+        if self.change_cwd:
+            os.chdir(self.old_cwd)
         self.remove()
 
 
@@ -269,8 +305,8 @@ def normalize_external_resource_path(path):
     :type path: str
     :return: str -- normalized path
     """
-    default_protocol = os.getenv(*legion.config.EXTERNAL_RESOURCE_PROTOCOL)
-    default_host = os.getenv(*legion.config.EXTERNAL_RESOURCE_HOST)
+    default_protocol = legion.config.EXTERNAL_RESOURCE_PROTOCOL
+    default_host = legion.config.EXTERNAL_RESOURCE_HOST
 
     if path.lower().startswith('//'):
         path = '%s:%s' % (default_protocol, path)
@@ -294,8 +330,8 @@ def _get_auth_credentials_for_external_resource():
 
     :return: :py:class:`requests.auth.HTTPBasicAuth` -- credentials
     """
-    user = os.getenv(*legion.config.EXTERNAL_RESOURCE_USER)
-    password = os.getenv(*legion.config.EXTERNAL_RESOURCE_PASSWORD)
+    user = legion.config.EXTERNAL_RESOURCE_USER
+    password = legion.config.EXTERNAL_RESOURCE_PASSWORD
 
     if user and password:
         return requests.auth.HTTPBasicAuth(user, password)
@@ -326,7 +362,7 @@ def copy_directory_contents(source_directory, target_directory):
     :type target_directory: str
     :return: None
     """
-    distutils.dir_util.copy_tree(source_directory, target_directory)  # pylint: disable=E1101
+    distutils.dir_util.copy_tree(source_directory, target_directory)
 
 
 def save_file(temp_file, target_file, remove_after_delete=False):
@@ -534,20 +570,6 @@ def model_properties_storage_name(model_id, model_version):
     return normalize_name('model-{}-{}'.format(model_id, model_version), dns_1035=True)
 
 
-def string_to_bool(value):
-    """
-    Convert string to bool
-
-    :param value: string or bool
-    :type value: str or bool
-    :return: bool
-    """
-    if isinstance(value, bool):
-        return value
-
-    return value.lower() in ['true', '1', 't', 'y', 'yes']
-
-
 def parse_value_to_type(value, target_type):
     """
     Parse string value to target type
@@ -559,7 +581,7 @@ def parse_value_to_type(value, target_type):
     :return: :py:class:`type`() -- target instance
     """
     if target_type == bool:
-        return string_to_bool(str(value))
+        return legion.config.cast_bool(str(value))
     else:
         return target_type(value)
 
@@ -597,6 +619,24 @@ def get_installed_packages():
     ], key=lambda item: item[0])
 
 
+def deduce_extra_version():
+    """
+    Deduce extra version based on date, user, commit
+
+    :return: str -- extra version string
+    """
+    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+
+    valid_user_names = [os.getenv(env) for env in MODEL_NAMING_UID_ENV if os.getenv(env)]
+    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
+
+    commit_id = get_git_revision(os.getcwd())
+    if not commit_id:
+        commit_id = '0000'
+
+    return '.'.join([date_string, user_id, commit_id])
+
+
 def deduce_model_file_name(model_id, model_version):
     """
     Get model file name
@@ -607,21 +647,12 @@ def deduce_model_file_name(model_id, model_version):
     :type model_version: str
     :return: str -- auto deduced file name
     """
-    date_string = datetime.datetime.now().strftime('%y%m%d%H%M%S')
+    file_name = '%s-%s+%s.model' % (model_id, str(model_version), deduce_extra_version())
 
-    valid_user_names = [os.getenv(env) for env in legion.config.MODEL_NAMING_UID_ENV if os.getenv(env)]
-    user_id = valid_user_names[0] if valid_user_names else getpass.getuser()
-
-    commit_id = get_git_revision(os.getcwd())
-    if not commit_id:
-        commit_id = '0000'
-
-    file_name = '%s-%s+%s.%s.%s.model' % (model_id, str(model_version), date_string, user_id, commit_id)
-
-    if string_to_bool(os.getenv(*legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT)):
+    if legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT:
         return '///%s' % file_name
 
-    default_prefix = os.getenv(*legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX)
+    default_prefix = legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX
     if default_prefix:
         return os.path.join(default_prefix, file_name)
 

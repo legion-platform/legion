@@ -135,7 +135,7 @@ class Utils:
         :type model_version: str
         :return: list[str] -- parsed EDI output for specific model
         """
-        founded = [info for info in parsed_edi_output if info[0] == model_id and model_version in (None, info[2])]
+        founded = [info for info in parsed_edi_output if info[0] == model_id and model_version in (None, info[1])]
         if not founded:
             raise Exception('Info about model {!r} v {!r} not found'.format(model_id, model_version))
 

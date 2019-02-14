@@ -1,7 +1,7 @@
 #!groovy
 
 /**
- *   Copyright 2017 EPAM Systems
+ *   Copyright 2019 EPAM Systems
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -26,6 +26,12 @@ def modelId() {
 def modelVersion() {
     def modelVersion = legionProperties()['modelVersion']
 
+    return (modelVersion == null) ? '<Model-Version is not defined>' : modelVersion
+}
+
+def modelExtendedVersion() {
+    def modelVersionString = modelVersion()
+
     fileName = modelFileName()
     extendedVersionSubstring = (fileName =~ /\+(.+)\.model/)
 
@@ -34,7 +40,7 @@ def modelVersion() {
     else
         extendedVersionSubstring = ''
 
-    return ((modelVersion == null) ? 'undefined' : modelVersion) + extendedVersionSubstring
+    return ((modelVersionString == null) ? 'undefined' : modelVersionString) + extendedVersionSubstring
 }
 
 def modelFileName() {
@@ -59,7 +65,7 @@ def getDefaultImageName(){
 def pod(Map podParams=null, Closure body) {
     if (podParams == null)
         podParams = [:]
-    
+
     if ( params.Enclave == "" ) {
         echo '[FAILURE] Parameter Enclave not defined!'
         currentBuild.result = 'FAILURE'
@@ -79,7 +85,7 @@ def pod(Map podParams=null, Closure body) {
             "LEGION_BASE_IMAGE_REPOSITORY",
             "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
             "MODEL_IMAGES_REGISTRY", "MODEL_IMAGES_REGISTRY_HOST", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
-            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT",
+            "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "MODEL_TRAIN_METRICS_ENABLED",
             "AIRFLOW_S3_URL", "AIRFLOW_REST_API", "AIRFLOW_DAGS_DIRECTORY", "DAGS_VOLUME_PVC", "S3_BUCKET_NAME"
     ]
 
@@ -209,7 +215,7 @@ def build() {
     echo 'MODEL_FILE_NAME = ' + env.MODEL_FILE_NAME
 
     baseDockerImage = getDefaultImageName()
-    modelVersion = modelVersion()
+    modelVersion = modelExtendedVersion()
 
     modelImageVersion = modelVersion
     env.TEMPORARY_DOCKER_IMAGE_NAME = generateModelTemporaryImageName(env.MODEL_ID, modelVersion)
@@ -220,7 +226,7 @@ def build() {
     legionctl build  \
     --docker-image-tag ${env.TEMPORARY_DOCKER_IMAGE_NAME} \
     --push-to-registry  ${env.EXTERNAL_IMAGE_NAME} \
-    ${env.MODEL_FILE_NAME}
+    --model-file "${env.MODEL_FILE_NAME}"
     """
 
 }
@@ -250,16 +256,18 @@ def deploy(Map deployParams=null) {
 def runTests() {
     env.ROOT_DIR = rootDir()
     env.MODEL_ID = modelId()
+    env.MODEL_VERSION = modelVersion()
 
     echo 'ROOT_DIR = ' + env.ROOT_DIR
     echo 'MODEL_ID = ' + env.MODEL_ID
+    echo 'MODEL_VERSION = ' + env.MODEL_VERSION
 
     sh """
     export INIT_DIR="`pwd`"
     rm -f nosetests.xml
 
     cd "${env.ROOT_DIR}/tests"
-    MODEL_ID="${env.MODEL_ID}" nosetests --with-xunit --xunit-file "\$INIT_DIR/nosetests.xml"
+    MODEL_ID="${env.MODEL_ID}" MODEL_VERSION="${env.MODEL_VERSION}" nosetests --with-xunit --xunit-file "\$INIT_DIR/nosetests.xml"
     """
 
     junit "nosetests.xml"

@@ -26,7 +26,11 @@
 127.0.0.1
 # Allow demo netmask
 1.2.3.4/32
+172.17.0.1
+172.17.0.2
 # Allow IPv4 configuration for nonMasqueradeCIDR be stored
 nonMasqueradeCIDR:\\s*[0-9\\./]+
 # Allow user:tag
 user:tag
+# Allow username : unicode (Jupyter config)
+username : unicode

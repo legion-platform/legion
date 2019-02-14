@@ -33,7 +33,7 @@ DOCKER_IMAGE_LABELS = {
 }
 
 
-class TestEDI(unittest2.TestCase):
+class TestEDIRemoteKubernetes(unittest2.TestCase):
     _multiprocess_can_split_ = True
 
     def test_edi_inspect_all_detail(self):

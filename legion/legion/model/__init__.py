@@ -19,6 +19,7 @@ Model functionality
 import legion.pymodel.model
 import legion.k8s.properties
 from legion.utils import normalize_name
+import legion.docker_bootup
 
 from .client import ModelClient, load_image
 from .types import int8, uint8, int16, uint16, int32, uint32, int64, uint64
