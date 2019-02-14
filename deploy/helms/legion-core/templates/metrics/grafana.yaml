@@ -1,6 +1,6 @@
 {{- if .Values.grafana.enabled }}
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-grafana"
   labels:
@@ -11,7 +11,8 @@ metadata:
 spec:
   replicas: 1
   selector:
-    component: "{{ .Release.Name }}-grafana"
+    matchLabels:
+      component: "{{ .Release.Name }}-grafana"
   template:
     metadata:
       labels:

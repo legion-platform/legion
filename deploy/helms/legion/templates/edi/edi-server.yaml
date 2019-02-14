@@ -1,6 +1,6 @@
 {{- if .Values.edi.enabled }}
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
@@ -11,7 +11,8 @@ metadata:
 spec:
   replicas: {{ .Values.edi.replicas }}
   selector:
-    component: "{{ .Release.Name }}-edi"
+    matchLabels:
+      component: "{{ .Release.Name }}-edi"
   template:
     metadata:
       labels:

@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "apps/v1",
   "kind": "Deployment",
   "metadata": {
     "annotations": {
@@ -23,11 +23,11 @@
     "name": "model-demo-abc-model-1-1",
     "namespace": "debug-enclave",
     "resourceVersion": "349727",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-1",
+    "selfLink": "/apis/apps/v1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-1",
     "uid": "be7252b9-e294-11e8-9de3-12a89ae87206"
   },
   "spec": {
-    "replicas": 2,
+    "replicas": 1,
     "selector": {
       "matchLabels": {
         "com.epam.legion.model.id": "demo-abc-model",
@@ -125,7 +125,7 @@
     }
   },
   "status": {
-    "availableReplicas": 2,
+    "availableReplicas": 1,
     "conditions": [
       {
         "lastTransitionTime": "2018-11-07T13:55:11Z",
@@ -136,9 +136,9 @@
         "type": "Available"
       }
     ],
-    "observedGeneration": 2,
-    "readyReplicas": 2,
-    "replicas": 2,
-    "updatedReplicas": 2
+    "observedGeneration": 1,
+    "readyReplicas": 1,
+    "replicas": 1,
+    "updatedReplicas": 1
   }
 }

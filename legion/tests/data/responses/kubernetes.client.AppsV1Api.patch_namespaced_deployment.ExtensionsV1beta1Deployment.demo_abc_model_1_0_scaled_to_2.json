@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "apps/v1",
   "kind": "Deployment",
   "metadata": {
     "annotations": {
@@ -12,7 +12,7 @@
       "deployment.kubernetes.io/revision": "1",
       "git_revision": "8968684"
     },
-    "creationTimestamp": "2018-11-06T12:47:04Z",
+    "creationTimestamp": "2018-11-06T12:01:19Z",
     "generation": 2,
     "labels": {
       "com.epam.legion.model.id": "demo-abc-model",
@@ -22,12 +22,12 @@
     },
     "name": "model-demo-abc-model-1-0",
     "namespace": "debug-enclave",
-    "resourceVersion": "165820",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-0",
-    "uid": "0ffd59a5-e1c2-11e8-9de3-12a89ae87206"
+    "resourceVersion": "159424",
+    "selfLink": "/apis/apps/v1/namespaces/debug-enclave/deployments/model-demo-abc-model-1-0",
+    "uid": "abdead33-e1bb-11e8-9de3-12a89ae87206"
   },
   "spec": {
-    "replicas": 1,
+    "replicas": 2,
     "selector": {
       "matchLabels": {
         "com.epam.legion.model.id": "demo-abc-model",
@@ -128,17 +128,17 @@
     "availableReplicas": 2,
     "conditions": [
       {
-        "lastTransitionTime": "2018-11-06T12:47:10Z",
-        "lastUpdateTime": "2018-11-06T12:47:10Z",
+        "lastTransitionTime": "2018-11-06T12:01:19Z",
+        "lastUpdateTime": "2018-11-06T12:01:19Z",
         "message": "Deployment has minimum availability.",
         "reason": "MinimumReplicasAvailable",
         "status": "True",
         "type": "Available"
       }
     ],
-    "observedGeneration": 1,
-    "readyReplicas": 1,
-    "replicas": 1,
-    "updatedReplicas": 1
+    "observedGeneration": 2,
+    "readyReplicas": 2,
+    "replicas": 2,
+    "updatedReplicas": 2
   }
 }

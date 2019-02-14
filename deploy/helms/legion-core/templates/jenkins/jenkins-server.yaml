@@ -31,8 +31,8 @@ data:
     hudson.save()
 
 ---
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-jenkins"
   labels:
@@ -43,7 +43,8 @@ metadata:
 spec:
   replicas: 1
   selector:
-    component: "{{ .Release.Name }}-jenkins"
+    matchLabels:
+      component: "{{ .Release.Name }}-jenkins"
   template:
     metadata:
       annotations:
