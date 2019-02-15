@@ -90,7 +90,7 @@ Check model API logging with request ID and many chunks
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${expected_response}=   Repeat string N times    ${TEST_MODEL_ARG_STR}   ${TEST_MODEL_ARG_COPIES}
 
-    ${response}=   Invoke deployed model    ${MODEL_TEST_ENCLAVE}  ${TEST_FEEDBACK_MODEL_ID}  ${TEST_FEEDBACK_MODEL_VERSION}  request_id=${request_id}  str=${TEST_MODEL_ARG_STR}  copies=${TEST_MODEL_ARG_COPIES}
+    ${response}=   Invoke deployed model    ${MODEL_TEST_ENCLAVE}  ${TEST_FEEDBACK_MODEL_ID}  ${TEST_FEEDBACK_MODEL_VERSION}  endpoint=feedback  request_id=${request_id}  str=${TEST_MODEL_ARG_STR}  copies=${TEST_MODEL_ARG_COPIES}
     Validate model API response      ${response}    result=${expected_response}
 
     ${actual_request_id}=          Get model API last response ID
