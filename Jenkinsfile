@@ -161,7 +161,7 @@ pipeline {
                     docker pull ${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} || true
                     docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile .
                     """
-                    legion.uploadDockerImage('legion-docker-agent', "${Globals.buildVersion}")
+                    legion.uploadDockerImage('legion-docker-agent')
                 }
             }
         }
@@ -328,7 +328,7 @@ EOL
                             docker pull ${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} || true
                             docker build ${Globals.dockerCacheArg} --cache-from=ubuntu:16.04 --cache-from=${env.param_docker_registry}/base-python-image:${env.param_docker_cache_source} -t "legion/base-python-image:${Globals.buildVersion}" ${Globals.dockerLabels} .
                             """
-                            legion.uploadDockerImage('base-python-image', "${Globals.buildVersion}")
+                            legion.uploadDockerImage('base-python-image')
                         }
                     }
                 }
@@ -419,7 +419,7 @@ EOL
                 stage("Build test models") {
                     steps {
                         script {
-                            docker.image("legion-docker-agent:${env.BUILD_NUMBER}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                 sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
 
                                 legion.buildTestBareModel("demo-abc-model", "1.0", "1")
