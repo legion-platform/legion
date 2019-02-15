@@ -14,17 +14,20 @@
 #    limitations under the License.
 #
 ARG version=latest
+
+FROM legion/legion-docker-agent:${version}
+
 FROM legion/base-python-image:${version}
 
 # Install Legion and custom scripts to image
-COPY *.whl /
+COPY --from=0 /src/legion/dist/*.whl ./
 COPY legion-doc.txt \
         /opt/legion/
 
 COPY jupyter_notebook_config.py /etc/jupyter/
 
-RUN pip3 install --disable-pip-version-check /legion*.whl \
- && rm -f /legion*.whl \
- && pip3 install --disable-pip-version-check ptvsd==4.2.2 \
- && echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc \
- && cat /opt/legion/legion-doc.txt > /etc/motd
+RUN pip3 install --disable-pip-version-check ./legion*.whl \
+  && rm -f ./legion*.whl \
+  && pip3 install --disable-pip-version-check ptvsd==4.2.2 \
+  && echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc \
+  && cat /opt/legion/legion-doc.txt > /etc/motd

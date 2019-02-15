@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'ec2orchestrator'}
 
     environment {
         //Input parameters
@@ -17,6 +17,7 @@ pipeline {
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         commitID = null
+        cleanupContainerVersion = "latest"
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
         helmLocalSrc = 'false'
@@ -35,14 +36,15 @@ pipeline {
             }
         }
 
-        stage('Install tools package'){
-            steps{
+        stage('Authorize Jenkins Agent') {
+            steps {
                 script {
-                    legion.installTools()
+                    legion.authorizeJenkinsAgent()
                 }
             }
         }
-        
+
+
         stage('Deploy Legion') {
             when {
                 expression {return param_deploy_legion == "true" }
@@ -61,6 +63,7 @@ pipeline {
             }
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
                     legion.createjenkinsJobs(commitID)
                 }
             }
@@ -72,6 +75,7 @@ pipeline {
             }
             steps {
                 script {
+                    legion.ansibleDebugRunCheck(env.param_debug_run)
                     legion.runRobotTests(env.param_tests_tags ?: "")
                 }
             }
@@ -82,6 +86,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
+                legion.cleanupClusterSg(param_legion_version ?: cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()
