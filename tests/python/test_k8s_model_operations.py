@@ -18,9 +18,6 @@ from __future__ import print_function
 import warnings
 import logging
 import os
-import time
-import unittest
-import unittest.mock
 
 import unittest2
 
