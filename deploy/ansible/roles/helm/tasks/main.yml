@@ -79,3 +79,29 @@
   delay: 20
   ignore_errors: false
   when: helm_list_initial_status.failed
+
+- name: Remove in-cluster access to helm
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: tiller-deploy
+        namespace: kube-system
+      spec:
+        containers:
+          - name: tiller
+            ports: []
+            command: ["/tiller"]
+            args: ["--listen=localhost:44134"]
+
+- name: Remove helm service
+  k8s:
+    state: absent
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: tiller-deploy
+        namespace: kube-system
