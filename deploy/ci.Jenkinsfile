@@ -59,7 +59,8 @@ pipeline {
                script {
                    result = build job: env.param_build_legion_job_name, propagate: true, wait: true, parameters: [
                            [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
-                           string(name: 'EnableDockerCache', value: env.param_enable_docker_cache)
+                           string(name: 'EnableDockerCache', value: env.param_enable_docker_cache),
+                           string(name: 'BuildUser', value: env.ghprbTriggerAuthor),
                    ]
 
                    buildNumber = result.getNumber()
