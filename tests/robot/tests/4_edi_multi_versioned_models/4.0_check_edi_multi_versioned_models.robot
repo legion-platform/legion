@@ -6,6 +6,7 @@ Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             legion_test.robot.Utils
 Library             legion_test.robot.Grafana
+Library             legion_test.robot.Model
 Library             Collections
 Suite Setup         Choose cluster context    ${CLUSTER_NAME}
 Test Setup          Run Keywords
@@ -217,5 +218,7 @@ Check default model urls
                     Should contain                  ${resp}                 "model_version": "${TEST_MODEL_2_VERSION}"
 
     Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
-    Run Keyword And Expect Error  Returned wrong status code: 400  Get model info  ${edge}  ${TOKEN}  ${TEST_MODEL_ID}
+    Run Keyword And Expect Error  *Returned wrong status code: 400*  Get model info  ${edge}  ${TOKEN}  ${TEST_MODEL_ID}
     Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_2_VERSION}
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_1_VERSION}

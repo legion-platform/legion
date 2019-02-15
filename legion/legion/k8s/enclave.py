@@ -466,18 +466,19 @@ class Enclave:
             :return list[:py:class:`legion.k8s.services.ModelServiceEndpoint`] -- endpoints with default
             """
             model_endpoints = []
-            unspecified_version_endpoints = []
+            unspecified_version_endpoints = {}
             model_id_counter = Counter(x.model_service.id for x in endpoints_to_normalize)
 
             for endpoint in endpoints_to_normalize:
+                model_id = endpoint.model_service.id
                 model_endpoints.append(endpoint)
 
-                if model_id_counter[endpoint.model_service.id] == 1:
+                if model_id_counter[model_id] == 1:
                     model_endpoints.append(endpoint.build_default())
                 else:
-                    unspecified_version_endpoints.append(endpoint.build_default())
+                    unspecified_version_endpoints[model_id] = endpoint.build_default()
 
-            return model_endpoints, unspecified_version_endpoints
+            return model_endpoints, list(unspecified_version_endpoints.values())
 
         for event_type, model_service in self.watch_models():
             model_endpoint = legion.k8s.services.ModelServiceEndpoint(model_service)

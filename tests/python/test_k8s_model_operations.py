@@ -163,7 +163,7 @@ class TestK8SModelOperations(unittest2.TestCase):
         enclave = self._get_test_enclave()
 
         def listener():
-            for new_state in enclave.watch_model_service_endpoints_state():
+            for new_state, _ in enclave.watch_model_service_endpoints_state():
                 states.append(new_state)
                 LOGGER.info('Got new model state update: {}'.format(repr(new_state)))
 
