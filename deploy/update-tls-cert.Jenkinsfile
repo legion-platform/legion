@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'ec2orchestrator'}
 
     environment {
         //Input parameters
@@ -41,6 +41,8 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
+                cleanupContainerVersion = param_legion_version ?: cleanupContainerVersion
+                legion.cleanupClusterSg(cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()
