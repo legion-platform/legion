@@ -1,18 +1,19 @@
 pipeline {
-    agent any
+    agent { label 'ec2orchestrator'}
 
     environment {
         //Input parameters
         param_git_branch = "${params.GitBranch}"
         param_profile = "${params.Profile}"
         param_legion_version = "${params.LegionVersion}"
-        aram_enclave_name = "${params.EnclaveName}"
+        param_enclave_name = "${params.EnclaveName}"
         param_docker_repo = "${params.DockerRepo}"
         param_debug_run = "${params.DebugRun}"
         //Job parameters
         sharedLibPath = "deploy/legionPipeline.groovy"
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
+        cleanupContainerVersion = "latest"
     }
 
     stages {
@@ -31,6 +32,7 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.authorizeJenkinsAgent()
                     legion.terminateLegionEnclave()
                 }
             }
@@ -41,6 +43,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
+                legion.cleanupClusterSg( param_legion_version ?: cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()
