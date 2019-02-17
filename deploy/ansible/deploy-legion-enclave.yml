@@ -50,4 +50,3 @@
       name: legion_enclave
     vars:
       enclave: "{{ enclave_name }}"
-

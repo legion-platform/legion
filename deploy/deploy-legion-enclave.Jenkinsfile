@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'ec2orchestrator'}
 
     environment {
         //Input parameters
@@ -16,6 +16,7 @@ pipeline {
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
         helmLocalSrc = 'false'
+        cleanupContainerVersion = "latest"
     }
 
     stages {
@@ -34,6 +35,7 @@ pipeline {
             steps {
                 script {
                     legion.ansibleDebugRunCheck(env.param_debug_run)
+                    legion.authorizeJenkinsAgent()
                     legion.deployLegionEnclave()
                 }
             }
@@ -44,6 +46,7 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
+                legion.cleanupClusterSg(param_legion_version ?: cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()
