@@ -337,11 +337,6 @@ EOL
                         }
                     }
                 }
-            }
-        }
-
-        stage("Build Docker images & Helms") {
-            parallel {
                 stage("Build toolchains Docker image"){
                     steps {
                         script {
@@ -354,6 +349,11 @@ EOL
                         }
                     }
                 }
+            }
+        }
+
+        stage("Build Docker images & Helms") {
+            parallel {
                 stage("Build Grafana Docker image") {
                     steps {
                         script {
