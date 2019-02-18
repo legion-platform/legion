@@ -13,6 +13,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+from requests.exceptions import RequestException
+
 from legion.model import ModelClient
 
 from locust import HttpLocust, task, TaskSet
@@ -40,6 +42,7 @@ class ModelTaskSet(TaskSet):
 
     def on_start(self):
         self._model_client = ModelClient('income', '1.1', use_relative_url=True, http_client=self.client,
+                                         http_exception=RequestException,
                                          token=build_client().get_token('income', '1.0'))
 
 

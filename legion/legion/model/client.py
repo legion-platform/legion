@@ -24,7 +24,7 @@ from PIL import Image as PYTHON_Image
 import legion.config
 import legion.containers.headers
 import legion.http
-from legion.utils import normalize_name
+from legion.utils import normalize_name, ensure_function_succeed
 
 
 def load_image(path):
@@ -48,8 +48,8 @@ class ModelClient:
     Model HTTP client
     """
 
-    def __init__(self, model_id, model_version, token=None, host=None, http_client=None, use_relative_url=False,
-                 timeout=None):
+    def __init__(self, model_id, model_version, token=None, host=None, http_client=None, http_exception=None,
+                 use_relative_url=False, timeout=None):
         """
         Build client
 
@@ -81,6 +81,13 @@ class ModelClient:
             self._http_client = http_client
         else:
             self._http_client = requests
+
+        if http_client and http_exception:
+            self._http_exception = http_exception
+        elif http_client and not http_exception:
+            self._http_exception = Exception
+        else:
+            self._http_exception = requests.exceptions.RequestException
 
         self._use_relative_url = use_relative_url
         if self._use_relative_url:
@@ -225,6 +232,35 @@ class ModelClient:
             kwargs['timeout'] = self._timeout
         return kwargs
 
+    def _request(self, url, http_method=None, data=None, files=None, retries=3, timeout=1, **kwargs):
+        """
+        Send request with provided method and other parameters
+        :param url: url to send request to
+        :type url: str
+        :param http_method: HTTP method
+        :type http_method: str
+        :param data: request data
+        :type data: any
+        :param files: files
+        :type files: dict
+        :return: list -- parsed model response
+        """
+        if not http_method:
+            raise Exception('request method is not set')
+
+        client_method = getattr(self._http_client, http_method)
+
+        def check_function():
+            try:
+                return client_method(url, data=data, files=files, **kwargs)
+            except self._http_exception:
+                pass
+
+        response = ensure_function_succeed(check_function, retries, timeout)
+        if not response:
+            raise self._http_exception('HTTP request failed')
+        return self._parse_response(response)
+
     def batch(self, invoke_parameters, endpoint=None):
         """
         Send batch invoke request
@@ -248,10 +284,7 @@ class ModelClient:
 
         content = '\n'.join(request_lines)
         url = self.build_batch_url(endpoint)
-        response = self._http_client.post(url,
-                                          data=content,
-                                          **self._additional_kwargs)
-        return self._parse_response(response)
+        return self._request(url, data=content, **self._additional_kwargs)
 
     def invoke(self, endpoint=None, **parameters):
         """
@@ -265,11 +298,7 @@ class ModelClient:
         """
         data, files = self._prepare_invoke_request(**parameters)
         url = self.build_invoke_url(endpoint)
-        response = self._http_client.post(url,
-                                          data=data, files=files,
-                                          **self._additional_kwargs)
-
-        return self._parse_response(response)
+        return self._request(url, data=data, files=files, **self._additional_kwargs)
 
     def info(self):
         """
@@ -277,7 +306,4 @@ class ModelClient:
 
         :return: dict -- parsed model info
         """
-        response = self._http_client.get(self.info_url,
-                                         **self._additional_kwargs)
-
-        return self._parse_response(response)
+        return self._request(self.info_url, **self._additional_kwargs)
