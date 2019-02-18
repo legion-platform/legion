@@ -524,4 +524,4 @@ MODEL_VERSION = ConfigVariableDeclaration('MODEL_VERSION', None, str, 'ID of cur
 MODEL_K8S_MEMORY = ConfigVariableDeclaration('MODEL_K8S_MEMORY', '256Mi', str, 'Default k8s memory for a model', True)
 MODEL_K8S_CPU = ConfigVariableDeclaration('MODEL_K8S_CPU', '256m', str, 'Default k8s cpu for a model', True)
 REDUCE_MODEL_REQUESTS_BY = ConfigVariableDeclaration('REDUCE_MODEL_REQUESTS_BY', 33, int,
-                                                     'Reducy k8s resource for model by specific percent', True)
+                                                     'Reduce k8s resource for model by specific percent', True)
