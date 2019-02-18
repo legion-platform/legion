@@ -337,22 +337,22 @@ EOL
                         }
                     }
                 }
-                stage("Build toolchains Docker image"){
-                    steps {
-                        script {
-                            /// don't pull base image because it's been done in current run
-                            legion.pullDockerCache([], 'python-toolchain')
-                            sh """
-                            cd k8s/toolchains/python
-                            docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:{env.param_docker_cache_source} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} --cache-from=${env.param_docker_registry}/python-toolchain:{env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
-                            """
-                        }
-                    }
+                
+            }
+        }
+        stage("Build toolchains Docker image"){
+            steps {
+                script {
+                    /// don't pull base image because it's been created in current run
+                    legion.pullDockerCache([], 'python-toolchain')
+                    sh """
+                    cd k8s/toolchains/python
+                    docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} --cache-from=${env.param_docker_registry}/python-toolchain:${env.param_docker_cache_source} --build-arg version="${Globals.buildVersion}" -t legion/python-toolchain:${Globals.buildVersion} ${Globals.dockerLabels} .
+                    """
                 }
             }
         }
-
-        stage("Build Docker images & Helms") {
+        stage("Build Docker images & Run Tests") {
             parallel {
                 stage("Build Grafana Docker image") {
                     steps {
@@ -485,13 +485,24 @@ EOL
                                     --cover-html \
                                     --logging-level DEBUG \
                                     -v || true
+                                
                                 cd -
                                 cp /src/legion/nosetests.xml legion/nosetests.xml
+                                tar -czf legion/legion_coverage_${Globals.buildVersion}.tar.gz /src/legion/cover
                                 """
+                                /// Parse nose tests results
+                                junit 'legion/nosetests.xml'
+
+                                archiveArtifacts artifacts: "legion/legion_coverage_${Globals.buildVersion}.tar.gz"
                             }
                         }
                     }
                 }
+            }
+        }
+
+        stage("Push Docker Images & Helm charts") {
+            parallel {
                 stage('Package and upload helm charts'){
                     steps {
                         script {
@@ -549,11 +560,6 @@ EOL
                         }
                     }
                 }
-            }
-        }
-
-        stage("Push Docker Images") {
-            parallel {
                 stage('Upload Grafana Docker Image') {
                     steps {
                         script {
