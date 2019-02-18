@@ -63,7 +63,7 @@ def get_builds(repository: str, options: Options):
         log.debug('Fetching Nexus artifacts from URL {}'.format(url))
         response = requests.get(url, params=search_filters, auth=(options.user, options.password))
         if response.status_code not in ALLOWED_RESPONSE_CODES:
-                raise Exception('Non 200 response from Nexus!')
+            raise Exception('Invalid response: {!r} - {!r}'.format(response.status_code, response.text))
         response_data = response.json()
         builds.extend(response_data.get('items'))
 
@@ -74,7 +74,7 @@ def get_builds(repository: str, options: Options):
             search_filters['continuationToken'] = continuation_token
             response = requests.get(url, params=search_filters, auth=(options.user, options.password))
             if response.status_code not in ALLOWED_RESPONSE_CODES:
-                raise Exception('Non 200 response from Nexus!')
+                raise Exception('Invalid response: {!r} - {!r}'.format(response.status_code, response.text))
             response_data = response.json()
             builds.extend(response_data.get('items'))
             continuation_token = response_data.get('continuationToken')
@@ -116,6 +116,7 @@ def filter_builds_by_date(builds: List[dict], remaining_days: int):
                 regex_pattern = '%Y%m%d%H%M%S'
             else:
                 log.warning('Unknown length of matched date {!r}'.format(regex_date))
+                continue
 
             resources_date = datetime.datetime.strptime(regex_date, regex_pattern)
 
@@ -182,7 +183,7 @@ def delete_builds(builds: List[dict], options: Options):
                     resource=build.get('id')),
                     auth=(options.user, options.password))
                 if response.status_code not in ALLOWED_RESPONSE_CODES:
-                    raise Exception('Non 200 response from Nexus!')
+                    raise Exception('Invalid response: {!r} - {!r}'.format(response.status_code, response.text))
             except Exception as e:
                 log.error('Error deleting artifact from Nexus: {}'.format(e))
                 raise
