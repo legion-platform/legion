@@ -69,6 +69,14 @@ edi:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
 
+connections:
+  docker:
+    type: proxy
+    protocol: "{{ model_docker_protocol }}"
+    url: "{{ model_docker_url }}"
+    user: "{{ docker.user }}"
+    password: "{{ docker.password }}"
+
 secrets:
   token_secret: "{{ enclave_jwt_secret }}"
   token_ttl_minutes: "{{ api.jwt_ttl_minutes | default('120') }}"
