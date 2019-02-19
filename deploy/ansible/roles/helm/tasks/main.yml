@@ -83,8 +83,8 @@
 
 - name: Remove in-cluster access to the tiller
   shell: |
-    kubectl --context {{ cluster_name }} patch deployment tiller-deploy -n=kube-system --type=json --patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'
+    kubectl --context {{ cluster_name }} patch deployment tiller-deploy -n=kube-system --type=json --patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]' || true
 
 - name: Remove helm tiller service
   shell: |
-    kubectl --context {{ cluster_name }} -n kube-system delete service tiller-deploy
+    kubectl --context {{ cluster_name }} -n kube-system delete service tiller-deploy || true

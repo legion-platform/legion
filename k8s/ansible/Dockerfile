@@ -17,7 +17,7 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 
 # Install ansible from pip
-RUN pip install ansible==2.7.2 openshift==0.8.6
+RUN pip install ansible==2.7.2
 
  # Install ansible dependencies
 RUN apt-get install -y \
