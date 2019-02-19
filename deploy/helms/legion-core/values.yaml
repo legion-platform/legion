@@ -3,14 +3,11 @@ localDomain: "cluster.local"
 enclaveDeploymentPrefix: "legion-"
 domainDelimiter: "."
 s3BucketName: ""
+cluster_prefix: ""
 
 auth:
   enabled: false
   annotations: {}
-
-secrets:
-  nexus:
-    admin: "jonny"
 
 jenkins:
   enabled: true
@@ -52,59 +49,12 @@ jenkins:
     adminGroups: ~
     readOnlyGroups: ~
 
-nexus:
-  # Nexus repository configuration
-  enabled: false
-  replicas: 1
-
-  image:
-    repository: "cavemandaveman/nexus"
-    tag: "3.6.0-02@sha256:f97c7180e9321aea96a5a7214a7e009580abfdaf41a815a25cbf498fd10cf924"
-
-  resources: {}
-
-  port: 8081
-  hostport: 31110
-
-  service:
-    annotations: {}
-
-  docker:
-    enabled: true
-    port: 5509
-    hostport: 31111
-    host: localhost
-
-  livenessProbe:
-    initialDelaySeconds: 60
-    periodSeconds: 30
-
-  readinessProbe:
-    initialDelaySeconds: 60
-    periodSeconds: 30
-    failureThreshold: 6
-
-  persistence:
-    enabled: true
-    storageClass: ""
-    accessMode: ReadWriteOnce
-    # existingClaim: ""
-    size: 20Gi
-
-  ## Create an Ingress for the Web UI
-  ingress:
-    enabled: true
-    annotations: {}
-    domain:
-      partial: nexus
-    tls:
-      enabled: true
-      autoSecretNameDeduction: true
-      # secretName: nexus.k8s-nightly.epm.kharlamov.biz-tlsa
-
 connections:
   docker:
     type: proxy
+    url: ~
+    user: ~
+    password: ~
 
 grafana:
   enabled: true

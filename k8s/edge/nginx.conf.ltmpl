@@ -110,6 +110,12 @@ http {
         }
     }
 
+    {% for model_endpoint in unspecified_version_endpoints %}
+    location /api/model/{{ model_endpoint.url }} {
+        return 400 'Error. Found multiple versions for the {{ model_endpoint.model_service.id }} model. Please, specify a model version explicitly.';
+    }
+    {% endfor %}
+
     # Models API
     {% for model_endpoint in models %}
     location /api/model/{{ model_endpoint.url }} {

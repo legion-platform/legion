@@ -33,8 +33,6 @@ import tempfile
 import zipfile
 import inspect
 
-import requests
-import requests.auth
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 import legion.config
@@ -280,65 +278,6 @@ def normalize_name(name, dns_1035=False, kubernetes_compatible=False):
     return value
 
 
-def is_local_resource(path):
-    """
-    Check if path is local resource
-
-    :param path:
-    :type path: str
-    :return: bool -- is path for local resource
-    """
-    if any(path.lower().startswith(prefix) for prefix in ['http://', 'https://', '//']):
-        return False
-
-    if '://' in path:
-        raise Exception('Unknown or unavailable resource: %s' % path)
-
-    return True
-
-
-def normalize_external_resource_path(path):
-    """
-    Normalize external resource path
-
-    :param path: non-normalized resource path
-    :type path: str
-    :return: str -- normalized path
-    """
-    default_protocol = legion.config.EXTERNAL_RESOURCE_PROTOCOL
-    default_host = legion.config.EXTERNAL_RESOURCE_HOST
-
-    if path.lower().startswith('//'):
-        path = '%s:%s' % (default_protocol, path)
-
-    first_double_slash = path.find('//')
-
-    if first_double_slash < 0:
-        raise Exception('Cannot found double slash')
-
-    if len(path) == first_double_slash + 2:
-        return path + default_host
-    elif len(path) > first_double_slash + 2 and path[first_double_slash + 2] == '/':
-        return path[:first_double_slash] + '//' + default_host + path[first_double_slash + 2:]
-
-    return path
-
-
-def _get_auth_credentials_for_external_resource():
-    """
-    Get HTTP auth credentials for requests module
-
-    :return: :py:class:`requests.auth.HTTPBasicAuth` -- credentials
-    """
-    user = legion.config.EXTERNAL_RESOURCE_USER
-    password = legion.config.EXTERNAL_RESOURCE_PASSWORD
-
-    if user and password:
-        return requests.auth.HTTPBasicAuth(user, password)
-
-    return None
-
-
 def copy_file(source_file, target_file):
     """
     Copy file from one location to another
@@ -378,60 +317,14 @@ def save_file(temp_file, target_file, remove_after_delete=False):
     :return: str -- path to file on external resource
     """
     try:
-        if is_local_resource(target_file):
-            if os.path.abspath(temp_file) != os.path.abspath(target_file):
-                shutil.copy2(temp_file, target_file)
-            result_path = os.path.abspath(target_file)
-        else:
-            url = normalize_external_resource_path(target_file)
-
-            with open(temp_file, 'rb') as file:
-                auth = _get_auth_credentials_for_external_resource()
-                response = requests.put(url,
-                                        data=file,
-                                        auth=auth)
-                if response.status_code >= 400:
-                    raise Exception('Wrong status code %d returned for url %s' % (response.status_code, url))
-
-            result_path = url
-
+        if os.path.abspath(temp_file) != os.path.abspath(target_file):
+            shutil.copy2(temp_file, target_file)
+        result_path = os.path.abspath(target_file)
     finally:
         if remove_after_delete:
             os.remove(temp_file)
 
     return result_path
-
-
-def download_file(target_file):
-    """
-    Download file from external resource and return path to file on local machine
-
-    :param target_file: path to file on external resource
-    :type target_file: str
-    :return: str -- path to file on local machine
-    """
-    if is_local_resource(target_file):
-        return target_file
-
-    # If external resource (only HTTP at this time)
-    url = normalize_external_resource_path(target_file)
-    name = target_file.split('/')[-1]
-    credentials = _get_auth_credentials_for_external_resource()
-    response = requests.get(url,
-                            stream=True,
-                            verify=False,
-                            auth=credentials)
-    if response.status_code >= 400 or response.status_code < 200:
-        raise Exception('Cannot load resource: %s. Returned status code: %d' % (url, response.status_code))
-
-    temp_file = tempfile.mktemp(suffix=name)
-
-    with open(temp_file, 'wb') as file:
-        for chunk in response.iter_content(chunk_size=1024):
-            if chunk:
-                file.write(chunk)
-
-    return os.path.abspath(temp_file)
 
 
 @contextlib.contextmanager
@@ -454,65 +347,6 @@ def extract_archive_item(path, subpath):
                 yield extracted_path
         except zipfile.BadZipFile:
             raise Exception('File {} is not a archive'.format(path))
-
-
-class ExternalFileReader:
-    """
-    External file reader for opening files from http://, https:// and local FS
-    """
-
-    def __init__(self, path):
-        """
-        Create external file reader
-
-        :param path: path to file
-        :type path: str
-        """
-        self._path = path
-        self._local_path = None
-        self._is_external_path = not is_local_resource(self._path)
-
-    @property
-    def path(self):
-        """
-        Get path to file on local machine
-
-        :return:
-        """
-        return self._local_path
-
-    def _download(self):
-        """
-        Download external resource
-
-        :return: None
-        """
-        if not self._local_path:
-            if self._is_external_path:
-                self._local_path = download_file(self._path)
-            else:
-                self._local_path = self._path
-
-    def __enter__(self):
-        """
-        Return self on context enter
-
-        :return: :py:class:`legion.utils.ExternalFileReader`
-        """
-        self._download()
-        return self
-
-    def __exit__(self, exit_type, value, traceback):
-        """
-        Call remove on context exit
-
-        :param exit_type: -
-        :param value: -
-        :param traceback: -
-        :return: None
-        """
-        if self._is_external_path:
-            remove_directory(self._local_path)
 
 
 def get_git_revision(file, use_short_hash=True):
@@ -648,9 +482,6 @@ def deduce_model_file_name(model_id, model_version):
     :return: str -- auto deduced file name
     """
     file_name = '%s-%s+%s.model' % (model_id, str(model_version), deduce_extra_version())
-
-    if legion.config.EXTERNAL_RESOURCE_USE_BY_DEFAULT:
-        return '///%s' % file_name
 
     default_prefix = legion.config.LOCAL_DEFAULT_RESOURCE_PREFIX
     if default_prefix:
