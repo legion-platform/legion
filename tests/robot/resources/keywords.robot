@@ -332,7 +332,7 @@ Test model pipeline result
     ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
     ${edge}=             Build enclave EDGE URL             ${enclave}
     Get token from EDI   ${enclave}   ${model_id}   ${model_version}
-    ${model_info} =      Get model info       ${model_id}  ${model_version}  ${edge}  ${TOKEN}
+    ${model_info} =      Get model info  ${edge}  ${TOKEN}  ${model_id}  ${model_version}
     Log                  Model info is ${model_info}
     Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}
