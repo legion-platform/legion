@@ -51,6 +51,8 @@
     name: "{{ cluster_name }}-fluentd-role"
     trust_policy_filepath: "{{ tmp_dir }}/trust_policy.kube-fluentd.{{ cluster_name }}.yaml"
     state: present
+  retries: 10
+  delay: 5
 
 - name: Attach Airflow S3 accesse policy to the role
   iam_policy:
@@ -59,6 +61,8 @@
     policy_name: "{{ cluster_name }}-fluentd-s3-access-policy"
     policy_document: "{{ tmp_dir }}/fluentd_s3_access_policy.{{ cluster_name }}.yaml"
     state: present
+  retries: 10
+  delay: 5
 
 - name: Create fluentd configuration (values) file
   template:
