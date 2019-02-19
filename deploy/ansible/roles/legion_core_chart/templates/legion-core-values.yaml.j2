@@ -4,6 +4,7 @@ namespace: default
 localDomain: "cluster.local"
 addLocalDomain: true
 s3BucketName: "{{ legion_data_s3_bucket }}"
+cluster_prefix: "{{ env_name }}"
 
 {% if dex.enabled == true %}
 auth:
@@ -20,10 +21,6 @@ package:
   baseImage:
     repository: "{{ docker_repo }}/base-python-image"
     tag: "{{ legion_version }}"
-
-secrets:
-  nexus:
-    admin: "jonny"
 
 jenkins:
   enabled: true
@@ -91,9 +88,9 @@ grafana:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
 
-nexus:
-  enabled: true
-
-  ingress:
-    tls:
-      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+connections:
+  docker:
+    type: proxy
+    url: "{{ model_docker_url }}"
+    user: "{{ docker.user }}"
+    password: "{{ docker.password }}"
