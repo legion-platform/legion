@@ -121,3 +121,5 @@ secrets_file: "/tmp/{{ cluster_name }}-secrets"
 # Dex
 dex:
   enabled: true
+
+model_docker_url: nexus-local.cc.epm.kharlamov.biz:8084
