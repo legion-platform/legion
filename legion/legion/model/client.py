@@ -284,7 +284,7 @@ class ModelClient:
 
         content = '\n'.join(request_lines)
         url = self.build_batch_url(endpoint)
-        return self._request(url, data=content, **self._additional_kwargs)
+        return self._request(url, http_method='post', data=content, **self._additional_kwargs)
 
     def invoke(self, endpoint=None, **parameters):
         """
@@ -298,7 +298,7 @@ class ModelClient:
         """
         data, files = self._prepare_invoke_request(**parameters)
         url = self.build_invoke_url(endpoint)
-        return self._request(url, data=data, files=files, **self._additional_kwargs)
+        return self._request(url, http_method='post', data=data, files=files, **self._additional_kwargs)
 
     def info(self):
         """
@@ -306,4 +306,4 @@ class ModelClient:
 
         :return: dict -- parsed model info
         """
-        return self._request(self.info_url, **self._additional_kwargs)
+        return self._request(self.info_url, http_method='get', **self._additional_kwargs)
