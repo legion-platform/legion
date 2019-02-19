@@ -19,13 +19,17 @@ import os
 import os.path
 import logging
 
+from unittest import mock
 import unittest2
 
 import legion.k8s
 import legion.k8s.utils
+import legion.config
 import legion.containers.docker
 import legion.containers.headers
 import legion.utils
+from legion.k8s.utils import ImageAttributes
+from legion.k8s.utils import parse_docker_image_url
 
 REGISTRY_IMAGE = 'registry:2.6.1@sha256:5eaafa2318aa0c4c52f95077c2a68bed0b13f6d2b464835723d4de1484052299'
 
@@ -89,6 +93,7 @@ class TestK8S(unittest2.TestCase):
         self.assertIsInstance(config, dict)
         self.assertDictEqual(config, valid)
 
+    @mock.patch('legion.config.DOCKER_REGISTRY_PROTOCOL', 'http')
     def test_get_labels_from_docker_image_exception_on_missed(self):
         with self.assertRaises(Exception) as raised_exception:
             with LegionTestContainer(image=REGISTRY_IMAGE, port=5000) as registry_container:
@@ -105,6 +110,7 @@ class TestK8S(unittest2.TestCase):
         self.assertEqual(len(raised_exception.exception.args), 1, 'exception doesn\'t contain arguments')
         self.assertTrue(raised_exception.exception.args[0].startswith('Missed one of '), 'wrong exception text')
 
+    @mock.patch('legion.config.DOCKER_REGISTRY_PROTOCOL', 'http')
     def test_get_labels_from_docker_image_exception(self):
         with LegionTestContainer(image=REGISTRY_IMAGE, port=5000) as registry_container:
             labels = self._build_test_model_labels()
@@ -157,6 +163,34 @@ class TestK8S(unittest2.TestCase):
         self.assertEqual(legion.containers.docker.get_docker_container_id_from_cgroup_line(
             '9:devices:/docker/54d998b5f4232277ef245f7d93b0156dec3e149186916c557190983863bc7f57'
         ), '54d998b5f4232277ef245f7d93b0156dec3e149186916c557190983863bc7f57')
+
+    def test_parse_docker_image_url(self):
+        image_attributes = parse_docker_image_url(
+            'nexus.example.com/legion-test-null-test-summation:1.0-190115092855.1.56ed5f4')
+        self.assertEqual(ImageAttributes(
+            host='nexus.example.com', repo='legion-test-null-test-summation', ref='1.0-190115092855.1.56ed5f4'
+        ), image_attributes)
+
+        image_attributes = parse_docker_image_url(
+            'nexus.example.com:443/legion-test-null-test-summation:1.0-190115092855.1.56ed5f4')
+        self.assertEqual(ImageAttributes(
+            host='nexus.example.com:443', repo='legion-test-null-test-summation',
+            ref='1.0-190115092855.1.56ed5f4'
+        ), image_attributes)
+
+        image_attributes = parse_docker_image_url(
+            'nexus.example.com/legion/test-bare-model-api-model-6:0.10.0-20190115075121.273.56ed5f4')
+        self.assertEqual(ImageAttributes(
+            host='nexus.example.com', repo='legion/test-bare-model-api-model-6',
+            ref='0.10.0-20190115075121.273.56ed5f4'
+        ), image_attributes)
+
+        image_attributes = parse_docker_image_url(
+            'nexus.example.com:443/legion/test-bare-model-api-model-6:0.10.0-20190115075121.273.56ed5f4')
+        self.assertEqual(ImageAttributes(
+            host='nexus.example.com:443', repo='legion/test-bare-model-api-model-6',
+            ref='0.10.0-20190115075121.273.56ed5f4'
+        ), image_attributes)
 
 
 if __name__ == '__main__':

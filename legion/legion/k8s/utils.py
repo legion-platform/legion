@@ -160,12 +160,9 @@ def get_docker_image_labels(image):
     # Get nexus registry host from ENV or image url
     try:
         if image_attributes.host == legion.config.MODEL_IMAGES_REGISTRY_HOST:
-            registry_host = legion.config.NEXUS_DOCKER_REGISTRY
+            registry_host = legion.config.DOCKER_REGISTRY
         else:
-            if urllib3.util.parse_url(image_attributes.host).port == 443:
-                registry_host = 'https://{}'.format(image_attributes.host)
-            else:
-                registry_host = 'http://{}'.format(image_attributes.host)
+            registry_host = '{}://{}'.format(legion.config.DOCKER_REGISTRY_PROTOCOL, image_attributes.host)
     except Exception as err:
         LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
         raise err
@@ -182,7 +179,7 @@ def get_docker_image_labels(image):
             manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
 
     except Exception as err:
-        raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
+        raise Exception('Can\'t get image labels for {} image: {}'.format(image, err))
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
@@ -252,7 +249,7 @@ def parse_docker_image_url(image_url):
     :type image_url: str
     :return: namedtuple[str, Any]
     """
-    image_attrs_regexp = r'(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
+    image_attrs_regexp = r'(.*?)/([\w\-/]+):([\-\.\w]+)'
     try:
         image_attrs_list = re.search(image_attrs_regexp, image_url)
 
