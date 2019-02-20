@@ -37,6 +37,6 @@ def enclave_models_monitor(template_system):
     enclave = Enclave(namespace)
     LOGGER.info('Loaded enclave {}'.format(enclave))
 
-    for new_state in enclave.watch_model_service_endpoints_state():
+    for model_endpoints, unspecified_version_endpoints in enclave.watch_model_service_endpoints_state():
         LOGGER.info('Got updated model state')
-        template_system.render(models=new_state)
+        template_system.render(models=model_endpoints, unspecified_version_endpoints=unspecified_version_endpoints)
