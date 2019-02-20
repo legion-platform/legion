@@ -116,3 +116,5 @@ max_token_ttl_minutes: ~  # Max TTL for JWT generated for a model
 
 # k8s_api_retry_number_max_limit: count of retries for confirming of k8s operations
 # k8s_api_retry_delay_sec: wait between confirming of k8s operations
+
+model_docker_url: ~

@@ -84,7 +84,7 @@ def pod(Map podParams=null, Closure body) {
             "LEGION_PACKAGE_VERSION", "LEGION_PACKAGE_REPOSITORY", "LEGION_BASE_IMAGE_TAG",
             "LEGION_BASE_IMAGE_REPOSITORY",
             "EXTERNAL_RESOURCE_PROTOCOL", "EXTERNAL_RESOURCE_HOST", "EXTERNAL_RESOURCE_USER", "EXTERNAL_RESOURCE_PASSWORD",
-            "MODEL_IMAGES_REGISTRY", "MODEL_IMAGES_REGISTRY_HOST", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
+            "CLUSTER_PREFIX", "DOCKER_REGISTRY", "DOCKER_REGISTRY_USER", "DOCKER_REGISTRY_PASSWORD",
             "GRAPHITE_HOST", "STATSD_HOST", "STATSD_PORT", "MODEL_TRAIN_METRICS_ENABLED",
             "AIRFLOW_S3_URL", "AIRFLOW_REST_API", "AIRFLOW_DAGS_DIRECTORY", "DAGS_VOLUME_PVC", "S3_BUCKET_NAME"
     ]
@@ -219,11 +219,12 @@ def build() {
 
     modelImageVersion = modelVersion
     env.TEMPORARY_DOCKER_IMAGE_NAME = generateModelTemporaryImageName(env.MODEL_ID, modelVersion)
-    env.EXTERNAL_IMAGE_NAME = "${System.getenv('MODEL_IMAGES_REGISTRY')}${env.MODEL_ID}:${modelImageVersion}"
+    dockerName = "${System.getenv('CLUSTER_PREFIX')}/${params.Enclave}-${env.MODEL_ID}"
+    env.EXTERNAL_IMAGE_NAME = "${System.getenv('DOCKER_REGISTRY')}/${dockerName}:${modelImageVersion}"
 
     sh """
     cd ${env.ROOT_DIR}
-    legionctl build  \
+    legionctl --verbose build  \
     --docker-image-tag ${env.TEMPORARY_DOCKER_IMAGE_NAME} \
     --push-to-registry  ${env.EXTERNAL_IMAGE_NAME} \
     --model-file "${env.MODEL_FILE_NAME}"
@@ -247,9 +248,9 @@ def deploy(Map deployParams=null) {
     echo 'MODEL_FILE_NAME = ' + env.MODEL_FILE_NAME
 
     sh """
-    legionctl undeploy --ignore-not-found ${env.MODEL_ID} --model-version ${env.MODEL_VERSION}
-    legionctl deploy ${env.EXTERNAL_IMAGE_NAME} --model-iam-role=${modelIamRole} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
-    legionctl inspect
+    legionctl --verbose undeploy --ignore-not-found ${env.MODEL_ID} --model-version ${env.MODEL_VERSION}
+    legionctl --verbose deploy ${env.EXTERNAL_IMAGE_NAME} --model-iam-role=${modelIamRole} --livenesstimeout=${livenesstimeout} --readinesstimeout=${readinesstimeout} --timeout=${deploytimeout}
+    legionctl --verbose inspect
     """
 }
 
