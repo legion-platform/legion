@@ -9,7 +9,7 @@ kubectl_version: "v1.11.6"
 kubectl_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/linux/amd64"
 kubectl_darwin_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/darwin/amd64"
 
-aws_image:  kope.io/k8s-1.11-debian-stretch-amd64-hvm-ebs-2018-08-17
+aws_image: k8s-1.11-debian-stretch-amd64-hvm-ebs-2019-01-15
 kubernetes_version: 1.11.6
 
 # TLS defaults
