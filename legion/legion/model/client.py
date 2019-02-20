@@ -232,21 +232,20 @@ class ModelClient:
             kwargs['timeout'] = self._timeout
         return kwargs
 
-    def _request(self, url, http_method=None, data=None, files=None, retries=3, timeout=1, **kwargs):
+    def _request(self, http_method, url, data=None, files=None, retries=3, timeout=1, **kwargs):
         """
         Send request with provided method and other parameters
-        :param url: url to send request to
-        :type url: str
         :param http_method: HTTP method
         :type http_method: str
+        :param url: url to send request to
+        :type url: str
         :param data: request data
         :type data: any
         :param files: files
         :type files: dict
         :return: list -- parsed model response
         """
-        if not http_method:
-            raise Exception('request method is not set')
+        http_method = http_method.lower()
 
         client_method = getattr(self._http_client, http_method)
 
@@ -284,7 +283,7 @@ class ModelClient:
 
         content = '\n'.join(request_lines)
         url = self.build_batch_url(endpoint)
-        return self._request(url, http_method='post', data=content, **self._additional_kwargs)
+        return self._request('post', url, data=content, **self._additional_kwargs)
 
     def invoke(self, endpoint=None, **parameters):
         """
@@ -298,7 +297,7 @@ class ModelClient:
         """
         data, files = self._prepare_invoke_request(**parameters)
         url = self.build_invoke_url(endpoint)
-        return self._request(url, http_method='post', data=data, files=files, **self._additional_kwargs)
+        return self._request('post', url, data=data, files=files, **self._additional_kwargs)
 
     def info(self):
         """
@@ -306,4 +305,4 @@ class ModelClient:
 
         :return: dict -- parsed model info
         """
-        return self._request(self.info_url, http_method='get', **self._additional_kwargs)
+        return self._request('get', self.info_url, **self._additional_kwargs)
