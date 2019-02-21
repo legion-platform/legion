@@ -30,6 +30,8 @@ import legion.containers.headers
 import legion.utils
 from legion.k8s.utils import ImageAttributes
 from legion.k8s.utils import parse_docker_image_url
+from legion.k8s.utils import reduce_cpu_resource
+from legion.k8s.utils import reduce_mem_resource
 
 REGISTRY_IMAGE = 'registry:2.6.1@sha256:5eaafa2318aa0c4c52f95077c2a68bed0b13f6d2b464835723d4de1484052299'
 
@@ -191,6 +193,26 @@ class TestK8S(unittest2.TestCase):
             host='nexus.example.com:443', repo='legion/test-bare-model-api-model-6',
             ref='0.10.0-20190115075121.273.56ed5f4'
         ), image_attributes)
+
+    def test_mem_resource_reducer(self):
+        self.assertEqual(reduce_mem_resource('256Mi'), '171Mi')
+        self.assertEqual(reduce_mem_resource('3G'), '2058Mi')
+        self.assertEqual(reduce_mem_resource('1G'), '686Mi')
+        self.assertEqual(reduce_mem_resource('333'), '223')
+
+        for res in '300Mi123', '300sdsd', '', 'sdsd':
+            with self.assertRaisesRegex(ValueError, 'Malformed mem resource'):
+                reduce_mem_resource(res)
+
+    def test_cpu_resource_reducer(self):
+        self.assertEqual(reduce_cpu_resource('256m'), '171m')
+        self.assertEqual(reduce_cpu_resource('3'), '2010m')
+        self.assertEqual(reduce_cpu_resource('1'), '670m')
+        self.assertEqual(reduce_cpu_resource('333m'), '223m')
+
+        for res in '300m123', '300sdsd', '', 'sdsd':
+            with self.assertRaisesRegex(ValueError, 'Malformed cpu resource'):
+                reduce_cpu_resource(res)
 
 
 if __name__ == '__main__':
