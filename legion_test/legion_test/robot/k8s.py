@@ -178,6 +178,28 @@ class K8s:
 
         raise Exception("Deployment '%s' wasn't found" % deployment_name)
 
+    def get_model_deployment(self, model_id, model_version, namespace):
+        """
+        Gets dict of deployment by model id and version
+
+        :param model_id: model id
+        :type model_id: str
+        :param model_version: model version
+        :type model_version: str
+        :param namespace: name of a namespace to look in
+        :type namespace: str
+        :return: number of replicas for a specified deployment
+        :rtype int
+        """
+        client = self.build_client()
+        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+        label_selector = 'legion.component=model,com.epam.legion.model.id={},com.epam.legion.model.version={}'.format(
+            model_id, model_version
+        )
+        deployments = extension_api.list_namespaced_deployment(namespace, label_selector=label_selector)
+
+        return deployments.items[0] if deployments else None
+
     def get_deployment_replicas(self, deployment_name, namespace='default'):
         """
         Gets number of replicas for a specified deployment from Kubernetes API
