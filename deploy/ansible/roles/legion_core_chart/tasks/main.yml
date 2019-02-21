@@ -23,6 +23,8 @@
     name: "{{ cluster_name }}-jenkins-role"
     trust_policy_filepath: "{{ tmp_dir }}/trust_policy.{{ enclave }}.{{ cluster_name }}.yaml"
     state: present
+  retries: 10
+  delay: 5
   with_items: "{{ enclaves }}"
   loop_control:
     loop_var: enclave
@@ -34,6 +36,8 @@
     policy_name: "{{ cluster_name }}-jenkins-airflow-s3-access-policy"
     policy_document: "{{ tmp_dir }}/jenkins_s3_access_policy.{{ enclave }}.{{ cluster_name }}.yaml"
     state: present
+  retries: 10
+  delay: 5
   with_items: "{{ enclaves }}"
   loop_control:
     loop_var: enclave
