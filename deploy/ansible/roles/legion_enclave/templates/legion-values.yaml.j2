@@ -84,3 +84,7 @@ secrets:
   token_ttl_minutes: "{{ api.jwt_ttl_minutes | default('120') }}"
   max_token_ttl_minutes: "{{ max_token_ttl_minutes | default('259200') }}"
   token_exp_datetime: "{{ api.jwt_exp_datetime | default('') }}"
+
+model_resources:
+  cpu: {{ model_resources_cpu }}
+  mem: {{ model_resources_mem }}

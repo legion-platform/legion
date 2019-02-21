@@ -62,7 +62,8 @@ class EdiClient(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None):
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None,
+               memory=None, cpu=None):
         """
         Deploy API endpoint
 
@@ -78,6 +79,10 @@ class EdiClient(metaclass=abc.ABCMeta):
         :type readinesstimeout: int
         :param local_port: (Optional) port to deploy model on (for local mode deploy)
         :type local_port: int
+        :param memory: limit memory for model deployment
+        :type memory: str
+        :param cpu: limit cpu for model deployment
+        :type cpu: str
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         pass
@@ -271,7 +276,8 @@ class RemoteEdiClient(EdiClient):
         """
         return self._query(legion.edi.server.EDI_INFO)
 
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None):
+    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, memory=None, cpu=None,
+               **kwargs):  # pylint: disable=W0221
         """
         Deploy API endpoint
 
@@ -285,8 +291,10 @@ class RemoteEdiClient(EdiClient):
         :type livenesstimeout: int
         :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
         :type readinesstimeout: int
-        :param local_port: (Optional) port to deploy model on (for local mode deploy)
-        :type local_port: int
+        :param memory: limit memory for model deployment
+        :type memory: str
+        :param cpu: limit cpu for model deployment
+        :type cpu: str
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         payload = {
@@ -299,6 +307,10 @@ class RemoteEdiClient(EdiClient):
             payload['livenesstimeout'] = livenesstimeout
         if readinesstimeout:
             payload['readinesstimeout'] = readinesstimeout
+        if cpu:
+            payload['cpu'] = cpu
+        if memory:
+            payload['memory'] = memory
 
         return self.parse_deployments(self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload))
 
@@ -405,20 +417,12 @@ class LocalEdiClient(EdiClient):
         LOGGER.debug('Returning {} as a information for local deployment server')
         return {}
 
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None):
+    def deploy(self, image, local_port=None, **kwargs):  # pylint: disable=W0221
         """
         Deploy API endpoint
 
         :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
-        :param model_iam_role: (Optional) IAM role to be used at model pod (for cluster mode deploy)
-        :type model_iam_role: str
-        :param count: (Optional) count of pods to create (for cluster mode deploy)
-        :type count: int
-        :param livenesstimeout: (Optional) model pod startup timeout (used in liveness probe) (for cluster mode deploy)
-        :type livenesstimeout: int
-        :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
-        :type readinesstimeout: int
         :param local_port: (Optional) port to deploy model on (for local mode deploy)
         :type local_port: int
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments

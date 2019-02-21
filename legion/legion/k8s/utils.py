@@ -55,6 +55,60 @@ ImageAttributes = NamedTuple('ImageAttributes', [
     ('ref', str)
 ])
 
+CPU_REDUCE_PAT = re.compile(r"^(\d+)(m?)$")
+MEM_REDUCE_PAT = re.compile(r"^(\d+)(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki|)$")
+
+
+def _calculate_request_res(value: int) -> int:
+    """
+    Calculate request for k8s resource
+
+    :param value: k8s resource
+    :type value: int
+    :return: reduced k8s resource - int
+    """
+    return value * (100 - legion.config.REDUCE_MODEL_REQUESTS_BY) // 100
+
+
+def reduce_mem_resource(res: str):
+    """
+    Reduce memory k8s resource
+
+    :param res: k8s memory
+    :type res: str
+    :return: k8s memory - str
+    """
+    matches = MEM_REDUCE_PAT.match(res)
+    if not matches:
+        raise ValueError('Malformed mem resource: {}'.format(res))
+
+    num, res_type = int(matches.group(1)), matches.group(2)
+
+    if res_type in ('G', 'Gi'):
+        num, res_type = num * 1024, 'Mi'
+
+    return '{}{}'.format(_calculate_request_res(num), res_type)
+
+
+def reduce_cpu_resource(res: str):
+    """
+    Reduce cpu k8s resource
+
+    :param res: k8s cpu
+    :type res: str
+    :return: k8s cpu - str
+    """
+    matches = CPU_REDUCE_PAT.match(res)
+    if not matches:
+        raise ValueError('Malformed cpu resource: {}'.format(res))
+
+    num, res_type = int(matches.group(1)), matches.group(2)
+
+    if not res_type:
+        num, res_type = num * 1000, 'm'
+
+    return '{}{}'.format(_calculate_request_res(num), res_type)
+
 
 def build_client():
     """
