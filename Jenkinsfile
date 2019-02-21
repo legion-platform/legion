@@ -10,7 +10,7 @@ class Globals {
 def chartNames = null
 
 pipeline {
-    agent { label 'ec2builder'}
+    agent { label 'ec2orchestrator-808'}
 
     options{
             buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
@@ -460,7 +460,7 @@ EOL
                 stage("Run Python tests") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
                                 sh """
                                 export TEMP_DIRECTORY="\$(pwd)"
                                 cd /src/legion
@@ -497,7 +497,7 @@ EOL
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
                                 dir ("${WORKSPACE}/deploy/helms") {
                                     chartNames = sh(returnStdout: true, script: 'ls').split()
                                     println (chartNames)

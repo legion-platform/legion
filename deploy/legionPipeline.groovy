@@ -20,13 +20,12 @@ def createCluster() {
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u jenkins:root") {
+                docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create cluster') {
                         sh """
-                        touch file1
-                        ls -lsa file1
-                        @cd ${ansibleHome} && \
-                        #ansible-playbook create-cluster.yml \
+                        touch file1 && \
+                        cd ${ansibleHome} && \
+                        ansible-playbook create-cluster.yml \
                         ${ansibleVerbose} \
                         --vault-password-file=${vault} \
                         --extra-vars "profile=${env.param_profile} \
@@ -99,6 +98,9 @@ def updateTLSCert() {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Reissue TLS Certificates') {
                         sh """
+                        pwd
+                        ls -lsa
+                        touch 123
                         cd ${ansibleHome} && \
                         ansible-playbook update-tls-certificate.yml \
                         ${ansibleVerbose} \
