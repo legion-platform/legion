@@ -130,9 +130,10 @@ def api_root():
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
 @legion.http.provide_json_response
 @legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, model_iam_role=str, count=int, livenesstimeout=int, readinesstimeout=int)
+@legion.http.populate_fields(image=str, model_iam_role=str, count=int, livenesstimeout=int, readinesstimeout=int,
+                             memory=str, cpu=str)
 @legion.http.requested_fields('image')
-def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
+def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, memory=None, cpu=None):
     """
     Deploy API endpoint
 
@@ -157,13 +158,18 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
     :type livenesstimeout: int
     :param readinesstimeout: time in seconds for readiness check
     :type readinesstimeout: int
+    :param memory: limit memory for model deployment
+    :type memory: str
+    :param cpu: limit cpu for model deployment
+    :type cpu: str
     :return: bool -- True
     """
-    LOGGER.info('Command: deploy image {} with {} replicas and livenesstimeout={!r} readinesstimeout={!r} and \
-                {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, model_iam_role))
+    LOGGER.info('Command: deploy image {} with {} replicas, livenesstimeout={!r}, readinesstimeout={!r},'
+                'memory={}, cpu={} and {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, memory,
+                                                             cpu, model_iam_role))
 
     is_deployed, model_service = app.config['ENCLAVE'].deploy_model(
-        image, model_iam_role, count, livenesstimeout, readinesstimeout
+        image, model_iam_role, count, livenesstimeout, readinesstimeout, memory, cpu
     )
 
     if is_deployed:
