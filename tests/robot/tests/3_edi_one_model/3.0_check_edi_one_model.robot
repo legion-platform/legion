@@ -4,6 +4,7 @@ Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
 Library             Collections
 Suite Setup         Choose cluster context                              ${CLUSTER_NAME}
@@ -241,3 +242,30 @@ Check EDI enclave inspect procedure without deployed model
     ${resp}=        Run EDI inspect                ${MODEL_TEST_ENCLAVE}
                     Should Be Equal As Integers    ${resp.rc}          0
                     Should Not Contain             ${resp.stdout}      ${TEST_EDI_MODEL_ID}
+
+Deploy with custom memory and cpu
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_EDI_MODEL_ID}
+    [Documentation]  Deploy with custom memory and cpu
+    ${res}=  Shell  legionctl --verbose deploy ${TEST_MODEL_IMAGE_3} --memory 333Mi --cpu 333m --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+         Should be equal  ${res.rc}  ${0}
+    ${model_deployment}=  Get model deployment  ${TEST_EDI_MODEL_ID}  ${TEST_MODEL_3_VERSION}  ${MODEL_TEST_ENCLAVE}
+    LOG  ${model_deployment}
+
+    ${model_resources}=  Set variable  ${model_deployment.spec.template.spec.containers[0].resources}
+    Should be equal  333m  ${model_resources.limits["cpu"]}
+    Should be equal  333Mi  ${model_resources.limits["memory"]}
+    Should be equal  223m  ${model_resources.requests["cpu"]}
+    Should be equal  223Mi  ${model_resources.requests["memory"]}
+
+Check setting of default resource values
+    [Documentation]  Deploy setting of default resource values
+    ${res}=  Shell  legionctl --verbose deploy ${TEST_MODEL_IMAGE_3} --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+         Should be equal  ${res.rc}  ${0}
+    ${model_deployment}=  Get model deployment  ${TEST_EDI_MODEL_ID}  ${TEST_MODEL_3_VERSION}  ${MODEL_TEST_ENCLAVE}
+    LOG  ${model_deployment}
+
+    ${model_resources}=  Set variable  ${model_deployment.spec.template.spec.containers[0].resources}
+    Should be equal  256m  ${model_resources.limits["cpu"]}
+    Should be equal  256Mi  ${model_resources.limits["memory"]}
+    Should be equal  171m  ${model_resources.requests["cpu"]}
+    Should be equal  171Mi  ${model_resources.requests["memory"]}

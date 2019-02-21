@@ -242,5 +242,16 @@ Get token from EDI with expiration date set
 
     Ensure component auth page requires authorization   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_COMMAND_MODEL_ID}/${TEST_MODEL_5_VERSION}/info  ${token}  ${2}  ${6}
 
+Deploy fails when memory resource is incorect
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_COMMAND_MODEL_ID}
+    [Documentation]  Deploy fails when memory resource is incorect
+    ${res}=  Shell  legionctl --verbose deploy ${TEST_MODEL_IMAGE_5} --memory wrong --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Malformed mem resource
 
-
+Deploy fails when cpu resource is incorect
+    [Setup]         Run EDI undeploy model without version and check    ${MODEL_TEST_ENCLAVE}   ${TEST_COMMAND_MODEL_ID}
+    [Documentation]  Deploy fails when cpu resource is incorect
+    ${res}=  Shell  legionctl --verbose deploy ${TEST_MODEL_IMAGE_5} --cpu wrong --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Malformed cpu resource

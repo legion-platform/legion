@@ -133,6 +133,10 @@ grafana:
       enabled: true
       autoSecretNameDeduction: true
 
+model_resources:
+  cpu: 256m
+  mem: 256Mi
+
 connections:
   docker:
     type: proxy
