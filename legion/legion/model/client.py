@@ -249,9 +249,14 @@ class ModelClient:
 
         client_method = getattr(self._http_client, http_method)
 
+        if data:
+            kwargs['data'] = data
+        if files:
+            kwargs['files'] = files
+
         def check_function():
             try:
-                return client_method(url, data=data, files=files, **kwargs)
+                return client_method(url, **kwargs)
             except self._http_exception:
                 pass
 
