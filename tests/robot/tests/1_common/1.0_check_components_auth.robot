@@ -1,6 +1,5 @@
 *** Settings ***
 Documentation       Check if all core components are secured
-Resource            ../../resources/browser.robot
 Resource            ../../resources/keywords.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             Collections
@@ -19,10 +18,6 @@ Check if Jenkins domain has been secured
     [Tags]  apps
     [Template]    Check if component domain has been secured
     component=jenkins    enclave=${EMPTY}
-
-Check if Nexus domain has been secured
-    [Template]    Check if component domain has been secured
-    component=nexus    enclave=${EMPTY}
 
 Check if Grafana domain has been secured
     [Template]    Check if component domain has been secured
@@ -52,11 +47,6 @@ Check if Jenkins domain does not auth with invalid creds
     [Tags]  apps
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=jenkins    enclave=${EMPTY}
-
-Check if Nexus domain does not auth with invalid creds
-    [Tags]  apps
-    [Template]    Secured component domain should not be accessible by invalid credentials
-    component=nexus    enclave=${EMPTY}
 
 Check if Grafana domain does not auth with invalid creds
     [Tags]  apps
@@ -102,11 +92,6 @@ Check if K8S dashboard domain can auth with valid creds
     [Tags]  infra
     [Template]    Secured component domain should be accessible by valid credentials
     component=Dashboard    enclave=${EMPTY}
-
-Check if Nexus domain can auth with valid creds
-    [Tags]  apps
-    [Template]    Secured component domain should be accessible by valid credentials
-    component=nexus    enclave=${EMPTY}
 
 Check if Grafana domain can auth with valid creds
     [Tags]  apps
