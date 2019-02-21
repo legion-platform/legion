@@ -23,6 +23,7 @@ import time
 import json
 import requests
 
+from legion_test.robot.dex_client import auth_on_dex
 from legion_test.utils import wait_until
 
 
@@ -30,6 +31,23 @@ class Utils:
     """
     Utilities for robot tests
     """
+
+    @staticmethod
+    def request_with_dex(service_url, cluster_host, login, password):
+        """
+        Request resource using dex
+
+        :param service_url: template of url
+        :type service_url: str
+        :param cluster_host: base host of a cluster
+        :type cluster_host: str
+        :param login: dex static user
+        :type login: str
+        :param password: password of a dex static user
+        :type password: str
+        :return: final response - Response
+        """
+        return auth_on_dex(service_url, cluster_host, login, password)
 
     @staticmethod
     def check_domain_exists(domain):
