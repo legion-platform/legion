@@ -232,7 +232,7 @@ class ModelClient:
             kwargs['timeout'] = self._timeout
         return kwargs
 
-    def _request(self, http_method, url, data=None, files=None, retries=3, timeout=1, **kwargs):
+    def _request(self, http_method, url, data=None, files=None, retries=3, sleep=1, **kwargs):
         """
         Send request with provided method and other parameters
         :param http_method: HTTP method
@@ -260,7 +260,7 @@ class ModelClient:
             except self._http_exception:
                 pass
 
-        response = ensure_function_succeed(check_function, retries, timeout)
+        response = ensure_function_succeed(check_function, retries, sleep)
         if not response:
             raise self._http_exception('HTTP request failed')
         return self._parse_response(response)
