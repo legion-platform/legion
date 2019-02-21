@@ -349,15 +349,16 @@ def deploy(args):
     """
     Deploy model on remote cluster or on local machine
 
-    :param args: command arguments with .model_id, .namespace , .livenesstimeout,
-                .readinesstimeout, .model_iam_role and .scale
+    :param args: command arguments with .model_id, .namespace, .livenesstimeout, .readinesstimeout, .model_iam_role,
+                 .port, .memory, .cpu and .scale
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
     LOGGER.info('Sending deploy request to {!r}'.format(edi_client))
-    model_deployments = edi_client.deploy(args.image, args.model_iam_role, args.scale, args.livenesstimeout,
-                                          args.readinesstimeout, args.port)
+    model_deployments = edi_client.deploy(args.image, model_iam_role=args.model_iam_role, count=args.scale,
+                                          livenesstimeout=args.livenesstimeout, readinesstimeout=args.readinesstimeout,
+                                          local_port=args.port, memory=args.memory, cpu=args.cpu)
     LOGGER.info('Server returned list of affected deployments: {!r}'.format(model_deployments))
 
     wait_operation_finish(args, edi_client,
@@ -603,6 +604,8 @@ def build_parser():  # pylint: disable=R0915
     deploy_parser.add_argument('--readinesstimeout',
                                default=2,
                                type=int, help='model startup timeout for readiness probe')
+    deploy_parser.add_argument('--memory', default=None, type=str, help='limit memory for model deployment')
+    deploy_parser.add_argument('--cpu', default=None, type=str, help='limit cpu for model deployment')
     legion.external.edi.add_arguments_for_wait_operation(deploy_parser)
     legion.edi.security.add_edi_arguments(deploy_parser)
     deploy_parser.set_defaults(func=deploy)
