@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM openresty/openresty:1.13.6.2-bionic@sha256:18bb9ea3c536b0b00f7a6be0045c5196910b9b90de6339cca506758e039c498a
+FROM openresty/openresty:1.13.6.2-bionic
 
 RUN apt update -y && \
     apt install -y openssl libffi-dev libssl-dev \

@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM ubuntu:16.04@sha256:e4a134999bea4abb4a27bc437e6118fdddfb172e1b9d683129b74d254af51675
+FROM ubuntu:16.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 

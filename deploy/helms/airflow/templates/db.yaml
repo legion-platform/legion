@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: "postgres:10@sha256:41f013d3153c03345d04ae362b2ce4b60f4a1687f260aafd74f75461e5e5be8d"
+        image: "postgres:10"
         resources:
           requests:
             cpu: "50m"

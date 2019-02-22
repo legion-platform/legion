@@ -14,7 +14,7 @@
 #    limitations under the License.
 #
 
-FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4@sha256:b8c94527b489fb61d3d81ce5ad7f3ddbb7be71e9620a3a36e2bede2f2e487d73
+FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
 
 # Install fluentd-s3 plugin
 RUN gem install -N fluent-plugin-s3 -v '~>1.1.4'

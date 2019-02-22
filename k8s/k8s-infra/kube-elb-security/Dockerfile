@@ -1,4 +1,4 @@
-FROM golang:1.10.8-alpine@sha256:549535d72baf28b3d1470ef9fcc6d4e0cb52c7fc3012655a659b65eaf942ec63 as builder
+FROM golang:1.10.8-alpine as builder
 
 RUN apk update && apk add git
 

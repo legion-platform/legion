@@ -1,4 +1,4 @@
-FROM python:3.6.8@sha256:605eee08eb7ba41d2ac1ee80a87c6e6db4d415974fb03c93f62660a7f7dc2359
+FROM python:3.6.8
 
 # Install python package dependencies and docker CLI
 RUN apt-get update && apt-get install -y software-properties-common \
