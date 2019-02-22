@@ -241,7 +241,7 @@ class ModelClient:
         :type data: any
         :param files: files
         :type files: dict
-        :return: list -- parsed model response
+        :return: dict -- parsed model response
         """
         http_method = http_method.lower()
 
@@ -271,7 +271,7 @@ class ModelClient:
         :type invoke_parameters: list[dict]
         :param endpoint: name of endpoint
         :type endpoint: str
-        :return: list -- parsed model response
+        :return: dict -- parsed model response
         """
         request_lines = []
         for parameters in invoke_parameters:
