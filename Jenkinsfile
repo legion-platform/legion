@@ -10,7 +10,7 @@ class Globals {
 def chartNames = null
 
 pipeline {
-    agent { label 'ec2orchestrator-808'}
+    agent { label 'ec2builder'}
 
     options{
             buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
@@ -460,7 +460,7 @@ EOL
                 stage("Run Python tests") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                 sh """
                                 export TEMP_DIRECTORY="\$(pwd)"
                                 cd /src/legion
