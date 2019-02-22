@@ -431,8 +431,7 @@ EOL
                 stage("Build test models") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                                sh "pip3 install --disable-pip-version-check --extra-index-url ${env.param_pypi_repository} legion==${Globals.buildVersion}"
+                            docker.image("legion/python-toolchain:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
                                 legion.buildTestBareModel("demo-abc-model", "1.0", "1")
                                 legion.buildTestBareModel("demo-abc-model", "1.1", "2")
                                 legion.buildTestBareModel("edi-test-model", "1.2", "3")
