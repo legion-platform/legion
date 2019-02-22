@@ -5,7 +5,9 @@ grafana:
 {% if dex.enabled == true %}
 
     annotations:
-      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        set_escape_uri $escaped_request_uri $request_uri;
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
       nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
 {% endif %}
     tls:
@@ -20,7 +22,9 @@ prometheus:
 {% if dex.enabled == true %}
 
     annotations:
-      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+     nginx.ingress.kubernetes.io/configuration-snippet: |
+        set_escape_uri $escaped_request_uri $request_uri;
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
       nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
 {% endif %}
     tls:
@@ -35,7 +39,9 @@ alertmanager:
 {% if dex.enabled == true %}
 
     annotations:
-      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        set_escape_uri $escaped_request_uri $request_uri;
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
       nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
 {% endif %}
     tls:
