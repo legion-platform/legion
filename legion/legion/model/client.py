@@ -82,10 +82,8 @@ class ModelClient:
         else:
             self._http_client = requests
 
-        if http_client and http_exception:
+        if http_exception:
             self._http_exception = http_exception
-        elif http_client and not http_exception:
-            self._http_exception = Exception
         else:
             self._http_exception = requests.exceptions.RequestException
 
