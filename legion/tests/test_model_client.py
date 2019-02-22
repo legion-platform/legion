@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 import unittest2
 import requests
+import responses
 
 import legion.model.client
 import legion.config
@@ -65,15 +66,15 @@ class TestModelClient(unittest2.TestCase):
             self.assertEqual(client.info_url, root_url + '/info')
             self.assertEqual(client.build_invoke_url(), root_url + '/invoke')
 
+    @responses.activate
     def test_client_request_retry_on_error(self):
-        with patch('requests.get') as mock:
-            mock.side_effect = requests.RequestException('Some exception')
-            client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION)
-            try:
-                client._request('get', 'http://some_url')
-            except requests.RequestException:
-                pass
-            self.assertEqual(mock.call_count, 3)
+        url = 'http://some_url.com'
+        responses.add(responses.GET, url, body=requests.RequestException('Some exception'))
+        content = 'some content'
+        responses.add(responses.GET, url, status=200, body=content)
+        client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION)
+        res = client._request('get', url)
+        self.assertEqual(res, content)
 
 
 if __name__ == '__main__':
