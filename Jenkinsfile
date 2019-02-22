@@ -76,11 +76,7 @@ pipeline {
                     println("Docker cache args: " + Globals.dockerCacheArg)
 
                     wrap([$class: 'BuildUser']) {
-                        if (binding.hasVariable('BUILD_USER ')) {
-                            BUILD_USER = "${BUILD_USER}"
-                        } else {
-                            BUILD_USER = null
-                        }
+                        BUILD_USER = binding.hasVariable('BUILD_USER') ? '${BUILD_USER}' : "null"
                     }
 
                     Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user='${BUILD_USER}' --label build_date=${buildDate}"
