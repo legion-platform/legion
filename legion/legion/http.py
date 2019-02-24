@@ -174,6 +174,9 @@ def provide_json_response(method):
             response = method(*args, **kwargs)
             if isinstance(response, bool):
                 response = {'status': response}
+            # all classes that inherits from typing.NamedTuple
+            elif isinstance(response, tuple) and hasattr(response, '_asdict'):
+                response = response._asdict()
             elif not isinstance(response, dict) and not isinstance(response, list):
                 raise Exception('Wrong value returned from API handler')
         except Exception as exception:

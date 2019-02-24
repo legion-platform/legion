@@ -28,6 +28,7 @@ import legion.config
 import legion.containers.docker
 import legion.containers.headers
 import legion.utils
+from legion.k8s.utils import extract_container_id
 from legion.k8s.utils import ImageAttributes
 from legion.k8s.utils import parse_docker_image_url
 from legion.k8s.utils import reduce_cpu_resource
@@ -213,6 +214,10 @@ class TestK8S(unittest2.TestCase):
         for res in '300m123', '300sdsd', '', 'sdsd':
             with self.assertRaisesRegex(ValueError, 'Malformed cpu resource'):
                 reduce_cpu_resource(res)
+
+    def test_extract_container_id(self):
+        self.assertEqual(extract_container_id("docker://40985bfadf82466b4241ef1f7c7c926c98d3943456"),
+                         "40985bfadf82466b4241ef1f7c7c926c98d3943456")
 
 
 if __name__ == '__main__':

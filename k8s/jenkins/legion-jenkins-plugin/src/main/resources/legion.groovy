@@ -74,7 +74,8 @@ def pod(Map podParams=null, Closure body) {
 
     def annotations = []
 
-    image = podParams.get('image', getDefaultImageName())
+    model_image = podParams.get('image', getDefaultImageName())
+    builder_image = "${System.getenv('LEGION_EDI_IMAGE')}"
     cpu = podParams.get('cpu', '330m')
     ram = podParams.get('ram', '4Gi')
     iamRole = podParams.get('iamRole', "${System.getenv('CLUSTER_NAME')}-${params.Enclave}-jslave-role")
@@ -91,6 +92,7 @@ def pod(Map podParams=null, Closure body) {
 
     envVars = envToPass.collect({ name -> envVar(key: name, value: System.getenv(name)) })
     envVars << envVar(key: 'ENCLAVE_DEPLOYMENT_PREFIX', value: "${env.ENCLAVE_DEPLOYMENT_PREFIX}")
+    envVars << envVar(key: 'NAMESPACE', value: "${params.Enclave}")
     envVars << envVar(key: 'MODEL_SERVER_URL', value: "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edge.${params.Enclave}")
     envVars << envVar(key: 'EDI_URL', value: "http://${env.ENCLAVE_DEPLOYMENT_PREFIX}${params.Enclave}-edi.${params.Enclave}")
 
@@ -98,6 +100,20 @@ def pod(Map podParams=null, Closure body) {
 
     def tolerations = """
 spec:
+  containers:
+  - name: builder
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    volumeMounts:
+    - mountPath: "/var/run/docker.sock"
+      name: docker-socket
+  volumes:
+  - name: docker-socket
+    hostPath:
+      path: "/var/run/docker.sock"
   tolerations:
   - key: "dedicated"
     operator: "Equal"
@@ -112,18 +128,27 @@ spec:
             containers: [
                     containerTemplate(
                             name: 'model',
-                            image: image,
+                            image: model_image,
                             resourceLimitMemory: ram,
                             resourceLimitCpu: cpu,
                             ttyEnabled: true,
                             command: 'cat',
-                            envVars: envVars),
+                            envVars: envVars
+                    ),
+                    containerTemplate(
+                            name: 'builder',
+                            image: builder_image,
+                            resourceLimitMemory: '100Mi',
+                            resourceLimitCpu: '100m',
+                            ttyEnabled: true,
+                            command: '/usr/local/bin/uwsgi',
+                            serviceAccount: 'jenkins',
+                            args: '--strict --ini /etc/uwsgi/model_builder_uwsgi.ini',
+                            envVars: envVars
+                    )
             ],
-            volumes: [
-                    hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'),
-                    persistentVolumeClaim(claimName: env.DAGS_VOLUME_PVC, mountPath: env.AIRFLOW_DAGS_DIRECTORY)
-
-            ]) {
+            serviceAccount: "model-builder"
+    ) {
         node(label){
             container('model', body)
         }
@@ -225,6 +250,7 @@ def build() {
     sh """
     cd ${env.ROOT_DIR}
     legionctl --verbose build  \
+    --build-type docker-remote \
     --docker-image-tag ${env.TEMPORARY_DOCKER_IMAGE_NAME} \
     --push-to-registry  ${env.EXTERNAL_IMAGE_NAME} \
     --model-file "${env.MODEL_FILE_NAME}"

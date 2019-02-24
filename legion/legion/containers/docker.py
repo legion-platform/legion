@@ -18,18 +18,22 @@ legion k8s functions
 """
 import logging
 import os
+import typing
 
 import docker
 import docker.errors
+from docker.models.images import Image as DockerImage
 
 import legion
+import legion.containers.headers
 import legion.model
 import legion.pymodel
-import legion.config
-import legion.containers.headers
 import legion.utils
+from legion import config
+from legion.containers.definitions import ModelBuildParameters
 
 LOGGER = logging.getLogger(__name__)
+MODEL_TARGET_WORKSPACE = '/app'
 
 
 def build_docker_client():
@@ -94,6 +98,7 @@ def commit_image(client, container_id=None):
 
     container = client.containers.get(container_id)
     image = container.commit()
+    LOGGER.info('Image %s has been captured', image.id)
 
     return image.id
 
@@ -118,54 +123,75 @@ def get_docker_log_line_content(log_line):
     return str_line.rstrip('\n')
 
 
-def build_docker_image(client, model_id, model_file, labels,
-                       docker_image_tag):
+def _check_python_packages() -> None:
+    """
+    Raise exception if there are missed python packages
+    """
+    LOGGER.info('Checking package state')
+
+    installed_packages = set(legion.utils.get_installed_packages())
+    requirements = set(legion.utils.get_list_of_requirements())
+    missed_packages = requirements - installed_packages
+
+    if missed_packages:
+        missed_packages_requirements_list = ['{}=={}'.format(name, version)
+                                             for (name, version) in missed_packages]
+        raise Exception('Some packages are missed: {}'.format(', '.join(missed_packages_requirements_list)))
+
+
+def _copy_model_files(model_file: str, target_model_file: str) -> None:
+    """
+    Copy model files to the workspace
+
+    :param model_file: a serialized model file
+    :param target_model_file: path to the target model file location
+    """
+    try:
+        LOGGER.info('Copying model binary from {!r} to {!r}'
+                    .format(model_file, target_model_file))
+        legion.utils.copy_file(model_file, target_model_file)
+    except Exception as model_binary_copy_exception:
+        LOGGER.exception('Unable to move model binary to persistent location',
+                         exc_info=model_binary_copy_exception)
+        raise
+
+    try:
+        workspace_path = os.getcwd()
+        LOGGER.info('Copying model workspace from {!r} to {!r}'.format(workspace_path, MODEL_TARGET_WORKSPACE))
+        legion.utils.copy_directory_contents(workspace_path, MODEL_TARGET_WORKSPACE)
+    except Exception as model_workspace_copy_exception:
+        LOGGER.exception('Unable to move model workspace to persistent location',
+                         exc_info=model_workspace_copy_exception)
+        raise
+
+
+def prepare_build(model_id: str, model_file: str) -> None:
+    """
+    Execute some actions before building image
+
+    :param model_id: model id
+    :param model_file: path to model file (in the temporary directory)
+    :return: docker.models.Image
+    """
+    _check_python_packages()
+
+    _copy_model_files(model_file, os.path.join(model_id))
+
+
+def build_docker_image(client: docker.client.DockerClient, params: ModelBuildParameters,
+                       container_id: typing.Optional[str] = None) -> DockerImage:
     """
     Build docker image from current image with addition files
 
+    :param container_id: id of container that will be committed. Further It will be used as base for model image
+    :param params: Model docker build parameters
     :param client: Docker client
-    :type client: :py:class:`docker.client.DockerClient`
-    :param model_id: model id
-    :type model_id: str
-    :param model_file: path to model file (in the temporary directory)
-    :type model_file: str
-    :param labels: image labels
-    :type labels: dict[str, str]
-    :param docker_image_tag: str docker image tag
-    :type docker_image_tag: str ot None
-    :return: docker.models.Image
+    :return: model docker image
     """
+    LOGGER.info('Building docker image...')
+
     with legion.utils.TemporaryFolder('legion-docker-build') as temp_directory:
-        # Copy Jenkins workspace from mounted volume to persistent container directory
-        target_workspace = '/app'
-        target_model_file = os.path.join(target_workspace, model_id)
-
-        LOGGER.info('Checking package state')
-        installed_packages = set(legion.utils.get_installed_packages())
-        requirements = set(legion.utils.get_list_of_requirements())
-        missed_packages = requirements - installed_packages
-        if missed_packages:
-            missed_packages_requirements_list = ['{}=={}'.format(name, version)
-                                                 for (name, version) in missed_packages]
-            raise Exception('Some packages are missed: {}'.format(', '.join(missed_packages_requirements_list)))
-
-        try:
-            LOGGER.info('Copying model binary from {!r} to {!r}'
-                        .format(model_file, target_model_file))
-            legion.utils.copy_file(model_file, target_model_file)
-        except Exception as model_binary_copy_exception:
-            LOGGER.exception('Unable to move model binary to persistent location',
-                             exc_info=model_binary_copy_exception)
-            raise
-
-        try:
-            workspace_path = os.getcwd()
-            LOGGER.info('Copying model workspace from {!r} to {!r}'.format(workspace_path, target_workspace))
-            legion.utils.copy_directory_contents(workspace_path, target_workspace)
-        except Exception as model_workspace_copy_exception:
-            LOGGER.exception('Unable to move model workspace to persistent location',
-                             exc_info=model_workspace_copy_exception)
-            raise
+        target_model_file = os.path.join(MODEL_TARGET_WORKSPACE, params.model_id)
 
         # Copy additional files for docker build
         additional_directory = os.path.abspath(os.path.join(
@@ -175,33 +201,31 @@ def build_docker_image(client, model_id, model_file, labels,
         legion.utils.copy_directory_contents(additional_directory, temp_directory.path)
 
         # ALL Filesystem modification below next line would be ignored
-        captured_image_id = commit_image(client)
-        LOGGER.info('Image {} has been captured'.format(captured_image_id))
+        captured_image_id = commit_image(client, container_id)
 
-        if workspace_path.count(os.path.sep) > 1:
-            symlink_holder = os.path.abspath(os.path.join(workspace_path, os.path.pardir))
+        if params.workspace_path.count(os.path.sep) > 1:
+            symlink_holder = os.path.abspath(os.path.join(params.workspace_path, os.path.pardir))
         else:
             symlink_holder = '/'
 
         # Remove old workspace (if exists), create path to old workspace's parent, create symlink
         symlink_create_command = 'rm -rf "{0}" && mkdir -p "{1}" && ln -s "{2}" "{0}"'.format(
-            workspace_path,
+            params.workspace_path,
             symlink_holder,
-            target_workspace
+            MODEL_TARGET_WORKSPACE
         )
-
-        print('Executing {!r}'.format(symlink_create_command))
+        LOGGER.info('Executing %s', symlink_create_command)
 
         docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
-            'MODEL_PORT': legion.config.LEGION_PORT,
+            'MODEL_PORT': config.LEGION_PORT,
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
-            'MODEL_ID': model_id,
+            'MODEL_ID': params.model_id,
             'MODEL_FILE': target_model_file,
             'CREATE_SYMLINK_COMMAND': symlink_create_command
         })
 
         labels = {k: str(v) if v else None
-                  for (k, v) in labels.items()}
+                  for (k, v) in params.image_labels.items()}
 
         with open(os.path.join(temp_directory.path, 'Dockerfile'), 'w') as file:
             file.write(docker_file_content)
@@ -209,12 +233,14 @@ def build_docker_image(client, model_id, model_file, labels,
         LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
         try:
             image, _ = client.images.build(
-                tag=docker_image_tag,
+                tag=params.local_image_tag,
                 nocache=True,
                 path=temp_directory.path,
                 rm=True,
                 labels=labels
             )
+
+            LOGGER.info('Image has been built: %s', image)
         except docker.errors.BuildError as build_error:
             LOGGER.error('Cannot build image: {}. Build logs: '.format(build_error))
             for log_line in build_error.build_log:
@@ -232,8 +258,6 @@ def generate_docker_labels_for_image(model_file, model_id):
     :type model_file: str
     :param model_id: model id
     :type model_id: str
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
     :return: dict[str, str] of labels
     """
     container = legion.pymodel.Model.load(model_file)
@@ -295,8 +319,8 @@ def push_image_to_registry(client, image, external_image_name):
         version = image_name[version_delimiter + 1:]
         image_name = image_name[:version_delimiter]
 
-    docker_registry_user = legion.config.DOCKER_REGISTRY_USER
-    docker_registry_password = legion.config.DOCKER_REGISTRY_PASSWORD
+    docker_registry_user = config.DOCKER_REGISTRY_USER
+    docker_registry_password = config.DOCKER_REGISTRY_PASSWORD
     auth_config = None
 
     if docker_registry_user and docker_registry_password:
@@ -315,3 +339,28 @@ def push_image_to_registry(client, image, external_image_name):
 
     image_with_version = '{}/{}:{}'.format(registry, image_name, version)
     legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)
+
+
+def build_model_docker_image(params: ModelBuildParameters, container_id: typing.Optional[str] = None) -> str:
+    """
+    Build model docker image
+
+    :param container_id: container id to capture as base image
+    :param params: params to build model docker image
+    :return: name of built model docker image
+    """
+    client = build_docker_client()
+
+    image = legion.containers.docker.build_docker_image(
+        client, params, container_id
+    )
+
+    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_ID_LOCAL, image.id)
+
+    if image.tags:
+        legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.tags[0])
+
+    if params.push_to_registry:
+        legion.containers.docker.push_image_to_registry(client, image, params.push_to_registry)
+
+    return params.local_image_tag

@@ -81,6 +81,8 @@ spec:
           value: "{{ .Values.package.baseImage.tag }}"
         - name: LEGION_BASE_IMAGE_REPOSITORY
           value: "{{ .Values.package.baseImage.repository }}"
+        - name: LEGION_EDI_IMAGE
+          value: "{{ .Values.package.edi_image }}"
         - name: CLUSTER_PREFIX
           value: "{{ .Values.cluster_prefix }}"
         - name: DOCKER_REGISTRY

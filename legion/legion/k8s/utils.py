@@ -16,35 +16,36 @@
 """
 legion k8s utils functions
 """
-import os
-import logging
 import json
+import logging
+import os
 import re
 from typing import NamedTuple
 
-import yaml
-import urllib3
-import urllib3.exceptions
 import kubernetes
 import kubernetes.client
+from kubernetes.client import V1Pod, V1ContainerStatus
 import kubernetes.config
 import kubernetes.config.config_exception
+import urllib3
+import urllib3.exceptions
+import yaml
 from docker_registry_client import DockerRegistryClient
 
 import legion
+import legion.config
 import legion.containers.docker
 import legion.containers.exceptions
 import legion.containers.headers
-import legion.config
 import legion.external.grafana
-from legion.utils import normalize_name
-import legion.k8s.services
-import legion.k8s.exceptions
 import legion.k8s.enclave
+import legion.k8s.exceptions
+import legion.k8s.services
 from legion.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE, \
     ModelContainerMetaInformation
+from legion.utils import normalize_name
 
 LOGGER = logging.getLogger(__name__)
 CONNECTION_CONTEXT = None
@@ -126,6 +127,35 @@ def build_client():
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     return kubernetes.client.ApiClient()
+
+
+def extract_container_id(container_id: str) -> str:
+    """
+    Extract from k8s containerID a real container id.
+    For example:
+        docker://40985bfadf82466b4241ef1f7c7c926c98d3943456 -> 40985bfadf82466b4241ef1f7c7c926c98d3943456
+
+    :param container_id: k8s containerID
+    :return: real docker container id
+    """
+    return container_id[len('docker://'):]
+
+
+def get_container_id_of_current_pod(container_name: str) -> str:
+    """
+    Extract container id from current pod by container name
+
+    :param container_name: k8s container name
+    :return: container id
+    """
+    api = kubernetes.client.CoreV1Api(legion.k8s.utils.build_client())
+    pod: V1Pod = api.read_namespaced_pod(legion.config.POD_NAME, legion.config.NAMESPACE)
+
+    for container_status in pod.status.container_statuses:  # type: V1ContainerStatus
+        if container_status.name == container_name:
+            return extract_container_id(container_status.container_id)
+
+    raise ValueError(f"Not found {container_name} in the {legion.config.POD_NAME}")
 
 
 def get_current_namespace():

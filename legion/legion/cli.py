@@ -22,6 +22,7 @@ import os
 import stat
 import sys
 import time
+import uuid
 
 import legion.config
 import legion.containers.docker
@@ -36,6 +37,9 @@ import legion.pymodel
 import legion.model
 import legion.utils
 import legion.template
+from legion.external.docker import request_to_build_image
+from legion.containers.definitions import ModelBuildParameters
+from legion.containers.docker import build_model_docker_image, prepare_build
 from legion.utils import Colors
 
 LOGGER = logging.getLogger(__name__)
@@ -43,6 +47,9 @@ LOGGER = logging.getLogger(__name__)
 INSPECT_FORMAT_COLORIZED = 'colorized'
 INSPECT_FORMAT_TABULAR = 'column'
 VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
+
+BUILD_TYPE_DOCKER_SOCKET = 'docker-socket'
+BUILD_TYPE_DOCKER_REMOTE = 'docker-remote'
 
 
 def output_table(headers, rows):
@@ -71,10 +78,8 @@ def build_model(args):
 
     :param args: command arguments
     :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`docker.model.Image` docker image
+    :return: None
     """
-    client = legion.containers.docker.build_docker_client()
-
     model_file = args.model_file
     if not model_file:
         model_file = legion.config.MODEL_FILE
@@ -88,34 +93,26 @@ def build_model(args):
     container = legion.pymodel.Model.load(model_file)
     model_id = container.model_id
     model_version = container.model_version
+    workspace_path = os.getcwd()
 
     image_labels = legion.containers.docker.generate_docker_labels_for_image(model_file, model_id)
-
-    LOGGER.info('Building docker image...')
-
     new_image_tag = args.docker_image_tag
     if not new_image_tag:
         new_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, legion.utils.deduce_extra_version())
 
-    image = legion.containers.docker.build_docker_image(
-        client,
-        model_id,
-        model_file,
-        image_labels,
-        new_image_tag
-    )
+    prepare_build(model_id, model_file)
 
-    LOGGER.info('Image has been built: {}'.format(image))
+    params = ModelBuildParameters(model_id, workspace_path, image_labels, new_image_tag, args.push_to_registry,
+                                  build_id=str(uuid.uuid4()))
 
-    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_ID_LOCAL, image.id)
+    if args.build_type == BUILD_TYPE_DOCKER_SOCKET:
+        model_image = build_model_docker_image(params)
+    elif args.build_type == BUILD_TYPE_DOCKER_REMOTE:
+        model_image = request_to_build_image(params)
+    else:
+        raise ValueError(f'Unexpected build type: {args.build_type}')
 
-    if image.tags:
-        legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.tags[0])
-
-    if args.push_to_registry:
-        legion.containers.docker.push_image_to_registry(client, image, args.push_to_registry)
-
-    return image
+    LOGGER.info('The image %s has been built', model_image)
 
 
 def generate_token(args):
@@ -580,6 +577,13 @@ def build_parser():  # pylint: disable=R0915
                                     type=str, help='docker image tag')
     build_model_parser.add_argument('--push-to-registry',
                                     type=str, help='docker registry address')
+    build_model_parser.add_argument('--build-type', default='docker-socket', choices=[BUILD_TYPE_DOCKER_SOCKET,
+                                                                                      BUILD_TYPE_DOCKER_REMOTE],
+                                    type=str,
+                                    help="Available values: docker-socket - builds a model image using a docker socket."
+                                         "docker-remote - does not build image yourself. Send an HTTP request to the "
+                                         "MODEL_DOCKER_BUILDER_URL server that determines the model container, builds "
+                                         "and pushes it.")
     build_model_parser.set_defaults(func=build_model)
 
     # --------- KUBERNETES SECTION -----------

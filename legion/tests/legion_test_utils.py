@@ -1,36 +1,40 @@
 # pylint: disable=C0302
-import logging
 import contextlib
-import time
-import tempfile
-import typing
-import os
-import tarfile
+import glob
+import importlib
+import inspect
 import io
 import json
-import glob
+import logging
+import os
 import pty
 import re
 import subprocess
+import tarfile
+import tempfile
+import time
+import typing
 from unittest.mock import patch
-import importlib
-import inspect
 
 import docker
-import docker.types
-import docker.errors
 import docker.client
-import responses
+import docker.errors
+import docker.types
+import flask
+from flask import Response
+from flask.testing import FlaskClient
 import requests
 import requests.adapters
+import responses
 
 import legion.config
 import legion.containers.docker
 import legion.containers.headers
-from legion.model import ModelClient
+import legion.edi.server as ediserve
 import legion.model.client
 import legion.serving.pyserve as pyserve
-import legion.edi.server as ediserve
+from legion.containers import server as docker_server
+from legion.model import ModelClient
 from legion.utils import remove_directory, ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
@@ -147,6 +151,7 @@ def build_sequential_resource_name_generator(responses_list):
         value = responses_list[i]
         i += 1
         return value
+
     return func
 
 
@@ -964,10 +969,10 @@ class EDITestServer:
         test_enclave._data_loaded = True
 
         with patch_config(additional_environment), \
-                patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
-                   patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
-                     patch('legion.edi.server.get_application_grafana', lambda *x: None), \
-                       patch_environ(additional_environment):  # noqa
+             patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
+             patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
+             patch('legion.edi.server.get_application_grafana', lambda *x: None), \
+             patch_environ(additional_environment):  # noqa
             self.application = ediserve.init_application(None)
 
         self.application.testing = True
@@ -985,6 +990,66 @@ class EDITestServer:
         :return: None
         """
         pass
+
+
+class DockerBuildServer:
+    """
+    Context manager for testing Docker build server
+    """
+
+    def __init__(self):
+        """
+        Create context
+        """
+        self.application: flask.Flask = None
+        self.http_client: FlaskClient = None
+
+    @staticmethod
+    def _emulates_response() -> None:
+        """
+        This function adds functions that there are in the response of the request library
+
+        """
+        Response.json = lambda resp: json.loads(resp.data)
+        Response.ok = property(lambda resp: resp.status_code < 400)
+
+    @staticmethod
+    def _unemulates_response() -> None:
+        """
+        This function adds functions that there are in the response of the request library
+
+        """
+        del Response.json
+        del Response.ok
+
+    def __enter__(self) -> 'DockerBuildServer':
+        """
+        Enter into context
+
+        :return: self
+        """
+        self._emulates_response()
+        enclave_name = 'test'
+        test_enclave = legion.k8s.enclave.Enclave(enclave_name)
+        test_enclave._data_loaded = True
+
+        with patch('legion.k8s.get_current_namespace', lambda *x: enclave_name), \
+                patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave):
+            self.application = docker_server.init_application()
+
+        self.application.testing = True
+        self.http_client = self.application.test_client()
+
+        return self
+
+    def __exit__(self, *args):
+        """
+        Exit
+
+        :param args: list of arguments
+        :return: None
+        """
+        self._unemulates_response()
 
 
 class ModelLocalContainerExecutionContext:
