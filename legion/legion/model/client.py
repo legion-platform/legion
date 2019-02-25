@@ -48,8 +48,8 @@ class ModelClient:
     Model HTTP client
     """
 
-    def __init__(self, model_id, model_version, token=None, host=None, http_client=None, http_exception=None,
-                 use_relative_url=False, timeout=None):
+    def __init__(self, model_id, model_version, token=None, host=None, http_client=None,
+                 http_exception=requests.exceptions.RequestException, use_relative_url=False, timeout=None):
         """
         Build client
 
@@ -63,6 +63,8 @@ class ModelClient:
         :type host: str or None
         :param http_client: HTTP client (default: requests)
         :type http_client: python class that implements requests-like post & get methods
+        :param http_exception: http_client exception class, which can be thrown by http_client in case of some errors
+        :type http_exception: python class that implements Exception class interface
         :param use_relative_url: use non-full get/post requests (useful for locust)
         :type use_relative_url: bool
         :param timeout: timeout for connections
@@ -82,10 +84,7 @@ class ModelClient:
         else:
             self._http_client = requests
 
-        if http_exception:
-            self._http_exception = http_exception
-        else:
-            self._http_exception = requests.exceptions.RequestException
+        self._http_exception = http_exception
 
         self._use_relative_url = use_relative_url
         if self._use_relative_url:
@@ -239,8 +238,12 @@ class ModelClient:
         :type url: str
         :param data: request data
         :type data: any
-        :param files: files
+        :param files: files to send with request
         :type files: dict
+        :param retries: How many times to retry executing a request
+        :type retries: int
+        :param sleep: How much time to sleep between retries in case of errors
+        :type sleep: int
         :return: dict -- parsed model response
         """
         http_method = http_method.lower()
