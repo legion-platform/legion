@@ -20,8 +20,6 @@
 ([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*(~|example|\\s?str,|\\s\\|\\-|$)
 #Allow ansible substitution like password: {{ .... }}
 ([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*(\"|\')?\\{\\{\\s.+\\s\\}\\}(\"|\')?
-# TODO: hardcoded values should be removed in future when closing LEGION #499
-(user|password): YWRtaW4=
 # Allow localhost IPv4 address
 127.0.0.1
 # Allow demo netmask
@@ -32,5 +30,8 @@
 nonMasqueradeCIDR:\\s*[0-9\\./]+
 # Allow user:tag
 user:tag
+# Empty user and password
+user: ""
+password: ""
 # Allow username : unicode (Jupyter config)
 username : unicode

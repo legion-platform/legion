@@ -1,0 +1,4 @@
+dependencies:
+- name: grafana
+  version: "1.26.1"
+  repository: "@stable"

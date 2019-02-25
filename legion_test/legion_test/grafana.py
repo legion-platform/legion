@@ -133,3 +133,21 @@ class GrafanaClient:
             return None
 
         return data[0]
+
+    def get_dashboard_by(self, uid):
+        """
+        Get dashboard json by dashboard uid
+
+        :param uid: a dashboard uid
+        :type uid: str
+        :return: dashboard json - dict[str, Any]
+        """
+        return self._query('/api/dashboards/uid/{}'.format(uid))
+
+    def get_preferences(self):
+        """
+        Get grafana preferences
+
+        :return: grafana response - dict[str, Any]
+        """
+        return self._query('/api/user/preferences')
