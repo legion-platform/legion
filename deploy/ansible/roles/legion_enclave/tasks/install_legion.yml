@@ -1,75 +1,23 @@
 ---
 
-- name: Get legion chart status
-  shell: helm --kube-context {{ cluster_name }} ls --all legion-{{ enclave }}
-  register: legion_deployment_status
-
-- set_fact:
-    "legion_deployed": "{{ legion_deployment_status.stdout_lines|length > 1 }}"
-
-- name: Remove legion chart
-  shell: helm --kube-context {{ cluster_name }} delete --purge legion-{{ enclave }}
-  when: "legion_deployed"
-
-- name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --context {{ cluster_name }} --namespace {{ enclave }}  delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ enclave }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
-  when: "legion_deployed"
-
 - name: Generate JWT Secret
   set_fact:
     enclave_jwt_secret: "{{ lookup('password', '/dev/null length=16 chars=ascii_letters') }}"
+    tmp_values_file: "{{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
 
 - name: Create legion configuration (values) file
   template:
     src: legion-values.yaml.j2
-    dest: "{{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
+    dest: "{{ tmp_values_file }}"
     mode: 0644
+
+- name: Install legion core helm chart
+  include_role:
+    name: deploy_helm_chart
   vars:
-    git_secret_name: legion-git-deploy
-
-# Install charts from remote repo
-- name: Pre run with dumping
-  shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
-  register: helm_legion_install_output
-  when:  helm_local_src != 'true'
-
-- name: Save pre run result
-  copy:
-    content: "{{ helm_legion_install_output.stdout }}"
-    dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.debug"
-  when:  helm_local_src != 'true'
-
-- name: Install legion chart
-  shell: "helm --kube-context {{ cluster_name }} install legion-helm/legion --name legion-{{ enclave }} --version={{ legion_version }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
-  when:  helm_local_src != 'true'
-
-# OR install charts from local soures in case of debug flag
-- name: Pre run with dumping
-  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --debug --dry-run -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
-  register: helm_legion_install_output
-  args:
-    chdir: ../helms
-  when: helm_local_src == 'true'
-
-- name: Save pre run result
-  copy:
-    content: "{{ helm_legion_install_output.stdout }}"
-    dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.debug"
-  when: helm_local_src == 'true'
-
-- name: Install legion chart
-  shell: "helm --kube-context {{ cluster_name }} install legion --name legion-{{ enclave }} --namespace {{ enclave }} --wait --timeout 600 -f  {{ tmp_dir }}/legion-values.{{ cluster_name }}.yaml"
-  args:
-    chdir: ../helms
-  when: helm_local_src == 'true'
-
-- name: Dump current HELM status
-  shell: "helm --kube-context {{ cluster_name }} status legion-{{ enclave }}"
-  register: helm_legion_status_output
-
-- name: Save HELM status localy
-  copy:
-    content: "{{ helm_legion_status_output.stdout }}"
-    dest: "{{ tmp_dir }}/helm.legion_{{ enclave }}.{{ cluster_name }}.status"
-
-
+    release_name: legion-{{ enclave }}
+    values_file: "{{ tmp_values_file }}"
+    namespace: "{{ enclave }}"
+    src_chart_name: legion
+    chart_name: legion-helm/legion
+    chart_version: "{{ legion_version }}"
