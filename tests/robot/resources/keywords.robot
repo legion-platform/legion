@@ -20,7 +20,10 @@ Url stay the same after dex log in
 
 Connect to enclave Grafana
     [Arguments]           ${enclave}
-    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}    ${SERVICE_ACCOUNT}     ${SERVICE_PASSWORD}
+    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
+
+Connect to main Grafana
+    Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 
 Connect to Jenkins endpoint
     Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}

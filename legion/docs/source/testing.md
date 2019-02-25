@@ -78,6 +78,11 @@ dex:
     staticPasswords:
       - email: tests-user@legion.com
         password: ~
+
+grafana:
+  admin:
+    username: ~
+    password: ~
 ```
 * Go to the `tests\robot` directory. Export the following environment variables:
 ```bash

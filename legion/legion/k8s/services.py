@@ -65,7 +65,11 @@ class Service:
         if not ports:
             raise Exception('Invalid service for introspection: {} has no ports'.format(self._name))
 
-        api_ports = [port.port for port in ports if port.name == LEGION_API_SERVICE_PORT]
+        if len(ports) == 1:
+            api_ports = [ports[0].port]
+        else:
+            api_ports = [port.port for port in ports if port.name == LEGION_API_SERVICE_PORT]
+
         if not api_ports:
             raise Exception('Invalid service for introspection: cannot find port {} for service {}'
                             .format(LEGION_API_SERVICE_PORT, self._name))

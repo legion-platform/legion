@@ -83,6 +83,8 @@ def get_variables(arg=None):
         'FEEDBACK_BUCKET': '{}-{}-{}'.format(data['legion_data_bucket_prefix'],
                                               data['env_type'],
                                               data['enclaves'][0]),
+        'GRAFANA_USER': data['grafana']['admin']['username'],
+        'GRAFANA_PASSWORD': data['grafana']['admin']['password'],
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'

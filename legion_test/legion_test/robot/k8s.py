@@ -149,7 +149,7 @@ class K8s:
 
         raise Exception("Stateful set '%s' wasn't found" % stateful_set_name)
 
-    def deployment_is_running(self, deployment_name, namespace=None):
+    def deployment_is_running(self, deployment_name, namespace):
         """
         Check that specific named deployment is okay (no one pending or failed pod)
 
@@ -161,22 +161,13 @@ class K8s:
         :return: None
         """
         client = self.build_client()
-
         apps_api = kubernetes.client.AppsV1Api(client)
-        if namespace is None:
-            deployments = apps_api.list_deployment_for_all_namespaces()
-        else:
-            deployments = apps_api.list_deployment_for_all_namespaces()
 
-        for item in deployments.items:
-            if item.metadata.labels.get('component', '') == deployment_name:
-                if item.status.replicas == item.status.ready_replicas:
-                    return True
-                else:
-                    raise Exception("Deployment '%s' is not ready: %d/%d replicas are running"
-                                    % (deployment_name, item.status.ready_replicas, item.status.replicas))
+        deployment = apps_api.read_namespaced_deployment(deployment_name, namespace)
 
-        raise Exception("Deployment '%s' wasn't found" % deployment_name)
+        if deployment.status.replicas != deployment.status.ready_replicas:
+            raise Exception("Deployment '%s' is not ready: %d/%d replicas are running"
+                            % (deployment_name, deployment.status.ready_replicas, deployment.status.replicas))
 
     def get_model_deployment(self, model_id, model_version, namespace):
         """
