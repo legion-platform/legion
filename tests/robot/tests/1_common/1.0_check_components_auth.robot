@@ -1,6 +1,5 @@
 *** Settings ***
 Documentation       Check if all core components are secured
-Resource            ../../resources/browser.robot
 Resource            ../../resources/keywords.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             Collections
@@ -19,10 +18,6 @@ Check if Jenkins domain has been secured
     [Tags]  apps
     [Template]    Check if component domain has been secured
     component=jenkins    enclave=${EMPTY}
-
-Check if Nexus domain has been secured
-    [Template]    Check if component domain has been secured
-    component=nexus    enclave=${EMPTY}
 
 Check if Grafana domain has been secured
     [Template]    Check if component domain has been secured
@@ -52,11 +47,6 @@ Check if Jenkins domain does not auth with invalid creds
     [Tags]  apps
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=jenkins    enclave=${EMPTY}
-
-Check if Nexus domain does not auth with invalid creds
-    [Tags]  apps
-    [Template]    Secured component domain should not be accessible by invalid credentials
-    component=nexus    enclave=${EMPTY}
 
 Check if Grafana domain does not auth with invalid creds
     [Tags]  apps
@@ -102,11 +92,6 @@ Check if K8S dashboard domain can auth with valid creds
     [Tags]  infra
     [Template]    Secured component domain should be accessible by valid credentials
     component=Dashboard    enclave=${EMPTY}
-
-Check if Nexus domain can auth with valid creds
-    [Tags]  apps
-    [Template]    Secured component domain should be accessible by valid credentials
-    component=nexus    enclave=${EMPTY}
 
 Check if Grafana domain can auth with valid creds
     [Tags]  apps
@@ -180,3 +165,14 @@ Check if EDGE don't authorize with other model id valid token
      ${auth_page} =  Get From Dictionary   ${response}    response_text
      Should contain   ${auth_page}    401 Authorization Required
      [Teardown]      Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_6_ID}   ${TEST_MODEL_6_VERSION}   ${TEST_MODEL_IMAGE_6}
+
+Service url stay the same after log in
+    [Tags]  apps
+    [Documentation]  Service url stay the same after log in
+    [Template]    Url stay the same after dex log in
+    service_url=https://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/healthcheck?xx=22&yy=33
+    service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/info?xx=22&yy=33
+    service_url=https://airflow-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/admin/airflow/duration?dag_id=example_python_work&days=30&root=
+    service_url=https://flower-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/tasks?x=2&y=3
+    service_url=https://grafana-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/?orgId=1&x=2
+    service_url=https://grafana.${HOST_BASE_DOMAIN}/?orgId=1&x=2

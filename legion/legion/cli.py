@@ -36,7 +36,7 @@ import legion.pymodel
 import legion.model
 import legion.utils
 import legion.template
-from legion.utils import Colors, ExternalFileReader
+from legion.utils import Colors
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,41 +82,40 @@ def build_model(args):
     if not model_file:
         raise Exception('Model file has not been provided')
 
-    with ExternalFileReader(model_file) as external_reader:
-        if not os.path.exists(external_reader.path):
-            raise Exception('Cannot find model binary {}'.format(external_reader.path))
+    if not os.path.exists(model_file):
+        raise Exception('Cannot find model binary {}'.format(model_file))
 
-        container = legion.pymodel.Model.load(external_reader.path)
-        model_id = container.model_id
-        model_version = container.model_version
+    container = legion.pymodel.Model.load(model_file)
+    model_id = container.model_id
+    model_version = container.model_version
 
-        image_labels = legion.containers.docker.generate_docker_labels_for_image(external_reader.path, model_id)
+    image_labels = legion.containers.docker.generate_docker_labels_for_image(model_file, model_id)
 
-        LOGGER.info('Building docker image...')
+    LOGGER.info('Building docker image...')
 
-        new_image_tag = args.docker_image_tag
-        if not new_image_tag:
-            new_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, legion.utils.deduce_extra_version())
+    new_image_tag = args.docker_image_tag
+    if not new_image_tag:
+        new_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, legion.utils.deduce_extra_version())
 
-        image = legion.containers.docker.build_docker_image(
-            client,
-            model_id,
-            external_reader.path,
-            image_labels,
-            new_image_tag
-        )
+    image = legion.containers.docker.build_docker_image(
+        client,
+        model_id,
+        model_file,
+        image_labels,
+        new_image_tag
+    )
 
-        LOGGER.info('Image has been built: {}'.format(image))
+    LOGGER.info('Image has been built: {}'.format(image))
 
-        legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_ID_LOCAL, image.id)
+    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_ID_LOCAL, image.id)
 
-        if image.tags:
-            legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.tags[0])
+    if image.tags:
+        legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.tags[0])
 
-        if args.push_to_registry:
-            legion.containers.docker.push_image_to_registry(client, image, args.push_to_registry)
+    if args.push_to_registry:
+        legion.containers.docker.push_image_to_registry(client, image, args.push_to_registry)
 
-        return image
+    return image
 
 
 def generate_token(args):
@@ -350,15 +349,16 @@ def deploy(args):
     """
     Deploy model on remote cluster or on local machine
 
-    :param args: command arguments with .model_id, .namespace , .livenesstimeout,
-                .readinesstimeout, .model_iam_role and .scale
+    :param args: command arguments with .model_id, .namespace, .livenesstimeout, .readinesstimeout, .model_iam_role,
+                 .port, .memory, .cpu and .scale
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
     edi_client = legion.external.edi.build_client(args)
     LOGGER.info('Sending deploy request to {!r}'.format(edi_client))
-    model_deployments = edi_client.deploy(args.image, args.model_iam_role, args.scale, args.livenesstimeout,
-                                          args.readinesstimeout, args.port)
+    model_deployments = edi_client.deploy(args.image, model_iam_role=args.model_iam_role, count=args.scale,
+                                          livenesstimeout=args.livenesstimeout, readinesstimeout=args.readinesstimeout,
+                                          local_port=args.port, memory=args.memory, cpu=args.cpu)
     LOGGER.info('Server returned list of affected deployments: {!r}'.format(model_deployments))
 
     wait_operation_finish(args, edi_client,
@@ -604,6 +604,8 @@ def build_parser():  # pylint: disable=R0915
     deploy_parser.add_argument('--readinesstimeout',
                                default=2,
                                type=int, help='model startup timeout for readiness probe')
+    deploy_parser.add_argument('--memory', default=None, type=str, help='limit memory for model deployment')
+    deploy_parser.add_argument('--cpu', default=None, type=str, help='limit cpu for model deployment')
     legion.external.edi.add_arguments_for_wait_operation(deploy_parser)
     legion.edi.security.add_edi_arguments(deploy_parser)
     deploy_parser.set_defaults(func=deploy)

@@ -13,9 +13,17 @@ Library             legion_test.robot.Airflow
 Library             legion_test.robot.Process
 
 *** Keywords ***
+Url stay the same after dex log in
+    [Arguments]  ${service_url}
+    ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
+    should be equal  ${service_url}  ${resp.url}
+
 Connect to enclave Grafana
     [Arguments]           ${enclave}
-    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}    ${SERVICE_ACCOUNT}     ${SERVICE_PASSWORD}
+    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
+
+Connect to main Grafana
+    Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 
 Connect to Jenkins endpoint
     Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}
@@ -332,7 +340,7 @@ Test model pipeline result
     ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
     ${edge}=             Build enclave EDGE URL             ${enclave}
     Get token from EDI   ${enclave}   ${model_id}   ${model_version}
-    ${model_info} =      Get model info       ${model_id}  ${model_version}  ${edge}  ${TOKEN}
+    ${model_info} =      Get model info  ${edge}  ${TOKEN}  ${model_id}  ${model_version}
     Log                  Model info is ${model_info}
     Connect to enclave Grafana                              ${enclave}
     Dashboard should exists                                 ${model_id}

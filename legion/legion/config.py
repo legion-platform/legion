@@ -438,26 +438,9 @@ EDI_TOKEN = ConfigVariableDeclaration('EDI_TOKEN', None, str,
                                       'Token for EDI server authorisation',
                                       True)
 
-# Mechanism for storing model binaries in external storage (will be deprecated)
-EXTERNAL_RESOURCE_USE_BY_DEFAULT = ConfigVariableDeclaration('EXTERNAL_RESOURCE_USE_BY_DEFAULT', False, cast_bool,
-                                                             'Place model binaries on external server if model file '
-                                                             'path is not absolute or is not defined',
-                                                             False)
 LOCAL_DEFAULT_RESOURCE_PREFIX = ConfigVariableDeclaration('LOCAL_DEFAULT_RESOURCE_PREFIX', None, str,
                                                           'Prefix for building local model binary storage path',
                                                           False)
-EXTERNAL_RESOURCE_PROTOCOL = ConfigVariableDeclaration('EXTERNAL_RESOURCE_PROTOCOL', 'https', str,
-                                                       'Protocol HTTP/HTTPS for model binary storing',
-                                                       False)
-EXTERNAL_RESOURCE_HOST = ConfigVariableDeclaration('EXTERNAL_RESOURCE_HOST', 'localhost', str,
-                                                   'Network URL of external model\'s binaries storage',
-                                                   False)
-EXTERNAL_RESOURCE_USER = ConfigVariableDeclaration('EXTERNAL_RESOURCE_USER', None, str,
-                                                   'Name of user for model\'s binaries storage',
-                                                   False)
-EXTERNAL_RESOURCE_PASSWORD = ConfigVariableDeclaration('EXTERNAL_RESOURCE_PASSWORD', None, str,
-                                                       'Password for model\'s binaries storage',
-                                                       False)
 
 # Images registry
 MODEL_IMAGES_REGISTRY_HOST = ConfigVariableDeclaration('MODEL_IMAGES_REGISTRY_HOST', None, str,
@@ -465,16 +448,14 @@ MODEL_IMAGES_REGISTRY_HOST = ConfigVariableDeclaration('MODEL_IMAGES_REGISTRY_HO
                                                        False)
 
 # Configuration about storing built docker images
-NEXUS_DOCKER_REGISTRY = ConfigVariableDeclaration('NEXUS_DOCKER_REGISTRY', None, str,
-                                                  'Name of default nexus registry for saving built models',
-                                                  True)
+DOCKER_REGISTRY = ConfigVariableDeclaration('DOCKER_REGISTRY', None, str,
+                                            'Name of default nexus registry for saving built models', True)
 DOCKER_REGISTRY_USER = ConfigVariableDeclaration('DOCKER_REGISTRY_USER', None, str,
-                                                 'Docker API user (for saving built model images)',
-                                                 True)
+                                                 'Docker API user (for saving built model images)', True)
 DOCKER_REGISTRY_PASSWORD = ConfigVariableDeclaration('DOCKER_REGISTRY_PASSWORD', None, str,
-                                                     'Docker API password (for saving built model images)',
-                                                     True)
-
+                                                     'Docker API password (for saving built model images)', True)
+DOCKER_REGISTRY_PROTOCOL = ConfigVariableDeclaration('DOCKER_REGISTRY_PROTOCOL', 'https', str,
+                                                     'Docker registry protocol: https/http', True)
 
 # EDI server configuration
 CLUSTER_CONFIG_PATH = ConfigVariableDeclaration('CLUSTER_CONFIG_PATH', None, str,
@@ -536,10 +517,11 @@ TEMP_DIRECTORY = ConfigVariableDeclaration('TEMP_DIRECTORY', None, str,
                                            True)
 
 # For using in tests scenarios
-MODEL_ID = ConfigVariableDeclaration('MODEL_ID', None, str,
-                                     'ID of current model',
-                                     False)
+MODEL_ID = ConfigVariableDeclaration('MODEL_ID', None, str, 'ID of current model', False)
 
-MODEL_VERSION = ConfigVariableDeclaration('MODEL_VERSION', None, str,
-                                          'ID of current model',
-                                          False)
+MODEL_VERSION = ConfigVariableDeclaration('MODEL_VERSION', None, str, 'ID of current model', False)
+
+MODEL_K8S_MEMORY = ConfigVariableDeclaration('MODEL_K8S_MEMORY', '256Mi', str, 'Default k8s memory for a model', True)
+MODEL_K8S_CPU = ConfigVariableDeclaration('MODEL_K8S_CPU', '256m', str, 'Default k8s cpu for a model', True)
+REDUCE_MODEL_REQUESTS_BY = ConfigVariableDeclaration('REDUCE_MODEL_REQUESTS_BY', 33, int,
+                                                     'Reduce k8s resource for model by specific percent', True)

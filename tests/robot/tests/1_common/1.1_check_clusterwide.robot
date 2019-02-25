@@ -1,6 +1,5 @@
 *** Settings ***
 Documentation       Check clusterwide and enclave resources
-Resource            ../../resources/browser.robot
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
@@ -8,7 +7,6 @@ Library             Collections
 Library             legion_test.robot.K8s
 Library             legion_test.robot.Utils
 Test Setup          Choose cluster context            ${CLUSTER_NAME}
-Test Teardown       Close All Browsers
 
 *** Test Cases ***
 Checking if all core domains have been registered
@@ -26,21 +24,14 @@ Checking if all enclave domains have been registered
 Checking if all replica sets, stateful sets, deployments are up and running
     [Documentation]  Gather information from kubernetes through API and check state of all required componens
     [Tags]  k8s  infra
-    Replica set is running                   ${DEPLOYMENT}-core-nexus
-    Deployment is running        ${DEPLOYMENT}-core-jenkins
-    Deployment is running        ${DEPLOYMENT}-core-graphite
+    Deployment is running        ${DEPLOYMENT}-core-jenkins   namespace=default
+    Deployment is running        ${DEPLOYMENT}-core-graphite  namespace=default
+    Deployment is running        ${DEPLOYMENT}-core-grafana   namespace=default
     :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edge          ${enclave}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edi           ${enclave}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-grafana       ${enclave}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-graphite      ${enclave}
-
-Check Nexus availability
-    [Documentation]  Check Nexus UI availability
-    [Tags]  nexus  ui  apps
-    Start browser    ${NEXUS_HOST}
-    Login with dex
-    Go To            ${NEXUS_HOST}/
+    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edge          namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edi           namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-${enclave}-grafana       namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-${enclave}-graphite      namespace=${enclave}
 
 Check enclave Grafana availability
     [Documentation]  Try to connect to Grafana in each enclave
@@ -48,6 +39,18 @@ Check enclave Grafana availability
     :FOR    ${enclave}    IN    @{ENCLAVES}
     \  Connect to enclave Grafana     ${enclave}
 
+Grafana preferences contains main dashboard
+    [Documentation]  Check that main dashboard sets as home and stars
+    [Tags]  grafana  infra
+    LOG  ${GRAFANA_USER}
+    LOG  ${GRAFANA_PASSWORD}
+    Connect to main Grafana
+
+    ${PREFERENCES}=  Get preferences
+    ${MAIN_DASHBOARD}=  Get dashboard by  uid=${GRAFANA_MAIN_DASHBOARD_UID}
+    should be equal  &{PREFERENCES}[homeDashboardId]  ${MAIN_DASHBOARD["dashboard"]["id"]}
+
+    should be true  ${MAIN_DASHBOARD["meta"]["isStarred"]}
 Check Vertical Scailing
     [Documentation]  Runs "PERF TEST Vertical-Scaling" jenkins job to test vertical scailing
     [Tags]  k8s  scaling  infra

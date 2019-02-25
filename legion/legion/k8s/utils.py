@@ -55,6 +55,60 @@ ImageAttributes = NamedTuple('ImageAttributes', [
     ('ref', str)
 ])
 
+CPU_REDUCE_PAT = re.compile(r"^(\d+)(m?)$")
+MEM_REDUCE_PAT = re.compile(r"^(\d+)(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki|)$")
+
+
+def _calculate_request_res(value: int) -> int:
+    """
+    Calculate request for k8s resource
+
+    :param value: k8s resource
+    :type value: int
+    :return: reduced k8s resource - int
+    """
+    return value * (100 - legion.config.REDUCE_MODEL_REQUESTS_BY) // 100
+
+
+def reduce_mem_resource(res: str):
+    """
+    Reduce memory k8s resource
+
+    :param res: k8s memory
+    :type res: str
+    :return: k8s memory - str
+    """
+    matches = MEM_REDUCE_PAT.match(res)
+    if not matches:
+        raise ValueError('Malformed mem resource: {}'.format(res))
+
+    num, res_type = int(matches.group(1)), matches.group(2)
+
+    if res_type in ('G', 'Gi'):
+        num, res_type = num * 1024, 'Mi'
+
+    return '{}{}'.format(_calculate_request_res(num), res_type)
+
+
+def reduce_cpu_resource(res: str):
+    """
+    Reduce cpu k8s resource
+
+    :param res: k8s cpu
+    :type res: str
+    :return: k8s cpu - str
+    """
+    matches = CPU_REDUCE_PAT.match(res)
+    if not matches:
+        raise ValueError('Malformed cpu resource: {}'.format(res))
+
+    num, res_type = int(matches.group(1)), matches.group(2)
+
+    if not res_type:
+        num, res_type = num * 1000, 'm'
+
+    return '{}{}'.format(_calculate_request_res(num), res_type)
+
 
 def build_client():
     """
@@ -160,12 +214,9 @@ def get_docker_image_labels(image):
     # Get nexus registry host from ENV or image url
     try:
         if image_attributes.host == legion.config.MODEL_IMAGES_REGISTRY_HOST:
-            registry_host = legion.config.NEXUS_DOCKER_REGISTRY
+            registry_host = legion.config.DOCKER_REGISTRY
         else:
-            if urllib3.util.parse_url(image_attributes.host).port == 443:
-                registry_host = 'https://{}'.format(image_attributes.host)
-            else:
-                registry_host = 'http://{}'.format(image_attributes.host)
+            registry_host = '{}://{}'.format(legion.config.DOCKER_REGISTRY_PROTOCOL, image_attributes.host)
     except Exception as err:
         LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
         raise err
@@ -182,7 +233,7 @@ def get_docker_image_labels(image):
             manifest[0]["history"][0]["v1Compatibility"])["container_config"]["Labels"]
 
     except Exception as err:
-        raise Exception('Can\'t get image labels for  {} image: {}'.format(image, err))
+        raise Exception('Can\'t get image labels for {} image: {}'.format(image, err))
 
     required_headers = [
         legion.containers.headers.DOMAIN_MODEL_ID,
@@ -252,7 +303,7 @@ def parse_docker_image_url(image_url):
     :type image_url: str
     :return: namedtuple[str, Any]
     """
-    image_attrs_regexp = r'(.*)/([\w-]+/[\w\-]+):([\-\.\w]+)'
+    image_attrs_regexp = r'(.*?)/([\w\-/]+):([\-\.\w]+)'
     try:
         image_attrs_list = re.search(image_attrs_regexp, image_url)
 

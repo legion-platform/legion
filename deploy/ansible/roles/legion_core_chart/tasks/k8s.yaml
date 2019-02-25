@@ -1,0 +1,40 @@
+---
+
+- name: Copy git deploy key to host
+  copy:
+    content: "{{ jenkins.git_key | b64decode }}"
+    dest: "{{ tmp_dir }}/git.{{ cluster_name }}.deploy"
+
+- name: Remove old GIT secret
+  shell: kubectl --context {{ cluster_name }} delete secret legion-git-deploy --ignore-not-found=true
+
+- name: Create GIT secret
+  shell: kubectl --context {{ cluster_name }} create secret generic legion-git-deploy --from-file=id_rsa={{ tmp_dir }}/git.{{ cluster_name }}.deploy
+
+- set_fact:
+    tmp_values_file: "{{ tmp_dir }}/legion-core-values.{{ cluster_name }}.yaml"
+
+- name: Create legion configuration (values) file
+  template:
+    src: legion-core-values.yaml.j2
+    dest: "{{ tmp_values_file }}"
+    mode: 0777
+  vars:
+    git_secret_name: legion-git-deploy
+  with_items: "{{ enclaves }}"
+  loop_control:
+    loop_var: enclave
+
+- name: Install legion core helm chart
+  include_role:
+    name: deploy_helm_chart
+  vars:
+    release_name: legion-core
+    values_file: "{{ tmp_values_file }}"
+    namespace: default
+    src_chart_name: legion-core
+    chart_name: legion-helm/legion-core
+    chart_version: "{{ legion_version }}"
+
+- name: Label default namespace with legion-component=core
+  shell: kubectl --context {{ cluster_name }} label ns default legion-component=core --overwrite

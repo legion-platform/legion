@@ -3,14 +3,11 @@ localDomain: "cluster.local"
 enclaveDeploymentPrefix: "legion-"
 domainDelimiter: "."
 s3BucketName: ""
+cluster_prefix: ""
 
 auth:
   enabled: false
   annotations: {}
-
-secrets:
-  nexus:
-    admin: "jonny"
 
 jenkins:
   enabled: true
@@ -52,85 +49,64 @@ jenkins:
     adminGroups: ~
     readOnlyGroups: ~
 
-nexus:
-  # Nexus repository configuration
-  enabled: false
-  replicas: 1
-
-  image:
-    repository: "cavemandaveman/nexus"
-    tag: "3.6.0-02@sha256:f97c7180e9321aea96a5a7214a7e009580abfdaf41a815a25cbf498fd10cf924"
-
-  resources: {}
-
-  port: 8081
-  hostport: 31110
-
-  service:
-    annotations: {}
-
-  docker:
-    enabled: true
-    port: 5509
-    hostport: 31111
-    host: localhost
-
-  livenessProbe:
-    initialDelaySeconds: 60
-    periodSeconds: 30
-
-  readinessProbe:
-    initialDelaySeconds: 60
-    periodSeconds: 30
-    failureThreshold: 6
-
-  persistence:
-    enabled: true
-    storageClass: ""
-    accessMode: ReadWriteOnce
-    # existingClaim: ""
-    size: 20Gi
-
-  ## Create an Ingress for the Web UI
-  ingress:
-    enabled: true
-    annotations: {}
-    domain:
-      partial: nexus
-    tls:
-      enabled: true
-      autoSecretNameDeduction: true
-      # secretName: nexus.k8s-nightly.epm.kharlamov.biz-tlsa
-
 connections:
   docker:
     type: proxy
+    url: ~
+    user: ~
+    password: ~
 
 grafana:
-  enabled: true
-  image:
-    repository: "legion/k8s-grafana"
-    tag: "latest"
-
-  # graphite: "aaaa"
-
+  adminUser: admin_user
+  adminPassword: admin_password
+  fullnameOverride: "legion-core-grafana"
+  extraConfigmapMounts:
+    - name: grafana-model-build-js
+      configMap: grafana-model-build-js
+      mountPath: /usr/share/grafana/public/dashboards
+      readOnly: true
+  resources:
+    limits:
+      cpu: 512m
+      memory: 512Mi
+    requests:
+      cpu: 256m
+      memory: 256Mi
+  sidecar:
+    dashboards:
+      enabled: true
+    datasources:
+      enabled: true
+  persistence:
+    enabled: true
+    initChownData: true
+    storageClassName: gp2
+    accessModes:
+    - ReadWriteOnce
+    size: 10Gi
+  service:
+    labels:
+      legion.component: grafana
   ingress:
     enabled: true
-    annotations: {}
-    domain:
-      partial: grafana
+    hosts:
+    - "grafana.k8s-nightly.epm.kharlamov.biz"
+    - "grafana.local.grafana.k8s-nightly.epm.kharlamov.biz"
     tls:
-      enabled: true
-      autoSecretNameDeduction: true
-
-  openId:
-    enable: false
-    clientId: ~
-    clientSecret: ~
-    tokenServerUrl: ~
-    authServerUrl: ~
+    - secretName: "k8s-nightly.epm.kharlamov.biz-tls"
+      hosts: ["grafana.k8s-nightly.epm.kharlamov.biz"]
+    annotations:
+      nginx.ingress.kubernetes.io/auth-signin: "https://auth.legion.epm.org/oauth2/start?rd=https://$host$request_uri$is_args$args"
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth"
+  env:
+    GF_AUTH_ANONYMOUS_ENABLED: "true"
+  setup:
+    image:
+      repository: legion/k8s-ansible
+      tag: latest
 
 graphite:
+  url: "http://legion-core-graphite.default.svc.cluster.local:80"
   enabled: true
 
 

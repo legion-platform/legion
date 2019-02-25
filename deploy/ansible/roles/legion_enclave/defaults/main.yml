@@ -12,3 +12,6 @@ airflow_worker_cpu_limits: "2000m"
 airflow_worker_mem_requests: "1000Mi"
 airflow_worker_mem_limits: "2500Mi"
 helm_local_src: false
+model_docker_protocol: https
+model_resources_cpu: 256m
+model_resources_mem: 256Mi

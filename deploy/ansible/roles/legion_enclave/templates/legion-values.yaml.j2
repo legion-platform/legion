@@ -9,7 +9,9 @@ log_level: {{ log_level }}
 auth:
   enabled: true
   annotations:
-    nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$request_uri$is_args$args
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+        set_escape_uri $escaped_request_uri $request_uri;
+    nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
     nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
 {% endif %}
 
@@ -34,13 +36,26 @@ feedback:
     path: "model_log/${tag}/${model_id}/${model_version}/year=%Y/month=%m/day=%d/"
 
 grafana:
-  image:
-    repository: "{{ docker_repo }}/k8s-grafana"
-    tag: "{{ legion_version }}"
-
+  adminUser: "{{ grafana.admin.username }}"
+  adminPassword:  "{{ grafana.admin.password }}"
+  fullnameOverride: "legion-{{ enclave }}-grafana"
   ingress:
+    enabled: true
+    path: /
+    hosts:
+      - "grafana-{{ root_domain }}"
+      - "grafana.local.{{ root_domain }}"
     tls:
-      enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
+      - secretName: "{{ root_domain }}-tls"
+        hosts: ["grafana-{{ root_domain }}"]
+    annotations:
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+          set_escape_uri $escaped_request_uri $request_uri;
+      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
+      nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+
+graphite:
+  url: "http://legion-{{ enclave }}-graphite.{{ enclave }}.svc.cluster.local:80"
 
 edge:
   enabled: true
@@ -69,8 +84,20 @@ edi:
     tls:
       enabled: {% if use_https == "yes" %}true{% else %}false{% endif %}
 
+connections:
+  docker:
+    type: proxy
+    protocol: "{{ model_docker_protocol }}"
+    url: "{{ model_docker_url }}"
+    user: "{{ docker.user }}"
+    password: "{{ docker.password }}"
+
 secrets:
   token_secret: "{{ enclave_jwt_secret }}"
   token_ttl_minutes: "{{ api.jwt_ttl_minutes | default('120') }}"
   max_token_ttl_minutes: "{{ max_token_ttl_minutes | default('259200') }}"
   token_exp_datetime: "{{ api.jwt_exp_datetime | default('') }}"
+
+model_resources:
+  cpu: {{ model_resources_cpu }}
+  mem: {{ model_resources_mem }}

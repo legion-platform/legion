@@ -17,23 +17,26 @@
 legion k8s enclave class
 """
 import logging
+from collections import Counter
 
 import kubernetes
 import kubernetes.client
 import kubernetes.config
 import kubernetes.config.config_exception
+from kubernetes.client import V1ResourceRequirements
 
-import legion.containers.headers
 import legion.config
+import legion.containers.headers
+import legion.k8s.properties
+import legion.k8s.services
+import legion.k8s.watch
+import legion.utils
+
+from legion.k8s import utils as k8s_utils
 from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
 from legion.k8s.definitions import \
     LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI, \
     LEGION_COMPONENT_NAME_GRAFANA, LEGION_COMPONENT_NAME_GRAPHITE
-import legion.k8s.watch
-import legion.k8s.utils
-import legion.k8s.services
-import legion.k8s.properties
-import legion.utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -270,7 +273,8 @@ class Enclave:
                 LOGGER.info('Property {!r} has been set to default value {!r}'.format(k, v))
                 storage.save()
 
-    def deploy_model(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2):
+    def deploy_model(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, memory=None,
+                     cpu=None):
         """
         Deploy new model. Return True if model is deployed
 
@@ -284,15 +288,19 @@ class Enclave:
         :type livenesstimeout: int
         :param readinesstimeout: model pod startup timeout (used readiness probe)
         :type readinesstimeout: int
+        :param memory: limit memory for model deployment
+        :type memory: str
+        :param cpu: limit cpu for model deployment
+        :type cpu: str
         :return: (bool, :py:class:`legion.k8s.services.ModelService`) -- model service
         """
         if count < 1:
             raise Exception('Invalid scale parameter: should be greater then 0')
 
-        client = legion.k8s.utils.build_client()
+        client = k8s_utils.build_client()
         LOGGER.info('Gathering docker labels from image {}'.format(image))
-        labels = legion.k8s.utils.get_docker_image_labels(image)
-        image_meta_information = legion.k8s.utils.get_meta_from_docker_labels(labels)
+        labels = k8s_utils.get_docker_image_labels(image)
+        image_meta_information = k8s_utils.get_meta_from_docker_labels(labels)
         LOGGER.info('{} has been gathered from image {}'.format(image_meta_information, image))
 
         model_properties_default_values_str = labels.get(legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES)
@@ -340,6 +348,14 @@ class Enclave:
             timeout_seconds=2
         )
 
+        cpu = cpu or legion.config.MODEL_K8S_CPU
+        memory = memory or legion.config.MODEL_K8S_MEMORY
+
+        resources = V1ResourceRequirements(
+            limits={'cpu': cpu, 'memory': memory},
+            requests={'cpu': k8s_utils.reduce_cpu_resource(cpu), 'memory': k8s_utils.reduce_mem_resource(memory)}
+        )
+
         container = kubernetes.client.V1Container(
             name='model',
             image=image,
@@ -347,6 +363,7 @@ class Enclave:
                 kubernetes.client.V1EnvVar(name=k, value=str(v))
                 for k, v in container_env_variables.items()
             ],
+            resources=resources,
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,
             ports=[
@@ -464,21 +481,20 @@ class Enclave:
             :type endpoints_to_normalize: set[:py:class:`legion.k8s.services.ModelServiceEndpoint`]
             :return list[:py:class:`legion.k8s.services.ModelServiceEndpoint`] -- endpoints with default
             """
-            result = []
-            default_endpoints_models = {}
+            model_endpoints = []
+            unspecified_version_endpoints = {}
+            model_id_counter = Counter(x.model_service.id for x in endpoints_to_normalize)
 
             for endpoint in endpoints_to_normalize:
                 model_id = endpoint.model_service.id
+                model_endpoints.append(endpoint)
 
-                # TODO: Change in future, add default model choosing algorithm
-                default_endpoints_models[model_id] = endpoint
-                result.append(endpoint)
+                if model_id_counter[model_id] == 1:
+                    model_endpoints.append(endpoint.build_default())
+                else:
+                    unspecified_version_endpoints[model_id] = endpoint.build_default()
 
-            # Append defaults to the end
-            for default_endpoint in default_endpoints_models.values():
-                result.append(default_endpoint.build_default())
-
-            return result
+            return model_endpoints, list(unspecified_version_endpoints.values())
 
         for event_type, model_service in self.watch_models():
             model_endpoint = legion.k8s.services.ModelServiceEndpoint(model_service)
@@ -501,7 +517,7 @@ class Enclave:
 
         :return: (str, :py:class:`legion.k8s.services.Service`) -- (event type [ADDED, DELETED, MODIFIED], service)
         """
-        client = legion.k8s.utils.build_client()
+        client = k8s_utils.build_client()
 
         core_api = kubernetes.client.CoreV1Api(client)
 
@@ -520,7 +536,7 @@ class Enclave:
         :return: A tuple (event type [ADDED, DELETED, MODIFIED], service object)
         :rtype: (str, Enclave)
         """
-        client = legion.k8s.utils.build_client()
+        client = k8s_utils.build_client()
 
         core_api = kubernetes.client.CoreV1Api(client)
 
@@ -539,7 +555,7 @@ class Enclave:
         :type grace_period_seconds: int
         :return: None
         """
-        client = legion.k8s.utils.build_client()
+        client = k8s_utils.build_client()
         core_api = kubernetes.client.CoreV1Api(client)
 
         body = kubernetes.client.V1DeleteOptions(propagation_policy='Foreground',
@@ -554,7 +570,7 @@ def find_enclaves():
 
     :return list[Enclave] -- list of found enclaves
     """
-    client = legion.k8s.utils.build_client()
+    client = k8s_utils.build_client()
 
     core_api = kubernetes.client.CoreV1Api(client)
     all_namespaces = core_api.list_namespace()
