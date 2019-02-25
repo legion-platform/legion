@@ -231,3 +231,21 @@ class Grafana:
 
         if wait_until(is_metric_present, 5, 3):
             raise Exception('Metric is not present')
+
+    def get_dashboard_by(self, uid):
+        """
+        Get dashboard json by dashboard uid
+
+        :param uid: a dashboard uid
+        :type uid: str
+        :return: dashboard json - dict[str, Any]
+        """
+        return self._client.get_dashboard_by(uid)
+
+    def get_preferences(self):
+        """
+        Get grafana preferences
+
+        :return: grafana response - dict[str, Any]
+        """
+        return self._client.get_preferences()

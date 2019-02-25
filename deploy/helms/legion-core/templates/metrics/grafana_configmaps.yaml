@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-model-build-js
+data:
+  model_builds.js: |-
+{{ .Files.Get "files/model_builds.js" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: train-metrics-dashboard
+  labels:
+     grafana_dashboard: "1"
+data:
+  train-metrics-dashboard.json: |-
+{{ .Files.Get "files/train-metrics-dashboard.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-graphite-datasource
+  labels:
+     grafana_datasource: "1"
+data:
+  graphite-datasource.yaml: |-
+    apiVersion: 1
+    datasources:
+    - name: graphite
+      type: graphite
+      access: proxy
+      orgId: 1
+      url: "{{ .Values.graphite.url }}"
+      password: ""
+      user: ""
+      database: ""
+      basicAuth: false
+      isDefault: true
+      jsonData:
+         graphiteVersion: "1.0"
+      version: 1
