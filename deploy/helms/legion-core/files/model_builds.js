@@ -1,6 +1,5 @@
 /* global _ */
 'use strict';
-
 /**
  *   Copyright 2017 EPAM Systems
  *
@@ -20,7 +19,6 @@
 // accessible variables
 var window, document, ARGS, $, jQuery, moment, kbn;
 
-
 // get parameters
 var modelId = 'UNKNOWN_MODEL';
 
@@ -30,7 +28,6 @@ if (!_.isUndefined(ARGS.model)) {
 
 var dataSource = services.datasourceSrv.getAll().graphite;
 var baseUrl = grafanaBootData.settings.appSubUrl;
-
 
 function getMetricsList(callback) {
     var metricsLabel = 'stats.legion.model.' + modelId + '.metrics.*';
@@ -53,7 +50,6 @@ function getMetricsList(callback) {
     );
 }
 
-
 // Create dashboard
 var dashboard;
 dashboard = {
@@ -68,8 +64,6 @@ dashboard = {
     editable: false,
     hideControls: true
 };
-
-
 
 return function(callback) {
     getMetricsList(function(data) {
