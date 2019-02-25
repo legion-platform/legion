@@ -23,7 +23,6 @@ def createCluster() {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create cluster') {
                         sh """
-                        touch file1 && \
                         cd ${ansibleHome} && \
                         ansible-playbook create-cluster.yml \
                         ${ansibleVerbose} \
@@ -98,9 +97,6 @@ def updateTLSCert() {
                 docker.image("${env.param_docker_repo}/k8s-ansible:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Reissue TLS Certificates') {
                         sh """
-                        pwd
-                        ls -lsa
-                        touch 123
                         cd ${ansibleHome} && \
                         ansible-playbook update-tls-certificate.yml \
                         ${ansibleVerbose} \
