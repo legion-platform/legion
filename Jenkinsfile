@@ -337,7 +337,6 @@ EOL
                         }
                     }
                 }
-
             }
         }
         stage("Build toolchains Docker image"){
