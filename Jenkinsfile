@@ -497,7 +497,7 @@ EOL
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock") {
                                 dir ("${WORKSPACE}/deploy/helms") {
                                     chartNames = sh(returnStdout: true, script: 'ls').split()
                                     println (chartNames)
