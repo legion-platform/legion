@@ -26,7 +26,7 @@ pipeline {
         ansibleHome =  "/opt/legion/deploy/ansible"
         ansibleVerbose = '-v'
         helmLocalSrc = 'false'
-        mergeTag = "ci/${params.GitBranch}"
+        mergeBranch = "ci/${params.GitBranch}"
     }
 
     stages {
@@ -35,21 +35,21 @@ pipeline {
                 cleanWs()
                 checkout scm
                 script {
-                    print('Set interim merge tag')
+                    print('Set interim merge branch')
                     sh """
-                    echo ${env.param_push_git_tag}
-                    if [ `git tag |grep -x ${env.mergeTag}` ]; then
+                    echo ${env.mergeBranch}
+                    if [ `git branch | grep ${env.mergeBranch}` ]; then
                         echo 'Removing existing git tag'
-                        git tag -d ${env.mergeTag}
-                        git push origin :refs/tags/${env.mergeTag}
+                        git branch -D ${env.mergeBranch}
+                        git push origin --delete ${env.mergeBranch}
                     fi
-                    git tag ${env.mergeTag}
-                    git push origin ${env.mergeTag}
+                    git branch ${env.mergeBranch}
+                    git push origin ${env.mergeBranch}
                     """
 
                     legion = load "${env.sharedLibPath}"
                     legion.buildDescription()
-                    commitID = env.mergeTag
+                    commitID = env.mergeBranch
                 }
             }
         }
@@ -58,7 +58,7 @@ pipeline {
            steps {
                script {
                    result = build job: env.param_build_legion_job_name, propagate: true, wait: true, parameters: [
-                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                            string(name: 'EnableDockerCache', value: env.param_enable_docker_cache)
                    ]
 
@@ -102,7 +102,7 @@ pipeline {
            steps {
                script {
                    result = build job: env.param_terminate_cluster_job_name, propagate: true, wait: true, parameters: [
-                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                            string(name: 'LegionVersion', value: legionVersion),
                            string(name: 'Profile', value: env.param_profile),
                    ]
@@ -114,7 +114,7 @@ pipeline {
            steps {
                script {
                    result = build job: env.param_create_cluster_job_name, propagate: true, wait: true, parameters: [
-                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                            string(name: 'Profile', value: env.param_profile),
                            string(name: 'LegionVersion', value: legionVersion),
                            booleanParam(name: 'SkipKops', value: false)
@@ -127,7 +127,7 @@ pipeline {
            steps {
                script {
                    result = build job: env.param_deploy_legion_job_name, propagate: true, wait: true, parameters: [
-                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                            string(name: 'Profile', value: env.param_profile),
                            string(name: 'LegionVersion', value: legionVersion),
                            string(name: 'TestsTags', value: env.param_tests_tags ?: ""),
@@ -143,7 +143,7 @@ pipeline {
            steps {
                script {
                    result = build job: env.param_deploy_legion_enclave_job_name, propagate: true, wait: true, parameters: [
-                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                            string(name: 'Profile', value: env.param_profile),
                            string(name: 'TestsTags', value: env.param_tests_tags ?: ""),
                            string(name: 'LegionVersion', value: legionVersion),
@@ -157,7 +157,7 @@ pipeline {
            steps {
                script {
                    result = build job: env.param_terminate_legioin_enclave_job_name, propagate: true, wait: true, parameters: [
-                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                           [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                            string(name: 'Profile', value: env.param_profile),
                            string(name: 'LegionVersion', value: legionVersion),
                            string(name: 'EnclaveName', value: 'enclave-ci')
@@ -172,18 +172,19 @@ pipeline {
             script {
                 legion = load "${sharedLibPath}"
                 result = build job: env.param_terminate_cluster_job_name, propagate: true, wait: true, parameters: [
-                        [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeTag],
+                        [$class: 'GitParameterValue', name: 'GitBranch', value: env.mergeBranch],
                        string(name: 'LegionVersion', value: legionVersion),
                         string(name: 'Profile', value: env.param_profile)]
+
                 legion.notifyBuild(currentBuild.currentResult)
-                    print('Remove interim merge tag')
-                    sh """
-                    if [ `git tag |grep -x ${env.mergeTag}` ]; then
-                        echo 'Removing interim merge tag'
-                        git tag -d ${env.mergeTag}
-                        git push origin :refs/tags/${env.mergeTag}
+
+                print('Remove interim merge branch')
+                sh """
+                    if [ `git branch | grep ${env.mergeBranch}` ]; then
+                        git branch -D ${env.mergeBranch}
+                        git push origin --delete ${env.mergeBranch}
                     fi
-                    """
+                """
             }
             deleteDir()
         }
