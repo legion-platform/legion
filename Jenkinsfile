@@ -75,7 +75,11 @@ pipeline {
                     Globals.dockerCacheArg = (env.param_enable_docker_cache.toBoolean()) ? '' : '--no-cache'
                     println("Docker cache args: " + Globals.dockerCacheArg)
 
-                    Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user=${env.BUILD_USER} --label build_date=${buildDate}"
+                    wrap([$class: 'BuildUser']) {
+                        BUILD_USER = binding.hasVariable('BUILD_USER') ? '${BUILD_USER}' : "null"
+                    }
+
+                    Globals.dockerLabels = "--label git_revision=${Globals.rootCommit} --label build_id=${env.BUILD_NUMBER} --label build_user='${BUILD_USER}' --label build_date=${buildDate}"
                     println("Docker labels: " + Globals.dockerLabels)
 
                     print("Check code for security issues")
@@ -83,14 +87,14 @@ pipeline {
 
                     /// Define build version
                     if (env.param_stable_release) {
-                        if (env.param_release_version ){
-                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                        if (env.param_release_version ) {
+                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py '${BUILD_USER}'"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
                             exit 1
                         }
                     } else {
-                        Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                        Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py '${BUILD_USER}'"
                     }
 
                     Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
