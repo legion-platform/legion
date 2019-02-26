@@ -14,7 +14,6 @@
 #    limitations under the License.
 #
 import random
-import os
 
 from legion.model import ModelClient
 from legion.external.edi import build_client
