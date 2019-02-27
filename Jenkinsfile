@@ -160,7 +160,7 @@ pipeline {
         stage('Build Agent Docker Image') {
             steps {
                 script {
-                    legion.pullDockerCache(['python:3.6'],'legion-docker-agent')
+                    legion.pullDockerCache(['python:3.6.8'],'legion-docker-agent')
                     sh "docker build ${Globals.dockerCacheArg} --cache-from=${env.param_docker_registry}/legion-docker-agent:${env.param_docker_cache_source} -t legion/legion-docker-agent:${Globals.buildVersion} -f pipeline.Dockerfile ."
                     legion.uploadDockerImage('legion-docker-agent')
                 }
@@ -497,7 +497,7 @@ EOL
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock") {
                                 dir ("${WORKSPACE}/deploy/helms") {
                                     chartNames = sh(returnStdout: true, script: 'ls').split()
                                     println (chartNames)

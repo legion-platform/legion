@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - name: alpine
-        image: "alpine:3.5@sha256:b894cf1fe97eec6905af1761bff0a7c3e03a214d0271a76eaf42985ece38845c"
+        image: "alpine:3.5"
         resources:
           requests:
             cpu: "100m"

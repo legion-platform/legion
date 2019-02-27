@@ -72,7 +72,7 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
       - name: logger
-        image: "fluent/fluent-bit:0.14@sha256:b24f1ba60ddf254541d9d393af70d5444a48332bf1b24d29ba0e7c42f9a69686"
+        image: "fluent/fluent-bit:0.14"
         command: ["bash"]
         args:
           - /opt/edge-scripts/start-fluentbit.sh
@@ -87,7 +87,7 @@ spec:
         - name: edge-scripts
           mountPath: /opt/edge-scripts
       - name: dns
-        image: "janeczku/go-dnsmasq:release-1.0.7@sha256:3a99ad92353b55e97863812470e4f7403b47180f06845fdd06060773fe04184f"
+        image: "janeczku/go-dnsmasq:release-1.0.7"
         args:
           - --listen
           - "127.0.0.1:53"

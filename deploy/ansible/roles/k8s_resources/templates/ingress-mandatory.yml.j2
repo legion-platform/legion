@@ -29,7 +29,7 @@ spec:
         # Any image is permissible as long as:
         # 1. It serves a 404 page at /
         # 2. It serves 200 on a /healthz endpoint
-        image: "gcr.io/google_containers/defaultbackend:1.4@sha256:865b0c35e6da393b8e80b7e3799f777572399a4cff047eb02a81fa6e7a48ed4b"
+        image: "gcr.io/google_containers/defaultbackend:1.4"
         livenessProbe:
           httpGet:
             path: /healthz
@@ -242,7 +242,7 @@ spec:
       serviceAccountName: nginx-ingress-serviceaccount
       containers:
         - name: nginx-ingress-controller
-          image: "quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.15.0@sha256:7b79e1bc6437e6376dadf558e012adde6395bb28dee4a38ce08c7e5c9f220178"
+          image: "quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.15.0"
           args:
             - /nginx-ingress-controller
             - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
