@@ -23,7 +23,7 @@ config:
 
 image:
   repository: mintel/dex-k8s-authenticator
-  tag: "1.1.0@sha256:fe442258fbfdd67743132f1d45b19965eec09c1c97edac527f733586004c5c67"
+  tag: "1.1.0"
 
 service:
   type: ClusterIP

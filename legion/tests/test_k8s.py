@@ -33,7 +33,7 @@ from legion.k8s.utils import parse_docker_image_url
 from legion.k8s.utils import reduce_cpu_resource
 from legion.k8s.utils import reduce_mem_resource
 
-REGISTRY_IMAGE = 'registry:2.6.1@sha256:5eaafa2318aa0c4c52f95077c2a68bed0b13f6d2b464835723d4de1484052299'
+REGISTRY_IMAGE = 'registry:2.6.1'
 
 try:
     from .legion_test_utils import LegionTestContainer
