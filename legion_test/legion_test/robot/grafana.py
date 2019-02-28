@@ -16,10 +16,10 @@
 """
 Robot test library - grafana
 """
+import requests
 from legion_test.grafana import GrafanaClient
 from legion_test.utils import normalize_name, wait_until
 from legion_test.robot.dex_client import get_session_cookies
-import requests
 
 
 class Grafana:
