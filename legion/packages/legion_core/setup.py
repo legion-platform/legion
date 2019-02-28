@@ -62,6 +62,11 @@ def extract_version(filename):
             raise RuntimeError("Unable to find version string in %s." % (file_content,))
 
 
+def extract_package_with_version(package_name, filename):
+    version = extract_version(filename)
+    return '{}=={}'.format(package_name, version)
+
+
 setup(name='legion-core',
       version=extract_version(os.path.join(PACKAGE_ROOT_PATH, os.path.pardir, 'version.py')),
       description='Legion core package',
@@ -69,9 +74,19 @@ setup(name='legion-core',
       author='Alexey Kharlamov, Kirill Makhonin',
       author_email='alexey@kharlamov.biz, kirill@makhonin.biz',
       license='Apache v2',
-      packages=['legion_core'],
+      packages=['legion.core'],
       include_package_data=True,
       install_requires=extract_requirements(PIP_FILE_LOCK_PATH, 'default'),
+      extras_require={
+          'cli': [
+              extract_package_with_version('legion-cli',
+                                           os.path.join(PACKAGE_ROOT_PATH, os.path.pardir, 'version.py'))
+          ],
+          'services': [
+              extract_package_with_version('legion-services',
+                                           os.path.join(PACKAGE_ROOT_PATH, os.path.pardir, 'version.py'))
+          ]
+      },
       test_suite='nose.collector',
       tests_require=extract_requirements(PIP_FILE_LOCK_PATH, 'develop'),
       zip_safe=False)
