@@ -88,13 +88,13 @@ pipeline {
                     /// Define build version
                     if (env.param_stable_release) {
                         if (env.param_release_version ) {
-                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py '${BUILD_USER}'"
+                            Globals.buildVersion = sh returnStdout: true, script: "python3.6 tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} '${BUILD_USER}'"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
                             exit 1
                         }
                     } else {
-                        Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py '${BUILD_USER}'"
+                        Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id legion/legion/version.py ${env.BUILD_NUMBER} '${BUILD_USER}'"
                     }
 
                     Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
