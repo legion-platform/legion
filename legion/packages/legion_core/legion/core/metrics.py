@@ -21,8 +21,8 @@ import logging
 import time
 from enum import Enum
 
-import legion.config
-from legion.utils import normalize_name
+import legion.core.config
+from legion.core.utils import normalize_name
 
 
 LOGGER = logging.getLogger(__name__)

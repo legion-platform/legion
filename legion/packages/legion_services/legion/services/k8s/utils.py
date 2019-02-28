@@ -32,16 +32,16 @@ import kubernetes.config.config_exception
 from docker_registry_client import DockerRegistryClient
 
 import legion
-import legion.containers.docker
-import legion.containers.exceptions
-import legion.containers.headers
-import legion.config
-import legion.external.grafana
-from legion.utils import normalize_name
-import legion.k8s.services
-import legion.k8s.exceptions
-import legion.k8s.enclave
-from legion.k8s.definitions import \
+import legion.core.containers.docker
+import legion.core.containers.exceptions
+import legion.core.containers.headers
+import legion.core.config
+import legion.core.external.grafana
+from legion.core.utils import normalize_name
+import legion.core.k8s.services
+import legion.core.k8s.exceptions
+import legion.core.k8s.enclave
+from legion.services.k8s.definitions import \
     LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL, \
     LEGION_SYSTEM_LABEL, LEGION_SYSTEM_VALUE, \
     ModelContainerMetaInformation

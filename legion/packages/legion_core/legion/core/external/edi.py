@@ -24,11 +24,11 @@ from urllib.parse import urlparse
 import requests
 import requests.exceptions
 
-import legion.edi.server
-import legion.config
-import legion.containers.docker
-import legion.containers.definitions
-import legion.containers.local_deploy
+import legion.services.edi.server
+import legion.core.config
+import legion.core.containers.docker
+import legion.core.containers.definitions
+import legion.core.containers.local_deploy
 
 LOGGER = logging.getLogger(__name__)
 

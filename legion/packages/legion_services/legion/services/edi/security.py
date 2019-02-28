@@ -18,8 +18,8 @@ Security logic for legion
 """
 import logging
 
-import legion.config
-from legion.external import edi
+import legion.core.config
+from legion.core.external import edi
 
 LOG = logging.getLogger(__name__)
 SECURITY_SECTION_NAME = 'security'

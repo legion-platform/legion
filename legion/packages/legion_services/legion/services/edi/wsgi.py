@@ -18,8 +18,8 @@
 Entry point for WSGI server
 """
 
-from legion.logging import redirect_to_stdout, set_log_level
-from legion.edi.server import init_application
+from legion.core.logging import redirect_to_stdout, set_log_level
+from legion.services.edi.server import init_application
 
 set_log_level()
 redirect_to_stdout()

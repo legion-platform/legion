@@ -18,8 +18,8 @@ Enclave configmaps update notifier module for Legion Template
 """
 import logging
 
-from legion.k8s.utils import get_current_namespace
-from legion.k8s import K8SConfigMapStorage
+from legion.services.k8s.utils import get_current_namespace
+from legion.services.k8s import K8SConfigMapStorage
 
 LOGGER = logging.getLogger(__name__)
 

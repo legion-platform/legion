@@ -22,8 +22,8 @@ import logging
 
 import requests
 
-import legion.config
-from legion.utils import render_template
+import legion.core.config
+from legion.core.utils import render_template
 
 
 LOGGER = logging.getLogger(__name__)

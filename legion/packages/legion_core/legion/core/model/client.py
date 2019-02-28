@@ -20,10 +20,10 @@ import json
 
 import requests
 
-import legion.config
-import legion.containers.headers
-import legion.http
-from legion.utils import normalize_name
+import legion.core.config
+import legion.core.containers.headers
+import legion.core.http
+from legion.core.utils import normalize_name
 
 
 class ModelClient:

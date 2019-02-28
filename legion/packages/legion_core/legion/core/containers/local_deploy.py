@@ -22,14 +22,14 @@ import docker
 import docker.errors
 
 import legion
-import legion.model
+import legion.core.model
 import legion.pymodel
-import legion.config
-import legion.utils
-import legion.containers.headers
-import legion.containers.docker
-import legion.containers.exceptions
-import legion.containers.definitions
+import legion.core.config
+import legion.core.utils
+import legion.core.containers.headers
+import legion.core.containers.docker
+import legion.core.containers.exceptions
+import legion.core.containers.definitions
 
 LOGGER = logging.getLogger(__name__)
 

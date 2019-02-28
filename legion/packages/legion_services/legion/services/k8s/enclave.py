@@ -25,16 +25,16 @@ import kubernetes.config
 import kubernetes.config.config_exception
 from kubernetes.client import V1ResourceRequirements
 
-import legion.config
-import legion.containers.headers
-import legion.k8s.properties
-import legion.k8s.services
-import legion.k8s.watch
-import legion.utils
+import legion.core.config
+import legion.core.containers.headers
+import legion.services.k8s.properties
+import legion.services.k8s.services
+import legion.services.k8s.watch
+import legion.core.utils
 
-from legion.k8s import utils as k8s_utils
-from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
-from legion.k8s.definitions import \
+from legion.services.k8s import utils as k8s_utils
+from legion.services.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
+from legion.services.k8s.definitions import \
     LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI, \
     LEGION_COMPONENT_NAME_GRAFANA, LEGION_COMPONENT_NAME_GRAPHITE
 

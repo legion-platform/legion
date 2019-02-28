@@ -24,17 +24,17 @@ import kubernetes.client.rest
 import kubernetes.config
 import kubernetes.config.config_exception
 
-import legion.containers.headers
-import legion.k8s.enclave
-import legion.k8s.exceptions
-import legion.k8s.utils
-import legion.model
-from legion.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
-from legion.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
-from legion.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
-from legion.containers.definitions import ModelIdVersion
-from legion.containers.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
-from legion.utils import ensure_function_succeed
+import legion.core.containers.headers
+import legion.services.k8s.enclave
+import legion.services.k8s.exceptions
+import legion.services.k8s.utils
+import legion.core.model
+from legion.core.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
+from legion.services.k8s.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
+from legion.services.k8s.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
+from legion.core.containers.definitions import ModelIdVersion
+from legion.core.containers.definitions import STATUS_OK, STATUS_WARN, STATUS_FAIL
+from legion.core.utils import ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
 

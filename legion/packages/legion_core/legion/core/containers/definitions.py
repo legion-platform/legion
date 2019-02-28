@@ -19,8 +19,8 @@ legion k8s definitions functions
 import logging
 import json
 
-import legion.config
-import legion.containers.headers
+import legion.core.config
+import legion.core.containers.headers
 
 STATUS_OK = 'ok'
 STATUS_FAIL = 'fail'

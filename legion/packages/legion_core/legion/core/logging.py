@@ -21,7 +21,7 @@ Logging controller
 import logging
 import sys
 
-import legion.config
+import legion.core.config
 
 ROOT_LOGGER = logging.getLogger()
 

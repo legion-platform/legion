@@ -19,8 +19,8 @@ import functools
 
 import flask
 
-import legion.containers
-import legion.utils
+import legion.core.containers
+import legion.core.utils
 
 
 LOGGER = logging.getLogger(__name__)

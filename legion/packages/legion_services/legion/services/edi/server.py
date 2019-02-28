@@ -26,11 +26,11 @@ import jwt
 from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
 
-import legion.config
-import legion.external.grafana
-import legion.http
-import legion.k8s
-import legion.model
+import legion.core.config
+import legion.core.external.grafana
+import legion.core.http
+import legion.services.k8s
+import legion.core.model
 
 
 LOGGER = logging.getLogger(__name__)

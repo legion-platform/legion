@@ -30,14 +30,14 @@ import kubernetes.client.rest
 import kubernetes.config
 import kubernetes.config.config_exception
 
-import legion.containers.headers
-import legion.config
-import legion.model
-import legion.k8s.watch
-import legion.k8s.definitions
-import legion.k8s.utils
-import legion.k8s.services
-import legion.utils
+import legion.core.containers.headers
+import legion.core.config
+import legion.core.model
+import legion.services.k8s.watch
+import legion.services.k8s.definitions
+import legion.services.k8s.utils
+import legion.services.k8s.services
+import legion.core.utils
 
 LOGGER = logging.getLogger(__name__)
 
