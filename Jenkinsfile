@@ -52,6 +52,7 @@ pipeline {
             param_jenkins_plugins_repository = "${params.JenkinsPluginsRepository}"
             param_docker_registry = "${params.DockerRegistry}"
             param_docker_hub_registry = "${params.DockerHubRegistry}"
+            param_git_deploy_key = "${params.GitDeployKey}"
             ///Job parameters
             infraBuildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
             sharedLibPath = "deploy/legionPipeline.groovy"
@@ -123,21 +124,22 @@ pipeline {
                     if (env.param_stable_release) {
                         if (env.param_push_git_tag.toBoolean()){
                             print('Set Release tag')
-                            sh """
-                            echo ${env.param_push_git_tag}
-                            if [ `git tag |grep -x ${env.param_release_version}` ]; then
-                                if [ ${env.param_force_tag_push} = "true" ]; then
-                                    echo 'Removing existing git tag'
-                                    git tag -d ${env.param_release_version}
-                                    git push origin :refs/tags/${env.param_release_version}
-                                else
-                                    echo 'Specified tag already exists!'
-                                    exit 1
+                            sshagent(["${env.param_git_deploy_key}"]) {
+                                sh """
+                                if [ `git tag |grep -x ${env.param_release_version}` ]; then
+                                    if [ ${env.param_force_tag_push} = "true" ]; then
+                                        echo 'Removing existing git tag'
+                                        git tag -d ${env.param_release_version}
+                                        git push origin :refs/tags/${env.param_release_version}
+                                    else
+                                        echo 'Specified tag already exists!'
+                                        exit 1
+                                    fi
                                 fi
-                            fi
-                            git tag ${env.param_release_version}
-                            git push origin ${env.param_release_version}
-                            """
+                                git tag ${env.param_release_version}
+                                git push origin ${env.param_release_version}
+                                """
+                            }
                         } else {
                             print("Skipping release git tag push")
                         }
@@ -644,12 +646,14 @@ EOL
                             if (env.param_update_version_string.toBoolean()){
                                 print('Update Legion package version string')
                                 if (env.param_next_version){
-                                    sh """
-                                    git reset --hard
-                                    git checkout develop
-                                    sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
-                                    git commit -a -m "Bump Legion version to ${nextVersion}" && git push origin develop
-                                    """
+                                    sshagent(["${env.param_git_deploy_key}"]) {
+                                        sh """
+                                        git reset --hard
+                                        git checkout develop
+                                        sed -i -E "s/__version__.*/__version__ = \'${nextVersion}\'/g" legion/legion/version.py
+                                        git commit -a -m "Bump Legion version to ${nextVersion}" && git push origin develop
+                                        """
+                                    }
                                 } else {
                                     throw new Exception("next_version must be specified with update_version_string parameter")
                                 }
@@ -661,13 +665,15 @@ EOL
 
                         stage('Update Master branch'){
                             if (env.param_update_master.toBoolean()){
-                                sh """
-                                git reset --hard
-                                git checkout develop
-                                git checkout master && git pull -r origin master
-                                git pull -r origin develop
-                                git push origin master
-                                """
+                                sshagent(["${env.param_git_deploy_key}"]) {
+                                    sh """
+                                    git reset --hard
+                                    git checkout develop
+                                    git checkout master && git pull -r origin master
+                                    git pull -r origin develop
+                                    git push origin master
+                                    """
+                                }
                             }
                             else {
                                 print("Skipping Master branch update")
