@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+Flask = "==0.12.4"
+PyJWT = "==1.6.4"
+PyYAML = "==3.12"
+urllib3 = "==1.24"
+docker-registry-client = "==0.5.2"
+
+[requires]
+python_version = "3.6"
