@@ -153,6 +153,17 @@ pipeline {
                  passwordVariable: 'PASSWORD']]) {
                     sh "docker login -u ${USERNAME} -p ${PASSWORD} ${env.param_docker_registry}"
                 }
+                script {
+                    if (env.param_stable_release) {
+                        withCredentials([[
+                        $class: 'UsernamePasswordMultiBinding',
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'USERNAME',
+                        passwordVariable: 'PASSWORD']]) {
+                            sh "docker login -u ${USERNAME} -p ${PASSWORD}"
+                        }
+                    }
+                }
             }
         }
         stage('Build Agent Docker Image') {
