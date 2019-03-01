@@ -542,7 +542,14 @@ EOL
                                 dir ("${WORKSPACE}/legion-helm-charts") {
                                     if (env.param_stable_release) {
                                         //checkout repo with existing charts  (needed for generating correct repo index file )
-                                        git branch: "${env.param_helm_repo_git_branch}", poll: false, url: "${env.param_helm_repo_git_url}"
+                                        sshagent(["${env.param_git_deploy_key}"]) {
+                                            sh """
+                                            mkdir ~/.ssh || true
+                                            ssh-keyscan github.com >> ~/.ssh/known_hosts
+                                            git clone ${env.param_helm_repo_git_url}
+                                            git checkout ${env.param_helm_repo_git_branch}
+                                            """
+                                        }
                                         //move packed charts to folder (where repo was checkouted)
                                         for (chart in chartNames){
                                             sh"""
@@ -551,13 +558,15 @@ EOL
                                             git add ${chart}/${chart}-${Globals.buildVersion}.tgz
                                             """
                                         }
-                                        sh """
-                                        helm repo index ./
-                                        git add index.yaml
-                                        git status
-                                        git commit -m "Release ${Globals.buildVersion}"
-                                        git push origin ${env.param_helm_repo_git_branch}
-                                        """
+                                        sshagent(["${env.param_git_deploy_key}"]) {
+                                            sh """
+                                            helm repo index ./
+                                            git add index.yaml
+                                            git status
+                                            git commit -m "Release ${Globals.buildVersion}"
+                                            git push origin ${env.param_helm_repo_git_branch}
+                                            """
+                                        }
                                     }
                                 }
                             }
