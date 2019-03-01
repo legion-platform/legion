@@ -510,7 +510,7 @@ EOL
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
                                 dir ("${WORKSPACE}/deploy/helms") {
                                     chartNames = sh(returnStdout: true, script: 'ls').split()
                                     println (chartNames)
@@ -539,34 +539,41 @@ EOL
                                         }
                                     }
                                 }
-                                dir ("${WORKSPACE}/legion-helm-charts") {
-                                    if (env.param_stable_release) {
-                                        //checkout repo with existing charts  (needed for generating correct repo index file )
-                                        sshagent(["${env.param_git_deploy_key}"]) {
-                                            sh """
-                                            mkdir ~/.ssh || true
-                                            ssh-keyscan github.com >> ~/.ssh/known_hosts
-                                            git clone ${env.param_helm_repo_git_url}
-                                            git checkout ${env.param_helm_repo_git_branch}
-                                            """
-                                        }
-                                        //move packed charts to folder (where repo was checkouted)
-                                        for (chart in chartNames){
-                                            sh"""
-                                            mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
-                                            cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
-                                            git add ${chart}/${chart}-${Globals.buildVersion}.tgz
-                                            """
-                                        }
-                                        sshagent(["${env.param_git_deploy_key}"]) {
-                                            sh """
-                                            helm repo index ./
-                                            git add index.yaml
-                                            git status
-                                            git commit -m "Release ${Globals.buildVersion}"
-                                            git push origin ${env.param_helm_repo_git_branch}
-                                            """
-                                        }
+                                if (env.param_stable_release) {
+                                    //checkout repo with existing charts  (needed for generating correct repo index file )
+                                    sshagent(["${env.param_git_deploy_key}"]) {
+                                        sh """
+                                        mkdir ~/.ssh || true
+                                        ssh-keyscan github.com >> ~/.ssh/known_hosts
+                                        git clone ${env.param_helm_repo_git_url} && cd ${WORKSPACE}/legion-helm-charts
+                                        git status
+                                        ls -lsa
+                                        git checkout ${env.param_helm_repo_git_branch}
+                                        """
+                                    }
+                                    //move packed charts to folder (where repo was checkouted)
+                                    for (chart in chartNames){
+                                        sh"""
+                                        cd ${WORKSPACE}/legion-helm-charts
+                                        mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
+                                        cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
+                                        git status
+                                        ls -lsa
+                                        # git add ${chart}/${chart}-${Globals.buildVersion}.tgz
+                                        """
+                                    }
+                                    sshagent(["${env.param_git_deploy_key}"]) {
+                                        sh """
+                                        cd ${WORKSPACE}/legion-helm-charts
+                                        helm repo index ./
+                                        git add index.yaml
+                                        git status
+                                        ls -lsa
+                                        git commit -m "Release ${Globals.buildVersion}"
+                                        git push origin ${env.param_helm_repo_git_branch}
+                                        """
+                                    // Cleanup directory
+                                    sh "rm -rf ${WORKSPACE}/legion-helm-charts"
                                     }
                                 }
                             }
