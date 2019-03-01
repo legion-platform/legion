@@ -21,7 +21,7 @@ import requests
 import responses
 
 import legion.model.client
-import legion.config
+import legion.core.config
 
 
 class TestModelClient(unittest2.TestCase):
@@ -59,7 +59,7 @@ class TestModelClient(unittest2.TestCase):
         self.assertEqual(client.build_invoke_url('abcd'), root_url + '/invoke/abcd')
 
     def test_client_building_from_env(self):
-        with patch('legion.config.MODEL_SERVER_URL', 'test:10'):
+        with patch('legion.core.config.MODEL_SERVER_URL', 'test:10'):
             client = legion.model.client.ModelClient(self.MODEL_ID, self.MODEL_VERSION)
             root_url = 'test:10/api/model/{}/{}'.format(self.MODEL_ID, self.MODEL_VERSION)
             self.assertEqual(client.api_url, root_url)

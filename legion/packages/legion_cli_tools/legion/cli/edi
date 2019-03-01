@@ -25,8 +25,8 @@ import os
 import argparse
 import logging
 
-from legion.edi.server import serve
-import legion.utils
+from legion.services.edi.server import serve
+import legion.core.utils
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Legion API server')
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     v = vars(args)
 
-    if args.verbose or legion.utils.string_to_bool(os.getenv('VERBOSE', '')):
+    if args.verbose or legion.core.utils.string_to_bool(os.getenv('VERBOSE', '')):
         log_level = logging.DEBUG
     else:
         log_level = logging.ERROR

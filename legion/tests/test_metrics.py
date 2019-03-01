@@ -19,7 +19,7 @@ import time
 from unittest.mock import patch
 import unittest2
 
-import legion.config
+import legion.core.config
 import legion.metrics as metrics
 import legion.model
 
@@ -98,13 +98,13 @@ class TestMetrics(unittest2.TestCase):
 
     def test_default_endpoint_detection(self):
         host, port, namespace = metrics.get_metric_endpoint()
-        self.assertEqual(host, legion.config.GRAPHITE_HOST)
-        self.assertEqual(port, legion.config.GRAPHITE_PORT)
-        self.assertEqual(namespace, legion.config.GRAPHITE_NAMESPACE)
+        self.assertEqual(host, legion.core.config.GRAPHITE_HOST)
+        self.assertEqual(port, legion.core.config.GRAPHITE_PORT)
+        self.assertEqual(namespace, legion.core.config.GRAPHITE_NAMESPACE)
 
     def test_default_is_metrics_enabled(self):
         is_enabled = metrics.is_metrics_enabled()
-        self.assertEqual(is_enabled, legion.config.MODEL_TRAIN_METRICS_ENABLED)
+        self.assertEqual(is_enabled, legion.core.config.MODEL_TRAIN_METRICS_ENABLED)
 
     def test_custom_endpoint_detection(self):
         new_host = 'localhost'

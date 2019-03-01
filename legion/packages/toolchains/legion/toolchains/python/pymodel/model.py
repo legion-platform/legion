@@ -24,7 +24,7 @@ import logging
 
 import dill
 
-import legion.config
+import legion.core.config
 import legion.containers.headers
 import legion.model
 import legion.k8s.properties
@@ -197,7 +197,7 @@ class Model:
 
         storage_name = model_properties_storage_name(self.model_id, self.model_version)
         self._properties = legion.k8s.K8SConfigMapStorage(storage_name,
-                                                          cache_ttl=legion.config.MODEL_PROPERTIES_CACHE_TTL)
+                                                          cache_ttl=legion.core.config.MODEL_PROPERTIES_CACHE_TTL)
 
         LOGGER.info('Setting properties change callback getter to local function {!r} (id: {})'.format(
             self.get_on_property_change_callback,
@@ -367,7 +367,7 @@ class Model:
 
         file_name_has_been_deduced = False
         if not self._path:
-            file_name_from_env = legion.config.MODEL_FILE
+            file_name_from_env = legion.core.config.MODEL_FILE
             if file_name_from_env:
                 LOGGER.debug('Got target file name from ENV: {!r}'.format(file_name_from_env))
                 self._path = file_name_from_env
@@ -589,8 +589,8 @@ class Model:
         return {
             'legion.version': legion.__version__,
 
-            'jenkins.build_number': legion.config.BUILD_NUMBER,
-            'jenkins.build_id': legion.config.BUILD_ID,
+            'jenkins.build_number': legion.core.config.BUILD_NUMBER,
+            'jenkins.build_id': legion.core.config.BUILD_ID,
             'jenkins.build_tag': legion.config.BUILD_TAG,
             'jenkins.build_url': legion.config.BUILD_URL,
 

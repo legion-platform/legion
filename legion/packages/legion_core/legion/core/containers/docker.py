@@ -24,7 +24,6 @@ import docker.errors
 
 import legion
 import legion.core.model
-import legion.toolchains.pymodel
 import legion.core.config
 import legion.core.containers.headers
 import legion.core.utils
@@ -36,8 +35,6 @@ def build_docker_client():
     """
     Create docker client
 
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace` or None
     :return: :py:class:`docker.Client`
     """
     client = docker.from_env()
@@ -135,14 +132,14 @@ def build_docker_image(client, model_id, model_file, labels,
     :type docker_image_tag: str ot None
     :return: docker.models.Image
     """
-    with legion.utils.TemporaryFolder('legion-docker-build') as temp_directory:
+    with legion.core.utils.TemporaryFolder('legion-docker-build') as temp_directory:
         # Copy Jenkins workspace from mounted volume to persistent container directory
         target_workspace = '/app'
         target_model_file = os.path.join(target_workspace, model_id)
 
         LOGGER.info('Checking package state')
-        installed_packages = set(legion.utils.get_installed_packages())
-        requirements = set(legion.utils.get_list_of_requirements())
+        installed_packages = set(legion.core.utils.get_installed_packages())
+        requirements = set(legion.core.utils.get_list_of_requirements())
         missed_packages = requirements - installed_packages
         if missed_packages:
             missed_packages_requirements_list = ['{}=={}'.format(name, version)
@@ -152,7 +149,7 @@ def build_docker_image(client, model_id, model_file, labels,
         try:
             LOGGER.info('Copying model binary from {!r} to {!r}'
                         .format(model_file, target_model_file))
-            legion.utils.copy_file(model_file, target_model_file)
+            legion.core.utils.copy_file(model_file, target_model_file)
         except Exception as model_binary_copy_exception:
             LOGGER.exception('Unable to move model binary to persistent location',
                              exc_info=model_binary_copy_exception)
@@ -161,7 +158,7 @@ def build_docker_image(client, model_id, model_file, labels,
         try:
             workspace_path = os.getcwd()
             LOGGER.info('Copying model workspace from {!r} to {!r}'.format(workspace_path, target_workspace))
-            legion.utils.copy_directory_contents(workspace_path, target_workspace)
+            legion.core.utils.copy_directory_contents(workspace_path, target_workspace)
         except Exception as model_workspace_copy_exception:
             LOGGER.exception('Unable to move model workspace to persistent location',
                              exc_info=model_workspace_copy_exception)
@@ -172,7 +169,7 @@ def build_docker_image(client, model_id, model_file, labels,
             os.path.dirname(__file__),
             '..', 'templates', 'docker_files'
         ))
-        legion.utils.copy_directory_contents(additional_directory, temp_directory.path)
+        legion.core.utils.copy_directory_contents(additional_directory, temp_directory.path)
 
         # ALL Filesystem modification below next line would be ignored
         captured_image_id = commit_image(client)
@@ -192,8 +189,8 @@ def build_docker_image(client, model_id, model_file, labels,
 
         print('Executing {!r}'.format(symlink_create_command))
 
-        docker_file_content = legion.utils.render_template('Dockerfile.tmpl', {
-            'MODEL_PORT': legion.config.LEGION_PORT,
+        docker_file_content = legion.core.utils.render_template('Dockerfile.tmpl', {
+            'MODEL_PORT': legion.core.config.LEGION_PORT,
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
             'MODEL_ID': model_id,
             'MODEL_FILE': target_model_file,
@@ -222,39 +219,6 @@ def build_docker_image(client, model_id, model_file, labels,
             raise
 
         return image
-
-
-def generate_docker_labels_for_image(model_file, model_id):
-    """
-    Generate docker image labels from model file
-
-    :param model_file: path to model file
-    :type model_file: str
-    :param model_id: model id
-    :type model_id: str
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: dict[str, str] of labels
-    """
-    container = legion.pymodel.Model.load(model_file)
-
-    base = {
-        legion.containers.headers.DOMAIN_MODEL_ID: model_id,
-        legion.containers.headers.DOMAIN_MODEL_VERSION: container.model_version,
-        legion.containers.headers.DOMAIN_CLASS: 'pyserve',
-        legion.containers.headers.DOMAIN_CONTAINER_TYPE: 'model',
-        legion.containers.headers.DOMAIN_MODEL_PROPERTY_VALUES: container.properties.serialize_data_to_string()
-    }
-
-    for key, value in container.meta_information.items():
-        if hasattr(value, '__iter__') and not isinstance(value, str):
-            formatted_value = ', '.join(item for item in value)
-        else:
-            formatted_value = str(value)
-
-        base[legion.containers.headers.DOMAIN_PREFIX + key] = formatted_value
-
-    return base
 
 
 def generate_docker_labels_for_container(image):
@@ -295,8 +259,8 @@ def push_image_to_registry(client, image, external_image_name):
         version = image_name[version_delimiter + 1:]
         image_name = image_name[:version_delimiter]
 
-    docker_registry_user = legion.config.DOCKER_REGISTRY_USER
-    docker_registry_password = legion.config.DOCKER_REGISTRY_PASSWORD
+    docker_registry_user = legion.core.config.DOCKER_REGISTRY_USER
+    docker_registry_password = legion.core.config.DOCKER_REGISTRY_PASSWORD
     auth_config = None
 
     if docker_registry_user and docker_registry_password:
@@ -314,4 +278,4 @@ def push_image_to_registry(client, image, external_image_name):
     LOGGER.info('Successfully pushed image {}:{}'.format(image_and_registry, version))
 
     image_with_version = '{}/{}:{}'.format(registry, image_name, version)
-    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)
+    legion.core.utils.send_header_to_stderr(legion.core.containers.headers.IMAGE_TAG_EXTERNAL, image_with_version)

@@ -23,20 +23,19 @@ import stat
 import sys
 import time
 
-import legion.config
-import legion.containers.docker
-import legion.containers.definitions
-import legion.containers.headers
-import legion.k8s
-import legion.edi.security
-import legion.external.edi
-import legion.external.grafana
-import legion.serving.pyserve
-import legion.pymodel
-import legion.model
-import legion.utils
-import legion.template
-from legion.utils import Colors
+import legion.core.config
+import legion.core.containers.docker
+import legion.core.containers.definitions
+import legion.core.containers.headers
+import legion.core.external.edi
+import legion.core.external.grafana
+import legion.core.model
+import legion.core.utils
+import legion.cli.template
+import legion.services.k8s
+import legion.services.edi.security
+import legion.services.serving.pyserve
+from legion.core.utils import Colors
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,59 +62,6 @@ def output_table(headers, rows):
     for row in rows:
         print('|'.join('{name:{width}} '.format(name=str(column_value), width=columns_width[col_idx])
                        for col_idx, column_value in enumerate(row)))
-
-
-def build_model(args):
-    """
-    Build model
-
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`docker.model.Image` docker image
-    """
-    client = legion.containers.docker.build_docker_client()
-
-    model_file = args.model_file
-    if not model_file:
-        model_file = legion.config.MODEL_FILE
-
-    if not model_file:
-        raise Exception('Model file has not been provided')
-
-    if not os.path.exists(model_file):
-        raise Exception('Cannot find model binary {}'.format(model_file))
-
-    container = legion.pymodel.Model.load(model_file)
-    model_id = container.model_id
-    model_version = container.model_version
-
-    image_labels = legion.containers.docker.generate_docker_labels_for_image(model_file, model_id)
-
-    LOGGER.info('Building docker image...')
-
-    new_image_tag = args.docker_image_tag
-    if not new_image_tag:
-        new_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, legion.utils.deduce_extra_version())
-
-    image = legion.containers.docker.build_docker_image(
-        client,
-        model_id,
-        model_file,
-        image_labels,
-        new_image_tag
-    )
-
-    LOGGER.info('Image has been built: {}'.format(image))
-
-    legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_ID_LOCAL, image.id)
-
-    if image.tags:
-        legion.utils.send_header_to_stderr(legion.containers.headers.IMAGE_TAG_LOCAL, image.tags[0])
-
-    if args.push_to_registry:
-        legion.containers.docker.push_image_to_registry(client, image, args.push_to_registry)
-
-    return image
 
 
 def generate_token(args):
@@ -173,8 +119,8 @@ def inspect(args):
 
             for item in data:
                 deploy_mode = item['deployment'].deploy_mode
-                if deploy_mode == legion.containers.definitions.ModelDeploymentDescription.MODE_LOCAL:
-                    api_url = '{}:{}'.format(legion.config.LOCAL_DEPLOY_HOSTNAME,
+                if deploy_mode == legion.core.containers.definitions.ModelDeploymentDescription.MODE_LOCAL:
+                    api_url = '{}:{}'.format(legion.core.config.LOCAL_DEPLOY_HOSTNAME,
                                              item['deployment'].local_port)
                     print('{}* [LOCAL]{} {}{}{} (ver. {}) container: {} api: {} image: {} {}{}{}'.format(
                         item['line_color'], Colors.ENDC,
@@ -184,7 +130,7 @@ def inspect(args):
                         item['line_color'], item['errors'],
                         Colors.ENDC
                     ))
-                elif deploy_mode == legion.containers.definitions.ModelDeploymentDescription.MODE_CLUSTER:
+                elif deploy_mode == legion.core.containers.definitions.ModelDeploymentDescription.MODE_CLUSTER:
                     print('{}* [CLUSTER]{} {}{}{} (ver. {}) image: {} {}{}/{} pods ready {}{}'.format(
                         item['line_color'], Colors.ENDC,
                         Colors.UNDERLINE, item['deployment'].model, Colors.ENDC, item['deployment'].version,
@@ -225,8 +171,8 @@ def get_related_model_deployments(client, affected_deployments):
     :param client: EDI client
     :type client: :py:class:`legion.external.edi.EdiClient`
     :param affected_deployments: affected by main operation (e.g. deploy) model deployments
-    :type affected_deployments: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
-    :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- actual status of model deployments
+    :type affected_deployments: list[:py:class:`legion.core.containers.k8s.ModelDeploymentDescription`]
+    :return: list[:py:class:`legion.core.containers.k8s.ModelDeploymentDescription`] -- actual status of model deployments
     """
     affected_deployment_ids = {
         deployment.id_and_version
@@ -249,9 +195,9 @@ def wait_operation_finish(args, edi_client, model_deployments, wait_callback):
     :param edi_client: EDI client instance
     :type edi_client: :py:class:`legion.external.edi.EdiClient`
     :param model_deployments: models that have been affected during operation call
-    :type model_deployments: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+    :type model_deployments: list[:py:class:`legion.core.containers.k8s.ModelDeploymentDescription`]
     :param wait_callback: function that will be called to ensure that operation completed (should return True)
-    :type wait_callback: py:class:`Callable[[list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]],
+    :type wait_callback: py:class:`Callable[[list[:py:class:`legion.core.containers.k8s.ModelDeploymentDescription`]],
                                             typing.Optional[bool]]`
     :return: None
     """
@@ -288,7 +234,7 @@ def check_all_scaled(deployments_status, expected_scale, expected_count):
     Check that all model finished scale process and now are OK
 
     :param deployments_status: actual deployment status
-    :type deployments_status: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+    :type deployments_status: list[:py:class:`legion.core.containers.k8s.ModelDeploymentDescription`]
     :param expected_scale: expected scale
     :type expected_scale: int
     :param expected_count: expected count of models
@@ -391,8 +337,8 @@ def sandbox(args):
         work_directory=work_directory,
         legion_data_directory=legion_data_directory,
         model_file=model_file,
-        remove_arguments='--rm' if legion.config.SANDBOX_CREATE_SELF_REMOVING_CONTAINER else '',
-        docker_socket_path=legion.config.SANDBOX_DOCKER_MOUNT_PATH
+        remove_arguments='--rm' if legion.core.config.SANDBOX_CREATE_SELF_REMOVING_CONTAINER else '',
+        docker_socket_path=legion.core.config.SANDBOX_DOCKER_MOUNT_PATH
     )
     cmd = legion.utils.render_template('sandbox-cli.sh.tmpl', arguments)
 
@@ -433,7 +379,7 @@ def _check_variable_exists_or_exit(name):
     :type name: str
     :return: None
     """
-    if name not in legion.config.ALL_VARIABLES:
+    if name not in legion.core.config.ALL_VARIABLES:
         print('Variable {!r} is unknown'.format(name))
         sys.exit(1)
 
@@ -448,8 +394,8 @@ def _print_variable_information(name, show_secrets=False):
     :type show_secrets: bool
     :return: None
     """
-    description = legion.config.ALL_VARIABLES[name]
-    current_value = getattr(legion.config, name)
+    description = legion.core.config.ALL_VARIABLES[name]
+    current_value = getattr(legion.core.config, name)
     is_secret = any(sub in name for sub in ('_PASSWORD', '_TOKEN'))
     print('{} - {}\n  default: {!r}'.format(name, description.description, description.default))
     if current_value != description.default:
@@ -469,10 +415,10 @@ def config_set(args):
     variable_name = args.key.upper()
     _check_variable_exists_or_exit(variable_name)
 
-    if not legion.config.ALL_VARIABLES[variable_name].configurable_manually:
+    if not legion.core.config.ALL_VARIABLES[variable_name].configurable_manually:
         raise Exception('Variable {} is not configurable manually'.format(variable_name))
 
-    legion.config.update_config_file(**{variable_name: args.value})
+    legion.core.config.update_config_file(**{variable_name: args.value})
 
     _print_variable_information(variable_name, True)
 
@@ -499,8 +445,8 @@ def config_get_all(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    configurable_values = filter(lambda i: i[1].configurable_manually, legion.config.ALL_VARIABLES.items())
-    non_configurable_values = filter(lambda i: not i[1].configurable_manually, legion.config.ALL_VARIABLES.items())
+    configurable_values = filter(lambda i: i[1].configurable_manually, legion.core.config.ALL_VARIABLES.items())
+    non_configurable_values = filter(lambda i: not i[1].configurable_manually, legion.core.config.ALL_VARIABLES.items())
 
     print('Configurable manually variables:\n===========================')
     for name, _ in configurable_values:
@@ -522,7 +468,7 @@ def config_path(_):
     :type _: :py:class:`argparse.Namespace`
     :return: None
     """
-    print(legion.config.get_config_file_path())
+    print(legion.core.config.get_config_file_path())
 
 
 def configure_logging(args):
@@ -533,7 +479,7 @@ def configure_logging(args):
     :type args: :py:class:`argparse.Namespace`
     :return: None
     """
-    if args.verbose or legion.config.DEBUG:
+    if args.verbose or legion.core.config.DEBUG:
         log_level = logging.DEBUG
     else:
         log_level = logging.ERROR
@@ -570,17 +516,6 @@ def build_parser():  # pylint: disable=R0915
                                        help='Token expiration date in utc: %Y-%m-%dT%H:%M:%S')
     legion.edi.security.add_edi_arguments(generate_token_parser)
     generate_token_parser.set_defaults(func=generate_token)
-
-    # --------- LOCAL DOCKER SECTION -----------
-    build_model_parser = subparsers.add_parser('build', description='build model into new docker image (should be run '
-                                                                    'in the docker container)')
-    build_model_parser.add_argument('--model-file',
-                                    type=str, help='serialized model file name')
-    build_model_parser.add_argument('--docker-image-tag',
-                                    type=str, help='docker image tag')
-    build_model_parser.add_argument('--push-to-registry',
-                                    type=str, help='docker registry address')
-    build_model_parser.set_defaults(func=build_model)
 
     # --------- KUBERNETES SECTION -----------
     deploy_parser = subparsers.add_parser('deploy',
@@ -659,7 +594,7 @@ def build_parser():  # pylint: disable=R0915
     sandbox_parser = subparsers.add_parser('create-sandbox', description='create sandbox')
     sandbox_parser.add_argument('--image',
                                 type=str,
-                                default=legion.config.SANDBOX_PYTHON_TOOLCHAIN_IMAGE,
+                                default=legion.core.config.SANDBOX_PYTHON_TOOLCHAIN_IMAGE,
                                 help='explicitly set toolchain python image')
     sandbox_parser.add_argument('--force-recreate',
                                 action='store_true',

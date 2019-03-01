@@ -19,7 +19,7 @@ import logging
 import signal
 from enum import IntEnum
 
-from legion.template import LegionTemplateEngine
+from legion.cli.template import LegionTemplateEngine
 
 if __name__ == '__main__':
     signals = {sig_name: getattr(signal, sig_name).value

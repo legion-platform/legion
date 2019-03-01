@@ -15,7 +15,7 @@
 #
 import unittest2
 
-import legion.config
+import legion.core.config
 import legion.utils as utils
 
 
@@ -57,7 +57,7 @@ class TestUtilsTextOperations(unittest2.TestCase):
         )
 
         for example, valid_answer in examples:
-            self.assertEqual(legion.config.cast_bool(example), valid_answer)
+            self.assertEqual(legion.core.config.cast_bool(example), valid_answer)
 
     def test_string_to_bool_from_bool(self):
         examples = (
@@ -66,7 +66,7 @@ class TestUtilsTextOperations(unittest2.TestCase):
         )
 
         for example, valid_answer in examples:
-            self.assertEqual(legion.config.cast_bool(example), valid_answer)
+            self.assertEqual(legion.core.config.cast_bool(example), valid_answer)
 
 
 if __name__ == '__main__':

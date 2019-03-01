@@ -47,7 +47,7 @@ class EdiClient(metaclass=abc.ABCMeta):
         :type model: str
         :param version: (Optional) model version
         :type version: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`]
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`]
         """
         pass
 
@@ -56,7 +56,7 @@ class EdiClient(metaclass=abc.ABCMeta):
         """
         Perform info query on EDI server
 
-        :return: dict[:py:class:`legion.containers.definitions.ModelDeploymentDescription`]
+        :return: dict[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`]
         """
         pass
 
@@ -82,7 +82,7 @@ class EdiClient(metaclass=abc.ABCMeta):
         :type memory: str
         :param cpu: limit cpu for model deployment
         :type cpu: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         pass
@@ -100,7 +100,7 @@ class EdiClient(metaclass=abc.ABCMeta):
         :type version: str
         :param ignore_not_found: (Optional) ignore if cannot find models
         :type ignore_not_found: bool
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         pass
@@ -116,7 +116,7 @@ class EdiClient(metaclass=abc.ABCMeta):
         :type count: int
         :param version: (Optional) model version
         :type version: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         pass
@@ -155,7 +155,7 @@ class RemoteEdiClient(EdiClient):
         """
         self._base = base
         self._token = token
-        self._version = legion.edi.server.EDI_VERSION
+        self._version = legion.services.edi.server.EDI_VERSION
         self._retries = retries
 
     def _request(self, action, url, data=None, headers=None, cookies=None):
@@ -248,9 +248,9 @@ class RemoteEdiClient(EdiClient):
 
         :param response: EDI server response
         :type response: list[dict[str, any]]
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- parsed model deployments
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- parsed model deployments
         """
-        return [legion.containers.definitions.ModelDeploymentDescription.build_from_json(x) for x in response]
+        return [legion.core.containers.definitions.ModelDeploymentDescription.build_from_json(x) for x in response]
 
     def inspect(self, model=None, version=None):
         """
@@ -260,7 +260,7 @@ class RemoteEdiClient(EdiClient):
         :type model: str
         :param version: (Optional) model version
         :type version: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`]
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`]
         """
         payload = {}
         if model:
@@ -268,15 +268,15 @@ class RemoteEdiClient(EdiClient):
         if version:
             payload['version'] = version
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_INSPECT, payload=payload))
+        return self.parse_deployments(self._query(legion.services.edi.server.EDI_INSPECT, payload=payload))
 
     def info(self):
         """
         Perform info query on EDI server
 
-        :return: dict[:py:class:`legion.containers.definitions.ModelDeploymentDescription`]
+        :return: dict[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`]
         """
-        return self._query(legion.edi.server.EDI_INFO)
+        return self._query(legion.services.edi.server.EDI_INFO)
 
     def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, memory=None, cpu=None,
                **kwargs):  # pylint: disable=W0221
@@ -297,7 +297,7 @@ class RemoteEdiClient(EdiClient):
         :type memory: str
         :param cpu: limit cpu for model deployment
         :type cpu: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         payload = {
@@ -315,7 +315,7 @@ class RemoteEdiClient(EdiClient):
         if memory:
             payload['memory'] = memory
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_DEPLOY, action='POST', payload=payload))
+        return self.parse_deployments(self._query(legion.services.edi.server.EDI_DEPLOY, action='POST', payload=payload))
 
     def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
         """
@@ -329,7 +329,7 @@ class RemoteEdiClient(EdiClient):
         :type version: str
         :param ignore_not_found: (Optional) ignore if cannot find models
         :type ignore_not_found: bool
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         payload = {
@@ -343,7 +343,7 @@ class RemoteEdiClient(EdiClient):
         if version:
             payload['version'] = version
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_UNDEPLOY, action='POST', payload=payload))
+        return self.parse_deployments(self._query(legion.services.edi.server.EDI_UNDEPLOY, action='POST', payload=payload))
 
     def scale(self, model, count, version=None):
         """
@@ -355,7 +355,7 @@ class RemoteEdiClient(EdiClient):
         :type count: int
         :param version: (Optional) model version
         :type version: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         payload = {
@@ -365,7 +365,7 @@ class RemoteEdiClient(EdiClient):
         if version:
             payload['version'] = version
 
-        return self.parse_deployments(self._query(legion.edi.server.EDI_SCALE, action='POST', payload=payload))
+        return self.parse_deployments(self._query(legion.services.edi.server.EDI_SCALE, action='POST', payload=payload))
 
     def get_token(self, model_id, model_version, expiration_date=None):
         """
@@ -384,7 +384,7 @@ class RemoteEdiClient(EdiClient):
         if expiration_date:
             payload['expiration_date'] = expiration_date
 
-        response = self._query(legion.edi.server.EDI_GENERATE_TOKEN, action='POST', payload=payload)
+        response = self._query(legion.services.edi.server.EDI_GENERATE_TOKEN, action='POST', payload=payload)
         if response and 'token' in response:
             return response['token']
 
@@ -408,16 +408,16 @@ class LocalEdiClient(EdiClient):
         :type model: str
         :param version: (Optional) model version
         :type version: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`]
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`]
         """
-        client = legion.containers.docker.build_docker_client()
-        return legion.containers.local_deploy.get_models(client, model, version)
+        client = legion.core.containers.docker.build_docker_client()
+        return legion.core.containers.local_deploy.get_models(client, model, version)
 
     def info(self):
         """
         Perform info query on EDI server
 
-        :return: dict[:py:class:`legion.containers.definitions.ModelDeploymentDescription`]
+        :return: dict[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`]
         """
         LOGGER.debug('Returning {} as a information for local deployment server')
         return {}
@@ -430,11 +430,11 @@ class LocalEdiClient(EdiClient):
         :type image: str
         :param local_port: (Optional) port to deploy model on (for local mode deploy)
         :type local_port: int
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
-        client = legion.containers.docker.build_docker_client()
-        return legion.containers.local_deploy.deploy_model(client, image, local_port=local_port)
+        client = legion.core.containers.docker.build_docker_client()
+        return legion.core.containers.local_deploy.deploy_model(client, image, local_port=local_port)
 
     def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
         """
@@ -448,11 +448,11 @@ class LocalEdiClient(EdiClient):
         :type version: str
         :param ignore_not_found: (Optional) ignore if cannot find models
         :type ignore_not_found: bool
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
-        client = legion.containers.docker.build_docker_client()
-        return legion.containers.local_deploy.undeploy_model(client, model, version, ignore_not_found)
+        client = legion.core.containers.docker.build_docker_client()
+        return legion.core.containers.local_deploy.undeploy_model(client, model, version, ignore_not_found)
 
     def scale(self, model, count, version=None):
         """
@@ -464,7 +464,7 @@ class LocalEdiClient(EdiClient):
         :type count: int
         :param version: (Optional) model version
         :type version: str
-        :return: list[:py:class:`legion.containers.definitions.ModelDeploymentDescription`] -- affected model
+        :return: list[:py:class:`legion.core.containers.definitions.ModelDeploymentDescription`] -- affected model
                  deployments
         """
         raise Exception('Scale command is not supported for local deployment')

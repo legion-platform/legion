@@ -44,7 +44,7 @@ def is_metrics_enabled():
 
     :return: bool -- is sending of metrics is enabled or not
     """
-    return legion.config.MODEL_TRAIN_METRICS_ENABLED
+    return legion.core.config.MODEL_TRAIN_METRICS_ENABLED
 
 
 def get_metric_endpoint():
@@ -53,9 +53,9 @@ def get_metric_endpoint():
 
     :return: metric server endpoint
     """
-    host = legion.config.GRAPHITE_HOST
-    port = legion.config.GRAPHITE_PORT
-    namespace = legion.config.GRAPHITE_NAMESPACE
+    host = legion.core.config.GRAPHITE_HOST
+    port = legion.core.config.GRAPHITE_PORT
+    namespace = legion.core.config.GRAPHITE_NAMESPACE
     return host, port, namespace
 
 
@@ -66,7 +66,7 @@ def get_build_number():
     :return: int -- build number
     """
     try:
-        return legion.config.BUILD_NUMBER
+        return legion.core.config.BUILD_NUMBER
     except ValueError:
         raise Exception('Cannot parse build number as integer')
 

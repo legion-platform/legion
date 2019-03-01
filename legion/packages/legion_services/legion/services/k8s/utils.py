@@ -67,7 +67,7 @@ def _calculate_request_res(value: int) -> int:
     :type value: int
     :return: reduced k8s resource - int
     """
-    return value * (100 - legion.config.REDUCE_MODEL_REQUESTS_BY) // 100
+    return value * (100 - legion.core.config.REDUCE_MODEL_REQUESTS_BY) // 100
 
 
 def reduce_mem_resource(res: str):
@@ -213,10 +213,10 @@ def get_docker_image_labels(image):
 
     # Get nexus registry host from ENV or image url
     try:
-        if image_attributes.host == legion.config.MODEL_IMAGES_REGISTRY_HOST:
-            registry_host = legion.config.DOCKER_REGISTRY
+        if image_attributes.host == legion.core.config.MODEL_IMAGES_REGISTRY_HOST:
+            registry_host = legion.core.config.DOCKER_REGISTRY
         else:
-            registry_host = '{}://{}'.format(legion.config.DOCKER_REGISTRY_PROTOCOL, image_attributes.host)
+            registry_host = '{}://{}'.format(legion.core.config.DOCKER_REGISTRY_PROTOCOL, image_attributes.host)
     except Exception as err:
         LOGGER.error('Can\'t get registry host neither from ENV nor from image URL: {}'.format(err))
         raise err
@@ -224,8 +224,8 @@ def get_docker_image_labels(image):
     try:
         registry_client = DockerRegistryClient(
             host=registry_host,
-            username=legion.config.DOCKER_REGISTRY_USER,
-            password=legion.config.DOCKER_REGISTRY_PASSWORD,
+            username=legion.core.config.DOCKER_REGISTRY_USER,
+            password=legion.core.config.DOCKER_REGISTRY_PASSWORD,
             api_version=2
         )
         manifest = registry_client.repository(image_attributes.repo).manifest(image_attributes.ref)
@@ -236,9 +236,9 @@ def get_docker_image_labels(image):
         raise Exception('Can\'t get image labels for {} image: {}'.format(image, err))
 
     required_headers = [
-        legion.containers.headers.DOMAIN_MODEL_ID,
-        legion.containers.headers.DOMAIN_MODEL_VERSION,
-        legion.containers.headers.DOMAIN_CONTAINER_TYPE
+        legion.core.containers.headers.DOMAIN_MODEL_ID,
+        legion.core.containers.headers.DOMAIN_MODEL_VERSION,
+        legion.core.containers.headers.DOMAIN_CONTAINER_TYPE
     ]
 
     if any(header not in labels for header in required_headers):

@@ -22,7 +22,7 @@ import unittest2
 
 import legion.k8s
 import legion.k8s.utils
-import legion.config
+import legion.core.config
 import legion.external
 import legion_test.profiler_loader
 import legion_test.utils

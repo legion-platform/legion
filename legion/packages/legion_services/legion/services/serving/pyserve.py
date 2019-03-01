@@ -115,14 +115,14 @@ def model_invoke(model_id, model_version, endpoint='default'):
     """
     validate_model_id(model_id, model_version)
 
-    input_dict = legion.http.parse_request(request)
+    input_dict = legion.services.http.parse_request(request)
 
     model = app.config['model']
     if endpoint not in model.endpoints:
         raise Exception('Unknown endpoint {!r}'.format(endpoint))
 
     output = model.endpoints[endpoint].invoke(input_dict)
-    return legion.http.prepare_response(output, model_id=model_id, model_version=model_version,
+    return legion.services.http.prepare_response(output, model_id=model_id, model_version=model_version,
                                         model_endpoint=endpoint)
 
 
@@ -144,7 +144,7 @@ def model_batch(model_id, model_version, endpoint='default'):
     """
     validate_model_id(model_id, model_version)
 
-    input_dicts = legion.http.parse_batch_request(request)
+    input_dicts = legion.services.http.parse_batch_request(request)
 
     model = app.config['model']
     if endpoint not in model.endpoints:
@@ -152,7 +152,7 @@ def model_batch(model_id, model_version, endpoint='default'):
 
     responses = [model.endpoints[endpoint].invoke(input_dict) for input_dict in input_dicts]
 
-    return legion.http.prepare_response(responses, model_id=model_id, model_version=model_version,
+    return legion.services.http.prepare_response(responses, model_id=model_id, model_version=model_version,
                                         model_endpoint=endpoint)
 
 
@@ -306,7 +306,7 @@ def init_application(args=None):
     :return: :py:class:`Flask.app` -- application instance
     """
     application = create_application()
-    legion.http.configure_application(application, args)
+    legion.services.http.configure_application(application, args)
 
     # Put a model object into application configuration
     init_model(application)

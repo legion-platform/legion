@@ -17,8 +17,8 @@
 import sys
 import logging
 
-from legion.cli import build_parser
-import legion.utils
+from legion.cli.cli import build_parser
+import legion.core.utils
 
 
 if __name__ == '__main__':

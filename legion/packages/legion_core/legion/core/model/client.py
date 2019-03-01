@@ -224,7 +224,7 @@ class ModelClient:
             if files:
                 raise Exception('Files object not allowed for batch invocation')
 
-            request_lines.append(legion.http.encode_http_params(data))
+            request_lines.append(legion.services.http.encode_http_params(data))
 
         if not request_lines:
             return []

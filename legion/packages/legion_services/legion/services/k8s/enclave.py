@@ -329,7 +329,7 @@ class Enclave:
 
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
-            port=legion.config.LEGION_PORT
+            port=legion.core.config.LEGION_PORT
         )
 
         livenessprobe = kubernetes.client.V1Probe(
@@ -348,8 +348,8 @@ class Enclave:
             timeout_seconds=2
         )
 
-        cpu = cpu or legion.config.MODEL_K8S_CPU
-        memory = memory or legion.config.MODEL_K8S_MEMORY
+        cpu = cpu or legion.core.config.MODEL_K8S_CPU
+        memory = memory or legion.core.config.MODEL_K8S_MEMORY
 
         resources = V1ResourceRequirements(
             limits={'cpu': cpu, 'memory': memory},
@@ -367,7 +367,7 @@ class Enclave:
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,
             ports=[
-                kubernetes.client.V1ContainerPort(container_port=legion.config.LEGION_PORT,
+                kubernetes.client.V1ContainerPort(container_port=legion.core.config.LEGION_PORT,
                                                   name='api', protocol='TCP')
             ])
 
@@ -379,7 +379,7 @@ class Enclave:
                                                     labels=image_meta_information.kubernetes_labels),
             spec=kubernetes.client.V1PodSpec(
                 containers=[container],
-                service_account_name=legion.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
+                service_account_name=legion.core.config.MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
             ))
 
         deployment_spec = kubernetes.client.V1DeploymentSpec(
@@ -404,8 +404,8 @@ class Enclave:
             body=deployment,
             namespace=self.namespace)
 
-        retries = legion.config.K8S_API_RETRY_NUMBER_MAX_LIMIT
-        retry_timeout = legion.config.K8S_API_RETRY_DELAY_SEC
+        retries = legion.core.config.K8S_API_RETRY_NUMBER_MAX_LIMIT
+        retry_timeout = legion.core.config.K8S_API_RETRY_DELAY_SEC
 
         deployment_ready = legion.utils.ensure_function_succeed(
             lambda: legion.k8s.services.find_model_deployment(self.name, image_meta_information.model_id,

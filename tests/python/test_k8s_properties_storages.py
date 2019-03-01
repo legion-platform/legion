@@ -29,7 +29,7 @@ from nose.plugins.attrib import attr
 import legion.k8s
 import legion.k8s.utils
 import legion.k8s.definitions
-import legion.config
+import legion.core.config
 import legion.external
 import legion.model
 import legion.template_plugins

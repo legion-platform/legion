@@ -24,7 +24,7 @@ import unittest2
 
 import legion.k8s
 import legion.k8s.utils
-import legion.config
+import legion.core.config
 import legion.containers.docker
 import legion.containers.headers
 import legion.utils
@@ -95,7 +95,7 @@ class TestK8S(unittest2.TestCase):
         self.assertIsInstance(config, dict)
         self.assertDictEqual(config, valid)
 
-    @mock.patch('legion.config.DOCKER_REGISTRY_PROTOCOL', 'http')
+    @mock.patch('legion.core.config.DOCKER_REGISTRY_PROTOCOL', 'http')
     def test_get_labels_from_docker_image_exception_on_missed(self):
         with self.assertRaises(Exception) as raised_exception:
             with LegionTestContainer(image=REGISTRY_IMAGE, port=5000) as registry_container:
@@ -112,7 +112,7 @@ class TestK8S(unittest2.TestCase):
         self.assertEqual(len(raised_exception.exception.args), 1, 'exception doesn\'t contain arguments')
         self.assertTrue(raised_exception.exception.args[0].startswith('Missed one of '), 'wrong exception text')
 
-    @mock.patch('legion.config.DOCKER_REGISTRY_PROTOCOL', 'http')
+    @mock.patch('legion.core.config.DOCKER_REGISTRY_PROTOCOL', 'http')
     def test_get_labels_from_docker_image_exception(self):
         with LegionTestContainer(image=REGISTRY_IMAGE, port=5000) as registry_container:
             labels = self._build_test_model_labels()

@@ -112,8 +112,8 @@ def root():
 
 
 @blueprint.route(build_blueprint_url(EDI_API_ROOT), methods=['GET'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
 def api_root():
     """
     Root API endpoint
@@ -128,11 +128,11 @@ def api_root():
 
 
 @blueprint.route(build_blueprint_url(EDI_DEPLOY), methods=['POST'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
-@legion.http.populate_fields(image=str, model_iam_role=str, count=int, livenesstimeout=int, readinesstimeout=int,
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
+@legion.services.http.populate_fields(image=str, model_iam_role=str, count=int, livenesstimeout=int, readinesstimeout=int,
                              memory=str, cpu=str)
-@legion.http.requested_fields('image')
+@legion.services.http.requested_fields('image')
 def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, memory=None, cpu=None):
     """
     Deploy API endpoint
@@ -185,10 +185,10 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
 
 
 @blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model=str, version=str, grace_period=int, ignore_not_found=bool)
-@legion.http.requested_fields('model')
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
+@legion.services.http.populate_fields(model=str, version=str, grace_period=int, ignore_not_found=bool)
+@legion.services.http.requested_fields('model')
 def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     """
     Undeploy API endpoint
@@ -243,10 +243,10 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
 
 
 @blueprint.route(build_blueprint_url(EDI_SCALE), methods=['POST'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model=str, count=int, version=str)
-@legion.http.requested_fields('model', 'count')
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
+@legion.services.http.populate_fields(model=str, count=int, version=str)
+@legion.services.http.requested_fields('model', 'count')
 def scale(model, count, version=None):
     """
     Scale API endpoint
@@ -278,9 +278,9 @@ def scale(model, count, version=None):
 
 
 @blueprint.route(build_blueprint_url(EDI_INSPECT), methods=['GET'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model=str, version=str)
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
+@legion.services.http.populate_fields(model=str, version=str)
 def inspect(model=None, version=None):
     """
     Inspect API endpoint
@@ -297,7 +297,7 @@ def inspect(model=None, version=None):
         try:
             model_api_info = {}
 
-            model_client = legion.model.ModelClient.build_from_model_service(model_service)
+            model_client = legion.core.model.ModelClient.build_from_model_service(model_service)
 
             try:
                 model_api_info['result'] = model_client.info()
@@ -319,8 +319,8 @@ def inspect(model=None, version=None):
 
 
 @blueprint.route(build_blueprint_url(EDI_INFO), methods=['GET'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
 def info():
     """
     Info API endpoint.
@@ -334,10 +334,10 @@ def info():
 
 
 @blueprint.route(build_blueprint_url(EDI_GENERATE_TOKEN), methods=['POST'])
-@legion.http.provide_json_response
-@legion.http.authenticate(authenticate)
-@legion.http.populate_fields(model_id=str, model_version=str, expiration_date=str)
-@legion.http.requested_fields('model_id', 'model_version')
+@legion.services.http.provide_json_response
+@legion.services.http.authenticate(authenticate)
+@legion.services.http.populate_fields(model_id=str, model_version=str, expiration_date=str)
+@legion.services.http.requested_fields('model_id', 'model_version')
 def generate_token(model_id, model_version, expiration_date=None):
     """
     Generate JWT token
@@ -441,7 +441,7 @@ def init_application(args=None):
     :return: :py:class:`Flask.app` -- application instance
     """
     application = create_application()
-    legion.http.configure_application(application, args)
+    legion.services.http.configure_application(application, args)
     load_cluster_config(application)
 
     return application

@@ -24,7 +24,7 @@ import responses
 import requests
 import requests.adapters
 
-import legion.config
+import legion.core.config
 import legion.containers.docker
 import legion.containers.headers
 from legion.model import ModelClient
@@ -103,7 +103,7 @@ def patch_config(new_config):
     :return: None
     """
     contexts = [
-        patch('legion.config.' + key, new_value) for (key, new_value) in new_config.items()
+        patch('legion.core.config.' + key, new_value) for (key, new_value) in new_config.items()
     ]
     with contextlib.ExitStack() as stack:
         yield [stack.enter_context(inst) for inst in contexts]
@@ -1031,7 +1031,7 @@ class ModelLocalContainerExecutionContext:
 
             container_labels = legion.containers.docker.generate_docker_labels_for_container(self._image)
 
-            api_port_name = '{}/tcp'.format(legion.config.LEGION_PORT)
+            api_port_name = '{}/tcp'.format(legion.core.config.LEGION_PORT)
             ports = {api_port_name: 0}
 
             self.container = self._docker_client.containers.run(self._image_id,

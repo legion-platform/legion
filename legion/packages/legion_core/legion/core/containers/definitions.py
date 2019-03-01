@@ -196,9 +196,9 @@ class ModelDeploymentDescription:
         local_port = None
         binded_ports = docker_container_info.attrs['NetworkSettings']['Ports']
         for name, info in binded_ports.items():
-            if name.startswith('{}/'.format(legion.config.LEGION_PORT)):
+            if name.startswith('{}/'.format(legion.core.config.LEGION_PORT)):
                 if not info:
-                    LOGGER.debug('Port {} has not been bound for container {}'.format(legion.config.LEGION_PORT,
+                    LOGGER.debug('Port {} has not been bound for container {}'.format(legion.core.config.LEGION_PORT,
                                                                                       docker_container_info.id))
                 else:
                     local_port = int(info[0]['HostPort'])
@@ -206,13 +206,13 @@ class ModelDeploymentDescription:
                 break
 
         if not local_port:
-            LOGGER.debug('Cannot find port {} for container {}'.format(legion.config.LEGION_PORT,
+            LOGGER.debug('Cannot find port {} for container {}'.format(legion.core.config.LEGION_PORT,
                                                                        docker_container_info.id))
 
         return ModelDeploymentDescription(
             status=STATUS_OK if is_working else STATUS_FAIL,
-            model=docker_container_info.labels[legion.containers.headers.DOMAIN_MODEL_ID],
-            version=docker_container_info.labels[legion.containers.headers.DOMAIN_MODEL_VERSION],
+            model=docker_container_info.labels[legion.core.containers.headers.DOMAIN_MODEL_ID],
+            version=docker_container_info.labels[legion.core.containers.headers.DOMAIN_MODEL_VERSION],
             image=docker_container_info.image.id,
             scale=1 if is_working else 0,
             ready_replicas=1 if is_working else 0,

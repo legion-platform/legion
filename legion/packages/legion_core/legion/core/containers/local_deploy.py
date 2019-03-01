@@ -23,7 +23,6 @@ import docker.errors
 
 import legion
 import legion.core.model
-import legion.pymodel
 import legion.core.config
 import legion.core.utils
 import legion.core.containers.headers
@@ -49,22 +48,22 @@ def get_models(client, model_id=None, model_version=None):
     containers = [container
                   for container in client.containers.list()
                   if container.labels
-                  and legion.containers.headers.DOMAIN_MODEL_ID in container.labels
-                  and legion.containers.headers.DOMAIN_MODEL_VERSION in container.labels
-                  and model_id in (None, '*', container.labels[legion.containers.headers.DOMAIN_MODEL_ID])
-                  and model_version in (None, '*', container.labels[legion.containers.headers.DOMAIN_MODEL_VERSION])
+                  and legion.core.containers.headers.DOMAIN_MODEL_ID in container.labels
+                  and legion.core.containers.headers.DOMAIN_MODEL_VERSION in container.labels
+                  and model_id in (None, '*', container.labels[legion.core.containers.headers.DOMAIN_MODEL_ID])
+                  and model_version in (None, '*', container.labels[legion.core.containers.headers.DOMAIN_MODEL_VERSION])
                   ]
 
     prepared_containers = []
 
     for container in containers:
-        container_info = legion.containers.definitions.ModelDeploymentDescription.build_from_docker_container_info(
+        container_info = legion.core.containers.definitions.ModelDeploymentDescription.build_from_docker_container_info(
             container
         )
 
         model_api_info = {}
 
-        model_client = legion.model.ModelClient(container_info.id_and_version.id,
+        model_client = legion.core.model.ModelClient(container_info.id_and_version.id,
                                                 container_info.id_and_version.version,
                                                 host='{}:{}'.format(legion.config.LOCAL_DEPLOY_HOSTNAME,
                                                                     container_info.local_port))
@@ -79,7 +78,7 @@ def get_models(client, model_id=None, model_version=None):
             model_api_ok = False
 
         prepared_containers.append(
-            legion.containers.definitions.ModelDeploymentDescription.build_from_docker_container_info(
+            legion.core.containers.definitions.ModelDeploymentDescription.build_from_docker_container_info(
                 container, model_api_ok, model_api_info
             ))
 
@@ -142,14 +141,14 @@ def deploy_model(client, image, local_port=0):
         docker_image = client.images.pull(image)
         LOGGER.debug('Image {} has been pulled'.format(image))
 
-    model_id = docker_image.labels.get(legion.containers.headers.DOMAIN_MODEL_ID)
-    model_version = docker_image.labels.get(legion.containers.headers.DOMAIN_MODEL_VERSION)
+    model_id = docker_image.labels.get(legion.core.containers.headers.DOMAIN_MODEL_ID)
+    model_version = docker_image.labels.get(legion.core.containers.headers.DOMAIN_MODEL_VERSION)
 
     if not model_id or not model_version:
-        raise legion.containers.exceptions.IncompatibleLegionModelDockerImage(
+        raise legion.core.containers.exceptions.IncompatibleLegionModelDockerImage(
             'Legion docker labels for model image are missed: {}'.format(
-                ', '.join((legion.containers.headers.DOMAIN_MODEL_ID,
-                           legion.containers.headers.DOMAIN_MODEL_VERSION,)),
+                ', '.join((legion.core.containers.headers.DOMAIN_MODEL_ID,
+                           legion.core.containers.headers.DOMAIN_MODEL_VERSION,)),
             ))
 
     LOGGER.debug('Image {} contains model: {!r} version {!r}'.format(image, model_id, model_version))

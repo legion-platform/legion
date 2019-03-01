@@ -67,7 +67,7 @@ def _save_credentials(edi_url, token):
     :type token: str
     :return None
     """
-    legion.config.update_config_file(EDI_URL=edi_url,
+    legion.core.config.update_config_file(EDI_URL=edi_url,
                                      EDI_TOKEN=token)
 
 

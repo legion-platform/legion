@@ -116,7 +116,7 @@ class K8SPropertyStorage:
 
         resources = cls._find_k8s_resources(k8s_namespace)
         names = [
-            resource.metadata.labels[legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE]
+            resource.metadata.labels[legion.core.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE]
             for resource in resources
             if K8SPropertyStorage.is_valid_object(resource)
         ]
@@ -130,7 +130,7 @@ class K8SPropertyStorage:
         :param obj: kubernetes object
         :return: bool -- is valid K8S object or not
         """
-        return obj.metadata.labels and legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE in obj.metadata.labels
+        return obj.metadata.labels and legion.core.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE in obj.metadata.labels
 
     @property
     def k8s_name(self):
@@ -614,7 +614,7 @@ class K8SConfigMapStorage(K8SPropertyStorage):
         config_map_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
             name=self.k8s_name,
             labels={
-                legion.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE: self._storage_name
+                legion.core.containers.headers.DOMAIN_MODEL_PROPERTY_TYPE: self._storage_name
             }
         )
 

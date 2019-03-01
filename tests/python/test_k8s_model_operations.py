@@ -23,7 +23,7 @@ import unittest2
 
 import legion.k8s
 import legion.k8s.utils
-import legion.config
+import legion.core.config
 import legion.containers.docker
 import legion.external
 import legion.containers.headers

@@ -120,14 +120,14 @@ def prepare_response(response_data, model_id=None, model_version=None, model_end
     """
     response = flask.jsonify(response_data)
     if model_id:
-        response.headers[legion.containers.headers.MODEL_ID] = legion.utils.normalize_name(model_id, dns_1035=True)
+        response.headers[legion.core.containers.headers.MODEL_ID] = legion.utils.normalize_name(model_id, dns_1035=True)
 
     if model_version:
-        response.headers[legion.containers.headers.MODEL_VERSION] = legion.utils.normalize_name(
+        response.headers[legion.core.containers.headers.MODEL_VERSION] = legion.utils.normalize_name(
             model_version, dns_1035=True)
 
     if model_endpoint:
-        response.headers[legion.containers.headers.MODEL_ENDPOINT] = legion.utils.normalize_name(
+        response.headers[legion.core.containers.headers.MODEL_ENDPOINT] = legion.utils.normalize_name(
             model_endpoint, dns_1035=True)
 
     return response
@@ -264,14 +264,14 @@ def apply_cli_args(application, args):
 
 def copy_configuration(application):
     """
-    Set Flask app instance configuration from legion.config (internal file and ENV)
+    Set Flask app instance configuration from legion.core.config (internal file and ENV)
 
     :param application: Flask app instance
     :type application: :py:class:`Flask.app`
     :return: None
     """
-    for name in legion.config.ALL_VARIABLES:
-        value = getattr(legion.config, name)
+    for name in legion.core.config.ALL_VARIABLES:
+        value = getattr(legion.core.config, name)
         if value is not None:
             application.config[name] = value
 
@@ -292,8 +292,8 @@ def configure_application(application, args):
     application.config.from_pyfile('config_default.py')
 
     # 3rd priority: config from file (path to file from ENV)
-    if legion.config.FLASK_APP_SETTINGS_FILES:
-        application.config.from_pyfile(legion.config.FLASK_APP_SETTINGS_FILES, True)
+    if legion.core.config.FLASK_APP_SETTINGS_FILES:
+        application.config.from_pyfile(legion.core.config.FLASK_APP_SETTINGS_FILES, True)
 
     # 2nd priority: config from Legion File, ENV variables
     copy_configuration(application)

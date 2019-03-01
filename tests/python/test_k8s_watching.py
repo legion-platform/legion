@@ -28,7 +28,7 @@ import kubernetes.client.models.v1_object_meta
 import legion.k8s
 import legion.k8s.utils
 import legion.k8s.definitions
-import legion.config
+import legion.core.config
 import legion.external
 import legion.template_plugins
 import legion_test.profiler_loader
