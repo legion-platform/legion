@@ -18,6 +18,7 @@ legion k8s definitions functions
 """
 import logging
 import json
+import typing
 
 import legion.config
 import legion.containers.headers
@@ -27,6 +28,21 @@ STATUS_FAIL = 'fail'
 STATUS_WARN = 'warning'
 
 LOGGER = logging.getLogger(__name__)
+
+
+class ModelBuildParameters(typing.NamedTuple):
+    model_id: str
+    workspace_path: str
+    image_labels: typing.Dict[str, str]
+    local_image_tag: str
+    push_to_registry: typing.Optional[str] = None
+    build_id: str = None
+
+
+class ModelBuildResult(typing.NamedTuple):
+    ready: bool
+    image_name: str = None
+    error: str = None
 
 
 class ModelIdVersion:

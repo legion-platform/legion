@@ -23,6 +23,7 @@ package:
   baseImage:
     repository: "{{ docker_repo }}/base-python-image"
     tag: "{{ legion_version }}"
+  edi_image: "{{ docker_repo }}/k8s-edi:{{ legion_version }}"
 
 jenkins:
   enabled: true

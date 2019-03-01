@@ -363,6 +363,9 @@ NODE_NAME = ConfigVariableDeclaration('NODE_NAME', None, str,
                                       'Name of node [Jenkins]. It is used in model saving (during training)',
                                       False)
 
+MODEL_DOCKER_BUILDER_URL = ConfigVariableDeclaration('MODEL_DOCKER_BUILDER_URL', 'http://127.0.0.1:8080', str,
+                                                     'URL of the docker builder sidecar', False)
+
 # Model invocation testing
 MODEL_SERVER_URL = ConfigVariableDeclaration('MODEL_SERVER_URL', 'http://edge', str,
                                              'Default url of model server',
@@ -487,6 +490,8 @@ MODEL_PROPERTIES_CACHE_TTL = ConfigVariableDeclaration('MODEL_PROPERTIES_CACHE_T
 NAMESPACE = ConfigVariableDeclaration('NAMESPACE', None, str,
                                       'Name of kubernetes namespace inside Pod',
                                       False)
+
+POD_NAME = ConfigVariableDeclaration('POD_NAME', None, str, 'Current pod name', False)
 
 K8S_API_RETRY_NUMBER_MAX_LIMIT = ConfigVariableDeclaration('K8S_API_RETRY_NUMBER_MAX_LIMIT', 5, int,
                                                            'Count of retries for K8S API calls',

@@ -18,7 +18,7 @@ FROM legion/base-python-image:${version}
 
 EXPOSE 5000
 
-COPY uwsgi.ini /etc/uwsgi/
+COPY edi_uwsgi.ini model_builder_uwsgi.ini /etc/uwsgi/
 
 # Install Legion
 ARG pip_extra_index_params=""
@@ -26,4 +26,4 @@ ARG pip_legion_version_string=""
 RUN pip3 install --disable-pip-version-check $pip_extra_index_params legion$pip_legion_version_string
 
 ENTRYPOINT []
-CMD ["/usr/local/bin/uwsgi", "--strict", "--ini", "/etc/uwsgi/uwsgi.ini"]
+CMD ["/usr/local/bin/uwsgi", "--strict", "--ini", "/etc/uwsgi/edi_uwsgi.ini"]
