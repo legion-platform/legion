@@ -89,7 +89,7 @@ pipeline {
                     /// Define build version
                     if (env.param_stable_release) {
                         if (env.param_release_version ){
-                            Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py ${env.BUILD_NUMBER} ${env.BUILD_USER}"
+                            Globals.buildVersion = sh returnStdout: true, script: "python tools/update_version_id --build-version=${env.param_release_version} legion/legion/version.py '${BUILD_USER}'"
                         } else {
                             print('Error: ReleaseVersion parameter must be specified for stable release')
                             exit 1
@@ -272,15 +272,14 @@ EOL
                                 """
 
                                 if (env.param_stable_release) {
-                                    stage('Upload Legion package to pypi.org'){
-                                        if (env.param_upload_legion_package.toBoolean()){
-                                            withCredentials([[
-                                            $class: 'UsernamePasswordMultiBinding',
-                                            credentialsId: 'pypi-repository',
-                                            usernameVariable: 'USERNAME',
-                                            passwordVariable: 'PASSWORD']]) {
-                                                sh """
-                                                cat > /tmp/.pypirc << EOL
+                                    if (env.param_upload_legion_package.toBoolean()){
+                                        withCredentials([[
+                                        $class: 'UsernamePasswordMultiBinding',
+                                        credentialsId: 'pypi-repository',
+                                        usernameVariable: 'USERNAME',
+                                        passwordVariable: 'PASSWORD']]) {
+                                            sh """
+                                            cat > /tmp/.pypirc << EOL
 [distutils]
 index-servers =
   ${env.param_test_pypi_distribution_target_name}
@@ -295,13 +294,12 @@ username=${env.USERNAME}
 password=${env.PASSWORD}
 EOL
 """
-                                            }
-                                            sh """
-                                            twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-${Globals.buildVersion}.*'
-                                            """
-                                        } else {
-                                            print("Skipping package upload")
                                         }
+                                        sh """
+                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
+                                        """
+                                    } else {
+                                        print("Skipping package upload")
                                     }
                                 }
                             }
@@ -333,7 +331,7 @@ EOL
         
         stage("Build and Upload Base Docker Image & Ansible image ") {
             parallel {
-                stage ("Build Base python image") {
+                stage("Build Base python image") {
                     steps {
                         script {
                             legion.pullDockerCache(['ubuntu:16.04'], 'base-python-image')
@@ -546,8 +544,6 @@ EOL
                                         mkdir ~/.ssh || true
                                         ssh-keyscan github.com >> ~/.ssh/known_hosts
                                         git clone ${env.param_helm_repo_git_url} && cd ${WORKSPACE}/legion-helm-charts
-                                        git status
-                                        ls -lsa
                                         git checkout ${env.param_helm_repo_git_branch}
                                         """
                                     }
@@ -556,10 +552,8 @@ EOL
                                         sh"""
                                         cd ${WORKSPACE}/legion-helm-charts
                                         mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
-                                        cp ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
-                                        git status
-                                        ls -lsa
-                                        # git add ${chart}/${chart}-${Globals.buildVersion}.tgz
+                                        mv ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
+                                        git add ${chart}/${chart}-${Globals.buildVersion}.tgz
                                         """
                                     }
                                     sshagent(["${env.param_git_deploy_key}"]) {
@@ -568,14 +562,18 @@ EOL
                                         helm repo index ./
                                         git add index.yaml
                                         git status
-                                        ls -lsa
                                         git commit -m "Release ${Globals.buildVersion}"
                                         git push origin ${env.param_helm_repo_git_branch}
                                         """
-                                    // Cleanup directory
-                                    sh "rm -rf ${WORKSPACE}/legion-helm-charts"
+
                                     }
                                 }
+
+                                // Cleanup directory
+                                sh """
+                                rm -rf ${WORKSPACE}/legion-helm-charts
+                                rm -rf ${WORKSPACE}/deploy/helms
+                                """
                             }
                         }
                     }
