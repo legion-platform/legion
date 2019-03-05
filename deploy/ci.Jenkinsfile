@@ -177,7 +177,10 @@ pipeline {
                         string(name: 'Profile', value: env.param_profile)]
 
                 legion.notifyBuild(currentBuild.currentResult)
-
+            }
+        }
+        cleanup {
+            script {
                 print('Remove interim merge branch')
                 sh """
                     if [ `git branch | grep ${env.mergeBranch}` ]; then
