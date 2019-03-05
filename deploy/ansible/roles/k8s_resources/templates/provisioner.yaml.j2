@@ -1,0 +1,115 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: efs-provisioner
+  namespace: kube-system
+data:
+  file.system.id: {{ airflow_efs.efs.file_system_id }}
+  aws.region: {{ aws_region }}
+  provisioner.name: {{ cluster_name }}/aws-efs
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: kube-system
+  name: efs-provisioner
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: efs-provisioner-runner
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: run-efs-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: efs-provisioner
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: efs-provisioner-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: efs-provisioner
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: efs-provisioner
+  strategy:
+    type: Recreate 
+  template:
+    metadata:
+      labels:
+        app: efs-provisioner
+    spec:
+      serviceAccount: efs-provisioner
+      containers:
+        - name: efs-provisioner
+          image: "quay.io/external_storage/efs-provisioner:v1.0.0-k8s1.10"
+          env:
+            - name: FILE_SYSTEM_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: efs-provisioner
+                  key: file.system.id
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: efs-provisioner
+                  key: aws.region
+            - name: PROVISIONER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: efs-provisioner
+                  key: provisioner.name
+          volumeMounts:
+            - name: pv-volume
+              mountPath: /persistentvolumes
+      volumes:
+        - name: pv-volume
+          nfs:
+            server: {{ airflow_efs.efs.file_system_id }}.efs.{{ aws_region }}.amazonaws.com
+            path: /
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ storageclass }}
+  namespace: kube-system
+provisioner: {{ cluster_name }}/aws-efs
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: efs
+  namespace: kube-system
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "{{ storageclass }}"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Mi
+---
