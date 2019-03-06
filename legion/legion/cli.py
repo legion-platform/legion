@@ -17,11 +17,13 @@
 CLI logic for legion
 """
 import argparse
+import json
 import logging
 import os
 import stat
 import sys
 import time
+import typing
 import uuid
 
 import legion.config
@@ -37,9 +39,11 @@ import legion.pymodel
 import legion.model
 import legion.utils
 import legion.template
+from legion.external import edge
 from legion.external.docker import request_to_build_image
 from legion.containers.definitions import ModelBuildParameters
 from legion.containers.docker import build_model_docker_image, prepare_build
+from legion.external.edge import model_config_prefix
 from legion.utils import Colors
 
 LOGGER = logging.getLogger(__name__)
@@ -125,6 +129,10 @@ def generate_token(args):
     """
     edi_client = legion.external.edi.build_client(args)
     token = edi_client.get_token(args.model_id, args.model_version, args.expiration_date)
+
+    legion.config.update_config_file(section=legion.config.MODEL_JWT_TOKEN_SECTION,
+                                     **{model_config_prefix(args.model_id, args.model_version): token})
+
     print(token)
 
 
@@ -340,6 +348,59 @@ def scale(args):
                           lambda affected_deployments_status: check_all_scaled(affected_deployments_status,
                                                                                args.scale,
                                                                                len(model_deployments)))
+
+
+def _parse_p_parameter(var: str):
+    """
+    Parse cli `-p key=value` parameter
+
+    :param var:
+    :return:
+    """
+    key, value = var.split('=')
+    key, value = key.strip(), value.strip()
+
+    if not key:
+        raise ValueError(f'Keys is empty: {key}')
+
+    if not value:
+        raise ValueError(f'Values is empty: {value}')
+
+    return key, value
+
+
+def _prepare_invoke_parameters(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
+    """
+    Convert `-p` and `--json` cli parameters to the dict by the following rules:
+        1) Evaluate `--json` parameter value to the dict
+        2) Insert every `-p key=value`to the created dict
+
+    :param args: cli argument
+    :return dict result
+    """
+    params: typing.Dict[str, typing.Any] = {}
+
+    if args.json:
+        params = {**params, **json.loads(args.json)}
+
+    if args.p:
+        for k, v in args.p:
+            params[k] = v
+
+    return params
+
+
+def invoke(args: argparse.Namespace):
+    """
+    Invoke model endpoint
+
+    :param args: command arguments with .model_id, .namespace and .scale
+    :return: None
+    """
+    edge_client = edge.build_client(args)
+    params = _prepare_invoke_parameters(args)
+    result = edge_client.invoke_model_api(args.model_id, args.model_version, params, args.endpoint)
+    print(f'Model response: {result}')
 
 
 def deploy(args):
@@ -669,6 +730,22 @@ def build_parser():  # pylint: disable=R0915
                                 action='store_true',
                                 help='recreate sandbox if it already existed')
     sandbox_parser.set_defaults(func=sandbox)
+
+    # --------- MODEL SECTION -----------
+    invoke_parser = subparsers.add_parser('invoke', description='invoke model')
+    invoke_parser.add_argument('--model-id', type=str, help='model ID', required=True)
+    invoke_parser.add_argument('--model-version', type=str, help='model version', required=True)
+    invoke_parser.add_argument('--model-server-url', type=str, default=legion.config.MODEL_SERVER_URL,
+                               help='Url of model server')
+    invoke_parser.add_argument('-p', action='append', help='Key-value parameter. For example: -p x=2',
+                               type=_parse_p_parameter)
+    invoke_parser.add_argument('--json', type=str, help='Json parameter. For example: --json {"x": 2}')
+    invoke_parser.add_argument('--endpoint', default='default', help='Invoke specific module endpoint', type=str)
+    invoke_parser.add_argument('--local', action='store_true', help='Invoke locally deployed model')
+    invoke_parser.add_argument('--jwt', type=str, default=legion.config.MODEL_JWT_TOKEN,
+                               help='Model jwt token')
+
+    invoke_parser.set_defaults(func=invoke)
 
     # --------- UTILS SECTION -----------
     list_dependencies_parser = subparsers.add_parser('list-dependencies', description='list package dependencies')

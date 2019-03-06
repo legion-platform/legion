@@ -154,12 +154,15 @@ sandbox> jupyter notebook
 # Create model's image
 sandbox> legionctl build
 
-# Run builded docker container (ON HOST MACHINE)
-host> docker run --rm -p 5000:5000 61bdddad33ea
+# Deploy model locally: legionctl deploy <builded-model-image> --local
+# For example
+sandbox or host> legionctl deploy model-summation:latest --local
 
-# ... test model API using web-browser / Postman / wget
+# Invoke model: legionctl invoke --model-id <model-id> --model-version <model-version> -p <parameters> --local
+# For example
+sandbox or host> legionctl invoke --model-id test-summation --model -version '2.0' -p a=1 -p b=2 --local
 
-# Exit from container and terminate machine
-sandbox> exit
+# Undeploy your model: legionctl undeploy <model-id> --model-version <model-version> --local
+# For example
+sandbox or host> legionctl undeploy test-summation --model-version '2.0' --local
 ```
-

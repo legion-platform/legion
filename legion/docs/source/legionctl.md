@@ -34,9 +34,19 @@ legionctl login --edi <edi-url> --token <your-token>
 legionctl inspect
 ```
 
-##Model
+## Model
 
 To get json web model token for a model, you can use a command:
 ```bash
 legionctl generate-token --edi <edi-url> --model-id <model-id> --model-version <model-version>
 ```
+
+## Invoke models
+
+You can invoke a model locally or remotely:
+```bash
+legionctl invoke --model-id 'test-summation' --model-version '1.0' --model-server-url 'https://edge-company-a.legion.org' -p a=1
+```
+
+You can pass model parameters as key-value `-p a=1` or json structure `--json {"a": 1}`.
+If you have both kind of parameters that they will be merged. The key-value parameter has a higher priority.
