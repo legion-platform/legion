@@ -2,7 +2,6 @@ rootDomain: k8s-nightly.epm.kharlamov.biz
 localDomain: "cluster.local"
 enclaveDeploymentPrefix: "legion-"
 domainDelimiter: "."
-s3BucketName: ""
 cluster_prefix: ""
 
 auth:
@@ -31,14 +30,6 @@ jenkins:
   persistence:
     storageClass: ""
     size: 20Gi
-
-  airflow:
-    enabled: false
-    rest_url: ''
-    s3_url: ''
-    expected_output: ''
-
-    dags_volume_pvc: ''
 
   openId:
     enable: false

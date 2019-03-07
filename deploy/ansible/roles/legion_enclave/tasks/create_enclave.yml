@@ -32,92 +32,11 @@
 - name: Copy TLS secret
   shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace default | jq '.metadata.namespace = \"{{ enclave }}\"' | jq '.metadata.name = \"{{ root_domain }}-tls\"' | kubectl create --context {{ cluster_name }} -f -"
 
-# Create Airflow RDS resources
-- name: Install ansible dependencies
-  apt: name="{{ item }}"
-  with_items:
-    - python-psycopg2
-    - postgresql-client
-  become: yes
-
-- name: Get Airflow Postgres RDS endpoint
-  rds:
-    command: facts
-    region: "{{ aws_region }}"
-    instance_name: "{{ env_name }}-airflow-rds"
-  register: airflow_rds_instance_facts
-
-- name: "Create Postgres schema for {{ enclave }} enclave"
-  postgresql_schema: 
-    database: "{{ aws.rds.database_name }}"
-    login_host: "{{ airflow_rds_instance_facts.instance.endpoint }}"
-    login_password: "{{ aws.rds.password }}"
-    login_user: "{{ aws.rds.username }}"
-    state: present
-    name: "{{ airflow_db_schema }}"
-
-- name: "Generate {{ enclave }} enclave Postgres user password"
-  shell: "tr -d -c 'a-zA-Z0-9' < /dev/urandom | head -c 20"
-  register: airflow_db_enclave_pass
-
-- name: "Create Postgres user for {{ enclave }} enclave"
-  postgresql_user: 
-    db: "{{ aws.rds.database_name }}"
-    login_host: "{{ airflow_rds_instance_facts.instance.endpoint }}"
-    login_password: "{{ aws.rds.password }}"
-    login_user: "{{ aws.rds.username }}"
-    state: present
-    name: "{{ airflow_db_enclave_user }}"
-    password: "{{ airflow_db_enclave_pass.stdout }}"
-    encrypted: yes
-
-- name: "Set Postgres user privileges "
-  postgresql_privs: 
-    db: "{{ aws.rds.database_name }}"
-    login_host: "{{ airflow_rds_instance_facts.instance.endpoint }}"
-    login_password: "{{ aws.rds.password }}"
-    login_user: "{{ aws.rds.username }}"
-    role: "{{ airflow_db_enclave_user }}"
-    privs: ALL
-    type: schema
-    objs: "{{ airflow_db_schema }}"
-    state: present
-
-- name: Create alter role query
-  template:
-    src: alter_role.sql.j2
-    dest: "{{ tmp_dir }}/alter_role.{{ cluster_name }}.sql"
-    mode: 0644
-
-- name: "Set search_path (Schema) for Postgres user"
-  shell: PGPASSWORD="{{ aws.rds.password }}" psql -h "{{ airflow_rds_instance_facts.instance.endpoint }}" -U"{{ aws.rds.username }}" < {{ tmp_dir }}/alter_role.{{ cluster_name }}.sql
-
-# Create NFS storage for Airflow
-- name: Create PVC configuration
-  template:
-    src: airflow-pvc.yaml.j2
-    dest: "{{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml"
-    mode: 0644
-
-- name: Remove old PVC
-  shell: 'kubectl --context {{ cluster_name }} delete --ignore-not-found=true --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
-  ignore_errors: yes
-
-- name: Apply new PVC
-  shell: 'kubectl --context {{ cluster_name }} apply --namespace {{ enclave }} -f {{ tmp_dir }}/airflow-pvc.{{ cluster_name }}.yaml'
-
 # Create S3 resources
 - name: Create S3 buckets for enclave resources
   aws_s3:
     bucket: "{{ legion_data_s3_bucket }}"
     mode: create
-
-- name: Create S3 storage for Airflow logs
-  aws_s3:
-    bucket: "{{ legion_data_s3_bucket }}"
-    object: "/{{ airflow_s3_logs_path }}"
-    mode: create
-
 
 # Create IAM roles
 - name: Generate Trust policy documents
@@ -139,7 +58,6 @@
   retries: 10
   delay: 5
   with_items:
-    - airflow
     - jslave
     - model
     - collector
@@ -154,7 +72,6 @@
   retries: 10
   delay: 5
   with_items:
-    - airflow
     - jslave
     - collector
     - model
