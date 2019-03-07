@@ -30,6 +30,7 @@ import legion.utils
 import legion.containers.docker
 import legion.containers.exceptions
 import legion.containers.definitions
+from legion.k8s.definitions import LEGION_COMPONENT_LABEL
 
 LOGGER = logging.getLogger(__name__)
 
@@ -163,8 +164,12 @@ def deploy_model(client, image, local_port=0):
     LOGGER.debug('Creating container with image {!r} and port configuration {!r}'.format(image,
                                                                                          port_configuration))
 
+    docker_labels = {f'{LEGION_COMPONENT_LABEL}.model_id': model_id,
+                     f'{LEGION_COMPONENT_LABEL}.model_version': model_version}
+
     container = client.containers.run(docker_image,
                                       ports=port_configuration,
+                                      labels=docker_labels,
                                       detach=True,
                                       remove=True)
     LOGGER.debug('Container {} has been stared'.format(container.id))

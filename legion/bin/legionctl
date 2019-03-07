@@ -30,6 +30,8 @@ if __name__ == '__main__':
     legion.cli.configure_logging(args)
     root_logger = logging.getLogger()
 
+    root_logger.debug('CLI parameters: %s', args)
+
     try:
         if args.version:
             print(legion.__version__)

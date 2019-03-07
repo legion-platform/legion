@@ -30,9 +30,10 @@ ALL_VARIABLES = {}
 _LOGGER = logging.getLogger()
 
 _INI_FILE_TRIED_TO_BE_LOADED = False
-_INI_FILE_CONTENT = None
+_INI_FILE_CONTENT: configparser.ConfigParser = None
 _INI_FILE_DEFAULT_CONFIG_PATH = Path.home().joinpath('.legion/config')
 _DEFAULT_INI_SECTION = 'general'
+MODEL_JWT_TOKEN_SECTION = 'model_tokens'
 
 
 def reset_context():
@@ -367,9 +368,12 @@ MODEL_DOCKER_BUILDER_URL = ConfigVariableDeclaration('MODEL_DOCKER_BUILDER_URL',
                                                      'URL of the docker builder sidecar', False)
 
 # Model invocation testing
-MODEL_SERVER_URL = ConfigVariableDeclaration('MODEL_SERVER_URL', 'http://edge', str,
+MODEL_SERVER_URL = ConfigVariableDeclaration('MODEL_SERVER_URL', '', str,
                                              'Default url of model server',
-                                             False)
+                                             True)
+
+MODEL_JWT_TOKEN = ConfigVariableDeclaration('MODEL_JWT_TOKEN', False, str,
+                                            'Model jwt token for access to the model', True)
 
 # Building and serving
 MODEL_FILE = ConfigVariableDeclaration('MODEL_FILE', None, str,

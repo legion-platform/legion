@@ -1,3 +1,6 @@
+*** Variables ***
+${LOCAL_CONFIG}  legion/config_6_1
+
 *** Settings ***
 Documentation       Legion's EDI operational check
 Test Timeout        6 minutes
@@ -8,10 +11,25 @@ Library             legion_test.robot.Utils
 Library             Collections
 Default Tags        edi  cli  enclave  apps
 Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
-...                 Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+...                 Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}  AND
+...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}
 Suite Teardown      Run EDI undeploy without version  ${MODEL_TEST_ENCLAVE}  ${TEST_COMMAND_MODEL_ID}
-*** Variables ***
-${LOCAL_CONFIG}  legion/config
+Test Teardown       Remove File  ${LOCAL_CONFIG}
+
+*** Keywords ***
+Refresh security tokens
+    [Documentation]  Refresh edi and model tokens. Return model jwt token
+
+    ${res}=  Shell  legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+             Should be equal  ${res.rc}  ${0}
+    ${res}=  Shell  legionctl generate-token --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION}
+             Should be equal  ${res.rc}  ${0}
+    ${JWT}=  Set variable  ${res.stdout}
+    ${res}=  Shell  legionctl config set MODEL_SERVER_URL https://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}
+             Should be equal  ${res.rc}  ${0}
+
+    [Return]  ${JWT}
+
 *** Test Cases ***
 Scale. Nonexistent model service
     [Documentation]  The scale command must fail if a model cannot be found by id
@@ -185,27 +203,24 @@ Without token
 
 Login. Basic usage
     [Documentation]  Check the login command and inspect command
-    [Teardown]  Remove File  ${LOCAL_CONFIG}
-    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+    ${res}=  Shell  legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
              Should be equal  ${res.rc}  ${0}
 
-    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose inspect
+    ${res}=  Shell  legionctl --verbose inspect
              Should be equal  ${res.rc}  ${0}
 
 Login. Wrong token
     [Documentation]  The login command must fail if token is wrong
-    [Teardown]  Remove File  ${LOCAL_CONFIG}
-    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
+    ${res}=  Shell  legionctl --verbose inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
 
 Login. Override login values
     [Documentation]  Command line parameters must be overrided by config parameters
-    [Teardown]  Remove File  ${LOCAL_CONFIG}
-    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+    ${res}=  Shell  legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
              Should be equal  ${res.rc}  ${0}
 
-    ${res}=  Shell  LEGION_CONFIG=${LOCAL_CONFIG} legionctl --verbose inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
+    ${res}=  Shell  legionctl --verbose inspect --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token wrong-token
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
 
@@ -255,3 +270,78 @@ Deploy fails when cpu resource is incorect
     ${res}=  Shell  legionctl --verbose deploy ${TEST_MODEL_IMAGE_5} --cpu wrong --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Malformed cpu resource
+
+Invoke. Empty model service url
+    [Documentation]  Fails if model service url is empty
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} -p a=1 -p b=2 --jwt "some_token"
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  specify model server url
+
+Invoke. Empty jwt
+    [Documentation]  Fails if jwt is empty
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    # Ensure that next command will not use the config file
+    Remove File  ${LOCAL_CONFIG}
+
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} -p a=1 -p b=2 --model-server-url ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  specify model jwt
+
+Invoke. Wrong jwt
+    [Documentation]  Fails if jwt is wrong
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} -p a=1 -p b=2 --model-server-url ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --jwt wrong
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Wrong jwt model token
+
+Invoke. Pass parameters explicitly
+    [Documentation]  Pass parameters explicitly
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    ${JWT}=  Refresh security tokens
+    # Ensure that next command will not use the config file
+    Remove File  ${LOCAL_CONFIG}
+
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} -p a=1 -p b=2 --model-server-url ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --jwt "${JWT}"
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  42
+
+Invoke. Pass parameters through config file
+    [Documentation]  Pass parameters through config file
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    Refresh security tokens
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} -p a=1 -p b=2
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  42
+
+Invoke. Fails with wrong model parameters
+    [Documentation]  Fails if model parameters is wrong
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    Refresh security tokens
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} -p a=1
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Internal Server Error
+
+Invoke. Pass model parameters using json
+    [Documentation]  Model parameters as json
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    Refresh security tokens
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --json '{"a": 1, "b": 2}'
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  42
+
+Invoke. Pass model parameters using json and p
+    [Documentation]  Combination json and p model parameters
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    Refresh security tokens
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --json '{"a": 1}' -p b=2
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  42
+
+Invoke. Specify model endpoint
+    [Documentation]  Different model endpoint
+    [Setup]  Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_IMAGE_5}  ${TEST_COMMAND_MODEL_ID}  ${TEST_MODEL_5_VERSION}
+    Refresh security tokens
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_COMMAND_MODEL_ID} --model-version ${TEST_MODEL_5_VERSION} --endpoint=feedback -p str=aa -p copies=3
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  aaaaaa

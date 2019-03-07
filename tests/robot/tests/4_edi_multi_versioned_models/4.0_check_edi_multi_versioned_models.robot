@@ -1,3 +1,6 @@
+*** Variables ***
+${LOCAL_CONFIG}  legion/config_4_0
+
 *** Settings ***
 Documentation       Legion's EDI operational check
 Test Timeout        6 minutes
@@ -8,13 +11,15 @@ Library             legion_test.robot.Utils
 Library             legion_test.robot.Grafana
 Library             legion_test.robot.Model
 Library             Collections
-Suite Setup         Choose cluster context    ${CLUSTER_NAME}
+Suite Setup         Run keywords  Choose cluster context    ${CLUSTER_NAME}  AND
+...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}
 Test Setup          Run Keywords
 ...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}   AND
 ...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
 Test Teardown       Run Keywords
 ...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}    AND
-...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}   ${TEST_MODEL_IMAGE_2}
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}   ${TEST_MODEL_IMAGE_2}    AND
+...                 Remove File  ${LOCAL_CONFIG}
 Force Tags          edi  cli  enclave  multi_versions
 
 *** Test Cases ***
@@ -222,3 +227,22 @@ Check default model urls
     Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_2_VERSION}
     Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
     Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_1_VERSION}
+
+Invoke two models
+    [Documentation]  Check that config holds model jwts separately
+    [Tags]  apps  kek
+    ${res}=  Shell  legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+             Should be equal  ${res.rc}  ${0}
+    ${res}=  Shell  legionctl generate-token --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_1_VERSION}
+             Should be equal  ${res.rc}  ${0}
+    ${res}=  Shell  legionctl generate-token --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_2_VERSION}
+             Should be equal  ${res.rc}  ${0}
+    ${res}=  Shell  legionctl config set MODEL_SERVER_URL https://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_1_VERSION} -p a=1 -p b=2
+         Should be equal  ${res.rc}  ${0}
+         Should contain   ${res.stdout}  42
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_2_VERSION} -p a=1 -p b=2
+         Should be equal  ${res.rc}  ${0}
+         Should contain   ${res.stdout}  42

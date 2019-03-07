@@ -22,6 +22,7 @@ import typing
 
 import docker
 import docker.errors
+from docker.models.containers import Container
 from docker.models.images import Image as DockerImage
 
 import legion
@@ -46,6 +47,21 @@ def build_docker_client():
     """
     client = docker.from_env()
     return client
+
+
+def find_host_model_port(model_container: Container) -> int:
+    """
+    Find exposed on host model port
+    :param model_container: model container
+    :return exposed ports
+    """
+    model_ports: typing.Dict[str, typing.Any] = model_container.attrs['NetworkSettings']['Ports']
+
+    for _, host_port in model_ports.items():
+        if host_port:
+            return host_port[0]['HostPort']
+
+    raise ValueError(f'Can not find exposed port of model container {model_container.id}')
 
 
 def get_docker_container_id_from_cgroup_line(line):
