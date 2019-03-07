@@ -29,7 +29,7 @@
     kubectl --context {{ cluster_name }} -n kube-system patch svc kubernetes-dashboard --type='json' -p='[{"op": "replace", "path": "/spec/ports/0/port", "value":80}, {"op": "replace", "path": "/spec/ports/0/targetPort", "value":9090}]'
   when: dashboard.insecure == true
 
-- name: Extend permissions t ocluster-admin for kubernetes-dashboard service account
+- name: Extend permissions to cluster-admin for kubernetes-dashboard service account
   command: kubectl --context {{ cluster_name }} create clusterrolebinding dashboard-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
   when: dashboard.insecure == true
 
