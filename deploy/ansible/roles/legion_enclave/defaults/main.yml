@@ -9,3 +9,4 @@ helm_local_src: false
 model_docker_protocol: https
 model_resources_cpu: 256m
 model_resources_mem: 256Mi
+monitoring_namespace: kube-monitoring

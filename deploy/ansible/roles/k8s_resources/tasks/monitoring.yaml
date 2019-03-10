@@ -1,0 +1,38 @@
+---
+- name: Create Prometheus configuration (values) file
+  template:
+    src: monitoring-values.yml.j2
+    dest: "{{ monitoring_values_file }}"
+    mode: 0644
+
+- name: Create monitoring namespace
+  shell: kubectl --context "{{ cluster_name }}" get ns "{{ monitoring_namespace }}" || kubectl --context "{{ cluster_name }}" create ns "{{ monitoring_namespace }}"
+
+- name: "Label monitoring namespace"
+  shell: "kubectl --context {{ cluster_name }} label ns {{ monitoring_namespace }} k8s-component=monitoring --overwrite"
+
+- name: Remove tls secret
+  shell: kubectl --context {{ cluster_name }} -n {{ monitoring_namespace }} delete secret {{ base_domain }}-tls --ignore-not-found
+
+- name: Copy TLS secret
+  shell: "kubectl --context {{ cluster_name }} get secret {{ source_secret_name }} -o json --namespace kube-system | jq '.metadata.namespace = \"{{ monitoring_namespace }}\"' | jq '.metadata.name = \"{{ base_domain }}-tls\"' | kubectl apply -n {{ monitoring_namespace }} --context {{ cluster_name }} -f -"
+
+
+- name: Delete Prometheus CRDs
+  shell: "kubectl --context {{ cluster_name }} delete --ignore-not-found crd {{ item }}.monitoring.coreos.com"
+  loop:
+    - "prometheuses"
+    - "prometheusrules"
+    - "servicemonitors"
+    - "alertmanagers"
+
+- name: Install monitoring helm chart
+  include_role:
+    name: deploy_helm_chart
+  vars:
+    release_name: legion-monitoring
+    values_file: "{{ monitoring_values_file }}"
+    namespace: "{{ monitoring_namespace }}"
+    src_chart_name: monitoring
+    chart_name: legion-helm/monitoring
+    chart_version: "{{ legion_version }}"

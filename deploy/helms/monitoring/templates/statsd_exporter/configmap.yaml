@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ index .Values "statsd-exporter" "deployment" "name" }}-config
+  labels:
+    component: {{ index .Values "statsd-exporter" "deployment" "name" }}
+    release: {{ .Release.Name | quote }}
+data:
+  mapping.conf: |-
+    defaults:
+      ttl: 1m
+    mappings:
+      - match: "*.*.metrics.*"
+        name: "legion_model_metrics"
+        labels:
+          namespace: "$1"
+          model_id: "$2"
+          name: "$3"
+          job: statsd-exporter

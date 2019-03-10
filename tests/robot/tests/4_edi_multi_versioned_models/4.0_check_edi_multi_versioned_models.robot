@@ -44,10 +44,6 @@ Check EDI undeploy 1 of 2 models with different versions but the same id
                     Should not contain              ${resp.stdout}          ${TEST_MODEL_IMAGE_1}
                     Should contain                  ${resp.stdout}          ${TEST_MODEL_IMAGE_2}
 
-                    Connect to enclave Grafana      ${MODEL_TEST_ENCLAVE}
-
-                    Dashboard should exists         ${TEST_MODEL_ID}
-
 Check EDI undeploy all model instances by version
     [Tags]  apps
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
@@ -67,11 +63,8 @@ Check EDI undeploy all model instances by version
                     Should not contain              ${resp.stdout}          |${TEST_MODEL_1_VERSION}
                     Should contain                  ${resp.stdout}          |${TEST_MODEL_2_VERSION}
 
-                    Connect to enclave Grafana      ${MODEL_TEST_ENCLAVE}
-                    Dashboard should exists         ${TEST_MODEL_ID}
     ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Dashboard should not exists     ${TEST_MODEL_ID}
 
 Check EDI undeploy 1 of 2 models without version
     [Tags]  apps

@@ -99,8 +99,6 @@ class TestK8SIntrospection(unittest2.TestCase):
 
         self.assertIsNotNone(enclave.edi_service, 'cannot find EDI service')
         self.assertIsNotNone(enclave.api_service, 'cannot find API (EDGE) service')
-        self.assertIsNotNone(enclave.grafana_service, 'cannot find Grafana service')
-        self.assertIsNotNone(enclave.graphite_service, 'cannot find Graphite service')
 
     @attr('k8s', 'inspection', 'apps')
     def test_check_edi_client(self):

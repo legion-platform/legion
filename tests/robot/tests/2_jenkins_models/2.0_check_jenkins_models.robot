@@ -1,7 +1,8 @@
 *** Settings ***
 Documentation       Legion stack operational check
-Resource            ../../resources/keywords.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Resource            ../../resources/keywords.robot
+Library             legion_test.robot.prometheus.Prometheus  ${HOST_PROTOCOL}://prometheus.${HOST_BASE_DOMAIN}
 Library             Collections
 Library             legion_test.robot.Grafana
 Library             legion_test.robot.K8s
@@ -12,6 +13,23 @@ Suite Setup         Run Keywords
 ...                 Choose cluster context                    ${CLUSTER_NAME}                         AND
 ...                 Run predefined Jenkins jobs for enclave   ${MODEL_TEST_ENCLAVE}
 Force Tags          jenkins  models  enclave  apps
+
+*** Keywords ***
+Test model pipeline result
+    [Arguments]          ${model_name}                      ${enclave}
+    Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
+    ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
+    Log                  Model build meta is ${model_meta}
+    ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
+    ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
+    ${edge}=             Build enclave EDGE URL             ${enclave}
+    Get token from EDI   ${enclave}   ${model_id}   ${model_version}
+    ${model_info} =      Get model info  ${edge}  ${TOKEN}  ${model_id}  ${model_version}
+    Log                  Model info is ${model_info}
+    ${edi_state}=        Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN}
+    Log                  State of ${model_id} is ${edi_state}
+    Ensure metric present  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_ENDPOINT}
+    [Return]             ${model_id}    ${model_version}
 
 *** Test Cases ***
 Running, waiting and checks jobs in Jenkins
@@ -28,10 +46,6 @@ Checking property update callback
     Log   Model with id = ${model_id} and model_version = ${model_version} has been deployed
     ${edge}=        Build enclave EDGE URL  ${MODEL_TEST_ENCLAVE}
                     Get token from EDI      ${MODEL_TEST_ENCLAVE}   ${model_id}    ${model_version}
-
-    Log   Connecting to Grafana
-    Connect to enclave Grafana  ${MODEL_TEST_ENCLAVE}
-    Ensure metric not present  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_ENDPOINT}
 
     Log   Resetting property to wrong value
     Update model property key  ${MODEL_TEST_ENCLAVE}  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_PROP}  0

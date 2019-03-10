@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    monitoring: prometheus
+    release: {{ .Release.Name | quote }}
+  name: legion-monitoring-rule
+spec:
+  groups:
+  - name: legion
+    rules:
+    - alert: HighModelResponseTime
+      annotations:
+        message: 'Model [id: "{{" $labels.model_id "}}", version: "{{" $labels.model_version "}}"] has response time more than 1 second.'
+      expr: histogram_quantile(0.95, sum(rate(legion_model_request_time_bucket[5m])) by (le, pod, model_id, model_version)) > 1
+      for: 2m
+      labels:
+        severity: warning

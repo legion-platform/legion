@@ -36,17 +36,14 @@ http {
 
   resolver 127.0.0.1:53 ipv6=off;
 
+  lua_shared_dict prometheus_metrics 50M;
   lua_package_path "/usr/local/openresty/luajit/?.lua;;";
 
   init_by_lua_block {
     local edge = require "edge"
 
-    local statsd_host = edge.get_config("STATSD_HOST", "graphite")
-    local statsd_port = edge.get_config("STATSD_PORT", "8125")
-    local statsd_namespace = edge.get_config("STATSD_NAMESPACE", "legion.model")
-
     local statistics_sender = require "statistics_sender"
-    statistics_sender.init(statsd_host, statsd_port, statsd_namespace)
+    statistics_sender.init()
 
     local invalid_tokens = require "blacklisted_tokens"
     invalid_tokens.init("{{ tokens['blacklisted-tokens'] }}")
@@ -55,6 +52,18 @@ http {
     local fluentd_host = edge.get_config("FLUENTD_HOST", "127.0.0.1")
     local fluentd_port = edge.get_config("FLUENTD_PORT", "24224")
     fluentd_logger.new(fluentd_host, fluentd_port)
+  }
+
+  server {
+    listen 7777 default_server;
+    server_name _;
+
+    location = /metrics {
+      content_by_lua_block {
+          local statistics_sender = require "statistics_sender"
+          statistics_sender.metrics();
+      }
+    }
   }
 
   server {
@@ -175,14 +184,19 @@ http {
         add_header 'Access-Control-Allow-Origin' '*';
 
         log_by_lua_block {
-            -- HTTP requests timing metrics for statsd
+            local model_endpoint = ngx.header["Model-Endpoint"]
+
+            if model_endpoint == Nil then
+                model_endpoint = "default"
+            end
+
+            -- HTTP requests timing metrics
             local statistics_sender = require "statistics_sender"
-            local latency = math.floor((ngx.now() - ngx.req.start_time()) * 1000)
-            statistics_sender.send_request_statistics("{{ model_endpoint.model_service.metrics_name }}", latency)
+            statistics_sender.send_request_statistics("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint, tonumber(ngx.var.request_time))
 
             -- Request info gathering
             local edge = require("edge")
-            local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}")
+            local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint)
 
             local fluentd_logger = require "fluentd_logger"
             fluentd_logger.post(ngx.req.start_time(), "request_response", requestInfo)

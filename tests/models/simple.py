@@ -1,4 +1,5 @@
 import argparse
+import time
 import typing
 
 import legion.model
@@ -13,6 +14,14 @@ def feedback(df: DataFrame) -> typing.Dict[str, str]:
     return {'result': df['str'] * df['copies']}
 
 
+def sleep(df: DataFrame) -> typing.Dict[str, str]:
+    sleep_time = df['seconds']
+
+    time.sleep(sleep_time)
+
+    return {'result': sleep_time}
+
+
 def build_model(id: str, version: str) -> None:
     """
     Build mock model for robot tests
@@ -25,6 +34,7 @@ def build_model(id: str, version: str) -> None:
     legion.model.export(apply_func=default, column_types={"a": legion.model.string, "b": legion.model.string})
     legion.model.export(apply_func=feedback, column_types={"str": legion.model.string,
                                                            "copies": legion.model.int64}, endpoint='feedback')
+    legion.model.export(apply_func=sleep, column_types={"seconds": legion.model.int64}, endpoint='sleep')
 
     legion.model.save('robot.model')
 

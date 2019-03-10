@@ -14,7 +14,7 @@
 #    limitations under the License.
 #
 """
-Graphana API functional for working with models
+Grafana API functional for working with models
 """
 
 import json

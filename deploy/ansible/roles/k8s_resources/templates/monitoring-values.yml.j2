@@ -1,0 +1,112 @@
+namespace: "{{ monitoring_namespace }}"
+
+prometheus-operator:
+  alertmanager:
+    templateFiles:
+      default.tmpl: |-{% raw %}
+        {{ define "__alertmanager" }}Cluster: CLUSTER_NAME{{ end }}
+        {{ define "__alertmanagerURL" }}{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}{{ end }}
+
+        {{ define "__subject" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.SortedPairs.Values | join " " }} {{ if gt (len .CommonLabels) (len .GroupLabels) }}({{ with .CommonLabels.Remove .GroupLabels.Names }}{{ .Values | join " " }}{{ end }}){{ end }}{{ end }}
+        {{ define "__description" }}{{ end }}
+
+        {{ define "__text_alert_list" }}{{ range . }}Labels:
+        {{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}
+        {{ end }}Annotations:
+        {{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}
+        {{ end }}Source: {{ .GeneratorURL }}
+        {{ end }}{{ end }}
+
+        {{ define "slack.default.title" }}{{ template "__subject" . }}{{ end }}
+        {{ define "slack.default.username" }}{{ template "__alertmanager" . }}{{ end }}
+        {{ define "slack.default.fallback" }}{{ template "slack.default.title" . }} | {{ template "slack.default.titlelink" . }}{{ end }}
+        {{ define "slack.default.pretext" }}{{ end }}
+        {{ define "slack.default.titlelink" }}{{ template "__alertmanagerURL" . }}{{ end }}
+        {{ define "slack.default.iconemoji" }}{{ end }}
+        {{ define "slack.default.iconurl" }}{{ end }}
+        {{ define "slack.default.text" }}{{ end }}
+        {{ define "slack.default.footer" }}{{ end }}{% endraw %}
+
+    config:
+      templates: ["/etc/alertmanager/secrets/default.tmpl"]
+      global:
+        resolve_timeout: 5m
+      route:
+        receiver: 'slack'
+        group_wait: 30s
+        group_interval: 2m
+        repeat_interval: 1h
+        group_by: [alertname]
+        routes: []
+      receivers:
+        - name: slack
+          slack_configs:
+            - send_resolved: false
+              api_url: "{{ alert_slack_url }}"
+              channel: "#alerts"{% raw %}
+              username: '{{ template "slack.default.username" . }}'
+              color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+              title: '{{ template "slack.default.title" . }}'
+              title_link: '{{ template "slack.default.titlelink" . }}'
+              pretext: '{{ .CommonAnnotations.summary }}'
+              text: |-
+                {{ range .Alerts }}
+                   *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+                  *Description:* {{ .Annotations.description }}
+                  *Details:*
+                  {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+                  {{ end }}
+                {{ end }}
+              fallback: '{{ template "slack.default.fallback" . }}'
+              icon_emoji: '{{ template "slack.default.iconemoji" . }}'
+              icon_url: '{{ template "slack.default.iconurl" . }}'{% endraw %}
+
+    ingress:
+      enabled: true
+      hosts:
+        - "alertmanager.{{ base_domain }}"
+        - "alertmanager.local.{{ base_domain }}"
+      tls:
+        - secretName: "{{ base_domain }}-tls"
+          hosts: ["alertmanager.{{ base_domain }}"]
+      annotations:
+        nginx.ingress.kubernetes.io/configuration-snippet: |-
+            set_escape_uri $escaped_request_uri $request_uri;
+        nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
+        nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+  prometheus:
+    ingress:
+      hosts:
+        - "prometheus.{{ base_domain }}"
+        - "prometheus.local.{{ base_domain }}"
+      tls:
+        - secretName: "{{ base_domain }}-tls"
+          hosts: ["prometheus.{{ base_domain }}"]
+      annotations:
+        nginx.ingress.kubernetes.io/configuration-snippet: |-
+            set_escape_uri $escaped_request_uri $request_uri;
+        nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
+        nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+
+  grafana:
+    adminUser: "{{ grafana.admin.username }}"
+    adminPassword:  "{{ grafana.admin.password }}"
+    ingress:
+      path: /
+      hosts:
+        - "grafana.{{ base_domain }}"
+        - "grafana.local.{{ base_domain }}"
+      tls:
+        - secretName: "{{ base_domain }}-tls"
+          hosts: ["grafana.{{ base_domain }}"]
+      annotations:
+        nginx.ingress.kubernetes.io/configuration-snippet: |-
+            set_escape_uri $escaped_request_uri $request_uri;
+        nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
+        nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+    env:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    setup:
+      image:
+        repository: "{{ docker_repo }}/k8s-ansible"
+        tag: "{{ legion_version }}"

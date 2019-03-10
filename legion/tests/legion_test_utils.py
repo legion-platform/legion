@@ -960,9 +960,7 @@ class EDITestServer:
         """
         additional_environment = {
             'CLUSTER_SECRETS_PATH': os.path.join(TEST_DATA_LOCATION, 'secrets'),
-            'JWT_CONFIG_PATH': os.path.join(TEST_DATA_LOCATION, 'jwt_config'),
-            'STATSD_HOST': 'graphite',
-            'STATSD_PORT': 80
+            'JWT_CONFIG_PATH': os.path.join(TEST_DATA_LOCATION, 'jwt_config')
         }
 
         test_enclave = legion.k8s.enclave.Enclave(self._enclave_name)
@@ -971,7 +969,6 @@ class EDITestServer:
         with patch_config(additional_environment), \
              patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
              patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
-             patch('legion.edi.server.get_application_grafana', lambda *x: None), \
              patch_environ(additional_environment):  # noqa
             self.application = ediserve.init_application(None)
 
