@@ -484,18 +484,33 @@ EOL
                                     --with-coverage \
                                     --cover-package legion \
                                     --with-xunitmp \
+                                    --cover-xml \
                                     --cover-html \
                                     --logging-level DEBUG \
                                     -v || true
 
                                 cd -
                                 cp /src/legion/nosetests.xml legion/nosetests.xml
-                                tar -czf legion/legion_coverage_${Globals.buildVersion}.tar.gz /src/legion/cover
+                                cp /src/legion/coverage.xml legion/coverage.xml
+                                cp -r /src/legion/cover legion/cover
                                 """
-                                /// Parse nose tests results
-                                junit 'legion/nosetests.xml'
 
-                                archiveArtifacts artifacts: "legion/legion_coverage_${Globals.buildVersion}.tar.gz"
+                                junit 'legion/nosetests.xml'
+                                cobertura coberturaReportFile: 'legion/coverage.xml'
+                                publishHTML (target: [
+                                  allowMissing: false,
+                                  alwaysLinkToLastBuild: false,
+                                  keepAll: true,
+                                  reportDir: 'legion/cover',
+                                  reportFiles: 'index.html',
+                                  reportName: "Test Coverage Report"
+                                ])
+
+                                sh """
+                                    rm -rf legion/nosetests.xml
+                                    rm -rf legion/coverage.xml
+                                    rm -rf legion/cover
+                                """
                             }
                         }
                     }
