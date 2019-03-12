@@ -39,10 +39,6 @@
   - name: Remove legion chart
     shell: helm --kube-context {{ cluster_name }} delete --purge legion-{{ enclave_name }}
     ignore_errors: true
-
-  - name: Remove airflow chart
-    shell: helm --kube-context {{ cluster_name }} delete --purge airflow-{{ enclave_name }}
-    ignore_errors: true
   
   - name: "Remove {{ enclave_name }} namespace"
     shell: "kubectl --context {{ cluster_name }} delete namespace {{ enclave_name }} --ignore-not-found=true --grace-period=10"

@@ -3,14 +3,8 @@ root_domain: "{{ enclave }}.{{ base_domain }}"
 domain_delimiter: "-"
 namespace: "{{ enclave }}"
 source_secret_name: "{{ base_domain }}-tls"
-airflow_db_schema: "{{ enclave }}"
-airflow_db_enclave_user: "{{ enclave }}"
 k8s_api_retry_number_max_limit: 10
 k8s_api_retry_delay_sec: 3
-airflow_worker_cpu_requests: "1500m"
-airflow_worker_cpu_limits: "2000m"
-airflow_worker_mem_requests: "1000Mi"
-airflow_worker_mem_limits: "2500Mi"
 helm_local_src: false
 model_docker_protocol: https
 model_resources_cpu: 256m

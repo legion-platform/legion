@@ -1,6 +1,6 @@
 ---
 
-# Create Jenkins IAM role for airflow s3 access
+# Create Jenkins IAM role for s3 data storage access
 - name: Generate trust policy document
   template:
     src: "trust_policy.yaml.j2"

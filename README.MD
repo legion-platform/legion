@@ -19,7 +19,6 @@ Legion provides:
 * Docker
 * Kubernetes
 * Jenkins
-* Airflow
 * Nexus
 * Graphana
 * Graphite

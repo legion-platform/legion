@@ -267,7 +267,6 @@ EOL
                                 sh """
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_test/dist/legion_test-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_airflow/dist/legion_airflow-*'
                                 """
 
                                 if (env.param_stable_release) {
@@ -375,13 +374,6 @@ EOL
                     steps {
                         script {
                             legion.buildLegionImage('k8s-edi', "k8s/edi")
-                        }
-                    }
-                }
-                stage("Build Airflow Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-airflow', 'k8s/airflow')
                         }
                     }
                 }
@@ -590,13 +582,6 @@ EOL
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-edi')
-                        }
-                    }
-                }
-                stage('Upload Airflow Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-airflow')
                         }
                     }
                 }
