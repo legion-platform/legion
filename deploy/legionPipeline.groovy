@@ -454,16 +454,46 @@ def buildTestBareModel(modelId, modelVersion, versionNumber) {
     """
 }
 
-def pullDockerCache(base_images=[], legion_image=null){
-    if (base_images){
-        for (image in base_images) {
-            sh "docker pull ${image} || true"
+def buildLegionImage(legion_image, build_context=".", dockerfile='Dockerfile', additional_parameters='') {
+    // Copy .dockerignore because we can't specify it using docker cli. https://github.com/moby/moby/issues/12886
+    sh "cp .gitignore ${build_context}/.dockerignore"
+
+    dir(build_context) {
+        cache_from_params = ''
+
+        if (env.param_enable_docker_cache.toBoolean()) {
+            // Get list of base images from a Dockerfile
+            base_images = sh(script: "grep 'FROM ' ${dockerfile} | awk '{print \$2}'", returnStdout: true).split('\n')
+
+            println("Found following base images: ${base_images}")
+
+            for (image in base_images) {
+                sh "docker pull ${image} || true"
+                cache_from_params += " --cache-from=${image}"
+            }
+
+            if (legion_image) {
+                cache_image = "${env.param_docker_registry}/${legion_image}:${env.param_docker_cache_source}"
+
+                cache_from_params += " --cache-from=${cache_image}"
+                sh "docker pull ${cache_image} || true"
+            }
         }
-    }
-    if (legion_image){
-        sh "docker pull ${env.param_docker_registry}/${legion_image}:${env.param_docker_cache_source} || true"
+
+        sh """
+            docker build ${Globals.dockerCacheArg} \
+                         --build-arg version="${Globals.buildVersion}" \
+                         --build-arg pip_extra_index_params="--extra-index-url ${env.param_pypi_repository}" \
+                         --build-arg pip_legion_version_string="==${Globals.buildVersion}" \
+                         ${cache_from_params} \
+                         ${additional_parameters} \
+                         -t legion/${legion_image}:${Globals.buildVersion} \
+                         ${Globals.dockerLabels} \
+                         -f ${dockerfile} .
+        """
     }
 }
+
 def uploadDockerImage(String imageName) {
     if (env.param_stable_release) {
         sh """
