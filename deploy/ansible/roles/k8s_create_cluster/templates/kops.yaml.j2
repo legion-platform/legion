@@ -90,7 +90,6 @@ metadata:
   creationTimestamp: null
   labels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: master-{{ zone.zone_name }}
@@ -103,7 +102,6 @@ spec:
   minSize: 1
   nodeLabels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: master-{{ zone.zone_name }}
   role: Master
@@ -120,7 +118,6 @@ metadata:
   creationTimestamp: null
   labels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: nodes
@@ -131,7 +128,6 @@ spec:
   minSize: {{ node_autoscaler_min }}
   nodeLabels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes
   cloudLabels:
@@ -153,7 +149,6 @@ metadata:
   creationTimestamp: null
   labels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: nodes.{{ shape }}
@@ -164,7 +159,6 @@ spec:
   minSize: {{ node_extra_min }}
   nodeLabels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: nodes.{{ shape }}
     dedicated: jenkins-slave
@@ -189,7 +183,6 @@ metadata:
   creationTimestamp: null
   labels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/cluster: {{ cluster_name }}
   name: bastions
@@ -200,7 +193,6 @@ spec:
   minSize: 1
   nodeLabels:
     vendor: {{ vendor }}
-    env_type: {{ env_type }}
     env_name: {{ env_name }}
     kops.k8s.io/instancegroup: bastions
   cloudLabels:

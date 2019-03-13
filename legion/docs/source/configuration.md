@@ -27,7 +27,6 @@ route53_zone: epm.kharlamov.biz               # AWS Route53 zone on which domain
 
 # Common
 vendor: legion          # name of vendor, will be used in resource tags
-env_type: dev           # name of env. type, will be added in resource tags
 env_name: legion-dev    # short name of env, will be added in resource tags
 
 
@@ -106,7 +105,7 @@ airflow_rds_size: "50"                                                   # size 
 
 # Airflow DAGs configuration [?]
 legion_data_bucket_prefix: ~ # S3 bucket name prefix
-legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"                              # Airflow storage location at S3
+legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_name }}-{{ enclave }}"                              # Airflow storage location at S3
 airflow_expected_output: 'expected-data/'                                # Configuration for Airflow DAGs
 
 # Addons configuration

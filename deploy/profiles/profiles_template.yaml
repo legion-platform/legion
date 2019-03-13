@@ -5,7 +5,6 @@ route53_zone: ~      # AWS Route53 zone on which domain will be created (zone sh
 
 # Common
 vendor: ~            # name of vendor, will be used in resource tags
-env_type: ~           # name of env. type, will be added in resource tags
 env_name: ~    # short name of env, will be added in resource tags
 
 

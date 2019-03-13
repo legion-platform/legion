@@ -1,6 +1,5 @@
 # Common
 vendor: legion
-env_type: ci-app
 env_name: legion-ci-app
 base_domain: legion-ci-app.epm.kharlamov.biz
 route53_zone: epm.kharlamov.biz
@@ -78,7 +77,7 @@ enclaves:
   - company-a
 storageclass: efs
 legion_data_bucket_prefix: epm-legion-data
-legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_type }}-{{ enclave }}"
+legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_name }}-{{ enclave }}"
 airflow_dags_dir: '/airflow-dags'
 airflow_dags_pvc: legion-airflow-dags
 airflow_s3_logs_path: 'airflow-logs/'
