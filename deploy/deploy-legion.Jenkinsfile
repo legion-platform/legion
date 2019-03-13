@@ -86,8 +86,12 @@ pipeline {
         always {
             script {
                 legion = load "${sharedLibPath}"
-                legion.cleanupClusterSg(param_legion_version ?: cleanupContainerVersion)
                 legion.notifyBuild(currentBuild.currentResult)
+            }
+        }
+        cleanup {
+            script {
+                legion.cleanupClusterSg(param_legion_version ?: cleanupContainerVersion)
             }
             deleteDir()
         }
