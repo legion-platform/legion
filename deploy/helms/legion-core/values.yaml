@@ -5,6 +5,9 @@ domainDelimiter: "."
 s3BucketName: ""
 cluster_prefix: ""
 
+dockerRepository: "legion"
+version: "latest"
+
 auth:
   enabled: false
   annotations: {}

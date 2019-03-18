@@ -6,6 +6,10 @@ addLocalDomain: true
 s3BucketName: "{{ legion_data_s3_bucket }}"
 cluster_prefix: "{{ env_name }}"
 
+dockerRepository: "{{ docker_repo }}"
+version: "{{ legion_version }}"
+
+
 {% if dex.enabled == true %}
 auth:
   enabled: true

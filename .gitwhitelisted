@@ -35,3 +35,5 @@ user: ""
 password: ""
 # Allow username : unicode (Jupyter config)
 username : unicode
+# Allow safe commit comment for difficult cases
+.*//\\+safeToCommit

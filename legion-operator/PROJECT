@@ -1,0 +1,3 @@
+version: "1"
+domain: legion-platform.org
+repo: github.com/legion-platform/legion/legion-operator

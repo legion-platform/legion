@@ -1,0 +1,11 @@
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: modeltraining-sample
+spec:
+  toolchain: python
+  entrypoint: run-me.py
+  vcsName: vcscredential-sample
+  image: nginx

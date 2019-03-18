@@ -305,7 +305,7 @@ EOL
                         }
                     }
                 }
-            } 
+            }
         }
 
         stage('Build docs') {
@@ -327,7 +327,7 @@ EOL
                 }
             }
         }
-        
+
         stage("Build and Upload Base Docker Image & Ansible image ") {
             parallel {
                 stage("Build Base python image") {
@@ -361,6 +361,13 @@ EOL
                     steps {
                         script {
                             legion.buildLegionImage('k8s-edge', 'k8s/edge')
+                        }
+                    }
+                }
+                stage("Build Legion Operator Docker image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-operator', 'legion-operator')
                         }
                     }
                 }
