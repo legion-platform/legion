@@ -9,7 +9,8 @@ spec:
   api:
     loadBalancer:
       type: Public
-      additionalSecurityGroups: {{ external_access_sgs|to_yaml }}
+      additionalSecurityGroups:
+        {{ external_access_sgs|to_nice_yaml | indent(8, False)  }}
   authorization:
     rbac: {}
 {% if dex.enabled == true %}
@@ -45,7 +46,8 @@ spec:
   iam:
     allowContainerRegistry: true
     legacy: false
-  kubernetesApiAccess: {{ allowed_wan_ips|to_yaml }}
+  kubernetesApiAccess: 
+    {{ allowed_wan_ips| to_nice_yaml | indent(4, False)  }}
   kubernetesVersion: {{ kubernetes_version }}
   masterPublicName: api.{{ cluster_name }}
   networkCIDR: {{ private_network }}.0.0/16
@@ -55,7 +57,8 @@ spec:
       majorVersion: v3
       crossSubnet: true
   nonMasqueradeCIDR: 100.64.0.0/10
-  sshAccess: {{ allowed_wan_ips|to_yaml }}
+  sshAccess:
+    {{ allowed_wan_ips| to_nice_yaml | indent(4, False)  }}
   subnets:
 {% for zone in cluster_zones %}
   - cidr: {{ zone.kops_cidr }}
@@ -82,7 +85,7 @@ spec:
 {% if zone.zone_name in k8s_master_zones %}
 
 apiVersion: kops/v1alpha2
-kind: InstanceGroup
+kind: InstanceGroup 
 metadata:
   creationTimestamp: null
   labels:

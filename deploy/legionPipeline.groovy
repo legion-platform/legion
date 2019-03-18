@@ -415,7 +415,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
     }
 
     /// Notify everyone about each Nightly build
-    if ("${env.JOB_NAME}".contains("Legion_CI_Infra")) {
+    if ("${env.JOB_NAME}".contains("Legion_CI_Nightly")) {
         slackSend (color: colorCode, message: summary)
         emailext (
             subject: mailSubject,
