@@ -574,6 +574,13 @@ EOL
                         }
                     }
                 }
+                stage('Upload Operator Docker Image') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-operator')
+                        }
+                    }
+                }
                 stage('Upload Jenkins Docker image') {
                     steps {
                         script {
