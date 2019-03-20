@@ -93,26 +93,7 @@ examples_to_test:       # which Jenkins examples will be executed in tests
 model_id_to_test: income  # id of model which will be tested in EDI tests
 enclaves:  # list of enclaves which will be automatically deployed after Legion deploy
   - company-a
-
-# Airflow specific configuration
-airflow_dags_dir: '/airflow-dags'                                        # Name of Aitflow DAGs directory
-airflow_dags_pvc: legion-airflow-dags                                    # Name of Airflow DAGs PVC which will be created in Cluster
-airflow_pvc: 200m                                                        # Airflow PVC size (for storing DAGs code)
-
-# Airflow RDS configuration
-airflow_rds_shape: "db.t2.medium"                                        # shape for Airflow RDS
-airflow_rds_size: "50"                                                   # size of Airflow RDS in GB
-
-# Airflow DAGs configuration [?]
-legion_data_bucket_prefix: ~ # S3 bucket name prefix
 legion_data_s3_bucket: "{{ legion_data_bucket_prefix }}-{{ env_name }}-{{ enclave }}"                              # Airflow storage location at S3
-airflow_expected_output: 'expected-data/'                                # Configuration for Airflow DAGs
-
-# Addons configuration
-storageclass: efs              # Which storage use in PVCs
-dashboard:                     # Kubernetes dashboard configuration
-  version: "1.10.1"             # Dashboard version
-  insecure: true               # Allow insecure access
 
 # Dex
 dex:
@@ -142,56 +123,11 @@ aws:
     password: example
     database_name: db
 
-# Airflow configuration
-airflow:
-  connections:  # list of airflow connections that will be automatically added during deploy
-  # Connection to Aurora
-  - connection_id: aurora_conn
-    connection_type: mysql
-    host: hostnamehere
-    port: 3306
-    login: example
-    password: example
-
-  # Connection to S3
-  - connection_id: s3_conn
-    connection_type: S3
-    extra: {"bucket_prefix": "epm-legion-data"}
-
-  # SMTP credentials for email notifications
-  email:
-    smtp_host: smtp.post.domain
-    smtp_starttls: true
-    smtp_ssl: true
-    smtp_user: example
-    smtp_port: 465
-    smtp_password: example
-    smtp_mail_from: mine.email@post.domain
-
-  # Fernet key
-  fernet_key: exampleexampleexample=
-
-  # Airflow-slack integration
-  slack:
-    channel: airflow
-    username: example
-    token: example
-  webserver:
-    email_backend: "etl.slack.send_notification" # set email_backend to empty for Slack disabling notifications
-
 external_access_sgs: # list of AWS SG that should be added on ELB
   - sg-00000000
 allowed_wan_ips:  # list of whitelisted CIDRs
   - 1.2.3.4/32
 jenkins_cc_sg: sg-00000000 # CC Jenkins Security Group to be whitelisted on cluster
-
-
-# Airflow auth configuration
-airflow_auth:
-  enabled: true
-  dex_group_admin: legion-platform:admin      # link to GitHub group
-  dex_group_profiler: legion-platform:view    # link to GitHub group
-  auth_backend: legion_airflow.auth.dex_auth  # Python auth backend
 
 # DEX configuration
 dex:
