@@ -35,6 +35,7 @@
 # Create S3 resources
 - name: Create S3 buckets for enclave resources
   aws_s3:
+    region: "{{ aws_region }}"
     bucket: "{{ legion_data_s3_bucket }}"
     mode: create
 
