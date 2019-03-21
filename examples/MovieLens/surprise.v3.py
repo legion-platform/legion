@@ -1,17 +1,16 @@
+import io
+import os
+import time
+from collections import defaultdict
+
+import pandas as pd
+from legion.toolchain import model
 from surprise import Dataset, Reader
-from surprise import KNNBasic, SVD
+from surprise import KNNBasic
 from surprise.builtin_datasets import download_builtin_dataset
 
-from collections import defaultdict
-import pandas as pd
-import numpy as np
-import os, io
-
-import legion.model
-import time
-
 use_built_in = True
-legion.model.init('movie-lens', '1.0')
+model.init('movie-lens', '1.0')
 
 
 class Profiler(object):
@@ -34,7 +33,7 @@ class Profiler(object):
     def __exit__(self, type, value, traceback):
         duration = time.time() - self._start_time
         print("Name: " + self._name + " Elapsed time: {:.3f} sec".format(duration))
-        legion.model.send_metric(self._name, duration)
+        model.send_metric(self._name, duration)
 
 
 # get item names for built-in 100k dataset
@@ -170,12 +169,12 @@ else:
     def recommend(input):
         return top3_recommendations[input['uid']]
 
-legion.model.export(
+model.export(
     recommend,
     {
-        'uid': legion.model.int32
+        'uid': model.int32
     })
-legion.model.save()
+model.save()
 
 recommendation_example = recommend({'uid': 1})
 print(repr(recommendation_example))

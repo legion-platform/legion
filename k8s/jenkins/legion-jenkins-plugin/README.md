@@ -1,1 +1,0 @@
-Legion dashboard Jenkins plugin.

@@ -21,7 +21,7 @@ package:
   repository: "{{ pypi_repo }}"
 
   baseImage:
-    repository: "{{ docker_repo }}/base-python-image"
+    repository: "{{ docker_repo }}/python-toolchain"
     tag: "{{ legion_version }}"
   edi_image: "{{ docker_repo }}/k8s-edi:{{ legion_version }}"
 

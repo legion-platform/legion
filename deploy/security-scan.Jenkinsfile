@@ -7,7 +7,7 @@ pipeline {
                 cleanWs()
                 checkout scm
                 script {
-                    sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+                    sh "bash tools/install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
                 }
             }
         }
