@@ -13,7 +13,6 @@
 - include: dashboard.yaml
 - include: autoscaler.yaml
 - include: prometheus.yaml
-- include: pvc.yaml
 - include: jenkins-volume.yaml
 - include: kube2iam.yaml
 - include: kube-fluentd.yaml

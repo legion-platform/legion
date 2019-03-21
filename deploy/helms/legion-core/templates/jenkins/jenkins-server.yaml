@@ -108,20 +108,6 @@ spec:
           value: "true"
         - name: CLUSTER_NAME
           value: {{ .Values.clusterName }}
-        - name: S3_BUCKET_NAME
-          value: {{ .Values.s3BucketName }}
-        {{- if .Values.jenkins.airflow.enabled }}
-        - name: DAGS_VOLUME_PVC
-          value: {{ .Values.jenkins.dags_volume_pvc }}
-        - name: AIRFLOW_DAGS_DIRECTORY
-          value: {{ .Values.jenkins.airflow_dags_directory }}
-        - name: AIRFLOW_REST_API
-          value: "{{ .Values.jenkins.airflow.rest_url }}"
-        - name: AIRFLOW_EXPECTED_OUTPUT
-          value: "{{ .Values.jenkins.airflow.expected_output }}"
-        - name: AIRFLOW_S3_URL
-          value: "{{ .Values.jenkins.airflow.s3_url }}"
-        {{- end }}
         {{- if .Values.jenkins.openId.enable }}
         - name: OPENID_ENABLE
           value: "{{ .Values.jenkins.openId.enable }}"

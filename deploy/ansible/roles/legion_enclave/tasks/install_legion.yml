@@ -11,7 +11,7 @@
     dest: "{{ tmp_values_file }}"
     mode: 0644
 
-- name: Install legion core helm chart
+- name: Install legion enclave helm chart
   include_role:
     name: deploy_helm_chart
   vars:

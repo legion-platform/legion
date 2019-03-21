@@ -81,7 +81,7 @@ def get_variables(arg=None):
         'NEXUS_DOCKER_REPO': data['docker_repo'],
         'TEMP_DIRECTORY': data['tmp_dir'],
         'FEEDBACK_BUCKET': '{}-{}-{}'.format(data['legion_data_bucket_prefix'],
-                                              data['env_type'],
+                                              data['env_name'],
                                               data['enclaves'][0]),
         'GRAFANA_USER': data['grafana']['admin']['username'],
         'GRAFANA_PASSWORD': data['grafana']['admin']['password'],

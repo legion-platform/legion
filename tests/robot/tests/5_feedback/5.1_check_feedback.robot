@@ -21,7 +21,7 @@ ${REQUEST_ID_CHECK_RETRIES}         30
 Check model API logging without request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - without request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK__BUCKET}
+    Choose bucket           ${FEEDBACK_BUCKET}
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
     ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
@@ -52,7 +52,7 @@ Check model API logging without request ID and one chunk
 Check model API logging with request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - with specified request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK__BUCKET}
+    Choose bucket           ${FEEDBACK_BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
@@ -86,7 +86,7 @@ Check model API logging with request ID and one chunk
 Check model API logging with request ID and many chunks
     [Documentation]  Checking that model API log is being persisted - with specified request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK__BUCKET}
+    Choose bucket           ${FEEDBACK_BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${expected_response}=   Repeat string N times    ${TEST_MODEL_ARG_STR}   ${TEST_MODEL_ARG_COPIES}
 
@@ -136,7 +136,7 @@ Check model API request generation have no duplicates
 Check model API feedback with request ID
     [Documentation]  Checking that model API feedback is being persisted - without request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK__BUCKET}
+    Choose bucket           ${FEEDBACK_BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
