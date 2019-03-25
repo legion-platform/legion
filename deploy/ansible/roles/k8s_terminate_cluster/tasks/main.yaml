@@ -1,5 +1,0 @@
----
-
-- include: kube2iam.yaml
-- include: jenkins-volume.yml
-- include: kops-cluster.yaml
