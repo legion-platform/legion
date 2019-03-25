@@ -40,21 +40,15 @@ pipeline {
             // Release version to be used as docker cache source
             param_docker_cache_source = "${params.DockerCacheSource}"
             //Artifacts storage parameters
-            param_helm_repo_git_url = "${params.HelmRepoGitUrl}"
-            param_helm_repo_git_branch = "${params.HelmRepoGitBranch}"
-            param_helm_repository = "${params.HelmRepository}"
             param_pypi_repository = "${params.PyPiRepository}"
             param_local_pypi_distribution_target_name = "${params.LocalPyPiDistributionTargetName}"
             param_test_pypi_distribution_target_name = "${params.testPyPiDistributionTargetName}"
             param_public_pypi_distribution_target_name = "${params.PublicPyPiDistributionTargetName}"
             param_pypi_distribution_target_name = "${params.PyPiDistributionTargetName}"
-            param_jenkins_plugins_repository_store = "${params.JenkinsPluginsRepositoryStore}"
-            param_jenkins_plugins_repository = "${params.JenkinsPluginsRepository}"
             param_docker_registry = "${params.DockerRegistry}"
             param_docker_hub_registry = "${params.DockerHubRegistry}"
             param_git_deploy_key = "${params.GitDeployKey}"
             ///Job parameters
-            infraBuildWorkspace = "${WORKSPACE}/k8s/k8s-infra"
             sharedLibPath = "deploy/legionPipeline.groovy"
     }
 
@@ -170,7 +164,8 @@ pipeline {
                 }
             }
         }
-        stage('Build Agent Docker Image') {
+
+        stage('Build Legion inside Docker') {
             steps {
                 script {
                     legion.buildLegionImage('legion-docker-agent', '.', 'pipeline.Dockerfile')
@@ -179,70 +174,31 @@ pipeline {
             }
         }
 
-        stage('Build dependencies') {
+        stage('Run Python code analyzers') {
+            steps {
+                script{
+                    docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                        sh '''
+                        bash analyze_code.sh
+                        '''
+
+                        archiveArtifacts 'legion-pylint.log'
+                        step([
+                            $class                     : 'WarningsPublisher',
+                            parserConfigurations       : [[
+                                                                parserName: 'PYLint',
+                                                                pattern   : 'legion-pylint.log'
+                                                        ]],
+                            unstableTotalAll           : '0',
+                            usePreviousBuildAsReference: true
+                        ])
+                    }
+                }
+            }
+        }
+
+        stage('Run tests and upload artofacts'){
             parallel {
-                stage('Build Jenkins plugin') {
-                    steps {
-                        script{
-                            docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
-                                /// Jenkins plugin which will be used in Jenkins Docker container only
-                                sh """
-                                export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
-                                mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
-                                mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
-                                mvn -f k8s/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
-                                """
-
-                                archiveArtifacts 'k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-
-                                withCredentials([[
-                                    $class: 'UsernamePasswordMultiBinding',
-                                    credentialsId: 'nexus-local-repository',
-                                    usernameVariable: 'USERNAME',
-                                    passwordVariable: 'PASSWORD']]) {
-                                    sh """
-                                    curl -v -u $USERNAME:$PASSWORD \
-                                    --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                    ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
-                                    """
-                                    script {
-                                        if (env.param_stable_release){
-                                            sh """
-                                            curl -v -u $USERNAME:$PASSWORD \
-                                            --upload-file k8s/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                            ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
-                                            """
-                                        }
-                                    }
-                                }
-                                sh "rm -rf ${WORKSPACE}/k8s/jenkins/legion-jenkins-plugin/*"
-                            }
-                        }
-                    }
-                }
-
-                stage('Run Python code analyzers') {
-                    steps {
-                        script{
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
-                                sh '''
-                                bash analyze_code.sh
-                                '''
-
-                                archiveArtifacts 'legion-pylint.log'
-                                step([
-                                    $class                     : 'WarningsPublisher',
-                                    parserConfigurations       : [[
-                                                                        parserName: 'PYLint',
-                                                                        pattern   : 'legion-pylint.log'
-                                                                ]],
-                                    unstableTotalAll           : '0',
-                                    usePreviousBuildAsReference: true
-                                ])
-                            }
-                        }
-                    }
-                }
                 stage("Upload Legion package") {
                     steps {
                         script {
@@ -252,17 +208,17 @@ pipeline {
                                 credentialsId: 'nexus-local-repository',
                                 usernameVariable: 'USERNAME',
                                 passwordVariable: 'PASSWORD']]) {
-                                    sh """
-                                    cat > /tmp/.pypirc << EOL
-[distutils]
-index-servers =
-  ${env.param_local_pypi_distribution_target_name}
-[${env.param_local_pypi_distribution_target_name}]
-repository=${env.param_pypi_repository.split('/').dropRight(1).join('/')}/
-username=${env.USERNAME}
-password=${env.PASSWORD}
-EOL
-"""
+                                sh """
+                                cat > /tmp/.pypirc << EOL
+        [distutils]
+        index-servers =
+        ${env.param_local_pypi_distribution_target_name}
+        [${env.param_local_pypi_distribution_target_name}]
+        repository=${env.param_pypi_repository.split('/').dropRight(1).join('/')}/
+        username=${env.USERNAME}
+        password=${env.PASSWORD}
+        EOL
+        """
                                 }
                                 sh """
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
@@ -278,20 +234,20 @@ EOL
                                         passwordVariable: 'PASSWORD']]) {
                                             sh """
                                             cat > /tmp/.pypirc << EOL
-[distutils]
-index-servers =
-  ${env.param_test_pypi_distribution_target_name}
-  ${env.param_public_pypi_distribution_target_name}
-[${env.param_test_pypi_distribution_target_name}]
-repository=https://test.pypi.org/legacy/
-username=${env.USERNAME}
-password=${env.PASSWORD}
-[${env.param_public_pypi_distribution_target_name}]
-repository=https://upload.pypi.org/legacy/
-username=${env.USERNAME}
-password=${env.PASSWORD}
-EOL
-"""
+        [distutils]
+        index-servers =
+        ${env.param_test_pypi_distribution_target_name}
+        ${env.param_public_pypi_distribution_target_name}
+        [${env.param_test_pypi_distribution_target_name}]
+        repository=https://test.pypi.org/legacy/
+        username=${env.USERNAME}
+        password=${env.PASSWORD}
+        [${env.param_public_pypi_distribution_target_name}]
+        repository=https://upload.pypi.org/legacy/
+        username=${env.USERNAME}
+        password=${env.PASSWORD}
+        EOL
+        """
                                         }
                                         sh """
                                         twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
@@ -304,122 +260,27 @@ EOL
                         }
                     }
                 }
-            } 
-        }
 
-        stage('Build docs') {
-            steps {
-                script {
-                    docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
-                        sh """
-                        cd legion/docs
-                        sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
-                        sed -i 's/\'1.0\'/\'${Globals.buildVersion}\'/' source/conf.py
-                        make html
-                        find build/html -type f -name '*.html' | xargs sed -i -r 's/href=\"(.*)\\.md\"/href=\"\\1.html\"/'
-                        cd ../../
-                        """
+                stage('Build docs') {
+                    steps {
+                        script {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                                sh """
+                                cd legion/docs
+                                sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
+                                sed -i 's/\'1.0\'/\'${Globals.buildVersion}\'/' source/conf.py
+                                make html
+                                find build/html -type f -name '*.html' | xargs sed -i -r 's/href=\"(.*)\\.md\"/href=\"\\1.html\"/'
+                                cd ../../
+                                """
 
-                        sh "tar -czf legion_docs_${Globals.buildVersion}.tar.gz legion/docs/build/html/"
-                        archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
-                    }
-                }
-            }
-        }
-        
-        stage("Build and Upload Base Docker Image & Ansible image ") {
-            parallel {
-                stage("Build Base python image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('base-python-image', 'base-python-image')
-                            legion.uploadDockerImage('base-python-image')
-                        }
-                    }
-                }
-                // Build ansible aside from other images because it uses root as context
-                stage("Build Ansible Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-ansible', '.', 'k8s/ansible/Dockerfile')
-                        }
-                    }
-                }
-            }
-        }
-        stage("Build toolchains Docker image"){
-            steps {
-                script {
-                    legion.buildLegionImage('python-toolchain', 'k8s/toolchains/python')
-                }
-            }
-        }
-        stage("Build Docker images & Run Tests") {
-            parallel {
-                stage("Build Edge Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edge', 'k8s/edge')
-                        }
-                    }
-                }
-                stage("Build Jenkins Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-jenkins', "k8s/jenkins", "Dockerfile", """--build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" """)
-                        }
-                    }
-                }
-                stage("Build Edi Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edi', "k8s/edi")
-                        }
-                    }
-                }
-                stage("Build Fluentd Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-fluentd', 'k8s/fluentd')
-                        }
-                    }
-                }
-                stage("Build test models") {
-                    steps {
-                        script {
-                            docker.image("legion/python-toolchain:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
-                                legion.buildTestBareModel("demo-abc-model", "1.0", "1")
-                                legion.buildTestBareModel("demo-abc-model", "1.1", "2")
-                                legion.buildTestBareModel("edi-test-model", "1.2", "3")
-                                legion.buildTestBareModel("feedback-test-model", "1.0", "4")
-                                legion.buildTestBareModel("command-test-model", "1.0", "5")
-                                legion.buildTestBareModel("auth-test-model", "1.0", "6")
+                                sh "tar -czf legion_docs_${Globals.buildVersion}.tar.gz legion/docs/build/html/"
+                                archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
                             }
                         }
                     }
                 }
-                /// Infra images which are used during cluster creation
-                stage('Build kube-fluentd') {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-kube-fluentd', "k8s/k8s-infra/kube-fluentd")
-                        }
-                    }
-                }
-                stage('Build kube-elb-security') {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-kube-elb-security', "k8s/k8s-infra/kube-elb-security")
-                        }
-                    }
-                }
-                stage('Build oauth2-proxy') {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-oauth2-proxy', "k8s/k8s-infra/oauth2-proxy")
-                        }
-                    }
-                }
+
                 stage("Run Python tests") {
                     steps {
                         script {
@@ -450,12 +311,12 @@ EOL
                                 junit 'legion/nosetests.xml'
                                 cobertura coberturaReportFile: 'legion/coverage.xml'
                                 publishHTML (target: [
-                                  allowMissing: false,
-                                  alwaysLinkToLastBuild: false,
-                                  keepAll: true,
-                                  reportDir: 'legion/cover',
-                                  reportFiles: 'index.html',
-                                  reportName: "Test Coverage Report"
+                                    allowMissing: false,
+                                    alwaysLinkToLastBuild: false,
+                                    keepAll: true,
+                                    reportDir: 'legion/cover',
+                                    reportFiles: 'index.html',
+                                    reportName: "Test Coverage Report"
                                 ])
 
                                 sh """
@@ -470,158 +331,6 @@ EOL
             }
         }
 
-        stage("Push Docker Images & Helm charts") {
-            parallel {
-                stage('Package and upload helm charts'){
-                    steps {
-                        script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
-                                dir ("${WORKSPACE}/deploy/helms") {
-                                    chartNames = sh(returnStdout: true, script: 'ls').split()
-                                    println (chartNames)
-                                    for (chart in chartNames){
-                                        sh """
-                                            export HELM_HOME="\$(pwd)"
-
-                                            helm init --client-only
-                                            helm dependency update "${chart}"
-                                            helm package --version "${Globals.buildVersion}" "${chart}"
-                                        """
-                                    }
-                                }
-                                withCredentials([[
-                                $class: 'UsernamePasswordMultiBinding',
-                                credentialsId: 'nexus-local-repository',
-                                usernameVariable: 'USERNAME',
-                                passwordVariable: 'PASSWORD']]) {
-                                    dir ("${WORKSPACE}/deploy/helms") {
-                                        script {
-                                            for (chart in chartNames){
-                                            sh"""
-                                            curl -u ${USERNAME}:${PASSWORD} ${env.param_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
-                                            """
-                                            }
-                                        }
-                                    }
-                                }
-                                if (env.param_stable_release) {
-                                    //checkout repo with existing charts  (needed for generating correct repo index file )
-                                    sshagent(["${env.param_git_deploy_key}"]) {
-                                        sh """
-                                        mkdir ~/.ssh || true
-                                        ssh-keyscan github.com >> ~/.ssh/known_hosts
-                                        git clone ${env.param_helm_repo_git_url} && cd ${WORKSPACE}/legion-helm-charts
-                                        git checkout ${env.param_helm_repo_git_branch}
-                                        """
-                                    }
-                                    //move packed charts to folder (where repo was checkouted)
-                                    for (chart in chartNames){
-                                        sh"""
-                                        cd ${WORKSPACE}/legion-helm-charts
-                                        mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
-                                        mv ${WORKSPACE}/deploy/helms/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
-                                        git add ${chart}/${chart}-${Globals.buildVersion}.tgz
-                                        """
-                                    }
-                                    sshagent(["${env.param_git_deploy_key}"]) {
-                                        sh """
-                                        cd ${WORKSPACE}/legion-helm-charts
-                                        helm repo index ./
-                                        git add index.yaml
-                                        git status
-                                        git commit -m "Release ${Globals.buildVersion}"
-                                        git push origin ${env.param_helm_repo_git_branch}
-                                        """
-
-                                    }
-                                }
-
-                                // Cleanup directory
-                                sh """
-                                rm -rf ${WORKSPACE}/legion-helm-charts
-                                rm -rf ${WORKSPACE}/deploy/helms
-                                """
-                            }
-                        }
-                    }
-                }
-                stage('Upload Ansible Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-ansible')
-                        }
-                    }
-                }
-                stage('Upload Edge Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-edge')
-                        }
-                    }
-                }
-                stage('Upload Jenkins Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-jenkins')
-                        }
-                    }
-                }
-                stage("Upload test models") {
-                    steps {
-                        script {
-                            legion.uploadDockerImage("test-bare-model-api-model-1")
-                            legion.uploadDockerImage("test-bare-model-api-model-2")
-                            legion.uploadDockerImage("test-bare-model-api-model-3")
-                            legion.uploadDockerImage("test-bare-model-api-model-4")
-                            legion.uploadDockerImage("test-bare-model-api-model-5")
-                            legion.uploadDockerImage("test-bare-model-api-model-6")
-                        }
-                    }
-                }
-                stage('Upload Edi Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-edi')
-                        }
-                    }
-                }
-                stage('Upload Fluentd Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-fluentd')
-                        }
-                    }
-                }
-                stage('Upload oauth2-proxy Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-oauth2-proxy')
-                        }
-                    }
-                }
-                stage('Upload kube-fluentd Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-kube-fluentd')
-                        }
-                    }
-                }
-                stage('Upload kube-elb-security Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-kube-elb-security')
-                        }
-                    }
-                }
-                stage('Upload python-toolchain Docker Image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('python-toolchain')
-                        }
-                    }
-                }
-            }
-        }
         stage("CI Stage") {
             steps {
                 script {
