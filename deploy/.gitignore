@@ -1,16 +1,5 @@
 log.*
 *.log
-*.retry
-*.status
-*.debug
-hosts
-
-# Compiled files
-*.tfstate
-*.tfstate.backup
-
-# Module directory
-.terraform/
 
 # Chart dependencies
 /helms/legion/charts/

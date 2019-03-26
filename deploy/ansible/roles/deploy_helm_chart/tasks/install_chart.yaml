@@ -1,7 +1,0 @@
----
-- name: Pre run with dumping
-  shell: helm --kube-context {{ cluster_name }} install {{ chart_name }} --name {{ release_name }} --version={{ chart_version }} --namespace {{ namespace }} --debug --dry-run -f  {{ values_file }}
-  register: helm_legion_install_output
-
-- name: Install legion chart
-  shell: "helm --kube-context {{ cluster_name }} install {{ chart_name }} --name {{ release_name }} --version={{ chart_version }} --namespace {{ namespace }} --wait --timeout 600 -f  {{ values_file }}"

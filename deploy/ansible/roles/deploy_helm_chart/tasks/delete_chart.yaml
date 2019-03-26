@@ -1,6 +1,0 @@
----
-- name: Remove legion chart
-  shell: helm --kube-context {{ cluster_name }} delete --purge {{ release_name }}
-
-- name: WORKAROUND delete pods in phase terminating
-  shell: kubectl --context {{ cluster_name }} --namespace {{ namespace }} delete --grace-period=0 --force po $(kubectl --context {{ cluster_name }} --namespace {{ namespace }} get po -o wide | grep Terminating | awk '{ print $1 }') || true
