@@ -28,6 +28,10 @@ test.model
 *.tmp.yml
 *.tmp.out
 
+# Chart dependencies
+/helms/legion/charts/
+/helms/legion-core/charts/
+
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 .vscode/
