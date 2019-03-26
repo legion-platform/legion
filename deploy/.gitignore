@@ -1,6 +1,0 @@
-log.*
-*.log
-
-# Chart dependencies
-/helms/legion/charts/
-/helms/legion-core/charts/

@@ -29,6 +29,10 @@ test.model
 *.tmp.out
 requirements.lock
 
+# Chart dependencies
+/helms/legion/charts/
+/helms/legion-core/charts/
+
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 .vscode/
