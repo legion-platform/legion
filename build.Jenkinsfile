@@ -68,7 +68,7 @@ pipeline {
             param_git_deploy_key = "${params.GitDeployKey}"
             ///Job parameters
             versionFile = "legion/legion/version.py"
-            sharedLibPath = "legion-aws/pipelines/legionPipeline.groovy"
+            sharedLibPath = "pipelines/legionPipeline.groovy"
     }
 
     stages {
@@ -80,10 +80,17 @@ pipeline {
                     sh 'echo RunningOn: $(curl http://checkip.amazonaws.com/)'
 
                     // import Legion components
-                    dir("${WORKSPACE}/legion-aws") {
-                        checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
-                        legion = load "${env.sharedLibPath}"
-                    }
+                    //dir("${WORKSPACE}/legion-aws") {
+                    //    print ("Checkout Legion-infra repo")
+                    //    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
+
+                    //    print ("Load legion pipeline common library")
+                    //    legion = load "${env.sharedLibPath}"
+                    //}
+                    print ("Load legion pipeline common library")
+                    library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
+                        [$class: 'GitSCMSource',
+                        remote: "${env.param_legion_infra_repo}"])
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
@@ -152,24 +159,68 @@ pipeline {
             }
         }
 
-        stage('Run Python code analyzers') {
-            steps {
-                script{
-                    docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
-                        sh '''
-                        bash analyze_code.sh
-                        '''
+        stage('Build dependencies') {
+            parallel {
+                stage('Build Jenkins plugin') {
+                    steps {
+                        script{
+                            docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
+                                /// Jenkins plugin which will be used in Jenkins Docker container only
+                                sh """
+                                export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
+                                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
+                                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
+                                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
+                                """
 
-                        archiveArtifacts 'legion-pylint.log'
-                        step([
-                            $class                     : 'WarningsPublisher',
-                            parserConfigurations       : [[
-                                                                parserName: 'PYLint',
-                                                                pattern   : 'legion-pylint.log'
-                                                        ]], 
-                            unstableTotalAll           : '0',
-                            usePreviousBuildAsReference: true
-                        ])
+                                archiveArtifacts 'containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
+
+                                withCredentials([[
+                                    $class: 'UsernamePasswordMultiBinding',
+                                    credentialsId: 'nexus-local-repository',
+                                    usernameVariable: 'USERNAME',
+                                    passwordVariable: 'PASSWORD']]) {
+                                    sh """
+                                    curl -v -u $USERNAME:$PASSWORD \
+                                    --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                    ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
+                                    """
+                                    script {
+                                        if (env.param_stable_release){
+                                            sh """
+                                            curl -v -u $USERNAME:$PASSWORD \
+                                            --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                            ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
+                                            """
+                                        }
+                                    }
+                                }
+                                sh "rm -rf ${WORKSPACE}/containers/jenkins/legion-jenkins-plugin/*"
+                            }
+                        }
+                    }
+                }
+
+                stage('Run Python code analyzers') {
+                    steps {
+                        script{
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
+                                sh '''
+                                bash analyze_code.sh
+                                '''
+
+                                archiveArtifacts 'legion-pylint.log'
+                                step([
+                                    $class                     : 'WarningsPublisher',
+                                    parserConfigurations       : [[
+                                                                        parserName: 'PYLint',
+                                                                        pattern   : 'legion-pylint.log'
+                                                                ]], 
+                                    unstableTotalAll           : '0',
+                                    usePreviousBuildAsReference: true
+                                ])
+                            }
+                        }
                     }
                 }
             }
@@ -484,6 +535,7 @@ pipeline {
             }
         }
     }
+
     post {
         always {
             script {
