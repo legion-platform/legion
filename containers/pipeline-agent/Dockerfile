@@ -2,7 +2,7 @@ FROM python:3.6.8
 
 # Install python package dependencies and docker CLI
 RUN apt-get update && apt-get install -y software-properties-common && \
-	apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git  \
+	apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git wget  \
   jq=1.5+dfsg-1.3 xvfb=2:1.19.2-1+deb9u5 \
   # firefox is not pinned deliberately because debian repo constantly rotates intermediate releases
   firefox-esr && \
