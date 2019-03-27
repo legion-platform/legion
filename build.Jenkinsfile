@@ -67,8 +67,10 @@ pipeline {
             param_docker_hub_registry = "${params.DockerHubRegistry}"
             param_git_deploy_key = "${params.GitDeployKey}"
             ///Job parameters
+            updateVersionScript = "legion_test/bin/update_version_id"
             versionFile = "legion/legion/version.py"
-            sharedLibPath = "pipelines/legionPipeline.groovy"
+            // TODO update path
+            sharedLibPath = "legionPipeline.groovy"
     }
 
     stages {
@@ -87,15 +89,18 @@ pipeline {
                     //    print ("Load legion pipeline common library")
                     //    legion = load "${env.sharedLibPath}"
                     //}
-                    print ("Load legion pipeline common library")
-                    library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
-                        [$class: 'GitSCMSource',
-                        remote: "${env.param_legion_infra_repo}"])
+
+                    //print ("Load legion pipeline common library")
+                    //library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
+                    //    [$class: 'GitSCMSource',
+                    //    remote: "${env.param_legion_infra_repo}"])
+
+                    legion = load "${env.sharedLibPath}"
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
-                    legion.setBuildMeta(env.versionFile)
+                    legion.setBuildMeta(env.updateVersionScript, env.versionFile)
 
                 }
             }
@@ -105,7 +110,12 @@ pipeline {
         stage('Set GIT release Tag'){
             steps {
                 script {
-                    legion.setGitReleaseTag()
+                    if (env.param_stable_release && env.param_push_git_tag.toBoolean()){
+                        legion.setGitReleaseTag()
+                    }
+                    else {
+                        print("Skipping release git tag push")
+                    }
                 }
             }
         }
@@ -538,13 +548,13 @@ pipeline {
 
     post {
         always {
-            script {
-                dir("${WORKSPACE}/legion-aws") {
-                    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
-                    legion = load "${env.sharedLibPath}"
-                }
-                legion.notifyBuild(currentBuild.currentResult)
-            }
+            //script {
+            //    dir("${WORKSPACE}/legion-aws") {
+            //        checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
+            //        legion = load "${env.sharedLibPath}"
+            //    }
+            //    legion.notifyBuild(currentBuild.currentResult)
+            //}
             deleteDir()
         }
     }
