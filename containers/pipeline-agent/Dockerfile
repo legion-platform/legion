@@ -48,5 +48,6 @@ COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock /src
 RUN  cd /src/legion/toolchains/python && pipenv install --system --three
 
 COPY ./ "/src/"
+RUN chmod -R a+x /src/scripts/*
 
 RUN cd /src/ && make BUILD_PARAMS="--no-deps" install-all

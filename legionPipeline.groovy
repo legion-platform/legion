@@ -318,10 +318,7 @@ def setBuildMeta(updateVersionScript) {
     Globals.rootCommit = Globals.rootCommit.trim()
     println("Root commit: " + Globals.rootCommit)
 
-    def buildDate = sh returnStdout: true, script: "date '+%Y%m%d%H%M%S'"
-    
-    // TODO debug
-    print buildDate
+    def buildDate = sh returnStdout: true, script: "date '+%Y%m%d%H%M%S' | tr -d '\n'"
 
     Globals.dockerCacheArg = (env.param_enable_docker_cache.toBoolean()) ? '' : '--no-cache'
     println("Docker cache args: " + Globals.dockerCacheArg)
@@ -489,8 +486,7 @@ def buildLegionImage(legion_image, build_context=".", dockerfile='Dockerfile', a
                          ${cache_from_params} \
                          ${additional_parameters} \
                          -t legion/${legion_image}:${Globals.buildVersion} \
-                         ${Globals.dockerLabels} \
-                         -f ${dockerfile} .
+                         ${Globals.dockerLabels} -f ${dockerfile} .
         """
     }
 }
