@@ -13,12 +13,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+from legion.sdk.clients.edi import build_client
+from legion.sdk.clients.model import ModelClient
 from requests.exceptions import RequestException
 
-from legion.model import ModelClient
 
 from locust import HttpLocust, task, TaskSet
-from legion.external.edi import build_client
 
 
 class ModelTaskSet(TaskSet):
