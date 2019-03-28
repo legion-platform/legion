@@ -15,17 +15,17 @@
 #
 import os
 
-from legion.model import ModelClient
-from legion.external.edi import build_client
-import legion.config
+from legion.sdk.clients.model import ModelClient
+from legion.sdk.clients.edi import build_client
+from legion import config
 
 import unittest2
 
 
 class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self._client = ModelClient(legion.config.MODEL_ID, legion.config.MODEL_VERSION,
-                                   token=build_client().get_token(legion.config.MODEL_ID, legion.config.MODEL_VERSION))
+        self._client = ModelClient(config.MODEL_ID, config.MODEL_VERSION,
+                                   token=build_client().get_token(config.MODEL_ID, config.MODEL_VERSION))
 
     def test_model(self):
         response = self._client.invoke(**{"age": "31",
