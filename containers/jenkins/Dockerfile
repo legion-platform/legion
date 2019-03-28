@@ -30,14 +30,14 @@ RUN add-apt-repository \
 RUN apt-get update && apt-get install --yes docker-ce
 
 # Copy bootstrap scripts
-COPY scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
-COPY scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
+COPY build/containers/jenkins/scripts/security.groovy /usr/share/jenkins/ref/init.groovy.d/security.groovy
+COPY build/containers/jenkins/scripts/create_jobs.groovy /usr/share/jenkins/ref/init.groovy.d/create_jobs.groovy
 
 # Copy plugins installation script & set run mode
-COPY scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
+COPY build/containers/jenkins/scripts/install-plugins.sh /usr/local/bin/install-plugins.sh
 RUN chmod +x /usr/local/bin/install-plugins.sh
 
-COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
+COPY build/containers/jenkins/plugins.txt /usr/share/jenkins/ref/plugins.txt
 
 # Prepare env variables from build arguments
 ARG update_center_url="https://updates.jenkins.io"

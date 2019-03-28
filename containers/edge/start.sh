@@ -15,7 +15,11 @@
 #    limitations under the License.
 #
 
-/usr/local/openresty/bin/openresty
+openresty
 
-legion-template "/nginx.conf.ltmpl" "/usr/local/openresty/nginx/conf/nginx.conf" --signal=SIGHUP --pid-file="/usr/local/openresty/nginx/logs/nginx.pid" --command="echo Reloading Nginx" --verbose
+legion-template "nginx.conf.ltmpl" \
+                "${NGINX_DIR}/conf/nginx.conf" \
+                --signal=SIGHUP \
+                --pid-file="${NGINX_DIR}/logs/nginx.pid" \
+                --command="echo Reloading Nginx" --verbose
 

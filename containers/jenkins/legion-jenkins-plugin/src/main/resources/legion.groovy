@@ -182,7 +182,6 @@ def runNotebook(notebookName) {
     export INIT_DIR="`pwd`"
     rm -f notebook.html
 
-    pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     cd "${env.ROOT_DIR}"
     jupyter nbconvert --execute "${env.NOTEBOOK_NAME}" --stdout > "\$INIT_DIR/notebook.html"
     """
@@ -206,7 +205,6 @@ def runScript(scriptPath){
     rm -f notebook.html
     rm -f script-log.txt
 
-    pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
     cd "${env.ROOT_DIR}"
     python3.6 "${env.TARGET_SCRIPT_PATH}" | tee "\$INIT_DIR/script-log.txt"
 
@@ -312,8 +310,6 @@ def runPerformanceTests(testScript) {
     sh """
     export INIT_DIR="`pwd`"
     rm -f locust.log
-
-    pip3 install --extra-index-url \$LEGION_PACKAGE_REPOSITORY legion==\$LEGION_PACKAGE_VERSION
 
     echo "Starting querying ${modelApiHost}"
 

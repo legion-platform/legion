@@ -1,5 +1,5 @@
 #
-#    Copyright 2017 EPAM Systems
+#    Copyright 2019 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,6 +14,13 @@
 #    limitations under the License.
 #
 FROM openresty/openresty:1.13.6.2-bionic
+
+ENV LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    WORK_DIR="/opt/legion" \
+    NGINX_DIR="/usr/local/openresty/nginx"
+
+WORKDIR "${WORK_DIR}/"
 
 RUN apt update -y && \
     apt install -y openssl libffi-dev libssl-dev \
@@ -30,34 +37,20 @@ RUN    luarocks install lua-resty-statsd          3.0.3-1 \
 
 RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
-COPY Pipfile Pipfile
-COPY Pipfile.lock Pipfile.lock
+COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock "${WORK_DIR}/legion/sdk/"
+RUN  cd legion/sdk && pipenv install --system --three
+COPY legion/services/Pipfile legion/services/Pipfile.lock "${WORK_DIR}/legion/services/"
+RUN  cd legion/services && pipenv install --system --three
 
-ENV LC_ALL=C.UTF-8 \
-    LANG=C.UTF-8
-RUN pipenv install -v --system --deploy --three
+COPY legion/sdk "${WORK_DIR}/legion/sdk"
+COPY legion/services "${WORK_DIR}/legion/services"
 
-# Install Legion
-ARG pip_extra_index_params=""
-ARG pip_legion_version_string=""
+RUN pip3 install --no-deps -e "${WORK_DIR}/legion/sdk" && \
+    pip3 install --no-deps -e "${WORK_DIR}/legion/services"
 
-RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_string
-
-WORKDIR /
-
-RUN python3 -m compileall /usr/local/lib/python3.6/dist-packages
-
-# Staff
-ADD start.sh /start.sh
-ADD nginx-jwt.lua \
-    statistics_sender.lua \
-    blacklisted_tokens.lua \
-    fluentd_logger.lua \
-    request_id_generator.lua \
-    edge.lua \
-      /usr/local/openresty/luajit/
-
-ADD nginx.conf.ltmpl /nginx.conf.ltmpl
+COPY build/containers/edge/nginx.conf.ltmpl "${WORK_DIR}/"
+COPY build/containers/edge/lua/ /usr/local/openresty/luajit/
+COPY build/containers/edge/start.sh /usr/bin/
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["/start.sh"]
+CMD ["start.sh"]

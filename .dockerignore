@@ -4,3 +4,10 @@
 .idea
 .examples
 .tests
+__pycache__/
+*.py[cod]
+*$py.class
+.noseids
+log.html
+output.xml
+report.html
