@@ -1,0 +1,6 @@
+.git*
+.vscode
+.venv
+.idea
+.examples
+.tests
