@@ -22,7 +22,6 @@ def buildTestBareModel(modelId, modelVersion, versionNumber) {
     """
 }
 
-
 pipeline {
     agent { label 'ec2builder'}
 
@@ -72,10 +71,10 @@ pipeline {
             param_docker_hub_registry = "${params.DockerHubRegistry}"
             param_git_deploy_key = "${params.GitDeployKey}"
             ///Job parameters
-            updateVersionScript = "legion_test/bin/update_version_id"
-            versionFile = "legion/legion/version.py"
+            updateVersionScript = "scripts/update_version_id"
             // TODO update path
             sharedLibPath = "legionPipeline.groovy"
+            pathToCharts= "${WORKSPACE}/helms"
     }
 
     stages {
@@ -103,9 +102,9 @@ pipeline {
                     legion = load "${env.sharedLibPath}"
 
                     print("Check code for security issues")
-                    sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+                    sh "bash scripts/install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
-                    legion.setBuildMeta(env.updateVersionScript, env.versionFile)
+                    legion.setBuildMeta(env.updateVersionScript)
 
                 }
             }
@@ -173,12 +172,12 @@ pipeline {
                                /// Jenkins plugin which will be used in Jenkins Docker container only
                                sh """
                                export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
-                               mvn -f build/containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
-                               mvn -f build/containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
-                               mvn -f build/containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
+                               mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
+                               mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
+                               mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
                                """
 
-                               archiveArtifacts 'build/containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
+                               archiveArtifacts 'containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
 
                                withCredentials([[
                                    $class: 'UsernamePasswordMultiBinding',
@@ -187,20 +186,20 @@ pipeline {
                                    passwordVariable: 'PASSWORD']]) {
                                    sh """
                                    curl -v -u $USERNAME:$PASSWORD \
-                                   --upload-file build/containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                   --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                                    ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
                                    """
                                    script {
                                        if (env.param_stable_release){
                                            sh """
                                            curl -v -u $USERNAME:$PASSWORD \
-                                           --upload-file build/containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                           --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
                                            ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
                                            """
                                        }
                                    }
                                }
-                               sh "rm -rf ${WORKSPACE}/build/containers/jenkins/legion-jenkins-plugin/*"
+                               sh "rm -rf ${WORKSPACE}/containers/jenkins/legion-jenkins-plugin/*"
                             }
                         }
                     }
@@ -213,21 +212,21 @@ pipeline {
                 stage("Build Edge Docker image") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-edge', 'containers/edge', 'containers/edge/Dockerfile')
+                            legion.buildLegionImage('k8s-edge', 'containers/edge')
                         }
                     }
                 }
                 stage("Build Edi Docker image") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-edi', "containers/edi", 'containers/edi/Dockerfile')
+                            legion.buildLegionImage('k8s-edi', "containers/edi")
                         }
                     }
                 }
                 stage("Build Fluentd Docker image") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-fluentd', 'containers/fluentd', 'containers/fluentd/Dockerfile')
+                            legion.buildLegionImage('k8s-fluentd', 'containers/fluentd')
                         }
                     }
                 }
@@ -255,7 +254,7 @@ pipeline {
                 stage('Build docs') {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
                                 sh "make LEGION_VERSION=${Globals.buildVersion} build-docs"
 
                                 archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
@@ -266,7 +265,7 @@ pipeline {
                 stage('Run Python code analyzers') {
                     steps {
                         script{
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
                                 def statusCode = sh script:'make lint', returnStatus:true
 
                                 if (statusCode != 0) {
@@ -291,7 +290,7 @@ pipeline {
                 stage("Run unittests") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                     sh """
                                         cd /src
 
@@ -385,7 +384,7 @@ pipeline {
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            legion.uploadHelmCharts()
+                            legion.uploadHelmCharts(env.pathToCharts)
                         }
                     }
                 }
