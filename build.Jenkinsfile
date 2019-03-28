@@ -58,11 +58,16 @@ pipeline {
             // Release version to be used as docker cache source
             param_docker_cache_source = "${params.DockerCacheSource}"
             //Artifacts storage parameters
+            param_helm_repo_git_url = "${params.HelmRepoGitUrl}"
+            param_helm_repo_git_branch = "${params.HelmRepoGitBranch}"
+            param_helm_repository = "${params.HelmRepository}"
             param_pypi_repository = "${params.PyPiRepository}"
             param_local_pypi_distribution_target_name = "${params.LocalPyPiDistributionTargetName}"
             param_test_pypi_distribution_target_name = "${params.testPyPiDistributionTargetName}"
             param_public_pypi_distribution_target_name = "${params.PublicPyPiDistributionTargetName}"
             param_pypi_distribution_target_name = "${params.PyPiDistributionTargetName}"
+            param_jenkins_plugins_repository_store = "${params.JenkinsPluginsRepositoryStore}"
+            param_jenkins_plugins_repository = "${params.JenkinsPluginsRepository}"
             param_docker_registry = "${params.DockerRegistry}"
             param_docker_hub_registry = "${params.DockerHubRegistry}"
             param_git_deploy_key = "${params.GitDeployKey}"
@@ -143,89 +148,138 @@ pipeline {
             }
         }
 
-        stage('Build pipeline Docker agent with Legion') {
-            steps {
-                script {
-                    legion.buildLegionImage('legion-pipeline-agent', '.', 'containers/pipeline-agent/Dockerfile')
-                    legion.uploadDockerImage('legion-pipeline-agent')
-                }
-            }
-        }
-        
-        stage("Build Base python image") {
-            steps {
-                script {
-                    legion.buildLegionImage('base-python-image', 'containers/base-python-image', 'containers/base-python-image/Dockerfile')
-                    legion.uploadDockerImage('base-python-image')
-                }
-            }
-        }
-
-        stage("Build toolchains Docker image"){
-            steps {
-                script {
-                    legion.buildLegionImage('python-toolchain', 'containers/toolchains/python', 'containers/toolchains/python/Dockerfile')
-                }
-            }
-        }
-
-        stage('Build dependencies') {
+        stage("Build base images") {
             parallel {
-                stage('Build Jenkins plugin') {
+                stage("Build toolchains Docker image"){
                     steps {
-                        script{
-                            docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
-                                /// Jenkins plugin which will be used in Jenkins Docker container only
-                                sh """
-                                export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
-                                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
-                                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
-                                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
-                                """
+                        script {
+                            legion.buildLegionImage('python-toolchain', 'containers/toolchains/python')
+                        }
+                    }
+                }
+                stage('Build pipeline Docker agent') {
+                    steps {
+                        script {
+                            legion.buildLegionImage('legion-pipeline-agent', '.', 'containers/pipeline-agent/Dockerfile')
+                            legion.uploadDockerImage('legion-pipeline-agent')
+                        }
+                    }
+                }
+                stage("Build Jenkins Legion plugin") {
+                   steps {
+                       script {
+                           docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
+                               /// Jenkins plugin which will be used in Jenkins Docker container only
+                               sh """
+                               export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
+                               mvn -f build/containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
+                               mvn -f build/containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=/tmp/.m2/repository
+                               mvn -f build/containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
+                               """
 
-                                archiveArtifacts 'containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
+                               archiveArtifacts 'build/containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
 
-                                withCredentials([[
-                                    $class: 'UsernamePasswordMultiBinding',
-                                    credentialsId: 'nexus-local-repository',
-                                    usernameVariable: 'USERNAME',
-                                    passwordVariable: 'PASSWORD']]) {
-                                    sh """
-                                    curl -v -u $USERNAME:$PASSWORD \
-                                    --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                    ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
-                                    """
-                                    script {
-                                        if (env.param_stable_release){
-                                            sh """
-                                            curl -v -u $USERNAME:$PASSWORD \
-                                            --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                            ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
-                                            """
-                                        }
-                                    }
-                                }
-                                sh "rm -rf ${WORKSPACE}/containers/jenkins/legion-jenkins-plugin/*"
+                               withCredentials([[
+                                   $class: 'UsernamePasswordMultiBinding',
+                                   credentialsId: 'nexus-local-repository',
+                                   usernameVariable: 'USERNAME',
+                                   passwordVariable: 'PASSWORD']]) {
+                                   sh """
+                                   curl -v -u $USERNAME:$PASSWORD \
+                                   --upload-file build/containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                   ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
+                                   """
+                                   script {
+                                       if (env.param_stable_release){
+                                           sh """
+                                           curl -v -u $USERNAME:$PASSWORD \
+                                           --upload-file build/containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
+                                           ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
+                                           """
+                                       }
+                                   }
+                               }
+                               sh "rm -rf ${WORKSPACE}/build/containers/jenkins/legion-jenkins-plugin/*"
                             }
                         }
                     }
                 }
+            }
+        }
+    
+        stage("Build Docker images & Run Tests") {
+            parallel {
+                stage("Build Edge Docker image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-edge', 'containers/edge', 'containers/edge/Dockerfile')
+                        }
+                    }
+                }
+                stage("Build Edi Docker image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-edi', "containers/edi", 'containers/edi/Dockerfile')
+                        }
+                    }
+                }
+                stage("Build Fluentd Docker image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-fluentd', 'containers/fluentd', 'containers/fluentd/Dockerfile')
+                        }
+                    }
+                }
+                stage("Build Jenkins Docker image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-jenkins', "containers/jenkins", "containers/jenkins/Dockerfile", """--build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" """)
+                        }
+                    }
+                }
+                stage("Build test models") {
+                    steps {
+                        script {
+                            docker.image("legion/python-toolchain:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
+                                buildTestBareModel("demo-abc-model", "1.0", "1")
+                                buildTestBareModel("demo-abc-model", "1.1", "2")
+                                buildTestBareModel("edi-test-model", "1.2", "3")
+                                buildTestBareModel("feedback-test-model", "1.0", "4")
+                                buildTestBareModel("command-test-model", "1.0", "5")
+                                buildTestBareModel("auth-test-model", "1.0", "6")
+                            }
+                        }
+                    }
+                }
+                stage('Build docs') {
+                    steps {
+                        script {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                                sh "make LEGION_VERSION=${Globals.buildVersion} build-docs"
 
+                                archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
+                            }
+                        }
+                    }
+                }
                 stage('Run Python code analyzers') {
                     steps {
                         script{
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
-                                sh '''
-                                bash analyze_code.sh
-                                '''
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside() {
+                                def statusCode = sh script:'make lint', returnStatus:true
 
-                                archiveArtifacts 'legion-pylint.log'
+                                if (statusCode != 0) {
+                                    currentBuild.result = 'UNSTABLE'
+                                }
+
+                                archiveArtifacts 'target/pylint/legion.log'
+                                archiveArtifacts 'target/pydocstyle/legion.log'
                                 step([
                                     $class                     : 'WarningsPublisher',
                                     parserConfigurations       : [[
                                                                         parserName: 'PYLint',
-                                                                        pattern   : 'legion-pylint.log'
-                                                                ]], 
+                                                                        pattern   : 'target/pylint/legion.log'
+                                                                ]],
                                     unstableTotalAll           : '0',
                                     usePreviousBuildAsReference: true
                                 ])
@@ -233,10 +287,38 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
+                stage("Run unittests") {
+                    steps {
+                        script {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                                    sh """
+                                        cd /src
 
-        stage('Run tests and upload artifacts'){
+                                        make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" unittests || true
+                                    """
+
+                                    sh 'cp -r /src/target/coverage.xml /src/target/nosetests.xml /src/target/cover ./'
+
+                                    junit 'nosetests.xml'
+                                    cobertura coberturaReportFile: 'coverage.xml'
+                                    publishHTML (target: [
+                                      allowMissing: false,
+                                      alwaysLinkToLastBuild: false,
+                                      keepAll: true,
+                                      reportDir: 'cover',
+                                      reportFiles: 'index.html',
+                                      reportName: "Test Coverage Report"
+                                    ])
+
+                                    sh 'rm -rf coverage.xml nosetests.xml cover'
+                            }
+                        }
+                    }
+                }
+            }
+       }
+
+        stage('Upload artifacts'){
             parallel {
                 stage("Upload Legion package") {
                     steps {
@@ -299,175 +381,13 @@ pipeline {
                         }
                     }
                 }
-
-                stage('Build docs') {
+                stage('Package and upload helm charts'){
                     steps {
                         script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
-                                sh """
-                                cd legion/docs
-                                sphinx-apidoc -f --private -o source/ ../legion/ -V '${Globals.buildVersion}'
-                                sed -i 's/\'1.0\'/\'${Globals.buildVersion}\'/' source/conf.py
-                                make html
-                                find build/html -type f -name '*.html' | xargs sed -i -r 's/href=\"(.*)\\.md\"/href=\"\\1.html\"/'
-                                cd ../../
-                                """
-
-                                sh "tar -czf legion_docs_${Globals.buildVersion}.tar.gz legion/docs/build/html/"
-                                archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
-                            }
+                            legion.uploadHelmCharts()
                         }
                     }
                 }
-
-                stage("Run Python tests") {
-                    steps {
-                        script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                                sh """
-                                export TEMP_DIRECTORY="\$(pwd)"
-                                cd /src/legion
-                                VERBOSE=true \
-                                DEBUG=true \
-                                BASE_IMAGE_VERSION="${Globals.buildVersion}" \
-                                SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
-                                    nosetests --processes=10 \
-                                    --process-timeout=600 \
-                                    --with-coverage \
-                                    --cover-package legion \
-                                    --with-xunitmp \
-                                    --cover-xml \
-                                    --cover-html \
-                                    --logging-level DEBUG \
-                                    -v || true
-
-                                cd -
-                                cp /src/legion/nosetests.xml legion/nosetests.xml
-                                cp /src/legion/coverage.xml legion/coverage.xml
-                                cp -r /src/legion/cover legion/cover
-                                """
-
-                                junit 'legion/nosetests.xml'
-                                cobertura coberturaReportFile: 'legion/coverage.xml'
-                                publishHTML (target: [
-                                    allowMissing: false,
-                                    alwaysLinkToLastBuild: false,
-                                    keepAll: true,
-                                    reportDir: 'legion/cover',
-                                    reportFiles: 'index.html',
-                                    reportName: "Test Coverage Report"
-                                ])
-
-                                sh """
-                                    rm -rf legion/nosetests.xml
-                                    rm -rf legion/coverage.xml
-                                    rm -rf legion/cover
-                                """
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        stage("Build Docker images & Upload Helm charts") {
-            parallel {
-                stage("Build Edge Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edge', 'containers/edge', 'containers/edge/Dockerfile')
-                        }
-                    }
-                }
-                stage("Build Jenkins Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-jenkins', "containers/jenkins", "containers/jenkins/Dockerfile", """--build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" """)
-                        }
-                    }
-                }
-                stage("Build Edi Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edi', "containers/edi", 'containers/edi/Dockerfile')
-                        }
-                    }
-                }
-                stage("Build Fluentd Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-fluentd', 'containers/fluentd', 'containers/fluentd/Dockerfile')
-                        }
-                    }
-                }
-                stage("Build test models") {
-                    steps {
-                        script {
-                            docker.image("legion/python-toolchain:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
-                                buildTestBareModel("demo-abc-model", "1.0", "1")
-                                buildTestBareModel("demo-abc-model", "1.1", "2")
-                                buildTestBareModel("edi-test-model", "1.2", "3")
-                                buildTestBareModel("feedback-test-model", "1.0", "4")
-                                buildTestBareModel("command-test-model", "1.0", "5")
-                                buildTestBareModel("auth-test-model", "1.0", "6")
-                            }
-                        }
-                    }
-                }
-
-                stage("Run Python tests") {
-                    steps {
-                        script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                                sh """
-                                export TEMP_DIRECTORY="\$(pwd)"
-                                cd /src/legion
-                                VERBOSE=true \
-                                DEBUG=true \
-                                BASE_IMAGE_VERSION="${Globals.buildVersion}" \
-                                SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
-                                    nosetests --processes=10 \
-                                    --process-timeout=600 \
-                                    --with-coverage \
-                                    --cover-package legion \
-                                    --with-xunitmp \
-                                    --cover-xml \
-                                    --cover-html \
-                                    --logging-level DEBUG \
-                                    -v || true
-
-                                cd -
-                                cp /src/legion/nosetests.xml legion/nosetests.xml
-                                cp /src/legion/coverage.xml legion/coverage.xml
-                                cp -r /src/legion/cover legion/cover
-                                """
-
-                                junit 'legion/nosetests.xml'
-                                cobertura coberturaReportFile: 'legion/coverage.xml'
-                                publishHTML (target: [
-                                  allowMissing: false,
-                                  alwaysLinkToLastBuild: false,
-                                  keepAll: true,
-                                  reportDir: 'legion/cover',
-                                  reportFiles: 'index.html',
-                                  reportName: "Test Coverage Report"
-                                ])
-
-                                sh """
-                                    rm -rf legion/nosetests.xml
-                                    rm -rf legion/coverage.xml
-                                    rm -rf legion/cover
-                                """
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-
-        stage("Push Docker Images & Helm charts") {
-            parallel {
                 stage('Upload Edge Docker Image') {
                     steps {
                         script {
@@ -505,14 +425,6 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-fluentd')
-                        }
-                    }
-                }
-
-                stage('Package and upload helm charts'){
-                    steps {
-                        script {
-                            legion.uploadHelmCharts()
                         }
                     }
                 }
