@@ -111,54 +111,32 @@ def updateTLSCert() {
     }
 }
 
-def createjenkinsJobs(String commitID) {
+def downloadSecrets(String vault) {
+    sh """
+        export CLUSTER_NAME="${env.param_profile}"
+        export PATH_TO_PROFILE_FILE="deploy/profiles/${env.param_profile}.yml"
+        export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
+        echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
+        export CREDENTIAL_SECRETS=".secrets.yaml"
+
+        aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
+        ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
+
+        kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
+    """
+}
+
+def createJenkinsJobs(String commitID) {
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/legion-pipeline-agent:${env.param_legion_version}").inside("-e HOME=/opt/legion -v ${WORKSPACE}/profiles:/opt/legion/profiles -u root") {
+                docker.image("${env.param_docker_repo}/legion-docker-agent:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Create Jenkins jobs') {
                         dir("${WORKSPACE}"){
-                            def creds
-                            def output = sh(script:"""
-                                export PATH_TO_PROFILES_DIR=\"profiles\"
-                                export PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
-                                export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
-                                export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
-                                echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
-                                export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
+                            downloadSecrets(vault)
 
-                                aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
-                                ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
-
-                                kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
-
-                                export PROFILE=${env.param_profile}
-
-                                echo ----
-                                jenkins_dex_client
-                                """, returnStdout: true)
-
-                            creds = output.split('----')[1].split('\n')
-                            env.jenkins_user = creds[1]
-                            env.jenkins_pass = creds[2]
-                            env.jenkins_token = creds[3]
-
-                            sh """
-                            create_example_jobs \
-                            \"https://jenkins.${env.param_profile}\" \
-                            ./examples \
-                            ./ \
-                            \"https://github.com/legion-platform/legion.git\" \
-                            ${commitID} \
-                            --connection-timeout 600 \
-                            --git-root-key \"legion-root-key\" \
-                            --model-host "" \
-                            --dynamic-model-prefix \"DYNAMIC MODEL\" \
-                            --jenkins-user "${jenkins_user}" \
-                            --jenkins-password "${jenkins_pass}" \
-                            --jenkins-cookies "${jenkins_token}" \
-                            """
+                            sh "make COMMIT_ID=${commitID} CLUSTER_NAME=${env.param_profile} create-models-job"
                         }
                     }
                 }
@@ -166,20 +144,18 @@ def createjenkinsJobs(String commitID) {
         }
     }
 }
-
 def runRobotTests(tags="") {
     withCredentials([
     file(credentialsId: "vault-${env.param_profile}", variable: 'vault')]) {
         withAWS(credentials: 'kops') {
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
-                docker.image("${env.param_docker_repo}/legion-pipeline-agent:${env.param_legion_version}").inside("-e HOME=/opt/legion/ -v ${WORKSPACE}/profiles:/opt/legion/profiles -u root") {
+                docker.image("${env.param_docker_repo}/legion-docker-agent:${env.param_legion_version}").inside("-e HOME=/opt/legion/deploy -v ${WORKSPACE}/deploy/profiles:/opt/legion/deploy/profiles -u root") {
                     stage('Run Robot tests') {
                         dir("${WORKSPACE}"){
-                            def nose_report = 0
-                            def robot_report = 0
                             def tags_list = tags.toString().trim().split(',')
                             def robot_tags = []
                             def nose_tags = []
+
                             for (item in tags_list) {
                                 if (item.startsWith('-')) {
                                     item = item.replace("-","")
@@ -189,59 +165,29 @@ def runRobotTests(tags="") {
                                 else if (item?.trim()) {
                                     robot_tags.add(" -i ${item}")
                                     nose_tags.add(" -a ${item}")
-                                    }
                                 }
+                            }
+
                             env.robot_tags= robot_tags.join(" ")
                             env.nose_tags = nose_tags.join(" ")
+
+                            downloadSecrets(vault)
+
                             sh """
-                            echo "Starting robot tests"
-                            cd tests/robot
-                            rm -f *.xml
+                                echo "Starting robot tests"
+                                make CLUSTER_NAME=${env.param_profile} LEGION_VERSION=${env.param_legion_version} e2e-robot || true
 
-                            PATH_TO_PROFILES_DIR=\"../../profiles\"
-                            PATH_TO_PROFILE_FILE=\"\$PATH_TO_PROFILES_DIR/${env.param_profile}.yml\"
-                            PATH_TO_COOKIES=\"\$PATH_TO_PROFILES_DIR/cookies.dat\"
-
-                            export CLUSTER_NAME=\"\$(yq -r .cluster_name \$PATH_TO_PROFILE_FILE)\"
-                            export CLUSTER_STATE_STORE=\"\$(yq -r .state_store \$PATH_TO_PROFILE_FILE)\"
-                            echo \"Loading kubectl config from \$CLUSTER_STATE_STORE for cluster \$CLUSTER_NAME\"
-                            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
-
-                            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
-                            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
-
-                            kops export kubecfg --name \$CLUSTER_NAME --state \$CLUSTER_STATE_STORE
-                            
-                            # Start Xvfb server in background
-                            Xvfb :99 -ac &
-
-                            # Get Auth cookies
-                            DISPLAY=:99 \
-                            PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} \
-                            jenkins_dex_client --path-to-profiles \$PATH_TO_PROFILES_DIR > \$PATH_TO_COOKIES
-
-                            # Run Robot tests
-                            DISPLAY=:99 \
-                            PROFILE=${env.param_profile} LEGION_VERSION=${env.param_legion_version} PATH_TO_COOKIES=\$PATH_TO_COOKIES \
-                            pabot --verbose --processes 6 --variable PATH_TO_PROFILES_DIR:\$PATH_TO_PROFILES_DIR --listener legion_test.process_reporter ${env.robot_tags} --outputdir . tests/**/*.robot || true
-
-                            echo \"Starting python tests\"
-                            cd ../python
-                            export CREDENTIAL_SECRETS=\"${env.param_profile}.yaml\"
-                            aws s3 cp \$CLUSTER_STATE_STORE/vault/${env.param_profile} \$CLUSTER_NAME
-                            ansible-vault decrypt --vault-password-file=${vault} --output \$CREDENTIAL_SECRETS \$CLUSTER_NAME
-
-                            PROFILE=${env.param_profile} PATH_TO_PROFILES_DIR=\$PATH_TO_PROFILES_DIR LEGION_VERSION=${env.param_legion_version} \
-                            nosetests ${env.nose_tags} --with-xunit --logging-level DEBUG -v || true
+                                echo "Starting python tests"
+                                make CLUSTER_NAME=${env.param_profile} LEGION_VERSION=${env.param_legion_version} e2e-python || true
                             """
 
-                            robot_report = sh(script: 'find tests/robot/ -name "*.xml" | wc -l', returnStdout: true)
-                            nose_report = sh(script: 'cat tests/python/nosetests.xml | wc -l', returnStdout: true)
+                            def robot_report = sh(script: 'find target/ -name "*.xml" | wc -l', returnStdout: true)
+                            def nose_report = sh(script: 'cat target/nosetests.xml | wc -l', returnStdout: true)
 
                             if (robot_report.toInteger() > 0) {
                                 step([
                                     $class : 'RobotPublisher',
-                                    outputPath : 'tests/robot/',
+                                    outputPath : 'target/',
                                     outputFileName : "*.xml",
                                     disableArchiveOutput : false,
                                     passThreshold : 100,
@@ -255,7 +201,7 @@ def runRobotTests(tags="") {
                             }
 
                             if (nose_report.toInteger() > 1) {
-                                junit 'tests/python/nosetests.xml'
+                                junit 'target/nosetests.xml'
                             }
                             else {
                                 echo "No ''*.xml' files for generating nosetests report"
@@ -268,14 +214,7 @@ def runRobotTests(tags="") {
                             if (!(nose_report.toInteger() > 1 || robot_report.toInteger() > 0) && tags) {
                                 echo "No tests were run during this build. Marking build as UNSTABLE"
                                 currentBuild.result = 'UNSTABLE'
-                            }     
-
-                            sh """
-                            # Cleanup temp files
-                            rm -rf tests/python/__pycache__
-                            rm -rf tests/robot/__pycache__
-                            rm -rf tests/robot/pabot_results
-                            """         
+                            }
                         }
                     }
                 }
@@ -373,7 +312,7 @@ def authorizeJenkinsAgent() {
     }
 }
 
-def setBuildMeta(updateVersionScript, versionFile) {
+def setBuildMeta(updateVersionScript) {
 
     Globals.rootCommit = sh returnStdout: true, script: 'git rev-parse --short HEAD 2> /dev/null | sed  "s/\\(.*\\)/\\1/"'
     Globals.rootCommit = Globals.rootCommit.trim()
@@ -405,7 +344,7 @@ def setBuildMeta(updateVersionScript, versionFile) {
             exit 1
         }
     } else {
-        Globals.buildVersion = sh returnStdout: true, script: "python ${updateVersionScript} ${versionFile} ${env.BUILD_NUMBER} '${BUILD_USER}'"
+        Globals.buildVersion = sh returnStdout: true, script: "python ${updateVersionScript} ${env.BUILD_NUMBER} '${BUILD_USER}'"
     }
 
     Globals.buildVersion = Globals.buildVersion.replaceAll("\n", "")
@@ -516,8 +455,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
     }
 
 }
-
-
 
 def buildLegionImage(legion_image, build_context=".", dockerfile='Dockerfile', additional_parameters='') {
     // Copy .dockerignore because we can't specify it using docker cli. https://github.com/moby/moby/issues/12886
