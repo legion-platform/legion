@@ -17,10 +17,6 @@ Url stay the same after dex log in
     ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
     should be equal  ${service_url}  ${resp.url}
 
-Connect to enclave Grafana
-    [Arguments]           ${enclave}
-    Connect to Grafana    ${HOST_PROTOCOL}://grafana-${enclave}.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
-
 Connect to main Grafana
     Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 
@@ -321,25 +317,6 @@ Verify model info from edi
     Should Be Equal  ${target_model[5]}    ${model_image}     invalid model image
     Should Be Equal  ${target_model[6]}    ${scale_num}       invalid actual scales
     Should Be Equal  ${target_model[7]}    ${scale_num}       invalid desired scale
-
-Test model pipeline result
-    [Arguments]          ${model_name}                      ${enclave}
-    Jenkins artifact present                                DYNAMIC MODEL ${model_name}   notebook.html
-    ${model_meta} =      Jenkins log meta information       DYNAMIC MODEL ${model_name}
-    Log                  Model build meta is ${model_meta}
-    ${model_id} =        Get From Dictionary                ${model_meta}                 modelId
-    ${model_version} =   Get From Dictionary                ${model_meta}                 modelVersion
-    ${edge}=             Build enclave EDGE URL             ${enclave}
-    Get token from EDI   ${enclave}   ${model_id}   ${model_version}
-    ${model_info} =      Get model info  ${edge}  ${TOKEN}  ${model_id}  ${model_version}
-    Log                  Model info is ${model_info}
-    Connect to enclave Grafana                              ${enclave}
-    Dashboard should exists                                 ${model_id}
-    Sleep                15s
-    Metric should be presented                              ${model_id}                   ${model_version}
-    ${edi_state}=        Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN}
-    Log                  State of ${model_id} is ${edi_state}
-    [Return]             ${model_id}    ${model_version}
 
 Check if all enclave domains are registered
     [Arguments]             ${enclave}

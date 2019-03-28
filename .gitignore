@@ -27,7 +27,6 @@ test.model
 
 *.tmp.yml
 *.tmp.out
-requirements.lock
 
 # Created by .ignore support plugin (hsz.mobi)
 .idea/

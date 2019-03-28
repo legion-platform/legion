@@ -1,5 +1,5 @@
 --
---   Copyright 2017 EPAM Systems
+--   Copyright 2019 EPAM Systems
 --
 --   Licensed under the Apache License, Version 2.0 (the "License");
 --   you may not use this file except in compliance with the License.
@@ -14,53 +14,26 @@
 --   limitations under the License.
 --
 local _M = {}
-local Statsd = require("resty_statsd")
 
-
-function _M.push_data(_, time, name, endpoint)
-    local host = _M.host
-    local port = _M.port
-    local namespace = _M.namespace
-
-    ngx.log(ngx.DEBUG, "Connection to host="..host.." port="..port.." namespace="..namespace)
-
-    local conn, err = Statsd({
-        host = host,
-        port = tonumber(port),
-        namespace = namespace
-    })
-
-    local ok = false
-
-    if conn ~= Nil then
-        ok, err = conn:increment(name.."."..endpoint..".request.count", 1, 1)
-        ok, err = conn:timer(name.."."..endpoint..".request.time", time)
-    end
-
-    if err ~= Nil then
-        ngx.log(ngx.ERR, "Failed to send Statsd statistics to host="..host.." port="..port.." namespace="..namespace..":", err)
-    end
+function _M.send_request_statistics(model_id, model_version, model_endpoint, latency)
+    _M.metric_requests:inc(1, {model_id, model_version, model_endpoint})
+    _M.metric_latency:observe(latency, {model_id, model_version, model_endpoint})
 end
 
-function _M.send_request_statistics(name, latency)
-    local endpoint = ngx.header["Model-Endpoint"]
-
-    if model_endpoint == Nil then
-        model_endpoint = "default"
-    end
-
-    local ok, err = ngx.timer.at(0, _M.push_data, latency, name, endpoint)
-    if not ok then
-        ngx.log(ngx.ERR, "Failed to create Statsd reporting timer: ", err)
-        return
-    end
+function _M.metrics()
+    return _M.prometheus:collect()
 end
 
-function _M.init(host, port, namespace)
-    _M.host = host
-    _M.port = port
-    _M.namespace = namespace
-    ngx.log(ngx.ERR, "statistics_sender.lua initialized with host="..host.." port="..port.." namespace="..namespace)
+function _M.init()
+    _M.prometheus = require("prometheus").init("prometheus_metrics")
+    _M.metric_requests = _M.prometheus:counter(
+            "legion_model_request_counter", "Number of model HTTP requests",
+            {"model_id", "model_version", "model_endpoint"}
+    )
+    _M.metric_latency = _M.prometheus:histogram(
+            "legion_model_request_time", "HTTP model request latency",
+            {"model_id", "model_version", "model_endpoint"}
+    )
 end
 
 return _M

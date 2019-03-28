@@ -1,5 +1,6 @@
 ---
 
-prometheus_operator: 0.0.15
-kube_prometheus: 0.0.43
 helm_local_src: false
+monitoring_namespace: kube-monitoring
+source_secret_name: "{{ base_domain }}-tls"
+monitoring_values_file: "{{ tmp_dir }}/monitoring.{{ cluster_name }}.yml"

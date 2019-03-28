@@ -34,10 +34,7 @@ import legion.utils
 
 from legion.k8s import utils as k8s_utils
 from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
-from legion.k8s.definitions import \
-    LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI, \
-    LEGION_COMPONENT_NAME_GRAFANA, LEGION_COMPONENT_NAME_GRAPHITE
-
+from legion.k8s.definitions import LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI
 LOGGER = logging.getLogger(__name__)
 
 SERVE_HEALTH_CHECK = '/healthcheck'
@@ -60,8 +57,6 @@ class Enclave:
 
         self._edi_service = None
         self._api_service = None
-        self._grafana_service = None
-        self._graphite_service = None
 
     @staticmethod
     def build_from_namespace_object(ns_object):
@@ -104,8 +99,6 @@ class Enclave:
 
         self._edi_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_EDI)
         self._api_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_API)
-        self._grafana_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_GRAFANA)
-        self._graphite_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_GRAPHITE)
 
     @property
     def name(self):
@@ -144,26 +137,6 @@ class Enclave:
         """
         self._load_services()
         return self._api_service
-
-    @property
-    def grafana_service(self):
-        """
-        Return Grafana service object.
-
-        :return: :py:class:`legion.k8s.Service` -- Grafana service object or None
-        """
-        self._load_services()
-        return self._grafana_service
-
-    @property
-    def graphite_service(self):
-        """
-        Return Graphite service object.
-
-        :return: :py:class:`legion.k8s.Service` -- Graphite service object or None
-        """
-        self._load_services()
-        return self._graphite_service
 
     def get_models(self, model_id=None, model_version=None):
         """
@@ -320,13 +293,6 @@ class Enclave:
 
             return False, model
 
-        # REFACTOR, maybe we should remove that
-        # TODO: Check
-        container_env_variables = {
-            'STATSD_HOST': self.graphite_service.internal_domain,
-            'STATSD_PORT': str(self.graphite_service.internal_port)
-        }
-
         http_get_object = kubernetes.client.V1HTTPGetAction(
             path='/healthcheck',
             port=legion.config.LEGION_PORT
@@ -359,10 +325,6 @@ class Enclave:
         container = kubernetes.client.V1Container(
             name='model',
             image=image,
-            env=[
-                kubernetes.client.V1EnvVar(name=k, value=str(v))
-                for k, v in container_env_variables.items()
-            ],
             resources=resources,
             liveness_probe=livenessprobe,
             readiness_probe=readinessprobe,

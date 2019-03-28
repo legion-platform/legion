@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # install system utilities
 RUN apt-get update && apt-get install -y \
     python-pip apt-transport-https bash curl tar openssh-client \
-    sshpass git ca-certificates python-pip apt-utils locales && \
+    sshpass git ca-certificates python-pip apt-utils locales jq && \
     apt-get clean && apt-get autoclean
 
 # setup locale

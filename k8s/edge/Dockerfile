@@ -18,7 +18,7 @@ FROM openresty/openresty:1.13.6.2-bionic
 RUN apt update -y && \
     apt install -y openssl libffi-dev libssl-dev \
        python3 python3-dev python3-pip g++ \
-       ca-certificates gnupg openssl git curl dumb-init
+       ca-certificates gnupg openssl git curl dumb-init libnginx-mod-http-lua
 
 RUN    luarocks install lua-resty-statsd          3.0.3-1 \
     && luarocks install lua-cmsgpack              0.4.0 \
@@ -26,7 +26,8 @@ RUN    luarocks install lua-resty-statsd          3.0.3-1 \
     && luarocks install basexx                    0.4.0-1 \
     && luarocks install lua-resty-jwt             0.2.0-0 \
     && luarocks install lua-resty-jit-uuid        0.0.7-1 \
-    && luarocks install lua-resty-reqargs         1.4-1
+    && luarocks install lua-resty-reqargs         1.4-1 \
+    && luarocks install nginx-lua-prometheus      0.20181120-2
 
 RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
@@ -45,8 +46,8 @@ RUN python3 -m pip install $pip_extra_index_params legion$pip_legion_version_str
 
 WORKDIR /
 
-RUN python3 -m compileall /usr/local/lib/python3.6/dist-packages
-
+RUN python3 -m compileall /usr/local/lib/python3.6/dist-packages && \
+    cp /usr/local/openresty/luajit/share/lua/5.1/nginx/prometheus.lua /usr/local/openresty/luajit/
 # Staff
 ADD start.sh /start.sh
 ADD nginx-jwt.lua \

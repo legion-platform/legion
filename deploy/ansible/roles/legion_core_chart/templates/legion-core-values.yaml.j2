@@ -67,31 +67,10 @@ jenkins:
     {%- endif -%}
     {% endfor %}"
 
-graphite:
+metrics:
   enabled: true
-  image:
-    repository: "hopsoft/graphite-statsd"
-    tag: "v0.9.15-phusion0.9.18"
-
-grafana:
-  adminUser: "{{ grafana.admin.username }}"
-  adminPassword: "{{ grafana.admin.password }}"
-  ingress:
-    hosts:
-      - "grafana.{{ base_domain }}"
-      - "grafana.local.{{ base_domain }}"
-    tls:
-      - secretName: "{{ base_domain }}-tls"
-        hosts: ["grafana.{{ base_domain }}"]
-    annotations:
-      nginx.ingress.kubernetes.io/configuration-snippet: |
-          set_escape_uri $escaped_request_uri $request_uri;
-      nginx.ingress.kubernetes.io/auth-signin: https://auth.{{ cluster_name }}/oauth2/start?rd=https://$host$escaped_request_uri
-      nginx.ingress.kubernetes.io/auth-url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
-  setup:
-    image:
-      repository: "{{ docker_repo }}/k8s-ansible"
-      tag: "{{ legion_version }}"
+  host: statsd-exporter.{{ monitoring_namespace }}.svc.cluster.local
+  port: 9125
 
 connections:
   docker:

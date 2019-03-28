@@ -12,7 +12,7 @@
 - include: k8s-authenticator.yaml
 - include: dashboard.yaml
 - include: autoscaler.yaml
-- include: prometheus.yaml
 - include: jenkins-volume.yaml
 - include: kube2iam.yaml
 - include: kube-fluentd.yaml
+- include: monitoring.yaml

@@ -227,7 +227,6 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                  m_func('kubernetes.client.AppsV1Api.create_namespaced_deployment', 'deploy_done'), \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None), \
                  mock.patch('legion.k8s.utils.get_docker_image_labels', return_value=DOCKER_IMAGE_LABELS):
                 deployments = edi.edi_client.deploy(
                     '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a')
@@ -264,7 +263,6 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                         'deploy_done') as cnd_mock, \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None), \
                  mock.patch('legion.k8s.utils.get_docker_image_labels', return_value=DOCKER_IMAGE_LABELS):
                 deployments = edi.edi_client.deploy(
                     '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', count=1)
@@ -306,7 +304,6 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                         'deploy_done') as cnd_mock, \
                  m_func('kubernetes.client.CoreV1Api.create_namespaced_service', 'deploy_done'), \
                  mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None), \
                  mock.patch('legion.k8s.utils.get_docker_image_labels', return_value=DOCKER_IMAGE_LABELS):
                 deployments = edi.edi_client.deploy(
                     '127.0.0.1/legion/test-bare-model-api-model-1:0.9.0-20181106123540.560.3b9739a', count=2)
@@ -357,8 +354,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                  m_func('kubernetes.client.AppsV1Api.delete_namespaced_deployment',
                         'model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.undeploy('demo-abc-model')
                 self.assertIsInstance(deployments, list)
                 self.assertEqual(len(deployments), 1)
@@ -491,8 +487,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.inspect(model='demo-abc-model', version='*')
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
@@ -544,8 +539,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
             with m_func('kubernetes.client.CoreV1Api.list_namespaced_service', 'demo_abc_models_1_0_and_1_1'), \
                  m_func('kubernetes.client.AppsV1Api.read_namespaced_deployment',
                         ['demo_abc_model_1_0', 'demo_abc_model_1_1']), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.inspect(model='*')
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
@@ -624,8 +618,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                         'last_model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
                  mock.patch('legion.k8s.utils.is_code_run_in_cluster', return_value=None), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.undeploy(model='demo-abc-model', version='*')
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
@@ -682,8 +675,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                          'demo_abc_model_1_1', 'demo_abc_model_1_1_scaled_to_2']), \
                  m_func('kubernetes.client.AppsV1Api.patch_namespaced_deployment',
                         'last_model_scaled_to_2') as pnd_mock, \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale(model='demo-abc-model', count=2, version='*')
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
@@ -745,8 +737,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                          'demo_abc_model_1_1', 'demo_abc_model_1_1_scaled_to_2']), \
                  m_func('kubernetes.client.AppsV1Api.patch_namespaced_deployment',
                         'last_model_scaled_to_2') as pnd_mock, \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.scale(model='*', count=2)
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)
@@ -811,8 +802,7 @@ class TestEDIRemoteKubernetes(unittest2.TestCase):
                      'kubernetes.client.AppsV1Api.delete_namespaced_deployment',
                      'last_model_deleted'), \
                  m_func('kubernetes.client.CoreV1Api.delete_namespaced_service', 'undeploy_done'), \
-                 mock.patch('legion.k8s.utils.build_client', return_value=None), \
-                 mock.patch('legion.k8s.enclave.Enclave.graphite_service', return_value=None):
+                 mock.patch('legion.k8s.utils.build_client', return_value=None):
                 deployments = edi.edi_client.undeploy(model='*')
                 # Test count of returned deployments
                 self.assertIsInstance(deployments, list)

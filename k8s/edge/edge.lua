@@ -41,7 +41,6 @@ function _M.parse_feedback_data()
     local model_id, model_version = _M.get_model_id_and_version_from_feedback_url()
     local reqargs = require "resty.reqargs"
     local get, post, files = reqargs()
-    local cjson = require "cjson"
 
     local data = {}
     local params = {}
@@ -109,14 +108,9 @@ function _M.catch_model_api_response_chunk(model_id, model_version, content, eof
     return data
 end
 
-function _M.catch_model_api_call(model_id, model_version)
+function _M.catch_model_api_call(model_id, model_version, model_endpoint)
     local request_http_headers = ngx.req.get_headers()
     local request_id = request_http_headers["Request-ID"]
-    local model_endpoint = ngx.header["Model-Endpoint"]
-
-    if model_endpoint == Nil then
-        model_endpoint = "default"
-    end
 
     local http_method = ngx.req.get_method()
     request_http_headers["authorization"] = nil

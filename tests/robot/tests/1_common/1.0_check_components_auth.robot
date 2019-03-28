@@ -20,13 +20,19 @@ Check if Jenkins domain has been secured
     component=jenkins    enclave=${EMPTY}
 
 Check if Grafana domain has been secured
+    [Tags]  infra
     [Template]    Check if component domain has been secured
     component=grafana    enclave=${EMPTY}
 
-Check if Grafana enclave domain has been secured
-    [Tags]  apps
+Check if Prometheus domain has been secured
+    [Tags]  infra
     [Template]    Check if component domain has been secured
-    component=grafana    enclave=${MODEL_TEST_ENCLAVE}
+    component=prometheus    enclave=${EMPTY}
+
+Check if alertmanager domain has been secured
+    [Tags]  infra
+    [Template]    Check if component domain has been secured
+    component=alertmanager    enclave=${EMPTY}
 
 Check if K8S dashboard domain does not auth with invalid creds
     [Tags]  infra
@@ -43,20 +49,20 @@ Check if Grafana domain does not auth with invalid creds
     [Template]    Secured component domain should not be accessible by invalid credentials
     component=grafana    enclave=${EMPTY}
 
-Check if Grafana enclave does not auth with invalid creds
+Check if Prometheus domain does not auth with invalid creds
     [Tags]  apps
     [Template]    Secured component domain should not be accessible by invalid credentials
-    component=grafana    enclave=${MODEL_TEST_ENCLAVE}
+    component=prometheus    enclave=${EMPTY}
+
+Check if Alertmanager domain does not auth with invalid creds
+    [Tags]  apps
+    [Template]    Secured component domain should not be accessible by invalid credentials
+    component=alertmanager    enclave=${EMPTY}
 
 Check if Jenkins domain can auth with valid creds
     [Tags]  apps
     [Template]    Secured component domain should be accessible by valid credentials
     component=jenkins    enclave=${EMPTY}
-
-Check if Grafana enclave can auth with valid creds
-    [Tags]  apps
-    [Template]    Secured component domain should be accessible by valid credentials
-    component=grafana    enclave=${MODEL_TEST_ENCLAVE}
 
 Check if K8S dashboard domain can auth with valid creds
     [Tags]  infra
@@ -67,6 +73,16 @@ Check if Grafana domain can auth with valid creds
     [Tags]  apps
     [Template]    Secured component domain should be accessible by valid credentials
     component=grafana    enclave=${EMPTY}
+
+Check if Prometheus domain can auth with valid creds
+    [Tags]  apps
+    [Template]    Secured component domain should be accessible by valid credentials
+    component=prometheus    enclave=${EMPTY}
+
+Check if ALertmanager domain can auth with valid creds
+    [Tags]  apps
+    [Template]    Secured component domain should be accessible by valid credentials
+    component=Alertmanager    enclave=${EMPTY}
 
 Check if EDGE has been secured by token
      [Tags]  apps
@@ -142,5 +158,6 @@ Service url stay the same after log in
     [Template]    Url stay the same after dex log in
     service_url=https://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/healthcheck?xx=22&yy=33
     service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/info?xx=22&yy=33
-    service_url=https://grafana-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/?orgId=1&x=2
     service_url=https://grafana.${HOST_BASE_DOMAIN}/?orgId=1&x=2
+    service_url=https://prometheus.${HOST_BASE_DOMAIN}/graph?x=2&y=3
+    service_url=https://alertmanager.${HOST_BASE_DOMAIN}/?orgId=1&x=2

@@ -1,3 +1,4 @@
 ---
 
 helm_local_src: false
+monitoring_namespace: kube-monitoring

@@ -15,7 +15,6 @@
  */
 import React, { Component, PropTypes } from 'react';
 import TrainingReport from './components/TrainingReport';
-import MetricsDashboard from './components/MetricsDashboard';
 
 const t = require('@jenkins-cd/blueocean-core-js').i18nTranslator('legion-jenkins-plugin');
 
@@ -30,13 +29,6 @@ export class RunDetailsModel extends Component {
         /* eslint-disable react/jsx-closing-bracket-location */
         const result = (
             <div className="model-container">
-              <MetricsDashboard
-                params={this.props.params}
-                pipeline={this.props.pipeline}
-                run={this.props.result}
-                locale={this.props.locale}
-                t={t}
-              />
               <TrainingReport
                 params={this.props.params}
                 pipeline={this.props.pipeline}

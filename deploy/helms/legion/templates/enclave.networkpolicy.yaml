@@ -8,6 +8,9 @@ spec:
   - from:
     - namespaceSelector:
         matchLabels:
+          k8s-component: monitoring
+    - namespaceSelector:
+        matchLabels:
           legion-component: core
     - namespaceSelector:
         matchLabels:
