@@ -15,6 +15,9 @@
 #
 FROM python:3.6.8-stretch
 
+ENV WORK_DIR="/opt/legion"
+WORKDIR "${WORK_DIR}/"
+
 RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 ptvsd==4.2.2
 
 COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock "${WORK_DIR}/legion/sdk/"
@@ -24,8 +27,8 @@ RUN  cd legion/toolchains/python && pipenv install --system --three
 COPY legion/cli/Pipfile legion/cli/Pipfile.lock "${WORK_DIR}/legion/cli/"
 RUN  cd legion/cli && pipenv install --system --three
 
-COPY build/containers/toolchains/python/legion-doc.txt /opt/legion/
-COPY build/containers/toolchains/python/jupyter_notebook_config.py /etc/jupyter/
+COPY containers/toolchains/python/legion-doc.txt /opt/legion/
+COPY containers/toolchains/python/jupyter_notebook_config.py /etc/jupyter/
 
 COPY legion/sdk "${WORK_DIR}/legion/sdk"
 COPY legion/toolchains/python "${WORK_DIR}/legion/toolchains/python"

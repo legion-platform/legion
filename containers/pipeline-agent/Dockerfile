@@ -15,7 +15,7 @@ RUN  curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$
 
 # Install Kops
 ENV KOPS_VERSION=1.11.0
-RUN wget https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 -O /usr/local/bin/kops && \
+RUN wget https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 -qO /usr/local/bin/kops && \
     chmod a+x /usr/local/bin/kops
 
 # Install kubectl
@@ -32,7 +32,7 @@ RUN curl -fsSLO https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSI
     mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
 
 # Install python dependecies
-COPY build/containers/pipeline/Pipfile build/containers/pipeline/Pipfile.lock /src/legion/
+COPY containers/pipeline-agent/Pipfile containers/pipeline-agent/Pipfile.lock /src/legion/
 RUN  cd /src/legion && pipenv install --system --three
 COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock /src/legion/sdk/
 RUN  cd /src/legion/sdk && pipenv install --system --three

@@ -102,7 +102,7 @@ pipeline {
                     legion = load "${env.sharedLibPath}"
 
                     print("Check code for security issues")
-                    sh "bash scripts/install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+                    sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
                     legion.setBuildMeta(env.updateVersionScript)
 
@@ -152,7 +152,7 @@ pipeline {
                 stage("Build toolchains Docker image"){
                     steps {
                         script {
-                            legion.buildLegionImage('python-toolchain', 'containers/toolchains/python')
+                            legion.buildLegionImage('python-toolchain', '.', 'containers/toolchains/python/Dockerfile')
                             legion.uploadDockerImage('python-toolchain')
                         }
                     }
@@ -212,14 +212,14 @@ pipeline {
                 stage("Build Edge Docker image") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-edge', 'containers/edge')
+                            legion.buildLegionImage('k8s-edge', '.', 'containers/edge/Dockerfile')
                         }
                     }
                 }
                 stage("Build Edi Docker image") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-edi', "containers/edi")
+                            legion.buildLegionImage('k8s-edi', '.', "containers/edi/Dockerfile")
                         }
                     }
                 }
@@ -233,7 +233,7 @@ pipeline {
                 stage("Build Jenkins Docker image") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-jenkins', "containers/jenkins", "containers/jenkins/Dockerfile", """--build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" """)
+                            legion.buildLegionImage('k8s-jenkins', "containers/jenkins", "Dockerfile", """--build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" """)
                         }
                     }
                 }

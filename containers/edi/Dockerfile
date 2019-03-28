@@ -30,7 +30,7 @@ COPY legion/services "${WORK_DIR}/legion/services"
 RUN pip3 install --no-deps -e "${WORK_DIR}/legion/sdk" && \
     pip3 install --no-deps -e "${WORK_DIR}/legion/services"
 
-COPY build/containers/edi/edi_uwsgi.ini build/containers/edi/model_builder_uwsgi.ini /etc/uwsgi/
+COPY containers/edi/edi_uwsgi.ini containers/edi/model_builder_uwsgi.ini /etc/uwsgi/
 
 ENTRYPOINT []
 CMD ["/usr/local/bin/uwsgi", "--strict", "--ini", "/etc/uwsgi/edi_uwsgi.ini"]

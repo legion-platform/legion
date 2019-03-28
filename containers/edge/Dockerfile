@@ -48,9 +48,9 @@ COPY legion/services "${WORK_DIR}/legion/services"
 RUN pip3 install --no-deps -e "${WORK_DIR}/legion/sdk" && \
     pip3 install --no-deps -e "${WORK_DIR}/legion/services"
 
-COPY build/containers/edge/nginx.conf.ltmpl "${WORK_DIR}/"
-COPY build/containers/edge/lua/ /usr/local/openresty/luajit/
-COPY build/containers/edge/start.sh /usr/bin/
+COPY containers/edge/nginx.conf.ltmpl "${WORK_DIR}/"
+COPY containers/edge/lua/ /usr/local/openresty/luajit/
+COPY containers/edge/start.sh /usr/bin/
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["start.sh"]

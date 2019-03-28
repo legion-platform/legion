@@ -61,19 +61,19 @@ install-robot:
     	python setup.py bdist_wheel
 
 docker-pipeline:
-	docker build -t legionplatform/python-pipeline:latest -f build/containers/pipeline/Dockerfile .
+	docker build -t legionplatform/python-pipeline:latest -f containers/pipeline/Dockerfile .
 
 docker-python-toolchain:
-	docker build -t legionplatform/python-toolchain:latest -f build/containers/toolchains/python/Dockerfile .
+	docker build -t legionplatform/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
 
 docker-ansible:
-	docker build -t legionplatform/k8s-ansible:latest -f build/containers/ansible/Dockerfile .
+	docker build -t legionplatform/k8s-ansible:latest -f containers/ansible/Dockerfile .
 
 docker-edi:
-	docker build -t legionplatform/k8s-edi:latest -f build/containers/edi/Dockerfile .
+	docker build -t legionplatform/k8s-edi:latest -f containers/edi/Dockerfile .
 
 docker-edge:
-	docker build -t legionplatform/k8s-edge:latest -f build/containers/edge/Dockerfile .
+	docker build -t legionplatform/k8s-edge:latest -f containers/edge/Dockerfile .
 
 ## install-unittests: Install unit tests
 install-unittests:
@@ -81,15 +81,15 @@ install-unittests:
 
 ## lint: Lints source code
 lint:
-	build/lint.sh
+	scripts/lint.sh
 
 build-docs:
-	BUILD_VERSION="${LEGION_VERSION}" build/build-docs.sh
+	BUILD_VERSION="${LEGION_VERSION}" scripts/build-docs.sh
 
 ## unittests: Run unit tests
 unittests:
 	@if [ "${SANDBOX_PYTHON_TOOLCHAIN_IMAGE}" == "" ]; then \
-	    docker build -t legionplatform/python-toolchain:latest -f build/containers/toolchains/python/Dockerfile . ;\
+	    docker build -t legionplatform/python-toolchain:latest -f containers/toolchains/python/Dockerfile . ;\
 	fi
 
 	mkdir -p target
@@ -111,7 +111,7 @@ unittests:
 ## e2e-robot: Run e2e robot tests
 e2e-robot:
 	pabot --verbose --processes 6 \
-	      -v PATH_TO_PROFILES_DIR:deploy/profiles \
+	      -v PATH_TO_PROFILES_DIR:profiles \
 	      --listener legion.robot.process_reporter \
 	      --outputdir target legion/tests/e2e/robot/tests/${ROBOT_FILES}
 
@@ -138,7 +138,7 @@ create-models-job:
 	     --profile ${CLUSTER_NAME}
 
 update-python-deps:
-	./build/update_python_deps.sh
+	./scripts/update_python_deps.sh
 
 help: Makefile
 	@echo "Choose a command run in "$(PROJECTNAME)":"
