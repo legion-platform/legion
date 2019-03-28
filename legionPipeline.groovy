@@ -318,11 +318,10 @@ def setBuildMeta(updateVersionScript) {
     Globals.rootCommit = Globals.rootCommit.trim()
     println("Root commit: " + Globals.rootCommit)
 
-    // TODO fix date import
-    //def dateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
-    //def date = new Date()
-    //def buildDate = dateFormat.format(date)
-    def buildDate = "201900327010101"
+    def buildDate = sh returnStdout: true, script: "date '+%Y%m%d%H%M%S'"
+    
+    // TODO debug
+    print buildDate
 
     Globals.dockerCacheArg = (env.param_enable_docker_cache.toBoolean()) ? '' : '--no-cache'
     println("Docker cache args: " + Globals.dockerCacheArg)

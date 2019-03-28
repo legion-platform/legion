@@ -11,7 +11,7 @@ def chartNames = null
 
 def buildTestBareModel(modelId, modelVersion, versionNumber) {
     sh """
-        cd tests/models
+        cd legion/tests/e2e/models
         rm -rf robot.model || true
         mkdir /app || true
         python3 simple.py --id "${modelId}" --version "${modelVersion}"
@@ -80,7 +80,7 @@ pipeline {
     stages {
         stage('Checkout and set build vars') {
             steps {
-                cleanWs()
+                //cleanWs()
                 checkout scm
                 script {
                     sh 'echo RunningOn: $(curl http://checkip.amazonaws.com/)'
@@ -254,8 +254,11 @@ pipeline {
                 stage('Build docs') {
                     steps {
                         script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
-                                sh "make LEGION_VERSION=${Globals.buildVersion} build-docs"
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
+                                sh """
+                                ls -lsa && ls -lsa scripts
+                                make LEGION_VERSION=${Globals.buildVersion} build-docs
+                                """
 
                                 archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
                             }
