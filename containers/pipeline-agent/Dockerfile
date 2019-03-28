@@ -1,79 +1,52 @@
 FROM python:3.6.8
 
 # Install python package dependencies and docker CLI
-RUN apt-get update && apt-get install -y software-properties-common && \
-	apt-get install -y build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
-  jq=1.5+dfsg-1.3 xvfb=2:1.19.2-1+deb9u5 \
-  # firefox is not pinned deliberately because debian repo constantly rotates intermediate releases
-  firefox-esr && \
-	apt-get clean all
+RUN apt-get update && apt-get install -y software-properties-common \
+	&& apt-get install -y make build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git  \
+  jq=1.5+dfsg-1.3 && apt-get clean all
 
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
 # Docker CLI (without engine, is used for testing)
 ENV DOCKER_VERSION=18.03.1-ce
-RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz && \
-  tar xzvf docker-${DOCKER_VERSION}.tgz --strip 1 -C /usr/local/bin docker/docker && \
-  rm docker-${DOCKER_VERSION}.tgz
-
-# Install updated firefox version
-ENV FIREFOX_VERSION=64.0.2
-RUN wget -qO firefox.tar.bz2 "https://download.mozilla.org/?product=firefox-${FIREFOX_VERSION}&os=linux64&lang=en-US" && \
-    ls -lsa && \
-    mkdir /opt/firefox && \
-    tar xjf firefox.tar.bz2 -C /opt/firefox/ && \
-    rm -rf /usr/bin/firefox && \
-    ln -s /opt/firefox/firefox/firefox /usr/bin/firefox && \
-    rm -rf firefox.tar.bz2
-    
-# Install Geckodriver for selenium tests
-ENV GECKO_VERSION=0.22.0
-RUN wget -qO geckodriver.tar.gz "https://github.com/mozilla/geckodriver/releases/download/v${GECKO_VERSION}/geckodriver-v${GECKO_VERSION}-linux64.tar.gz" && \
-    tar xzf geckodriver.tar.gz -C /usr/local/bin/ && chmod a+x /usr/local/bin/geckodriver && rm -rf geckodriver*
-
-# Install kubectl
-ENV KUBECTL_VERSION=v1.10.6
-RUN wget -qO /usr/local/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \
-    chmod a+x /usr/local/bin/kubectl
+RUN  curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+  && tar xzvf docker-${DOCKER_VERSION}.tgz --strip 1 -C /usr/local/bin docker/docker \
+  && rm docker-${DOCKER_VERSION}.tgz
 
 # Install Kops
-ENV KOPS_VERSION=1.10.0
-RUN wget -qO /usr/local/bin/kops "https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64"  && \
+ENV KOPS_VERSION=1.11.0
+RUN wget https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 -O /usr/local/bin/kops && \
     chmod a+x /usr/local/bin/kops
 
-## Install Helm
-#ENV HELM_VERSION=v2.10.0
-#RUN wget https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz -o helm-${HELM_VERSION}-linux-amd64.tar.gz && \
-#    mkdir -p /tmp/helm && mv helm-${HELM_VERSION}-linux-amd64.tar.gz /tmp/helm && \
-#    tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
-#    mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
-#
-## Install requirements for legion package
-#COPY legion/requirements/Pipfile /src/requirements/legion/Pipfile
-#COPY legion/requirements/Pipfile.lock /src/requirements/legion/Pipfile.lock
-#RUN cd /src/requirements/legion && pipenv install --system --dev
-#
-## Install requirements for legion_test package
-#COPY legion_test/requirements/Pipfile /src/requirements/legion_test/Pipfile
-#COPY legion_test/requirements/Pipfile.lock /src/requirements/legion_test/Pipfile.lock
-#RUN cd /src/requirements/legion_test && pipenv install --system --dev
-#
-## Install additional tools for build purposes
-#RUN pip install Sphinx==1.8.0 sphinx_rtd_theme==0.4.1 sphinx-autobuild==0.7.1 \
-#    recommonmark==0.4.0 twine==1.11.0 ansible==2.6.4 awscli==1.16.19 yq==2.7.2
-#
-## Add sources and install python packages
-#
-#COPY legion /src/legion
-#RUN cd /src/legion \
-#  && python setup.py collect_data \
-#  && python setup.py install \
-#  && python setup.py sdist \
-#  && python setup.py bdist_wheel
-#
-#COPY legion_test /src/legion_test
-#RUN cp /src/legion/legion/version.py /src/legion_test/legion_test/version.py \
-#  && cd /src/legion_test \
-#  && python setup.py install \
-#  && python setup.py sdist \
-#  && python setup.py bdist_wheel
+# Install kubectl
+ENV KUBECTL_VERSION=v1.11.6
+RUN curl -fsSLO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+    mv kubectl /usr/local/bin/kubectl && \
+    chmod a+x /usr/local/bin/kubectl
+
+# Install Helm
+ENV HELM_VERSION=v2.10.0
+RUN curl -fsSLO https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz && \
+    mkdir -p /tmp/helm && mv helm-${HELM_VERSION}-linux-amd64.tar.gz /tmp/helm && \
+    tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
+    mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
+
+# Install python dependecies
+COPY build/containers/pipeline/Pipfile build/containers/pipeline/Pipfile.lock /src/legion/
+RUN  cd /src/legion && pipenv install --system --three
+COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock /src/legion/sdk/
+RUN  cd /src/legion/sdk && pipenv install --system --three
+COPY legion/services/Pipfile legion/services/Pipfile.lock /src/legion/services/
+RUN  cd /src/legion/services && pipenv install --system --three
+COPY legion/cli/Pipfile legion/cli/Pipfile.lock /src/legion/cli/
+RUN  cd /src/legion/cli && pipenv install --system --three
+COPY legion/robot/Pipfile legion/robot/Pipfile.lock /src/legion/robot/
+RUN  cd /src/legion/robot && pipenv install --system --three
+COPY legion/tests/unit/requirements/Pipfile legion/tests/unit/requirements/Pipfile.lock /src/legion/tests/unit/
+RUN  cd /src/legion/tests/unit && pipenv install --system --three --dev
+COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock /src/legion/toolchains/python/
+RUN  cd /src/legion/toolchains/python && pipenv install --system --three
+
+COPY ./ "/src/"
+
+RUN cd /src/ && make BUILD_PARAMS="--no-deps" install-all

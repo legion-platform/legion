@@ -13,21 +13,26 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-ARG version=latest
+FROM python:3.6.8-stretch
 
-FROM legion/legion-docker-agent:${version}
+RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 ptvsd==4.2.2
 
-FROM legion/base-python-image:${version}
+COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock "${WORK_DIR}/legion/sdk/"
+RUN  cd legion/sdk && pipenv install --system --three
+COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock "${WORK_DIR}/legion/toolchains/python/"
+RUN  cd legion/toolchains/python && pipenv install --system --three
+COPY legion/cli/Pipfile legion/cli/Pipfile.lock "${WORK_DIR}/legion/cli/"
+RUN  cd legion/cli && pipenv install --system --three
 
-# Install Legion and custom scripts to image
-COPY --from=0 /src/legion/dist/*.whl ./
-COPY legion-doc.txt \
-        /opt/legion/
+COPY build/containers/toolchains/python/legion-doc.txt /opt/legion/
+COPY build/containers/toolchains/python/jupyter_notebook_config.py /etc/jupyter/
 
-COPY jupyter_notebook_config.py /etc/jupyter/
+COPY legion/sdk "${WORK_DIR}/legion/sdk"
+COPY legion/toolchains/python "${WORK_DIR}/legion/toolchains/python"
+COPY legion/cli "${WORK_DIR}/legion/cli"
 
-RUN pip3 install --disable-pip-version-check ./legion*.whl \
-  && rm -f ./legion*.whl \
-  && pip3 install --disable-pip-version-check ptvsd==4.2.2 \
-  && echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc \
-  && cat /opt/legion/legion-doc.txt > /etc/motd
+RUN pip3 install --no-deps -e legion/sdk && \
+    pip3 install --no-deps -e legion/toolchains/python && \
+    pip3 install --no-deps -e legion/cli && \
+    echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc && \
+    cat /opt/legion/legion-doc.txt > /etc/motd

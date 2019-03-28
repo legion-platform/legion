@@ -13,9 +13,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-{{ load_module('legion.template_plugins.enclave_models_monitor') }}
-{{ load_module('legion.template_plugins.environment_variables_provider') }}
-{{ load_module('legion.template_plugins.enclave_configmap_monitor', var_name='tokens') }}
+{{ load_module('legion.services.template.plugins.enclave_models_monitor') }}
+{{ load_module('legion.services.template.plugins.environment_variables_provider') }}
+{{ load_module('legion.services.template.plugins.enclave_configmap_monitor', var_name='tokens') }}
 
 env JWT_SECRET;
 env POD_UUID;

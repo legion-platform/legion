@@ -154,6 +154,7 @@ pipeline {
                     steps {
                         script {
                             legion.buildLegionImage('python-toolchain', 'containers/toolchains/python')
+                            legion.uploadDockerImage('python-toolchain')
                         }
                     }
                 }
@@ -395,6 +396,20 @@ pipeline {
                         }
                     }
                 }
+                stage('Upload Edi Docker image') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-edi')
+                        }
+                    }
+                }
+                stage('Upload Fluentd Docker image') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-fluentd')
+                        }
+                    }
+                }
                 stage('Upload Jenkins Docker image') {
                     steps {
                         script {
@@ -411,20 +426,6 @@ pipeline {
                             legion.uploadDockerImage("test-bare-model-api-model-4")
                             legion.uploadDockerImage("test-bare-model-api-model-5")
                             legion.uploadDockerImage("test-bare-model-api-model-6")
-                        }
-                    }
-                }
-                stage('Upload Edi Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-edi')
-                        }
-                    }
-                }
-                stage('Upload Fluentd Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-fluentd')
                         }
                     }
                 }

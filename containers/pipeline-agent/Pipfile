@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+Sphinx = "==1.8.0"
+sphinx_rtd_theme = "==0.4.1"
+sphinx-autobuild = "==0.7.1"
+recommonmark = "==0.4.0"
+twine = "==1.11.0"
+ansible = "==2.6.4"
+awscli = "==1.16.19"
+yq = "==2.7.2"
+pylint = "==2.2.2"
+pydocstyle = "==3.0.0"
+
+[requires]
+python_version = "3.6"
