@@ -259,10 +259,10 @@ pipeline {
                                 cd /src
                                 make LEGION_VERSION=${Globals.buildVersion} build-docs
                                 cp /src/legion_docs_${Globals.buildVersion}.tar.gz ${WORKSPACE}
-                                ls -lsa ${WORKSPACE}
                                 """
 
                                 archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
+                                sh "rm ${WORKSPACE} legion_docs_${Globals.buildVersion}.tar.gz"
                             }
                         }
                     }

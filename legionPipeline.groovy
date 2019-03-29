@@ -457,7 +457,7 @@ def buildLegionImage(legion_image, build_context=".", dockerfile='Dockerfile', a
     sh "cp .gitignore ${build_context}/.dockerignore"
 
     dir(build_context) {
-        cache_from_params = ''
+        def cache_from_params = ''
 
         if (env.param_enable_docker_cache.toBoolean()) {
             // Get list of base images from a Dockerfile
