@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ index .Values "statsd-exporter" "deployment" "name" }}
+  labels:
+    component: {{ index .Values "statsd-exporter" "deployment" "name" }}
+    release: {{ .Release.Name | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ index .Values "statsd-exporter" "deployment" "name" }}
+      release: {{ .Release.Name | quote }}
+  template:
+    metadata:
+      labels:
+        component: {{ index .Values "statsd-exporter" "deployment" "name" }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      containers:
+      - name: statsd-to-prometheus
+        image: {{ index .Values "statsd-exporter" "image" }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ index .Values "statsd-exporter" "service" "externalStatsdPromPort" }}
+        - containerPort: {{ index .Values "statsd-exporter" "service" "externalStatsdTcpPort" }}
+        args:
+        - '--statsd.mapping-config=/etc/statsd/mapping.conf'
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/statsd
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ index .Values "statsd-exporter" "deployment" "name" }}-config

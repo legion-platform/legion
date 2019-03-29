@@ -21,7 +21,7 @@ import unittest2
 from PIL import Image as PYTHON_Image
 import pandas as pd
 
-import legion.toolchain.model.types as types
+from legion.toolchain import types
 
 
 class TestTypes(unittest2.TestCase):

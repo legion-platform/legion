@@ -25,6 +25,7 @@ import jwt
 from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
 
+<<<<<<< HEAD
 <<<<<<< HEAD:legion/legion/edi/server.py
 import legion.config
 import legion.http
@@ -34,14 +35,16 @@ from legion.external import grafana
 
 =======
 from legion.sdk.clients.grafana import GrafanaClient
+=======
+>>>>>>> [#849] sync refactoring
 from legion.sdk.clients.model import ModelClient
 from legion.sdk.containers.definitions import ModelDeploymentDescription
 from legion.sdk.definitions import EDI_INFO, EDI_GENERATE_TOKEN, EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, \
     EDI_VERSION, EDI_ROOT, EDI_API_ROOT
-from legion.sdk.k8s.enclave import Enclave
-from legion.sdk.k8s.exceptions import UnknownDeploymentForModelService
-from legion.sdk.k8s.utils import load_secrets
-from legion.sdk.k8s import utils
+from legion.services.k8s.enclave import Enclave
+from legion.services.k8s.exceptions import UnknownDeploymentForModelService
+from legion.services.k8s.utils import load_secrets
+from legion.services.k8s import utils
 from legion.services.edi import http
 from legion.services.edi.http import configure_application
 >>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
@@ -174,6 +177,7 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
         image, model_iam_role, count, livenesstimeout, readinesstimeout, memory, cpu
     )
 
+<<<<<<< HEAD
 <<<<<<< HEAD:legion/legion/edi/server.py
     return return_model_deployments([legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)])
 =======
@@ -186,6 +190,8 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
         else:
             LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
 
+=======
+>>>>>>> [#849] sync refactoring
     return return_model_deployments([ModelDeploymentDescription.build_from_model_service(model_service)])
 >>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
 
@@ -393,6 +399,7 @@ def get_application_enclave(application):
     return Enclave(application.config['NAMESPACE'])
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD:legion/legion/edi/server.py
 =======
 def get_application_grafana(application):
@@ -410,6 +417,8 @@ def get_application_grafana(application):
 
 
 >>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
+=======
+>>>>>>> [#849] sync refactoring
 def load_cluster_config(application):
     """
     Load cluster configuration into Flask config
@@ -429,7 +438,6 @@ def load_cluster_config(application):
     application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
 =======
     application.config['CLUSTER_SECRETS'] = load_secrets(application.config['CLUSTER_SECRETS_PATH'])
-    application.config['GRAFANA_CLIENT'] = get_application_grafana(application)
     application.config['JWT_CONFIG'] = load_secrets(application.config['JWT_CONFIG_PATH'])
 >>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
 

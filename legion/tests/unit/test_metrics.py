@@ -58,12 +58,17 @@ class TestMetrics(unittest2.TestCase):
         }
 
         with patch_config(additional_environment):
+<<<<<<< HEAD
 <<<<<<< HEAD:legion/tests/test_metrics.py
             with patch('legion.metrics.send_tcp') as send_tcp_mock, patch('time.time', return_value=timestamp):
 =======
             with patch('legion.toolchain.metrics.send_tcp') as send_tcp_mock, patch('time.time', return_value=timestamp):
                 timestamp = int(time.time())
 >>>>>>> [#849] sync files with Refactoring:legion/tests/unit/test_metrics.py
+=======
+            with patch('legion.toolchain.metrics.send_tcp') as send_tcp_mock, patch('time.time',
+                                                                                    return_value=timestamp):
+>>>>>>> [#849] sync refactoring
                 metrics.send_metric(model_id, metric, value)
 
                 self.assertEqual(1, len(send_tcp_mock.call_args_list), '2 calls have not been founded')
@@ -97,6 +102,7 @@ class TestMetrics(unittest2.TestCase):
 
     def test_default_endpoint_detection(self):
         host, port, namespace = metrics.get_metric_endpoint()
+<<<<<<< HEAD
 <<<<<<< HEAD:legion/tests/test_metrics.py
         self.assertEqual(host, legion.config.METRICS_HOST)
         self.assertEqual(port, legion.config.METRICS_PORT)
@@ -106,6 +112,11 @@ class TestMetrics(unittest2.TestCase):
         self.assertEqual(port, config.GRAPHITE_PORT)
         self.assertEqual(namespace, config.GRAPHITE_NAMESPACE)
 >>>>>>> [#849] sync files with Refactoring:legion/tests/unit/test_metrics.py
+=======
+        self.assertEqual(host, config.METRICS_HOST)
+        self.assertEqual(port, config.METRICS_PORT)
+        self.assertEqual(namespace, config.NAMESPACE)
+>>>>>>> [#849] sync refactoring
 
     def test_default_is_metrics_enabled(self):
         is_enabled = metrics.is_metrics_enabled()

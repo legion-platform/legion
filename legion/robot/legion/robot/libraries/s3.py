@@ -169,12 +169,12 @@ class S3:
         :type prefixes: List[str]
         :param needle_substring: needle substring
         :type needle_substring: str
-        :param required_count: required count of lines (will be casted to int). \
+        :param required_count: required count of lines (will be casted to int).
                                If 0 - all lines from first scan will be returned
         :type required_count: str
         :param return_first_line: return only first line
         :type return_first_line: bool
-        :return: dict -- return first line content if return_first_line else \
+        :return: dict -- return first line content if return_first_line else
                          required lines in list[dict] format
         """
         required_count = int(required_count)

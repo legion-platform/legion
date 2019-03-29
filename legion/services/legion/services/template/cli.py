@@ -14,6 +14,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+"""
+Legion-template cli
+"""
 import argparse
 import logging
 import signal
@@ -23,6 +26,9 @@ from legion.services.template.engine import LegionTemplateEngine
 
 
 def main():
+    """
+    Legion-template entrypoint
+    """
     signals = {sig_name: getattr(signal, sig_name).value
                for sig_name in dir(signal)
                if sig_name.startswith('SIG') and not sig_name.startswith('SIG_')

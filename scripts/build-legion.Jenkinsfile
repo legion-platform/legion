@@ -72,8 +72,7 @@ pipeline {
             param_git_deploy_key = "${params.GitDeployKey}"
             ///Job parameters
             updateVersionScript = "scripts/update_version_id"
-            // TODO update path
-            sharedLibPath = "legionPipeline.groovy"
+            sharedLibPath = "pipelines/legionPipeline.groovy"
             pathToCharts= "${WORKSPACE}/helms"
     }
 
@@ -85,21 +84,10 @@ pipeline {
                 script {
                     sh 'echo RunningOn: $(curl http://checkip.amazonaws.com/)'
 
-                    // import Legion components
-                    //dir("${WORKSPACE}/legion-aws") {
-                    //    print ("Checkout Legion-infra repo")
-                    //    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
-
-                    //    print ("Load legion pipeline common library")
-                    //    legion = load "${env.sharedLibPath}"
-                    //}
-
-                    //print ("Load legion pipeline common library")
-                    //library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
-                    //    [$class: 'GitSCMSource',
-                    //    remote: "${env.param_legion_infra_repo}"])
-
-                    legion = load "${env.sharedLibPath}"
+                    print ("Load legion pipeline common library")
+                    library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
+                        [$class: 'GitSCMSource',
+                        remote: "${env.param_legion_infra_repo}"])
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
@@ -270,24 +258,24 @@ pipeline {
                 stage('Run Python code analyzers') {
                     steps {
                         script{
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
-                                def statusCode = sh script:'cd /src && echo "SKIPPING" #make lint', returnStatus:true
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
+                                def statusCode = sh script:'make lint', returnStatus:true
 
                                 if (statusCode != 0) {
                                     currentBuild.result = 'UNSTABLE'
                                 }
 
-                                //archiveArtifacts 'target/pylint/legion.log'
-                                //archiveArtifacts 'target/pydocstyle/legion.log'
-                                //step([
-                                //    $class                     : 'WarningsPublisher',
-                                //    parserConfigurations       : [[
-                                //                                        parserName: 'PYLint',
-                                //                                        pattern   : 'target/pylint/legion.log'
-                                //                                ]],
-                                //    unstableTotalAll           : '0',
-                                //    usePreviousBuildAsReference: true
-                                //])
+                                archiveArtifacts 'target/pylint/legion.log'
+                                archiveArtifacts 'target/pydocstyle/legion.log'
+                                step([
+                                    $class                     : 'WarningsPublisher',
+                                    parserConfigurations       : [[
+                                                                        parserName: 'PYLint',
+                                                                        pattern   : 'target/pylint/legion.log'
+                                                                ]],
+                                    unstableTotalAll           : '0',
+                                    usePreviousBuildAsReference: true
+                                ])
                             }
                         }
                     }
@@ -295,10 +283,13 @@ pipeline {
                 stage("Run unittests") {
                     steps {
                         script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                     sh """
-                                    cd /src && \
-                                    make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" unittests || true
+                                        CURRENT_DIR="\$(pwd)"
+                                        cd /src
+
+                                        make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
+                                             TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
                                     """
 
                                     sh 'cp -r /src/target/coverage.xml /src/target/nosetests.xml /src/target/cover ./'
@@ -443,8 +434,8 @@ pipeline {
         stage("Update Legion version string") {
             steps {
                 script {
-                    if (env.param_stable_release && env.param_update_version_string.toBoolean()) {
-                        legion.updateVersionString(versionFile)
+                    if (env.param_stable_release && env.param_update_version_string) {
+                        legion.updateVersionString(env.versionFile)
                     }
                     else {
                         print("Skipping version string update")
@@ -470,10 +461,9 @@ pipeline {
     post {
         always {
             script {
-                dir("${WORKSPACE}/legion-aws") {
-                    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
-                    legion = load "${env.sharedLibPath}"
-                }
+                library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
+                    [$class: 'GitSCMSource',
+                    remote: "${env.param_legion_infra_repo}"])
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()

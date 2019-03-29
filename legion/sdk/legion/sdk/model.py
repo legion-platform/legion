@@ -21,29 +21,22 @@ import logging
 import typing
 import zipfile
 
-from legion.sdk import config
-from legion.sdk.k8s import properties
-from legion.sdk.utils import extract_archive_item, model_properties_storage_name
+from legion.sdk.utils import extract_archive_item
 
 LOGGER = logging.getLogger(__name__)
 
 ZIP_COMPRESSION = zipfile.ZIP_STORED
 ZIP_FILE_MODEL = 'model'
 ZIP_FILE_INFO = 'manifest.json'
-ZIP_FILE_PROPERTIES = 'properties'
-ZIP_FILE_CALLBACK = 'callback'
 
 PROPERTY_MODEL_ID = 'model.id'
 PROPERTY_MODEL_VERSION = 'model.version'
 PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
-PROPERTY_REQUIRED_PROPERTIES = 'model.required_properties'
-PROPERTY_PROPERTIES_CALLBACK_EXISTS = 'mode.properties_callback_exists'
 
 
 class ModelMeta:
     def __init__(self, model_id: str, model_version: str,
-                 meta_information: typing.Dict[str, typing.Any] = None,
-                 data_properties: typing.Dict[str, typing.Any] = None):
+                 meta_information: typing.Dict[str, typing.Any] = None):
         """
         Build model meta
 
@@ -57,13 +50,6 @@ class ModelMeta:
 
         self._model_id = model_id
         self._model_version = model_version
-
-        storage_name = model_properties_storage_name(model_id, model_version)
-        self._required_properties = []
-        self._properties = properties.K8SConfigMapStorage(storage_name, cache_ttl=config.MODEL_PROPERTIES_CACHE_TTL)
-
-        if data_properties:
-            self._properties.data = data_properties
 
     @property
     def model_id(self) -> str:
@@ -92,15 +78,6 @@ class ModelMeta:
         """
         return self._meta_information.copy()
 
-    @property
-    def properties(self):
-        """
-        Get model properties
-
-        :return: :py:class:`legion.k8s.K8SConfigMapStorage` -- model properties storage
-        """
-        return self._properties
-
 
 def load_meta_model(path: str) -> ModelMeta:
     """
@@ -114,14 +91,9 @@ def load_meta_model(path: str) -> ModelMeta:
         with open(manifest_path, 'r') as manifest_file:
             meta_information = json.load(manifest_file)
 
-    LOGGER.debug('Loading properties from {}'.format(ZIP_FILE_PROPERTIES))
-    with extract_archive_item(path, ZIP_FILE_PROPERTIES) as properties_path:
-        with open(properties_path, 'r') as properties_file:
-            data_properties = json.load(properties_file)
-
     model_id = meta_information[PROPERTY_MODEL_ID]
     model_version = meta_information[PROPERTY_MODEL_VERSION]
 
     LOGGER.debug('Loading has been finished')
 
-    return ModelMeta(model_id, model_version, meta_information, data_properties)
+    return ModelMeta(model_id, model_version, meta_information)

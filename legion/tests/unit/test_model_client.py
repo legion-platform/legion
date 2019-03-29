@@ -13,13 +13,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import os
 from unittest.mock import patch
 
-import unittest2
 import requests
 import responses
-
+import unittest2
 from legion.sdk.clients.model import ModelClient
 
 

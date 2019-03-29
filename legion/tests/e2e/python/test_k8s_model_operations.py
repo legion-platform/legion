@@ -15,18 +15,18 @@
 #
 from __future__ import print_function
 
-import warnings
 import logging
 import os
+import warnings
 
 import unittest2
+from nose.plugins.attrib import attr
+
 from legion.robot import profiler_loader, test_assets
 from legion.robot.utils import wait_until, ContextThread
 from legion.sdk.containers.definitions import ModelIdVersion, STATUS_OK
-
-from legion.sdk.k8s import utils as k8s_utils
-from legion.sdk.k8s.enclave import find_enclaves
-from nose.plugins.attrib import attr
+from legion.services.k8s import utils as k8s_utils
+from legion.services.k8s.enclave import find_enclaves
 
 warnings.simplefilter('ignore', ResourceWarning)
 
@@ -169,7 +169,7 @@ class TestK8SModelOperations(unittest2.TestCase):
             is_deployed, model_service = enclave.deploy_model(TEST_IMAGE)
 
             self.assertTrue(is_deployed, 'model already deployed')
-            self.assertTrue(wait_until(lambda: is_test_model_in_last_state()),
+            self.assertTrue(wait_until(is_test_model_in_last_state),
                             'state has not been found but model has been deployed')
 
             # Delete new model

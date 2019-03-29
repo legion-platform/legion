@@ -26,7 +26,7 @@ from flask import current_app as app
 from legion.sdk.containers.definitions import ModelBuildParameters, ModelBuildResult
 from legion.sdk.containers.docker import build_model_docker_image
 from legion.sdk.definitions import DOCKER_BUILD_URL
-from legion.sdk.k8s.utils import get_container_id_of_current_pod
+from legion.services.k8s.utils import get_container_id_of_current_pod
 from legion.sdk.logging import set_log_level, redirect_to_stdout
 from legion.services.edi.http import provide_json_response
 

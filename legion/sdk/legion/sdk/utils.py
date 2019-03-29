@@ -427,8 +427,6 @@ def get_list_of_requirements():
     """
     file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'Pipfile.lock')
     if not os.path.exists(file_path):
-        # TODO: fix
-        return []
         raise Exception('File with requirements ({}) is not exists'.format(file_path))
 
     with open(file_path, 'r') as file_stream:

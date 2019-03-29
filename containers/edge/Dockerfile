@@ -67,5 +67,7 @@ COPY containers/edge/nginx.conf.ltmpl "${WORK_DIR}/"
 COPY containers/edge/lua/ /usr/local/openresty/luajit/
 COPY containers/edge/start.sh /usr/bin/
 
+RUN cp /usr/local/openresty/luajit/share/lua/5.1/nginx/prometheus.lua /usr/local/openresty/luajit/
+
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["start.sh"]

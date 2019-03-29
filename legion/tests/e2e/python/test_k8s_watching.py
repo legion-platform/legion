@@ -17,15 +17,19 @@ from __future__ import print_function
 
 import logging
 import warnings
+from contextlib import suppress
 
 import kubernetes
 import kubernetes.client.models.v1_namespace
 import kubernetes.client.models.v1_object_meta
-from legion.robot import profiler_loader
-from legion.sdk.k8s import utils as k8s_utils
 import unittest2
-from legion.sdk.k8s.enclave import Enclave
 from nose.plugins.attrib import attr
+
+from legion.robot import profiler_loader
+from legion.robot.utils import wait_until, ContextThread
+from legion.sdk.definitions import EVENT_DELETED, EVENT_MODIFIED, EVENT_ADDED, ENCLAVE_NAMESPACE_LABEL
+from legion.services.k8s import utils as k8s_utils
+from legion.services.k8s.enclave import Enclave
 
 warnings.simplefilter('ignore', ResourceWarning)
 VARIABLES = profiler_loader.get_variables()
@@ -47,17 +51,13 @@ class TestK8SWatching(unittest2.TestCase):
         k8s_utils.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(k8s_utils.CONNECTION_CONTEXT))
 
-        try:
+        with suppress(Exception):
             Enclave(TEST_ENCLAVE_NAME).delete()
-        except:
-            pass
 
     @classmethod
     def tearDownClass(cls):
-        try:
+        with suppress(Exception):
             Enclave(TEST_ENCLAVE_NAME).delete()
-        except:
-            pass
 
     @attr('k8s', 'watch', 'apps')
     def test_watch_enclaves(self):
@@ -75,21 +75,21 @@ class TestK8SWatching(unittest2.TestCase):
 
         current_namespace_name = VARIABLES['ENCLAVES'][0]
 
-        with legion_test.utils.ContextThread(listener):
+        with ContextThread(listener):
             LOGGER.debug('Waiting before updating')
             self.assertTrue(
-                legion_test.utils.wait_until(lambda: (legion.k8s.EVENT_ADDED, current_namespace_name) in events),
+                wait_until(lambda: (EVENT_ADDED, current_namespace_name) in events),
                 'enclave {!r} has not been added'.format(current_namespace_name)
             )
 
-            client = legion.k8s.utils.build_client()
+            client = k8s_utils.build_client()
             core_api = kubernetes.client.CoreV1Api(client)
             current_namespace = core_api.read_namespace(current_namespace_name)
 
             # Build new namespace specification
             new_namespace_metadata = kubernetes.client.models.v1_object_meta.V1ObjectMeta(
                 name=TEST_ENCLAVE_NAME, labels={
-                    legion.k8s.definitions.ENCLAVE_NAMESPACE_LABEL: TEST_ENCLAVE_NAME
+                    ENCLAVE_NAMESPACE_LABEL: TEST_ENCLAVE_NAME
                 })
             new_namespace = kubernetes.client.models.v1_namespace.V1Namespace(
                 spec=current_namespace.spec, metadata=new_namespace_metadata)
@@ -97,18 +97,18 @@ class TestK8SWatching(unittest2.TestCase):
             # Create new namespace from specification
             core_api.create_namespace(new_namespace)
             self.assertTrue(
-                legion_test.utils.wait_until(lambda: (legion.k8s.EVENT_ADDED, TEST_ENCLAVE_NAME) in events),
+                wait_until(lambda: (EVENT_ADDED, TEST_ENCLAVE_NAME) in events),
                 'enclave {!r} has not been added'.format(TEST_ENCLAVE_NAME)
             )
 
             # Delete new namespace
-            legion.k8s.Enclave(TEST_ENCLAVE_NAME).delete(5)
+            Enclave(TEST_ENCLAVE_NAME).delete(5)
             self.assertTrue(
-                legion_test.utils.wait_until(lambda: (legion.k8s.EVENT_MODIFIED, TEST_ENCLAVE_NAME) in events),
+                wait_until(lambda: (EVENT_MODIFIED, TEST_ENCLAVE_NAME) in events),
                 'enclave {!r} has not been modified'.format(TEST_ENCLAVE_NAME)
             )
             self.assertTrue(
-                legion_test.utils.wait_until(lambda: (legion.k8s.EVENT_DELETED, TEST_ENCLAVE_NAME) in events),
+                wait_until(lambda: (EVENT_DELETED, TEST_ENCLAVE_NAME) in events),
                 'enclave {!r} has not been deleted'.format(TEST_ENCLAVE_NAME)
             )
 

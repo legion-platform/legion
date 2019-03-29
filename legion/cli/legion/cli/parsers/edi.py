@@ -291,6 +291,11 @@ def deploy(args):
 
 
 def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
+    """
+    Generate cli parsers
+
+    :param main_subparser: parent cli parser
+    """
     deploy_parser = main_subparser.add_parser('deploy',
                                               description='deploys a model into a kubernetes cluster')
     deploy_parser.add_argument('image',

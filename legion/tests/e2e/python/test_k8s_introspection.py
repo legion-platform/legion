@@ -140,16 +140,16 @@ if __name__ == '__main__':
 #
 from __future__ import print_function
 
-import warnings
 import logging
+import warnings
 
 import unittest2
+from nose.plugins.attrib import attr
+
 from legion.robot import profiler_loader
 from legion.sdk.clients.edi import RemoteEdiClient
-from legion.sdk.k8s import utils as k8s_utils
-from legion.sdk.k8s.enclave import find_enclaves, Enclave
-
-from nose.plugins.attrib import attr
+from legion.services.k8s import utils as k8s_utils
+from legion.services.k8s.enclave import find_enclaves, Enclave
 
 warnings.simplefilter('ignore', ResourceWarning)
 VARIABLES = profiler_loader.get_variables()
@@ -222,8 +222,6 @@ class TestK8SIntrospection(unittest2.TestCase):
 
         self.assertIsNotNone(enclave.edi_service, 'cannot find EDI service')
         self.assertIsNotNone(enclave.api_service, 'cannot find API (EDGE) service')
-        self.assertIsNotNone(enclave.grafana_service, 'cannot find Grafana service')
-        self.assertIsNotNone(enclave.graphite_service, 'cannot find Graphite service')
 
     @attr('k8s', 'inspection', 'apps')
     def test_check_edi_client(self):

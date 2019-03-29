@@ -24,12 +24,12 @@ import unittest2
 
 from legion.sdk.containers import headers
 from legion.sdk.containers.docker import build_docker_client, get_docker_container_id_from_cgroup_line
-from legion.sdk.k8s.utils import extract_container_id
-from legion.sdk.k8s.utils import ImageAttributes
-from legion.sdk.k8s.utils import parse_docker_image_url
-from legion.sdk.k8s.utils import reduce_cpu_resource
-from legion.sdk.k8s.utils import reduce_mem_resource
-from legion.sdk.k8s import utils as k8s_utils
+from legion.services.k8s.utils import extract_container_id
+from legion.services.k8s.utils import ImageAttributes
+from legion.services.k8s.utils import parse_docker_image_url
+from legion.services.k8s.utils import reduce_cpu_resource
+from legion.services.k8s.utils import reduce_mem_resource
+from legion.services.k8s import utils as k8s_utils
 from legion.sdk import utils as legion_utils
 
 REGISTRY_IMAGE = 'registry:2.6.1'

@@ -44,7 +44,6 @@ def create_simple_summation_model_by_df_with_prepare(model_id, model_version, pa
     }])
 
     model.init(model_id, model_version)
-    model.define_property('abc', 20.234)
 
     return model.export_df(apply, df).save(path)
 

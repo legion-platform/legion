@@ -407,6 +407,7 @@ LEGION_API_PORT = ConfigVariableDeclaration('LEGION_API_PORT', 5001, int,
                                             'Port to listen Legion service endpoint',
                                             False)
 
+<<<<<<< HEAD
 # Information for managing dashboards on external grafana
 
 REGISTER_ON_GRAFANA = ConfigVariableDeclaration('REGISTER_ON_GRAFANA', False, cast_bool,
@@ -423,6 +424,8 @@ GRAFANA_PASSWORD = ConfigVariableDeclaration('GRAFANA_PASSWORD', 'admin', str,
                                              'Password for managing model metrics dashboard',
                                              False)
 
+=======
+>>>>>>> [#849] sync refactoring
 # EDI endpoint
 EDI_URL = ConfigVariableDeclaration('EDI_URL', None, str,
                                     'URL of EDI server',

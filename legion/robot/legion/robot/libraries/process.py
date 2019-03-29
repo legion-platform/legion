@@ -1,3 +1,4 @@
+#  pylint: disable=E1101
 #
 #    Copyright 2017 EPAM Systems
 #
@@ -16,11 +17,11 @@
 """
 Robot test library - process wrapper for gathering streams without PIPEs
 """
-import tempfile
 import os
+import tempfile
 
-import robot.libraries.Process
-import robot.running
+import robot.libraries.Process  # pylint: disable=E0611,E0401
+import robot.running  # pylint: disable=E0611,E0401
 
 
 def build_configuration_and_files(configuration, temp_directory=None):
@@ -54,12 +55,13 @@ class Process(robot.libraries.Process.Process):
 
     def run_process_without_pipe(self, command, *arguments, **configuration):
         """
-        Wrapper around `Run Process` function from standard `Process` library.
+        Wrap around `Run Process` function from standard `Process` library.
         Uses temporary files instead of PIPEs for stdout and stderr streams.
         Removes files at the end of operation.
         Runs a process and waits for it to complete.
         """
-        variables = robot.running.context.EXECUTION_CONTEXTS.current.variables.current.as_dict(decoration=False)
+        variables = robot.running.context.EXECUTION_CONTEXTS \
+            .current.variables.current.as_dict(decoration=False)
         new_configuration, temporary_files = build_configuration_and_files(configuration,
                                                                            variables.get('TEMP_DIRECTORY'))
         result = None

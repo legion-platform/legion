@@ -18,8 +18,8 @@ Enclave models Notifier module for Legion Template
 """
 import logging
 
-from legion.sdk.k8s.enclave import Enclave
-from legion.sdk.k8s.utils import get_current_namespace
+from legion.services.k8s.enclave import Enclave
+from legion.services.k8s.utils import get_current_namespace
 
 LOGGER = logging.getLogger(__name__)
 

@@ -43,6 +43,10 @@ class ExecutionTimeoutException(Exception):
 
 @contextlib.contextmanager
 def with_execution_time_limit(limit):
+    """
+    Send alarm after limit
+    :param limit: limit alarm
+    """
     def sig_handler(_1, _2):
         raise ExecutionTimeoutException()
 
@@ -100,7 +104,7 @@ def kill_and_report_process(popen_object):
 
 def end_test(test, result):  # pylint: disable=W0613
     """
-    Listener for Robot's "end of test" event
+    Listen Robot's "end of test" event
 
     :param test: test
     :param result: test result

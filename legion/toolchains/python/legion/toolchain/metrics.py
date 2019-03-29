@@ -31,6 +31,7 @@ from legion.sdk import config
 from legion.sdk.utils import normalize_name
 >>>>>>> [#849] sync files with Refactoring:legion/toolchains/python/legion/toolchain/metrics.py
 
+STATSD_METRIC_FORMAT = "{}:{}|c"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -59,6 +60,7 @@ def get_metric_endpoint():
 
     :return: metric server endpoint
     """
+<<<<<<< HEAD
 <<<<<<< HEAD:legion/legion/metrics.py
     host = legion.config.METRICS_HOST
     port = legion.config.METRICS_PORT
@@ -68,6 +70,11 @@ def get_metric_endpoint():
     port = config.GRAPHITE_PORT
     namespace = config.GRAPHITE_NAMESPACE
 >>>>>>> [#849] sync files with Refactoring:legion/toolchains/python/legion/toolchain/metrics.py
+=======
+    host = config.METRICS_HOST
+    port = config.METRICS_PORT
+    namespace = config.NAMESPACE
+>>>>>>> [#849] sync refactoring
     return host, port, namespace
 
 
