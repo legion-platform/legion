@@ -259,10 +259,10 @@ pipeline {
                                 cd /src
                                 make LEGION_VERSION=${Globals.buildVersion} build-docs
                                 cp /src/legion_docs_${Globals.buildVersion}.tar.gz ${WORKSPACE}
-                                ls -lsa ${WORKSPACE}
                                 """
 
                                 archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
+                                sh "rm ${WORKSPACE}/legion_docs_${Globals.buildVersion}.tar.gz"
                             }
                         }
                     }
@@ -337,7 +337,7 @@ pipeline {
                                 cat > /tmp/.pypirc << EOL
                                 [distutils]
                                 index-servers =
-                                ${env.param_local_pypi_distribution_target_name}
+                                  ${env.param_local_pypi_distribution_target_name}
                                 [${env.param_local_pypi_distribution_target_name}]
                                 repository=${env.param_pypi_repository.split('/').dropRight(1).join('/')}/
                                 username=${env.USERNAME}
@@ -346,8 +346,10 @@ pipeline {
                                 """.stripIndent()
                                 }
                                 sh """
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion_test/dist/legion_test-*'
+                                cat /tmp/.pypirc
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/sdk/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/cli/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/toolchains/python/dist/legion-*'
                                 """
 
                                 if (env.param_stable_release) {
@@ -361,7 +363,7 @@ pipeline {
                                             cat > /tmp/.pypirc << EOL
                                             [distutils]
                                             index-servers =
-                                            ${env.param_test_pypi_distribution_target_name}
+                                              ${env.param_test_pypi_distribution_target_name}
                                             ${env.param_public_pypi_distribution_target_name}
                                             [${env.param_test_pypi_distribution_target_name}]
                                             repository=https://test.pypi.org/legacy/
@@ -375,7 +377,8 @@ pipeline {
                                             """.stripIndent()
                                         }
                                         sh """
-                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/dist/legion-*'
+                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/sdk/dist/legion-*'
+                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/cli/dist/legion-*'
                                         """
                                     } else {
                                         print("Skipping package upload")
@@ -388,7 +391,9 @@ pipeline {
                 stage('Package and upload helm charts'){
                     steps {
                         script {
-                            legion.uploadHelmCharts(env.pathToCharts)
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
+                                legion.uploadHelmCharts(env.pathToCharts)
+                            }
                         }
                     }
                 }
@@ -451,8 +456,9 @@ pipeline {
         stage('Update Master branch'){
             steps {
                 script {
-                    if (env.param_update_master.toBoolean()){
-                        legion.updateMasterBranch()
+                    if (env.param_update_master){
+                        print ("update master HERE")
+                        //legion.updateMasterBranch()
                         }
                     else {
                         print("Skipping Master branch update")

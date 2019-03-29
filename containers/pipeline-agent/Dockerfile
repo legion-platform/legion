@@ -47,7 +47,10 @@ RUN  cd /src/legion/tests/unit && pipenv install --system --three --dev
 COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock /src/legion/toolchains/python/
 RUN  cd /src/legion/toolchains/python && pipenv install --system --three
 
-COPY ./ "/src/"
+COPY ./scripts /src/scripts
 RUN chmod -R a+x /src/scripts/*
+COPY Makefile /src/Makefile
+COPY ./docs /src/docs
+COPY ./legion /src/legion
 
 RUN cd /src/ && make BUILD_PARAMS="--no-deps" install-all

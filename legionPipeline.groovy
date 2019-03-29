@@ -457,7 +457,7 @@ def buildLegionImage(legion_image, build_context=".", dockerfile='Dockerfile', a
     sh "cp .gitignore ${build_context}/.dockerignore"
 
     dir(build_context) {
-        cache_from_params = ''
+        def cache_from_params = ''
 
         if (env.param_enable_docker_cache.toBoolean()) {
             // Get list of base images from a Dockerfile
@@ -543,72 +543,71 @@ def updateMasterBranch() {
 }
 
 def uploadHelmCharts(String pathToCharts) {
-    docker.image("legion/k8s-ansible:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
-        dir (pathToCharts) {
-            chartNames = sh(returnStdout: true, script: 'ls').split()
-            println (chartNames)
-            for (chart in chartNames){
-                sh """
-                    export HELM_HOME="\$(pwd)"
-                    helm init --client-only
-                    helm dependency update "${chart}"
-                    helm package --version "${Globals.buildVersion}" "${chart}"
-                """
-            }
+    dir (pathToCharts) {
+        chartNames = sh(returnStdout: true, script: 'ls').split()
+        println (chartNames)
+        for (chart in chartNames){
+            sh """
+                export HELM_HOME="\$(pwd)"
+                helm init --client-only
+                helm dependency update "${chart}"
+                helm package --version "${Globals.buildVersion}" "${chart}"
+            """
         }
-        withCredentials([[
-        $class: 'UsernamePasswordMultiBinding',
-        credentialsId: 'nexus-local-repository',
-        usernameVariable: 'USERNAME',
-        passwordVariable: 'PASSWORD']]) {
-            dir (pathToCharts) {
-                script {
-                    for (chart in chartNames){
-                    sh"""
-                    curl -u ${USERNAME}:${PASSWORD} ${env.param_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
-                    """
-                    }
+    }
+    withCredentials([[
+    $class: 'UsernamePasswordMultiBinding',
+    credentialsId: 'nexus-local-repository',
+    usernameVariable: 'USERNAME',
+    passwordVariable: 'PASSWORD']]) {
+        dir (pathToCharts) {
+            script {
+                for (chart in chartNames){
+                sh"""
+                curl -u ${USERNAME}:${PASSWORD} ${env.param_helm_repository} --upload-file ${chart}-${Globals.buildVersion}.tgz
+                """
                 }
             }
         }
-        // Upload stable release
-        if (env.param_stable_release) {
-            //checkout repo with existing charts  (needed for generating correct repo index file )
-            sshagent(["${env.param_git_deploy_key}"]) {
-                sh """
-                mkdir ~/.ssh || true
-                ssh-keyscan github.com >> ~/.ssh/known_hosts
-                git clone ${env.param_helm_repo_git_url} && cd ${WORKSPACE}/legion-helm-charts
-                git checkout ${env.param_helm_repo_git_branch}
-                """
-            }
-            //move packed charts to folder (where repo was checkouted)
-            for (chart in chartNames){
-                sh"""
-                cd ${WORKSPACE}/legion-helm-charts
-                mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
-                mv ${pathToCharts}/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
-                git add ${chart}/${chart}-${Globals.buildVersion}.tgz
-                """
-            }
-            sshagent(["${env.param_git_deploy_key}"]) {
-                sh """
-                cd ${WORKSPACE}/legion-helm-charts
-                helm repo index ./
-                git add index.yaml
-                git status
-                git commit -m "Release ${Globals.buildVersion}"
-                git push origin ${env.param_helm_repo_git_branch}
-                """
-            }
-        }
-
-        // Cleanup directory
-        sh """
-        rm -rf ${WORKSPACE}/legion-helm-charts
-        rm -rf ${pathToCharts}
-        """
     }
+    // Upload stable release
+    if (env.param_stable_release) {
+        //checkout repo with existing charts  (needed for generating correct repo index file )
+        sshagent(["${env.param_git_deploy_key}"]) {
+            sh """
+            mkdir ~/.ssh || true
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            git clone ${env.param_helm_repo_git_url} && cd ${WORKSPACE}/legion-helm-charts
+            git checkout ${env.param_helm_repo_git_branch}
+            """
+        }
+        //move packed charts to folder (where repo was checkouted)
+        for (chart in chartNames){
+            sh"""
+            cd ${WORKSPACE}/legion-helm-charts
+            mkdir -p ${WORKSPACE}/legion-helm-charts/${chart}
+            mv ${pathToCharts}/${chart}-${Globals.buildVersion}.tgz ${WORKSPACE}/legion-helm-charts/${chart}/
+            git add ${chart}/${chart}-${Globals.buildVersion}.tgz
+            """
+        }
+        sshagent(["${env.param_git_deploy_key}"]) {
+            sh """
+            cd ${WORKSPACE}/legion-helm-charts
+            helm repo index ./
+            git add index.yaml
+            git status
+            git commit -m "Release ${Globals.buildVersion}"
+            git push origin ${env.param_helm_repo_git_branch}
+            """
+        }
+    }
+
+    // Cleanup directory
+    sh """
+    rm -rf ${WORKSPACE}/legion-helm-charts
+    rm -rf ${pathToCharts}
+    """
+
 }
 
 return this
