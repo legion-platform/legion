@@ -71,7 +71,7 @@ class TestRemoteDockerBuild(unittest2.TestCase):
         with DockerBuildServer() as server, \
                 patch('legion.sdk.containers.docker.commit_image', return_value='python:3.6'), \
                 m_func('kubernetes.client.CoreV1Api.read_namespaced_pod', 'model'), \
-                mock.patch('legion.sdk.k8s.utils.build_client', return_value=None):
+                mock.patch('legion.services.k8s.utils.build_client', return_value=None):
             model_build_result = request_to_build_image(self._build_params, provider=server.http_client)
             self.assertEqual(self._build_params.local_image_tag, model_build_result.image_name)
 
@@ -84,7 +84,7 @@ class TestRemoteDockerBuild(unittest2.TestCase):
         with DockerBuildServer() as server, \
                 m_func('kubernetes.client.CoreV1Api.read_namespaced_pod', 'model'), \
                 mock.patch('legion.services.build_services._build_model_image', side_effect=Exception(error_msg)), \
-                mock.patch('legion.sdk.k8s.utils.build_client', return_value=None):
+                mock.patch('legion.services.k8s.utils.build_client', return_value=None):
             with self.assertRaisesRegex(Exception, error_msg):
                 request_to_build_image(self._build_params, provider=server.http_client, sleep=1)
 
@@ -92,7 +92,7 @@ class TestRemoteDockerBuild(unittest2.TestCase):
         with DockerBuildServer() as server, \
                 m_func('kubernetes.client.CoreV1Api.read_namespaced_pod', 'model'), \
                 mock.patch('legion.services.build_services._build_model_image', side_effect=lambda _: sleep(15)), \
-                mock.patch('legion.sdk.k8s.utils.build_client', return_value=None):
+                mock.patch('legion.services.k8s.utils.build_client', return_value=None):
             with self.assertRaisesRegex(Exception, 'Failed to wait build result'):
                 request_to_build_image(self._build_params, provider=server.http_client, sleep=1, retries=5)
 

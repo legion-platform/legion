@@ -17,8 +17,8 @@
 Extensions for robot framework API
 """
 
-import robot.libraries.Process
-import robot.running
+import robot.libraries.Process  # pylint: disable=E0611,E0401
+import robot.running  # pylint: disable=E0611,E0401
 
 
 def get_imported_library_instance(name):
@@ -29,7 +29,7 @@ def get_imported_library_instance(name):
     :type name: str
     :return: library instance or None (e.g. robot.libraries.Process.Process instance)
     """
-    context = robot.running.context.EXECUTION_CONTEXTS.current
+    context = robot.running.context.EXECUTION_CONTEXTS.current    # pylint: disable=E1101
     namespace = context.namespace
     imported = namespace._kw_store.libraries
     if name not in imported:

@@ -1,40 +1,56 @@
+#
+#    Copyright 2019 EPAM Systems
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
 import json
 import os
 import re
+import typing
 
 from setuptools import setup, find_namespace_packages
 
+PIPFILE_DEP_SECTION = 'default'
 PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'Pipfile.lock')
+VERSION_FILE = os.path.join(PACKAGE_ROOT_PATH, 'legion/toolchain', 'version.py')
 
 
-def extract_requirements(pip_file_lock_path, section):
+def extract_requirements() -> typing.List[str]:
     """
     Extracts requirements from a pip formatted requirements file.
 
-    :param pip_file_lock_path: path to Pipfile.lock
-    :type pip_file_lock_path: str
-    :param section: name of package section in Pipfile.lock
-    :type section: str
-    :return: list[str] of package names as strings
+    :return: package names as strings
     """
-    with open(pip_file_lock_path, 'r') as pip_file_lock_stream:
+    legion_dependencies = [f'legion-sdk=={extract_version()}']
+
+    with open(PIP_FILE_LOCK_PATH, 'r') as pip_file_lock_stream:
         pip_file_lock_data = json.load(pip_file_lock_stream)
-        pip_file_section_data = pip_file_lock_data.get(section, {})
-        return [
+        pip_file_section_data = pip_file_lock_data.get(PIPFILE_DEP_SECTION, {})
+        return legion_dependencies + [
             key + value['version']
             for (key, value)
             in pip_file_section_data.items()
         ]
 
 
-def extract_version(filename):
+def extract_version() -> str:
     """
     Extract version from .py file using regex
-    :param filename: str path to file
-    :return: str version
+
+    :return: legion version
     """
-    with open(filename, 'rt') as version_file:
+    with open(VERSION_FILE, 'rt') as version_file:
         file_content = version_file.read()
         VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
         mo = re.search(VSRE, file_content, re.M)
@@ -46,13 +62,12 @@ def extract_version(filename):
 
 setup(
     name='legion-toolchain',
-    version=extract_version(os.path.join(PACKAGE_ROOT_PATH, 'legion/toolchain', 'version.py')),
-    description='Legion',
+    version=extract_version(),
+    description='Legion python toolchain',
     packages=find_namespace_packages(),
     url='https://github.com/legion-platform/legion',
     author='Alexey Kharlamov, Kirill Makhonin',
     author_email='alexey@kharlamov.biz, kirill@makhonin.biz',
     license='Apache v2',
-    install_requires=extract_requirements(PIP_FILE_LOCK_PATH, 'default'),
-    package_data={'': ['Pipfile', 'Pipfile.lock']}
+    install_requires=extract_requirements()
 )

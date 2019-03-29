@@ -1,10 +1,10 @@
 import argparse
 import logging
 import os
+from pathlib import Path
 import unittest
 from unittest import mock
 from unittest.mock import patch
-from pathlib import Path
 
 import urllib3
 
@@ -12,8 +12,8 @@ from legion.cli.parsers import security
 from legion.cli.parsers.config import config_set, config_get, config_get_all
 from legion.cli.parsers.local import build_model
 from legion.sdk import config
-from legion_test_utils import patch_config, gather_stdout_stderr
 from legion.sdk import utils as legion_utils
+from legion_test_utils import patch_config, gather_stdout_stderr
 
 
 class TestBuildModel(unittest.TestCase):

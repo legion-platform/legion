@@ -16,16 +16,13 @@
 """
 Flask package
 """
-import functools
 import logging
 from urllib.parse import parse_qs
 
 import flask
-
 from legion.sdk import config
-
 from legion.sdk.containers import headers
-from legion.sdk.utils import normalize_name, parse_value_to_type, EdiHTTPAccessDeniedException
+from legion.sdk.utils import normalize_name
 
 LOGGER = logging.getLogger(__name__)
 

@@ -30,8 +30,6 @@ AUTH_ENABLED = False
 AUTH_TOKEN_ENABLED = True
 AUTH_TOKEN = 'demo-token'
 
-REGISTER_ON_GRAFANA = True
-
 CLUSTER_CONFIG_PATH = '/opt/legion/state/cluster.yaml'
 CLUSTER_SECRETS_PATH = '/opt/legion/secrets'
 JWT_CONFIG_PATH = '/opt/legion/jwtconf'

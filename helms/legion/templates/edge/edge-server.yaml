@@ -38,10 +38,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.uid
-        - name: STATSD_HOST
-          value: "{{ .Release.Name }}-graphite.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
-        - name: STATSD_PORT
-          value: "8125"
         - name: FLUENTD_HOST
           value: "127.0.0.1"
         - name: FLUENTD_PORT
@@ -56,6 +52,9 @@ spec:
         ports:
         - containerPort: 80
           name: api
+          protocol: TCP
+        - containerPort: 7777
+          name: metrics
           protocol: TCP
         readinessProbe:
           httpGet:
@@ -119,6 +118,9 @@ spec:
   ports:
   - name: api
     port: 80
+    protocol: TCP
+  - name: metrics
+    port: 7777
     protocol: TCP
 ---
 kind: ConfigMap

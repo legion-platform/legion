@@ -1,0 +1,58 @@
+# Default values for oauth2_proxy.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: legionplatform/k8s-oauth2-proxy
+  tag: latest
+
+config:
+  provider: iodc
+  redirect_url: https://auth.chart-example.local/oauth2/callback
+  oidc_issuer_url: https://dex.domain.com
+  whitelist_domain: .chart-example.local
+  cookie_domain: .chart-example.local
+  cookie_secure: true
+  cookie_expire: 3600
+  email_domains: "*"
+  set_authorization_header: true
+  skip_provider_button: true
+  scope: openid profile email offline_access groups
+  http_address: 0.0.0.0:4180
+  #cookie_secret: #Generate random secret if nil
+  client_secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+  client_id: client-id
+
+service:
+  type: ClusterIP
+  port: 4180
+  name: oauth2-proxy
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - auth.chart-example.local
+  tls:
+  - secretName: chart-example-tls
+    hosts:
+    - auth.chart-example.local
+
+resources:
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  requests:
+   cpu: 200m
+   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

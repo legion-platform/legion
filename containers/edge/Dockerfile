@@ -33,7 +33,8 @@ RUN luarocks install lua-resty-statsd          3.0.3-1 \
     && luarocks install basexx                    0.4.0-1 \
     && luarocks install lua-resty-jwt             0.2.0-0 \
     && luarocks install lua-resty-jit-uuid        0.0.7-1 \
-    && luarocks install lua-resty-reqargs         1.4-1
+    && luarocks install lua-resty-reqargs         1.4-1 \
+    && luarocks install nginx-lua-prometheus      0.20181120-2
 
 RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
 
@@ -51,6 +52,8 @@ RUN pip3 install --no-deps -e "${WORK_DIR}/legion/sdk" && \
 COPY containers/edge/nginx.conf.ltmpl "${WORK_DIR}/"
 COPY containers/edge/lua/ /usr/local/openresty/luajit/
 COPY containers/edge/start.sh /usr/bin/
+
+RUN cp /usr/local/openresty/luajit/share/lua/5.1/nginx/prometheus.lua /usr/local/openresty/luajit/
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["start.sh"]

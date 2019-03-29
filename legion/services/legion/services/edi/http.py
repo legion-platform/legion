@@ -106,7 +106,6 @@ def provide_json_response(method):
     :param method: decorator function
     :return: decorated function
     """
-
     @functools.wraps(method)
     def decorated_function(*args, **kwargs):
         code = 200
@@ -159,7 +158,6 @@ def populate_fields(**fields):
     :type fields: dict[str, type]
     :return: decorator function
     """
-
     def decorator(method):
         @functools.wraps(method)
         def decorated_function(*args, **kwargs):
@@ -192,7 +190,6 @@ def authenticate(authenticator):
     :type authenticator: function[user, password]: bool
     :return: decorator function
     """
-
     def decorator(method):
         @functools.wraps(method)
         def decorated_function(*args, **kwargs):
@@ -222,7 +219,6 @@ def requested_fields(*fields):
     :type fields: list[str]
     :return: decorator function
     """
-
     def decorator(method):
         @functools.wraps(method)
         def decorated_function(*args, **kwargs):

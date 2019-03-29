@@ -381,15 +381,10 @@ MODEL_FILE = ConfigVariableDeclaration('MODEL_FILE', None, str,
 MODEL_TRAIN_METRICS_ENABLED = ConfigVariableDeclaration('MODEL_TRAIN_METRICS_ENABLED', False, cast_bool,
                                                         'Send model metrics on train',
                                                         False)
-STATSD_HOST = ConfigVariableDeclaration('STATSD_HOST', 'graphite', str,
-                                        'Host that gets train metrics. It is used during model training',
-                                        False)
-STATSD_PORT = ConfigVariableDeclaration('STATSD_PORT', 8125, int,
-                                        'Port that gets train metrics. It is used during model training',
-                                        False)
-STATSD_NAMESPACE = ConfigVariableDeclaration('STATSD_NAMESPACE', 'legion.model', str,
-                                             'Graphite namespace for train metrics. It is used during model training',
-                                             False)
+METRICS_HOST = ConfigVariableDeclaration('METRICS_HOST', 'graphite', str,
+                                         'Host that gets train metrics. It is used during model training', False)
+METRICS_PORT = ConfigVariableDeclaration('METRICS_PORT', 9125, int,
+                                         'Port that gets train metrics. It is used during model training', False)
 
 # API for models
 LEGION_ADDR = ConfigVariableDeclaration('LEGION_ADDR', '0.0.0.0', str,
@@ -406,33 +401,6 @@ LEGION_API_ADDR = ConfigVariableDeclaration('LEGION_API_ADDR', '0.0.0.0', str,
 LEGION_API_PORT = ConfigVariableDeclaration('LEGION_API_PORT', 5001, int,
                                             'Port to listen Legion service endpoint',
                                             False)
-
-# TODO: Remove graphite host, keep only statsd
-GRAPHITE_HOST = ConfigVariableDeclaration('GRAPHITE_HOST', 'graphite', str,
-                                          'DEPRECATED: see STATSD_*',
-                                          False)
-GRAPHITE_PORT = ConfigVariableDeclaration('GRAPHITE_PORT', 2003, int,
-                                          'DEPRECATED: see STATSD_*',
-                                          False)
-GRAPHITE_NAMESPACE = ConfigVariableDeclaration('GRAPHITE_NAMESPACE', 'stats.legion.model', str,
-                                               'DEPRECATED: see STATSD_*',
-                                               False)
-
-# Information for managing dashboards on external grafana
-
-REGISTER_ON_GRAFANA = ConfigVariableDeclaration('REGISTER_ON_GRAFANA', False, cast_bool,
-                                                'Register model dashboards',
-                                                False)
-
-GRAFANA_URL = ConfigVariableDeclaration('GRAFANA_URL', None, str,
-                                        'URL of Grafana server for managing model metrics dashboard',
-                                        False)
-GRAFANA_USER = ConfigVariableDeclaration('GRAFANA_USER', None, str,
-                                         'User name for managing model metrics dashboard',
-                                         False)
-GRAFANA_PASSWORD = ConfigVariableDeclaration('GRAFANA_PASSWORD', None, str,
-                                             'Password for managing model metrics dashboard',
-                                             False)
 
 # EDI endpoint
 EDI_URL = ConfigVariableDeclaration('EDI_URL', None, str,
@@ -488,7 +456,7 @@ MODEL_PROPERTIES_CACHE_TTL = ConfigVariableDeclaration('MODEL_PROPERTIES_CACHE_T
                                                        False)
 
 # Kubernetes API
-NAMESPACE = ConfigVariableDeclaration('NAMESPACE', None, str,
+NAMESPACE = ConfigVariableDeclaration('NAMESPACE', 'legion', str,
                                       'Name of kubernetes namespace inside Pod',
                                       False)
 

@@ -23,11 +23,10 @@ import time
 from typing import NamedTuple
 from urllib.parse import quote
 
+import jenkins
 from legion.robot import profiler_loader
 from legion.robot.libraries import dex_client
 from legion.robot.template import render_template
-
-import jenkins
 
 Options = NamedTuple('Options', [
     ('jenkins_url', str),
@@ -206,7 +205,6 @@ def work(options: Options):
     :param options: options
     :return: None
     """
-
     jenkins_user, jenkins_password, jenkins_token = get_jenkins_credentials(options.profiles_dir, options.profile)
     if os.getenv('PYTHONHTTPSVERIFY', None) == '0':
         import ssl
@@ -246,6 +244,9 @@ def work(options: Options):
 
 
 def main():
+    """
+    CLI entrypoint
+    """
     parser = argparse.ArgumentParser('Jenkins job creator')
     parser.add_argument('jenkins_url', type=str, help='Jenkins server url')
     parser.add_argument('base_directory', type=str, help='Base find directory')

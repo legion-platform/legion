@@ -18,12 +18,13 @@ Model metrics
 """
 import socket
 import logging
-import time
+import typing
 from enum import Enum
 
 from legion.sdk import config
 from legion.sdk.utils import normalize_name
 
+STATSD_METRIC_FORMAT = "{}:{}|c"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -52,9 +53,9 @@ def get_metric_endpoint():
 
     :return: metric server endpoint
     """
-    host = config.GRAPHITE_HOST
-    port = config.GRAPHITE_PORT
-    namespace = config.GRAPHITE_NAMESPACE
+    host = config.METRICS_HOST
+    port = config.METRICS_PORT
+    namespace = config.NAMESPACE
     return host, port, namespace
 
 
@@ -115,38 +116,31 @@ def send_udp(host, port, message):
     sock.sendto(message, (host, port))
 
 
-def send_tcp(host, port, message):
+def send_tcp(host: str, port: str, messages: typing.List[str]) -> None:
     """
-    Send message with TCP
+    Send messages with TCP
 
     :param host: target host
-    :type host: str
     :param port: target port
-    :type port: int
-    :param message: data string or bytes
-    :type message: str or bytes
-    :return: None
+    :param messages: stasd metrics
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((host, port))
 
-    if isinstance(message, str):
-        message = message.encode('utf-8')
+    encoded_message = "\n".join(messages).encode('utf-8')
+    LOGGER.debug('Send metrics %s to the statsd', encoded_message)
 
-    sock.send(message)
+    sock.send(encoded_message)
     sock.close()
 
 
-def send_metric(model_id, metric, value):
+def send_metric(model_id: str, metric: typing.Union[str, Metric], value: float):
     """
     Send build metric value
 
     :param model_id: model ID
-    :type model_id: str
     :param metric: metric type or metric name
-    :type metric: :py:class:`legion.metrics.Metric` or str
     :param value: metric value
-    :type value: float or int
     :return: None
     """
     if not is_metrics_enabled():
@@ -154,12 +148,13 @@ def send_metric(model_id, metric, value):
         return
 
     host, port, namespace = get_metric_endpoint()
+    messages: typing.List[str] = []
 
-    metric_name = '{}.{}'.format(namespace, get_metric_name(metric, model_id))
-    message = "{} {} {}\n".format(metric_name, float(value), int(time.time()))
-    send_tcp(host, port, message)
+    message = STATSD_METRIC_FORMAT.format(f'{namespace}.{get_metric_name(metric, model_id)}', float(value))
+    messages.append(message)
 
     build_no = get_build_number()
-    metric_name = '{}.{}'.format(namespace, get_metric_name('build', model_id))
-    message = "{} {} {}\n".format(metric_name, build_no, int(time.time()))
-    send_tcp(host, port, message)
+    message = STATSD_METRIC_FORMAT.format(f'{namespace}.{get_metric_name("build", model_id)}', build_no)
+    messages.append(message)
+
+    send_tcp(host, port, messages)

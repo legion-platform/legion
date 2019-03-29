@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: statsd-exporter
+    release: {{ .Release.Name | quote }}
+    monitoring: prometheus
+  name: statsd-exporter
+spec:
+  endpoints:
+  - interval: 15s
+    path: /metrics
+    port: statsd-prom
+  namespaceSelector:
+    matchNames:
+    - "{{ .Values.namespace }}"
+  selector:
+    matchLabels:
+      component: statsd-exporter
+      release: {{ .Release.Name | quote }}

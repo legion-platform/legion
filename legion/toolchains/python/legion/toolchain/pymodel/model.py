@@ -17,37 +17,31 @@
 Python model
 """
 import json
-import sys
-import os
-import zipfile
 import logging
-import typing
+import os
+import sys
+import typing  # pylint: disable=W0611
+import zipfile
 
 import dill
-from legion.toolchain import model, version, metrics
-from legion.toolchain.model import types
-
-from legion.sdk.model import ModelMeta
-from legion.sdk.k8s import properties
-
 from legion.sdk import config
 from legion.sdk.containers import headers
-from legion.sdk.utils import model_properties_storage_name, send_header_to_stderr, \
+from legion.sdk.model import ModelMeta
+from legion.sdk.utils import send_header_to_stderr, \
     extract_archive_item, TemporaryFolder, deduce_model_file_name, save_file
+from legion.toolchain import version, metrics
+from legion.toolchain import types
 
 LOGGER = logging.getLogger(__name__)
 
 ZIP_COMPRESSION = zipfile.ZIP_STORED
 ZIP_FILE_MODEL = 'model'
 ZIP_FILE_INFO = 'manifest.json'
-ZIP_FILE_PROPERTIES = 'properties'
 ZIP_FILE_CALLBACK = 'callback'
 
 PROPERTY_MODEL_ID = 'model.id'
 PROPERTY_MODEL_VERSION = 'model.version'
 PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
-PROPERTY_REQUIRED_PROPERTIES = 'model.required_properties'
-PROPERTY_PROPERTIES_CALLBACK_EXISTS = 'mode.properties_callback_exists'
 
 
 class ModelEndpoint:
@@ -104,7 +98,7 @@ class ModelEndpoint:
         :return: dict -- output data
         """
         LOGGER.info('Input vector: %r' % input_vector)
-        data_frame = model.types.build_df(self.column_types, input_vector, not self.use_df)
+        data_frame = types.build_df(self.column_types, input_vector, not self.use_df)
 
         LOGGER.info('Running prepare with DataFrame: %r' % data_frame)
         data_frame = self.prepare(data_frame)  # pylint: disable=E1102
@@ -186,16 +180,6 @@ class Model(ModelMeta):
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
 
-        self._on_property_change_callback = None  # type: typing.Callable[[], None] or None
-        self._on_property_change_callback_loaded = False  # type: bool
-
-        LOGGER.info('Setting properties change callback getter to local function {!r} (id: {})'.format(
-            self.get_on_property_change_callback,
-            id(self.get_on_property_change_callback)
-        ))
-
-        self._properties.set_change_callback(self.get_on_property_change_callback)
-
         send_header_to_stderr(headers.MODEL_ID, self.model_id)
         send_header_to_stderr(headers.MODEL_VERSION, self.model_version)
 
@@ -209,20 +193,12 @@ class Model(ModelMeta):
         """
         self._path = path
         self._endpoints = None
-        self._on_property_change_callback_loaded = False
         LOGGER.info('Loading model from {}'.format(path))
 
         LOGGER.debug('Loading metadata from {}'.format(ZIP_FILE_INFO))
         with extract_archive_item(path, ZIP_FILE_INFO) as manifest_path:
             with open(manifest_path, 'r') as manifest_file:
                 self._meta_information = json.load(manifest_file)
-
-        self._required_properties = self.meta_information[PROPERTY_REQUIRED_PROPERTIES]
-
-        LOGGER.debug('Loading properties from {}'.format(ZIP_FILE_PROPERTIES))
-        with extract_archive_item(path, ZIP_FILE_PROPERTIES) as properties_path:
-            with open(properties_path, 'r') as properties_file:
-                self.properties.data = json.load(properties_file)
 
         LOGGER.debug('Loading has been finished')
 
@@ -262,18 +238,6 @@ class Model(ModelMeta):
         """
         return endpoint_name
 
-    def load_properties_change_callback(self):
-        """
-        Load properties change callback from binary
-
-        :return: deserialized model properties change callback
-        :rtype: :py:class:`typing.Callable[[], None]`
-        """
-        LOGGER.debug('Loading properties change callback')
-        with extract_archive_item(self._path, ZIP_FILE_CALLBACK) as callback_path:
-            with open(callback_path, 'rb') as callback_file:
-                return dill.load(callback_file)
-
     def load_endpoint(self, endpoint_name):
         """
         Load endpoint from model binary
@@ -308,8 +272,6 @@ class Model(ModelMeta):
 
         :return: dict -- current endpoints
         """
-        # If endpoint is None it means that model in partial loaded state
-        # (properties has been loaded, endpoints - not)
         if self._endpoints is None:
             self._endpoints = {}
 
@@ -332,7 +294,6 @@ class Model(ModelMeta):
         """
         if not self.endpoints:
             raise ValueError('Cannot save empty model container (no one export function has been called)')
-        properties_change_callback_exists = self.get_on_property_change_callback() is not None
 
         meta_information_to_save = self._meta_information.copy()
         meta_information_to_save.update(self._collect_build_info())
@@ -341,8 +302,6 @@ class Model(ModelMeta):
         meta_information_to_save[PROPERTY_MODEL_ID] = self.model_id
         meta_information_to_save[PROPERTY_MODEL_VERSION] = self.model_version
         meta_information_to_save[PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
-        meta_information_to_save[PROPERTY_REQUIRED_PROPERTIES] = list(self._required_properties)
-        meta_information_to_save[PROPERTY_PROPERTIES_CALLBACK_EXISTS] = properties_change_callback_exists
 
         self._path = path
 
@@ -368,19 +327,6 @@ class Model(ModelMeta):
                 with open(os.path.join(temp_directory.path, ZIP_FILE_INFO), 'w') as info_file:
                     json.dump(meta_information_to_save, info_file)
                 stream.write(os.path.join(temp_directory.path, ZIP_FILE_INFO), ZIP_FILE_INFO)
-
-                # Add current properties state
-                LOGGER.debug('Saving current property values to {}'.format(ZIP_FILE_PROPERTIES))
-                with open(os.path.join(temp_directory.path, ZIP_FILE_PROPERTIES), 'w') as props_file:
-                    json.dump(model.properties.data, props_file)
-                stream.write(os.path.join(temp_directory.path, ZIP_FILE_PROPERTIES), ZIP_FILE_PROPERTIES)
-
-                # Add callback file
-                if properties_change_callback_exists:
-                    LOGGER.debug('Saving property change callback to {}'.format(ZIP_FILE_CALLBACK))
-                    with open(os.path.join(temp_directory.path, ZIP_FILE_CALLBACK), 'wb') as callback_file:
-                        dill.dump(self.get_on_property_change_callback(), callback_file, recurse=True)
-                    stream.write(os.path.join(temp_directory.path, ZIP_FILE_CALLBACK), ZIP_FILE_CALLBACK)
 
                 # Add endpoints
                 for endpoint in self.endpoints.values():
@@ -495,45 +441,6 @@ class Model(ModelMeta):
         self._export(apply_func, prepare_func, None, False, endpoint)
         return self
 
-    def get_on_property_change_callback(self):
-        """
-        Get or lazy load registered callback or empty callback
-
-        :return: :py:class:`Callable[[], None]` -- callback function
-        """
-        # If property change callback loaded - return
-        if not self._on_property_change_callback_loaded:
-            callback_exists = self._meta_information.get(PROPERTY_PROPERTIES_CALLBACK_EXISTS)
-
-            if not callback_exists:
-                LOGGER.warning('Property change callback is empty - using lambda')
-                self._on_property_change_callback = lambda: None
-            else:
-                self._on_property_change_callback = self.load_properties_change_callback()
-            self._on_property_change_callback_loaded = True
-
-        return self._on_property_change_callback
-
-    def on_property_change(self, callback):
-        """
-        Set property change callback
-
-        :param callback: callback which will be called on each property change
-        :type callback: :py:class:`Callable[[], None]`
-        :return: None
-        """
-        self._on_property_change_callback = callback
-        self._on_property_change_callback_loaded = True
-
-    @property
-    def required_props(self):
-        """
-        Get model required props
-
-        :return: list[str] -- list of required property names
-        """
-        return self._required_properties
-
     def _collect_build_info(self):
         """
         Get additional container properties for container
@@ -566,22 +473,3 @@ class Model(ModelMeta):
         :return: None
         """
         return metrics.send_metric(self.model_id, metric, value)
-
-    def define_property(self, name, initial_value):
-        """
-        Define model property and set initial value
-
-        :param name: property name
-        :type name: str
-        :param initial_value: initial property value
-        :type initial_value: any
-        :return: :py:class:`legion.pymodel.model.Model` -- model container
-        """
-        self._required_properties.append(name)
-
-        if not model.properties:
-            raise Exception('Model properties has not been initialized')
-
-        model.properties[name] = initial_value
-
-        return self

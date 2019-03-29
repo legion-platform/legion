@@ -16,12 +16,11 @@
 """
 Model functionality
 """
-from legion.sdk.k8s.properties import K8SPropertyStorage
 from legion.sdk.utils import normalize_name
 from legion.toolchain.pymodel.model import Model
-from .types import int8, uint8, int16, uint16, int32, uint32, int64, uint64
-from .types import float32, float64
-from .types import string, boolean, image
+from legion.toolchain.types import int8, uint8, int16, uint16, int32, uint32, int64, uint64
+from legion.toolchain.types import float32, float64
+from legion.toolchain.types import string, boolean, image
 
 
 MODEL_TYPES = [Model]
@@ -30,10 +29,6 @@ MODEL_TYPES = [Model]
 # Global variable for storing model context
 # This variable initializes by init() function
 _model = None
-
-# Global variable for storing properties for current model
-# This variable initializes by set_properties() function that calls on model init or before model deploy
-properties = None  # type: K8SPropertyStorage
 
 
 def get_context():
@@ -53,28 +48,6 @@ def reset_context():
     """
     global _model
     _model = None
-
-
-def set_properties(new_properties):
-    """
-    Set new properties as a instance of legion.k8s.properties.K8SPropertyStorage class
-
-    :param new_properties: new properties
-    :type new_properties: :py:class:`legion.k8s.properties.K8SPropertyStorage`
-    :return: None
-    """
-    global properties
-    properties = new_properties
-
-
-def reset_properties():
-    """
-    Reset properties
-
-    :return: None
-    """
-    global properties
-    properties = None
 
 
 def init(model_id, model_version, model_type=Model.NAME):
@@ -107,7 +80,6 @@ def init(model_id, model_version, model_type=Model.NAME):
         raise Exception('More then 1 builder have been found for type {}'.format(model_type))
 
     _model = builder[0](model_id, model_version)
-    set_properties(_model.properties)
 
     return _model
 
@@ -197,33 +169,3 @@ def save(path=None):
         raise Exception('Context has not been defined')
 
     return _model.save(path)
-
-
-def define_property(name, initial_value):
-    """
-    Define model property
-
-    :param name: property name
-    :type name: str
-    :param initial_value: initial property value
-    :type initial_value: any
-    :return: model container
-    """
-    if not _model:
-        raise Exception('Context has not been defined')
-
-    return _model.define_property(name, initial_value)
-
-
-def on_property_change(callback):
-    """
-    Set callback that will be called on each property update
-
-    :param callback: callback on each model property update
-    :type callback: :py:class:`Callable[[], None]`
-    :return: None
-    """
-    if not _model:
-        raise Exception('Context has not been defined')
-
-    return _model.on_property_change(callback)

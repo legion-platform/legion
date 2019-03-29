@@ -32,7 +32,7 @@ from legion.sdk.clients.edi import RemoteEdiClient
 from legion.sdk.clients.model import ModelClient
 from legion.sdk.containers import headers
 from legion.sdk.containers.docker import build_docker_client, generate_docker_labels_for_container
-from legion.sdk.k8s.enclave import Enclave
+from legion.services.k8s.enclave import Enclave
 from legion.sdk.utils import remove_directory, ensure_function_succeed
 from legion.toolchain import model
 from legion.toolchain.server import pyserve
@@ -398,7 +398,7 @@ class ManagedProcessContext:
             stream_file = os.path.join(stream_folder, stream_name)
 
             if os.path.exists(stream_file):
-                print('Overwritting file {!r}'.format(stream_name))
+                print('Overwriting file {!r}'.format(stream_name))
 
             stream = open(stream_file, 'w')
             args_holder[stream_name] = stream
@@ -864,7 +864,6 @@ class ModelServeTestBuild:
 
             print('Creating pyserve')
             additional_environment = {
-                'REGISTER_ON_GRAFANA': False,
                 'MODEL_FILE': self._model_path
             }
             with patch_config(additional_environment):
@@ -872,9 +871,9 @@ class ModelServeTestBuild:
                 self.application.testing = True
                 self.client = self.application.test_client()
                 self.model_client = ModelClient(self._model_id,
-                                                             self._model_version,
-                                                             http_client=self.client,
-                                                             use_relative_url=True)
+                                                self._model_version,
+                                                http_client=self.client,
+                                                use_relative_url=True)
 
             return self
         except Exception as build_exception:
@@ -924,14 +923,14 @@ def build_requests_mock_function(test_client):
     :return: Callable[[str, str, dict[str, str], dict[str, str]], requests.Response]
     """
 
-    def func(action, url, data=None, headers=None, cookies=None):
+    def func(action, url, data=None, http_headers=None, cookies=None):
         request_data = {'query_string' if action == 'GET' else 'data': data}
         server_name = "localhost"
 
         for k, v in cookies.items():
             test_client.set_cookie(server_name, k, v)
 
-        test_response = test_client.open(url, method=action, headers=headers, **request_data)
+        test_response = test_client.open(url, method=action, headers=http_headers, **request_data)
 
         return build_requests_reponse_from_flask_client_response(test_response, url)
 
@@ -961,18 +960,15 @@ class EDITestServer:
         """
         additional_environment = {
             'CLUSTER_SECRETS_PATH': os.path.join(TEST_DATA_LOCATION, 'secrets'),
-            'JWT_CONFIG_PATH': os.path.join(TEST_DATA_LOCATION, 'jwt_config'),
-            'STATSD_HOST': 'graphite',
-            'STATSD_PORT': 80
+            'JWT_CONFIG_PATH': os.path.join(TEST_DATA_LOCATION, 'jwt_config')
         }
 
         test_enclave = Enclave(self._enclave_name)
         test_enclave._data_loaded = True
 
         with patch_config(additional_environment), \
-             patch('legion.sdk.k8s.utils.get_current_namespace', lambda *x: self._enclave_name) as kek, \
+             patch('legion.services.k8s.utils.get_current_namespace', lambda *x: self._enclave_name), \
              patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave), \
-             patch('legion.services.edi.server.get_application_grafana', lambda *x: None), \
              patch_environ(additional_environment):  # noqa
             self.application = edi_server.init_application(None)
 
@@ -1034,8 +1030,8 @@ class DockerBuildServer:
         test_enclave = Enclave(enclave_name)
         test_enclave._data_loaded = True
 
-        with patch('legion.sdk.k8s.utils.get_current_namespace', lambda *x: enclave_name), \
-                patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave):
+        with patch('legion.services.k8s.utils.get_current_namespace', lambda *x: enclave_name), \
+             patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave):
             self.application = build_services.init_application()
 
         self.application.testing = True
@@ -1245,5 +1241,7 @@ def activate_http_api_json_calls_catcher(*paths, target=None):
         def wrapped(*args, **kwargs):
             with catch_http_api_json_calls(*paths, target=target):
                 return func(*args, **kwargs)
+
         return wrapped
+
     return wrapper

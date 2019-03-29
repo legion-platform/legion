@@ -38,7 +38,6 @@ def init_session_id_from_data(data: dict):
     :param data: persisted login data
     :type data: dict[str, str]
     """
-
     global _session_cookies, _jenkins_credentials
     if not _session_cookies and not _jenkins_credentials:
         cookies = data['cookies'].split(';')

@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Information about {{MODEL_ID}}. Copyright 2018 EPAM Systems, Apache License, Version 2.0.",
+  "description": "Information about legion models. Copyright 2019 EPAM Systems, Apache License, Version 2.0.",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
@@ -24,7 +24,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "graphite",
+          "datasource": "Prometheus",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -98,7 +98,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "graphite",
+          "datasource": "Prometheus",
           "format": "ms",
           "gauge": {
             "maxValue": 100,
@@ -180,7 +180,7 @@
           "cacheTimeout": "1",
           "dashLength": 10,
           "dashes": false,
-          "datasource": "graphite",
+          "datasource": "Prometheus",
           "fill": 1,
           "hideTimeOverride": false,
           "id": 1,
@@ -272,7 +272,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "graphite",
+          "datasource": "Prometheus",
           "fill": 1,
           "id": 2,
           "legend": {
@@ -380,7 +380,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "graphite",
+          "datasource": "Prometheus",
           "fill": 3,
           "id": 5,
           "legend": {
@@ -526,7 +526,7 @@
     "list": [
       {
         "allValue": null,
-        "datasource": "graphite",
+        "datasource": "Prometheus",
         "hide": 0,
         "includeAll": false,
         "label": "Model Version",
@@ -546,7 +546,7 @@
       },
       {
         "allValue": null,
-        "datasource": "graphite",
+        "datasource": "Prometheus",
         "hide": 0,
         "includeAll": false,
         "label": "Model Endpoint",
@@ -596,6 +596,6 @@
     ]
   },
   "timezone": "",
-  "title": "Model information - {{MODEL_ID}}",
+  "title": "Model information",
   "version": 1
 }

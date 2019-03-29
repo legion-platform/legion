@@ -1,0 +1,136 @@
+namespace: kube-monitoring
+
+statsd-exporter:
+  image: prom/statsd-exporter:v0.9.0
+
+  service:
+    externalStatsdPromPort: 9102
+    externalStatsdTcpPort: 9125
+
+  deployment:
+    name: statsd-exporter
+
+prometheus-operator:
+  defaultRules:
+    labels:
+      monitoring: prometheus
+  commonLabels:
+    monitoring: prometheus
+
+  alertmanager:
+    ingress:
+      enabled: true
+      hosts:
+        - "alertmanager.legion-test.org"
+        - "alertmanager.local.grafana.legion-test.org"
+      tls:
+        - secretName: "legion-test.org-tls"
+          hosts: ["alertmanager.legion-test.org"]
+      annotations:
+        nginx.ingress.kubernetes.io/auth-signin: "https://auth.legion.epm.org/oauth2/start?rd=https://$host$request_uri$is_args$args"
+        nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth"
+    alertmanagerSpec:
+      resources:
+        limits:
+          cpu: 512m
+          memory: 512Mi
+        requests:
+          cpu: 256m
+          memory: 256Mi
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp2
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 5Gi
+
+  prometheus:
+    ingress:
+      enabled: true
+      hosts:
+        - "prometheus.legion-test.org"
+        - "prometheus.local.grafana.legion-test.org"
+      tls:
+        - secretName: "legion-test.org-tls"
+          hosts: ["prometheus.legion-test.org"]
+      annotations:
+        nginx.ingress.kubernetes.io/auth-signin: "https://auth.legion.epm.org/oauth2/start?rd=https://$host$request_uri$is_args$args"
+        nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth"
+    prometheusSpec:
+      resources:
+        limits:
+          cpu: 1
+          memory: 1Gi
+        requests:
+          cpu: 512m
+          memory: 512Mi
+      ruleSelector:
+        matchLabels:
+          monitoring: prometheus
+      serviceMonitorSelector:
+        matchLabels:
+          monitoring: prometheus
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp2
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+
+  coreDns:
+    enabled: false
+
+  grafana:
+    enabled: true
+    defaultDashboardsEnabled: true
+    fullnameOverride: grafana
+    tag: 6.0.1
+
+    adminUser: grafana_admin
+    adminPassword: grafana_password
+    resources:
+      limits:
+        cpu: 512m
+        memory: 512Mi
+      requests:
+        cpu: 256m
+        memory: 256Mi
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+      datasources:
+        enabled: true
+        label: grafana_datasource
+
+    serviceMonitor:
+      selfMonitor: true
+
+    persistence:
+      enabled: true
+      initChownData: true
+      storageClassName: gp2
+      accessModes:
+      - ReadWriteOnce
+      size: 10Gi
+    ingress:
+      enabled: true
+      hosts:
+        - "grafana.legion-test.org"
+        - "grafana.local.grafana.legion-test.org"
+      tls:
+        - secretName: "legion-test.org-tls"
+          hosts: ["grafana.legion-test.org"]
+      annotations:
+        nginx.ingress.kubernetes.io/auth-signin: "https://auth.legion.epm.org/oauth2/start?rd=https://$host$request_uri$is_args$args"
+        nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth"
+    env:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    setup:
+      image:
+        repository: legion/k8s-ansible
+        tag: latest

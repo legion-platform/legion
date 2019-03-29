@@ -24,16 +24,10 @@ LEGION_COMPONENT_LABEL = 'legion.component'
 LEGION_COMPONENT_NAME_MODEL = 'model'
 LEGION_COMPONENT_NAME_EDI = 'edi'
 LEGION_COMPONENT_NAME_API = 'edge'
-LEGION_COMPONENT_NAME_GRAFANA = 'grafana'
-LEGION_COMPONENT_NAME_GRAPHITE = 'graphite'
 
 LEGION_API_SERVICE_PORT = 'api'
 
 ENCLAVE_NAMESPACE_LABEL = 'enclave'
-
-INGRESS_DASHBOARD_NAME = 'kubernetes-dashboard'
-INGRESS_GRAFANA_NAME = 'legion-core-grafana'
-
 
 EVENT_ADDED = 'ADDED'
 EVENT_MODIFIED = 'MODIFIED'
@@ -61,3 +55,5 @@ EDI_INFO = '/api/{version}/info'
 EDI_GENERATE_TOKEN = '/api/{version}/generate_token'
 
 DOCKER_BUILD_URL = '/api/1.0/build'
+
+KUBERNETES_SERVICE_ACCOUNT_NAMESPACE_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/namespace'

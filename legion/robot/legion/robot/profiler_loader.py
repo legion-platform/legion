@@ -87,6 +87,7 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
                                              data['enclaves'][0]),
         'GRAFANA_USER': data['grafana']['admin']['username'],
         'GRAFANA_PASSWORD': data['grafana']['admin']['password'],
+        'MONITORING_NAMESPACE': data.get('monitoring_namespace', 'kube-monitoring')
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'

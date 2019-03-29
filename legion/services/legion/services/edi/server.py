@@ -25,15 +25,14 @@ import jwt
 from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
 
-from legion.sdk.clients.grafana import GrafanaClient
 from legion.sdk.clients.model import ModelClient
 from legion.sdk.containers.definitions import ModelDeploymentDescription
 from legion.sdk.definitions import EDI_INFO, EDI_GENERATE_TOKEN, EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, \
     EDI_VERSION, EDI_ROOT, EDI_API_ROOT
-from legion.sdk.k8s.enclave import Enclave
-from legion.sdk.k8s.exceptions import UnknownDeploymentForModelService
-from legion.sdk.k8s.utils import load_secrets
-from legion.sdk.k8s import utils
+from legion.services.k8s.enclave import Enclave
+from legion.services.k8s.exceptions import UnknownDeploymentForModelService
+from legion.services.k8s.utils import load_secrets
+from legion.services.k8s import utils
 from legion.services.edi import http
 from legion.services.edi.http import configure_application
 
@@ -161,18 +160,9 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
                 'memory={}, cpu={} and {!r} IAM role'.format(image, count, livenesstimeout, readinesstimeout, memory,
                                                              cpu, model_iam_role))
 
-    is_deployed, model_service = app.config['ENCLAVE'].deploy_model(
+    _, model_service = app.config['ENCLAVE'].deploy_model(
         image, model_iam_role, count, livenesstimeout, readinesstimeout, memory, cpu
     )
-
-    if is_deployed:
-        if app.config['REGISTER_ON_GRAFANA']:
-            LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
-                        .format(model_service.id, model_service.version))
-
-            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
-        else:
-            LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
 
     return return_model_deployments([ModelDeploymentDescription.build_from_model_service(model_service)])
 
@@ -214,18 +204,6 @@ def undeploy(model, version=None, grace_period=0, ignore_not_found=False):
     model_services = app.config['ENCLAVE'].get_models_strict(model, version, ignore_not_found)
 
     for model_service in model_services:
-        if app.config['REGISTER_ON_GRAFANA']:
-            other_versions_exist = len(app.config['ENCLAVE'].get_models(model_service.id)) > 1
-            LOGGER.info('Removing model\'s dashboard from Grafana (id={}, version={})'
-                        .format(model_service.id, model_service.version))
-
-            if not other_versions_exist:
-                app.config['GRAFANA_CLIENT'].remove_dashboard_for_model(model_service.id)
-            else:
-                LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - there are other model')
-        else:
-            LOGGER.info('Removing model\'s dashboard from Grafana has been skipped - disabled in configuration')
-
         model_deployments.append(
             ModelDeploymentDescription.build_from_model_service(model_service)
         )
@@ -392,20 +370,6 @@ def get_application_enclave(application):
     return Enclave(application.config['NAMESPACE'])
 
 
-def get_application_grafana(application):
-    """
-    Build enclave's grafana client
-
-    :param application: Flask app instance
-    :type application: :py:class:`Flask.app`
-    :return :py:class:`legion.external.grafana.GrafanaClient`
-    """
-    grafana_client = GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
-                                   application.config['CLUSTER_SECRETS']['grafana.user'],
-                                   application.config['CLUSTER_SECRETS']['grafana.password'])
-    return grafana_client
-
-
 def load_cluster_config(application):
     """
     Load cluster configuration into Flask config
@@ -419,7 +383,6 @@ def load_cluster_config(application):
 
     application.config['ENCLAVE'] = get_application_enclave(application)
     application.config['CLUSTER_SECRETS'] = load_secrets(application.config['CLUSTER_SECRETS_PATH'])
-    application.config['GRAFANA_CLIENT'] = get_application_grafana(application)
     application.config['JWT_CONFIG'] = load_secrets(application.config['JWT_CONFIG_PATH'])
 
 

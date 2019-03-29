@@ -15,15 +15,14 @@
 #
 from __future__ import print_function
 
-import os
 import logging
-import unittest2
+import os
 
 import numpy
 import pandas
-
+import unittest2
 from legion.toolchain import model
-from legion.toolchain.model import types, reset_context
+from legion.toolchain import types
 from legion.toolchain.pymodel.model import Model, ModelEndpoint
 
 LOGGER = logging.getLogger(__name__)
@@ -99,7 +98,7 @@ class TestModelContainer(unittest2.TestCase):
         model.init(MODEL_ID, MODEL_VERSION) \
             .export(make_square, {
                     'value': model.int32,
-                    'are_you_sure': model.types.ColumnInformation(CustomBoolObject())
+                    'are_you_sure': types.ColumnInformation(CustomBoolObject())
                     }, endpoint='square') \
             .save(MODEL_PATH)
 
@@ -112,7 +111,6 @@ class TestModelContainer(unittest2.TestCase):
 
     def test_model_pack_native_multiple_endpoints(self):
         model.init(MODEL_ID, MODEL_VERSION) \
-            .define_property('abc_prop', 12.41) \
             .export_untyped(apply_add, endpoint='add') \
             .export_untyped(apply_sub, endpoint='sub') \
             .save(MODEL_PATH)

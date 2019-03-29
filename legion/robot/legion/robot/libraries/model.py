@@ -24,7 +24,11 @@ class Model:
     """
     Model API class
     """
+
     def __init__(self):
+        """
+        Init model
+        """
         self._last_response_id = None
         self._last_response = None
 
@@ -141,53 +145,6 @@ class Model:
         :return: str -- last response ID
         """
         return self._last_response_id
-
-    @staticmethod
-    def get_model_api_properties(model_id, model_version, edge, token):
-        """
-        Get model properties through model API
-
-        :param model_id: model ID
-        :param model_version: model version
-        :param edge: edge url
-        :param token: model API JWT token
-        :return: dict -- response
-        """
-        headers = {"Authorization": "Bearer {}".format(token)}
-        url = '{}/api/model/{}/{}/properties'.format(edge, model_id, model_version)
-
-        print('Requesting {} in GET mode'.format(url))
-
-        response = requests.get(url, headers=headers)
-
-        if response.status_code != 200:
-            raise Exception('Returned wrong status code: {}'.format(response.status_code))
-
-        return response.json()
-
-    @staticmethod
-    def ensure_model_property_has_been_updated(model_id, model_version, edge, token, prop_name, desired_value):
-        """
-        Get model properties through model API
-
-        :param model_id: model ID
-        :param model_version: model version
-        :param edge: edge url
-        :param token: model API JWT token
-        :param prop_name: name of property
-        :param desired_value: desired value
-        :return: None
-        """
-        def check():
-            properties = Model.get_model_api_properties(model_id, model_version, edge, token)
-            actual_value = properties.get(prop_name)
-            print('Got result of properties request: actual value = {!r}, desired value = {!r}'
-                  .format(actual_value, desired_value))
-            return str(actual_value) == str(desired_value)
-
-        if not wait_until(check, 1, 5):
-            raise Exception('Property {} has not been updated to desired value {}'
-                            .format(prop_name, desired_value))
 
     def ensure_model_api_call_result_field_is_correct(self, model_id, model_version, edge, token, endpoint,
                                                       result_field, desired_value, **payload):

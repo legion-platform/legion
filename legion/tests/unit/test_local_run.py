@@ -198,14 +198,6 @@ class TestLocalRun(unittest2.TestCase):
                 context.wait_stream_output('# $')
                 context.mark_streams_finished()
 
-                context.write_to_stdin('pwd')
-                context.wait_streams_changed()
-                context.wait_stream_output('# $')
-
-                context.write_to_stdin('find / | grep "run.py"')
-                context.wait_streams_changed()
-                context.wait_stream_output('# $')
-
                 context.write_to_stdin(CONTAINER_INTERPRETER + ' run.py')
                 context.wait_streams_changed()
                 context.wait_stream_output('# $')

@@ -24,8 +24,7 @@ import kubernetes.config
 import kubernetes.config.config_exception
 import urllib3
 
-from legion.sdk.k8s import utils as k8s_utils, properties
-from legion.sdk import utils as legion_utils
+from legion.services.k8s import utils as k8s_utils
 
 from legion.robot.utils import wait_until
 
@@ -171,7 +170,7 @@ class K8s:
 
     def get_model_deployment(self, model_id, model_version, namespace):
         """
-        Gets dict of deployment by model id and version
+        Get dict of deployment by model id and version
 
         :param model_id: model id
         :type model_id: str
@@ -193,7 +192,7 @@ class K8s:
 
     def get_deployment_replicas(self, deployment_name, namespace='default'):
         """
-        Gets number of replicas for a specified deployment from Kubernetes API
+        Get number of replicas for a specified deployment from Kubernetes API
 
         :param deployment_name: name of a deployment
         :type deployment_name: str
@@ -252,24 +251,6 @@ class K8s:
         print("Setting replica to {} for {} in {} enclave".format(replicas, deployment_name, namespace))
         apps_api.replace_namespaced_deployment_scale(deployment_name, namespace, scale_data)
         print("Replica to {} for {} in {} enclave was set up".format(replicas, deployment_name, namespace))
-
-    def update_model_property_key(self, namespace, model_id, model_version, key, value):
-        """
-        Update models config map property by key value
-
-        :param namespace: name of namespace
-        :param model_id: model ID
-        :param model_version: model version
-        :param key: key of config map
-        :param value: new value for key
-        :return: None
-        """
-        storage_name = legion_utils.model_properties_storage_name(model_id, model_version)
-        model_property = properties.K8SConfigMapStorage(storage_name, namespace)
-
-        model_property.load()
-        model_property[key] = value
-        model_property.save()
 
     def get_cluster_nodes(self):
         """

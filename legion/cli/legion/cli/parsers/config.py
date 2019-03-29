@@ -136,6 +136,11 @@ def list_dependencies(_):
 
 
 def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
+    """
+    Generate cli parsers
+
+    :param main_subparser: parent cli parser
+    """
     list_dependencies_parser = main_subparser.add_parser('list-dependencies', description='list package dependencies')
     list_dependencies_parser.set_defaults(func=list_dependencies)
 

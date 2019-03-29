@@ -26,9 +26,6 @@ spec:
       - name: cluster-secrets
         secret:
           secretName: "{{ .Release.Name }}-cluster-secrets"
-      - name: cluster-state
-        configMap:
-          name: "{{ .Release.Name }}-cluster-state"
       - name: jwt-config
         secret:
           secretName: "{{ .Release.Name }}-jwt-config"
@@ -73,8 +70,26 @@ spec:
           value: "{{ .Values.edi.k8s_api_retry_number_max_limit }}"
         - name: K8S_API_RETRY_DELAY_SEC
           value: "{{ .Values.edi.k8s_api_retry_delay_sec }}"
+        - name: MODEL_TRAIN_METRICS_ENABLED
+          value: "{{ .Values.metrics.enabled }}"
+        - name: METRICS_HOST
+          value: "{{ .Values.metrics.host }}"
+        - name: METRICS_PORT
+          value: "{{ .Values.metrics.port }}"
         - name: REGISTER_ON_GRAFANA
-          value: "true"
+          value: "{{ .Values.grafana.enabled }}"
+        - name: GRAFANA_URL
+          value: "{{ .Values.grafana.url }}"
+        - name: GRAFANA_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-cluster-secrets
+              key: grafana.user
+        - name: GRAFANA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-cluster-secrets
+              key: grafana.password
         - name: MODEL_K8S_MEMORY
           value: "{{ .Values.model_resources.mem }}"
         - name: MODEL_K8S_CPU
@@ -84,9 +99,6 @@ spec:
           name: docker-socket
         - mountPath: /opt/legion/secrets
           name: cluster-secrets
-          readOnly: true
-        - mountPath: /opt/legion/state
-          name: cluster-state
           readOnly: true
         - mountPath: /opt/legion/jwtconf
           name: jwt-config

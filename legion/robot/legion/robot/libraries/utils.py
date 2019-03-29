@@ -239,7 +239,7 @@ class Utils:
     @staticmethod
     def ensure_component_auth_page_requires_authorization(url, token=None, iteration_duration=1, iterations=5):
         """
-        Ensures component main auth page requires authorization
+        Ensure component main auth page requires authorization
 
         :param url: component url
         :type url: str

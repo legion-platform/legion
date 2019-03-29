@@ -18,4 +18,3 @@ legion template plugins
 """
 from .enclave import enclave_models_monitor
 from .os_environ import environment_variables_provider
-from .k8s import enclave_configmap_monitor

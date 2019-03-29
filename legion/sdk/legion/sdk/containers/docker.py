@@ -189,8 +189,6 @@ def prepare_build(model_id: str, model_file: str) -> None:
     :param model_file: path to model file (in the temporary directory)
     :return: docker.models.Image
     """
-    _check_python_packages()
-
     _copy_model_files(model_file, os.path.join(model_id))
 
 
@@ -282,8 +280,7 @@ def generate_docker_labels_for_image(model_file, model_id):
         headers.DOMAIN_MODEL_ID: model_id,
         headers.DOMAIN_MODEL_VERSION: model_meta.model_version,
         headers.DOMAIN_CLASS: 'pyserve',
-        headers.DOMAIN_CONTAINER_TYPE: 'model',
-        headers.DOMAIN_MODEL_PROPERTY_VALUES: model_meta.properties.serialize_data_to_string()
+        headers.DOMAIN_CONTAINER_TYPE: 'model'
     }
 
     for key, value in model_meta.meta_information.items():
