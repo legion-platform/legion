@@ -457,9 +457,8 @@ pipeline {
             steps {
                 script {
                     if (env.param_update_master){
-                        print ("update master HERE")
-                        //legion.updateMasterBranch()
-                        }
+                        legion.updateMasterBranch()
+                    }
                     else {
                         print("Skipping Master branch update")
                     }
@@ -470,13 +469,13 @@ pipeline {
 
     post {
         always {
-            //script {
-            //    dir("${WORKSPACE}/legion-aws") {
-            //        checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
-            //        legion = load "${env.sharedLibPath}"
-            //    }
-            //    legion.notifyBuild(currentBuild.currentResult)
-            //}
+            script {
+                dir("${WORKSPACE}/legion-aws") {
+                    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
+                    legion = load "${env.sharedLibPath}"
+                }
+                legion.notifyBuild(currentBuild.currentResult)
+            }
             deleteDir()
         }
     }
