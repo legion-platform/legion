@@ -1,11 +1,11 @@
-Welcome to legion's documentation!
+Welcome to Legion's documentation!
 ================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: General Overview:
 
-   installation
+   project_structure
    configuration
    usage
    system_architecture
@@ -13,14 +13,36 @@ Welcome to legion's documentation!
    local_run
    legionctl
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Components:
+
+   edge
+   edi
+   grafana
+   airflow
 
 .. toctree::
    :maxdepth: 2
-   :caption: Architecture:
+   :caption: Deployment and management:
 
-   grafana_and_graphite
-   jenkins
-   edge
+   deploying
+   configuration
+   legionctl
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Model development:
+
+   local_run
+   model_rest_api
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development:
+
+   developing
+   testing
    rbac
 
 .. toctree::

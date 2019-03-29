@@ -1,5 +1,3 @@
-
-
 # Testing
 
 There are 2 test categories in legion:
