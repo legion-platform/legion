@@ -61,9 +61,8 @@ RUN echo "INSTALLING BASE PLUGINS:" && \
 ARG legion_plugin_version="latest"
 ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
 
-#TODO merge layers
-RUN rm -f /usr/share/jenkins/ref/plugins.txt
-RUN echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt 
-RUN echo "INSTALLING LEGION PLUGINS:" 
-RUN cat /usr/share/jenkins/ref/plugins.txt 
-RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+RUN rm -f /usr/share/jenkins/ref/plugins.txt && \
+    echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
+    echo "INSTALLING LEGION PLUGINS:" && \
+    cat /usr/share/jenkins/ref/plugins.txt && \
+    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt

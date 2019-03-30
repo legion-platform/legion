@@ -41,7 +41,6 @@ function _M.parse_feedback_data()
     local model_id, model_version = _M.get_model_id_and_version_from_feedback_url()
     local reqargs = require "resty.reqargs"
     local get, post, files = reqargs()
-    local cjson = require "cjson"
 
     local data = {}
     local params = {}

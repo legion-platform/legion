@@ -25,9 +25,9 @@ WORKDIR "${WORK_DIR}/"
 RUN apt update -y && \
     apt install -y openssl libffi-dev libssl-dev \
        python3 python3-dev python3-pip g++ \
-       ca-certificates gnupg openssl git curl dumb-init
+       ca-certificates gnupg openssl git curl dumb-init libnginx-mod-http-lua
 
-RUN luarocks install lua-resty-statsd          3.0.3-1 \
+RUN    luarocks install lua-resty-statsd          3.0.3-1 \
     && luarocks install lua-cmsgpack              0.4.0 \
     && luarocks install lua-cjson                 2.1.0.6-1 \
     && luarocks install basexx                    0.4.0-1 \

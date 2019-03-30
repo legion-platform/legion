@@ -15,13 +15,13 @@
 #
 import os
 
-import unittest2
+import unittest
 from legion.sdk import config
 from legion.sdk.clients.edi import build_client
 from legion.sdk.clients.model import ModelClient, load_image
 
 
-class BasicTest(unittest2.TestCase):
+class BasicTest(unittest.TestCase):
     def setUp(self):
         self._client = ModelClient(config.MODEL_ID, config.MODEL_VERSION,
                                    token=build_client().get_token(config.MODEL_ID, config.MODEL_VERSION))
@@ -33,4 +33,4 @@ class BasicTest(unittest2.TestCase):
 
 
 if __name__ == '__main__':
-    unittest2.main()
+    unittest.main()
