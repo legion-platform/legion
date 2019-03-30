@@ -24,6 +24,7 @@ TEMP_DIRECTORY=
 
 all: install-all
 
+## install-all: Install all python packages
 install-all: install-sdk install-services install-cli install-python-toolchain install-robot
 
 ## install-sdk: Install sdk python package
@@ -61,36 +62,38 @@ install-robot:
 		python setup.py sdist && \
     	python setup.py bdist_wheel
 
-docker-pipeline:
-	docker build -t legionplatform/python-pipeline:latest -f build/containers/pipeline/Dockerfile .
+## docker-pipeline-agent: Build pipeline agent docker image
+docker-pipeline-agent:
+	docker build -t legionplatform/python-pipeline:latest -f containers/pipeline-agent/Dockerfile .
 
+## docker-python-toolchain: Build python toolchain docker image
 docker-python-toolchain:
-	docker build -t legionplatform/python-toolchain:latest -f build/containers/toolchains/python/Dockerfile .
+	docker build -t legionplatform/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
 
-docker-ansible:
-	docker build -t legionplatform/k8s-ansible:latest -f build/containers/ansible/Dockerfile .
-
+## docker-edi: Build edi docker image
 docker-edi:
-	docker build -t legionplatform/k8s-edi:latest -f build/containers/edi/Dockerfile .
+	docker build -t legionplatform/k8s-edi:latest -f containers/edi/Dockerfile .
 
+## docker-edge: Build edge docker image
 docker-edge:
-	docker build -t legionplatform/k8s-edge:latest -f build/containers/edge/Dockerfile .
+	docker build -t legionplatform/k8s-edge:latest -f containers/edge/Dockerfile .
 
 ## install-unittests: Install unit tests
 install-unittests:
-	pip3 install -e legion/tests
+	cd legion/tests/unit/requirements/ && pipenv install
 
 ## lint: Lints source code
 lint:
-	build/lint.sh
+	scripts/lint.sh
 
+## build-docs: Build legion docs
 build-docs:
-	BUILD_VERSION="${LEGION_VERSION}" build/build-docs.sh
+	BUILD_VERSION="${LEGION_VERSION}" scripts/build-docs.sh
 
 ## unittests: Run unit tests
 unittests:
 	@if [ "${SANDBOX_PYTHON_TOOLCHAIN_IMAGE}" == "" ]; then \
-	    docker build -t legionplatform/python-toolchain:latest -f build/containers/toolchains/python/Dockerfile . ;\
+	    docker build -t legionplatform/python-toolchain:latest -f containers/toolchains/python/Dockerfile . ;\
 	fi
 
 	mkdir -p target
@@ -112,7 +115,7 @@ unittests:
 ## e2e-robot: Run e2e robot tests
 e2e-robot:
 	pabot --verbose --processes 6 \
-	      -v PATH_TO_PROFILES_DIR:deploy/profiles \
+	      -v PATH_TO_PROFILES_DIR:profiles \
 	      --listener legion.robot.process_reporter \
 	      --outputdir target legion/tests/e2e/robot/tests/${ROBOT_FILES}
 
@@ -124,6 +127,7 @@ e2e-python:
 	          --xunitmp-file target/nosetests.xml \
 	          -v legion/tests/e2e/python
 
+## create-models-job: Create model jenkins jobs
 create-models-job:
 	create_example_jobs \
 	     "https://jenkins.${CLUSTER_NAME}" \
@@ -138,8 +142,9 @@ create-models-job:
 	     --profiles-dir deploy/profiles \
 	     --profile ${CLUSTER_NAME}
 
+## update-python-deps: Update all python dependecies in the Pipfiles
 update-python-deps:
-	./build/update_python_deps.sh
+	scripts/update_python_deps.sh
 
 help: Makefile
 	@echo "Choose a command run in "$(PROJECTNAME)":"
