@@ -79,15 +79,19 @@ pipeline {
     stages {
         stage('Checkout and set build vars') {
             steps {
-                //cleanWs()
+                cleanWs()
                 checkout scm
                 script {
                     sh 'echo RunningOn: $(curl http://checkip.amazonaws.com/)'
 
-                    print ("Load legion pipeline common library")
-                    library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
-                        [$class: 'GitSCMSource',
-                        remote: "${env.param_legion_infra_repo}"])
+                    // import Legion components
+                    dir("${WORKSPACE}/legion-aws") {
+                        print ("Checkout Legion-infra repo")
+                        checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
+
+                        print ("Load legion pipeline common library")
+                        legion = load "${env.sharedLibPath}"
+                    }
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
@@ -102,7 +106,8 @@ pipeline {
         stage('Set GIT release Tag'){
             steps {
                 script {
-                    if (env.param_stable_release && env.param_push_git_tag.toBoolean()){
+                    print (env.param_stable_release)
+                    if (env.param_stable_release.toBoolean() && env.param_push_git_tag.toBoolean()){
                         legion.setGitReleaseTag()
                     }
                     else {
@@ -122,7 +127,7 @@ pipeline {
                     sh "docker login -u ${USERNAME} -p ${PASSWORD} ${env.param_docker_registry}"
                 }
                 script {
-                    if (env.param_stable_release) {
+                    if (env.param_stable_release.toBoolean()) {
                         withCredentials([[
                         $class: 'UsernamePasswordMultiBinding',
                         credentialsId: 'dockerhub',
@@ -178,7 +183,7 @@ pipeline {
                                    ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
                                    """
                                    script {
-                                       if (env.param_stable_release){
+                                       if (env.param_stable_release.toBoolean()){
                                            sh """
                                            curl -v -u $USERNAME:$PASSWORD \
                                            --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
@@ -283,7 +288,7 @@ pipeline {
                 stage("Run unittests") {
                     steps {
                         script {
-                            docker.image("legion/legion-docker-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                     sh """
                                         CURRENT_DIR="\$(pwd)"
                                         cd /src
@@ -343,7 +348,7 @@ pipeline {
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/toolchains/python/dist/legion-*'
                                 """
 
-                                if (env.param_stable_release) {
+                                if (env.param_stable_release.toBoolean()) {
                                     if (env.param_upload_legion_package.toBoolean()){
                                         withCredentials([[
                                         $class: 'UsernamePasswordMultiBinding',
@@ -434,7 +439,7 @@ pipeline {
         stage("Update Legion version string") {
             steps {
                 script {
-                    if (env.param_stable_release && env.param_update_version_string) {
+                    if (env.param_stable_release.toBoolean() && env.param_update_version_string.toBoolean()) {
                         legion.updateVersionString(env.versionFile)
                     }
                     else {
@@ -447,7 +452,7 @@ pipeline {
         stage('Update Master branch'){
             steps {
                 script {
-                    if (env.param_update_master){
+                    if (env.param_update_master.toBoolean()){
                         legion.updateMasterBranch()
                     }
                     else {
@@ -461,9 +466,14 @@ pipeline {
     post {
         always {
             script {
-                library legion: "${sharedLibPath}@refs/tags/${env.param_legion_infra_version_tag}", retriever: modernSCM(
-                    [$class: 'GitSCMSource',
-                    remote: "${env.param_legion_infra_repo}"])
+                // import Legion components
+                dir("${WORKSPACE}/legion-aws") {
+                    print ("Checkout Legion-infra repo")
+                    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
+
+                    print ("Load legion pipeline common library")
+                    legion = load "${env.sharedLibPath}"
+                }
                 legion.notifyBuild(currentBuild.currentResult)
             }
             deleteDir()
