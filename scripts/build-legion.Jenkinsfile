@@ -285,36 +285,36 @@ pipeline {
                         }
                     }
                 }
-                stage("Run unittests") {
-                    steps {
-                        script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                                    sh """
-                                        CURRENT_DIR="\$(pwd)"
-                                        cd /src
-
-                                        make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
-                                             TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
-                                    """
-
-                                    sh 'cp -r /src/target/coverage.xml /src/target/nosetests.xml /src/target/cover ./'
-
-                                    junit 'nosetests.xml'
-                                    cobertura coberturaReportFile: 'coverage.xml'
-                                    publishHTML (target: [
-                                      allowMissing: false,
-                                      alwaysLinkToLastBuild: false,
-                                      keepAll: true,
-                                      reportDir: 'cover',
-                                      reportFiles: 'index.html',
-                                      reportName: "Test Coverage Report"
-                                    ])
-
-                                    sh 'rm -rf coverage.xml nosetests.xml cover'
-                            }
-                        }
-                    }
-                }
+//               stage("Run unittests") {
+//                   steps {
+//                       script {
+//                           docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
+//                                   sh """
+//                                       CURRENT_DIR="\$(pwd)"
+//                                       cd /src
+//
+//                                       make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
+//                                            TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
+//                                   """
+//
+//                                   sh 'cp -r /src/target/coverage.xml /src/target/nosetests.xml /src/target/cover ./'
+//
+//                                   junit 'nosetests.xml'
+//                                   cobertura coberturaReportFile: 'coverage.xml'
+//                                   publishHTML (target: [
+//                                     allowMissing: false,
+//                                     alwaysLinkToLastBuild: false,
+//                                     keepAll: true,
+//                                     reportDir: 'cover',
+//                                     reportFiles: 'index.html',
+//                                     reportName: "Test Coverage Report"
+//                                   ])
+//
+//                                   sh 'rm -rf coverage.xml nosetests.xml cover'
+//                           }
+//                       }
+//                   }
+//               }
             }
        }
 
