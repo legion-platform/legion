@@ -56,4 +56,4 @@ COPY containers/edge/start.sh /usr/bin/
 RUN cp /usr/local/openresty/luajit/share/lua/5.1/nginx/prometheus.lua /usr/local/openresty/luajit/
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["start.sh"]
+CMD ["start.sh"]git st
