@@ -32,25 +32,26 @@ RUN curl -fsSLO https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSI
     mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
 
 # Install python dependecies
-COPY containers/pipeline-agent/Pipfile containers/pipeline-agent/Pipfile.lock /src/legion/
-RUN  cd /src/legion && pipenv install --system --three
-COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock /src/legion/sdk/
-RUN  cd /src/legion/sdk && pipenv install --system --three
-COPY legion/services/Pipfile legion/services/Pipfile.lock /src/legion/services/
-RUN  cd /src/legion/services && pipenv install --system --three
-COPY legion/cli/Pipfile legion/cli/Pipfile.lock /src/legion/cli/
-RUN  cd /src/legion/cli && pipenv install --system --three
-COPY legion/robot/Pipfile legion/robot/Pipfile.lock /src/legion/robot/
-RUN  cd /src/legion/robot && pipenv install --system --three
-COPY legion/tests/unit/requirements/Pipfile legion/tests/unit/requirements/Pipfile.lock /src/legion/tests/unit/
-RUN  cd /src/legion/tests/unit && pipenv install --system --three --dev
-COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock /src/legion/toolchains/python/
-RUN  cd /src/legion/toolchains/python && pipenv install --system --three
+COPY containers/pipeline-agent/Pipfile containers/pipeline-agent/Pipfile.lock /opt/legion/legion/
+RUN  cd /opt/legion/legion && pipenv install --system --three
+COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock /opt/legion/legion/sdk/
+RUN  cd /opt/legion/legion/sdk && pipenv install --system --three
+COPY legion/services/Pipfile legion/services/Pipfile.lock /opt/legion/legion/services/
+RUN  cd /opt/legion/legion/services && pipenv install --system --three
+COPY legion/cli/Pipfile legion/cli/Pipfile.lock /opt/legion/legion/cli/
+RUN  cd /opt/legion/legion/cli && pipenv install --system --three
+COPY legion/robot/Pipfile legion/robot/Pipfile.lock /opt/legion/legion/robot/
+RUN  cd /opt/legion/legion/robot && pipenv install --system --three
+COPY legion/tests/unit/requirements/Pipfile legion/tests/unit/requirements/Pipfile.lock /opt/legion/legion/tests/unit/
+RUN  cd /opt/legion/legion/tests/unit && pipenv install --system --three --dev
+COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock /opt/legion/legion/toolchains/python/
+RUN  cd /opt/legion/legion/toolchains/python && pipenv install --system --three
 
-COPY scripts /src/scripts
-RUN chmod -R a+x /src/scripts/*
-COPY Makefile /src/Makefile
-COPY docs /src/docs
-COPY legion /src/legion
+COPY scripts /opt/legion/scripts
+RUN chmod -R a+x /opt/legion/scripts/*
+COPY Makefile /opt/legion/Makefile
+COPY docs /opt/legion/docs
+COPY examples /opt/legion/examples
+COPY legion /opt/legion/legion
 
-RUN cd /src/ && make BUILD_PARAMS="--no-deps" install-all
+RUN cd /opt/legion/ && make BUILD_PARAMS="--no-deps" install-all

@@ -119,8 +119,6 @@ def work(args, version_file):
     if not os.path.exists(version_file) or not os.path.isfile(version_file):
         raise Exception('Cannot find version file: %s' % version_file)
 
-    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-
     if not args.git_revision:
         git_revision = get_git_revision(version_file, not args.use_full_commit_id)
         if not git_revision:
@@ -130,6 +128,7 @@ def work(args, version_file):
 
     build_id = args.build_id
     build_user = args.build_user
+    date_string = args.date_string
 
     if not args.build_version:
         local_version_string = '%s.%s.%s' % (date_string, str(build_id), git_revision)
@@ -146,6 +145,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Version file updater (adds time, build id, commit id to version)')
     parser.add_argument('build_id', type=int, help='Set build id')
     parser.add_argument('build_user', type=str, help='Set build user')
+    parser.add_argument('date_string', type=str, help='Set date string')
     parser.add_argument('--build-version', type=str, help='Explicitly specify new Legion build version')
     parser.add_argument('--use-full-commit-id', action='store_true', help='Use full git sha commits')
     parser.add_argument('--git-revision', type=str, help='Set git revision')

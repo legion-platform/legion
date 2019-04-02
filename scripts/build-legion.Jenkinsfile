@@ -249,9 +249,9 @@ pipeline {
                         script {
                             docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
                                 sh """
-                                cd /src
+                                cd /opt/legion
                                 make LEGION_VERSION=${Globals.buildVersion} build-docs
-                                cp /src/legion_docs_${Globals.buildVersion}.tar.gz ${WORKSPACE}
+                                cp /opt/legion/legion_docs_${Globals.buildVersion}.tar.gz ${WORKSPACE}
                                 """
 
                                 archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
@@ -297,7 +297,7 @@ pipeline {
 //                                            TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
 //                                   """
 //
-//                                   sh 'cp -r /src/target/coverage.xml /src/target/nosetests.xml /src/target/cover ./'
+//                                   sh 'cp -r /opt/legiontarget/coverage.xml /opt/legiontarget/nosetests.xml /opt/legiontarget/cover ./'
 //
 //                                   junit 'nosetests.xml'
 //                                   cobertura coberturaReportFile: 'coverage.xml'
@@ -343,9 +343,9 @@ pipeline {
                                 }
                                 sh """
                                 cat /tmp/.pypirc
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/sdk/dist/legion-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/cli/dist/legion-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/toolchains/python/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/sdk/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/cli/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/toolchains/python/dist/legion-*'
                                 """
 
                                 if (env.param_stable_release.toBoolean()) {
@@ -373,8 +373,8 @@ pipeline {
                                             """.stripIndent()
                                         }
                                         sh """
-                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/sdk/dist/legion-*'
-                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/src/legion/cli/dist/legion-*'
+                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/sdk/dist/legion-*'
+                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/cli/dist/legion-*'
                                         """
                                     } else {
                                         print("Skipping package upload")
