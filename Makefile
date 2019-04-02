@@ -11,7 +11,7 @@ SANDBOX_PYTHON_TOOLCHAIN_IMAGE=
 CREDENTIAL_SECRETS=.secrets.yaml
 ROBOT_FILES=**/*.robot
 CLUSTER_NAME=
-PATH_TO_PROFILES_DIR=deploy/profiles
+PATH_TO_PROFILES_DIR=./profiles
 E2E_PYTHON_TAGS=
 COMMIT_ID=
 TEMP_DIRECTORY=
@@ -139,7 +139,7 @@ create-models-job:
 	     --git-root-key "legion-root-key" \
 	     --model-host "" \
 	     --dynamic-model-prefix "DYNAMIC MODEL" \
-	     --profiles-dir deploy/profiles \
+	     --profiles-dir ${PATH_TO_PROFILES_DIR} \
 	     --profile ${CLUSTER_NAME}
 
 ## update-python-deps: Update all python dependecies in the Pipfiles
