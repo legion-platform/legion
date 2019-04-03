@@ -290,6 +290,8 @@ def runTests() {
     export INIT_DIR="`pwd`"
     rm -f nosetests.xml
 
+    pip3 install nose
+
     cd "${env.ROOT_DIR}/tests"
     MODEL_ID="${env.MODEL_ID}" MODEL_VERSION="${env.MODEL_VERSION}" nosetests --with-xunit --xunit-file "\$INIT_DIR/nosetests.xml"
     """
