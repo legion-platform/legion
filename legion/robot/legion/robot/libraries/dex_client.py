@@ -14,7 +14,11 @@
 #    limitations under the License.
 #
 """Dex authentication client."""
+import logging
 import re
+import time
+
+import requests
 from requests.sessions import Session
 
 REQUEST_ID_REGEXP = re.compile(r'/auth/local\?req=([^"]+)')
@@ -26,9 +30,13 @@ SESSION_ID_COOKIE_NAMES = ('_oauth2_proxy', 'JSESSION')
 AUTH_ENDPOINT_URLS = ('https://dashboard.{}/', 'https://jenkins.{}/securityRealm/commenceLogin',)
 JENKINS_PROFILE_URL = 'https://jenkins.{}/user/{}/configure'
 JENKINS_API_TOKEN_REGEX = re.compile('<input [^>]*id="apiToken"[^>]*value="([^"]+)"[^>]*>')
+AUTH_RETRY_TIMEOUT = 10
+NUMBER_AUTH_RETRIES = 10
 
 _session_cookies = {}
 _jenkins_credentials = None
+
+LOGGER = logging.getLogger(__name__)
 
 
 def init_session_id_from_data(data: dict):
@@ -68,8 +76,8 @@ def auth_on_dex(service_url: str, cluster_host: str, login: str, password: str, 
 
     resp = session.get(service_url)
     if resp.status_code != 200:
-        raise IOError('Authentication endpoint is unavailable, got {} http code'
-                      .format(resp.status_code))
+        requests.HTTPError('Authentication endpoint is unavailable, got {} http code'
+                           .format(resp.status_code))
 
     if resp.url.startswith(AUTHENTICATION_HOSTNAME.format(cluster_host)):  # if auth form is opened
         match = re.search(REQUEST_ID_REGEXP, resp.text)
@@ -82,9 +90,9 @@ def auth_on_dex(service_url: str, cluster_host: str, login: str, password: str, 
         data = {PARAM_NAME_LOGIN: login, PARAM_NAME_PASSWORD: password}
         resp = session.post(url, data)
         if resp.status_code != 200:
-            raise IOError('Unable to authorise, got {} http code from {} '  # pylint: disable=E1305
-                          'for the query to {} with data, resp {}'
-                          .format(resp.status_code, service_url, url, data, resp.text))
+            raise requests.HTTPError('Unable to authorise, got {} http code from {} '  # pylint: disable=E1305
+                                     'for the query to {} with data, resp {}'
+                                     .format(resp.status_code, service_url, url, data, resp.text))
 
     return resp
 
@@ -104,7 +112,16 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
     global _session_cookies, _jenkins_credentials
     session = Session()
     for auth_endpoint_url in AUTH_ENDPOINT_URLS:
-        auth_on_dex(auth_endpoint_url.format(cluster_host), cluster_host, login, password, session)
+        for _ in range(NUMBER_AUTH_RETRIES):
+            try:
+                auth_on_dex(auth_endpoint_url.format(cluster_host), cluster_host, login, password, session)
+                break
+            except requests.HTTPError as e:
+                LOGGER.error(
+                    f'Failed with exception: {e}. Waiting {AUTH_RETRY_TIMEOUT} seconds before next retry analysis')
+                time.sleep(AUTH_RETRY_TIMEOUT)
+        else:
+            raise Exception(f"Number of auth retries were exceed")
 
         for cookie_name in session.cookies.keys():
             if cookie_name.startswith(SESSION_ID_COOKIE_NAMES):

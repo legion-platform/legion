@@ -122,7 +122,7 @@ e2e-robot:
 ## e2e-python: Run e2e python tests
 e2e-python:
 	mkdir -p target
-	nosetests ${E2E_PYTHON_TAGS} --with-xunit \
+	nosetests ${E2E_PYTHON_TAGS} --with-xunitmp \
 	          --logging-level DEBUG \
 	          --xunitmp-file target/nosetests.xml \
 	          -v legion/tests/e2e/python
