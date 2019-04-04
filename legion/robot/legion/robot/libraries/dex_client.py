@@ -115,10 +115,12 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
         for _ in range(NUMBER_AUTH_RETRIES):
             try:
                 auth_on_dex(auth_endpoint_url.format(cluster_host), cluster_host, login, password, session)
+
                 break
             except requests.HTTPError as e:
-                LOGGER.error(
-                    f'Failed with exception: {e}. Waiting {AUTH_RETRY_TIMEOUT} seconds before next retry analysis')
+                LOGGER.error('Failed with exception: %s. Waiting %s seconds before next retry analysis',
+                             str(e), AUTH_RETRY_TIMEOUT)
+
                 time.sleep(AUTH_RETRY_TIMEOUT)
         else:
             raise Exception(f"Number of auth retries were exceed")
