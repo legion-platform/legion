@@ -25,18 +25,6 @@ import jwt
 from flask import Flask, Blueprint, render_template, request
 from flask import current_app as app
 
-<<<<<<< HEAD
-<<<<<<< HEAD:legion/legion/edi/server.py
-import legion.config
-import legion.http
-import legion.k8s
-import legion.model
-from legion.external import grafana
-
-=======
-from legion.sdk.clients.grafana import GrafanaClient
-=======
->>>>>>> [#849] sync refactoring
 from legion.sdk.clients.model import ModelClient
 from legion.sdk.containers.definitions import ModelDeploymentDescription
 from legion.sdk.definitions import EDI_INFO, EDI_GENERATE_TOKEN, EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, EDI_INSPECT, \
@@ -47,7 +35,6 @@ from legion.services.k8s.utils import load_secrets
 from legion.services.k8s import utils
 from legion.services.edi import http
 from legion.services.edi.http import configure_application
->>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
 
 LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('apiserver', __name__)
@@ -177,23 +164,7 @@ def deploy(image, model_iam_role=None, count=1, livenesstimeout=2, readinesstime
         image, model_iam_role, count, livenesstimeout, readinesstimeout, memory, cpu
     )
 
-<<<<<<< HEAD
-<<<<<<< HEAD:legion/legion/edi/server.py
-    return return_model_deployments([legion.k8s.ModelDeploymentDescription.build_from_model_service(model_service)])
-=======
-    if is_deployed:
-        if app.config['REGISTER_ON_GRAFANA']:
-            LOGGER.info('Registering dashboard on Grafana for model (id={}, version={})'
-                        .format(model_service.id, model_service.version))
-
-            app.config['GRAFANA_CLIENT'].create_dashboard_for_model(model_service.id, model_service.version)
-        else:
-            LOGGER.info('Registration on Grafana has been skipped - disabled in configuration')
-
-=======
->>>>>>> [#849] sync refactoring
     return return_model_deployments([ModelDeploymentDescription.build_from_model_service(model_service)])
->>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
 
 
 @blueprint.route(build_blueprint_url(EDI_UNDEPLOY), methods=['POST'])
@@ -399,26 +370,6 @@ def get_application_enclave(application):
     return Enclave(application.config['NAMESPACE'])
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD:legion/legion/edi/server.py
-=======
-def get_application_grafana(application):
-    """
-    Build enclave's grafana client
-
-    :param application: Flask app instance
-    :type application: :py:class:`Flask.app`
-    :return :py:class:`legion.external.grafana.GrafanaClient`
-    """
-    grafana_client = GrafanaClient(application.config['ENCLAVE'].grafana_service.url,
-                                   application.config['CLUSTER_SECRETS']['grafana.user'],
-                                   application.config['CLUSTER_SECRETS']['grafana.password'])
-    return grafana_client
-
-
->>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
-=======
->>>>>>> [#849] sync refactoring
 def load_cluster_config(application):
     """
     Load cluster configuration into Flask config
@@ -431,15 +382,8 @@ def load_cluster_config(application):
         application.config['NAMESPACE'] = utils.get_current_namespace()
 
     application.config['ENCLAVE'] = get_application_enclave(application)
-<<<<<<< HEAD:legion/legion/edi/server.py
-    application.config['CLUSTER_SECRETS'] = legion.k8s.load_secrets(application.config['CLUSTER_SECRETS_PATH'])
-    application.config['GRAFANA_CLIENT'] = grafana.GrafanaClient(legion.config.GRAFANA_URL, legion.config.GRAFANA_USER,
-                                                                 legion.config.GRAFANA_PASSWORD)
-    application.config['JWT_CONFIG'] = legion.k8s.load_secrets(application.config['JWT_CONFIG_PATH'])
-=======
     application.config['CLUSTER_SECRETS'] = load_secrets(application.config['CLUSTER_SECRETS_PATH'])
     application.config['JWT_CONFIG'] = load_secrets(application.config['JWT_CONFIG_PATH'])
->>>>>>> [#849] sync files with Refactoring:legion/services/legion/services/edi/server.py
 
 
 def init_application(args=None):

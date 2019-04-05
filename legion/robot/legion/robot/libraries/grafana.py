@@ -17,13 +17,8 @@
 Robot test library - grafana
 """
 
-<<<<<<< HEAD:legion_test/legion_test/robot/grafana.py
-from legion_test.grafana import GrafanaClient
-from legion_test.robot.dex_client import get_session_cookies
-=======
 from legion.robot.grafana import GrafanaClient
 from legion.robot.libraries.dex_client import get_session_cookies
->>>>>>> [#849] sync files with Refactoring:legion/robot/legion/robot/libraries/grafana.py
 
 
 class Grafana:
@@ -40,15 +35,7 @@ class Grafana:
         self._url = None  # type: str
         self._user = None  # type: str
         self._password = None  # type: str
-<<<<<<< HEAD:legion_test/legion_test/robot/grafana.py
-        self._client = None  # type: legion_test.grafana.GrafanaClient
-=======
         self._client = None  # type: GrafanaClient
-<<<<<<< HEAD
-        self._start_time = time.time()
->>>>>>> [#849] sync files with Refactoring:legion/robot/legion/robot/libraries/grafana.py
-=======
->>>>>>> [#849] sync refactoring
 
     def connect_to_grafana(self, domain, user, password):
         """

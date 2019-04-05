@@ -967,19 +967,8 @@ class EDITestServer:
         test_enclave._data_loaded = True
 
         with patch_config(additional_environment), \
-<<<<<<< HEAD
-<<<<<<< HEAD:legion/tests/legion_test_utils.py
-             patch('legion.k8s.get_current_namespace', lambda *x: self._enclave_name), \
-             patch('legion.edi.server.get_application_enclave', lambda *x: test_enclave), \
-=======
-             patch('legion.sdk.k8s.utils.get_current_namespace', lambda *x: self._enclave_name) as kek, \
-             patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave), \
-             patch('legion.services.edi.server.get_application_grafana', lambda *x: None), \
->>>>>>> [#849] sync files with Refactoring:legion/tests/unit/legion_test_utils.py
-=======
              patch('legion.services.k8s.utils.get_current_namespace', lambda *x: self._enclave_name), \
              patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave), \
->>>>>>> [#849] sync refactoring
              patch_environ(additional_environment):  # noqa
             self.application = edi_server.init_application(None)
 

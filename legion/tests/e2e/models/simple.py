@@ -32,22 +32,10 @@ def build_model(id: str, version: str) -> None:
     """
     init(id, version)
 
-<<<<<<< HEAD
-<<<<<<< HEAD:tests/models/simple.py
-    legion.model.export(apply_func=default, column_types={"a": legion.model.string, "b": legion.model.string})
-    legion.model.export(apply_func=feedback, column_types={"str": legion.model.string,
-                                                           "copies": legion.model.int64}, endpoint='feedback')
-    legion.model.export(apply_func=sleep, column_types={"seconds": legion.model.int64}, endpoint='sleep')
-=======
-    export(apply_func=default, column_types={"a": model.string, "b": model.string})
-    export(apply_func=feedback, column_types={"str": model.string,  "copies": model.int64}, endpoint='feedback')
->>>>>>> [#849] sync files with Refactoring:legion/tests/e2e/models/simple.py
-=======
     model.export(apply_func=default, column_types={"a": model.string, "b": model.string})
     model.export(apply_func=feedback, column_types={"str": model.string,
                                                            "copies": model.int64}, endpoint='feedback')
     model.export(apply_func=sleep, column_types={"seconds": model.int64}, endpoint='sleep')
->>>>>>> [#849] sync refactoring
 
     save('robot.model')
 

@@ -43,25 +43,11 @@ RUN  cd legion/sdk && pipenv install --system --three
 COPY legion/services/Pipfile legion/services/Pipfile.lock "${WORK_DIR}/legion/services/"
 RUN  cd legion/services && pipenv install --system --three
 
-<<<<<<< HEAD
-RUN python3 -m compileall /usr/local/lib/python3.6/dist-packages && \
-    cp /usr/local/openresty/luajit/share/lua/5.1/nginx/prometheus.lua /usr/local/openresty/luajit/
-# Staff
-ADD start.sh /start.sh
-ADD nginx-jwt.lua \
-    statistics_sender.lua \
-    blacklisted_tokens.lua \
-    fluentd_logger.lua \
-    request_id_generator.lua \
-    edge.lua \
-      /usr/local/openresty/luajit/
-=======
 COPY legion/sdk "${WORK_DIR}/legion/sdk"
 COPY legion/services "${WORK_DIR}/legion/services"
 
 RUN pip3 install --no-deps -e "${WORK_DIR}/legion/sdk" && \
     pip3 install --no-deps -e "${WORK_DIR}/legion/services"
->>>>>>> [#849] sync files with Refactoring
 
 COPY containers/edge/nginx.conf.ltmpl "${WORK_DIR}/"
 COPY containers/edge/lua/ /usr/local/openresty/luajit/

@@ -25,18 +25,6 @@ import kubernetes.config
 import kubernetes.config.config_exception
 from kubernetes.client import V1ResourceRequirements
 
-<<<<<<< HEAD:legion/legion/k8s/enclave.py
-import legion.config
-import legion.containers.headers
-import legion.k8s.properties
-import legion.k8s.services
-import legion.k8s.watch
-import legion.utils
-
-from legion.k8s import utils as k8s_utils
-from legion.k8s.definitions import ENCLAVE_NAMESPACE_LABEL
-from legion.k8s.definitions import LEGION_COMPONENT_NAME_API, LEGION_COMPONENT_NAME_EDI
-=======
 from legion.sdk import config
 from legion.services.k8s import utils as k8s_utils, services
 from legion.sdk.definitions import ENCLAVE_NAMESPACE_LABEL, EVENT_ADDED, EVENT_MODIFIED, EVENT_DELETED
@@ -48,7 +36,6 @@ from legion.services.k8s.services import get_service, ModelService, find_model_s
 from legion.services.k8s.watch import ResourceWatch
 from legion.sdk.utils import ensure_function_succeed
 
->>>>>>> [#849] sync files with Refactoring:legion/sdk/legion/sdk/k8s/enclave.py
 LOGGER = logging.getLogger(__name__)
 
 SERVE_HEALTH_CHECK = '/healthcheck'
@@ -111,18 +98,8 @@ class Enclave:
 
         self._data_loaded = True
 
-<<<<<<< HEAD:legion/legion/k8s/enclave.py
-        self._edi_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_EDI)
-        self._api_service = legion.k8s.services.get_service(self.name, LEGION_COMPONENT_NAME_API)
-=======
         self._edi_service = get_service(self.name, LEGION_COMPONENT_NAME_EDI)
         self._api_service = get_service(self.name, LEGION_COMPONENT_NAME_API)
-<<<<<<< HEAD:legion/sdk/legion/sdk/k8s/enclave.py
-        self._grafana_service = get_service(self.name, LEGION_COMPONENT_NAME_GRAFANA)
-        self._graphite_service = get_service(self.name, LEGION_COMPONENT_NAME_GRAPHITE)
->>>>>>> [#849] sync files with Refactoring:legion/sdk/legion/sdk/k8s/enclave.py
-=======
->>>>>>> [#849] sync refactoring:legion/services/legion/services/k8s/enclave.py
 
     @property
     def name(self):
