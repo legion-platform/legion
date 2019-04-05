@@ -27,13 +27,10 @@ test.model
 
 *.tmp.yml
 *.tmp.out
-<<<<<<< HEAD
 
 # Chart dependencies
 /helms/legion/charts/
 /helms/legion-core/charts/
-=======
->>>>>>> [#849] sync refactoring
 
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
