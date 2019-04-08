@@ -13,6 +13,23 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
+# Build Legion Jenkins plugin
+FROM maven:3.5.3-jdk-8 as builder
+
+ARG legion_plugin_version="latest"
+ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
+
+# ENV JAVA_HOME="$(readlink -f /usr/bin/java | sed 's:bin/java::')"
+ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/jre/"
+
+COPY legion-jenkins-plugin /src/legion-jenkins-plugin
+RUN ls /src/legion-jenkins-plugin
+
+RUN mvn -f /src/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${JENKINS_PLUGIN_VERSION} -Dmaven.repo.local=///tmp/.m2/repository
+RUN mvn -f /src/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
+
+# Build Jenkins image
 FROM jenkins/jenkins:2.121.3
 
 USER root
@@ -49,6 +66,7 @@ ENV JENKINS_UC_DOWNLOAD=$update_center_download_url
 ARG update_center_experimental_url="https://updates.jenkins.io/experimental"
 ENV JENKINS_UC_EXPERIMENTAL=$update_center_experimental_url
 
+
 # Install plugins
 USER jenkins
 
@@ -61,8 +79,11 @@ RUN echo "INSTALLING BASE PLUGINS:" && \
 ARG legion_plugin_version="latest"
 ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
 
-RUN rm -f /usr/share/jenkins/ref/plugins.txt && \
-    echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
-    echo "INSTALLING LEGION PLUGINS:" && \
-    cat /usr/share/jenkins/ref/plugins.txt && \
-    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+# RUN rm -f /usr/share/jenkins/ref/plugins.txt && \
+#    echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
+#    echo "INSTALLING LEGION PLUGINS:" && \
+#    cat /usr/share/jenkins/ref/plugins.txt && \
+#    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+
+COPY --from=builder /src/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi ${JENKINS_HOME}/plugins/
+RUN chown jenkins:jenkins ${JENKINS_HOME}/plugins/legion-jenkins-plugin.hpi
