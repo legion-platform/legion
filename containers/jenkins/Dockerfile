@@ -66,24 +66,11 @@ ENV JENKINS_UC_DOWNLOAD=$update_center_download_url
 ARG update_center_experimental_url="https://updates.jenkins.io/experimental"
 ENV JENKINS_UC_EXPERIMENTAL=$update_center_experimental_url
 
-
 # Install plugins
-USER jenkins
-
 RUN echo "INSTALLING BASE PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
     /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
 
-# Non-cached section
-
-ARG legion_plugin_version="latest"
-ENV JENKINS_PLUGIN_VERSION=$legion_plugin_version
-
-# RUN rm -f /usr/share/jenkins/ref/plugins.txt && \
-#    echo "legion-jenkins-plugin:experimental=$JENKINS_PLUGIN_VERSION" > /usr/share/jenkins/ref/plugins.txt && \
-#    echo "INSTALLING LEGION PLUGINS:" && \
-#    cat /usr/share/jenkins/ref/plugins.txt && \
-#    /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
-
 COPY --from=builder /src/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi ${JENKINS_HOME}/plugins/
 RUN chown jenkins:jenkins ${JENKINS_HOME}/plugins/legion-jenkins-plugin.hpi
+USER jenkins
