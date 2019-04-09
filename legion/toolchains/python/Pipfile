@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+Flask = "==0.12.4"
+Pillow = "==5.0.0"
+numpy = "==1.14.3"
+pandas = "==0.23.0"
+dill = "==0.2.9"
+ipykernel = "==4.9.0"
+jupyter = "==1.0.0"
+sklearn = "==0.0"
+matplotlib = "==2.2.2"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"

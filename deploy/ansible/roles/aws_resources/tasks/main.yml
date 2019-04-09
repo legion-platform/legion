@@ -1,5 +1,0 @@
----
-
-- include: jenkins-volume.yml
-- include: vpc-facts.yml
-

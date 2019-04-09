@@ -28,6 +28,10 @@ test.model
 *.tmp.yml
 *.tmp.out
 
+# Chart dependencies
+/helms/legion/charts/
+/helms/legion-core/charts/
+
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 .vscode/
@@ -44,7 +48,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -97,7 +100,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs/build/
 
 # PyBuilder
 target/
@@ -142,3 +145,12 @@ tests/robot/*.xml
 tests/python/cover/*
 
 legion/tests/__init__\.py
+
+.git
+
+legion-activate.sh
+legion-pyling.log
+
+log.html
+output.xml
+report.html

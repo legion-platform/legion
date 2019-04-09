@@ -1,7 +1,0 @@
----
-
-- name: Configure kubectl using kops
-  shell: "kops export kubecfg --name {{ cluster_name }} --state {{ state_store }}"
-
-- include: create_enclave.yml
-- include: install_legion.yml

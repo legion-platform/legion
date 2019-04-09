@@ -15,17 +15,16 @@
 #
 import os
 
-from legion.model import ModelClient, load_image
-from legion.external.edi import build_client
-import legion.config
+import unittest
+from legion.sdk import config
+from legion.sdk.clients.edi import build_client
+from legion.sdk.clients.model import ModelClient, load_image
 
-import unittest2
 
-
-class BasicTest(unittest2.TestCase):
+class BasicTest(unittest.TestCase):
     def setUp(self):
-        self._client = ModelClient(legion.config.MODEL_ID, legion.config.MODEL_VERSION,
-                                   token=build_client().get_token(legion.config.MODEL_ID, legion.config.MODEL_VERSION))
+        self._client = ModelClient(config.MODEL_ID, config.MODEL_VERSION,
+                                   token=build_client().get_token(config.MODEL_ID, config.MODEL_VERSION))
 
     def test_nine_decode(self):
         image = load_image(os.path.join('files', 'nine.png'))
@@ -34,4 +33,4 @@ class BasicTest(unittest2.TestCase):
 
 
 if __name__ == '__main__':
-    unittest2.main()
+    unittest.main()

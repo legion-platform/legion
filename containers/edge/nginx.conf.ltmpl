@@ -1,0 +1,206 @@
+#
+#    Copyright 2018 EPAM Systems
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+{{ load_module('legion.services.template.plugins.enclave_models_monitor') }}
+{{ load_module('legion.services.template.plugins.environment_variables_provider') }}
+
+env JWT_SECRET;
+env POD_UUID;
+
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+
+  include       mime.types;
+  default_type  application/octet-stream;
+  sendfile        on;
+  keepalive_timeout  65;
+  autoindex on;
+
+  resolver 127.0.0.1:53 ipv6=off;
+
+  lua_shared_dict prometheus_metrics 50M;
+  lua_package_path "/usr/local/openresty/luajit/?.lua;;";
+
+  init_by_lua_block {
+    local edge = require "edge"
+
+    local statistics_sender = require "statistics_sender"
+    statistics_sender.init()
+
+    local invalid_tokens = require "blacklisted_tokens"
+    invalid_tokens.init("{{ tokens['blacklisted-tokens'] }}")
+
+    local fluentd_logger = require "fluentd_logger"
+    local fluentd_host = edge.get_config("FLUENTD_HOST", "127.0.0.1")
+    local fluentd_port = edge.get_config("FLUENTD_PORT", "24224")
+    fluentd_logger.new(fluentd_host, fluentd_port)
+  }
+
+  server {
+    listen 7777 default_server;
+    server_name _;
+
+    location = /metrics {
+      content_by_lua_block {
+          local statistics_sender = require "statistics_sender"
+          statistics_sender.metrics();
+      }
+    }
+  }
+
+  server {
+    listen 80 default_server;
+    server_name _;
+    client_max_body_size 0; # disable any limits to avoid HTTP 413 for large image uploads
+
+    chunked_transfer_encoding on;
+
+    # Root location. Nothing is here
+    location = / {
+      return 200;
+    }
+
+    # For Kubernetes healthchecks
+    location = /healthcheck {
+      return 200;
+    }
+
+    # Models Feedback
+    location ~ /api/model/([a-zA-Z0-9\-\.]+)/([a-zA-Z0-9\-\.]+)/feedback {
+        access_by_lua_block {
+            local edge = require("edge")
+            local model_id, model_version = edge.get_model_id_and_version_from_feedback_url()
+
+            -- JWT validation
+            local jwt = require("nginx-jwt")
+            jwt.auth({
+                model_id=function (val) return jwt.table_contains(val, model_id) end,
+                model_version=function (val) return jwt.table_contains(val, model_version) end
+            })
+            local blacklisted_tokens = require "blacklisted_tokens"
+            blacklisted_tokens.check_token()
+
+            -- RequestID validation
+            local requestID = ngx.req.get_headers()["Request-ID"]
+            if not requestID then
+                ngx.log(ngx.WARN, "Request-ID header is missed")
+                ngx.say("Request-ID header is missed")
+                ngx.exit(ngx.HTTP_BAD_REQUEST)
+            end
+        }
+
+        content_by_lua_block {
+            local edge = require("edge")
+
+            local data = edge.parse_feedback_data()
+
+            local fluentd_logger = require "fluentd_logger"
+            fluentd_logger.post(ngx.req.start_time(), "feedback", data)
+
+            edge.response_feedback(data)
+        }
+    }
+
+    {% for model_endpoint in unspecified_version_endpoints %}
+    location /api/model/{{ model_endpoint.url }} {
+        return 400 'Error. Found multiple versions for the {{ model_endpoint.model_service.id }} model. Please, specify a model version explicitly.';
+    }
+    {% endfor %}
+
+    # Models API
+    {% for model_endpoint in models %}
+    location /api/model/{{ model_endpoint.url }} {
+        set $model_api_chunk_count 0;
+
+        body_filter_by_lua_block {
+            -- arg[1] contains a chunk of response content
+            -- arg[2] is true if this is the last chunk
+
+            -- Model-Endpoint generation if it is missing
+            local model_endpoint = ngx.header["Model-Endpoint"]
+            if not model_endpoint then
+                model_endpoint = "default"
+                ngx.header["Model-Endpoint"] = model_endpoint
+                ngx.log(ngx.INFO, "Model Endpoint has been set to "..model_endpoint)
+            end
+
+            local edge = require("edge")
+            local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", ngx.arg[1], ngx.arg[2])
+
+            if chunkInfo then
+                local fluentd_logger = require "fluentd_logger"
+                fluentd_logger.post(ngx.req.start_time(), "response_body", chunkInfo)
+            end
+        }
+
+        access_by_lua_block {
+            local edge = require("edge")
+            local request_id_generator = require("request_id_generator")
+
+            -- JWT validation
+            local jwt = require("nginx-jwt")
+            jwt.auth({
+                model_id=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.id }}") end,
+                model_version=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.version }}") end
+            })
+            local blacklisted_tokens = require "blacklisted_tokens"
+            blacklisted_tokens.check_token()
+
+            -- RequestID generation if it is missed
+            local requestID = ngx.req.get_headers()["Request-ID"]
+            if not requestID then
+               requestID = request_id_generator.generate_request_id()
+               ngx.req.set_header("Request-ID", requestID)
+               ngx.log(ngx.INFO, "Request ID has been generated: "..requestID)
+            end
+
+            ngx.header["Request-ID"] = requestID
+        }
+
+        proxy_pass {{ model_endpoint.model_service.url_with_ip }}/api/model/{{ model_endpoint.model_service.id }}/{{ model_endpoint.model_service.version }};
+
+
+        expires -1;
+        add_header Cache-Control no-cache;
+
+        add_header 'Access-Control-Allow-Origin' '*';
+
+        log_by_lua_block {
+            local model_endpoint = ngx.header["Model-Endpoint"]
+
+            if model_endpoint == Nil then
+                model_endpoint = "default"
+            end
+
+            -- HTTP requests timing metrics
+            local statistics_sender = require "statistics_sender"
+            statistics_sender.send_request_statistics("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint, tonumber(ngx.var.request_time))
+
+            -- Request info gathering
+            local edge = require("edge")
+            local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint)
+
+            local fluentd_logger = require "fluentd_logger"
+            fluentd_logger.post(ngx.req.start_time(), "request_response", requestInfo)
+        }
+    }
+    {% endfor %}
+  }
+}
