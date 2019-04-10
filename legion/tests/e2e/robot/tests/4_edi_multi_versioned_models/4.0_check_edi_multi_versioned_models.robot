@@ -1,5 +1,8 @@
 *** Variables ***
 ${LOCAL_CONFIG}  legion/config_4_0
+${TEST_MODEL_ID}         4
+${TEST_MODEL_VERSION_1}  1
+${TEST_MODEL_VERSION_2}  2
 
 *** Settings ***
 Documentation       Legion's EDI operational check
@@ -12,13 +15,17 @@ Library             legion.robot.libraries.grafana.Grafana
 Library             legion.robot.libraries.model.Model
 Library             Collections
 Suite Setup         Run keywords  Choose cluster context    ${CLUSTER_NAME}  AND
-...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}
+...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
+...                 Build stub model  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_1}  \${TEST_MODEL_IMAGE_1}  AND
+...                 Build stub model  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_2}  \${TEST_MODEL_IMAGE_2}
+Suite Teardown      Run keywords  Delete stub model training  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_1}  AND
+...                 Delete stub model training  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_2}
 Test Setup          Run Keywords
-...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}   AND
-...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}   AND
+...                 Run EDI deploy and check model started          ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_2}
 Test Teardown       Run Keywords
-...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}   ${TEST_MODEL_IMAGE_1}    AND
-...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}   ${TEST_MODEL_IMAGE_2}    AND
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}   ${TEST_MODEL_IMAGE_1}    AND
+...                 Run EDI undeploy by model version and check     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}   ${TEST_MODEL_IMAGE_2}    AND
 ...                 Remove File  ${LOCAL_CONFIG}
 Force Tags          edi  cli  enclave  multi_versions
 
@@ -28,16 +35,16 @@ Check EDI deploy 2 models with different versions but the same id
     [Tags]  apps
     ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers     ${resp.rc}         0
-    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}
+                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_VERSION_1}"
     ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
                     Should Be Equal As Integers     ${resp.rc}         0
-    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
-                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_2_VERSION}"
+    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_2}
+                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_VERSION_2}"
 
 Check EDI undeploy 1 of 2 models with different versions but the same id
     [Tags]  apps
-    ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+    ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
@@ -46,24 +53,24 @@ Check EDI undeploy 1 of 2 models with different versions but the same id
 
 Check EDI undeploy all model instances by version
     [Tags]  apps
-    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
-    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
                     Log                             ${model_1}
-    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_VERSION_1}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_VERSION_2}  1
 
-    ${resp}=   Run EDI undeploy with version        ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
+    ${resp}=   Run EDI undeploy with version        ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}         0
     ${resp}=        Run EDI inspect by model id     ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}
                     Should Be Equal As Integers     ${resp.rc}              0
-                    Should not contain              ${resp.stdout}          |${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp.stdout}          |${TEST_MODEL_2_VERSION}
+                    Should not contain              ${resp.stdout}          ${TEST_MODEL_IMAGE_1}
+                    Should contain                  ${resp.stdout}          ${TEST_MODEL_IMAGE_2}
 
-    ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_2_VERSION}
+    ${resp}=        Run EDI undeploy with version   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_2}
                     Should Be Equal As Integers     ${resp.rc}              0
 
 Check EDI undeploy 1 of 2 models without version
@@ -74,41 +81,41 @@ Check EDI undeploy 1 of 2 models without version
 
 Check EDI scale up 1 of 2 models with different versions but the same id
     [Tags]  apps
-    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
-    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
                     Log                             ${model_1}
-    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_VERSION_1}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_VERSION_2}  1
 
 Check EDI scale down 1 of 2 models with different versions but the same id
     [Tags]  apps
-    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
-    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
                     Log                             ${model_1}
-    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_VERSION_1}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_VERSION_2}  1
 
-    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    1   ${TEST_MODEL_1_VERSION}
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    1   ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
-    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
                     Log                             ${model_1}
-    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  1
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_VERSION_1}  1
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_VERSION_2}  1
 
 Check EDI scale up 1 of 2 models by invalid version
     [Tags]  apps
-    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_1_VERSION}121
+    ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   ${TEST_MODEL_VERSION_1}121
                     Should Be Equal As Integers     ${resp.rc}              2
                     Should contain                  ${resp.stderr}          No one model can be found
 
@@ -127,14 +134,14 @@ Check EDI model inspect by model id return 2 models
 
 Check EDI model inspect by model version return 1 model
     [Tags]  apps
-    ${resp}=   Run EDI inspect by model version     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_1_VERSION}
+    ${resp}=   Run EDI inspect by model version     ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers     ${resp.rc}          0
                     Should contain                  ${resp.stdout}      ${TEST_MODEL_IMAGE_1}
                     Should not contain              ${resp.stdout}      ${TEST_MODEL_IMAGE_2}
 
 Check EDI model inspect by model id and version return 1 model
     [Tags]  apps
-    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}      ${TEST_MODEL_1_VERSION}
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}      ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers                 ${resp.rc}         0
                     Should contain                              ${resp.stdout}     ${TEST_MODEL_IMAGE_1}
                     Should not contain                          ${resp.stdout}     ${TEST_MODEL_IMAGE_2}
@@ -147,25 +154,25 @@ Check EDI model inspect by invalid model id
 
 Check EDI model inspect by invalid model version
     [Tags]  apps
-    ${resp}=   Run EDI inspect by model version     ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_1_VERSION}test
+    ${resp}=   Run EDI inspect by model version     ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_VERSION_1}test
                     Should Be Equal As Integers     ${resp.rc}        0
                     Should be empty                 ${resp.stdout}
 
 Check EDI model inspect by invalid model id and invalid version
     [Tags]  apps
-    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}test
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_VERSION_1}test
                     Should Be Equal As Integers                 ${resp.rc}          0
                     Should be empty                             ${resp.stdout}
 
 Check EDI model inspect by invalid model id and valid version
     [Tags]  apps
-    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_1_VERSION}
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}test   ${TEST_MODEL_VERSION_1}
                     Should Be Equal As Integers                 ${resp.rc}          0
                     Should be empty                             ${resp.stdout}
 
 Check EDI model inspect by valid model id and invalid version
     [Tags]  apps
-    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}test
+    ${resp}=   Run EDI inspect by model id and model version    ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}test
                     Should Be Equal As Integers                 ${resp.rc}          0
                     Should be empty                             ${resp.stdout}
 
@@ -174,12 +181,12 @@ Check EDI scale up all instances for 2 models(diff versions) by versions=*
     ${resp}=        Run EDI scale with version      ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    2   '*'
                     Should Be Equal As Integers     ${resp.rc}              0
     ${resp}=        Run EDI inspect with parse by model id       ${MODEL_TEST_ENCLAVE}      ${TEST_MODEL_ID}
-    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    ${model_1}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
                     Log                             ${model_1}
-    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_1_VERSION}  2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_2_VERSION}  2
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_1}   ${TEST_MODEL_VERSION_1}  2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_ID}   ${TEST_MODEL_IMAGE_2}   ${TEST_MODEL_VERSION_2}  2
 
 Check EDI model inspect by model id=* return all models
     [Documentation]  Try to inspect 2 models by all ids through EDI console
@@ -199,43 +206,43 @@ Check default model urls
     [Setup]  NONE
     [Tags]  apps
     ${edge}=             Build enclave EDGE URL     ${MODEL_TEST_ENCLAVE}
-    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
 
     ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_1}
                     Should Be Equal As Integers     ${resp.rc}         0
-    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_1_VERSION}
-                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_1_VERSION}"
+    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}
+                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_VERSION_1}"
 
-    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
     Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}
-    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_1_VERSION}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_1}
 
     ${resp}=        Run EDI deploy                  ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE_2}
                     Should Be Equal As Integers     ${resp.rc}         0
-    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}  ${TEST_MODEL_2_VERSION}
-                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_2_VERSION}"
+    ${resp}=        Check model started             ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_2}
+                    Should contain                  ${resp}                 "model_version": "${TEST_MODEL_VERSION_2}"
 
-    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_2_VERSION}
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_2}
     Run Keyword And Expect Error  *Returned wrong status code: 400*  Get model info  ${edge}  ${TOKEN}  ${TEST_MODEL_ID}
-    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_2_VERSION}
-    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_1_VERSION}
-    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_1_VERSION}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_2}
+    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}   ${TEST_MODEL_VERSION_1}
+    Get model info       ${edge}  ${TOKEN}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION_1}
 
 Invoke two models
     [Documentation]  Check that config holds model jwts separately
     [Tags]  apps  kek
     ${res}=  Shell  legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
              Should be equal  ${res.rc}  ${0}
-    ${res}=  Shell  legionctl generate-token --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_1_VERSION}
+    ${res}=  Shell  legionctl generate-token --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION_1}
              Should be equal  ${res.rc}  ${0}
-    ${res}=  Shell  legionctl generate-token --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_2_VERSION}
+    ${res}=  Shell  legionctl generate-token --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION_2}
              Should be equal  ${res.rc}  ${0}
     ${res}=  Shell  legionctl config set MODEL_SERVER_URL https://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}
              Should be equal  ${res.rc}  ${0}
 
-    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_1_VERSION} -p a=1 -p b=2
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION_1} -p a=1 -p b=2
          Should be equal  ${res.rc}  ${0}
          Should contain   ${res.stdout}  42
-    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_2_VERSION} -p a=1 -p b=2
+    ${res}=  Shell  legionctl --verbose invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION_2} -p a=1 -p b=2
          Should be equal  ${res.rc}  ${0}
          Should contain   ${res.stdout}  42

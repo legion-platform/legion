@@ -1,0 +1,10 @@
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: sklearn-income
+spec:
+  toolchain: jupyter
+  vcsName: legion
+  entrypoint: "examples/sklearn-income/Income-wo-df.ipynb"

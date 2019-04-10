@@ -27,14 +27,11 @@ AUTHENTICATION_HOSTNAME = 'https://dex.{}/'
 PARAM_NAME_LOGIN = 'login'
 PARAM_NAME_PASSWORD = 'password'
 SESSION_ID_COOKIE_NAMES = ('_oauth2_proxy', 'JSESSION')
-AUTH_ENDPOINT_URLS = ('https://dashboard.{}/', 'https://jenkins.{}/securityRealm/commenceLogin',)
-JENKINS_PROFILE_URL = 'https://jenkins.{}/user/{}/configure'
-JENKINS_API_TOKEN_REGEX = re.compile('<input [^>]*id="apiToken"[^>]*value="([^"]+)"[^>]*>')
+AUTH_ENDPOINT_URLS = ('https://dashboard.{}/',)
 AUTH_RETRY_TIMEOUT = 10
 NUMBER_AUTH_RETRIES = 10
 
 _session_cookies = {}
-_jenkins_credentials = None
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,13 +43,12 @@ def init_session_id_from_data(data: dict):
     :param data: persisted login data
     :type data: dict[str, str]
     """
-    global _session_cookies, _jenkins_credentials
-    if not _session_cookies and not _jenkins_credentials:
+    global _session_cookies
+    if not _session_cookies:
         cookies = data['cookies'].split(';')
         for cookie in cookies:
             cookie = cookie.replace('=', ':', 1)
             _session_cookies[cookie.split(':')[0]] = cookie.split(':')[1]
-        _jenkins_credentials = (data['jenkins_user'], data['jenkins_password'])
 
 
 def auth_on_dex(service_url: str, cluster_host: str, login: str, password: str, session=None):
@@ -109,7 +105,7 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
     :type cluster_host: str
     :return: None
     """
-    global _session_cookies, _jenkins_credentials
+    global _session_cookies
     session = Session()
     for auth_endpoint_url in AUTH_ENDPOINT_URLS:
         for _ in range(NUMBER_AUTH_RETRIES):
@@ -131,13 +127,6 @@ def init_session_id(login: str, password: str, cluster_host: str) -> None:
         if not _session_cookies:
             raise ValueError('Cant find any session ID in Cookies')
 
-    response = session.get(JENKINS_PROFILE_URL.format(cluster_host, login))
-    if response.status_code == 200:
-
-        regex_output = JENKINS_API_TOKEN_REGEX.search(response.text)
-        if regex_output:
-            _jenkins_credentials = (login, regex_output.group(1))
-
 
 def get_session_cookies():
     """
@@ -155,12 +144,3 @@ def get_token():
     :return: str -- jwt
     """
     return _session_cookies['_oauth2_proxy']
-
-
-def get_jenkins_credentials():
-    """
-    Get credentials (username and API Token) for Jenkins API, if they are found.
-
-    :return: (username, password) or None
-    """
-    return _jenkins_credentials

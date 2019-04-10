@@ -17,10 +17,9 @@
 Variables loader (from profiles/{env.PROFILE}.ansible.yml files)
 """
 from legion.robot import profiler_loader
-from legion.robot.test_assets import get_test_bare_model_api_image
 
 
-def get_variables(arg):
+def get_variables(arg=None):
     """
     Gather and return all variables to robot
 
@@ -28,12 +27,5 @@ def get_variables(arg):
     :type args: str
     :return: dict[str, Any] -- values for robot
     """
-    variables = profiler_loader.get_variables(arg)
-    variables['TEST_MODEL_IMAGE_1'] = get_test_bare_model_api_image(variables, 1)
-    variables['TEST_MODEL_IMAGE_2'] = get_test_bare_model_api_image(variables, 2)
-    variables['TEST_MODEL_IMAGE_3'] = get_test_bare_model_api_image(variables, 3)
-    variables['TEST_MODEL_IMAGE_4'] = get_test_bare_model_api_image(variables, 4)
-    variables['TEST_MODEL_IMAGE_5'] = get_test_bare_model_api_image(variables, 5)
-    variables['TEST_MODEL_IMAGE_6'] = get_test_bare_model_api_image(variables, 6)
 
-    return variables
+    return profiler_loader.get_variables(arg)

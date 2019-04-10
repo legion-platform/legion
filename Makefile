@@ -11,10 +11,11 @@ SANDBOX_PYTHON_TOOLCHAIN_IMAGE=
 CREDENTIAL_SECRETS=.secrets.yaml
 ROBOT_FILES=**/*.robot
 CLUSTER_NAME=
-PATH_TO_PROFILES_DIR=./profiles
+PATH_TO_PROFILES_DIR=profiles
 E2E_PYTHON_TAGS=
 COMMIT_ID=
 TEMP_DIRECTORY=
+TAG=
 
 -include .env
 
@@ -64,19 +65,43 @@ install-robot:
 
 ## docker-pipeline-agent: Build pipeline agent docker image
 docker-pipeline-agent:
-	docker build -t legionplatform/python-pipeline:latest -f containers/pipeline-agent/Dockerfile .
+	docker build -t legion/python-pipeline:latest -f containers/pipeline/Dockerfile .
 
 ## docker-python-toolchain: Build python toolchain docker image
 docker-python-toolchain:
-	docker build -t legionplatform/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
+	docker build -t legion/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
 
 ## docker-edi: Build edi docker image
 docker-edi:
-	docker build -t legionplatform/k8s-edi:latest -f containers/edi/Dockerfile .
+	docker build -t legion/k8s-edi:latest -f containers/edi/Dockerfile .
 
 ## docker-edge: Build edge docker image
 docker-edge:
-	docker build -t legionplatform/k8s-edge:latest -f containers/edge/Dockerfile .
+	docker build -t legion/k8s-edge:latest -f containers/edge/Dockerfile .
+
+## docker-model-builder: Build model builder docker image
+docker-model-builder:
+	docker build --target model-builder -t legion/k8s-model-builder:latest -f containers/operator/Dockerfile .
+
+## docker-operator: Build operator docker image
+docker-operator:
+	docker build --target operator -t legion/k8s-operator:latest -f containers/operator/Dockerfile .
+
+## push-model-builder: Push model builder docker image
+push-model-builder:
+	@if [ "${TAG}" == "" ]; then \
+	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
+	fi
+	docker tag legion/k8s-model-builder:latest nexus.cc.epm.kharlamov.biz:443/legion/k8s-model-builder:${TAG}
+	docker push nexus.cc.epm.kharlamov.biz:443/legion/k8s-model-builder:${TAG}
+
+## push-operator: Push operator docker image
+push-operator:
+	@if [ "${TAG}" == "" ]; then \
+	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
+	fi
+	docker tag legion/k8s-operator:latest nexus.cc.epm.kharlamov.biz:443/legion/k8s-operator:${TAG}
+	docker push nexus.cc.epm.kharlamov.biz:443/legion/k8s-operator:${TAG}
 
 ## install-unittests: Install unit tests
 install-unittests:
@@ -93,7 +118,7 @@ build-docs:
 ## unittests: Run unit tests
 unittests:
 	@if [ "${SANDBOX_PYTHON_TOOLCHAIN_IMAGE}" == "" ]; then \
-	    docker build -t legionplatform/python-toolchain:latest -f containers/toolchains/python/Dockerfile . ;\
+	    docker build -t legion/python-toolchain:latest -f containers/toolchains/python/Dockerfile . ;\
 	fi
 
 	mkdir -p target
@@ -126,21 +151,6 @@ e2e-python:
 	          --logging-level DEBUG \
 	          --xunitmp-file target/nosetests.xml \
 	          -v legion/tests/e2e/python
-
-## create-models-job: Create model jenkins jobs
-create-models-job:
-	create_example_jobs \
-	     "https://jenkins.${CLUSTER_NAME}" \
-	     ./examples \
-	     ./ \
-	     "https://github.com/legion-platform/legion.git" \
-	     ${COMMIT_ID} \
-	     --connection-timeout 600 \
-	     --git-root-key "legion-root-key" \
-	     --model-host "" \
-	     --dynamic-model-prefix "DYNAMIC MODEL" \
-	     --profiles-dir ${PATH_TO_PROFILES_DIR} \
-	     --profile ${CLUSTER_NAME}
 
 ## update-python-deps: Update all python dependecies in the Pipfiles
 update-python-deps:

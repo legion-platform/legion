@@ -19,10 +19,11 @@ import logging
 import os
 import warnings
 
-import unittest2
 from nose.plugins.attrib import attr
+import unittest2
 
-from legion.robot import profiler_loader, test_assets
+from legion.robot import profiler_loader
+from legion.robot.libraries import k8s
 from legion.robot.utils import wait_until, ContextThread
 from legion.sdk.containers.definitions import ModelIdVersion, STATUS_OK
 from legion.services.k8s import utils as k8s_utils
@@ -34,8 +35,8 @@ VARIABLES = profiler_loader.get_variables()
 LOGGER = logging.getLogger(__name__)
 
 TEST_MODEL_ID = 'demo-abc-model'
-TEST_MODEL_VERSION = '1.0'
-TEST_IMAGE = test_assets.get_test_bare_model_api_image(VARIABLES)
+TEST_MODEL_VERSION = '1'
+TEST_IMAGE = None
 
 
 class TestK8SModelOperations(unittest2.TestCase):
@@ -62,6 +63,14 @@ class TestK8SModelOperations(unittest2.TestCase):
 
         k8s_utils.CONNECTION_CONTEXT = VARIABLES['CLUSTER_NAME']
         LOGGER.info('K8S context has been set to {}'.format(k8s_utils.CONNECTION_CONTEXT))
+
+        status_cr = k8s.K8s(VARIABLES['MODEL_TEST_ENCLAVE']).build_stub_model(TEST_MODEL_ID, TEST_MODEL_VERSION)
+        global TEST_IMAGE
+        TEST_IMAGE = status_cr["modelImage"]
+
+    @classmethod
+    def tearDownClass(cls):
+        k8s.K8s(VARIABLES['MODEL_TEST_ENCLAVE']).delete_stub_model_training(TEST_MODEL_ID, TEST_MODEL_VERSION)
 
     def _remove_model_if_exists(self, model_id, model_version=None):
         """

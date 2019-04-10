@@ -1,0 +1,10 @@
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: test-summation
+spec:
+  toolchain: jupyter
+  vcsName: legion
+  entrypoint: "examples/Test-Summation/Summation.ipynb"

@@ -154,3 +154,6 @@ legion-pyling.log
 log.html
 output.xml
 report.html
+
+legion/operator/vendor/
+legion/operator/config/

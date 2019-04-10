@@ -46,17 +46,3 @@ def get_k8s_version():
                         .format(LEGION_VERSION_ENVIRON_KEY))
 
     return '{}'.format(legion_version)
-
-
-def get_test_bare_model_api_image(variables, model_num=1):
-    """
-    Get model api test image
-
-    :param variables: loaded variables from file
-    :type variables: dict
-    :param model_num: (Optional) test model num
-    :type model_num: int
-    :return: str -- model image name
-    """
-
-    return '{}/test-bare-model-api-model-{}:{}'.format(get_k8s_repository(variables), model_num, get_k8s_version())

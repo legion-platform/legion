@@ -23,7 +23,6 @@ import stat
 import uuid
 
 from legion.sdk import config, utils
-from legion.sdk.clients.docker import request_to_build_image
 from legion.sdk.containers import docker
 from legion.sdk.containers.definitions import ModelBuildParameters
 from legion.sdk.containers.docker import prepare_build, build_model_docker_image
@@ -68,12 +67,7 @@ def build_model(args):
     params = ModelBuildParameters(model_id, workspace_path, image_labels, new_image_tag, args.push_to_registry,
                                   build_id=str(uuid.uuid4()))
 
-    if args.build_type == BUILD_TYPE_DOCKER_SOCKET:
-        model_image = build_model_docker_image(params)
-    elif args.build_type == BUILD_TYPE_DOCKER_REMOTE:
-        model_image = request_to_build_image(params)
-    else:
-        raise ValueError(f'Unexpected build type: {args.build_type}')
+    model_image = build_model_docker_image(params, args.container_id)
 
     LOGGER.info('The image %s has been built', model_image)
 
@@ -137,13 +131,8 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
                                     type=str, help='docker image tag')
     build_model_parser.add_argument('--push-to-registry',
                                     type=str, help='docker registry address')
-    build_model_parser.add_argument('--build-type', default='docker-socket', choices=[BUILD_TYPE_DOCKER_SOCKET,
-                                                                                      BUILD_TYPE_DOCKER_REMOTE],
-                                    type=str,
-                                    help="Available values: docker-socket - builds a model image using a docker socket."
-                                         "docker-remote - does not build image yourself. Send an HTTP request to the "
-                                         "MODEL_DOCKER_BUILDER_URL server that determines the model container, builds "
-                                         "and pushes it.")
+    build_model_parser.add_argument('--container-id',
+                                    help='If parameters is empty than legionctl will commit current container')
     build_model_parser.set_defaults(func=build_model)
 
     sandbox_parser = main_subparser.add_parser('create-sandbox', description='create sandbox')

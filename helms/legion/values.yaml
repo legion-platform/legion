@@ -12,6 +12,23 @@ auth:
   enabled: false
   annotations: {}
 
+toolchains:
+  python:
+    image: legion/python-toolchain:1.0
+
+operator:
+  image: legion/k8s-operator:1.0
+  builder:
+    image: legion/k8s-model-builder:1.0
+
+vcs:
+  enabled: false
+  name: "legion"
+  type: "{{ .Values.vcs.type }}"
+  uri: "{{ .Values.vcs.type }}"
+  defaultReference: "{{ .Values.vcs.defaultReference }}"
+  creds: "{{ .Values.vcs.creds }}"
+
 feedback:
   replicas: 1
   ingress:

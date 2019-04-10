@@ -9,25 +9,12 @@ class Globals {
 
 def chartNames = null
 
-def buildTestBareModel(modelId, modelVersion, versionNumber) {
-    sh """
-        cd legion/tests/e2e/models
-        rm -rf robot.model || true
-        mkdir /app || true
-        python3 simple.py --id "${modelId}" --version "${modelVersion}"
-
-        legionctl --verbose build \
-                  --docker-image-tag "legion/test-bare-model-api-model-${versionNumber}:${Globals.buildVersion}" \
-                  --model-file robot.model
-    """
-}
-
 pipeline {
     agent { label 'ec2builder'}
 
     options{
             buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
-        }
+    }
     environment {
             /// Input parameters
             //Enable docker cache parameter
@@ -158,48 +145,8 @@ pipeline {
                         }
                     }
                 }
-                stage("Build Jenkins Legion plugin") {
-                   steps {
-                       script {
-                           docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
-                               /// Jenkins plugin which will be used in Jenkins Docker container only
-                               sh """
-                               export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
-                               mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
-                               mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=///tmp/.m2/repository
-                               mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
-                               """
-
-                               archiveArtifacts 'containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-
-                               withCredentials([[
-                                   $class: 'UsernamePasswordMultiBinding',
-                                   credentialsId: 'nexus-local-repository',
-                                   usernameVariable: 'USERNAME',
-                                   passwordVariable: 'PASSWORD']]) {
-                                   sh """
-                                   curl -v -u $USERNAME:$PASSWORD \
-                                   --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                   ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
-                                   """
-                                   script {
-                                       if (env.param_stable_release.toBoolean()){
-                                           sh """
-                                           curl -v -u $USERNAME:$PASSWORD \
-                                           --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                                           ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
-                                           """
-                                       }
-                                   }
-                               }
-                               sh "rm -rf ${WORKSPACE}/containers/jenkins/legion-jenkins-plugin/*"
-                            }
-                        }
-                    }
-                }
             }
         }
-    
         stage("Build Docker images & Run Tests") {
             parallel {
                 stage("Build Edge Docker image") {
@@ -223,27 +170,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Build Jenkins Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-jenkins', "containers/jenkins", "Dockerfile", """--build-arg update_center_url="" --build-arg update_center_experimental_url="${env.param_jenkins_plugins_repository}" --build-arg update_center_download_url="${env.param_jenkins_plugins_repository}" --build-arg legion_plugin_version="${Globals.buildVersion}" """)
-                        }
-                    }
-                }
-                stage("Build test models") {
-                    steps {
-                        script {
-                            docker.image("legion/python-toolchain:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root") {
-                                buildTestBareModel("demo-abc-model", "1.0", "1")
-                                buildTestBareModel("demo-abc-model", "1.1", "2")
-                                buildTestBareModel("edi-test-model", "1.2", "3")
-                                buildTestBareModel("feedback-test-model", "1.0", "4")
-                                buildTestBareModel("command-test-model", "1.0", "5")
-                                buildTestBareModel("auth-test-model", "1.0", "6")
-                            }
-                        }
-                    }
-                }
                 stage('Build docs') {
                     steps {
                         script {
@@ -257,6 +183,14 @@ pipeline {
                                 archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
                                 sh "rm ${WORKSPACE}/legion_docs_${Globals.buildVersion}.tar.gz"
                             }
+                        }
+                    }
+                }
+                stage("Build model builder and operator images") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder")
+                            legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator")
                         }
                     }
                 }
@@ -287,7 +221,6 @@ pipeline {
                 }
             }
         }
-
         stage("Run unittests") {
             steps {
                 script {
@@ -390,6 +323,20 @@ pipeline {
                         }
                     }
                 }
+                stage("Upload operator image") {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-model-builder')
+                        }
+                    }
+                }
+                stage("Upload model builder image") {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-operator')
+                        }
+                    }
+                }
                 stage('Upload Edge Docker Image') {
                     steps {
                         script {
@@ -408,25 +355,6 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-fluentd')
-                        }
-                    }
-                }
-                stage('Upload Jenkins Docker image') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('k8s-jenkins')
-                        }
-                    }
-                }
-                stage("Upload test models") {
-                    steps {
-                        script {
-                            legion.uploadDockerImage("test-bare-model-api-model-1")
-                            legion.uploadDockerImage("test-bare-model-api-model-2")
-                            legion.uploadDockerImage("test-bare-model-api-model-3")
-                            legion.uploadDockerImage("test-bare-model-api-model-4")
-                            legion.uploadDockerImage("test-bare-model-api-model-5")
-                            legion.uploadDockerImage("test-bare-model-api-model-6")
                         }
                     }
                 }

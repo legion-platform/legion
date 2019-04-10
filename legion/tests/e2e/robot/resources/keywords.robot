@@ -1,12 +1,12 @@
 *** Settings ***
 Documentation       Legion robot resources
 Resource            variables.robot
+Variables           ../load_variables_from_profiles.py
 Library             String
 Library             OperatingSystem
 Library             Collections
 Library             DateTime
-Library             legion.robot.libraries.k8s.K8s
-Library             legion.robot.libraries.jenkins.Jenkins
+Library             legion.robot.libraries.k8s.K8s  ${MODEL_TEST_ENCLAVE}
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.grafana.Grafana
 Library             legion.robot.libraries.process.Process
@@ -20,8 +20,17 @@ Url stay the same after dex log in
 Connect to main Grafana
     Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 
-Connect to Jenkins endpoint
-    Connect to Jenkins    ${HOST_PROTOCOL}://jenkins.${HOST_BASE_DOMAIN}
+Build stub model
+    [Arguments]  ${model_id}  ${model_version}  ${model_image_key_name}=\${TEST_MODEL_IMAGE}
+    Delete stub model training  ${model_id}  ${model_version}
+    Create stub model training  ${model_id}  ${model_version}
+
+    Wait stub model training  ${model_id}  ${model_version}
+
+    ${model_build_status}=  Get stub model training status  ${model_id}  ${model_version}
+    ${model_image}=  Get From Dictionary  ${model_build_status}  modelImage
+
+    Set Suite Variable  ${model_image_key_name}  ${model_image}
 
 Shell
     [Arguments]           ${command}
@@ -323,17 +332,6 @@ Check if all enclave domains are registered
     :FOR    ${enclave_subdomain}    IN    @{ENCLAVE_SUBDOMAINS}
     \   Check domain exists  ${enclave_subdomain}-${enclave}.${HOST_BASE_DOMAIN}
 
-Run model jenkins Job
-    [Arguments]          ${model_name}                      ${enclave}=${CLUSTER_NAMESPACE}
-    Run and wait Jenkins job                                DYNAMIC MODEL ${model_name}   Enclave=${enclave}
-    Last Jenkins job is successful                          DYNAMIC MODEL ${model_name}
-
-Run predefined Jenkins jobs for enclave
-    [Arguments]             ${enclave}
-    Connect to Jenkins endpoint
-    :FOR  ${model_name}  IN  @{JENKINS_JOBS}
-    \    Run model jenkins Job  ${model_name}  ${enclave}
-
 Get cluster nodes and their count
     [Arguments]    ${is_before}
     @{cluster_nodes} =    Get cluster nodes
@@ -346,11 +344,8 @@ Get cluster nodes and their count
 Check if component domain has been secured
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a legion component is secured by auth
-    ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
-    ...    ELSE      Set Variable    False
-    ${boolean} =     Convert To Boolean    ${jenkins}
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}    ${boolean}
-    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}    ${boolean}
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}
+    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}
     Log              Auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text
@@ -359,12 +354,9 @@ Check if component domain has been secured
 Secured component domain should not be accessible by invalid credentials
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a secured legion component does not provide access by invalid credentials
-    ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
-    ...    ELSE      Set Variable    False
-    ${boolean} =     Convert To Boolean    ${jenkins}
     &{creds} =       Create Dictionary 	login=admin   password=admin
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
-    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
+    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
     Log              Bad auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text
@@ -374,12 +366,9 @@ Secured component domain should not be accessible by invalid credentials
 Secured component domain should be accessible by valid credentials
     [Arguments]     ${component}    ${enclave}
     [Documentation]  Check that a secured legion component does not provide access by invalid credentials
-    ${jenkins} =     Run Keyword If   '${component}' == 'jenkins'    Set Variable    True
-    ...    ELSE      Set Variable    False
-    ${boolean} =     Convert To Boolean    ${jenkins}
     &{creds} =       Create Dictionary    login=${STATIC_USER_EMAIL}    password=${STATIC_USER_PASS}
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
-    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}    ${boolean}
+    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
+    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
     Log              Bad auth page for ${component} is ${response}
     Dictionary Should Contain Item    ${response}    response_code    200
     ${auth_page} =   Get From Dictionary   ${response}    response_text
