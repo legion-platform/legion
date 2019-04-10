@@ -158,46 +158,6 @@ pipeline {
                         }
                     }
                 }
-
-                // stage("Build Jenkins Legion plugin") {
-                //    steps {
-                //        script {
-                //            docker.image("maven:3.5.3-jdk-8").inside("-v /tmp/.m2:/tmp/.m2 -e HOME=/tmp -u root") {
-                //                /// Jenkins plugin which will be used in Jenkins Docker container only
-                //                sh """
-                //                export JAVA_HOME=\$(readlink -f /usr/bin/java | sed "s:bin/java::")
-                //                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml clean -Dmaven.repo.local=/tmp/.m2/repository
-                //                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml versions:set -DnewVersion=${Globals.buildVersion} -Dmaven.repo.local=///tmp/.m2/repository
-                //                mvn -f containers/jenkins/legion-jenkins-plugin/pom.xml install -Dmaven.repo.local=/tmp/.m2/repository
-                //                """
-
-                //                archiveArtifacts 'containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi'
-
-                //                withCredentials([[
-                //                    $class: 'UsernamePasswordMultiBinding',
-                //                    credentialsId: 'nexus-local-repository',
-                //                    usernameVariable: 'USERNAME',
-                //                    passwordVariable: 'PASSWORD']]) {
-                //                    sh """
-                //                    curl -v -u $USERNAME:$PASSWORD \
-                //                    --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                //                    ${env.param_jenkins_plugins_repository_store}/${Globals.buildVersion}/legion-jenkins-plugin.hpi
-                //                    """
-                //                    script {
-                //                        if (env.param_stable_release.toBoolean()){
-                //                            sh """
-                //                            curl -v -u $USERNAME:$PASSWORD \
-                //                            --upload-file containers/jenkins/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi \
-                //                            ${env.param_jenkins_plugins_repository_store}/latest/legion-jenkins-plugin.hpi
-                //                            """
-                //                        }
-                //                    }
-                //                }
-                //                sh "rm -rf ${WORKSPACE}/containers/jenkins/legion-jenkins-plugin/*"
-                //             }
-                //         }
-                //     }
-                // }
             }
         }
     

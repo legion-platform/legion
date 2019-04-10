@@ -67,10 +67,10 @@ ARG update_center_experimental_url="https://updates.jenkins.io/experimental"
 ENV JENKINS_UC_EXPERIMENTAL=$update_center_experimental_url
 
 # Install plugins
+USER jenkins
+
 RUN echo "INSTALLING BASE PLUGINS:" && \
     cat /usr/share/jenkins/ref/plugins.txt && \
     /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
 
-COPY --from=builder /src/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi ${JENKINS_HOME}/plugins/
-RUN chown jenkins:jenkins ${JENKINS_HOME}/plugins/legion-jenkins-plugin.hpi
-USER jenkins
+COPY --from=builder /src/legion-jenkins-plugin/target/legion-jenkins-plugin.hpi /usr/share/jenkins/ref/plugins/legion-jenkins.jpi
