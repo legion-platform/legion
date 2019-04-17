@@ -41,8 +41,6 @@ def build_docker_client():
     """
     Create docker client
 
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace` or None
     :return: :py:class:`docker.Client`
     """
     client = docker.from_env()

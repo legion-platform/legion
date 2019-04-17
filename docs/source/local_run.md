@@ -23,7 +23,7 @@ You may override default parameters using CLI arguments or Legion application co
 * `--image` - docker image (named Legion Toolchain) from which container will be started. Default value comes from `legion.config.SANDBOX_PYTHON_TOOLCHAIN_IMAGE`
 * `--force-recreate` - recreate `legion-activate.sh` if it exists.
 
-Image should be compatible with Legion Platform. By default Legion Platform provides **legionplatform/python-toolchain** public image.
+Image should be compatible with Legion Platform. By default Legion Platform provides **legion/python-toolchain** public image.
 
 Example of value: `docker-registry-host:900/legion/python-toolchain:1.0.0`
 

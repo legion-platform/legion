@@ -20,13 +20,30 @@ import time
 
 import kubernetes
 import kubernetes.client
+from kubernetes.client import V1DeleteOptions, V1Pod, V1ObjectMeta, V1PodSpec, V1Toleration, V1Container, \
+    V1ResourceRequirements
+from kubernetes.client.rest import ApiException
 import kubernetes.config
 import kubernetes.config.config_exception
 import urllib3
-
+import yaml
+from legion.robot.utils import wait_until
 from legion.services.k8s import utils as k8s_utils
 
-from legion.robot.utils import wait_until
+FAT_POD_MEMORY = "4Gi"
+FAT_POD_CPU = "7"
+FAT_POD_IMAGE = 'alpine:3.9.3'
+FAT_POD_NAME = "fat-pod-name"
+
+
+def generate_stub_model(model_id: str, model_version: str) -> str:
+    """
+    Generate name for stub model training custom resource
+    :param model_id: model id
+    :param model_version: model version
+    :return: name
+    """
+    return f"stub-model-{model_id}-{model_version}"
 
 
 class K8s:
@@ -36,12 +53,20 @@ class K8s:
 
     ROBOT_LIBRARY_SCOPE = 'TEST SUITE'
 
-    def __init__(self):
+    def __init__(self, namespace):
         """
         Init client
+        :param namespace: default k8s namespace
         """
         self._context = None
         self._information = None
+        self._model_training_group = 'legion.legion-platform.org'
+        self._model_training_version = 'v1alpha1'
+        self._namespace = namespace
+        self._model_training_plural = 'modeltrainings'
+        self._model_training_info = self._model_training_group, self._model_training_version, \
+                                    self._namespace, self._model_training_plural
+        self._default_vcs = 'legion'
 
     def build_client(self):
         """
@@ -69,6 +94,198 @@ class K8s:
         """
         self._context = context
         k8s_utils.CONNECTION_CONTEXT = context
+
+        self.build_client()
+
+    def start_fat_pod(self):
+        """
+        Start fat pod
+        """
+        client = self.build_client()
+
+        core_api = kubernetes.client.CoreV1Api(client)
+
+        pod = V1Pod(
+            api_version='v1',
+            kind='Pod',
+            metadata=V1ObjectMeta(
+                name=FAT_POD_NAME,
+            ),
+            spec=V1PodSpec(
+                restart_policy='Never',
+                priority=0,
+                tolerations=[
+                    V1Toleration(
+                        key="dedicated",
+                        operator="Equal",
+                        value="jenkins-slave",
+                        effect="NoSchedule",
+                    )
+                ],
+                containers=[
+                    V1Container(
+                        name=FAT_POD_NAME,
+                        image=FAT_POD_IMAGE,
+                        resources=V1ResourceRequirements(
+                            limits={'cpu': FAT_POD_CPU, 'memory': FAT_POD_MEMORY},
+                            requests={'cpu': FAT_POD_CPU, 'memory': FAT_POD_MEMORY}
+                        ),
+                        command=["echo"],
+                        args=["I am a fat :("]
+                    )
+                ]
+            )
+        )
+
+        core_api.create_namespaced_pod(self._namespace, pod)
+
+    def delete_fat_pod(self):
+        """
+        Delete fat pod
+        """
+        client = self.build_client()
+
+        core_api = kubernetes.client.CoreV1Api(client)
+
+        try:
+            core_api.delete_namespaced_pod(FAT_POD_NAME, self._namespace,
+                                           V1DeleteOptions(propagation_policy='Foreground',
+                                                           grace_period_seconds=0))
+        except ApiException as e:
+            if e.status != 404:
+                raise e
+
+    def wait_fat_pod_completion(self):
+        """
+        Wait completion of fat pod
+        """
+        client = self.build_client()
+
+        core_api = kubernetes.client.CoreV1Api(client)
+
+        pod_completed_lambda = lambda: core_api.read_namespaced_pod(
+            FAT_POD_NAME, self._namespace
+        ).status.phase == "Succeeded"
+        if not wait_until(pod_completed_lambda, iteration_duration=10, iterations=78):
+            raise Exception("Timeout")
+
+    def delete_stub_model_training(self, model_id, model_version):
+        """
+        Delete model training resource
+        :param model_id: model id
+        :param model_version: model version
+        """
+        self.delete_model_training(generate_stub_model(model_id, model_version))
+
+    def delete_model_training(self, name):
+        """
+        Delete model trainig resource
+        :param name: name of training resource
+        """
+        crds = kubernetes.client.CustomObjectsApi()
+
+        try:
+            crds.delete_namespaced_custom_object(*self._model_training_info, name.lower(),
+                                                 V1DeleteOptions(propagation_policy='Foreground',
+                                                                 grace_period_seconds=0))
+        except ApiException as e:
+            if e.status != 404:
+                raise e
+
+    def create_stub_model_training(self, model_id, model_version):
+        """
+        Create model training resource
+        :param model_id: model id
+        :param model_version: modle version
+        """
+        crds = kubernetes.client.CustomObjectsApi()
+
+        crds.create_namespaced_custom_object(
+            *self._model_training_info,
+            {
+                "apiVersion": "legion.legion-platform.org/v1alpha1",
+                "kind": "ModelTraining",
+                "metadata": {
+                    "name": generate_stub_model(model_id, model_version)
+                },
+                "spec": {
+                    "entrypoint": 'legion/tests/e2e/models/simple.py',
+                    'args': ['--id', model_id, '--version', model_version],
+                    "toolchain": "python",
+                    "vcsName": self._default_vcs
+                }
+            }
+        )
+
+    def create_model_training_from_yaml(self, path_to_file):
+        """
+        Create model training resource by yaml template
+        :param path_to_file: path to yaml template
+        """
+        crds = kubernetes.client.CustomObjectsApi()
+
+        with open(path_to_file) as f:
+            model_training = yaml.load(f)
+            crds.create_namespaced_custom_object(
+                *self._model_training_info,
+                model_training
+            )
+
+    def get_model_training_status(self, name):
+        """
+        Get model training status
+        :param name: name of a model training resource
+        :return: status
+        """
+        crds = kubernetes.client.CustomObjectsApi()
+
+        model_training = crds.get_namespaced_custom_object(*self._model_training_info, name.lower())
+        print(f'Fetched model training: {model_training}')
+
+        status = model_training.get('status')
+        return status if status else {}
+
+    def build_stub_model(self, model_id, model_version):
+        """
+        Full lifecycle of model training resource
+        :param model_id: model id
+        :param model_version: model version
+        :return: status of a model training resource
+        """
+        self.delete_stub_model_training(model_id, model_version)
+        self.create_stub_model_training(model_id, model_version)
+        self.wait_stub_model_training(model_id, model_version)
+
+        return self.get_stub_model_training_status(model_id, model_version)
+
+    def get_stub_model_training_status(self, model_id, model_version):
+        """
+        Get stub model training resource status
+        :param model_id: model id
+        :param model_version: model version
+        :return:
+        """
+        return self.get_model_training_status(generate_stub_model(model_id, model_version))
+
+    def wait_stub_model_training(self, model_id, model_version, expected_state="succeeded"):
+        """
+        Wait specific status of a stub model training resource
+        :param model_id: model id
+        :param model_version: model version
+        :param expected_state: expected state
+        :return:
+        """
+        return self.wait_model_training(generate_stub_model(model_id, model_version), expected_state)
+
+    def wait_model_training(self, name, expected_state="succeeded"):
+        """
+        Wait specific status of a model training resource
+        :param name: resource name
+        :param expected_state: expected state
+        """
+        if not wait_until(lambda: self.get_model_training_status(name.lower()).get("state") == expected_state,
+                          iteration_duration=10, iterations=36):
+            raise Exception(f"Timeout")
 
     def service_is_running(self, service_name, namespace=None):
         """

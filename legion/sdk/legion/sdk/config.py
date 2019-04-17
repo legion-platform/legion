@@ -471,7 +471,7 @@ K8S_API_RETRY_DELAY_SEC = ConfigVariableDeclaration('K8S_API_RETRY_DELAY_SEC', 3
 
 # Sandbox mode
 SANDBOX_PYTHON_TOOLCHAIN_IMAGE = ConfigVariableDeclaration('SANDBOX_PYTHON_TOOLCHAIN_IMAGE',
-                                                           'legionplatform/python-toolchain:latest',
+                                                           'legion/python-toolchain:latest',
                                                            str, 'Default image for sandbox mode using python toolchain',
                                                            True)
 

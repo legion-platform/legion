@@ -1,0 +1,10 @@
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: digit-recognition
+spec:
+  toolchain: python
+  vcsName: legion
+  entrypoint: "examples/MovieLens/surprise.v3.py"

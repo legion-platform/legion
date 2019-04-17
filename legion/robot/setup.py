@@ -69,8 +69,5 @@ setup(
     author='Alexey Kharlamov, Kirill Makhonin',
     author_email='alexey@kharlamov.biz, kirill@makhonin.biz',
     license='Apache v2',
-    entry_points={
-        'console_scripts': ['create_example_jobs=legion.robot.entrypoints.create_example_jobs:main'],
-    },
     install_requires=extract_requirements()
 )

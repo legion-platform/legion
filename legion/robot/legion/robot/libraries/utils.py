@@ -215,11 +215,10 @@ class Utils:
         return {"text": response.text, "code": response.status_code}
 
     @staticmethod
-    def get_component_auth_page(url, jenkins=False, token=None):
+    def get_component_auth_page(url, token=None):
         """
         Get component main auth page
 
-        :param boolean jenkins: if jenkins service is under test
         :param url: component url
         :type url: str
         :param token: token for the authorization
@@ -227,13 +226,12 @@ class Utils:
         :return:  response_code and response_text
         :rtype: dict
         """
-        if jenkins:
-            response = requests.get('{}/securityRealm/commenceLogin'.format(url), timeout=10)
-        elif token:
+        if token:
             headers = {"Authorization": "Bearer {}".format(token)}
             response = requests.get(url, timeout=10, headers=headers)
         else:
             response = requests.get(url, timeout=10)
+
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
@@ -243,8 +241,6 @@ class Utils:
 
         :param url: component url
         :type url: str
-        :param jenkins: if jenkins service is under test
-        :type jenkins: boolean
         :param token: token for the authorization
         :type token: str
         :param iteration_duration: duration between checks in seconds
@@ -262,11 +258,10 @@ class Utils:
             raise Exception('Auth page is available')
 
     @staticmethod
-    def post_credentials_to_auth(component_url, cluster_host, creds, jenkins=False):
+    def post_credentials_to_auth(component_url, cluster_host, creds):
         """
         Get session id and send post request with credentials to authorize
 
-        :param boolean jenkins: if jenkins service is under test
         :param str component_url: legion core component url
         :param str cluster_host: cluster host name
         :param dict creds: dict with login and password
@@ -277,10 +272,7 @@ class Utils:
         import re
 
         session = requests.Session()
-        if jenkins:
-            response = session.get("{}.{}/securityRealm/commenceLogin".format(component_url, cluster_host))
-        else:
-            response = session.get("{}.{}".format(component_url, cluster_host))
+        response = session.get("{}.{}".format(component_url, cluster_host))
 
         if response.status_code != 200:
             raise IOError('Authentication endpoint is unavailable, got {} http code'

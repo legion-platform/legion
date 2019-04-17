@@ -1,0 +1,13 @@
+{{ if .Values.vcs.enabled -}}
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: VCSCredential
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: "{{ .Values.vcs.name }}"
+spec:
+  type: "{{ .Values.vcs.type }}"
+  uri: "{{ .Values.vcs.uri }}"
+  defaultReference: "{{ .Values.vcs.defaultReference }}"
+  credential: "{{ .Values.vcs.creds }}"
+{{- end }}

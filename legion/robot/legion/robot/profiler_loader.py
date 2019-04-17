@@ -75,7 +75,7 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
         'HOST_BASE_DOMAIN': data.get('test_base_domain', data['base_domain']),
         'USE_HTTPS_FOR_TESTS': data.get('use_https_for_tests', 'yes') == 'yes',
 
-        'JENKINS_JOBS': data['examples_to_test'],
+        'EXAMPLES_TO_TEST': data['examples_to_test'],
         'MODEL_ID': data['model_id_to_test'],
         'ENCLAVES': data.get('enclaves', []),
 
@@ -100,8 +100,6 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
             with open(cookies, 'r') as stream:
                 lines = stream.readlines()
                 cookies_data = {
-                    'jenkins_user': lines[0].rstrip(),
-                    'jenkins_password': lines[1].rstrip(),
                     'cookies': lines[2].rstrip()
                 }
         except IOError:
