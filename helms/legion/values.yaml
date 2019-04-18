@@ -1,129 +1,359 @@
-rootDomain: k8s-nightly.epm.kharlamov.biz
-domainDelimiter: "-"
+# Version of Legion
+legionVersion: 1.0.0
+
+# Target namespace to Install legion to
 namespace: default
-enclaveName: unknown
-localDomain: "cluster.local"
-addLocalDomain: false
-clusterName: ""
 
-log_level: info
+# Does cluster requires RBAC
+rbac: true
 
-auth:
+# Configuration of used images
+# There are images for next <service>s
+# - edi
+# - edge
+# - operator
+# - fluentd
+images:
+  # Docker images registry
+  # This registry will be used for automatic docker image name deduction based on Legion naming for images
+  # Each image could be overrided mannualy in .<service>.customImage, please see .edi root section or other
+  registry: legionplatform
+
+# Verbosity of loggin features in components
+# Valid values are:
+# - info
+# - debug
+# - warning
+# - error
+logLevel: info
+
+# Configuration of Legion ingresses
+# Ingresses are for next <service>s
+# - edi
+# - edge
+ingress:
+  # Global flag for Ingress enabling
+  # Each Ingress could be configurred manually in .<service>.ingress.enabled
   enabled: false
+
+  # Root domain for auto-created Ingress domains.
+  # Each domain could be configurred manually in .<service>.ingress.domain
+  globalDomain: example.com
+
+  # Global annotations for all services
+  # Each Ingress could be configurred manually in .<service>.ingress.annotations
   annotations: {}
+  #  kubernetes.io/ingress.class: nginx
+  #  kubernetes.io/tls-acme: "true"
 
-toolchains:
-  python:
-    image: legion/python-toolchain:1.0
+  # Global TLS flag
+  # Each Ingress could be configurred manually in .<service>.ingress.tlsEnabled
+  tlsEnabled: false
 
-operator:
-  image: legion/k8s-operator:1.0
-  builder:
-    image: legion/k8s-model-builder:1.0
+  # Global TLS secret name
+  # Each Ingress could be configurred manually in .<service>.ingress.tlsSecretName
+  tlsSecretName: undefined-secret
 
-vcs:
-  enabled: false
-  name: "legion"
-  type: "{{ .Values.vcs.type }}"
-  uri: "{{ .Values.vcs.type }}"
-  defaultReference: "{{ .Values.vcs.defaultReference }}"
-  creds: "{{ .Values.vcs.creds }}"
-
-feedback:
-  replicas: 1
-  ingress:
-    annotations: {}
-    domain:
-      partial: feedback
-    tls:
-      enabled: true
-      autoSecretNameDeduction: true
-
-  image:
-    repository: "legion/k8s-fluentd"
-    tag: "latest"
-
-  s3:
-    bucket: "none"
-    region: "none"
-
-    time_slice_format: "%Y%m%d%H"
-    time_slice_wait: "5m"
-
-    store_as: "json"
-
-    buffering:
-      timekey: 1m       # chunks length (window size)
-      timekey_wait: 0s  # delay for flush (after end of window)
-      path: /tmp
-
-    format: "json"
-    include_time_key: "true"
-    time_key: "time"
-
-edi:
+# Security configuration. Model API security configures in .modelApiSecurity section (see below)
+security:
+  # Is authorization for WEB requests enabled or not
   enabled: true
+
+  # Type of authorization. Currently only oauth2_proxy is supported
+  # Valid values are:
+  # - oauth2_proxy
+  integration: oauth2_proxy
+
+  # Detail configuration of oauth2_proxy
+  oauth2_proxy:
+    # Internal URL of oauth2_proxy that will be called on each Ingress request. Is used in auth_request directive on Ingress Nginx
+    url: http://oauth2-proxy.kube-system.svc.cluster.local:4180/oauth2/auth
+
+    # Public URL on which user will be redirected for authrorization
+    # Uncomment for custom public URL, otherwise auth.<ingress.globalDomain> will be used
+    # besided standart Nginx Ingress variables, escaped_request_uri is available too
+    # public_url: https://auth.my-company.com/oauth2/start?rd=https://$host$escaped_request_uri
+
+# Model API security
+modelApiSecurity:
+  # Should Model API security be closed by auth. or not
+  # Type: bool
+  enabled: true
+
+  # Type of auth. mechanism for Model API gateway
+  # Valid values are:
+  # - jwt
+  integration: jwt
+
+  # Detailed JWT configuration
+  jwt:
+    # Secret for JWT
+    # Type: string
+    secret: ~
+
+    # Default token's TTL in minutes
+    # Type: integer
+    defaultTokenTTLInMinutes: 120
+
+    # Maximum value of TTL in minutes
+    # This value is used in EDI to validate requests for token generation
+    # Type: integer or None
+    maxTokenTTLInMinutes: ~
+
+    # Default TTL end date
+    # Type: date sting, e.g. 2030-12-30T00:00:00
+    defaultTokenTTLEndDate: ~
+
+# Components metrics measurement
+# Measures models performance, components performance
+metrics:
+  # Is measurements enabled or not
+  enabled: false
+
+  # Namespaces where monitoring facilities live
+  namespace: monitoring
+
+  # StatsD configuration for metrics that requires StatsD format (e.g. model invocation metrics)
+  statsd:
+    # StatsD host
+    # Type: string
+    host: statsd-exporter.kube-monitoring.svc.cluster.local
+
+    # StatsD port
+    # Type: integer
+    port: 9125
+
+
+# Default VCS instances. Will be spawned on cluster start
+vcs: []
+# TODO: Sync with Vitaliy's code
+
+# Configuration of model building process
+modelBuilding:
+  # Docker Registry is required to persist results of model building process
+  dockerRegistry:
+    # Type of Docker Registry.
+    # Valid values are:
+    # - external - use external Docker Registry
+    type: external
+    # TODO: add "internal" variant - deploy and use internal Docker Registry with empheral disk (only for development purposes)
+
+    # Detailed configuration of external Docker Registry
+    external:
+      # Protocol
+      # Valid values are:
+      # - http
+      # - https
+      protocol: ~
+
+      # URL of Docker Registry
+      # Type: string
+      url: ~
+
+      # Credentials on Docker Registry
+      # Type: string
+      user: ~
+
+      # Credentials on Docker Registry
+      # Type: string
+      password: ~
+
+# Configuration of model execution process
+modelExecution:
+  # Limitations of model deployment pods
+  # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  limits:
+    cpu: 256m
+    mem: 256Mi
+
+# Feedback configuration
+feedback:
+  enabled: false
+
+  fluentd:
+    # This variable can be enabled to setup custom image name for fluentd
+    # customImage: custom-image:1.0
+
+    # Count of fluentd replicas
+    replicas: 1
+
+    # Resources for each instance
+    # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+    requests:
+      cpu: "300m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "1024Mi"
+
+    # Input port number
+    port: 24224
+
+  output:
+    # Where feedback data should be stored
+    # Only S3 is supported nowadays
+    # Valid values:
+    # s3 - AWS S3
+    # Type: string
+    target: s3
+
+    # Detail configuration for storing on S3
+    s3:
+      # S3 bucket name
+      # By default <.ingress.globalDomain>-feedback is used
+      customBucket: ~
+
+      # S3 region
+      # Type: string
+      region: "none"
+
+      # Path for data storing
+      # Type: string
+      path: "model_log/${tag}/${model_id}/${model_version}/year=%Y/month=%m/day=%d/"
+
+      # Slicing configuration
+      time_slice_format: "%Y%m%d%H"
+      time_slice_wait: "5m"
+
+      # Storage type and format
+      store_as: "json"
+      format: "json"
+
+      # Time key configuration
+      include_time_key: "true"
+      time_key: "time"
+
+      # Buffering (chunking)
+      buffering:
+        # Chunks length (window size)
+        timekey: 1m
+        # Delay for flush (after end of window)
+        timekey_wait: 0s
+        # Temporary buffering location
+        path: /tmp
+
+# Operator configuration
+operator:
+  server:
+    # This variable can be uncommented to setup custom image name for operator (server)
+    # customImage: custom-image:1.0
+
+    # Resources for each instance
+    # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+    limits:
+      cpu: "256m"
+      memory: "256Mi"
+    requests:
+      cpu: "128m"
+      memory: "128Mi"
+  builder:
+    # This variable can be uncommented to setup custom image name for operator (builder)
+    # customImage: custom-image:1.0
+
+# EDI server configuration
+edi:
+  # EDI could be disabled
+  enabled: true
+
+  # This variable can be uncommented to setup custom image name for operator (server)
+  # customImage: custom-image:1.0
+
+  # Count of EDI replicas
   replicas: 1
-  image:
-    repository: "legion/edi"
-    tag: "latest"
 
-  rbac: true
-
+  # Maximum number of retries for K8S API calls
   k8s_api_retry_number_max_limit: 10
+  # Delay between retries for K8S API calls
   k8s_api_retry_delay_sec: 3
 
-  ingress:
-    enabled: true
-    annotations: {}
-    domain:
-      partial: edi
-    tls:
-      enabled: true
-      autoSecretNameDeduction: true
+  # Resources for each instance
+  # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "100m"
+      memory: "512Mi"
 
+  ingress:
+    # Custom enabling/disabling of Ingress resource for EDI
+    # To use specific value, replace ~ with target value
+    # Type: bool
+    enabled: ~
+
+    # Annotations for ingress
+    # Will be added to global annotations (.ingress.annotations)
+    # Type: string->string map
+    annotations: {}
+
+    # Custom domain name
+    # By default domain name "edi.<..ingress.globalDomain>" is used
+    # To use specific value, replace ~ with target value
+    # Type: string
+    domain: ~
+
+    # Is TLS enabled for this Ingress or not
+    # By default global variable is used (.ingress.tlsEnabled)
+    # To use specific value, replace ~ with target value
+    # Type: string
+    tlsEnabled: ~
+
+    # Global TLS secret name
+    # By default global variable is used (.ingress.tlsSecretName)
+    # To use specific value, replace ~ with target value
+    # Type: string
+    tlsSecretName: ~
+
+# EDGE gateway
 edge:
+  # EDGE gateway could be disabled
   enabled: true
+
+  # This variable can be uncommented to setup custom image name for operator (server)
+  # customImage: custom-image:1.0
+
+  # Count of EDGE replicas
   replicas: 2
+
+  # Enable home (root) page of EDGE gateway
   enableHomePage: true
-  image:
-    repository: "legion/k8s-edge"
-    tag: "latest"
+
+  # Resources for each instance
+  # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "100m"
+      memory: "512Mi"
 
   ingress:
-    enabled: true
+    # Custom enabling/disabling of Ingress resource for EDGE
+    # To use specific value, replace ~ with target value
+    # Type: bool
+    enabled: ~
+
+    # Annotations for ingress
+    # Will be added to global annotations (.ingress.annotations)
+    # Type: string->string map
     annotations: {}
-    domain:
-      partial: edge
-    tls:
-      enabled: true
-      autoSecretNameDeduction: true
 
-metrics:
-  enabled: true
-  host: statsd-exporter.kube-monitoring.svc.cluster.local
-  port: 9125
+    # Custom domain name
+    # By default domain name "edge.<..ingress.globalDomain>" is used
+    # To use specific value, replace ~ with target value
+    # Type: string
+    domain: ~
 
-grafana:
-  enabled: true
-  adminUser: admin_user
-  adminPassword: admin_password
-  url: http://grafana.kube-monitoring.svc.cluster.local:80
+    # Is TLS enabled for this Ingress or not
+    # By default global variable is used (.ingress.tlsEnabled)
+    # To use specific value, replace ~ with target value
+    # Type: string
+    tlsEnabled: ~
 
-model_resources:
-  cpu: 256m
-  mem: 256Mi
-
-connections:
-  docker:
-    type: proxy
-    # http/https
-    protocol: ~
-    url: ~
-    user: ~
-    password: ~
-
-secrets:
-  token_ttl_minutes: "120"
-  max_token_ttl_minutes: ~
-  token_exp_datetime: ~
+    # Global TLS secret name
+    # By default global variable is used (.ingress.tlsSecretName)
+    # To use specific value, replace ~ with target value
+    # Type: string
+    tlsSecretName: ~
