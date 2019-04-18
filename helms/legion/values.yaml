@@ -1,23 +1,14 @@
 # Version of Legion
-legionVersion: 1.0.0
-
-# Target namespace to Install legion to
-namespace: default
+# Buy default .Chart.AppVersion version is used
+# legionVersion: "1.0"
 
 # Does cluster requires RBAC
 rbac: true
 
-# Configuration of used images
-# There are images for next <service>s
-# - edi
-# - edge
-# - operator
-# - fluentd
-images:
-  # Docker images registry
-  # This registry will be used for automatic docker image name deduction based on Legion naming for images
-  # Each image could be overrided mannualy in .<service>.customImage, please see .edi root section or other
-  registry: legionplatform
+# Docker images registry
+# This registry will be used for automatic docker image name deduction based on Legion naming for images
+# Each image could be overrided mannualy in .<service>.customImage, please see .edi root section or other
+imagesRegistry: legionplatform
 
 # Verbosity of loggin features in components
 # Valid values are:
@@ -34,7 +25,7 @@ logLevel: info
 ingress:
   # Global flag for Ingress enabling
   # Each Ingress could be configurred manually in .<service>.ingress.enabled
-  enabled: false
+  enabled: true
 
   # Root domain for auto-created Ingress domains.
   # Each domain could be configurred manually in .<service>.ingress.domain
@@ -48,7 +39,7 @@ ingress:
 
   # Global TLS flag
   # Each Ingress could be configurred manually in .<service>.ingress.tlsEnabled
-  tlsEnabled: false
+  tlsEnabled: true
 
   # Global TLS secret name
   # Each Ingress could be configurred manually in .<service>.ingress.tlsSecretName
@@ -89,7 +80,7 @@ modelApiSecurity:
   jwt:
     # Secret for JWT
     # Type: string
-    secret: ~
+    secret: example
 
     # Default token's TTL in minutes
     # Type: integer
@@ -97,12 +88,12 @@ modelApiSecurity:
 
     # Maximum value of TTL in minutes
     # This value is used in EDI to validate requests for token generation
-    # Type: integer or None
-    maxTokenTTLInMinutes: ~
+    # Type: integer
+    maxTokenTTLInMinutes: 60*24*365
 
     # Default TTL end date
     # Type: date sting, e.g. 2030-12-30T00:00:00
-    defaultTokenTTLEndDate: ~
+    defaultTokenTTLEndDate: "2030-12-30T00:00:00"
 
 # Components metrics measurement
 # Measures models performance, components performance
@@ -128,35 +119,35 @@ metrics:
 vcs: []
 # TODO: Sync with Vitaliy's code
 
-# Configuration of model building process
-modelBuilding:
-  # Docker Registry is required to persist results of model building process
-  dockerRegistry:
-    # Type of Docker Registry.
+# Model storage is a Docker Registry
+# Credentials are required for gathering model information
+modelStorage:
+  # Type of Docker Registry.
+  # Valid values are:
+  # - external - use external Docker Registry
+  type: external
+  # TODO: add "internal" variant - deploy and use internal Docker Registry with empheral disk (only for development purposes)
+
+  # Detailed configuration of external Docker Registry
+  external:
+    # Protocol
     # Valid values are:
-    # - external - use external Docker Registry
-    type: external
-    # TODO: add "internal" variant - deploy and use internal Docker Registry with empheral disk (only for development purposes)
+    # - http
+    # - https
+    protocol: ~
 
-    # Detailed configuration of external Docker Registry
-    external:
-      # Protocol
-      # Valid values are:
-      # - http
-      # - https
-      protocol: ~
+    # URL of Docker Registry
+    # Type: string
+    url: ~
 
-      # URL of Docker Registry
-      # Type: string
-      url: ~
+    # Credentials on Docker Registry
+    # Type: string
+    user: example
 
-      # Credentials on Docker Registry
-      # Type: string
-      user: ~
+    # Credentials on Docker Registry
+    # Type: string
+    password: example
 
-      # Credentials on Docker Registry
-      # Type: string
-      password: ~
 
 # Configuration of model execution process
 modelExecution:
@@ -262,9 +253,9 @@ edi:
   replicas: 1
 
   # Maximum number of retries for K8S API calls
-  k8s_api_retry_number_max_limit: 10
+  k8sApiRetryNumberMaxLimit: 10
   # Delay between retries for K8S API calls
-  k8s_api_retry_delay_sec: 3
+  k8sApiRetryDelaySec: 3
 
   # Resources for each instance
   # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
@@ -278,9 +269,9 @@ edi:
 
   ingress:
     # Custom enabling/disabling of Ingress resource for EDI
-    # To use specific value, replace ~ with target value
+    # To use specific value, uncomment and replace ~ with target value
     # Type: bool
-    enabled: ~
+    # enabled: ~
 
     # Annotations for ingress
     # Will be added to global annotations (.ingress.annotations)
@@ -291,19 +282,19 @@ edi:
     # By default domain name "edi.<..ingress.globalDomain>" is used
     # To use specific value, replace ~ with target value
     # Type: string
-    domain: ~
+    # domain: ~
 
     # Is TLS enabled for this Ingress or not
     # By default global variable is used (.ingress.tlsEnabled)
     # To use specific value, replace ~ with target value
     # Type: string
-    tlsEnabled: ~
+    # tlsEnabled: false
 
     # Global TLS secret name
     # By default global variable is used (.ingress.tlsSecretName)
     # To use specific value, replace ~ with target value
     # Type: string
-    tlsSecretName: ~
+    # tlsSecretName: ~
 
 # EDGE gateway
 edge:
