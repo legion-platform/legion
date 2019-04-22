@@ -16,127 +16,37 @@
 """
 EDI client
 """
-import abc
+import argparse
 import json
 import logging
-import typing
 from urllib.parse import urlparse
+import typing
 
 import requests
 import requests.exceptions
 
 from legion.sdk import config
 from legion.sdk.containers import local_deploy
-from legion.sdk.containers.definitions import ModelDeploymentDescription
 from legion.sdk.containers.docker import build_docker_client
-from legion.sdk.definitions import EDI_VERSION, EDI_INSPECT, EDI_INFO, EDI_DEPLOY, EDI_UNDEPLOY, EDI_SCALE, \
-    EDI_GENERATE_TOKEN
+from legion.sdk.definitions import EDI_VERSION, MODEL_TOKEN_TOKEN_URL
 
 LOGGER = logging.getLogger(__name__)
 
 
-class EdiClient(metaclass=abc.ABCMeta):
-    """
-    Base edi client
-    """
+class WrongHttpStatusCode(Exception):
 
-    @abc.abstractmethod
-    def inspect(self, model=None, version=None):
+    def __init__(self, status_code: int, http_result: typing.Dict[str, str]):
         """
-        Perform inspect query on EDI server
-
-        :param model: model id
-        :type model: str
-        :param version: (Optional) model version
-        :type version: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
+        Wrong Http Status Code
+        :param status_code: HTTP status code
+        :param http_result: HTTP data
         """
-        pass
+        super().__init__(f'Got error from server: {http_result["message"]}')
 
-    @abc.abstractmethod
-    def info(self):
-        """
-        Perform info query on EDI server
-
-        :return: dict[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
-        """
-        pass
-
-    @abc.abstractmethod
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, local_port=None,
-               memory=None, cpu=None):
-        """
-        Deploy API endpoint
-
-        :param image: Docker image for deploy (for kubernetes deployment and local pull)
-        :type image: str
-        :param model_iam_role: (Optional) IAM role to be used at model pod (for cluster mode deploy)
-        :type model_iam_role: str
-        :param count: (Optional) count of pods to create (for cluster mode deploy)
-        :type count: int
-        :param livenesstimeout: (Optional) model pod startup timeout (used in liveness probe) (for cluster mode deploy)
-        :type livenesstimeout: int
-        :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
-        :type readinesstimeout: int
-        :param local_port: (Optional) port to deploy model on (for local mode deploy)
-        :type local_port: int
-        :param memory: limit memory for model deployment
-        :type memory: str
-        :param cpu: limit cpu for model deployment
-        :type cpu: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        pass
-
-    @abc.abstractmethod
-    def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
-        """
-        Undeploy API endpoint
-
-        :param model: model id
-        :type model: str
-        :param grace_period: grace period for removing
-        :type grace_period: int
-        :param version: (Optional) model version
-        :type version: str
-        :param ignore_not_found: (Optional) ignore if cannot find models
-        :type ignore_not_found: bool
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        pass
-
-    @abc.abstractmethod
-    def scale(self, model, count, version=None):
-        """
-        Scale model
-
-        :param model: model id
-        :type model: str
-        :param count: count of pods to create
-        :type count: int
-        :param version: (Optional) model version
-        :type version: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        pass
-
-    @abc.abstractmethod
-    def get_token(self, model_id, model_version, expiration_date):
-        """
-        Get API token
-
-        :param model_id: model ID
-        :type model_id: str
-        :param model_version: model version
-        :type model_version: str
-        :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
-        :type expiration_date: str
-        :return: str -- return API Token
-        """
-        pass
+        self.status_code = status_code
 
 
-class RemoteEdiClient(EdiClient):
+class RemoteEdiClient:
     """
     EDI client
     """
@@ -172,10 +82,9 @@ class RemoteEdiClient(EdiClient):
         :type cookies: dict[str, str] or None
         :return: :py:class:`requests.Response` -- response
         """
-        request_data = {'params' if action == 'GET' else 'data': data}
-        return requests.request(action.lower(), url, headers=headers, cookies=cookies, **request_data)
+        return requests.request(action.lower(), url, headers=headers, cookies=cookies, json=data)
 
-    def _query(self, url_template, payload=None, action='GET'):
+    def query(self, url_template, payload=None, action='GET'):
         """
         Perform query to EDI server
 
@@ -230,138 +139,11 @@ class RemoteEdiClient(EdiClient):
         except ValueError as json_decode_exception:
             raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
-        if isinstance(answer, dict) and answer.get('error', False):
-            exception = answer.get('exception')
-            raise Exception('Got error from server: {!r}'.format(exception))
-
-        if response.status_code != 200:
-            raise Exception('Server returned wrong HTTP code (not 200) without error flag')
+        if not response.ok:
+            raise WrongHttpStatusCode(response.status_code, answer)
 
         LOGGER.debug('Query has been completed, parsed and validated')
         return answer
-
-    @staticmethod
-    def parse_deployments(response) -> typing.List[ModelDeploymentDescription]:
-        """
-        Parse model deployments from response
-
-        :param response: EDI server response
-        :type response: list[dict[str, any]]
-        :return: parsed model deployments
-        """
-        return [ModelDeploymentDescription.build_from_json(x) for x in response]
-
-    def inspect(self, model=None, version=None):
-        """
-        Perform inspect query on EDI server
-
-        :param model: model id
-        :type model: str
-        :param version: (Optional) model version
-        :type version: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
-        """
-        payload = {}
-        if model:
-            payload['model'] = model
-        if version:
-            payload['version'] = version
-
-        return self.parse_deployments(self._query(EDI_INSPECT, payload=payload))
-
-    def info(self):
-        """
-        Perform info query on EDI server
-
-        :return: dict[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
-        """
-        return self._query(EDI_INFO)
-
-    def deploy(self, image, model_iam_role=None, count=1, livenesstimeout=2, readinesstimeout=2, memory=None, cpu=None,
-               **kwargs):  # pylint: disable=W0221
-        """
-        Deploy API endpoint
-
-        :param image: Docker image for deploy (for kubernetes deployment and local pull)
-        :type image: str
-        :param model_iam_role: (Optional) IAM role to be used at model pod (for cluster mode deploy)
-        :type model_iam_role: str
-        :param count: (Optional) count of pods to create (for cluster mode deploy)
-        :type count: int
-        :param livenesstimeout: (Optional) model pod startup timeout (used in liveness probe) (for cluster mode deploy)
-        :type livenesstimeout: int
-        :param readinesstimeout: (Optional) model pod startup timeout (used readiness probe) (for cluster mode deploy)
-        :type readinesstimeout: int
-        :param memory: limit memory for model deployment
-        :type memory: str
-        :param cpu: limit cpu for model deployment
-        :type cpu: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        payload = {
-            'image': image,
-            'model_iam_role': model_iam_role
-        }
-        if count is not None:
-            payload['count'] = count
-        if livenesstimeout:
-            payload['livenesstimeout'] = livenesstimeout
-        if readinesstimeout:
-            payload['readinesstimeout'] = readinesstimeout
-        if cpu:
-            payload['cpu'] = cpu
-        if memory:
-            payload['memory'] = memory
-
-        return self.parse_deployments(self._query(EDI_DEPLOY, action='POST', payload=payload))
-
-    def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
-        """
-        Undeploy API endpoint
-
-        :param model: model id
-        :type model: str
-        :param grace_period: grace period for removing
-        :type grace_period: int
-        :param version: (Optional) model version
-        :type version: str
-        :param ignore_not_found: (Optional) ignore if cannot find models
-        :type ignore_not_found: bool
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        payload = {
-            'model': model,
-            'ignore_not_found': ignore_not_found
-        }
-
-        if grace_period:
-            payload['grace_period'] = grace_period
-
-        if version:
-            payload['version'] = version
-
-        return self.parse_deployments(self._query(EDI_UNDEPLOY, action='POST', payload=payload))
-
-    def scale(self, model, count, version=None):
-        """
-        Scale model
-
-        :param model: model id
-        :type model: str
-        :param count: count of pods to create
-        :type count: int
-        :param version: (Optional) model version
-        :type version: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        payload = {
-            'model': model,
-            'count': count
-        }
-        if version:
-            payload['version'] = version
-
-        return self.parse_deployments(self._query(EDI_SCALE, action='POST', payload=payload))
 
     def get_token(self, model_id, model_version, expiration_date=None):
         """
@@ -380,22 +162,24 @@ class RemoteEdiClient(EdiClient):
         if expiration_date:
             payload['expiration_date'] = expiration_date
 
-        response = self._query(EDI_GENERATE_TOKEN, action='POST', payload=payload)
+        response = self.query(MODEL_TOKEN_TOKEN_URL, action='POST', payload=payload)
         if response and 'token' in response:
             return response['token']
 
-    def __repr__(self):
+    def info(self):
         """
-        Get string representation of object
+        Perform info query on EDI server
 
-        :return: str -- string representation
+        :return:
         """
-        return "EdiClient({!r})".format(self._base)
+        try:
+            return self.query("/health")
+        except ValueError:
+            pass
 
-    __str__ = __repr__
 
+class LocalEdiClient:
 
-class LocalEdiClient(EdiClient):
     def inspect(self, model=None, version=None):
         """
         Perform inspect query on EDI server
@@ -418,7 +202,7 @@ class LocalEdiClient(EdiClient):
         LOGGER.debug('Returning {} as a information for local deployment server')
         return {}
 
-    def deploy(self, image, local_port=None, **kwargs):  # pylint: disable=W0221
+    def deploy(self, image, local_port=None):
         """
         Deploy API endpoint
 
@@ -431,7 +215,7 @@ class LocalEdiClient(EdiClient):
         client = build_docker_client()
         return local_deploy.deploy_model(client, image, local_port=local_port)
 
-    def undeploy(self, model, grace_period=0, version=None, ignore_not_found=False):
+    def undeploy(self, model, version=None, ignore_not_found=False):
         """
         Undeploy API endpoint
 
@@ -505,20 +289,15 @@ def add_arguments_for_wait_operation(parser):
                         type=int, help='timeout in s. for wait (if no-wait is off)')
 
 
-def build_client(args=None):
+def build_client(args: argparse.Namespace = None) -> RemoteEdiClient:
     """
-    Build EDI client from from ENV and from command line arguments
+    Build Remote EDI client from from ENV and from command line arguments
 
     :param args: (optional) command arguments with .namespace
-    :type args: :py:class:`argparse.Namespace`
-    :return: :py:class:`legion.external.edi.EdiClient` -- EDI client
     """
     host, token = None, None
 
     if args:
-        if 'local' in args and args.local:
-            return LocalEdiClient()
-
         if args.edi:
             host = args.edi
 
@@ -529,15 +308,9 @@ def build_client(args=None):
         host = host or config.EDI_URL
         token = token or config.EDI_TOKEN
 
-    # if not host:
-    #     if config.NAMESPACE:
-    #         try:
-    #             host = legion.k8s.Enclave(config.NAMESPACE).edi_service.url
-    #         except Exception as exc_info:
-    #             LOGGER.warning('Cannot get EDI URL from K8S API: {}'.format(exc_info))
-
     if host:
         client = RemoteEdiClient(host, token)
     else:
         raise Exception('EDI endpoint is not configured')
+
     return client

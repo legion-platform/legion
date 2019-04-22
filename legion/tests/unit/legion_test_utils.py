@@ -20,24 +20,17 @@ import docker
 import docker.client
 import docker.errors
 import docker.types
-import flask
-from flask import Response
-from flask.testing import FlaskClient
 import requests
 import requests.adapters
 import responses
 
 from legion.sdk import config
-from legion.sdk.clients.edi import RemoteEdiClient
 from legion.sdk.clients.model import ModelClient
 from legion.sdk.containers import headers
 from legion.sdk.containers.docker import build_docker_client, generate_docker_labels_for_container
-from legion.services.k8s.enclave import Enclave
 from legion.sdk.utils import remove_directory, ensure_function_succeed
 from legion.toolchain import model
 from legion.toolchain.server import pyserve
-from legion.services.edi import server as edi_server
-from legion.services import build_services
 
 LOGGER = logging.getLogger(__name__)
 TEST_MODELS_LOCATION = os.path.join(os.path.dirname(__file__), 'test_models')
@@ -935,118 +928,6 @@ def build_requests_mock_function(test_client):
         return build_requests_reponse_from_flask_client_response(test_response, url)
 
     return func
-
-
-class EDITestServer:
-    """
-    Context manager for testing EDI server
-    """
-
-    def __init__(self, enclave_name='debug-enclave'):
-        """
-        Create context
-        """
-        self._enclave_name = enclave_name
-
-        self.application = None
-        self.http_client: FlaskClient = None
-        self.edi_client: RemoteEdiClient = None
-
-    def __enter__(self):
-        """
-        Enter into context
-
-        :return: self
-        """
-        additional_environment = {
-            'CLUSTER_SECRETS_PATH': os.path.join(TEST_DATA_LOCATION, 'secrets'),
-            'JWT_CONFIG_PATH': os.path.join(TEST_DATA_LOCATION, 'jwt_config')
-        }
-
-        test_enclave = Enclave(self._enclave_name)
-        test_enclave._data_loaded = True
-
-        with patch_config(additional_environment), \
-             patch('legion.services.k8s.utils.get_current_namespace', lambda *x: self._enclave_name), \
-             patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave), \
-             patch_environ(additional_environment):  # noqa
-            self.application = edi_server.init_application(None)
-
-        self.application.testing = True
-        self.http_client = self.application.test_client()
-        self.edi_client = RemoteEdiClient('')
-        self.edi_client._request = build_requests_mock_function(self.http_client)
-
-        return self
-
-    def __exit__(self, *args):
-        """
-        Exit
-
-        :param args: list of arguements
-        :return: None
-        """
-        pass
-
-
-class DockerBuildServer:
-    """
-    Context manager for testing Docker build server
-    """
-
-    def __init__(self):
-        """
-        Create context
-        """
-        self.application: flask.Flask = None
-        self.http_client: FlaskClient = None
-
-    @staticmethod
-    def _emulates_response() -> None:
-        """
-        This function adds functions that there are in the response of the request library
-
-        """
-        Response.json = lambda resp: json.loads(resp.data)
-        Response.ok = property(lambda resp: resp.status_code < 400)
-
-    @staticmethod
-    def _unemulates_response() -> None:
-        """
-        This function adds functions that there are in the response of the request library
-
-        """
-        del Response.json
-        del Response.ok
-
-    def __enter__(self) -> 'DockerBuildServer':
-        """
-        Enter into context
-
-        :return: self
-        """
-        self._emulates_response()
-        enclave_name = 'test'
-        test_enclave = Enclave(enclave_name)
-        test_enclave._data_loaded = True
-
-        with patch('legion.services.k8s.utils.get_current_namespace', lambda *x: enclave_name), \
-             patch('legion.services.edi.server.get_application_enclave', lambda *x: test_enclave):
-            self.application = build_services.init_application()
-
-        self.application.testing = True
-        self.http_client = self.application.test_client()
-
-        return self
-
-    def __exit__(self, *args):
-        """
-        Exit
-
-        :param args: list of arguments
-        :return: None
-        """
-        self._unemulates_response()
 
 
 class ModelLocalContainerExecutionContext:

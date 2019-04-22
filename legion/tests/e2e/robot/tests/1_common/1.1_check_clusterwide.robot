@@ -34,7 +34,7 @@ Grafana preferences contains main dashboard
 
 Check Vertical Scailing
     [Documentation]  Start the fat pod to test vertical scailing
-    [Tags]  k8s  scaling  infra  kek
+    [Tags]  k8s  scaling  infra
     [Setup]  Delete fat pod
     [Teardown]  Delete fat pod
     Get cluster nodes and their count    before

@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"log"
+	"regexp"
+	"strings"
 )
 
 type Model struct {
@@ -17,10 +19,14 @@ type Model struct {
 }
 
 const (
-	ManifestFile  = "manifest.json"
-	ModelImageKey = "model-image"
-	ModelIDKey = "model-id"
+	ManifestFile    = "manifest.json"
+	ModelImageKey   = "model-image"
+	ModelIDKey      = "model-id"
 	ModelVersionKey = "model-version"
+)
+
+var (
+	invalidCharsRegexp = regexp.MustCompile("[^a-zA-Z0-9-]")
 )
 
 func ExtractModel(modelFile string) (model Model, err error) {
@@ -62,4 +68,15 @@ func ExtractModel(modelFile string) (model Model, err error) {
 
 func BuildModelImageName(dockerRegistry string, imagePrefix string, modelID string, modelVersion string) string {
 	return fmt.Sprintf("%s/%s/%s:%s", dockerRegistry, imagePrefix, modelID, modelVersion)
+}
+
+func ConvertTok8sName(modelId string, modelVersion string) string {
+	name := fmt.Sprintf("model-%s-%s", modelId, modelVersion)
+
+	invalidDelimiters := []string{" ", "_", "+", "."}
+	for _, char := range invalidDelimiters {
+		name = strings.Replace(name, char, "-", -1)
+	}
+
+	return invalidCharsRegexp.ReplaceAllString(name, "")
 }

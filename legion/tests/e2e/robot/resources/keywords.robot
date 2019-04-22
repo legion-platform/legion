@@ -41,32 +41,29 @@ Shell
 
     # --------- INSPECT COMMAND SECTION -----------
 Run EDI inspect enclave and check result
-    [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
-    [Arguments]           ${enclave}    ${expected_rc}   ${expected_output}
-    ${result}=            Run Process without PIPE   legionctl --verbose inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
-    Log                   stdout = ${result.stdout}
-    Log                   stderr = ${result.stderr}
+    [Documentation]  run legionctl 'md get command', logs result and return dict with return code and output
+    [Arguments]           ${expected_rc}   ${expected_output}
+    ${result}=  Shell   legionctl --verbose md get    shell=True
     Should Be Equal As Integers  ${result.rc}        ${expected_rc}
     Should contain               ${result.stdout}    ${expected_output}
 
 Run EDI inspect
-    [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
-    [Arguments]           ${enclave}
-    ${result}=            Run Process without PIPE   legionctl --verbose inspect --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
+    [Documentation]  run legionctl 'md get', logs result and return dict with return code and output
+    ${result}=            Run Process without PIPE   legionctl --verbose md get --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
 
 Run EDI inspect by model id
-    [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
-    [Arguments]           ${enclave}    ${model_id}
+    [Documentation]  run legionctl 'md get', logs result and return dict with return code and output
+    [Arguments]           ${model_id}
     ${result}=            Run Process without PIPE   legionctl --verbose inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
 
 Run EDI inspect by model version
-    [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
+    [Documentation]  run legionctl 'md get', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_ver}
     ${result}=            Run Process without PIPE   legionctl --verbose inspect --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
     Log                   stdout = ${result.stdout}
@@ -74,7 +71,7 @@ Run EDI inspect by model version
     [Return]              ${result}
 
 Run EDI inspect by model id and model version
-    [Documentation]  run legionctl 'inspect command', logs result and return dict with return code and output
+    [Documentation]  run legionctl 'md get', logs result and return dict with return code and output
     [Arguments]           ${enclave}    ${model_id}     ${model_ver}
     ${result}=            Run Process without PIPE   legionctl --verbose inspect --model-id ${model_id} --model-version ${model_ver} --format column --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
     Log                   stdout = ${result.stdout}
@@ -83,16 +80,15 @@ Run EDI inspect by model id and model version
 
 Run EDI inspect with parse
     [Documentation]  get parsed inspect result for validation and logs it
-    [Arguments]           ${enclave}
-    ${edi_state} =        Run EDI inspect                                ${enclave}
+    ${edi_state} =        Shell  legionctl --verbose md get
     ${parsed} =           Parse edi inspect columns info                 ${edi_state.stdout}
     Log                   ${parsed}
     [Return]              ${parsed}
 
 Run EDI inspect with parse by model id
     [Documentation]  get parsed inspect result for validation and logs it
-    [Arguments]           ${enclave}        ${model_id}
-    ${edi_state} =        Run EDI inspect by model id    ${enclave}      ${model_id}
+    [Arguments]           ${model_id}
+    ${edi_state} =        Shell  legionctl --verbose md get --model-id ${model_id}
     ${parsed} =           Parse edi inspect columns info                 ${edi_state.stdout}
     Log                   ${parsed}
     [Return]              ${parsed}
@@ -100,58 +96,49 @@ Run EDI inspect with parse by model id
     # --------- DEPLOY COMMAND SECTION -----------
 Run EDI deploy
     [Documentation]  run legionctl 'deploy command', logs result and return dict with return code and output(for exceptions)
-    [Arguments]           ${enclave}    ${image}
-    ${result}=            Run Process without PIPE   legionctl --verbose deploy ${image} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
+    [Arguments]           ${name}  ${image}
+    ${result}=            Run Process without PIPE   legionctl --verbose md create ${name} --image ${image}  shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
 
 Run EDI deploy with scale
     [Documentation]  run legionctl 'deploy command with scale option', logs result and return dict with return code and output(for exceptions)
-    [Arguments]           ${enclave}    ${image}    ${scale_count}
-    ${result}=            Run Process without PIPE   legionctl --verbose deploy ${image} --scale ${scale_count} --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
+    [Arguments]           ${name}    ${scale_count}
+    ${result}=            Run Process without PIPE   legionctl --verbose md create ${name} --replicas ${scale_count}  shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
 
 Run EDI deploy and check model started
-    [Arguments]           ${enclave}     ${image}      ${model_id}   ${model_ver}
+    [Arguments]           ${name}     ${image}      ${model_id}   ${model_ver}
     Log  ${DEX_TOKEN}
-    ${edi_state}=   Run EDI deploy       ${enclave}              ${image}
+    ${edi_state}=   Shell  legionctl --verbose md create ${name} --image ${image}
     Should Be Equal As Integers          ${edi_state.rc}         0
-    ${response}=    Check model started  ${enclave}              ${model_id}             ${model_ver}
-    Should contain                       ${response}             "model_version": "${model_ver}"
+    ${response}=    Check model started  ${model_id}             ${model_ver}
+    Should contain                       ${response}             'model_version': '${model_ver}'
 
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy by model version and check
     [Timeout]       2 min
-    [Arguments]           ${enclave}    ${model_id}    ${model_ver}    ${model_image}
-    ${resp_dict}=                Run EDI undeploy with version  ${enclave}   ${model_id}    ${model_ver}
+    [Arguments]           ${model_id}    ${model_version}    ${model_image}
+    ${resp_dict}=                Shell  legionctl --verbose md delete --model-id ${model_id} --model-verson ${model_version}
     Should Be Equal As Integers  ${resp_dict.rc}        0
-    ${resp_dict} =               Run EDI inspect        ${enclave}
+    ${resp_dict} =               Shell  legionctl --verbose md get
     Should Be Equal As Integers  ${resp_dict.rc}        0
     Should not contain           ${resp_dict.stdout}    ${model_image}
 
 Run EDI undeploy model without version and check
-    [Arguments]           ${enclave}    ${model_id}
-    ${edi_state}=                Run EDI undeploy without version  ${enclave}   ${model_id}
+    [Arguments]           ${md_name}
+    ${edi_state}=                Shell  legionctl --verbose md delete ${md_name} --ignore-not-found
     Should Be Equal As Integers  ${edi_state.rc}        0
-    Should not contain           ${edi_state.stdout}    ${model_id}
-    ${edi_state} =               Run EDI inspect        ${enclave}
+    ${edi_state} =               Shell  legionctl --verbose md get
     Should Be Equal As Integers  ${edi_state.rc}        0
-    Should not contain           ${edi_state.stdout}    ${model_id}
+    Should not contain           ${edi_state.stdout}    ${md_name}
 
 Run EDI undeploy with version
     [Arguments]           ${enclave}    ${model_id}  ${model_version}
     ${result}=            Run Process without PIPE   legionctl --verbose undeploy ${model_id} --model-version ${model_version} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"     shell=True
-    Log                   stdout = ${result.stdout}
-    Log                   stderr = ${result.stderr}
-    [Return]              ${result}
-
-Run EDI undeploy without version
-    [Documentation]  run legionctl 'undeploy command', logs result and return dict with return code and output(for exceptions)
-    [Arguments]           ${enclave}    ${model_id}
-    ${result}=            Run Process without PIPE   legionctl --verbose undeploy ${model_id} --ignore-not-found --edi ${HOST_PROTOCOL}://edi-${enclave}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"    shell=True
     Log                   stdout = ${result.stdout}
     Log                   stderr = ${result.stderr}
     [Return]              ${result}
@@ -181,22 +168,19 @@ Build enclave EDGE URL
 
 Get token from EDI
     [Documentation]  get token from EDI for the EDGE session
-    [Arguments]           ${enclave}    ${model_id}    ${model_version}
-    ${resp} =             Run Process without PIPE  legionctl generate-token --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --model-id ${model_id} --model-version ${model_version} --token "${DEX_TOKEN}"    shell=True
+    [Arguments]           ${model_id}    ${model_version}
+    ${resp} =             Shell  legionctl generate-token --model-id ${model_id} --model-version ${model_version}
     Should be equal as integers       ${resp.rc}  0
-    Log                   stdout = ${resp.stdout}
-    Log                   stderr = ${resp.stderr}
     Set Suite Variable    ${TOKEN}   ${resp.stdout}
 
 Check model started
     [Documentation]  check if model run in container by http request
-    [Arguments]           ${enclave}   ${model_id}  ${model_ver}
-    Log                   request url is ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info
-                          Get token from EDI    ${enclave}   ${model_id}   ${model_ver}
-    ${resp}=              Check valid http response   ${HOST_PROTOCOL}://edge-${enclave}.${HOST_BASE_DOMAIN}/api/model/${model_id}/${model_ver}/info    token=${TOKEN}
-    Log                   ${resp}
-    Should not be empty   ${resp}
-    [Return]              ${resp}
+    [Arguments]           ${model_id}  ${model_version}
+    ${resp}=              Shell  legionctl --verbose model info --model-id ${model_id} --model-version ${model_version}
+    Should be equal       ${resp.rc}  ${0}
+    Log                   ${resp.stdout}
+    Should not be empty   ${resp.stdout}
+    [Return]              ${resp.stdout}
 
 Invoke deployed model
     [Documentation]  call model invoke endpoint
@@ -319,13 +303,10 @@ Validate model feedback ID and version
     Should Be Equal                ${actual_model_version}   ${excpected_model_version}
 
 Verify model info from edi
-    [Arguments]      ${target_model}       ${model_id}        ${model_image}      ${model_version}    ${scale_num}
-    Should Be Equal  ${target_model[0]}    ${model_id}        invalid model id
-    Should Be Equal  ${target_model[1]}    ${model_version}   invalid model version
-    Should Be Equal  ${target_model[2]}    cluster            invalid deployment mode name
-    Should Be Equal  ${target_model[5]}    ${model_image}     invalid model image
-    Should Be Equal  ${target_model[6]}    ${scale_num}       invalid actual scales
-    Should Be Equal  ${target_model[7]}    ${scale_num}       invalid desired scale
+    [Arguments]      ${target_model}       ${model_name}        ${model_state}      ${model_replicas}
+    Should Be Equal  ${target_model[0]}    ${model_name}        invalid model name
+    Should Be Equal  ${target_model[1]}    ${model_state}       invalid model state
+    Should Be Equal  ${target_model[2]}    ${model_replicas}    invalid model replicas
 
 Check if all enclave domains are registered
     [Arguments]             ${enclave}
@@ -374,3 +355,9 @@ Secured component domain should be accessible by valid credentials
     ${auth_page} =   Get From Dictionary   ${response}    response_text
     Should contain   ${auth_page}    ${component}
     Should not contain   ${auth_page}    Invalid Email Address and password
+
+Login to the edi and edge
+    ${res}=  Shell  legionctl --verbose login --edi ${HOST_PROTOCOL}://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --token "${DEX_TOKEN}"
+    Should be equal  ${res.rc}  ${0}
+    ${res}=  Shell  legionctl config set MODEL_SERVER_URL ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}
+    Should be equal  ${res.rc}  ${0}

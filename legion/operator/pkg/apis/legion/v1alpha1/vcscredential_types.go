@@ -37,7 +37,7 @@ type VCSCredentialSpec struct {
 	// Creds for VCS. Is not required. In case of GIT should be base64-encoded private key.
 	Credential string `json:"credential,omitempty"`
 	// Public keys in base64 format for ssh know hosts. You can gather it using "ssh-keyscan"
-	PublicKey string  `json:"publicKey,omitempty"`
+	PublicKey string `json:"publicKey,omitempty"`
 }
 
 // VCSCredentialStatus defines the observed state of VCSCredential

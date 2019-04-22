@@ -21,6 +21,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -35,12 +36,11 @@ const (
 )
 
 type ModelBuilder struct {
-	config    legion.BuilderConfig
 	clientset *kubernetes.Clientset
 	k8sConfig *rest.Config
 }
 
-func NewModelBuilder(config legion.BuilderConfig) (*ModelBuilder, error) {
+func NewModelBuilder() (*ModelBuilder, error) {
 	k8sConfig, err := rest.InClusterConfig()
 	if err != nil {
 		log.Error(err, "Can't create k8s config")
@@ -55,7 +55,6 @@ func NewModelBuilder(config legion.BuilderConfig) (*ModelBuilder, error) {
 	}
 
 	return &ModelBuilder{
-		config:    config,
 		clientset: clientset,
 		k8sConfig: k8sConfig,
 	}, nil
@@ -67,14 +66,20 @@ func NewModelBuilder(config legion.BuilderConfig) (*ModelBuilder, error) {
 //   3) Extract model information from model file and save in annotations of current pod
 //   3) Launch legionctl command to build a model docker image
 func (mb *ModelBuilder) Start() (err error) {
-	err = utils.CloneUserRepo(mb.config.SharedDirPath, mb.config.RepositoryURL, mb.config.GitSSHKeyPath, mb.config.Reference)
+	err = utils.CloneUserRepo(
+		viper.GetString(legion.SharedDirPath),
+		viper.GetString(legion.RepositoryURL),
+		viper.GetString(legion.GitSSHKeyPath),
+		viper.GetString(legion.Reference),
+	)
 	if err != nil {
 		log.Error(err, "Error occurs during cloning project")
 		return err
 	}
 
 	commands := []string{
-		"/bin/bash", "-c", fmt.Sprintf("cd %s && %s", mb.config.SharedDirPath, mb.config.Model.Command),
+		"/bin/bash", "-c",
+		fmt.Sprintf("cd %s && %s", viper.GetString(legion.SharedDirPath), viper.GetString(legion.ModelCommand)),
 	}
 	err = mb.execInModelPod(commands)
 	if err != nil {
@@ -82,7 +87,7 @@ func (mb *ModelBuilder) Start() (err error) {
 		return err
 	}
 
-	model, err := legion.ExtractModel(mb.config.Model.FilePath)
+	model, err := legion.ExtractModel(viper.GetString(legion.ModelFile))
 	if err != nil {
 		log.Error(err, "Can't extract model from manifest file")
 		return err
@@ -98,8 +103,8 @@ func (mb *ModelBuilder) Start() (err error) {
 }
 
 func (mb *ModelBuilder) updateAnnotations(newAnnotations map[string]string) error {
-	podApi := mb.clientset.CoreV1().Pods(mb.config.Namespace)
-	pod, err := podApi.Get(mb.config.PodName, metav1.GetOptions{})
+	podApi := mb.clientset.CoreV1().Pods(viper.GetString(legion.Namespace))
+	pod, err := podApi.Get(viper.GetString(legion.PodName), metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Getting the current pod")
 		return err
@@ -121,8 +126,9 @@ func (mb *ModelBuilder) updateAnnotations(newAnnotations map[string]string) erro
 }
 
 func (mb *ModelBuilder) execInModelPod(commands []string) (err error) {
-	stdout, stderr, err := utils.ExecToPodThroughAPI(commands, "model", mb.config.PodName,
-		mb.config.Namespace)
+	stdout, stderr, err := utils.ExecToPodThroughAPI(
+		commands, "model", viper.GetString(legion.PodName), viper.GetString(legion.Namespace),
+	)
 
 	log.Info(fmt.Sprintf("Try to execute the following command: '%+v' in a model pod", commands))
 
@@ -138,7 +144,9 @@ func (mb *ModelBuilder) execInModelPod(commands []string) (err error) {
 }
 
 func (mb *ModelBuilder) getModelContainerID() (result string, err error) {
-	pod, err := mb.clientset.CoreV1().Pods(mb.config.Namespace).Get(mb.config.PodName, metav1.GetOptions{})
+	pod, err := mb.clientset.CoreV1().Pods(viper.GetString(legion.Namespace)).Get(
+		viper.GetString(legion.PodName), metav1.GetOptions{},
+	)
 
 	if err != nil {
 		log.Error(err, "Can't get pod %s", pod.Name)
@@ -162,7 +170,7 @@ func (mb *ModelBuilder) buildModel(model legion.Model) (err error) {
 	}
 
 	localImageTag := fmt.Sprintf("legion_ci_%s_%s_%d", model.ID, model.Version, rand.Int())
-	externalImageTag := legion.BuildModelImageName(mb.config.DockerRegistry, mb.config.ResultImagePrefix,
+	externalImageTag := legion.BuildModelImageName(viper.GetString(legion.DockerRegistry), viper.GetString(legion.ImagePrefix),
 		model.ID, model.Version)
 
 	// It's a hack to return the model information
@@ -176,10 +184,10 @@ func (mb *ModelBuilder) buildModel(model legion.Model) (err error) {
 	}
 
 	legionctlCmd := fmt.Sprintf("legionctl --verbose build --container-id %s --docker-image-tag %s "+
-		"--push-to-registry %s --model-file %s", containerID, localImageTag, externalImageTag, mb.config.Model.FilePath,
+		"--push-to-registry %s --model-file %s", containerID, localImageTag, externalImageTag, viper.GetString(legion.ModelFile),
 	)
 	commands := []string{
-		"/bin/bash", "-c", fmt.Sprintf("cd %s && %s", mb.config.SharedDirPath, legionctlCmd),
+		"/bin/bash", "-c", fmt.Sprintf("cd %s && %s", viper.GetString(legion.SharedDirPath), legionctlCmd),
 	}
 
 	if err = mb.execInModelPod(commands); err != nil {

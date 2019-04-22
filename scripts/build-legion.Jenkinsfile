@@ -156,13 +156,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Build Edi Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edi', '.', "containers/edi/Dockerfile")
-                        }
-                    }
-                }
                 stage("Build Fluentd Docker image") {
                     steps {
                         script {
@@ -191,6 +184,8 @@ pipeline {
                         script {
                             legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder")
                             legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator")
+                            legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi")
+                            legion.buildLegionImage('go-tests', ".", "containers/operator/Dockerfile", "--target tests")
                         }
                     }
                 }

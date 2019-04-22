@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-Flask = "==0.12.4"
-PyJWT = "==1.7.1"
 kubernetes = "==8.0.1"
 
 [requires]

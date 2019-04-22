@@ -138,24 +138,22 @@ class Utils:
         if len(lines) < 2:
             return []
 
-        return [[item.strip() for item in line.split('|')] for line in lines[1:]]
+        return [[item.strip() for item in line.split('|') if item] for line in lines[1:]]
 
     @staticmethod
-    def find_model_information_in_edi(parsed_edi_output, model_id, model_version=None):
+    def find_model_information_in_edi(parsed_edi_output, model_name):
         """
         Get specific model EDI output
 
         :param parsed_edi_output: parsed EDI output
         :type parsed_edi_output: list[list[str]]
-        :param model_id: model id
-        :type model_id: str
-        :param model_version: (Optional) model version
-        :type model_version: str
+        :param model_name: model deployment name
+        :type model_name: str
         :return: list[str] -- parsed EDI output for specific model
         """
-        founded = [info for info in parsed_edi_output if info[0] == model_id and model_version in (None, info[1])]
+        founded = [info for info in parsed_edi_output if info[0] == model_name]
         if not founded:
-            raise Exception('Info about model {!r} v {!r} not found'.format(model_id, model_version))
+            raise Exception(f'Info about model {model_name} not found')
 
         return founded[0]
 
@@ -311,7 +309,7 @@ class Utils:
             raise Exception('Cannot get secrets - file not found {}'.format(secrets))
 
         with open(secrets, 'r') as stream:
-            data = yaml.load(stream)
+            data = yaml.safe_load(stream)
 
         static_user = data['dex']['config']['staticPasswords'][0]
         return {"login": static_user['email'], "password": static_user['password']}

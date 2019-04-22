@@ -3,21 +3,21 @@ package legion
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"strings"
 )
 
 const (
-	PythonToolchainName = "python"
+	PythonToolchainName  = "python"
 	JupiterToolchainName = "jupyter"
 )
 
-func GetToolchainImage(toolchainName string, config OperatorConfig) (image string, err error) {
-
+func GetToolchainImage(toolchainName string) (image string, err error) {
 	switch toolchainName {
 	case PythonToolchainName:
-		return config.PythonToolchainImage, nil
+		return viper.GetString(PythonToolchainImage), nil
 	case JupiterToolchainName:
-		return config.PythonToolchainImage, nil
+		return viper.GetString(PythonToolchainImage), nil
 	}
 
 	return "", errors.New(fmt.Sprintf("Can't find %s toolchain", toolchainName))

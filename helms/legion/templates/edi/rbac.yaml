@@ -1,0 +1,119 @@
+{{ if .Values.edi.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ .Release.Name }}-edi"
+rules:
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeldeployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeldeployments/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeltrainings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeltrainings/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - vcscredentials
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - vcscredentials
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - vcscredentials/status
+    verbs:
+      - get
+      - update
+      - patch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "{{ .Release.Name }}-edi"
+subjects:
+  - kind: ServiceAccount
+    namespace: {{ .Release.Namespace }}
+    name: "{{ .Release.Name }}-edi"
+roleRef:
+  kind: ClusterRole
+  name: "{{ .Release.Name }}-edi"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-edi"
+{{- end }}
+
+
+

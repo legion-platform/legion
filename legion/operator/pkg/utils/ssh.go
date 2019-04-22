@@ -13,7 +13,7 @@ const PublicSshKeyName = "ssh_known_hosts"
 
 var (
 	SshUrlRegexp = regexp.MustCompile(`(?P<User>\w+)@(?P<Host>[\w.]+):.*`)
-	logSsh          = logf.Log.WithName("ssh")
+	logSsh       = logf.Log.WithName("ssh")
 )
 
 // TODO: Need to find a better solution.

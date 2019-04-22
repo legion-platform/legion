@@ -1,15 +1,11 @@
-
-# Image URL to use all building/pushing image targets
-LEGION_SRC_ROOT = ../../
-CONTAINERS = ${LEGION_SRC_ROOT}/build/containers
-TARGET_HELM_CHART = ${LEGION_SRC_ROOT}/helms/legion/
-TARGET_YAML_STORAGE = ${TARGET_HELM_CHART}/templates/operator/generated
+LEGION_OPERATOR_GENERATED_ENTITIES = ../../helms/legion/templates/operator/generated
+LEGION_OPERATOR_CRDS = ../../helms/legion-crds/templates
 
 all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
+	gotestsum ./pkg/... ./cmd/...
 
 # Build manager binary
 manager: generate fmt vet
@@ -24,15 +20,16 @@ install: manifests
 	kubectl apply -f config/crds
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests:
+manifests:  swag
 	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
-	mkdir -p ${TARGET_YAML_STORAGE}
+	mkdir -p ${LEGION_OPERATOR_GENERATED_ENTITIES}
+	mkdir -p ${LEGION_OPERATOR_CRDS}
 	@echo "removing old manifests from HELM's generated dictionary"
-	rm -fv ${TARGET_YAML_STORAGE}/*.yaml
+	rm -fv ${LEGION_OPERATOR_GENERATED_ENTITIES}/*.yaml
+	rm -fv ${LEGION_OPERATOR_CRDS}/*.yaml
 	@echo "copying actual manifests to HELM's generated dictionary"
-	cp -f ./config/crds/*.yaml ${TARGET_YAML_STORAGE}
-	cp -f ./config/rbac/rbac_role.yaml ${TARGET_YAML_STORAGE}
-	# sed -i '' -e 's@manager-role@"{{ .Release.Name }}-manager-role"@' ${TARGET_YAML_STORAGE}/rbac_role.yaml
+	cp -f ./config/crds/*.yaml ${LEGION_OPERATOR_CRDS}
+	sed 's/manager-role/legion-operator/g' ./config/rbac/rbac_role.yaml > ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 
 # Run go fmt against code
 fmt:
@@ -41,6 +38,11 @@ fmt:
 # Run go vet against code
 vet:
 	go vet ./pkg/... ./cmd/...
+
+# Generate swagger files
+swag:
+	@echo 🤙 🤴
+	swag init -g pkg/webserver/server.go
 
 # Generate code
 generate:

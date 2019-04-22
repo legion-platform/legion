@@ -1,25 +1,14 @@
 package legion
 
 import (
-	"archive/zip"
-	"io/ioutil"
-	"os"
+	"github.com/onsi/gomega"
 	"testing"
 )
 
-func createZipFile(content string, t *testing.T) {
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		t.Error(err)
-	}
-	defer tmpFile.Close()
+func TestNameNormalization(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
 
-	zipWriter := zip.NewWriter(tmpFile)
-	defer zipWriter.Close()
-
-}
-
-func TestExtractFromModelFile(t *testing.T) {
-	// createZipFile("Sdsd", t)
-
+	g.Expect(ConvertTok8sName("id", "Test name!")).To(gomega.Equal("model-id-Test-name"))
+	g.Expect(ConvertTok8sName("id", "Test-)1+name!")).To(gomega.Equal("model-id-Test-1-name"))
+	g.Expect(ConvertTok8sName("id", "abc-_ .")).To(gomega.Equal("model-id-abc----"))
 }

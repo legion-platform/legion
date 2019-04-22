@@ -28,9 +28,11 @@ RUN dep ensure -vendor-only
 
 COPY legion/operator/pkg/    pkg/
 COPY legion/operator/cmd/    cmd/
+COPY legion/operator/docs/    docs/
 
-RUN GOOS=linux GOARCH=amd64 go build -a -o operator github.com/legion-platform/legion/legion/operator/cmd/manager
-RUN GOOS=linux GOARCH=amd64 go build -a -o builder github.com/legion-platform/legion/legion/operator/cmd/builder
+RUN GOOS=linux GOARCH=amd64 go build -o edi github.com/legion-platform/legion/legion/operator/cmd/edi
+RUN GOOS=linux GOARCH=amd64 go build -o operator github.com/legion-platform/legion/legion/operator/cmd/manager
+RUN GOOS=linux GOARCH=amd64 go build -o builder github.com/legion-platform/legion/legion/operator/cmd/builder
 
 #########################################################
 #########################################################
@@ -40,11 +42,29 @@ FROM alpine:3.9 as operator
 
 ENV LEGION_DIR="/opt/legion"
 
-RUN apk add -u openssh-client
+RUN apk add -u openssh-client ca-certificates
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/operator "${LEGION_DIR}/"
 WORKDIR "${LEGION_DIR}"
 CMD ["./operator"]
+
+#########################################################
+#########################################################
+#########################################################
+
+FROM alpine:3.9 as edi
+
+ENV LEGION_DIR="/opt/legion" \
+    TEMPLATE_FOLDER="/opt/legion/templates" \
+    GIN_MODE="release"
+
+RUN apk add -u ca-certificates
+
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/edi "${LEGION_DIR}/"
+COPY legion/operator/templates "${TEMPLATE_FOLDER}/"
+
+WORKDIR "${LEGION_DIR}"
+CMD ["./edi"]
 
 #########################################################
 #########################################################
@@ -58,7 +78,7 @@ ENV LEGION_DIR="/opt/legion" \
     LANGUAGE="C.UTF-8"
 
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 && \
-    apk add -u openssh-client
+    apk add -u openssh-client ca-certificates
 
 COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock "${LEGION_DIR}/sdk/"
 RUN  cd "${LEGION_DIR}/sdk" && pipenv install --system --three
@@ -82,9 +102,17 @@ CMD ["./builder"]
 
 FROM golang:1.11.6-alpine3.9 as tests
 
+RUN apk add -u ca-certificates
 RUN wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
-    tar -zxvf /tmp/kubebuilder.tar.gz -C /usr/local/ && mv /usr/local/kubebuilder_* /usr/local/kubebuilder
-RUN apk add -u gcc musl-dev
-COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator /go/src/github.com/legion-platform/legion/legion/operator
+    tar -zxvf /tmp/kubebuilder.tar.gz -C /usr/local/ && mv /usr/local/kubebuilder_* /usr/local/kubebuilder && \
+    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
+    tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
+    apk add -u gcc musl-dev
+
 WORKDIR /go/src/github.com/legion-platform/legion/legion/operator
-RUN go test ./pkg/... ./cmd/... -coverprofile cover.out
+
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator ./
+COPY legion/operator/PROJECT ./
+
+RUN go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+RUN gotestsum

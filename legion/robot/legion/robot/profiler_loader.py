@@ -55,7 +55,7 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
         raise Exception('Cannot get profile - file not found {}'.format(profile))
 
     with open(profile, 'r') as stream:
-        data = yaml.load(stream)
+        data = yaml.safe_load(stream)
 
     # load Secrets
     secrets = os.getenv(CREDENTIAL_SECRETS_ENVIRONMENT_KEY)
@@ -66,7 +66,7 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
         raise Exception('Cannot get secrets - file not found {}'.format(secrets))
 
     with open(secrets, 'r') as stream:
-        data.update(yaml.load(stream))
+        data.update(yaml.safe_load(stream))
 
     variables = {
         'CLUSTER_NAMESPACE': data['namespace'],

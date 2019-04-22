@@ -131,7 +131,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 		},
 		Data: map[string][]byte{
 			utils.GitSSHKeyFileName: decodedRsa,
-			utils.PublicSshKeyName: publicKey,
+			utils.PublicSshKeyName:  publicKey,
 		},
 	}
 

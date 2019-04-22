@@ -19,6 +19,7 @@ package modeltraining
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
+	"github.com/spf13/viper"
 	"testing"
 	"time"
 
@@ -34,7 +35,7 @@ import (
 )
 
 const (
-	timeout           = time.Second * 5
+	timeout           = time.Second * 500
 	namespace         = "default"
 	modelTrainingName = "model-training-test"
 	vcsName           = "test-vcs"
@@ -72,23 +73,15 @@ var (
 	}
 )
 
-func generateConfig() legion.OperatorConfig {
-	return legion.OperatorConfig{
-		BuilderImage:           "builder_image_from_config",
-		MetricHost:             "metric_host_from_config",
-		MetricPort:             "metric_port_from_config",
-		MetricEnabled:          "metric_enabled_from_config",
-		PythonToolchainImage:   "python_toolchain_image_from_config",
-		BuildImagePrefix:       "build_image_prefix_from_config",
-		DockerRegistry:         "docker_registry_from_config",
-		DockerRegistryUser:     "docker_registry_user_from_config",
-		DockerRegistryPassword: "docker_registry_password_from_config",
-	}
+func setupConfig() {
+	viper.SetDefault(legion.BuilderImage, "test-builder:image")
+	viper.SetDefault(legion.PythonToolchainImage, "test-python-toolchain:image")
 }
 
 func TestBasicReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
+	setupConfig()
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
@@ -97,7 +90,6 @@ func TestBasicReconcile(t *testing.T) {
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
-	legion.OperatorConf = generateConfig()
 
 	defer func() {
 		close(stopMgr)
@@ -118,7 +110,7 @@ func TestBasicReconcile(t *testing.T) {
 		Spec: legionv1alpha1.ModelTrainingSpec{
 			ToolchainType: "python",
 			VCSName:       vcsName,
-			Entrypoint:  "some entrypoint",
+			Entrypoint:    "some entrypoint",
 		},
 	}
 

@@ -1,0 +1,24 @@
+{{- if .Values.metrics.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "{{ .Release.Name }}-operator"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- range $key, $value := .Values.metrics.serviceMonitoringLabels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  endpoints:
+  - interval: 15s
+    path: /metrics
+    port: metrics
+  namespaceSelector:
+    matchNames:
+    - "{{ .Release.Namespace }}"
+  selector:
+    matchLabels:
+      component: "legion-operator"
+      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
+{{- end }}

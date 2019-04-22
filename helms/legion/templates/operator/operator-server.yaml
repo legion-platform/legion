@@ -58,8 +58,8 @@ spec:
         resources:
           {{- toYaml .Values.operator.server.resources | nindent 10 }}
         ports:
-        - containerPort: 9876
-          name: webhook-server
+        - containerPort: 7777
+          name: metrics
           protocol: TCP
 ---
 apiVersion: v1
@@ -72,3 +72,20 @@ metadata:
 data:
   docker.registry.user: {{ .Values.modelStorage.external.user | b64enc | quote }}
   docker.registry.password: {{ .Values.modelStorage.external.password | b64enc | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-operator"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+spec:
+  selector:
+    component: "legion-operator"
+    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
+  ports:
+  - name: metrics
+    targetPort: 7777
+    port: 7777
+    protocol: TCP

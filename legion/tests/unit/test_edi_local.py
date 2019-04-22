@@ -21,13 +21,12 @@ import sys
 import responses
 
 import unittest2
-
 from legion.sdk.clients.edi import LocalEdiClient
+
 from legion.sdk.containers.definitions import ModelDeploymentDescription
 from legion.sdk.containers.docker import build_docker_client
 
 sys.path.extend(os.path.dirname(__file__))
-
 
 from legion_test_utils import \
     add_response_from_file
@@ -292,7 +291,7 @@ class TestEDILocalDeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.deploy(image=MODEL_A_IMAGE_REF)
 
-        self.assertTupleEqual(exc_info.exception.args, ('Model with same id and version already has been deployed', ))
+        self.assertTupleEqual(exc_info.exception.args, ('Model with same id and version already has been deployed',))
 
 
 class TestEDILocalUndeploy(TestEDILocal):
@@ -303,7 +302,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID)
 
-        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
+        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found',))
 
     @responses.activate
     def test_undeploy_correct(self):
@@ -353,7 +352,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID)
 
-        self.assertTupleEqual(exc_info.exception.args, ('Please specify version of model', ))
+        self.assertTupleEqual(exc_info.exception.args, ('Please specify version of model',))
 
     @responses.activate
     def test_undeploy_incorrect_id_filter(self):
@@ -362,7 +361,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID + '_incorrect')
 
-        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
+        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found',))
 
     @responses.activate
     def test_undeploy_incorrect_id_version_filter(self):
@@ -371,7 +370,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID, version=MODEL_A_VERSION + '_incorrect')
 
-        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
+        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found',))
 
 
 class TestEDILocalScale(TestEDILocal):
@@ -380,7 +379,7 @@ class TestEDILocalScale(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.scale(model=MODEL_A_ID, count=10)
 
-        self.assertTupleEqual(exc_info.exception.args, ('Scale command is not supported for local deployment', ))
+        self.assertTupleEqual(exc_info.exception.args, ('Scale command is not supported for local deployment',))
 
 
 if __name__ == '__main__':

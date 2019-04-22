@@ -33,12 +33,12 @@ import (
 
 func main() {
 	var metricsAddr string
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&metricsAddr, "metrics-addr", ":7777", "The address the metric endpoint binds to.")
 	flag.Parse()
 	logf.SetLogger(logf.ZapLogger(true))
 	log := logf.Log.WithName("entrypoint")
 
-	legion.OperatorConf = legion.NewOperatorConfig()
+	legion.SetUpOperatorConfig()
 
 	// Get a config to talk to the apiserver
 	log.Info("setting up client for manager")
