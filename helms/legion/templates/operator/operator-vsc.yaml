@@ -1,10 +1,11 @@
-{{ if .Values.vcs.enabled -}}
+{{- if .Values.vcs }}
 apiVersion: legion.legion-platform.org/v1alpha1
 kind: VCSCredential
 metadata:
+  name: "{{ .Values.vcs.name }}"
   labels:
     controller-tools.k8s.io: "1.0"
-  name: "{{ .Values.vcs.name }}"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   type: "{{ .Values.vcs.type }}"
   uri: "{{ .Values.vcs.uri }}"

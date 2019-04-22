@@ -1,9 +1,13 @@
+{{- if .Values.modelApiSecurity.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "{{  .Release.Name }}-blacklisted-tokens"
   labels:
     com.epam.legion.property: "{{  .Release.Name }}-blacklisted-tokens"
+    component: "{{ .Release.Name }}-edge"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 type: Opaque
 data:
   blacklisted-tokens: ""
+{{- end }}

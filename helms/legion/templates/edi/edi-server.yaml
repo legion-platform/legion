@@ -21,18 +21,17 @@ spec:
       serviceAccountName: "{{ .Release.Name }}-edi"
       {{- end}}
       volumes:
-      - name: docker-socket
-        hostPath:
-          path: /var/run/docker.sock
       - name: cluster-secrets
         secret:
           secretName: "{{ .Release.Name }}-cluster-secrets"
+      {{- if and .Values.modelApiSecurity.enabled (eq .Values.modelApiSecurity.integration "jwt") }}
       - name: jwt-config
         secret:
           secretName: "{{ .Release.Name }}-jwt-config"
+      {{- end}}
       containers:
       - name: edi
-        image: "{{ ternary $.Values.edi.customImage (printf "%s/edi:%s" $.Values.imagesRegistry (include "legion.application-version" .)) (hasKey $.Values.edi "customImage") }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%s/aa:%s") }}"
         resources:
           requests:
             cpu: {{ .Values.edi.resources.requests.cpu | quote }}
@@ -78,23 +77,23 @@ spec:
           value: "{{ .Values.metrics.statsd.host }}"
         - name: METRICS_PORT
           value: "{{ .Values.metrics.statsd.port }}"
-        {{- else -}}
+        {{- else }}
         - name: MODEL_TRAIN_METRICS_ENABLED
           value: "false"
-        {{- end }}}}
+        {{- end }}
         - name: MODEL_K8S_MEMORY
           value: "{{ .Values.modelExecution.limits.mem }}"
         - name: MODEL_K8S_CPU
           value: "{{ .Values.modelExecution.limits.cpu }}"
         volumeMounts:
-        - mountPath: /var/run/docker.sock
-          name: docker-socket
         - mountPath: /opt/legion/secrets
           name: cluster-secrets
           readOnly: true
+        {{- if and .Values.modelApiSecurity.enabled (eq .Values.modelApiSecurity.integration "jwt") }}
         - mountPath: /opt/legion/jwtconf
           name: jwt-config
           readOnly: true
+        {{- end }}
         ports:
         - containerPort: 5000
           name: api
@@ -121,35 +120,6 @@ spec:
   ports:
   - name: api
     targetPort: 5000
-    port: 80
+    port: {{ .Values.edi.port }}
     protocol: TCP
----
-{{- if (ternary $.Values.edi.ingress.enabled $.Values.ingress.enabled (hasKey $.Values.edi.ingress "enabled")) }}
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-  {{- range $key, $value := .Values.edi.ingress.annotations }}
-    {{ $key }}: {{ $value | quote }}
-  {{- end }}
-  {{- template "ingress-annotations" . }}
-  labels:
-    component: "{{ .Release.Name }}-edi"
-    {{- include "legion.helm-labels" . | nindent 4 }}
-  name: "{{ .Release.Name }}-edi"
-spec:
-  rules:
-    - host: "{{ ternary $.Values.edi.ingress.domain (printf "edi.%s" $.Values.ingress.globalDomain) (hasKey $.Values.edi.ingress "domain") }}"
-      http:
-        paths:
-          - backend:
-              serviceName: "{{ .Release.Name }}-edi"
-              servicePort: 80
-  {{- if (ternary $.Values.edi.ingress.tlsEnabled $.Values.ingress.tlsEnabled (hasKey $.Values.edi.ingress "tlsEnabled")) }}
-  tls:
-  - hosts:
-    - "{{ ternary $.Values.edi.ingress.domain (printf "edi.%s" $.Values.ingress.globalDomain) (hasKey $.Values.edi.ingress "domain") }}"
-    secretName: "{{ ternary $.Values.edi.ingress.tlsSecretName $.Values.ingress.tlsSecretName (hasKey $.Values.edi.ingress "tlsSecretName") }}"
-  {{- end }}
-{{- end }}
 {{- end }}

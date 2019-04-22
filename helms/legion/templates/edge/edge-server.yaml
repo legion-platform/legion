@@ -4,10 +4,8 @@ kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-edge"
   labels:
-    heritage: {{ .Release.Service | quote }}
-    release: {{ .Release.Name | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     component: "{{ .Release.Name }}-edge"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.edge.replicas }}
   selector:
@@ -17,36 +15,53 @@ spec:
     metadata:
       labels:
         component: "{{ .Release.Name }}-edge"
+        {{- include "legion.helm-labels" . | nindent 8 }}
     spec:
       serviceAccountName: "{{ .Release.Name }}-edge"
+      {{- if .Values.feedback.enabled }}
       volumes:
       - name: edge-scripts
         configMap:
           name: "{{ .Release.Name }}-edge-scripts"
+      {{- end }}
       containers:
       - name: nginx
-        image: "{{ .Values.edge.image.repository }}:{{ .Values.edge.image.tag }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edge "tpl" "%s/aa:%s") }}"
         resources:
           requests:
-            cpu: "50m"
-            memory: "128Mi"
+            cpu: {{ .Values.edge.resources.requests.cpu | quote }}
+            memory: {{ .Values.edge.resources.requests.memory | quote }}
           limits:
-            cpu: "100m"
-            memory: "512Mi"
+            cpu: {{ .Values.edge.resources.limits.cpu | quote }}
+            memory: {{ .Values.edge.resources.limits.memory | quote }}
         env:
         - name: POD_UUID
           valueFrom:
             fieldRef:
               fieldPath: metadata.uid
+        {{- if .Values.feedback.enabled }}
+        - name: FLUENTD_ENABLED
+          value: "true"
         - name: FLUENTD_HOST
           value: "127.0.0.1"
         - name: FLUENTD_PORT
           value: "24224"
+        {{- else -}}
+        - name: FLUENTD_ENABLED
+          value: "false"
+        {{- end }}
+        {{- if .Values.modelApiSecurity.enabled }}
+        - name: JWT_ENABLED
+          value: "true"
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: "{{ .Release.Name }}-jwt-config"
               key: "jwt.secret"
+        {{- else -}}
+        - name: JWT_ENABLED
+          value: "false"
+        {{- end }}
         - name: ENABLE_HOME_PAGE
           value: "{{ .Values.edge.enableHomePage }}"
         ports:
@@ -70,6 +85,7 @@ spec:
             port: 80
           initialDelaySeconds: 15
           periodSeconds: 20
+      {{- if .Values.feedback.enabled }}
       - name: logger
         image: "fluent/fluent-bit:0.14"
         command: ["bash"]
@@ -77,14 +93,15 @@ spec:
           - /opt/edge-scripts/start-fluentbit.sh
         env:
         - name: EXTERNAL_FLUENTD_HOST
-          value: "{{ .Release.Name }}-fluentd.{{ .Release.Namespace }}.svc.{{ .Values.localDomain }}"
+          value: "{{ .Release.Name }}-fluentd"
         - name: EXTERNAL_FLUENTD_PORT
-          value: "24224"
+          value: {{ .Values.feedback.fluentd.port | quote }}
         - name: FLUENTD_CONFIG
           value: "/opt/edge-scripts/fluentd-config.config"
         volumeMounts:
         - name: edge-scripts
           mountPath: /opt/edge-scripts
+      {{- end }}
       - name: dns
         image: "janeczku/go-dnsmasq:release-1.0.7"
         args:
@@ -110,23 +127,27 @@ metadata:
   name: "{{ .Release.Name }}-edge"
   labels:
     component: "{{ .Release.Name }}-edge"
-    legion.system: "yes"
-    legion.component: "edge"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   selector:
     component: "{{ .Release.Name }}-edge"
   ports:
   - name: api
-    port: 80
+    targetPort: 80
+    port: {{ .Values.edge.port }}
     protocol: TCP
   - name: metrics
     port: 7777
     protocol: TCP
+{{- if .Values.feedback.enabled }}
 ---
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: "{{ .Release.Name }}-edge-scripts"
+  labels:
+    component: "{{ .Release.Name }}-edge"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 data:
   fluentd-config.config: |-
     [INPUT]
@@ -144,48 +165,5 @@ data:
   start-fluentbit.sh: |-
     #!/bin/sh
     /fluent-bit/bin/fluent-bit -c $FLUENTD_CONFIG
----
-{{- if .Values.edge.ingress.enabled -}}
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-  {{- range $key, $value := .Values.edge.ingress.annotations }}
-    {{ $key }}: {{ $value | quote }}
-  {{- end }}
-  labels:
-    heritage: {{ .Release.Service | quote }}
-    release: {{ .Release.Name | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    component: "{{ .Release.Name }}-edge"
-    legion.system: "yes"
-    legion.component: "edge"
-  name: "{{ .Release.Name }}-edge"
-spec:
-  rules:
-    - host: "{{ .Values.edge.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
-      http:
-        paths:
-          - backend:
-              serviceName: "{{ .Release.Name }}-edge"
-              servicePort: 80
-    {{- if .Values.addLocalDomain }}
-    - host: "{{ .Values.edge.ingress.domain.partial }}.local.{{ .Values.rootDomain }}"
-      http:
-        paths:
-          - backend:
-              serviceName: "{{ .Release.Name }}-edge"
-              servicePort: 80
-    {{- end }}
-  {{- if .Values.edge.ingress.tls.enabled }}
-  tls:
-  - hosts:
-    - "{{ .Values.edge.ingress.domain.partial }}{{ .Values.domainDelimiter }}{{ .Values.rootDomain }}"
-    {{- if .Values.edge.ingress.tls.autoSecretNameDeduction }}
-    secretName: "{{ .Values.rootDomain }}-tls"
-    {{- else }}
-    secretName: {{ .Values.edge.ingress.tls.secretName  }}
-    {{- end }}
-  {{- end }}
 {{- end }}
 {{- end }}

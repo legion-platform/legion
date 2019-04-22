@@ -1,10 +1,12 @@
+{{- if and .Values.edge.enabled .Values.metrics.enabled -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
     app: edge-exporter
     monitoring: prometheus
-  name: edge-exporter
+    {{- include "legion.helm-labels" . | nindent 4 }}
+  name: "{{ .Release.Name }}-edge-exporter"
 spec:
   endpoints:
   - interval: 15s
@@ -12,7 +14,8 @@ spec:
     port: metrics
   namespaceSelector:
     matchNames:
-    - "{{ .Values.namespace }}"
+    - "{{ .Release.Namespace }}"
   selector:
     matchLabels:
       component: "{{ .Release.Name }}-edge"
+{{- end }}

@@ -1,12 +1,16 @@
+{{ if .Values.feedback.enabled -}}
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: "{{ .Release.Name }}-fluentd-config"
+  labels:
+    component: "{{ .Release.Name }}-fluentd"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 data:
   fluent.conf: |
     <source>
       @type forward
-      port 24224
+      port {{ .Values.feedback.fluentd.port }}
       bind 0.0.0.0
     </source>
 
@@ -18,32 +22,49 @@ data:
       </record>
     </filter>
 
-    # Default
+    {{- if .Values.feedback.output }}
+    {{- if eq .Values.feedback.output.target "s3"}}
+    # S3 output
     <match *>
       @type s3
+
+      {{- if eq .Values.feedback.output.s3.authorization "secret" }}
+      # Auth based on secrets from HELM configuration
+      # Secrets are attached as secretKeyRefs from "{{ .Release.Name }}-fluentd-secret" secret
+      aws_key_id "#{ENV['AWS_ACCESS_KEY_ID']}"
+      aws_sec_key "#{ENV['AWS_SECRET_ACCESS_KEY']}"
+      {{- end }}
+      {{- if eq .Values.feedback.output.s3.authorization "iam" }}
+      # IAM based authorization does not require any configuration
+      #  it only appends appropriate annotation for IAM service to FluentD pod
+      {{- end }}
+
       # Connection
-      s3_bucket {{ .Values.feedback.s3.bucket }}
-      s3_region {{ .Values.feedback.s3.region }}
+      s3_bucket {{ required "S3 bucket values is required" .Values.feedback.output.s3.bucket }}
+      s3_region {{ required "S3 region values is required" .Values.feedback.output.s3.region }}
 
       # Storing
-      path {{ .Values.feedback.s3.path }}
-      time_slice_format {{ .Values.feedback.s3.time_slice_format }}
-      time_slice_wait {{ .Values.feedback.s3.time_slice_wait }}
-      s3_object_key_format %{path}%{time_slice}_%{index}.%{file_extension}
+      path {{ .Values.feedback.output.s3.path }}
+      s3_object_key_format {{ .Values.feedback.output.s3.objectKeyFormat }}
+      time_slice_format {{ .Values.feedback.output.s3.timeSliceFormat }}
+      time_slice_wait {{ .Values.feedback.output.s3.timeSliceWait }}
       utc
-      store_as {{ .Values.feedback.s3.store_as }}
+      store_as {{ .Values.feedback.output.s3.storeAs }}
 
       # Buffering
       <buffer tag,time,model_id,model_version>
         @type file
-        path {{ .Values.feedback.s3.buffering.path }}/default
-        timekey {{ .Values.feedback.s3.buffering.timekey }}
-        timekey_wait {{ .Values.feedback.s3.buffering.timekey_wait }}
+        path {{ .Values.feedback.output.s3.buffering.path }}/default
+        timekey {{ .Values.feedback.output.s3.buffering.timekey }}
+        timekey_wait {{ .Values.feedback.output.s3.buffering.timekeyWait }}
         timekey_use_utc true
       </buffer>
 
       # Formatting
       <format>
-        @type {{ .Values.feedback.s3.format }}
+        @type {{ .Values.feedback.output.s3.format }}
       </format>
     </match>
+    {{- end }}
+    {{- end }}
+{{- end }}
