@@ -400,11 +400,6 @@ edge:
   # TODO: Force 2 in tests
   replicas: 1
 
-  # Enable home (root) page of EDGE gateway
-  # EDGE returns 404 for requests on / URI if it is disabled
-  # Type: bool
-  enableHomePage: true
-
   # Port on which EDI listens income trafic
   # Type: integer
   port: 80

@@ -62,8 +62,6 @@ spec:
         - name: JWT_ENABLED
           value: "false"
         {{- end }}
-        - name: ENABLE_HOME_PAGE
-          value: "{{ .Values.edge.enableHomePage }}"
         ports:
         - containerPort: 80
           name: api
