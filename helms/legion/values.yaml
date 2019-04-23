@@ -245,9 +245,8 @@ feedback:
       #AWSSecretKey: ~
 
       # S3 bucket name
-      # By default <.ingress.globalDomain>-feedback is used
       # Type: string
-      customBucket: ~
+      bucket: ~
 
       # S3 region
       # Type: string

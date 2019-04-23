@@ -70,17 +70,6 @@ spec:
           value: "{{ .Values.edi.k8sApiRetryNumberMaxLimit }}"
         - name: K8S_API_RETRY_DELAY_SEC
           value: "{{ .Values.edi.k8sApiRetryDelaySec }}"
-        {{- if .Values.metrics.enabled }}
-        - name: MODEL_TRAIN_METRICS_ENABLED
-          value: "true"
-        - name: METRICS_HOST
-          value: "{{ .Values.metrics.statsd.host }}"
-        - name: METRICS_PORT
-          value: "{{ .Values.metrics.statsd.port }}"
-        {{- else }}
-        - name: MODEL_TRAIN_METRICS_ENABLED
-          value: "false"
-        {{- end }}
         - name: MODEL_K8S_MEMORY
           value: "{{ .Values.modelExecution.limits.mem }}"
         - name: MODEL_K8S_CPU

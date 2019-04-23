@@ -30,7 +30,7 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: "{ .Release.Name }}-model"
+  name: "{{ .Release.Name }}-model"
   labels:
     component: "{{ .Release.Name }}-model-rbac"
     {{- include "legion.helm-labels" . | nindent 4 }}
