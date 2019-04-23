@@ -130,7 +130,6 @@ const (
 	sharedDirName          = "shared-dir"
 	defaultModelFileName   = "/var/legion/robot.model"
 	modelContainerName     = "model"
-	modelServiceAccount    = "model-builder"
 	dockerSocketVolumeName = "docker-socket"
 	dockerSocketVolumePath = "/var/run/docker.sock"
 	gitSshVolumeName       = "git-ssh"
@@ -204,7 +203,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
-			ServiceAccountName:            modelServiceAccount,
+			ServiceAccountName:            legion.OperatorConf.BuilderServiceAccount,
 			TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 			Volumes: []corev1.Volume{
 				{
