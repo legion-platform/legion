@@ -53,12 +53,12 @@ ingress:
   # Each Ingress could be configurred manually in .<service>.ingress.tlsEnabled
   # Also it controlls building URLs for external resources such as auth endpoint
   # Type: bool
-  tlsEnabled: true
+  tlsEnabled: false
 
   # Global TLS secret name
   # Each Ingress could be configurred manually in .<service>.ingress.tlsSecretName
   # Type: string
-  tlsSecretName: undefined-secret
+  tlsSecretName: ~
 
 # Security configuration. Model API security configures in .modelApiSecurity section (see below)
 security:

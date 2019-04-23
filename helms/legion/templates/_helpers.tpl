@@ -106,7 +106,7 @@ Arguments:
     - .local - service's ingress section (e.g. .Values.edi.ingress)
 */}}
 {{- define "legion.ingress-tls-secret-name" -}}
-{{ ternary .local.tlsSecretName .root.Values.ingress.tlsSecretName (hasKey .local "tlsSecretName") }}
+{{ required "TLS Secret name is required" (ternary .local.tlsSecretName .root.Values.ingress.tlsSecretName (hasKey .local "tlsSecretName")) }}
 {{- end -}}
 
 
