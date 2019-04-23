@@ -403,7 +403,6 @@ edge:
 
   # Count of EDGE replicas
   # Type: integer
-  # TODO: Force 2 in tests
   replicas: 1
 
   # Port on which EDI listens income trafic

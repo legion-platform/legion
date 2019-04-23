@@ -28,16 +28,15 @@ var (
 )
 
 type BuilderConfig struct {
-	RepositoryURL         string
-	PodName               string
-	DockerRegistry        string
-	SharedDirPath         string
-	Reference             string
-	ResultImagePrefix     string
-	BuilderServiceAccount string
-	Namespace             string
-	Model                 ModelConfig
-	GitSSHKeyPath         string
+	RepositoryURL     string
+	PodName           string
+	DockerRegistry    string
+	SharedDirPath     string
+	Reference         string
+	ResultImagePrefix string
+	Namespace         string
+	Model             ModelConfig
+	GitSSHKeyPath     string
 }
 
 type ModelConfig struct {
@@ -47,15 +46,14 @@ type ModelConfig struct {
 
 func NewBuilderConfig() BuilderConfig {
 	return BuilderConfig{
-		RepositoryURL:         envNotEmpty("REPOSITORY_URL"),
-		PodName:               envNotEmpty("POD_NAME"),
-		DockerRegistry:        envNotEmpty("DOCKER_REGISTRY"),
-		SharedDirPath:         envNotEmpty("SHARED_DIR_PATH"),
-		Reference:             envNotEmpty("BRANCH"),
-		ResultImagePrefix:     envNotEmpty("RESULT_IMAGE_PREFIX"),
-		BuilderServiceAccount: envNotEmpty("BUILDER_SERVICE_ACCOUNT"),
-		Namespace:             envNotEmpty("NAMESPACE"),
-		GitSSHKeyPath:         envNotEmpty("GIT_SSH_KEY_PATH"),
+		RepositoryURL:     envNotEmpty("REPOSITORY_URL"),
+		PodName:           envNotEmpty("POD_NAME"),
+		DockerRegistry:    envNotEmpty("DOCKER_REGISTRY"),
+		SharedDirPath:     envNotEmpty("SHARED_DIR_PATH"),
+		Reference:         envNotEmpty("BRANCH"),
+		ResultImagePrefix: envNotEmpty("RESULT_IMAGE_PREFIX"),
+		Namespace:         envNotEmpty("NAMESPACE"),
+		GitSSHKeyPath:     envNotEmpty("GIT_SSH_KEY_PATH"),
 		Model: ModelConfig{
 			FilePath: envNotEmpty("MODEL_FILE"),
 			Command:  envNotEmpty("MODEL_COMMAND"),
@@ -73,6 +71,7 @@ type OperatorConfig struct {
 	DockerRegistry         string
 	DockerRegistryUser     string
 	DockerRegistryPassword string
+	BuilderServiceAccount  string
 }
 
 func NewOperatorConfig() OperatorConfig {
@@ -86,6 +85,7 @@ func NewOperatorConfig() OperatorConfig {
 		DockerRegistry:         envNotEmpty("DOCKER_REGISTRY"),
 		DockerRegistryUser:     envNotEmpty("DOCKER_REGISTRY_USER"),
 		DockerRegistryPassword: envNotEmpty("DOCKER_REGISTRY_PASSWORD"),
+		BuilderServiceAccount:  envNotEmpty("BUILDER_SERVICE_ACCOUNT"),
 	}
 }
 
