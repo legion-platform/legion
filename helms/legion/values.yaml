@@ -158,6 +158,12 @@ modelStorage:
 
   # Detailed configuration of external Docker Registry
   external:
+    # Protocol for connection to Docker Registry
+    # Valid values are:
+    # - https
+    # - http
+    protocol: ~
+
     # URL of Docker Registry
     # Type: string
     url: ~

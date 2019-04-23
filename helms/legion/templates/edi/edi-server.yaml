@@ -52,9 +52,9 @@ spec:
           value: "1"
         {{- if .Values.rbac}}
         - name: DOCKER_REGISTRY
-          value: "TODO: REPLACE"
+          value: "{{ .Values.modelStorage.external.url }}"
         - name: DOCKER_REGISTRY_PROTOCOL
-          value: "TODO: REPLACE"
+          value: "{{ .Values.modelStorage.external.protocol }}"
         - name: DOCKER_REGISTRY_USER
           valueFrom:
             secretKeyRef:
