@@ -102,7 +102,7 @@ modelApiSecurity:
     # Maximum value of TTL in minutes
     # This value is used in EDI to validate requests for token generation
     # Type: integer
-    maxTokenTTLInMinutes: 60*24*365
+    maxTokenTTLInMinutes: 525600
 
     # Default TTL end date
     # Type: date sting, e.g. 2030-12-30T00:00:00

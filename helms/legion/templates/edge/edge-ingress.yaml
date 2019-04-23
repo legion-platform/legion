@@ -5,7 +5,10 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   annotations:
-  {{- include "legion.ingress-aggregated-annotations" (dict "local" .Values.edge.ingress "root" .) | nindent 4 }}
+    {{- include "legion.ingress-default-root-annotations" . | nindent 4 }}
+    {{- range $key, $value := .Values.edge.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
   labels:
     component: "legion-edge"
     {{- include "legion.helm-labels" . | nindent 4 }}
