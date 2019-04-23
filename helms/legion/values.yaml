@@ -21,11 +21,6 @@ imagesRegistry: legionplatform
 # - error
 logLevel: info
 
-# This controls management of network policy rules
-# If enabled it allows income traffic from namespaces labeled with k8s-component: monitoring or k8s-component: ingress
-# Type: bool
-networkPolicy: true
-
 # Configuration of Legion ingresses
 # Ingresses are for next <service>s
 # - edi
@@ -113,6 +108,7 @@ modelApiSecurity:
     # Type: date sting, e.g. 2030-12-30T00:00:00
     defaultTokenTTLEndDate: "2030-12-30T00:00:00"
 
+
 # Components metrics measurement
 # Measures components performance through prometheus protocol
 metrics:
@@ -120,9 +116,11 @@ metrics:
   # Type: bool
   enabled: false
 
-  # Namespaces where monitoring facilities live
-  # Type: string
-  namespace: monitoring
+  # Labels for ServiceMonitor CR objects
+  # Type: string -> string map
+  serviceMonitoringLabels:
+    monitoring: prometheus
+
 
 # StatsD configuration for metrics that requires StatsD format (e.g. model invocation & training metrics)
 modelMetrics:
@@ -154,7 +152,7 @@ modelStorage:
   # Prefix for all built images
   # Might be useful for management purposes
   # Type: string
-  buildPrefix: "legion-"
+  buildPrefix: "legion"
 
   # Type of Docker Registry.
   # Valid values are:

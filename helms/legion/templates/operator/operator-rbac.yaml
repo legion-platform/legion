@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "{{ .Release.Name }}-model-builder"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
@@ -19,7 +19,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "{{ .Release.Name }}-model-builder"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
@@ -35,7 +35,7 @@ kind: ServiceAccount
 metadata:
   name: "{{ .Release.Name }}-model-builder"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 ---
 kind: ClusterRoleBinding
@@ -43,12 +43,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     namespace: {{ .Release.Namespace }}
-    name: "{{ .Release.Name }}-legion-operator"
+    name: "{{ .Release.Name }}-operator"
 roleRef:
   kind: ClusterRole
   name: "{{ .Release.Name }}-operator"
@@ -59,6 +59,6 @@ kind: ServiceAccount
 metadata:
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 {{- end }}

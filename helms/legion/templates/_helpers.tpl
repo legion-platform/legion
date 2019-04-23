@@ -30,6 +30,15 @@ app.kubernetes.io/version: "{{ include "legion.application-version" . }}"
 {{- end -}}
 
 {{/*
+Function builds additional search labels
+Arguments:
+    - . - root HELM scope
+*/}}
+{{- define "legion.helm-labels-for-search" -}}
+app.kubernetes.io/instance: {{ .Release.Name | quote }}
+{{- end -}}
+
+{{/*
 ----------- INGRESS -----------
 */}}
 
@@ -95,7 +104,7 @@ Arguments:
     - .tpl - template for URI
 */}}
 {{- define "legion.ingress-domain-name" -}}
-{{ ternary .local.domain (printf .tpl .root.Values.ingress.globalDomain) (hasKey .local "domain") }}
+{{ ternary .local.domain (printf .tpl .root.Release.Namespace .root.Values.ingress.globalDomain) (hasKey .local "domain") }}
 {{- end -}}
 
 {{/*

@@ -4,14 +4,15 @@ kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-fluentd"
   labels:
-    component: "{{ .Release.Name }}-fluentd"
+    component: "legion-fluentd"
     {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   # FluentD is limited to 1 replica to avoid data overwriting
   replicas: 1
   selector:
     matchLabels:
-      component: "{{ .Release.Name }}-fluentd"
+      component: "legion-fluentd"
+      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
   template:
     metadata:
       {{- if and (eq .Values.feedback.output.target "s3") (eq .Values.feedback.output.s3.authorization "iam" ) }}
@@ -19,7 +20,7 @@ spec:
         iam.amazonaws.com/role: {{ ternary $.Values.feedback.output.s3.customIAMRole (printf "%s-%s-collector-role" $.Values.ingress.globalDomain $.Release.Namespace) (hasKey $.Values.feedback.output.s3 "customIAMRole") }}
       {{- end }}
       labels:
-        component: "{{ .Release.Name }}-fluentd"
+        component: "legion-fluentd"
         {{- include "legion.helm-labels" . | nindent 8 }}
     spec:
       containers:
@@ -72,11 +73,12 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}-fluentd"
   labels:
-    component: "{{ .Release.Name }}-fluentd"
+    component: "legion-fluentd"
     {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   selector:
-    component: "{{ .Release.Name }}-fluentd"
+    component: "legion-fluentd"
+    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
   ports:
   - name: input
     port: {{ .Values.feedback.fluentd.port }}

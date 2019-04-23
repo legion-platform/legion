@@ -3,17 +3,17 @@ kind: StatefulSet
 metadata:
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      component: "{{ .Release.Name }}-operator"
-      {{- include "legion.helm-labels" . | nindent 6 }}
+      component: "legion-operator"
+      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
   template:
     metadata:
       labels:
-        component: "{{ .Release.Name }}-operator"
+        component: "legion-operator"
         {{- include "legion.helm-labels" . | nindent 8 }}
     spec:
       {{- if .Values.rbac }}
@@ -71,7 +71,7 @@ kind: Secret
 metadata:
   name: "{{ .Release.Name }}-operator-config"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 data:
   docker.registry.user: {{ .Values.modelStorage.external.user | b64enc | quote }}

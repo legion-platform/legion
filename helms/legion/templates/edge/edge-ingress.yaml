@@ -7,12 +7,12 @@ metadata:
   annotations:
   {{- include "legion.ingress-aggregated-annotations" (dict "local" .Values.edge.ingress "root" .) | nindent 4 }}
   labels:
-    component: "{{ .Release.Name }}-edge"
+    component: "legion-edge"
     {{- include "legion.helm-labels" . | nindent 4 }}
   name: "{{ .Release.Name }}-edge"
 spec:
   rules:
-    - host: {{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge.%s") }}
+    - host: {{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge-%s.%s") }}
       http:
         paths:
           - backend:
@@ -21,7 +21,7 @@ spec:
   {{- if (ternary $.Values.edge.ingress.tlsEnabled $.Values.ingress.tlsEnabled (hasKey $.Values.edge.ingress "tlsEnabled")) }}
   tls:
   - hosts:
-    - {{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge.%s") | quote }}
+    - {{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge-%s.%s") | quote }}
     secretName: {{ include "legion.ingress-tls-secret-name" (dict "local" .Values.edge.ingress "root" . ) | quote }}
   {{- end }}
 {{- end }}

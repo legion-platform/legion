@@ -5,7 +5,7 @@ metadata:
   creationTimestamp: null
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "{{ .Release.Name }}-operator"
+    component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 rules:
 - apiGroups:

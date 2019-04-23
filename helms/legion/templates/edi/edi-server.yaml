@@ -4,17 +4,18 @@ kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
-    component: "{{ .Release.Name }}-edi"
+    component: "legion-edi"
     {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.edi.replicas }}
   selector:
     matchLabels:
-      component: "{{ .Release.Name }}-edi"
+      component: "legion-edi"
+      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
   template:
     metadata:
       labels:
-        component: "{{ .Release.Name }}-edi"
+        component: "legion-edi"
         {{- include "legion.helm-labels" . | nindent 8 }}
     spec:
       {{- if .Values.rbac}}
@@ -50,6 +51,8 @@ spec:
           value: "5000"
         - name: VERBOSE
           value: "1"
+        - name: MODEL_INSTANCE_SERVICE_ACCOUNT_NAME
+          value: "{{ .Release.Name }}-model"
         {{- if .Values.rbac}}
         - name: DOCKER_REGISTRY
           value: "{{ .Values.modelStorage.external.url }}"
@@ -101,11 +104,12 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
-    component: "{{ .Release.Name }}-edi"
+    component: "legion-edi"
     {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   selector:
-    component: "{{ .Release.Name }}-edi"
+    component: "legion-edi"
+    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
   ports:
   - name: api
     targetPort: 5000

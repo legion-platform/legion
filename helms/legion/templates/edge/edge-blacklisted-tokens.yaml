@@ -5,7 +5,7 @@ metadata:
   name: "{{  .Release.Name }}-blacklisted-tokens"
   labels:
     com.epam.legion.property: "{{  .Release.Name }}-blacklisted-tokens"
-    component: "{{ .Release.Name }}-edge"
+    component: "legion-edge"
     {{- include "legion.helm-labels" . | nindent 4 }}
 type: Opaque
 data:
