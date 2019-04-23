@@ -29,7 +29,7 @@ end
 
 function _M.is_config_enabled(name)
     local value = _M.get_config(name, "false")
-    return value.lower() == "true"
+    return value == "true"
 end
 
 function _M.get_model_id_and_version_from_feedback_url()

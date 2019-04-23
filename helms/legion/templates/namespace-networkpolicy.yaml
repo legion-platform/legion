@@ -2,7 +2,7 @@
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: enclave
+  name: "{{ .Release.Name }}-namespace-networkpolicy"
   labels:
     component: "{{ .Release.Name }}-enclave-networkpolicy"
     {{- include "legion.helm-labels" . | nindent 4 }}
