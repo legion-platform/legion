@@ -58,12 +58,12 @@ spec:
         - name: DOCKER_REGISTRY_USER
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-cluster-secrets
+              name: "{{ .Release.Name }}-cluster-secrets"
               key: docker.user
         - name: DOCKER_REGISTRY_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-cluster-secrets
+              name: "{{ .Release.Name }}-cluster-secrets"
               key: docker.password
         {{- end}}
         - name: K8S_API_RETRY_NUMBER_MAX_LIMIT

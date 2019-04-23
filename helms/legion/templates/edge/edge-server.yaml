@@ -40,14 +40,14 @@ spec:
             fieldRef:
               fieldPath: metadata.uid
         {{- if .Values.feedback.enabled }}
-        - name: FLUENTD_ENABLED
+        - name: FEEDBACK_ENABLED
           value: "true"
         - name: FLUENTD_HOST
           value: "127.0.0.1"
         - name: FLUENTD_PORT
           value: "24224"
         {{- else -}}
-        - name: FLUENTD_ENABLED
+        - name: FEEDBACK_ENABLED
           value: "false"
         {{- end }}
         {{- if .Values.modelApiSecurity.enabled }}

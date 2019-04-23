@@ -19,6 +19,9 @@
 env JWT_SECRET;
 env POD_UUID;
 
+env JWT_ENABLED;
+env FEEDBACK_ENABLED;
+
 worker_processes  1;
 
 events {
@@ -41,16 +44,23 @@ http {
   init_by_lua_block {
     local edge = require "edge"
 
+    -- process metrics for Prometheus
     local statistics_sender = require "statistics_sender"
     statistics_sender.init()
 
-    local invalid_tokens = require "blacklisted_tokens"
-    invalid_tokens.init("{{ tokens['blacklisted-tokens'] }}")
+    -- if JWT is enabled
+    if edge.is_config_enabled("JWT_ENABLED"){
+        local invalid_tokens = require "blacklisted_tokens"
+        invalid_tokens.init("{{ tokens['blacklisted-tokens'] }}")
+    }
 
-    local fluentd_logger = require "fluentd_logger"
-    local fluentd_host = edge.get_config("FLUENTD_HOST", "127.0.0.1")
-    local fluentd_port = edge.get_config("FLUENTD_PORT", "24224")
-    fluentd_logger.new(fluentd_host, fluentd_port)
+    -- if Feedback loop is enabled
+    if edge.is_config_enabled("FEEDBACK_ENABLED"){
+        local fluentd_logger = require "fluentd_logger"
+        local fluentd_host = edge.get_config("FLUENTD_HOST", "127.0.0.1")
+        local fluentd_port = edge.get_config("FLUENTD_PORT", "24224")
+        fluentd_logger.new(fluentd_host, fluentd_port)
+    }
   }
 
   server {
@@ -59,6 +69,7 @@ http {
 
     location = /metrics {
       content_by_lua_block {
+          -- export Prometheus metrics
           local statistics_sender = require "statistics_sender"
           statistics_sender.metrics();
       }
@@ -89,32 +100,45 @@ http {
             local model_id, model_version = edge.get_model_id_and_version_from_feedback_url()
 
             -- JWT validation
-            local jwt = require("nginx-jwt")
-            jwt.auth({
-                model_id=function (val) return jwt.table_contains(val, model_id) end,
-                model_version=function (val) return jwt.table_contains(val, model_version) end
-            })
-            local blacklisted_tokens = require "blacklisted_tokens"
-            blacklisted_tokens.check_token()
+            if edge.is_config_enabled("JWT_ENABLED"){
+                local jwt = require("nginx-jwt")
+                jwt.auth({
+                    model_id=function (val) return jwt.table_contains(val, model_id) end,
+                    model_version=function (val) return jwt.table_contains(val, model_version) end
+                })
+                local blacklisted_tokens = require "blacklisted_tokens"
+                blacklisted_tokens.check_token()
+            }
 
             -- RequestID validation
-            local requestID = ngx.req.get_headers()["Request-ID"]
-            if not requestID then
-                ngx.log(ngx.WARN, "Request-ID header is missed")
-                ngx.say("Request-ID header is missed")
+            if edge.is_config_enabled("FEEDBACK_ENABLED"){
+                local requestID = ngx.req.get_headers()["Request-ID"]
+                if not requestID then
+                    ngx.log(ngx.WARN, "Request-ID header is missed")
+                    ngx.say("Request-ID header is missed")
+                    ngx.exit(ngx.HTTP_BAD_REQUEST)
+                end
+            } else {
+                ngx.say("Feedback gathering is disabled")
                 ngx.exit(ngx.HTTP_BAD_REQUEST)
-            end
+            }
         }
 
         content_by_lua_block {
+            -- this sections could be accessed only after access_by_lua_block
+            -- so, all checks are in access_by_lua_block
+
             local edge = require("edge")
 
-            local data = edge.parse_feedback_data()
+            -- Feedback providing mechanism
+            if edge.is_config_enabled("FEEDBACK_ENABLED"){
+                local data = edge.parse_feedback_data()
 
-            local fluentd_logger = require "fluentd_logger"
-            fluentd_logger.post(ngx.req.start_time(), "feedback", data)
+                local fluentd_logger = require "fluentd_logger"
+                fluentd_logger.post(ngx.req.start_time(), "feedback", data)
 
-            edge.response_feedback(data)
+                edge.response_feedback(data)
+            }
         }
     }
 
@@ -133,7 +157,7 @@ http {
             -- arg[1] contains a chunk of response content
             -- arg[2] is true if this is the last chunk
 
-            -- Model-Endpoint generation if it is missing
+            -- Model-Endpoint header generation if it is missed
             local model_endpoint = ngx.header["Model-Endpoint"]
             if not model_endpoint then
                 model_endpoint = "default"
@@ -142,12 +166,16 @@ http {
             end
 
             local edge = require("edge")
-            local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", ngx.arg[1], ngx.arg[2])
 
-            if chunkInfo then
-                local fluentd_logger = require "fluentd_logger"
-                fluentd_logger.post(ngx.req.start_time(), "response_body", chunkInfo)
-            end
+            -- Logging response for Feedback loop
+            if edge.is_config_enabled("FEEDBACK_ENABLED"){
+                local chunkInfo = edge.catch_model_api_response_chunk("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", ngx.arg[1], ngx.arg[2])
+
+                if chunkInfo then
+                    local fluentd_logger = require "fluentd_logger"
+                    fluentd_logger.post(ngx.req.start_time(), "response_body", chunkInfo)
+                end
+            }
         }
 
         access_by_lua_block {
@@ -155,23 +183,28 @@ http {
             local request_id_generator = require("request_id_generator")
 
             -- JWT validation
-            local jwt = require("nginx-jwt")
-            jwt.auth({
-                model_id=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.id }}") end,
-                model_version=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.version }}") end
-            })
-            local blacklisted_tokens = require "blacklisted_tokens"
-            blacklisted_tokens.check_token()
+            if edge.is_config_enabled("JWT_ENABLED"){
+                local jwt = require("nginx-jwt")
+                jwt.auth({
+                    model_id=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.id }}") end,
+                    model_version=function (val) return jwt.table_contains(val, "{{ model_endpoint.model_service.version }}") end
+                })
+                local blacklisted_tokens = require "blacklisted_tokens"
+                blacklisted_tokens.check_token()
+            }
 
-            -- RequestID generation if it is missed
-            local requestID = ngx.req.get_headers()["Request-ID"]
-            if not requestID then
-               requestID = request_id_generator.generate_request_id()
-               ngx.req.set_header("Request-ID", requestID)
-               ngx.log(ngx.INFO, "Request ID has been generated: "..requestID)
-            end
+            -- Adding header for feedback
+            if edge.is_config_enabled("FEEDBACK_ENABLED"){
+                -- RequestID generation if it is missed
+                local requestID = ngx.req.get_headers()["Request-ID"]
+                if not requestID then
+                requestID = request_id_generator.generate_request_id()
+                ngx.req.set_header("Request-ID", requestID)
+                ngx.log(ngx.INFO, "Request ID has been generated: "..requestID)
+                end
 
-            ngx.header["Request-ID"] = requestID
+                ngx.header["Request-ID"] = requestID
+            }
         }
 
         proxy_pass {{ model_endpoint.model_service.url_with_ip }}/api/model/{{ model_endpoint.model_service.id }}/{{ model_endpoint.model_service.version }};
@@ -183,22 +216,24 @@ http {
         add_header 'Access-Control-Allow-Origin' '*';
 
         log_by_lua_block {
+            local edge = require("edge")
             local model_endpoint = ngx.header["Model-Endpoint"]
 
             if model_endpoint == Nil then
                 model_endpoint = "default"
             end
 
-            -- HTTP requests timing metrics
+            -- HTTP requests timing metrics for prometheus
             local statistics_sender = require "statistics_sender"
             statistics_sender.send_request_statistics("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint, tonumber(ngx.var.request_time))
 
             -- Request info gathering
-            local edge = require("edge")
-            local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint)
+            if edge.is_config_enabled("FEEDBACK_ENABLED"){
+                local requestInfo = edge.catch_model_api_call("{{ model_endpoint.model_service.id }}", "{{ model_endpoint.model_service.version }}", model_endpoint)
 
-            local fluentd_logger = require "fluentd_logger"
-            fluentd_logger.post(ngx.req.start_time(), "request_response", requestInfo)
+                local fluentd_logger = require "fluentd_logger"
+                fluentd_logger.post(ngx.req.start_time(), "request_response", requestInfo)
+            }
         }
     }
     {% endfor %}
