@@ -1,14 +1,14 @@
-{{- if .Values.vcs }}
+{{- range $vcs := .Values.vcs }}
+---
 apiVersion: legion.legion-platform.org/v1alpha1
 kind: VCSCredential
 metadata:
-  name: "{{ .Values.vcs.name }}"
+  name: "{{ $vcs.name }}"
   labels:
-    controller-tools.k8s.io: "1.0"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" $ | nindent 4 }}
 spec:
-  type: "{{ .Values.vcs.type }}"
-  uri: "{{ .Values.vcs.uri }}"
-  defaultReference: "{{ .Values.vcs.defaultReference }}"
-  credential: "{{ .Values.vcs.creds }}"
+  type: "{{ $vcs.type }}"
+  uri: "{{ $vcs.uri }}"
+  defaultReference: "{{ $vcs.defaultReference }}"
+  credential: "{{ $vcs.creds }}"
 {{- end }}

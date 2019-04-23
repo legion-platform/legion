@@ -140,7 +140,13 @@ modelMetrics:
 
 
 # Default VCS instances. Will be spawned on cluster start
-vcs: ~
+# For more information, read the VCSCredential documentation. Example:
+# - name: "legion"
+#   type: "git"
+#   uri: "git@github.com:legion-platform/legion.git"
+#   defaultReference: "origin/develop"
+#   creds: ""
+vcs: []
 
 # Model storage is a Docker Registry
 # Credentials are required for gathering model information

@@ -17,7 +17,7 @@ spec:
         {{- include "legion.helm-labels" . | nindent 8 }}
     spec:
       {{- if .Values.rbac }}
-      serviceAccountName: "{{ .Release.Name }}-legion-operator"
+      serviceAccountName: "{{ .Release.Name }}-operator"
       {{- end }}
       containers:
       - image: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.server "tpl" "%sk8s-operator:%s") }}"
