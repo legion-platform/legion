@@ -20,7 +20,7 @@ spec:
       serviceAccountName: "{{ .Release.Name }}-legion-operator"
       {{- end }}
       containers:
-      - image: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.server "tpl" "%s/aa:%s") }}"
+      - image: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.server "tpl" "%sk8s-operator:%s") }}"
         imagePullPolicy: Always
         name: manager
         env:
@@ -29,11 +29,11 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: BUILDER_IMAGE
-            value: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.builder "tpl" "%s/aa:%s") }}"
+            value: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.builder "tpl" "%sk8s-model-builder:%s") }}"
           - name: BUILDER_SERVICE_ACCOUNT
             value: "{{ .Release.Name }}-model-builder"
           - name: PYTHON_TOOLCHAIN_IMAGE
-            value: "{{ include "legion.image-name" (dict "root" . "service" .Values.toolchains.python "tpl" "%s/aa:%s") }}"
+            value: "{{ include "legion.image-name" (dict "root" . "service" .Values.toolchains.python "tpl" "%spython-toolchain:%s") }}"
           - name: BUILD_IMAGE_PREFIX
             value: {{ .Values.modelStorage.buildPrefix | quote }}
           - name: DOCKER_REGISTRY

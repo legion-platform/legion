@@ -31,7 +31,7 @@ spec:
       {{- end}}
       containers:
       - name: edi
-        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%s/aa:%s") }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%sk8s-edi:%s") }}"
         resources:
           requests:
             cpu: {{ .Values.edi.resources.requests.cpu | quote }}

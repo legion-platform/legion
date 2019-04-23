@@ -26,7 +26,7 @@ spec:
       {{- end }}
       containers:
       - name: nginx
-        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edge "tpl" "%s/aa:%s") }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edge "tpl" "%sk8s-edge:%s") }}"
         resources:
           requests:
             cpu: {{ .Values.edge.resources.requests.cpu | quote }}

@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: fluentd
-        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.fluentd "tpl" "%s/aa:%s") }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.fluentd "tpl" "%sk8s-fluentd:%s") }}"
         resources:
           requests:
             cpu: {{ .Values.feedback.fluentd.resources.requests.cpu | quote }}
