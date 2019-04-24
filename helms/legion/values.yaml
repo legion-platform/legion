@@ -11,7 +11,7 @@ rbac: true
 # This registry will be used for automatic docker image name deduction based on Legion naming for images
 # Each image could be overrided mannualy in .<service>.image, please see .edi root section or other
 # Type: string
-imagesRegistry: legionplatform
+imagesRegistry: legionplatform/
 
 # Verbosity of loggin features in components
 # Valid values are:
