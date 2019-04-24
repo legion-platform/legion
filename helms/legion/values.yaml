@@ -9,11 +9,11 @@ rbac: true
 
 # Docker images registry
 # This registry will be used for automatic docker image name deduction based on Legion naming for images
-# Each image could be overrided mannualy in .<service>.image, please see .edi root section or other
+# Each image could be overridden manually in .<service>.image, please see .edi root section or other
 # Type: string
 imagesRegistry: legionplatform/
 
-# Verbosity of loggin features in components
+# Verbosity of logging features in components
 # Valid values are:
 # - info
 # - debug
@@ -27,31 +27,31 @@ logLevel: info
 # - edge
 ingress:
   # Global flag for Ingress enabling
-  # Each Ingress could be configurred manually in .<service>.ingress.enabled
+  # Each Ingress could be configured manually in .<service>.ingress.enabled
   # Type: bool
   enabled: false
 
   # Root domain for auto-created Ingress domains.
-  # Each domain could be configurred manually in .<service>.ingress.domain
-  # Also it controlls building URLs for external resources such as auth endpoint
+  # Each domain could be configured manually in .<service>.ingress.domain
+  # Also it controls building URLs for external resources such as auth endpoint
   # Type: string
   globalDomain: example.com
 
   # Global annotations for all services
-  # Each Ingress could be configurred manually in .<service>.ingress.annotations
+  # Each Ingress could be configured manually in .<service>.ingress.annotations
   # Type: string->string map
   annotations: {}
   #  kubernetes.io/ingress.class: nginx
   #  kubernetes.io/tls-acme: "true"
 
   # Global TLS flag
-  # Each Ingress could be configurred manually in .<service>.ingress.tlsEnabled
-  # Also it controlls building URLs for external resources such as auth endpoint
+  # Each Ingress could be configured manually in .<service>.ingress.tlsEnabled
+  # Also it controls building URLs for external resources such as auth endpoint
   # Type: bool
   tlsEnabled: false
 
   # Global TLS secret name
-  # Each Ingress could be configurred manually in .<service>.ingress.tlsSecretName
+  # Each Ingress could be configured manually in .<service>.ingress.tlsSecretName
   # Type: string
   tlsSecretName: ~
 
@@ -74,7 +74,7 @@ security:
 
     # Public URL on which user will be redirected for authrorization
     # Uncomment for custom public URL, otherwise auth.<ingress.globalDomain> will be used
-    # besided standart Nginx Ingress variables, escaped_request_uri is available too
+    # besides standard Nginx Ingress variables, escaped_request_uri is available too
     # Type: string
     # public_url: https://auth.my-company.com/oauth2/start?rd=https://$host$escaped_request_uri
 
@@ -124,7 +124,7 @@ metrics:
 
 # StatsD configuration for metrics that requires StatsD format (e.g. model invocation & training metrics)
 modelMetrics:
-  # Is model performace metrics enabled or not
+  # Is model performance metrics enabled or not
   # Type: bool
   enabled: false
 
@@ -158,7 +158,7 @@ modelStorage:
   # Valid values are:
   # - external - use external Docker Registry
   type: external
-  # TODO: add "internal" variant - deploy and use internal Docker Registry with empheral disk (only for development purposes)
+  # TODO: add "internal" variant - deploy and use internal Docker Registry with ephemeral disk (only for development purposes)
 
   # Detailed configuration of external Docker Registry
   external:
@@ -298,7 +298,7 @@ feedback:
 # Operator handles all Legion's CustomResources such as ModelTraining and etc.
 operator:
   # Operator's server configuration
-  # It listents Kubernetes API for Legion CR update events
+  # It listens Kubernetes API for Legion CR update events
   #  and creates/updates appropriate Pods / Secrets
   server:
     # This variable can be uncommented to setup custom image name for operator (server)
@@ -352,7 +352,7 @@ edi:
   # Type: integer
   k8sApiRetryDelaySec: 3
 
-  # Port on which EDI listens income trafic
+  # Port on which EDI listens income traffic
   # Type: integer
   port: 80
 
@@ -412,7 +412,7 @@ edge:
   # Type: integer
   replicas: 1
 
-  # Port on which EDI listens income trafic
+  # Port on which EDI listens income traffic
   # Type: integer
   port: 80
 
