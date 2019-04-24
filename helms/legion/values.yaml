@@ -9,7 +9,7 @@ rbac: true
 
 # Docker images registry
 # This registry will be used for automatic docker image name deduction based on Legion naming for images
-# Each image could be overrided mannualy in .<service>.customImage, please see .edi root section or other
+# Each image could be overrided mannualy in .<service>.image, please see .edi root section or other
 # Type: string
 imagesRegistry: legionplatform
 
@@ -59,7 +59,7 @@ ingress:
 security:
   # Is authorization for WEB requests enabled or not
   # Type: bool
-  enabled: true
+  enabled: false
 
   # Type of authorization. Currently only oauth2_proxy is supported
   # Valid values are:
@@ -197,7 +197,7 @@ feedback:
   fluentd:
     # This variable can be enabled to setup custom image name for fluentd
     # Type: string
-    # customImage: custom-image:1.0
+    # image: custom-image:1.0
 
     # Resources for each instance
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
@@ -303,7 +303,7 @@ operator:
   server:
     # This variable can be uncommented to setup custom image name for operator (server)
     # Type: string
-    # customImage: custom-image:1.0
+    # image: custom-image:1.0
 
     # Resources for each instance
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
@@ -322,7 +322,7 @@ operator:
   builder:
     # This variable can be uncommented to setup custom image name for operator (builder)
     # Type: string
-    # customImage: custom-image:1.0
+    # image: custom-image:1.0
 
 # EDI server configuration
 # It provides HTTP API for model training & model deployment management
@@ -334,7 +334,7 @@ edi:
 
   # This variable can be uncommented to setup custom image name for operator (server)
   # Type: string
-  # customImage: custom-image:1.0
+  # image: custom-image:1.0
 
   # Count of EDI replicas
   # Type: integer
@@ -402,7 +402,7 @@ edge:
 
   # This variable can be uncommented to setup custom image name for operator (server)
   # Type: string
-  # customImage: custom-image:1.0
+  # image: custom-image:1.0
 
   # Count of EDGE replicas
   # Type: integer
@@ -456,4 +456,4 @@ toolchains:
   python:
     # This variable can be uncommented to setup custom image name for python
     # Type: string
-    # customImage: custom-image:1.0
+    # image: custom-image:1.0

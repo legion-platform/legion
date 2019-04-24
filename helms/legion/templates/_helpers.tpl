@@ -137,13 +137,13 @@ Arguments:
 Function builds image name for Kubernetes Pod
 Arguments:
     - .root - root HELM scope
-    - .service - service's scope with desired customImage field
+    - .service - service's scope with desired image field
     - .tpl - template for building default URI of image
 */}}
 {{- define "legion.image-name" -}}
 {{- if .service }}
-{{- if (hasKey .service "customImage") }}
-{{ .service.customImage  }}
+{{- if (hasKey .service "image") }}
+{{ .service.image  }}
 {{- else -}}
 {{- include "legion.default-image-name" . -}}
 {{ end }}
