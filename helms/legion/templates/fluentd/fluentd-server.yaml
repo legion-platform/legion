@@ -27,12 +27,7 @@ spec:
       - name: fluentd
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.fluentd "tpl" "%sk8s-fluentd:%s") }}"
         resources:
-          requests:
-            cpu: {{ .Values.feedback.fluentd.resources.requests.cpu | quote }}
-            memory: {{ .Values.feedback.fluentd.resources.requests.memory | quote }}
-          limits:
-            cpu: {{ .Values.feedback.fluentd.resources.limits.cpu | quote }}
-            memory: {{ .Values.feedback.fluentd.resources.limits.memory | quote }}
+          {{- toYaml .Values.feedback.fluentd.resources | nindent 10 }}
         env:
         # File load data from
         - name: FLUENTD_ARGS

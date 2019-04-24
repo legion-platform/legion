@@ -34,12 +34,7 @@ spec:
       - name: edi
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%sk8s-edi:%s") }}"
         resources:
-          requests:
-            cpu: {{ .Values.edi.resources.requests.cpu | quote }}
-            memory: {{ .Values.edi.resources.requests.memory | quote }}
-          limits:
-            cpu: {{ .Values.edi.resources.limits.cpu | quote }}
-            memory: {{ .Values.edi.resources.limits.memory | quote }}
+          {{- toYaml .Values.edi.resources | nindent 10 }}
         env:
         - name: DEPLOYMENT
           value: "{{ .Release.Name }}"

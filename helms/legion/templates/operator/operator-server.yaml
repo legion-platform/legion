@@ -56,12 +56,7 @@ spec:
           - name: METRICS_PORT
             value: {{ .Values.modelMetrics.port | quote }}
         resources:
-          limits:
-            cpu: {{ .Values.operator.server.resources.limits.cpu | quote }}
-            memory: {{ .Values.operator.server.resources.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.operator.server.resources.requests.cpu | quote }}
-            memory: {{ .Values.operator.server.resources.requests.memory | quote }}
+          {{- toYaml .Values.operator.server.resources | nindent 10 }}
         ports:
         - containerPort: 9876
           name: webhook-server

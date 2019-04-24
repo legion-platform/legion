@@ -29,12 +29,7 @@ spec:
       - name: nginx
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edge "tpl" "%sk8s-edge:%s") }}"
         resources:
-          requests:
-            cpu: {{ .Values.edge.resources.requests.cpu | quote }}
-            memory: {{ .Values.edge.resources.requests.memory | quote }}
-          limits:
-            cpu: {{ .Values.edge.resources.limits.cpu | quote }}
-            memory: {{ .Values.edge.resources.limits.memory | quote }}
+          {{- toYaml .Values.edge.resources | nindent 10 }}
         env:
         - name: POD_UUID
           valueFrom:
