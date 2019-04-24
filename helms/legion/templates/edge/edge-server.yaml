@@ -47,7 +47,7 @@ spec:
           value: "127.0.0.1"
         - name: FLUENTD_PORT
           value: "24224"
-        {{- else -}}
+        {{- else }}
         - name: FEEDBACK_ENABLED
           value: "false"
         {{- end }}
