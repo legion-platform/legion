@@ -40,7 +40,6 @@ spec:
             secretKeyRef:
               name: "{{ .Release.Name }}-fluentd-secret"
               key: AWSKeyID
-          value: "{{ required "AWS Access Key ID is required for secret-based auth." .Values.feedback.output.s3.AWSKeyID }}"
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
