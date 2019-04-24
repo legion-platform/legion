@@ -69,11 +69,8 @@ class Service:
         else:
             api_ports = [port.port for port in ports if port.name == LEGION_API_SERVICE_PORT]
 
-        if not api_ports:
-            raise Exception('Invalid service for introspection: cannot find port {} for service {}'
-                            .format(LEGION_API_SERVICE_PORT, self._name))
-
-        self._port = api_ports[0]
+        if api_ports:
+            self._port = api_ports[0]
 
         self._ingress_data_loaded = False
         self._ingress = None
@@ -168,18 +165,24 @@ class Service:
         """
         Get internal URL for service
 
-        :return: str -- internal URL
+        :return: str or None -- internal URL
         """
-        return 'http://{}:{}'.format(self.internal_domain, self._port)
+        if self._port:
+            return 'http://{}:{}'.format(self.internal_domain, self._port)
+        else:
+            return None
 
     @property
     def url_with_ip(self):
         """
         Get internal URL for service with IP instead of name
 
-        :return: str -- internal URL
+        :return: str or None -- internal URL
         """
-        return 'http://{}:{}'.format(self.k8s_service.spec.cluster_ip, self._port)
+        if self._port:
+            return 'http://{}:{}'.format(self.k8s_service.spec.cluster_ip, self._port)
+        else:
+            return None
 
     @property
     def namespace(self):
