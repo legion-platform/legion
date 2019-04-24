@@ -305,6 +305,10 @@ operator:
     # Type: string
     # image: custom-image:1.0
 
+    # Count of operator replicas
+    # Type: integer
+    replicas: 1
+
     # Resources for each instance
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
     resources:
