@@ -17,8 +17,8 @@
     "labels": {
       "com.epam.legion.model.id": "demo-abc-model",
       "com.epam.legion.model.version": "1.1",
-      "legion.component": "model",
-      "legion.system": "yes"
+      "component": "legion-model",
+      "app.kubernetes.io/name": "legion"
     },
     "name": "model-demo-abc-model-1-1",
     "namespace": "debug-enclave",
@@ -32,8 +32,8 @@
       "matchLabels": {
         "com.epam.legion.model.id": "demo-abc-model",
         "com.epam.legion.model.version": "1.1",
-        "legion.component": "model",
-        "legion.system": "yes"
+        "component": "legion-model",
+        "app.kubernetes.io/name": "legion"
       }
     },
     "strategy": {
@@ -58,8 +58,8 @@
         "labels": {
           "com.epam.legion.model.id": "demo-abc-model",
           "com.epam.legion.model.version": "1.1",
-          "legion.component": "model",
-          "legion.system": "yes"
+          "component": "legion-model",
+          "app.kubernetes.io/name": "legion"
         }
       },
       "spec": {
