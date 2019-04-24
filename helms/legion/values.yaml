@@ -82,7 +82,7 @@ security:
 modelApiSecurity:
   # Should Model API security be closed by auth. or not
   # Type: bool
-  enabled: true
+  enabled: false
 
   # Type of auth. mechanism for Model API gateway
   # Valid values are:
