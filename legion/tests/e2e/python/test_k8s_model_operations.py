@@ -25,7 +25,6 @@ import unittest2
 from legion.robot import profiler_loader
 from legion.robot.libraries import k8s
 from legion.robot.utils import wait_until, ContextThread
-from legion.sdk.containers.definitions import ModelIdVersion, STATUS_OK
 from legion.services.k8s import utils as k8s_utils
 from legion.services.k8s.enclave import find_enclaves
 
