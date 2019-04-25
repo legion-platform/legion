@@ -71,6 +71,7 @@ type OperatorConfig struct {
 	DockerRegistry         string
 	DockerRegistryUser     string
 	DockerRegistryPassword string
+	BuilderServiceAccount  string
 }
 
 func NewOperatorConfig() OperatorConfig {
@@ -84,6 +85,7 @@ func NewOperatorConfig() OperatorConfig {
 		DockerRegistry:         envNotEmpty("DOCKER_REGISTRY"),
 		DockerRegistryUser:     envNotEmpty("DOCKER_REGISTRY_USER"),
 		DockerRegistryPassword: envNotEmpty("DOCKER_REGISTRY_PASSWORD"),
+		BuilderServiceAccount:  envNotEmpty("BUILDER_SERVICE_ACCOUNT"),
 	}
 }
 

@@ -1,0 +1,31 @@
+{{- if .Values.edge.enabled -}}
+{{- if (ternary $.Values.edge.ingress.enabled $.Values.ingress.enabled (hasKey $.Values.edge.ingress "enabled")) }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    {{- include "legion.ingress-default-root-annotations" . | nindent 4 }}
+    {{- range $key, $value := .Values.edge.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  labels:
+    component: "legion-edge"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+  name: "{{ .Release.Name }}-edge"
+spec:
+  rules:
+    - host: {{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge-%s.%s") }}
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-edge"
+              servicePort: {{ .Values.edge.port }}
+  {{- if (ternary $.Values.edge.ingress.tlsEnabled $.Values.ingress.tlsEnabled (hasKey $.Values.edge.ingress "tlsEnabled")) }}
+  tls:
+  - hosts:
+    - {{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge-%s.%s") | quote }}
+    secretName: {{ include "legion.ingress-tls-secret-name" (dict "local" .Values.edge.ingress "root" . ) | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

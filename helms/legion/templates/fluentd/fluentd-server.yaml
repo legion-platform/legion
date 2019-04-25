@@ -1,42 +1,57 @@
+{{ if .Values.feedback.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-fluentd"
   labels:
-    heritage: {{ .Release.Service | quote }}
-    release: {{ .Release.Name | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    component: "{{ .Release.Name }}-fluentd"
+    component: "legion-fluentd"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.feedback.replicas }}
+  # FluentD is limited to 1 replica to avoid data overwriting
+  replicas: 1
   selector:
     matchLabels:
-      component: "{{ .Release.Name }}-fluentd"
+      component: "legion-fluentd"
+      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
   template:
     metadata:
+      {{- if and (eq .Values.feedback.output.target "s3") (eq .Values.feedback.output.s3.authorization "iam" ) }}
       annotations:
-        iam.amazonaws.com/role: "{{ .Values.clusterName }}-{{ .Values.enclaveName }}-collector-role"
+        iam.amazonaws.com/role: {{ ternary $.Values.feedback.output.s3.customIAMRole (printf "%s-%s-collector-role" $.Values.ingress.globalDomain $.Release.Namespace) (hasKey $.Values.feedback.output.s3 "customIAMRole") }}
+      {{- end }}
       labels:
-        component: "{{ .Release.Name }}-fluentd"
+        component: "legion-fluentd"
+        {{- include "legion.helm-labels" . | nindent 8 }}
     spec:
       containers:
       - name: fluentd
-        image: "{{ .Values.feedback.image.repository }}:{{ .Values.feedback.image.tag }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.fluentd "tpl" "%sk8s-fluentd:%s") }}"
         resources:
-          requests:
-            cpu: "300m"
-            memory: "256Mi"
-          limits:
-            cpu: "500m"
-            memory: "1024Mi"
+          {{- toYaml .Values.feedback.fluentd.resources | nindent 10 }}
         env:
+        # File load data from
         - name: FLUENTD_ARGS
           value: -c /opt/fluent-config/fluent.conf
+        # Auth on external storage systems
+        {{- if eq .Values.feedback.output.target "s3" }}
+        {{- if eq .Values.feedback.output.s3.authorization "secret" }}
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-fluentd-secret"
+              key: AWSKeyID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-fluentd-secret"
+              key: AWSSecretKey
+        {{- end }}
+        {{- end }}
         ports:
-        - containerPort: 24224
+        - containerPort: {{ .Values.feedback.fluentd.port }}
           name: input
           protocol: TCP
-        - containerPort: 24224
+        - containerPort: {{ .Values.feedback.fluentd.port }}
           name: input-udp
           protocol: UDP
         volumeMounts:
@@ -52,16 +67,19 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}-fluentd"
   labels:
-    component: "{{ .Release.Name }}-fluentd"
+    component: "legion-fluentd"
+    {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
   selector:
-    component: "{{ .Release.Name }}-fluentd"
+    component: "legion-fluentd"
+    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
   ports:
   - name: input
-    port: 24224
-    targetPort: 24224
+    port: {{ .Values.feedback.fluentd.port }}
+    targetPort: {{ .Values.feedback.fluentd.port }}
     protocol: TCP
   - name: input-udp
-    port: 24224
-    targetPort: 24224
+    port: {{ .Values.feedback.fluentd.port }}
+    targetPort: {{ .Values.feedback.fluentd.port }}
     protocol: UDP
+{{- end }}

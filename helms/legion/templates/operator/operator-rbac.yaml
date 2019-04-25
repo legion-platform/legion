@@ -1,0 +1,64 @@
+{{- if .Values.rbac -}}
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "{{ .Release.Name }}-model-builder"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "{{ .Release.Name }}-model-builder"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    namespace: {{ .Release.Namespace }}
+    name: "{{ .Release.Name }}-model-builder"
+roleRef:
+  kind: Role
+  name: "{{ .Release.Name }}-model-builder"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-model-builder"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "{{ .Release.Name }}-operator"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    namespace: {{ .Release.Namespace }}
+    name: "{{ .Release.Name }}-operator"
+roleRef:
+  kind: ClusterRole
+  name: "{{ .Release.Name }}-operator"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-operator"
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+{{- end }}

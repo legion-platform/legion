@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
+    {{- include "legion.helm-labels" . | nindent 4 }}
   name: modeltrainings.legion.legion-platform.org
 spec:
   additionalPrinterColumns:

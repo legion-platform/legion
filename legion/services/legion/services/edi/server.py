@@ -313,8 +313,11 @@ def generate_token(model_id, model_version, expiration_date=None):
     """
     Generate JWT token
 
-    :return: dict -- state of cluster
+    :return: dict -- JWT token and expiration information
     """
+    if not app.config['JWT_CONFIG']:
+        return {'token': '', 'exp': None}
+
     jwt_secret = app.config['JWT_CONFIG']['jwt.secret']
     jwt_exp_date = None
     jwt_exp_date_str = None
@@ -383,7 +386,11 @@ def load_cluster_config(application):
 
     application.config['ENCLAVE'] = get_application_enclave(application)
     application.config['CLUSTER_SECRETS'] = load_secrets(application.config['CLUSTER_SECRETS_PATH'])
-    application.config['JWT_CONFIG'] = load_secrets(application.config['JWT_CONFIG_PATH'])
+
+    if os.path.exists(application.config['JWT_CONFIG_PATH']):
+        application.config['JWT_CONFIG'] = load_secrets(application.config['JWT_CONFIG_PATH'])
+    else:
+        application.config['JWT_CONFIG'] = None
 
 
 def init_application(args=None):

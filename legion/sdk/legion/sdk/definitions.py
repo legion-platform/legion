@@ -18,12 +18,12 @@ legion k8s definitions functions
 """
 import typing
 
-LEGION_SYSTEM_LABEL = 'legion.system'
-LEGION_SYSTEM_VALUE = 'yes'
-LEGION_COMPONENT_LABEL = 'legion.component'
-LEGION_COMPONENT_NAME_MODEL = 'model'
-LEGION_COMPONENT_NAME_EDI = 'edi'
-LEGION_COMPONENT_NAME_API = 'edge'
+LEGION_SYSTEM_LABEL = 'app.kubernetes.io/name'
+LEGION_SYSTEM_VALUE = 'legion'
+LEGION_COMPONENT_LABEL = 'component'
+LEGION_COMPONENT_NAME_MODEL = 'legion-model'
+LEGION_COMPONENT_NAME_EDI = 'legion-edi'
+LEGION_COMPONENT_NAME_API = 'legion-edge'
 
 LEGION_API_SERVICE_PORT = 'api'
 

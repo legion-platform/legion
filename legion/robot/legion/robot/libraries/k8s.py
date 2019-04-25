@@ -400,7 +400,7 @@ class K8s:
         """
         client = self.build_client()
         extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
-        label_selector = 'legion.component=model,com.epam.legion.model.id={},com.epam.legion.model.version={}'.format(
+        label_selector = 'component=legion-model,com.epam.legion.model.id={},com.epam.legion.model.version={}'.format(
             model_id, model_version
         )
         deployments = extension_api.list_namespaced_deployment(namespace, label_selector=label_selector)

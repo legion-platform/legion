@@ -97,10 +97,13 @@ def generate_token(args):
     edi_client = edi.build_client(args)
     token = edi_client.get_token(args.model_id, args.model_version, args.expiration_date)
 
-    update_config_file(section=MODEL_JWT_TOKEN_SECTION,
-                       **{model_config_prefix(args.model_id, args.model_version): token})
+    if token:
+        update_config_file(section=MODEL_JWT_TOKEN_SECTION,
+                        **{model_config_prefix(args.model_id, args.model_version): token})
 
-    print(token)
+        print(token)
+    else:
+        print('JWT mechanism is disabled')
 
 
 def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
