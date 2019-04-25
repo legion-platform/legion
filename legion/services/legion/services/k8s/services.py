@@ -28,8 +28,8 @@ from legion.sdk import config
 from legion.sdk.containers.definitions import ModelIdVersion, STATUS_OK, STATUS_FAIL, STATUS_WARN
 from legion.sdk.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
 from legion.services.k8s import utils as k8s_utils
-from legion.sdk.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT, LEGION_COMPONENT_NAME_MODEL
-from legion.sdk.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
+from legion.sdk.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
+from legion.sdk.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT, LEGION_COMPONENT_NAME_MODEL
 from legion.services.k8s.exceptions import UnknownDeploymentForModelService, KubernetesOperationIsNotConfirmed
 from legion.services.k8s.utils import normalize_k8s_name
 from legion.sdk.utils import ensure_function_succeed, normalize_name
