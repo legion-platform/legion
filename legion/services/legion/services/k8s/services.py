@@ -28,7 +28,7 @@ from legion.sdk import config
 from legion.sdk.containers.definitions import ModelIdVersion, STATUS_OK, STATUS_FAIL, STATUS_WARN
 from legion.sdk.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
 from legion.services.k8s import utils as k8s_utils
-from legion.sdk.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT
+from legion.sdk.definitions import LEGION_COMPONENT_LABEL, LEGION_SYSTEM_LABEL, LEGION_API_SERVICE_PORT, LEGION_COMPONENT_NAME_MODEL
 from legion.sdk.definitions import LOAD_DATA_ITERATIONS, LOAD_DATA_TIMEOUT
 from legion.services.k8s.exceptions import UnknownDeploymentForModelService, KubernetesOperationIsNotConfirmed
 from legion.services.k8s.utils import normalize_k8s_name
@@ -554,7 +554,8 @@ class ModelServiceEndpoint:
 
 
 def _generate_model_labels(model_id=None, model_version=None):
-    """Generate kubernetes labels by model id and version.
+    """
+    Generate kubernetes labels by model id and version.
     If parameters equal None or * then it will not be included in label selector
 
     :param model_id: model id
@@ -563,7 +564,7 @@ def _generate_model_labels(model_id=None, model_version=None):
     :type model_version: str or None
     :return str - label selector
     """
-    label_selector = '{}=model'.format(LEGION_COMPONENT_LABEL)
+    label_selector = '{}={}'.format(LEGION_COMPONENT_LABEL, LEGION_COMPONENT_NAME_MODEL)
     if model_id and model_id != "*":
         label_selector += ',{}={}'.format(DOMAIN_MODEL_ID, model_id)
     if model_version and model_version != "*":
