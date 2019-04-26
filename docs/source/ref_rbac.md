@@ -1,6 +1,7 @@
 # RBAC configuration
 Legion package can be used for introspection and modification of Legion state in K8S cluster.
 
+**Information in this section is outdated, please update**
 
 ## Usage K8S API by functionality
 ### Enclave
@@ -13,7 +14,7 @@ Legion package can be used for introspection and modification of Legion state in
 * `AppsV1Api.create_namespaced_deployment`
 * `CoreV1Api.create_namespaced_service`
 
-#### Inspecting 
+#### Inspecting
 This function is used to getting models and services in enclave
 * `CoreV1Api.list_namespaced_service`
 
@@ -28,11 +29,11 @@ This function is used to getting models and services in enclave
 This functionality implemented in Enclave Inspecting
 * `CoreV1Api.list_namespaced_service`
 
-#### Accessing public URL 
+#### Accessing public URL
 This function will be called on accessing public URL for service, uses in EDI to get EDI info
 * `ExtensionsV1beta1Api.list_namespaced_ingress`
 
-#### Inspecting models 
+#### Inspecting models
 This function will be called on access deployment, scale, desired scale, status, image
 * `AppsV1Api.read_namespaced_deployment`
 
@@ -68,30 +69,30 @@ This function will be called on access deployment, scale, desired scale, status,
 * `CoreV1Api.delete_namespaced_secret`
 
 ## Usage by modules
-### Enclaves	
+### Enclaves
 ##### legion.k8s.enclave.Enclave.deploy_model
 * `AppsV1Api.create_namespaced_deployment`
 * `CoreV1Api.create_namespaced_service`
-	
+
 ##### legion.k8s.enclave.Enclave.watch_services
 * `CoreV1Api.list_namespaced_service [WATCH]`
-	
+
 ##### legion.k8s.enclave.Enclave.watch_enclaves
 * `CoreV1Api.list_namespace [WATCH]`
-	
+
 ##### legion.k8s.enclave.Enclave.delete
 * `CoreV1Api.delete_namespace`
-	
+
 ##### legion.k8s.enclave.find_enclaves
 * `CoreV1Api.list_namespace`
 
-### Services	
+### Services
 ##### legion.k8s.services.ModelService._load_data
 * `AppsV1Api.read_namespaced_deployment`
-	
+
 ##### legion.k8s.services.ModelService.scale
 * `AppsV1Api.patch_namespaced_deployment`
-	
+
 ##### legion.k8s.services.ModelService.delete
 * `AppsV1beta1Api.delete_namespaced_deployment`
 * `CoreV1Api.delete_namespaced_service`
@@ -99,15 +100,15 @@ This function will be called on access deployment, scale, desired scale, status,
 
 ##### legion.k8s.services.find_model_deployment
 * `AppsV1Api.read_namespaced_deployment`
-	
+
 ##### legion.k8s.services.find_all_models_deployments
 * `AppsV1Api.read_namespaced_deployment`
 * `AppsV1Api.list_deployment_for_all_namespaces`
-	
+
 ##### legion.k8s.services.find_all_services
 * `CoreV1Api.list_namespaced_service`
 * `CoreV1Api.list_service_for_all_namespaces`
-	
+
 ##### legion.k8s.services.find_all_ingresses
 * `ExtensionsV1beta1Api.list_namespaced_ingress`
 * `ExtensionsV1beta1Api.list_ingress_for_all_namespaces`

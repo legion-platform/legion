@@ -149,9 +149,11 @@ install-unittests:
 lint:
 	scripts/lint.sh
 
-## build-docs: Build legion docs
-build-docs:
-	BUILD_VERSION="${LEGION_VERSION}" scripts/build-docs.sh
+## docs: Build legion docs
+docs:  check-tag
+	docker build -t ${DOCKER_REGISTRY}/legion/docs-builder:${TAG} -f containers/docs-builder/Dockerfile .
+	docker run --rm -v $(PWD)/docs:/var/docs --workdir /var/docs ${DOCKER_REGISTRY}/legion/docs-builder:${TAG} /generate.sh
+
 
 ## unittests: Run unit tests
 unittests:

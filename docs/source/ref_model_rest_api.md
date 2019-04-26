@@ -1,7 +1,9 @@
 # Model REST API
 
-Each model provides endpoints for obtaining information, 
+Each model provides endpoints for obtaining information,
 simple and batch call of models.
+
+**Information in this section is outdated, please update**
 
 **Model information**
 ----
@@ -12,13 +14,13 @@ simple and batch call of models.
   `/api/model/:model_id/:model_version/info`
 
 * **Method:**
-  
+
   `GET`
-  
+
 *  **URL Params**
 
    **Required:**
- 
+
    `model_id=[str]`- ID of model
 
    `model_version=[str]`- version of model
@@ -30,7 +32,7 @@ simple and batch call of models.
 
   * **Strict model example (one endpoint)** <br />
     **Code:** 200 <br />
-    **Content** 
+    **Content**
     ```json
     {
         "endpoints": {
@@ -57,10 +59,10 @@ simple and batch call of models.
         "version": "1.1"
     }
     ```
-  
+
   * **Model example (strict abc endpoint, non strict def endpoint)** <br />
     **Code:** 200 <br />
-    **Content** 
+    **Content**
     ```json
     {
         "endpoints": {
@@ -85,13 +87,13 @@ simple and batch call of models.
             "def": {
                 "name": "def",
                 "use_df": true
-            }        
+            }
         },
         "id": "income",
         "version": "1.1"
     }
     ```
- 
+
 * **Error Response:**
 
   500 will be returned on any server-side error
@@ -119,19 +121,19 @@ curl -X GET \
   `/api/model/:model_id/:model_version/invoke/:endpoint`
 
 * **Method:**
-  
+
   `GET` | `POST`
-  
+
 *  **URL Params**
 
    **Required:**
- 
+
    `model_id=[str]`- ID of model
 
    `model_version=[str]`- version of model
 
    **Optional:**
- 
+
    `endpoint=[str]` - name of endpoint, `default` if omitted
 
    `key=[str]` - argument for model invocation. Can be passed in URL params or in data params. List of required params can be gathered from model info (for strict models) or from model specification (for non strict models)
@@ -143,18 +145,18 @@ curl -X GET \
   from model specification (for non strict models)
 
 * **Success Response:**
-  
+
   Successful invocation of model should return 200 code and valid JSON response (structure of response defined in a model code).
 
   * **Strict model example** <br />
     **Code:** 200 <br />
-    **Content** 
+    **Content**
     ```json
     {
         "result": 3
     }
     ```
- 
+
 * **Error Response:**
 
   500 will be returned on any server-side error
@@ -189,8 +191,8 @@ curl -X GET \
   ```
 
 * **Notes:**
-  
-  You can invoke model with lists. In this case you should use non-strict model 
+
+  You can invoke model with lists. In this case you should use non-strict model
   and send each list value with a key ending in `[]`. For example `movie[]=Titanic` and `movie[]=Clockwork orange`.
 
   Files should be send as form-data files with specified file names.
@@ -209,34 +211,34 @@ curl -X GET \
   `/api/model/:model_id/:model_version/batch/:endpoint`
 
 * **Method:**
-  
+
   `POST`
-  
+
 *  **URL Params**
 
    **Required:**
- 
+
    `model_id=[str]`- ID of model
 
    `model_version=[str]`- version of model
 
    **Optional:**
- 
+
    `endpoint=[str]` - name of endpoint, `default` if omitted
 
 * **Data Params**
-  
+
   Request should contain request body. Request body contains line for each model
   invocation. Each line should consists of valid GET parameters (encoded)
 
 * **Success Response:**
-  
+
   Successful batch invocation of model should return 200 code and valid JSON response.
-  Response is a valid JSON array, each value of which is a response for 
+  Response is a valid JSON array, each value of which is a response for
   model invocation.
 
   * **Code:** 200 <br />
-    **Content:** 
+    **Content:**
     ```json
     [
         {
@@ -247,7 +249,7 @@ curl -X GET \
         }
     ]
     ```
- 
+
 * **Error Response:**
 
   500 will be returned on any server-side error
@@ -262,7 +264,7 @@ curl -X GET \
   ```
 
 * **Notes:**
-  
+
   Files cannot be send in batch mode.
 
   02.07.2018, Kirill Makhonin
