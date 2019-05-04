@@ -290,7 +290,7 @@ pipeline {
                                             [distutils]
                                             index-servers =
                                               ${env.param_test_pypi_distribution_target_name}
-                                            ${env.param_public_pypi_distribution_target_name}
+                                              ${env.param_public_pypi_distribution_target_name}
                                             [${env.param_test_pypi_distribution_target_name}]
                                             repository=https://test.pypi.org/legacy/
                                             username=${env.USERNAME}
