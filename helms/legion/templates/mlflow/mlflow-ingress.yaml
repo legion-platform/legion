@@ -1,0 +1,28 @@
+{{- if .Values.mlflow.enabled -}}
+{{- if (ternary $.Values.mlflow.ingress.enabled $.Values.ingress.enabled (hasKey $.Values.mlflow.ingress "enabled")) }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- include "legion.ingress-aggregated-annotations" (dict "local" .Values.mlflow.ingress "root" .) | nindent 4 }}
+  labels:
+    component: "legion-mlflow"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+  name: "{{ .Release.Name }}-mlflow"
+spec:
+  rules:
+    - host: {{ include "legion.ingress-domain-name" (dict "local" .Values.mlflow.ingress "root" . "tpl" "mlflow-%s.%s") }}
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-mlflow"
+              servicePort: {{ .Values.mlflow.port }}
+  {{- if (ternary $.Values.mlflow.ingress.tlsEnabled $.Values.ingress.tlsEnabled (hasKey $.Values.mlflow.ingress "tlsEnabled")) }}
+  tls:
+  - hosts:
+    - {{ include "legion.ingress-domain-name" (dict "local" .Values.mlflow.ingress "root" . "tpl" "mlflow-%s.%s") | quote }}
+    secretName: {{ include "legion.ingress-tls-secret-name" (dict "local" .Values.mlflow.ingress "root" . ) | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

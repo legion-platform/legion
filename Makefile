@@ -75,6 +75,10 @@ docker-python-toolchain:
 docker-edi:
 	docker build -t legion/k8s-edi:latest -f containers/edi/Dockerfile .
 
+## docker-mlflow-server: Build MLFlow docker image
+docker-mlflow-server:
+	docker build -t legion/k8s-mlflow-server:latest -f containers/mlflow-server/Dockerfile .
+
 ## docker-edge: Build edge docker image
 docker-edge:
 	docker build -t legion/k8s-edge:latest -f containers/edge/Dockerfile .

@@ -170,6 +170,13 @@ pipeline {
                         }
                     }
                 }
+                stage("Build MLFlow Server Docker image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-mlflow-server', 'containers/mlflow-server')
+                        }
+                    }
+                }
                 stage('Build docs') {
                     steps {
                         script {
@@ -355,6 +362,13 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-fluentd')
+                        }
+                    }
+                }
+                stage('Upload MLFlow Docker image') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-mlflow-server')
                         }
                     }
                 }

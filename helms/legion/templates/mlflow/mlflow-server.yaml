@@ -1,0 +1,55 @@
+{{- if .Values.mlflow.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-mlflow"
+  labels:
+    component: "legion-mlflow"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: "legion-mlflow"
+      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        component: "legion-mlflow"
+        {{- include "legion.helm-labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: mlflow
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.mlflow "tpl" "%sk8s-mlflow-server:%s") }}"
+        resources:
+          {{- toYaml .Values.mlflow.resources | nindent 10 }}
+        ports:
+        - containerPort: 5000
+          name: api
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 120
+          timeoutSeconds: 8
+          failureThreshold: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-mlflow"
+  labels:
+    component: "legion-mlflow"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+spec:
+  selector:
+    component: "legion-mlflow"
+    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
+  ports:
+  - name: api
+    targetPort: 5000
+    port: {{ .Values.mlflow.port }}
+    protocol: TCP
+{{- end }}
