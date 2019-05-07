@@ -71,6 +71,10 @@ docker-pipeline-agent:
 docker-python-toolchain:
 	docker build -t legion/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
 
+## docker-mlflow-toolchain: Build MLFlow toolchain docker image
+docker-mlflow-toolchain:
+	docker build -t legion/mlflow-toolchain:latest -f containers/toolchains/mlflow/Dockerfile .
+
 ## docker-edi: Build edi docker image
 docker-edi:
 	docker build -t legion/k8s-edi:latest -f containers/edi/Dockerfile .
