@@ -24,6 +24,7 @@ legion/legion/data/Pipfile.lock
 
 test.model
 .noseids
+cover.out
 
 *.tmp.yml
 *.tmp.out

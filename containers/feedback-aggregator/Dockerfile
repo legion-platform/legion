@@ -49,6 +49,11 @@ CMD ["./server"]
 
 FROM golang:1.11.6-alpine3.9 as tests
 
-COPY --from=builder /go/src/github.com/legion-platform/legion/legion/feedback-aggregator/server /go/src/github.com/legion-platform/legion/legion/feedback-aggregator/server
+RUN apk add -u ca-certificates && \
+    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
+    tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
+    apk add -u gcc musl-dev
+
 WORKDIR /go/src/github.com/legion-platform/legion/legion/feedback-aggregator
-RUN go test ./cmd ./pkg/... -coverprofile cover.out
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/feedback-aggregator .
+RUN gotestsum
