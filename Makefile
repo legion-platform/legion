@@ -16,6 +16,8 @@ E2E_PYTHON_TAGS=
 COMMIT_ID=
 TEMP_DIRECTORY=
 TAG=
+# Example of DOCKER_REGISTRY: nexus.domain.com:443/
+DOCKER_REGISTRY=
 
 -include .env
 
@@ -87,21 +89,42 @@ docker-model-builder:
 docker-operator:
 	docker build --target operator -t legion/k8s-operator:latest -f containers/operator/Dockerfile .
 
+## docker-feedback-aggregator: Build operator docker image
+docker-feedback-aggregator:
+	docker build --target server -t legion/k8s-feedback-aggregator:latest -f containers/feedback-aggregator/Dockerfile .
+
 ## push-model-builder: Push model builder docker image
 push-model-builder:
 	@if [ "${TAG}" == "" ]; then \
 	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
 	fi
-	docker tag legion/k8s-model-builder:latest nexus.cc.epm.kharlamov.biz:443/legion/k8s-model-builder:${TAG}
-	docker push nexus.cc.epm.kharlamov.biz:443/legion/k8s-model-builder:${TAG}
+	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
+	    echo "DOCKER_REGISTRY not defined, please define DOCKER_REGISTRY variable" ; exit 1 ;\
+	fi
+	docker tag legion/k8s-model-builder:latest ${DOCKER_REGISTRY}legion/k8s-model-builder:${TAG}
+	docker push ${DOCKER_REGISTRY}legion/k8s-model-builder:${TAG}
 
 ## push-operator: Push operator docker image
 push-operator:
 	@if [ "${TAG}" == "" ]; then \
 	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
 	fi
-	docker tag legion/k8s-operator:latest nexus.cc.epm.kharlamov.biz:443/legion/k8s-operator:${TAG}
-	docker push nexus.cc.epm.kharlamov.biz:443/legion/k8s-operator:${TAG}
+	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
+	    echo "DOCKER_REGISTRY not defined, please define DOCKER_REGISTRY variable" ; exit 1 ;\
+	fi
+	docker tag legion/k8s-operator:latest ${DOCKER_REGISTRY}legion/k8s-operator:${TAG}
+	docker push ${DOCKER_REGISTRY}legion/k8s-operator:${TAG}
+
+## push-feedback-aggregator: Push feedback-aggregator docker image
+push-feedback-aggregator:
+	@if [ "${TAG}" == "" ]; then \
+	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
+	fi
+	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
+	    echo "DOCKER_REGISTRY not defined, please define DOCKER_REGISTRY variable" ; exit 1 ;\
+	fi
+	docker tag legion/k8s-feedback-aggregator:latest ${DOCKER_REGISTRY}legion/k8s-feedback-aggregator:${TAG}
+	docker push ${DOCKER_REGISTRY}legion/k8s-feedback-aggregator:${TAG}
 
 ## install-unittests: Install unit tests
 install-unittests:

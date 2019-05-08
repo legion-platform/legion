@@ -42,9 +42,13 @@ spec:
           value: "127.0.0.1"
         - name: FLUENTD_PORT
           value: "24224"
+        - name: FEEDBACK_AGGREGATOR_BACKEND
+          value: "http://{{ .Release.Name }}-feedback-aggregator:{{ .Values.feedback.aggregator.port }}"
         {{- else }}
         - name: FEEDBACK_ENABLED
           value: "false"
+        - name: FEEDBACK_AGGREGATOR_BACKEND
+          value: "http://127.0.0.1"
         {{- end }}
         {{- if .Values.modelApiSecurity.enabled }}
         - name: JWT_ENABLED

@@ -311,7 +311,7 @@ class Utils:
             raise Exception('Cannot get secrets - file not found {}'.format(secrets))
 
         with open(secrets, 'r') as stream:
-            data = yaml.load(stream)
+            data = yaml.load(stream, yaml.SafeLoader)
 
         static_user = data['dex']['config']['staticPasswords'][0]
         return {"login": static_user['email'], "password": static_user['password']}

@@ -17,6 +17,12 @@ Url stay the same after dex log in
     ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
     should be equal  ${service_url}  ${resp.url}
 
+Dex should raise auth error
+    [Arguments]  ${service_url}
+    ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  admin  admin
+    Log              Response for ${service_url} is ${resp}
+    Should contain   ${resp.text}    Invalid Email Address and password
+
 Connect to main Grafana
     Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 
@@ -294,7 +300,7 @@ Validate model feedback log entry
     [Documentation]  check that model feedback log entry contains all required keys
     [Arguments]      ${log_entry}
     Dictionary Should Contain Key   ${log_entry}  request_id
-    Dictionary Should Contain Key   ${log_entry}  feedback_payload
+    Dictionary Should Contain Key   ${log_entry}  payload
     Dictionary Should Contain Key   ${log_entry}  model_id
     Dictionary Should Contain Key   ${log_entry}  model_version
 
@@ -305,9 +311,10 @@ Validate model feedback log entry Request ID
     Should Be Equal                 ${actual_request_id}      ${excpected_request_id}
 
 Validate model feedback log entry params
-    [Documentation]  check that model feedback log entry params
+    [Documentation]  check that model feedback log entry params are correct
     [Arguments]      ${log_entry}   &{excpected_values}
-    ${actual_post_args}=    Get From Dictionary       ${log_entry}     feedback_payload
+    ${actual_payload}=      Get From Dictionary       ${log_entry}          payload
+    ${actual_post_args}=    Get From Dictionary       ${actual_payload}     post
     Dictionaries Should Be Equal    ${actual_post_args}    ${excpected_values}
 
 Validate model feedback ID and version
@@ -338,39 +345,3 @@ Get cluster nodes and their count
     ${nodes_number} =     Get Length    ${cluster_nodes}
     Run Keyword If   '${is_before}' == 'before'    Set Test Variable     ${NODES_COUNT_BEFORE}    ${nodes_number}
     ...    ELSE      Set Test Variable     ${NODES_COUNT_AFTER}    ${nodes_number}
-
-    # --------- TEMPLATE KEYWORDS SECTION -----------
-
-Check if component domain has been secured
-    [Arguments]     ${component}    ${enclave}
-    [Documentation]  Check that a legion component is secured by auth
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Get component auth page    ${HOST_PROTOCOL}://${component}.${HOST_BASE_DOMAIN}
-    ...    ELSE      Get component auth page    ${HOST_PROTOCOL}://${component}-${enclave}.${HOST_BASE_DOMAIN}
-    Log              Auth page for ${component} is ${response}
-    Dictionary Should Contain Item    ${response}    response_code    200
-    ${auth_page} =   Get From Dictionary   ${response}    response_text
-    Should contain   ${auth_page}    Log in
-
-Secured component domain should not be accessible by invalid credentials
-    [Arguments]     ${component}    ${enclave}
-    [Documentation]  Check that a secured legion component does not provide access by invalid credentials
-    &{creds} =       Create Dictionary 	login=admin   password=admin
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
-    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
-    Log              Bad auth page for ${component} is ${response}
-    Dictionary Should Contain Item    ${response}    response_code    200
-    ${auth_page} =   Get From Dictionary   ${response}    response_text
-    Should contain   ${auth_page}    Log in to Your Account
-    Should contain   ${auth_page}    Invalid Email Address and password
-
-Secured component domain should be accessible by valid credentials
-    [Arguments]     ${component}    ${enclave}
-    [Documentation]  Check that a secured legion component does not provide access by invalid credentials
-    &{creds} =       Create Dictionary    login=${STATIC_USER_EMAIL}    password=${STATIC_USER_PASS}
-    &{response} =    Run Keyword If   '${enclave}' == '${EMPTY}'    Post credentials to auth    ${HOST_PROTOCOL}://${component}    ${HOST_BASE_DOMAIN}    ${creds}
-    ...    ELSE      Post credentials to auth    ${HOST_PROTOCOL}://${component}-${enclave}     ${HOST_BASE_DOMAIN}    ${creds}
-    Log              Bad auth page for ${component} is ${response}
-    Dictionary Should Contain Item    ${response}    response_code    200
-    ${auth_page} =   Get From Dictionary   ${response}    response_text
-    Should contain   ${auth_page}    ${component}
-    Should not contain   ${auth_page}    Invalid Email Address and password
