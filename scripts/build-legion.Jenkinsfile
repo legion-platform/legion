@@ -156,13 +156,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Build Edi Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edi', '.', "containers/edi/Dockerfile")
-                        }
-                    }
-                }
                 stage("Build Fluentd Docker image") {
                     steps {
                         script {
@@ -191,6 +184,21 @@ pipeline {
                         script {
                             legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder")
                             legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator")
+                            legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi")
+                            legion.buildLegionImage('operator-tests', ".", "containers/operator/Dockerfile", "--target tests")
+
+                            docker.image("legion/operator-tests:${Globals.buildVersion}").inside() {
+                                sh """
+                                    gocover-cobertura < "\${OPERATOR_DIR}/operator-cover.out" > ./operator-cover.xml
+                                    cp "\${OPERATOR_DIR}/operator-report.xml" ./
+                                """
+
+                                junit 'operator-report.xml'
+                                // cobertura coberturaReportFile: 'operator-cover.xml'
+                                stash name: "operator-cover", includes: "operator-cover.xml"
+
+                                sh 'rm -rf operator-report.xml operator-cover.xml'
+                            }
                         }
                     }
                 }
@@ -198,6 +206,20 @@ pipeline {
                     steps {
                         script {
                             legion.buildLegionImage('k8s-feedback-aggregator', ".", "containers/feedback-aggregator/Dockerfile", "--target server")
+                            legion.buildLegionImage('feedback-tests', ".", "containers/feedback-aggregator/Dockerfile", "--target tests")
+
+                            docker.image("legion/feedback-tests:${Globals.buildVersion}").inside() {
+                                sh """
+                                    gocover-cobertura < "\${FEEDBACK_DIR}/feedback-cover.out" > ./feedback-cover.xml
+                                    cp "\${FEEDBACK_DIR}/feedback-report.xml" ./
+                                """
+
+                                junit 'feedback-report.xml'
+                                // cobertura coberturaReportFile: 'feedback-cover.xml'
+                                stash name: "feedback-cover", includes: "feedback-cover.xml"
+
+                                sh 'rm -rf feedback-report.xml feedback-cover.xml'
+                            }
                         }
                     }
                 }
@@ -238,9 +260,13 @@ pipeline {
                                 make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
                                      TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
                             """
-                            sh 'cp -r /opt/legion/target/coverage.xml /opt/legion/target/nosetests.xml /opt/legion/target/cover ./'
+                            sh 'cp -r /opt/legion/target/legion-cover.xml /opt/legion/target/nosetests.xml /opt/legion/target/cover ./'
                             junit 'nosetests.xml'
-                            cobertura coberturaReportFile: 'coverage.xml'
+
+                            unstash 'feedback-cover'
+                            unstash 'operator-cover'
+
+                            cobertura coberturaReportFile: '*-cover.xml'
                             publishHTML (target: [
                               allowMissing: false,
                               alwaysLinkToLastBuild: false,
@@ -249,7 +275,7 @@ pipeline {
                               reportFiles: 'index.html',
                               reportName: "Test Coverage Report"
                             ])
-                            sh 'rm -rf coverage.xml nosetests.xml cover'
+                            sh 'rm -rf *-cover.xml nosetests.xml cover'
                     }
                 }
             }

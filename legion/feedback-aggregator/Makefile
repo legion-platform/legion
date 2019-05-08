@@ -1,10 +1,19 @@
-all: build
+all: help
 
+## test: Run unit tests
 test:
-	go test ./cmd ./pkg/... -coverprofile cover.out
+	gotestsum --junitfile feedback-report.xml -- -coverprofile=feedback-cover.out ./pkg/...
 
+## build: Launch feedback service
 run:
 	go run ./cmd/server.go
 
+## build: Build feedback service
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o builder cmd/server.go
+	go build -o feedback cmd/server.go
+
+## help: Show the help message
+help: Makefile
+	@echo "Choose a command run in "$(PROJECTNAME)":"
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+	@echo

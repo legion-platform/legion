@@ -19,16 +19,14 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"path/filepath"
-
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
-
-	core_v1 "k8s.io/api/core/v1"
+	"os"
+	"path/filepath"
 )
 
 func GetClientConfig() (*rest.Config, error) {
@@ -60,15 +58,10 @@ func GetClientsetFromConfig(config *rest.Config) (*kubernetes.Clientset, error) 
 	return clientset, nil
 }
 
-func ExecToPodThroughAPI(command []string, containerName, podName, namespace string) (string, string, error) {
-	config, err := GetClientConfig()
-	if err != nil {
-		return "", "", err
-	}
-
+func ExecToPodThroughAPI(command []string, containerName, podName, namespace string, config *rest.Config) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	req := clientset.Core().RESTClient().Post().
@@ -78,7 +71,7 @@ func ExecToPodThroughAPI(command []string, containerName, podName, namespace str
 		SubResource("exec")
 	scheme := runtime.NewScheme()
 	if err := core_v1.AddToScheme(scheme); err != nil {
-		return "", "", fmt.Errorf("error adding to scheme: %v", err)
+		return fmt.Errorf("error adding to scheme: %v", err)
 	}
 
 	parameterCodec := runtime.NewParameterCodec(scheme)
@@ -95,7 +88,7 @@ func ExecToPodThroughAPI(command []string, containerName, podName, namespace str
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
-		return "", "", fmt.Errorf("error while creating Executor: %v", err)
+		return fmt.Errorf("error while creating Executor: %v", err)
 	}
 
 	var stdout, stderr bytes.Buffer
@@ -105,9 +98,14 @@ func ExecToPodThroughAPI(command []string, containerName, podName, namespace str
 		Tty:    false,
 	})
 
+	log.Info(fmt.Sprintf("Try to execute the following command: '%+v' in the %s container of the %s pod",
+		command, containerName, podName))
+
+	log.Info(fmt.Sprintf("Command [stdout='%s',stderr='%s']", stdout.String(), stderr.String()))
+
 	if err != nil {
-		return "", "", fmt.Errorf("error in Stream: %v", err)
+		return fmt.Errorf("error in Stream: %v", err)
 	}
 
-	return stdout.String(), stderr.String(), nil
+	return nil
 }

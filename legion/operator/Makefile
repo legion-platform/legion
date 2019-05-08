@@ -1,53 +1,88 @@
+LEGION_OPERATOR_GENERATED_ENTITIES = ../../helms/legion/templates/operator/generated
+LEGION_OPERATOR_CRDS = ../../helms/legion-crds/templates
 
-# Image URL to use all building/pushing image targets
-LEGION_SRC_ROOT = ../../
-CONTAINERS = ${LEGION_SRC_ROOT}/build/containers
-TARGET_HELM_CHART = ${LEGION_SRC_ROOT}/helms/legion/
-TARGET_YAML_STORAGE = ${TARGET_HELM_CHART}/templates/operator/generated
+all: help
 
-all: manager
-
-# Run tests
+## help: Run unit tests
 test: generate fmt vet manifests
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
+	gotestsum --junitfile operator-report.xml -- -coverprofile=operator-cover.out ./pkg/...
 
-# Build manager binary
-manager: generate fmt vet
-	go build -o bin/manager github.com/legion-platform/legion/legion/operator/cmd/manager
+## build-operator: Build operator executable binary
+build-operator: generate  fmt vet
+	go build -o operator github.com/legion-platform/legion/legion/operator/cmd/manager
 
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet
-	go run ./cmd/manager/main.go
+## build-edi: Build edi executable binary
+build-edi: fmt vet
+	go build -o edi github.com/legion-platform/legion/legion/operator/cmd/edi
 
-# Install CRDs into a cluster
-install: manifests
+## build-model-builder: Build model builder executable binary
+build-model-builder: fmt vet
+	go build -o builder github.com/legion-platform/legion/legion/operator/cmd/builder
+
+## build-all: Build all executable binyries
+build-all: build-edi build-model-builder build-operator
+
+## run-operator: Start operator
+run-operator:
+	go run ./cmd/operator/main.go
+
+## run-edi: Start edi server
+run-edi:
+	go run ./cmd/operator/main.go
+
+## install-crds: Install CRDs into a cluster
+install-crds: manifests
 	kubectl apply -f config/crds
 
-# Generate manifests e.g. CRD, RBAC etc.
-manifests:
+## manifests: Generate manifests e.g. CRD, RBAC etc.
+manifests:  swag
 	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
-	mkdir -p ${TARGET_YAML_STORAGE}
-	@echo "removing old manifests from HELM's generated dictionary"
-	rm -fv ${TARGET_YAML_STORAGE}/*.yaml
-	@echo "copying actual manifests to HELM's generated dictionary"
-	cp -f ./config/crds/*.yaml ${TARGET_YAML_STORAGE}
-	cp -f ./config/rbac/rbac_role.yaml ${TARGET_YAML_STORAGE}
-	# sed -i '' -e 's@manager-role@"{{ .Release.Name }}-manager-role"@' ${TARGET_YAML_STORAGE}/rbac_role.yaml
 
-# Run go fmt against code
+	mkdir -p ${LEGION_OPERATOR_GENERATED_ENTITIES}
+	mkdir -p ${LEGION_OPERATOR_CRDS}
+	@echo "removing old manifests from HELM's generated dictionary"
+
+	rm -fv ${LEGION_OPERATOR_GENERATED_ENTITIES}/*.yaml
+	rm -fv ${LEGION_OPERATOR_CRDS}/*.yaml
+	@echo "copying actual manifests to HELM's generated dictionary"
+	cp -f ./config/crds/*.yaml ${LEGION_OPERATOR_CRDS}
+	cp config/rbac/rbac_role.yaml ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+
+	# All Legion CRD's and operator role are generated resources.
+	# We cannot add, for example, a custom label during the generation process.
+	# That's why we add them using sed tool after generation.
+	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" . | nindent 4 }}' ${LEGION_OPERATOR_CRDS}/*.yaml
+
+	sed -i '/^  name:.*$$/a \ \ labels:' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" . | nindent 4 }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+	sed -i '/^  labels:$$/a \ \ \ \ component: "legion-operator"' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+	sed -i 's/manager-role/"{{ .Release.Name }}-operator"/g' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+	sed -i '1i{{- if .Values.rbac }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+	sed -i '$$a{{- end }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+
+## fmt: Run go fmt against code
 fmt:
 	go fmt ./pkg/... ./cmd/...
 
-# Run go vet against code
+## vet: Run go vet against code
 vet:
 	go vet ./pkg/... ./cmd/...
 
-# Generate code
+## swag: Generate swagger files
+swag:
+	swag init -g pkg/webserver/server.go
+	# Remove the line with generated timestamp
+	sed -i '3d' docs/docs.go
+
+## generate: Generate golang codes
 generate:
 ifndef GOPATH
 	$(error GOPATH not defined, please define GOPATH. Run "go help gopath" to learn more about GOPATH)
 endif
 	go generate ./pkg/... ./cmd/...
 
-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o builder cmd/builder/main.go
+## help: Show the help message
+help: Makefile
+	@echo "Choose a command run in "$(PROJECTNAME)":"
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+	@echo

@@ -1,3 +1,6 @@
+*** Variables ***
+${LOCAL_CONFIG}         legion/config_2_0
+
 *** Settings ***
 Documentation       Legion stack operational check
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
@@ -10,7 +13,9 @@ Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords
 ...                 Choose cluster context  ${CLUSTER_NAME}  AND
 ...                 Delete the examples models   AND
-...                 Build the example models
+...                 Build the example models  AND
+...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
+...                 Login to the edi and edge
 Suite Teardown      Delete the examples models
 Force Tags          operator  models  enclave  apps
 
@@ -34,16 +39,17 @@ Test model pipeline result
     ${model_id}=        Get From Dictionary  ${model_build_status}  id
     ${model_version}=   Get From Dictionary  ${model_build_status}  version
     ${model_image}=     Get From Dictionary  ${model_build_status}  modelImage
+    ${model_name}=      set variable  ${model_id}
 
-    Run EDI deploy and check model started  ${MODEL_TEST_ENCLAVE}  ${model_image}  ${model_id}  ${model_version}
+    Get token from EDI  ${model_id}  ${model_version}
 
-    ${edge}=             Build enclave EDGE URL  ${MODEL_TEST_ENCLAVE}
-    Get token from EDI   ${MODEL_TEST_ENCLAVE}   ${model_id}   ${model_version}
+    Shell  legionctl md delete ${model_name}
+    Run EDI deploy and check model started  ${model_name}  ${model_image}  ${model_id}  ${model_version}
 
-    ${model_info} =      Get model info  ${edge}  ${TOKEN}  ${model_id}  ${model_version}
+    ${model_info} =      Shell  legionctl --verbose model info --model-id ${model_id} --model-version ${model_version}
     Log                  Model info is ${model_info}
 
-    ${edi_state}=        Run      legionctl inspect --model-id ${model_id} --format column --edi ${HOST_PROTOCOL}://edi.${HOST_BASE_DOMAIN}
+    ${edi_state}=        Run      legionctl --verbose md get --model-id ${model_id}
     Log                  State of ${model_id} is ${edi_state}
 
     Ensure metric present  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_ENDPOINT}

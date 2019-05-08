@@ -19,11 +19,12 @@ package modeltraining
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
+	"github.com/spf13/viper"
 	"testing"
 	"time"
 
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,42 +73,33 @@ var (
 	}
 )
 
-func generateConfig() legion.OperatorConfig {
-	return legion.OperatorConfig{
-		BuilderImage:           "builder_image_from_config",
-		MetricHost:             "metric_host_from_config",
-		MetricPort:             "metric_port_from_config",
-		MetricEnabled:          "metric_enabled_from_config",
-		PythonToolchainImage:   "python_toolchain_image_from_config",
-		BuildImagePrefix:       "build_image_prefix_from_config",
-		DockerRegistry:         "docker_registry_from_config",
-		DockerRegistryUser:     "docker_registry_user_from_config",
-		DockerRegistryPassword: "docker_registry_password_from_config",
-	}
+func setupConfig() {
+	viper.SetDefault(legion.BuilderImage, "test-builder:image")
+	viper.SetDefault(legion.PythonToolchainImage, "test-python-toolchain:image")
 }
 
 func TestBasicReconcile(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
+	setupConfig()
 	mgr, err := manager.New(cfg, manager.Options{})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 	c = mgr.GetClient()
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
-	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
-	legion.OperatorConf = generateConfig()
 
 	defer func() {
 		close(stopMgr)
 		mgrStopped.Wait()
 	}()
 
-	g.Expect(c.Create(context.TODO(), vcs)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), vcs)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), vcs)
 
-	g.Expect(c.Create(context.TODO(), vscSecret)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), vscSecret)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), vscSecret)
 
 	modelTraining := &legionv1alpha1.ModelTraining{
@@ -118,16 +110,16 @@ func TestBasicReconcile(t *testing.T) {
 		Spec: legionv1alpha1.ModelTrainingSpec{
 			ToolchainType: "python",
 			VCSName:       vcsName,
-			Entrypoint:  "some entrypoint",
+			Entrypoint:    "some entrypoint",
 		},
 	}
 
-	g.Expect(c.Create(context.TODO(), modelTraining)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), modelTraining)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), modelTraining)
 
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	// Skip event of pod creation
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	pod := &corev1.Pod{}
 	g.Expect(c.Get(context.TODO(),
@@ -135,7 +127,7 @@ func TestBasicReconcile(t *testing.T) {
 			Name:      legion.GenerateBuildModelName(modelTrainingName),
 			Namespace: namespace,
 		}, pod),
-	).NotTo(gomega.HaveOccurred())
+	).NotTo(HaveOccurred())
 
-	g.Expect(len(pod.Spec.Containers)).To(gomega.Equal(2))
+	g.Expect(len(pod.Spec.Containers)).To(Equal(2))
 }

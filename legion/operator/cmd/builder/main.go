@@ -27,9 +27,9 @@ import (
 func main() {
 	utils.SetupLogger()
 
-	config := legion.NewBuilderConfig()
+	legion.SetUpBuilderConfig()
 
-	modelBuilder, err := builder.NewModelBuilder(config)
+	modelBuilder, err := builder.NewModelBuilder()
 
 	if err != nil {
 		logf.Log.WithName("builder").Error(err, "Creation of model builder is failed")

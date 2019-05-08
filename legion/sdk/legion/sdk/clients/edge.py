@@ -19,6 +19,7 @@ EDGE client
 import abc
 import argparse
 import logging
+import time
 import typing
 
 import requests
@@ -27,6 +28,10 @@ from legion.sdk import config
 from legion.sdk.containers.docker import build_docker_client, find_host_model_port
 from legion.sdk import definitions
 from legion.sdk.utils import normalize_name
+
+DEFAULT_TIMEOUT = 10
+
+DEFAULT_SLEEP_ITERATION = 10
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,13 +55,24 @@ class EdgeClient(metaclass=abc.ABCMeta):
         """
         pass
 
+    @abc.abstractmethod
+    def info(self, model_id: str, model_version: str) -> typing.Any:
+        """
+        Perform info query on EDGE server
+
+        :param model_id: model ID
+        :param model_version: model version
+        :return: json model response
+        """
+        pass
+
 
 class RemoteEdgeClient(EdgeClient):
     """
     EDGE client
     """
 
-    def __init__(self, model_server_url: str, jwt: str) -> None:
+    def __init__(self, model_server_url: str, jwt: str, retries: int = 10) -> None:
         """
         Build RemoteEdgeClient
 
@@ -70,6 +86,48 @@ class RemoteEdgeClient(EdgeClient):
 
         self._model_server_url = model_server_url
         self._jwt = jwt
+        self._retries = retries
+
+    def _request(self, url: str, method: str = 'POST', payload: typing.Dict[str, typing.Any] = None) -> typing.Any:
+        """
+        Perform inspect query on EDGE server
+
+        :param url: request url
+        :param method: HTTP method
+        :param payload: payload
+        :return: json model response
+        """
+        headers = {'Authorization': f'Bearer {self._jwt}'}
+
+        LOGGER.debug('Requesting {} with data = {} in POST mode'.format(url, payload))
+        left_retries = self._retries if self._retries > 0 else 1
+        raised_exception = None
+
+        while left_retries > 0:
+            try:
+                LOGGER.debug('Requesting {}'.format(url))
+
+                response = requests.request(method, url, data=payload, headers=headers, timeout=DEFAULT_TIMEOUT)
+
+                if response.status_code == 401:
+                    raise Exception(
+                        'Wrong jwt model token. You can refresh it by using "legionctl generate-token" command')
+
+                if not response.ok:
+                    raise Exception(f'Returned wrong status code: {response.status_code}, text: {response.text}')
+
+                return response.json()
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exception:
+                LOGGER.error('Failed to connect to {}: {}. Retrying'.format(url, exception))
+                raised_exception = exception
+
+                time.sleep(DEFAULT_SLEEP_ITERATION)
+
+            left_retries -= 1
+
+        raise Exception('Failed to connect to {}. No one retry left. Exception: {}'.format(
+            url, raised_exception
+        ))
 
     def invoke_model_api(self, model_id: str, model_version: str, payload: typing.Dict[str, typing.Any],
                          endpoint: str = 'default') -> typing.Any:
@@ -82,25 +140,19 @@ class RemoteEdgeClient(EdgeClient):
         :param payload: payload
         :return: json model response
         """
-        headers = {'Authorization': f'Bearer {self._jwt}'}
-
         url = f'{self._model_server_url}/api/model/{model_id}/{model_version}/invoke/{endpoint}'
+        return self._request(url, payload=payload)
 
-        LOGGER.debug('Requesting {} with data = {} in POST mode'.format(url, payload))
+    def info(self, model_id: str, model_version: str) -> typing.Any:
+        """
+        Perform info query on EDGE server
 
-        response = requests.post(
-            url,
-            data=payload,
-            headers=headers
-        )
-
-        if response.status_code == 401:
-            raise Exception('Wrong jwt model token. You can refresh it by using "legionctl generate-token" command')
-
-        if not response.ok:
-            raise Exception(f'Returned wrong status code: {response.status_code}, text: {response.text}')
-
-        return response.json()
+        :param model_id: model ID
+        :param model_version: model version
+        :return: json model response
+        """
+        url = f'{self._model_server_url}/api/model/{model_id}/{model_version}/info'
+        return self._request(url, method='GET')
 
 
 class LocalEdgeClient(EdgeClient):
@@ -142,6 +194,14 @@ class LocalEdgeClient(EdgeClient):
             raise Exception(f'Returned wrong status code: {response.status_code}, text: {response.text}')
 
         return response.json()
+
+    def info(self, model_id: str, model_version: str) -> typing.Any:
+        """
+        Stub method
+        :param model_id: model id
+        :param model_version: model version
+        """
+        pass
 
 
 def model_config_prefix(model_id: str, model_version: str) -> str:

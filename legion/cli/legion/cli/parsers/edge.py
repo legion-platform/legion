@@ -77,23 +77,47 @@ def invoke(args: argparse.Namespace):
     print(f'Model response: {result}')
 
 
+def info(args: argparse.Namespace):
+    """
+    Invoke model endpoint
+
+    :param args: command arguments with .model_id, .namespace and .scale
+    :return: None
+    """
+    edge_client = edge.build_client(args)
+    result = edge_client.info(args.model_id, args.model_version)
+    print(result)
+
+
 def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     """
     Generate cli parsers
 
     :param main_subparser: parent cli parser
     """
-    invoke_parser = main_subparser.add_parser('invoke', description='invoke model')
-    invoke_parser.add_argument('--model-id', type=str, help='model ID', required=True)
-    invoke_parser.add_argument('--model-version', type=str, help='model version', required=True)
-    invoke_parser.add_argument('--model-server-url', type=str, default=config.MODEL_SERVER_URL,
-                               help='Url of model server')
-    invoke_parser.add_argument('-p', action='append', help='Key-value parameter. For example: -p x=2',
-                               type=_parse_p_parameter)
-    invoke_parser.add_argument('--json', type=str, help='Json parameter. For example: --json {"x": 2}')
-    invoke_parser.add_argument('--endpoint', default='default', help='Invoke specific module endpoint', type=str)
-    invoke_parser.add_argument('--local', action='store_true', help='Invoke locally deployed model')
-    invoke_parser.add_argument('--jwt', type=str, default=config.MODEL_JWT_TOKEN,
-                               help='Model jwt token')
+    model_subparser = main_subparser.add_parser('model',
+                                                description='Model manipulations').add_subparsers()
 
-    invoke_parser.set_defaults(func=invoke)
+    model_invoke_parser = model_subparser.add_parser('invoke', description='invoke model')
+    model_invoke_parser.add_argument('--model-id', type=str, help='model ID', required=True)
+    model_invoke_parser.add_argument('--model-version', type=str, help='model version', required=True)
+    model_invoke_parser.add_argument('--model-server-url', type=str, default=config.MODEL_SERVER_URL,
+                                     help='Url of model server')
+    model_invoke_parser.add_argument('-p', action='append', help='Key-value parameter. For example: -p x=2',
+                                     type=_parse_p_parameter)
+    model_invoke_parser.add_argument('--json', type=str, help='Json parameter. For example: --json {"x": 2}')
+    model_invoke_parser.add_argument('--endpoint', default='default', help='Invoke specific module endpoint', type=str)
+    model_invoke_parser.add_argument('--local', action='store_true', help='Invoke locally deployed model')
+    model_invoke_parser.add_argument('--jwt', type=str, default=config.MODEL_JWT_TOKEN,
+                                     help='Model jwt token')
+    model_invoke_parser.set_defaults(func=invoke)
+
+    model_info_parser = model_subparser.add_parser('info', description='invoke model')
+    model_info_parser.add_argument('--model-id', type=str, help='model ID', required=True)
+    model_info_parser.add_argument('--model-version', type=str, help='model version', required=True)
+    model_info_parser.add_argument('--model-server-url', type=str, default=config.MODEL_SERVER_URL,
+                                   help='Url of model server')
+    model_info_parser.add_argument('--jwt', type=str, default=config.MODEL_JWT_TOKEN,
+                                   help='Model jwt token')
+
+    model_info_parser.set_defaults(func=info)

@@ -22,19 +22,9 @@ Checking if all replica sets, stateful sets, deployments are up and running
     \  Deployment is running   ${DEPLOYMENT}-${enclave}-edge          namespace=${enclave}
     \  Deployment is running   ${DEPLOYMENT}-${enclave}-edi           namespace=${enclave}
 
-Grafana preferences contains main dashboard
-    [Documentation]  Check that main dashboard sets as home and stars
-    [Tags]  grafana  infra
-    Connect to main Grafana
-
-    ${PREFERENCES}=  Get preferences
-    ${MAIN_DASHBOARD}=  Get dashboard by  uid=${GRAFANA_MAIN_DASHBOARD_UID}
-    should be equal  &{PREFERENCES}[homeDashboardId]  ${MAIN_DASHBOARD["dashboard"]["id"]}
-    should be true  ${MAIN_DASHBOARD["meta"]["isStarred"]}
-
 Check Vertical Scailing
     [Documentation]  Start the fat pod to test vertical scailing
-    [Tags]  k8s  scaling  infra  kek
+    [Tags]  k8s  scaling  infra
     [Setup]  Delete fat pod
     [Teardown]  Delete fat pod
     Get cluster nodes and their count    before

@@ -1,4 +1,6 @@
 *** Variables ***
+${LOCAL_CONFIG}        legion/config_5_1
+${TEST_MODEL_NAME}     stub-model-5-1
 ${TEST_MODEL_ID}       5
 ${TEST_MODEL_VERSION}  1
 
@@ -13,11 +15,14 @@ Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords
 ...                 Choose cluster context  ${CLUSTER_NAME}   AND
+...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
+...                 Login to the edi and edge  AND
 ...                 Build stub model  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  AND
-...                 Run EDI deploy and check model started              ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_IMAGE}   ${TEST_MODEL_ID}      ${TEST_MODEL_VERSION}
+...                 Get token from EDI  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  AND
+...                 Run EDI deploy and check model started  ${TEST_MODEL_NAME}   ${TEST_MODEL_IMAGE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
 Suite Teardown      Run Keywords
 ...                 Delete stub model training  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  AND
-...                 Run EDI undeploy by model version and check         ${MODEL_TEST_ENCLAVE}   ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}   ${TEST_MODEL_IMAGE}
+...                 Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
 Force Tags          feedback_loop  apps
 
 *** Variables ***

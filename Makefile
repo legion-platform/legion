@@ -18,6 +18,7 @@ TEMP_DIRECTORY=
 TAG=
 # Example of DOCKER_REGISTRY: nexus.domain.com:443/
 DOCKER_REGISTRY=
+HELM_ADDITIONAL_PARAMS=
 
 -include .env
 
@@ -25,7 +26,15 @@ DOCKER_REGISTRY=
 
 .PHONY: install-all install-cli install-services install-sdk
 
-all: install-all
+all: help
+
+check-tag:
+	@if [ "${TAG}" == "" ]; then \
+	    echo "TAG is not defined, please define the TAG variable" ; exit 1 ;\
+	fi
+	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
+	    echo "DOCKER_REGISTRY is not defined, please define the DOCKER_REGISTRY variable" ; exit 1 ;\
+	fi
 
 ## install-all: Install all python packages
 install-all: install-sdk install-services install-cli install-python-toolchain install-robot
@@ -65,66 +74,87 @@ install-robot:
 		python setup.py sdist && \
     	python setup.py bdist_wheel
 
-## docker-pipeline-agent: Build pipeline agent docker image
-docker-pipeline-agent:
-	docker build -t legion/python-pipeline:latest -f containers/pipeline/Dockerfile .
+## docker-build-pipeline-agent: Build pipeline agent docker image
+docker-build-pipeline-agent:
+	docker build -t legion/legion-pipeline-agent:latest -f containers/pipeline-agent/Dockerfile .
 
-## docker-python-toolchain: Build python toolchain docker image
-docker-python-toolchain:
+## docker-build-python-toolchain: Build python toolchain docker image
+docker-build-python-toolchain:
 	docker build -t legion/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
 
-## docker-edi: Build edi docker image
-docker-edi:
-	docker build -t legion/k8s-edi:latest -f containers/edi/Dockerfile .
+## docker-build-edi: Build edi docker image
+docker-build-edi:
+	docker build --target edi -t legion/k8s-edi:latest -f containers/operator/Dockerfile .
 
-## docker-edge: Build edge docker image
-docker-edge:
+## docker-build-edge: Build edge docker image
+docker-build-edge:
 	docker build -t legion/k8s-edge:latest -f containers/edge/Dockerfile .
 
-## docker-model-builder: Build model builder docker image
-docker-model-builder:
+## docker-build-model-builder: Build model builder docker image
+docker-build-model-builder:
 	docker build --target model-builder -t legion/k8s-model-builder:latest -f containers/operator/Dockerfile .
 
-## docker-operator: Build operator docker image
-docker-operator:
+## docker-build-operator: Build operator docker image
+docker-build-operator:
 	docker build --target operator -t legion/k8s-operator:latest -f containers/operator/Dockerfile .
 
-## docker-feedback-aggregator: Build operator docker image
-docker-feedback-aggregator:
+## docker-build-feedback-aggregator: Build feedback aggregator image
+docker-build-feedback-aggregator:
 	docker build --target server -t legion/k8s-feedback-aggregator:latest -f containers/feedback-aggregator/Dockerfile .
 
-## push-model-builder: Push model builder docker image
-push-model-builder:
-	@if [ "${TAG}" == "" ]; then \
-	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
-	fi
-	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
-	    echo "DOCKER_REGISTRY not defined, please define DOCKER_REGISTRY variable" ; exit 1 ;\
-	fi
-	docker tag legion/k8s-model-builder:latest ${DOCKER_REGISTRY}legion/k8s-model-builder:${TAG}
-	docker push ${DOCKER_REGISTRY}legion/k8s-model-builder:${TAG}
+## docker-build-all: Build all docker images
+docker-build-all:  docker-build-pipeline-agent  docker-build-python-toolchain  docker-build-edi  docker-build-edge  docker-build-model-builder  docker-build-operator  docker-build-feedback-aggregator
 
-## push-operator: Push operator docker image
-push-operator:
-	@if [ "${TAG}" == "" ]; then \
-	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
-	fi
-	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
-	    echo "DOCKER_REGISTRY not defined, please define DOCKER_REGISTRY variable" ; exit 1 ;\
-	fi
-	docker tag legion/k8s-operator:latest ${DOCKER_REGISTRY}legion/k8s-operator:${TAG}
-	docker push ${DOCKER_REGISTRY}legion/k8s-operator:${TAG}
+## docker-push-pipeline-agent: Push pipeline agent docker image
+docker-push-pipeline-agent:
+	docker tag legion/legion-pipeline-agent:latest ${DOCKER_REGISTRY}/legion/legion-pipeline-agent:${TAG}
+	docker push ${DOCKER_REGISTRY}/legion/legion-pipeline-agent:${TAG}
 
-## push-feedback-aggregator: Push feedback-aggregator docker image
-push-feedback-aggregator:
-	@if [ "${TAG}" == "" ]; then \
-	    echo "TAG not defined, please define TAG variable" ; exit 1 ;\
-	fi
-	@if [ "${DOCKER_REGISTRY}" == "" ]; then \
-	    echo "DOCKER_REGISTRY not defined, please define DOCKER_REGISTRY variable" ; exit 1 ;\
-	fi
+## docker-push-python-toolchain: Push python toolchain docker image
+docker-push-python-toolchain:  check-tag
+	docker tag legion/python-toolchain:latest ${DOCKER_REGISTRY}/legion/python-toolchain:${TAG}
+	docker push ${DOCKER_REGISTRY}/legion/python-toolchain:${TAG}
+
+## docker-push-edge: Push edge docker image
+docker-push-edge:  check-tag
+	docker tag legion/k8s-edge:latest ${DOCKER_REGISTRY}/legion/k8s-edge:${TAG}
+	docker push ${DOCKER_REGISTRY}/legion/k8s-edge:${TAG}
+
+## docker-push-edi: Push edi docker image
+docker-push-edi:  check-tag
+	docker tag legion/k8s-edi:latest ${DOCKER_REGISTRY}/legion/k8s-edi:${TAG}
+	docker push ${DOCKER_REGISTRY}/legion/k8s-edi:${TAG}
+
+## docker-push-model-builder: Push model builder docker image
+docker-push-model-builder:  check-tag
+	docker tag legion/k8s-model-builder:latest ${DOCKER_REGISTRY}/legion/k8s-model-builder:${TAG}
+	docker push ${DOCKER_REGISTRY}/legion/k8s-model-builder:${TAG}
+
+## docker-push-operator: Push operator docker image
+docker-push-operator:  check-tag
+	docker tag legion/k8s-operator:latest ${DOCKER_REGISTRY}/legion/k8s-operator:${TAG}
+	docker push ${DOCKER_REGISTRY}/legion/k8s-operator:${TAG}
+
+## docker-push-feedback-aggregator: Push feedback aggregator docker image
+docker-push-feedback-aggregator:  check-tag
 	docker tag legion/k8s-feedback-aggregator:latest ${DOCKER_REGISTRY}legion/k8s-feedback-aggregator:${TAG}
 	docker push ${DOCKER_REGISTRY}legion/k8s-feedback-aggregator:${TAG}
+
+## docker-push-all: Push all docker images
+docker-push-all:  docker-push-pipeline-agent  docker-push-python-toolchain  docker-push-edi  docker-push-edge  docker-push-model-builder  docker-push-operator  docker-push-feedback-aggregator
+
+## helm-install-crds: Install the crds helm chart from source code
+helm-install-crds:
+	helm delete --purge legion-crds || true
+	helm install helms/legion-crds --wait --timeout 30 --name legion-crds ${HELM_ADDITIONAL_PARAMS}
+
+## helm-install-legion: Install the legion helm chart from source code
+helm-install-legion:
+	helm delete --purge legion || true
+	helm install helms/legion --wait --timeout 60 --name legion --debug ${HELM_ADDITIONAL_PARAMS}
+
+## helm-install-all: Install all legion helm charts from source code
+helm-install-all:  helm-install-crds  helm-install-legion
 
 ## install-unittests: Install unit tests
 install-unittests:
@@ -154,7 +184,7 @@ unittests:
 	          --with-xunitmp \
 	          --xunitmp-file target/nosetests.xml \
 	          --cover-xml \
-	          --cover-xml-file=target/coverage.xml \
+	          --cover-xml-file=target/legion-cover.xml \
 	          --cover-html \
 	          --cover-html-dir=target/cover \
 	          --logging-level DEBUG \
@@ -179,6 +209,7 @@ e2e-python:
 update-python-deps:
 	scripts/update_python_deps.sh
 
+## help: Show the help message
 help: Makefile
 	@echo "Choose a command run in "$(PROJECTNAME)":"
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'

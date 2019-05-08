@@ -21,7 +21,7 @@ import logging
 import sys
 
 from legion.cli import version
-from legion.cli.parsers import security, config, edi, local, edge
+from legion.cli.parsers import security, config, local, edge, vcs, training, deployment
 from legion.sdk import config as legion_config
 
 
@@ -60,9 +60,11 @@ def build_parser():  # pylint: disable=R0915
 
     security.generate_parsers(subparsers)
     config.generate_parsers(subparsers)
-    edi.generate_parsers(subparsers)
     local.generate_parsers(subparsers)
     edge.generate_parsers(subparsers)
+    vcs.generate_parsers(subparsers)
+    training.generate_parsers(subparsers)
+    deployment.generate_parsers(subparsers)
 
     return parser, subparsers
 

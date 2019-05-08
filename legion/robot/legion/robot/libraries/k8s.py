@@ -225,7 +225,7 @@ class K8s:
         crds = kubernetes.client.CustomObjectsApi()
 
         with open(path_to_file) as f:
-            model_training = yaml.load(f, yaml.SafeLoader)
+            model_training = yaml.safe_load(f)
             crds.create_namespaced_custom_object(
                 *self._model_training_info,
                 model_training

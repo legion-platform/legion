@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,24 +51,24 @@ func TestStorageVCSCredential(t *testing.T) {
 			Credential:       vscCreds,
 		},
 	}
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	// Test Create
 	fetched := &VCSCredential{}
-	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), created)).NotTo(HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(created))
+	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(HaveOccurred())
+	g.Expect(fetched).To(Equal(created))
 
 	// Test Updating the Labels
 	updated := fetched.DeepCopy()
 	updated.Labels = map[string]string{"hello": "world"}
-	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Update(context.TODO(), updated)).NotTo(HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(updated))
+	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(HaveOccurred())
+	g.Expect(fetched).To(Equal(updated))
 
 	// Test Delete
-	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(HaveOccurred())
+	g.Expect(c.Get(context.TODO(), key, fetched)).To(HaveOccurred())
 }

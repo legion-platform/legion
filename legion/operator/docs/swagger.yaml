@@ -1,0 +1,819 @@
+basePath: '{{.BasePath}}'
+definitions:
+  routes.HTTPResult:
+    properties:
+      message:
+        description: Success of error message
+        type: string
+    type: object
+  v1.MDReplicas:
+    properties:
+      replicas:
+        description: New number of replicas
+        type: integer
+    type: object
+  v1.MDRequest:
+    properties:
+      name:
+        description: Model deployment name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.ModelDeploymentSpec'
+        description: Model Deployment specification. It is the same as ModelDeployment
+          CRD specification
+        type: object
+    type: object
+  v1.MDResponse:
+    properties:
+      name:
+        description: Model deployment name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.ModelDeploymentSpec'
+        description: Model Deployment specification. It is the same as ModelDeployment
+          CRD specification
+        type: object
+      status:
+        $ref: '#/definitions/v1alpha1.ModelDeploymentStatus'
+        description: Model Deployment specification. It is the same as ModelDeployment
+          CRD specification
+        type: object
+    type: object
+  v1.MTRequest:
+    properties:
+      name:
+        description: MT name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.ModelTrainingSpec'
+        description: MT specification. It is the same as ModelTraining CRD specification
+        type: object
+    type: object
+  v1.MTResponse:
+    properties:
+      name:
+        description: MT name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.ModelTrainingSpec'
+        description: MT specification. It is the same as ModelTraining CRD specification
+        type: object
+      status:
+        $ref: '#/definitions/v1alpha1.ModelTrainingStatus'
+        description: MT status. It is the same as ModelTraining CRD status
+        type: object
+    type: object
+  v1.TokenRequest:
+    properties:
+      expiration_date:
+        description: Explicitly set expiration date for token
+        type: string
+      model_id:
+        description: Model id
+        type: string
+      model_version:
+        description: Model version
+        type: string
+    type: object
+  v1.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  v1.VCSEntity:
+    properties:
+      name:
+        description: VCS name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.VCSCredentialSpec'
+        description: VCS specification. It is the same as VCSCredential CRD specification
+        type: object
+    type: object
+  v1alpha1.ModelDeploymentSpec:
+    properties:
+      annotations:
+        description: Annotations for model pods.
+        type: object
+      image:
+        description: Model Docker image
+        type: string
+      livenessProbeInitialDelay:
+        description: Initial delay for liveness probe of model pod
+        type: integer
+      readinessProbeInitialDelay:
+        description: Initial delay for readiness probe of model pod
+        type: integer
+      replicas:
+        description: Number of pods for model. By default the replicas parameter equals
+          1.
+        type: integer
+      resources:
+        description: |-
+          Resources for model deployment
+          The same format like k8s uses for pod resources.
+        type: string
+    type: object
+  v1alpha1.ModelDeploymentStatus:
+    properties:
+      deployment:
+        description: The model k8s deployment name
+        type: string
+      message:
+        description: The message describes the state in more details.
+        type: string
+      service:
+        description: The model k8s service name
+        type: string
+      serviceURL:
+        description: The model k8s service name
+        type: string
+      state:
+        description: |-
+          The state of a model deployment.
+            "DeploymentFailed" - A model was not deployed. Because some parameters of the
+                                 custom resource are wrong. For example, there is not a model
+                                 image in a Docker registry.
+            "DeploymentCreated" - A model was deployed successfully.
+        type: string
+    type: object
+  v1alpha1.ModelTrainingSpec:
+    properties:
+      args:
+        items:
+          type: string
+        type: array
+      entrypoint:
+        description: Model training file. It can be python\bash script or jupiter
+          notebook
+        type: string
+      env:
+        description: |-
+          Custom environment variables that should be setted before entrypoint invocation.
+          In ENVname:value format
+        type: object
+      hyperparameters:
+        description: Model training hyperparameters in parameter:value format
+        type: object
+      image:
+        description: Train image
+        type: string
+      modelFile:
+        description: Model file
+        type: string
+      reference:
+        description: VCS Reference
+        type: string
+      resources:
+        description: |-
+          Resources for model container
+          The same format like k8s uses for pod resources.
+        type: string
+      toolchain:
+        description: |-
+          Type of toolchain. Currently supports only python.
+          +kubebuilder:validation:Enum=python,jupyter
+        type: string
+      vcsName:
+        description: Name of VCSCredential resource. Must exists
+        type: string
+    type: object
+  v1alpha1.ModelTrainingStatus:
+    properties:
+      exitCode:
+        type: integer
+      id:
+        type: string
+      message:
+        type: string
+      modelImage:
+        type: string
+      podName:
+        type: string
+      reason:
+        type: string
+      state:
+        description: +kubebuilder:validation:Enum=scheduling,fetching-code,running,capturing,succeeded,failed,unknown
+        type: string
+      version:
+        type: string
+    type: object
+  v1alpha1.VCSCredentialSpec:
+    properties:
+      credential:
+        description: Creds for VCS. Is not required. In case of GIT should be base64-encoded
+          private key.
+        type: string
+      defaultReference:
+        description: Default reference in VCS, e.g. branch, commit, tag and etc.
+        type: string
+      publicKey:
+        description: Public keys in base64 format for ssh know hosts. You can gather
+          it using "ssh-keyscan"
+        type: string
+      type:
+        description: |-
+          Type of VCS. Currently supports only git.
+          +kubebuilder:validation:Enum=git
+        type: string
+      uri:
+        description: |-
+          VCS uri.
+          For Git valid formats are:
+          * git@github.com:legion-platform/legion.git
+        type: string
+    type: object
+host: '{{.Host}}'
+info:
+  contact: {}
+  description: This is a EDI server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: EDI API
+  version: "1.0"
+paths:
+  /api/v1/model/deployment:
+    delete:
+      consumes:
+      - application/json
+      description: Delete list of Model deployments by labels
+      parameters:
+      - description: model id label
+        in: query
+        name: com.epam.legion.model.id
+        type: string
+      - description: model version label
+        in: query
+        name: com.epam.legion.model.version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Delete list of Model deployments by labels
+      tags:
+      - ModelDeployment
+    get:
+      consumes:
+      - application/json
+      description: Get list of Model deployments
+      parameters:
+      - description: model id label
+        in: query
+        name: com.epam.legion.model.id
+        type: string
+      - description: model version label
+        in: query
+        name: com.epam.legion.model.version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.MDResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get list of Model deployments
+      tags:
+      - ModelDeployment
+    post:
+      consumes:
+      - application/json
+      description: Create a Model deployment. Result is created Model deployment.
+      parameters:
+      - description: Create a Model deployment
+        in: body
+        name: md
+        required: true
+        schema:
+          $ref: '#/definitions/v1.MDRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Create a Model deployment
+      tags:
+      - ModelDeployment
+    put:
+      consumes:
+      - application/json
+      description: Update a Model deployment. Result is updated Model deployment.
+      parameters:
+      - description: Update a Model deployment
+        in: body
+        name: md
+        required: true
+        schema:
+          $ref: '#/definitions/v1.MDRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Update a Model deployment
+      tags:
+      - ModelDeployment
+  /api/v1/model/deployment/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Model deployment by name
+      parameters:
+      - description: Model deployment name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Delete a Model deployment
+      tags:
+      - ModelDeployment
+    get:
+      consumes:
+      - application/json
+      description: Get a Model deployment by name
+      parameters:
+      - description: Model deployment name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.MDResponse'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get a Model deployment
+      tags:
+      - ModelDeployment
+  /api/v1/model/deployment/{name}/scale:
+    put:
+      consumes:
+      - application/json
+      description: Scale a Model deployment. Result is updated Model deployment.
+      parameters:
+      - description: Scale a Model deployment
+        in: body
+        name: md
+        required: true
+        schema:
+          $ref: '#/definitions/v1.MDReplicas'
+          type: object
+      - description: Name of Model Deployment
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Scale a Model deployment
+      tags:
+      - ModelDeployment
+  /api/v1/model/token:
+    post:
+      consumes:
+      - application/json
+      description: Create a JWT token for access to the model service
+      parameters:
+      - description: Create a model JWT token
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/v1.TokenRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.TokenResponse'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Create a model JWT token
+      tags:
+      - Token
+  /api/v1/model/training:
+    delete:
+      consumes:
+      - application/json
+      description: Delete list of  Model Training by labels
+      parameters:
+      - description: model id label
+        in: query
+        name: com.epam.legion.model.id
+        type: string
+      - description: model version label
+        in: query
+        name: com.epam.legion.model.version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Delete list of Model Trainings by labels
+      tags:
+      - ModelTraining
+    get:
+      consumes:
+      - application/json
+      description: Get list of Model Trainings
+      parameters:
+      - description: model id label
+        in: query
+        name: com.epam.legion.model.id
+        type: string
+      - description: model version label
+        in: query
+        name: com.epam.legion.model.version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.MTResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get list of Model Trainings
+      tags:
+      - ModelTraining
+    post:
+      consumes:
+      - application/json
+      description: Create a Model Training. Result is created Model Training.
+      parameters:
+      - description: Create a Model Training
+        in: body
+        name: mt
+        required: true
+        schema:
+          $ref: '#/definitions/v1.MTRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.MTResponse'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Create a Model Training
+      tags:
+      - ModelTraining
+    put:
+      consumes:
+      - application/json
+      description: Update a Model Training. Result is updated Model Training.
+      parameters:
+      - description: Update a Model Training
+        in: body
+        name: mt
+        required: true
+        schema:
+          $ref: '#/definitions/v1.MTRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Update a Model Training
+      tags:
+      - ModelTraining
+  /api/v1/model/training/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Get a Model Training by name
+      parameters:
+      - description: Model Training name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get a Model Training
+      tags:
+      - ModelTraining
+    get:
+      consumes:
+      - application/json
+      description: Get a Model Training by name
+      parameters:
+      - description: Model Training name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.MTResponse'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get a Model Training
+      tags:
+      - ModelTraining
+  /api/v1/vcs:
+    get:
+      consumes:
+      - application/json
+      description: Get list of VCS Credentials
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.VCSEntity'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get list of VCS Credentials
+      tags:
+      - VCSCredential
+    post:
+      consumes:
+      - application/json
+      description: Create a VCS Credential. Result is created VCS Credential.
+      parameters:
+      - description: Create a VCS Credential
+        in: body
+        name: vcs
+        required: true
+        schema:
+          $ref: '#/definitions/v1.VCSEntity'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.VCSEntity'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Create a VCS Credential
+      tags:
+      - VCSCredential
+    put:
+      consumes:
+      - application/json
+      description: Update a VCS Credential. Result is updated VCS Credential.
+      parameters:
+      - description: Update a VCS Credential
+        in: body
+        name: vcs
+        required: true
+        schema:
+          $ref: '#/definitions/v1.VCSEntity'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Update a VCS Credential
+      tags:
+      - VCSCredential
+  /api/v1/vcs/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a VCS Credential by name
+      parameters:
+      - description: VCS Credential name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Delete a VCS Credential
+      tags:
+      - VCSCredential
+    get:
+      consumes:
+      - application/json
+      description: Get a VCS Credential by name
+      parameters:
+      - description: VCS Credential name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.VCSEntity'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get a VCS Credential
+      tags:
+      - VCSCredential
+swagger: "2.0"

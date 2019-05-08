@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/legion-platform/legion/legion/operator/pkg/apis"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -63,13 +63,13 @@ func SetupTestReconcile(inner reconcile.Reconciler) (reconcile.Reconciler, chan 
 }
 
 // StartTestManager adds recFn
-func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
+func StartTestManager(mgr manager.Manager, g *GomegaWithT) (chan struct{}, *sync.WaitGroup) {
 	stop := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
+		g.Expect(mgr.Start(stop)).NotTo(HaveOccurred())
 	}()
 	return stop, wg
 }

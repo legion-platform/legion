@@ -1,0 +1,98 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    {{- include "legion.helm-labels" . | nindent 4 }}
+    controller-tools.k8s.io: "1.0"
+  name: modeldeployments.legion.legion-platform.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    name: State
+    type: string
+  - JSONPath: .spec.image
+    name: Model image
+    type: string
+  - JSONPath: .status.serviceURL
+    name: Service URL
+    type: string
+  group: legion.legion-platform.org
+  names:
+    kind: ModelDeployment
+    plural: modeldeployments
+    shortNames:
+    - md
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            annotations:
+              description: Annotations for model pods.
+              type: object
+            image:
+              description: Model Docker image
+              type: string
+            livenessProbeInitialDelay:
+              description: Initial delay for liveness probe of model pod
+              format: int32
+              type: integer
+            readinessProbeInitialDelay:
+              description: Initial delay for readiness probe of model pod
+              format: int32
+              type: integer
+            replicas:
+              description: Number of pods for model. By default the replicas parameter
+                equals 1.
+              format: int32
+              type: integer
+            resources:
+              description: Resources for model deployment The same format like k8s
+                uses for pod resources.
+              type: object
+          required:
+          - image
+          type: object
+        status:
+          properties:
+            deployment:
+              description: The model k8s deployment name
+              type: string
+            message:
+              description: The message describes the state in more details.
+              type: string
+            service:
+              description: The model k8s service name
+              type: string
+            serviceURL:
+              description: The model k8s service name
+              type: string
+            state:
+              description: The state of a model deployment.   "DeploymentFailed" -
+                A model was not deployed. Because some parameters of the                        custom
+                resource are wrong. For example, there is not a model                        image
+                in a Docker registry.   "DeploymentCreated" - A model was deployed
+                successfully.
+              type: string
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

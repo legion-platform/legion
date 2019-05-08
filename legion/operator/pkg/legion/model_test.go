@@ -1,25 +1,30 @@
+//
+//    Copyright 2019 EPAM Systems
+//
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+//
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+//
+
 package legion
 
 import (
-	"archive/zip"
-	"io/ioutil"
-	"os"
+	. "github.com/onsi/gomega"
 	"testing"
 )
 
-func createZipFile(content string, t *testing.T) {
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		t.Error(err)
-	}
-	defer tmpFile.Close()
+func TestNameNormalization(t *testing.T) {
+	g := NewGomegaWithT(t)
 
-	zipWriter := zip.NewWriter(tmpFile)
-	defer zipWriter.Close()
-
-}
-
-func TestExtractFromModelFile(t *testing.T) {
-	// createZipFile("Sdsd", t)
-
+	g.Expect(ConvertTok8sName("id", "Test name!")).To(Equal("model-id-Test-name"))
+	g.Expect(ConvertTok8sName("id", "Test-)1+name!")).To(Equal("model-id-Test-1-name"))
+	g.Expect(ConvertTok8sName("id", "abc-_ .")).To(Equal("model-id-abc----"))
 }

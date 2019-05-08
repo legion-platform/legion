@@ -32,7 +32,7 @@ type ModelTrainingSpec struct {
 	// Model training hyperparameters in parameter:value format
 	Hyperparameters map[string]string `json:"hyperparameters,omitempty"`
 	// Model training file. It can be python\bash script or jupiter notebook
-	Entrypoint string `json:"entrypoint"`
+	Entrypoint          string   `json:"entrypoint"`
 	EntrypointArguments []string `json:"args,omitempty"`
 	// Name of VCSCredential resource. Must exists
 	VCSName string `json:"vcsName"`
