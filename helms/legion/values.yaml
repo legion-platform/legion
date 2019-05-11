@@ -194,6 +194,30 @@ feedback:
   # Is feedback gathering stack enabled or not
   enabled: false
 
+  # Aggregator accepts HTTP traffic with "feedback" for previously made predictions
+  aggregator:
+    # This variable can be enabled to setup custom image name for aggregator
+    # Type: string
+    # image: custom-image:1.0
+
+    # Count of aggregator replicas
+    # Type: integer
+    replicas: 1
+
+    # Resources for each instance
+    # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "100m"
+        memory: "512Mi"
+
+    # Input port number
+    # Type: integer
+    port: 8080
+
   fluentd:
     # This variable can be enabled to setup custom image name for fluentd
     # Type: string

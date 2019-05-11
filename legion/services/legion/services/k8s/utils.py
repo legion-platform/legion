@@ -188,7 +188,7 @@ def load_config(path_to_config):
         raise Exception('config path %s is not a file' % path_to_config)
 
     with open(path_to_config, 'r') as stream:
-        return yaml.load(stream)
+        return yaml.load(stream, yaml.SafeLoader)
 
 
 def load_secrets(path_to_secrets):

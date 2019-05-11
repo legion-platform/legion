@@ -24,6 +24,7 @@ legion/legion/data/Pipfile.lock
 
 test.model
 .noseids
+cover.out
 
 *.tmp.yml
 *.tmp.out
@@ -157,3 +158,4 @@ report.html
 
 legion/operator/vendor/
 legion/operator/config/
+legion/feedback-aggregator/vendor/

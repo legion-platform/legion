@@ -21,6 +21,7 @@ env POD_UUID;
 
 env JWT_ENABLED;
 env FEEDBACK_ENABLED;
+env FEEDBACK_AGGREGATOR_BACKEND;
 
 worker_processes  1;
 
@@ -110,36 +111,14 @@ http {
                 blacklisted_tokens.check_token()
             end
 
-            -- RequestID validation
-            if edge.is_config_enabled("FEEDBACK_ENABLED") then
-                local requestID = ngx.req.get_headers()["Request-ID"]
-                if not requestID then
-                    ngx.log(ngx.WARN, "Request-ID header is missed")
-                    ngx.say("Request-ID header is missed")
-                    ngx.exit(ngx.HTTP_BAD_REQUEST)
-                end
-            else
+            -- Switch for feedback gathering
+            if not edge.is_config_enabled("FEEDBACK_ENABLED") then
                 ngx.say("Feedback gathering is disabled")
                 ngx.exit(ngx.HTTP_BAD_REQUEST)
             end
         }
 
-        content_by_lua_block {
-            -- this sections could be accessed only after access_by_lua_block
-            -- so, all checks are in access_by_lua_block
-
-            local edge = require("edge")
-
-            -- Feedback providing mechanism
-            if edge.is_config_enabled("FEEDBACK_ENABLED") then
-                local data = edge.parse_feedback_data()
-
-                local fluentd_logger = require "fluentd_logger"
-                fluentd_logger.post(ngx.req.start_time(), "feedback", data)
-
-                edge.response_feedback(data)
-            end
-        }
+        proxy_pass {{ environ.FEEDBACK_AGGREGATOR_BACKEND }};
     }
 
     {% for model_endpoint in unspecified_version_endpoints %}

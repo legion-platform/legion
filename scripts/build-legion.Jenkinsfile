@@ -194,6 +194,13 @@ pipeline {
                         }
                     }
                 }
+                stage("Build feedback-aggregator image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('k8s-feedback-aggregator', ".", "containers/feedback-aggregator/Dockerfile", "--target server")
+                        }
+                    }
+                }
                 stage('Run Python code analyzers') {
                     steps {
                         script{
@@ -334,6 +341,13 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-operator')
+                        }
+                    }
+                }
+                stage("Upload feedback aggregator image") {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-feedback-aggregator')
                         }
                     }
                 }

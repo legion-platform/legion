@@ -8,7 +8,6 @@ Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             Collections
-Library             legion.robot.libraries.feedback.Feedback
 Library             legion.robot.libraries.s3.S3
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
@@ -149,13 +148,15 @@ Check model API feedback with request ID
     ${b_value}=             Generate Random String   4   [LETTERS]
 
     ${response}=   Send feedback for deployed model    ${MODEL_TEST_ENCLAVE}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${request_id}  a=${a_value}  b=${b_value}
-    ${response_status}=     Get From Dictionary         ${response}     status
-    Should be true          ${response_status}
+    ${response_error}=      Get From Dictionary         ${response}     error
+    Should Not Be True      ${response_error}
 
     ${log_locations}=       Get S3 paths with lag  ${S3_LOCATION_MODELS_FEEDBACK}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
 
     ${log_entry}=          Find log lines with content   ${log_locations}  ${request_id}  1  ${True}
     Validate model feedback log entry                   ${log_entry}
     Validate model feedback log entry Request ID        ${log_entry}   ${request_id}
-    Validate model feedback log entry params            ${log_entry}   a=${a_value}  b=${b_value}
     Validate model feedback ID and version              ${log_entry}   ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}
+    @{desired_a_values}=    Create List    ${a_value}
+    @{desired_b_values}=    Create List    ${b_value}
+    Validate model feedback log entry params            ${log_entry}   a=${desired_a_values}  b=${desired_b_values}
