@@ -25,7 +25,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,33 +42,21 @@ import (
 )
 
 const (
-	labelSelectorKey                  = "deployment"
-	controllerName                    = "modeldeployemnt-controller"
-	defaultLivenessProbeInitialDelay  = 2
-	defaultModelPort                  = 5000
-	defaultReadinessProbeInitialDelay = 2
-	defaultLivenessFailureThreshold   = 10
-	defaultLivenessPeriod             = 10
-	defaultLivenessTimeout            = 2
-	defaultReadinessFailureThreshold  = 5
-	defaultReadinessPeriod            = 10
-	defaultReadinessTimeout           = 2
-	defaultModelPortName              = "api"
-	modelContainerName                = "model"
+	labelSelectorKey                 = "deployment"
+	controllerName                   = "modeldeployemnt-controller"
+	defaultModelPort                 = 5000
+	defaultLivenessFailureThreshold  = 10
+	defaultLivenessPeriod            = 10
+	defaultLivenessTimeout           = 2
+	defaultReadinessFailureThreshold = 5
+	defaultReadinessPeriod           = 10
+	defaultReadinessTimeout          = 2
+	defaultModelPortName             = "api"
+	modelContainerName               = "model"
 )
 
 var (
-	log                             = logf.Log.WithName(controllerName)
-	defaultModelDeploymentResources = &corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("256m"),
-			"memory": resource.MustParse("256Mi"),
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("128m"),
-			"memory": resource.MustParse("128Mi"),
-		},
-	}
+	log = logf.Log.WithName(controllerName)
 )
 
 func Add(mgr manager.Manager) error {
@@ -193,29 +180,10 @@ func (r *ReconcileModelDeployment) reconcileService(modelContainerMeta *modelCon
 
 func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *modelContainerMetaInformation,
 	modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
-	modelDeploymentResources := modelDeploymentCR.Spec.Resources
-	if modelDeploymentResources == nil {
-		modelDeploymentResources = defaultModelDeploymentResources
-	}
 
 	httpGetAction := &corev1.HTTPGetAction{
 		Path: "/healthcheck",
 		Port: intstr.FromInt(defaultModelPort),
-	}
-
-	livenessProbeInitialDelay := modelDeploymentCR.Spec.LivenessProbeInitialDelay
-	if livenessProbeInitialDelay == 0 {
-		livenessProbeInitialDelay = defaultLivenessProbeInitialDelay
-	}
-
-	readinessProbeInitialDelay := modelDeploymentCR.Spec.ReadinessProbeInitialDelay
-	if readinessProbeInitialDelay == 0 {
-		readinessProbeInitialDelay = defaultReadinessProbeInitialDelay
-	}
-
-	replicas := modelDeploymentCR.Spec.Replicas
-	if replicas == 0 {
-		replicas = 1
 	}
 
 	modelContainerMeta.k8sAnnotations[labelSelectorKey] = modelContainerMeta.k8sName
@@ -231,7 +199,7 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 			Selector: &metav1.LabelSelector{
 				MatchLabels: modelContainerMeta.k8sLabels,
 			},
-			Replicas: &replicas,
+			Replicas: modelDeploymentCR.Spec.Replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      modelContainerMeta.k8sLabels,
@@ -242,7 +210,7 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 						{
 							Name:      modelContainerName,
 							Image:     modelDeploymentCR.Spec.Image,
-							Resources: *modelDeploymentResources,
+							Resources: *modelDeploymentCR.Spec.Resources,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          defaultModelPortName,
@@ -255,7 +223,7 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 									HTTPGet: httpGetAction,
 								},
 								FailureThreshold:    defaultLivenessFailureThreshold,
-								InitialDelaySeconds: livenessProbeInitialDelay,
+								InitialDelaySeconds: *modelDeploymentCR.Spec.LivenessProbeInitialDelay,
 								PeriodSeconds:       defaultLivenessPeriod,
 								TimeoutSeconds:      defaultLivenessTimeout,
 							},
@@ -264,7 +232,7 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 									HTTPGet: httpGetAction,
 								},
 								FailureThreshold:    defaultReadinessFailureThreshold,
-								InitialDelaySeconds: readinessProbeInitialDelay,
+								InitialDelaySeconds: *modelDeploymentCR.Spec.ReadinessProbeInitialDelay,
 								PeriodSeconds:       defaultReadinessPeriod,
 								TimeoutSeconds:      defaultReadinessTimeout,
 							},

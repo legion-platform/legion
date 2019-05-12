@@ -231,6 +231,29 @@ class K8s:
                 model_training
             )
 
+    def get_model_training_logs(self, name):
+        """
+        Get model training logs
+        :param name: name of a model training resource
+        :return: status
+        """
+        core_api = kubernetes.client.CoreV1Api(kubernetes.client.ApiClient())
+
+        return core_api.read_namespaced_pod_log(f'{name}-training-pod', self._namespace, container='builder')
+
+    def check_all_containers_terminated(self, name):
+        """
+        Check that all pod containers are terminated
+        :param name: name of a model training resource
+        :return: None
+        """
+        core_api = kubernetes.client.CoreV1Api(kubernetes.client.ApiClient())
+
+        pod = core_api.read_namespaced_pod(f'{name}-training-pod', self._namespace)
+        for container in pod.status.container_statuses:
+            if not container.state.terminated:
+                raise Exception(f'Container {container.name} of {pod.metadata.name} pod is still alive')
+
     def get_model_training_status(self, name):
         """
         Get model training status

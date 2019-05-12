@@ -12,6 +12,18 @@ Library             legion.robot.libraries.grafana.Grafana
 Library             legion.robot.libraries.process.Process
 
 *** Keywords ***
+Shell
+    [Arguments]           ${command}
+    ${result}=            Run Process without PIPE   ${command}    shell=True
+    Log                   stdout = ${result.stdout}
+    Log                   stderr = ${result.stderr}
+    [Return]              ${result}
+
+StrictShell
+    [Arguments]           ${command}
+    ${res}=  Shell  ${command}
+    Should Be Equal  ${res.rc}  ${0}
+
 Url stay the same after dex log in
     [Arguments]  ${service_url}
     ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
@@ -28,8 +40,9 @@ Connect to main Grafana
 
 Build stub model
     [Arguments]  ${model_id}  ${model_version}  ${model_image_key_name}=\${TEST_MODEL_IMAGE}
+
     Delete stub model training  ${model_id}  ${model_version}
-    Create stub model training  ${model_id}  ${model_version}
+    Wait Until Keyword Succeeds  2m  5 sec  Create stub model training  ${model_id}  ${model_version}
 
     Wait stub model training  ${model_id}  ${model_version}
 
@@ -37,13 +50,6 @@ Build stub model
     ${model_image}=  Get From Dictionary  ${model_build_status}  modelImage
 
     Set Suite Variable  ${model_image_key_name}  ${model_image}
-
-Shell
-    [Arguments]           ${command}
-    ${result}=            Run Process without PIPE   ${command}    shell=True
-    Log                   stdout = ${result.stdout}
-    Log                   stderr = ${result.stderr}
-    [Return]              ${result}
 
     # --------- INSPECT COMMAND SECTION -----------
 Run EDI inspect enclave and check result

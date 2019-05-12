@@ -34,15 +34,6 @@ Check EDI deploy procedure
     ${response}=    Check model started                 ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
                     Should contain                      ${response}         'model_version': '${TEST_MODEL_VERSION}'
 
-# TODO: revert test after developing of model deployment webhook validation
-#Check EDI deploy with scale to 0
-#    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
-#    [Documentation]  Try to deploy dummy model through EDI console
-#    [Tags]  one_version  apps
-#    ${resp}=        Run EDI deploy with scale      ${TEST_MODEL_NAME}   ${TEST_MODEL_IMAGE}   -1
-#                    Should Be Equal As Integers    ${resp.rc}         2
-#                    Should contain                 ${resp.stderr}     Invalid scale parameter: should be greater then 0
-
 Check EDI deploy with scale to 1
     [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
     [Documentation]  Try to deploy dummy model through EDI console
@@ -128,14 +119,6 @@ Check EDI scale down procedure
                     Log                            ${model}
                     Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   1
 
-# TODO: revert test after developing of model deployment webhook validation
-#Check EDI scale to 0 procedure
-#    [Documentation]  Try to scale to 0 model through EDI console
-#    [Tags]  one_version  apps
-#    ${resp}=        Run EDI scale                  ${MODEL_TEST_ENCLAVE}    ${TEST_MODEL_ID}    0
-#                    Should Be Equal As Integers    ${resp.rc}          2
-#                    Should contain                 ${resp.stderr}      Invalid scale parameter: should be greater then 0
-
 Check EDI invalid model id scale up procedure
     [Documentation]  Try to scale up dummy model with invalid name through EDI console
     [Tags]  one_version  apps
@@ -157,17 +140,16 @@ Deploy with custom memory and cpu
     Should be equal  222m  ${model_resources.requests["cpu"]}
     Should be equal  222Mi  ${model_resources.requests["memory"]}
 
-# TODO: revert test after developing of model deployment webhook validation
-#Check setting of default resource values
-#    [Documentation]  Deploy setting of default resource values
-#    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE}
-#             Should be equal  ${res.rc}  ${0}
-#    ${model_deployment}=  Get model deployment  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${MODEL_TEST_ENCLAVE}
-#    LOG  ${model_deployment}
-#
-#    ${model_resources}=  Set variable  ${model_deployment.spec.template.spec.containers[0].resources}
-#    Should be equal  256m  ${model_resources.limits["cpu"]}
-#    Should be equal  256Mi  ${model_resources.limits["memory"]}
-#    Should be equal  128m  ${model_resources.requests["cpu"]}
-#    Should be equal  128Mi  ${model_resources.requests["memory"]}
+Check setting of default resource values
+    [Documentation]  Deploy setting of default resource values
+    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
+    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE}
+             Should be equal  ${res.rc}  ${0}
+    ${model_deployment}=  Get model deployment  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${MODEL_TEST_ENCLAVE}
+    LOG  ${model_deployment}
+
+    ${model_resources}=  Set variable  ${model_deployment.spec.template.spec.containers[0].resources}
+    Should be equal  256m  ${model_resources.limits["cpu"]}
+    Should be equal  256Mi  ${model_resources.limits["memory"]}
+    Should be equal  128m  ${model_resources.requests["cpu"]}
+    Should be equal  128Mi  ${model_resources.requests["memory"]}

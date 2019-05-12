@@ -235,7 +235,7 @@ func (controller *ModelDeploymentController) scaleMD(c *gin.Context) {
 		return
 	}
 
-	md.Spec.Replicas = mdReplicas.Replicas
+	md.Spec.Replicas = &mdReplicas.Replicas
 
 	if err := controller.k8sClient.Update(context.TODO(), &md); err != nil {
 		logMD.Error(err, fmt.Sprintf("Creation of the md: %+v", md))

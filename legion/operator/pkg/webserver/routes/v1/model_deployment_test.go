@@ -36,7 +36,7 @@ import (
 	"testing"
 )
 
-const (
+var (
 	mdName                  = "test-model-deployment"
 	mdImage                 = "test/test:123"
 	mdReplicas              = int32(2)
@@ -69,9 +69,9 @@ func TestGetMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 			Resources:                  mdResources,
 		},
@@ -239,9 +239,9 @@ func TestCreateMD(t *testing.T) {
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 		},
 	}
@@ -282,9 +282,9 @@ func TestCreateDuplicateMD(t *testing.T) {
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 		},
 	}
@@ -296,9 +296,9 @@ func TestCreateDuplicateMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 		},
 	}
@@ -333,22 +333,26 @@ func TestUpdateMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 		},
 	}
 	g.Expect(c.Create(context.TODO(), md)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), md)
 
+	newReplicas := mdReplicas + 1
+	newMDLivenessIninitialDelay := mdLivenessInitialDelay + 1
+	newMDReadinessInitialDelay := mdReadinessInitialDelay + 1
+
 	mdEntity := &MDRequest{
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      "new-image:123",
-			Replicas:                   mdReplicas + 1,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay + 1,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay + 1,
+			Replicas:                   &newReplicas,
+			LivenessProbeInitialDelay:  &newMDLivenessIninitialDelay,
+			ReadinessProbeInitialDelay: &newMDReadinessInitialDelay,
 			Annotations:                nil,
 		},
 	}
@@ -378,13 +382,17 @@ func TestUpdateMDNotFound(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, _ := createEnvironment()
 
+	newReplicas := mdReplicas + 1
+	newMDLivenessIninitialDelay := mdLivenessInitialDelay + 1
+	newMDReadinessInitialDelay := mdReadinessInitialDelay + 1
+
 	mdEntity := &MDResponse{
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      "new-image:123",
-			Replicas:                   mdReplicas + 1,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay + 1,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay + 1,
+			Replicas:                   &newReplicas,
+			LivenessProbeInitialDelay:  &newMDLivenessIninitialDelay,
+			ReadinessProbeInitialDelay: &newMDReadinessInitialDelay,
 		},
 	}
 
@@ -417,9 +425,9 @@ func TestScaleMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 		},
 	}
@@ -447,7 +455,7 @@ func TestScaleMD(t *testing.T) {
 	md = &legionv1alpha1.ModelDeployment{}
 	err = c.Get(context.TODO(), types.NamespacedName{Name: mdName, Namespace: testNamespace}, md)
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(newReplicasNumber).To(Equal(md.Spec.Replicas))
+	g.Expect(newReplicasNumber).To(Equal(*md.Spec.Replicas))
 }
 
 func TestScaleMDNotFound(t *testing.T) {
@@ -484,9 +492,9 @@ func TestDeleteMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   mdReplicas,
-			LivenessProbeInitialDelay:  mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: mdReadinessInitialDelay,
+			Replicas:                   &mdReplicas,
+			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
+			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
 		},
 	}

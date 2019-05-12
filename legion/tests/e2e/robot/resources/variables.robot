@@ -13,3 +13,4 @@ ${S3_LOCATION_MODELS_RESP_LOG}      model_log/response_body
 ${S3_LOCATION_MODELS_FEEDBACK}      model_log/feedback
 ${S3_PARTITIONING_PATTERN}          year=%Y/month=%m/day=%d/%Y%m%d%H
 ${GRAFANA_MAIN_DASHBOARD_UID}       f000cf13-581b-459c-b35e-f5d89fded48f
+${TEST_VCS}                         legion

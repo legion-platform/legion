@@ -41,3 +41,4 @@ username : unicode
 .*secret \:\=.*
 .*Token: token.*
 .*Token: "".*
+.*Secret: .*

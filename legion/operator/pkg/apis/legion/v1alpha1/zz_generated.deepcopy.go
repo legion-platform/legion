@@ -100,6 +100,21 @@ func (in *ModelDeploymentSpec) DeepCopyInto(out *ModelDeploymentSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
+	if in.LivenessProbeInitialDelay != nil {
+		in, out := &in.LivenessProbeInitialDelay, &out.LivenessProbeInitialDelay
+		*out = new(int32)
+		**out = **in
+	}
+	if in.ReadinessProbeInitialDelay != nil {
+		in, out := &in.ReadinessProbeInitialDelay, &out.ReadinessProbeInitialDelay
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

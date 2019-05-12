@@ -107,7 +107,7 @@ def _prepare_resources(args: argparse.Namespace) -> typing.Dict[str, typing.Any]
     if not resources["requests"]:
         del resources["requests"]
 
-    return resources
+    return resources or None
 
 
 def create(args: argparse.Namespace):

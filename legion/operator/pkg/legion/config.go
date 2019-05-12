@@ -46,6 +46,11 @@ const (
 	JwtExpDatetime         = "JWT_EXP_DATETIME"
 	TemplateFolder         = "TEMPLATE_FOLDER"
 	BuilderServiceAccount  = "BUILDER_SERVICE_ACCOUNT"
+	WebhookSecretName      = "WEBHOOK_SECRET_NAME"
+	WebhookServiceName     = "WEBHOOK_SERVICE_NAME"
+	WebhookPort            = "WEBHOOK_PORT"
+	MutatingWebhookName    = "MUTATING_WEBHOOK_NAME"
+	ValidatingWebhookName  = "VALIDATING_WEBHOOK_NAME"
 )
 
 // TODO:
@@ -80,6 +85,22 @@ func SetUpOperatorConfig() {
 
 	panicIfError(viper.BindEnv(DockerRegistryUser))
 	panicIfError(viper.BindEnv(DockerRegistryPassword))
+
+	viper.SetDefault(Namespace, "default")
+	panicIfError(viper.BindEnv(Namespace))
+
+	viper.SetDefault(WebhookSecretName, "webhook-server-secret")
+	panicIfError(viper.BindEnv(WebhookSecretName))
+
+	viper.SetDefault(WebhookServiceName, "legion-webhook-server-service")
+	panicIfError(viper.BindEnv(WebhookServiceName))
+
+	viper.SetDefault(WebhookPort, 9876)
+	panicIfError(viper.BindEnv(WebhookPort))
+
+	viper.SetDefault(MutatingWebhookName, "legion-mutating-webhook-configuration")
+	viper.SetDefault(ValidatingWebhookName, "legion-validating-webhook-configuration")
+
 }
 
 func SetUpEDIConfig() {

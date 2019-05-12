@@ -45,18 +45,11 @@ Scale. Nonexistent model service
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  not found
 
-# TODO: revert test after developing of model deployment webhook validation
-#Scale. Scale to zero replicas
-#    [Documentation]  The scale command must fail if number of replicas is zero
-#    ${res}=  Shell  legionctl --verbose md scale ${TEST_MODEL_NAME} --replicas 0
-#             Should not be equal  ${res.rc}  ${0}
-#             should contain       ${res.stderr}  Invalid scale parameter: should be greater then 0
-#
-#Scale. Scale to negative number of replicas
-#    [Documentation]  The scale command must fail if number of replicas is negative
-#    ${res}=  Shell  legionctl --verbose md scale ${TEST_MODEL_NAME} --replicas -3
-#             Should not be equal  ${res.rc}  ${0}
-#             Should contain       ${res.stderr}  should be greater then 0
+Scale. Scale to negative number of replicas
+    [Documentation]  The scale command must fail if number of replicas is negative
+    ${res}=  Shell  legionctl --verbose md scale ${TEST_MODEL_NAME} --replicas -3
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Number of replicas parameter must not be less than 0
 
 Scale. Missed the host parameter
     [Documentation]  The scale command must fail if it does not contain an edi host
@@ -82,45 +75,26 @@ Undeploy. Nonexistent model service with ignore-not-found parameter
     ${res}=  Shell  legionctl --verbose md delete this-model-does-not-exsit --ignore-not-found
              Should be equal  ${res.rc}  ${0}
 
-# TODO: revert test after developing of model deployment webhook validation
-#Undeploy. Negative grace period parameter
-#    [Documentation]  The undeploy command must finish successfully when grace period is negative
-#    [Setup]  Run EDI deploy and check model started  ${TEST_MODEL_NAME}  ${TEST_MODEL_IMAGE}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}
-#    [Teardown]  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
-#    ${res}=  Shell  legionctl --verbose md delete ${TEST_MODEL_NAME} --grace-period=-5
-#             Should be equal  ${res.rc}  ${0}
+Deploy. Negative liveness timeout
+    [Documentation]  The deploy command must fail if liveness timeout is negative
+    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
+    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --livenesstimeout -3
+             Should not be equal  ${res.rc}  ${0}
+             should contain  ${res.stderr}  Liveness probe parameter must be positive number
 
-# TODO: revert test after developing of model deployment webhook validation
-#Deploy. Negative liveness timeout
-#    [Documentation]  The deploy command must fail if liveness timeout is negative
-#    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --livenesstimeout -3
-#             Should not be equal  ${res.rc}  ${0}
-#             should contain  ${res.stderr}  must be greater than or equal to 0
+Deploy. Negative readiness timeout
+    [Documentation]  The deploy command must fail if readiness timeout is negative
+    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
+    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --readinesstimeout -3
+             Should not be equal  ${res.rc}  ${0}
+             should contain  ${res.stderr}  Readiness probe must be positive number
 
-# TODO: revert test after developing of model deployment webhook validation
-#Deploy. Negative readiness timeout
-#    [Documentation]  The deploy command must fail if readiness timeout is negative
-#    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --readinesstimeout -3
-#             Should not be equal  ${res.rc}  ${0}
-#             should contain  ${res.stderr}  must be greater than or equal to 0
-
-# TODO: revert test after developing of model deployment webhook validation
-#Deploy. Zero replicas
-#    [Documentation]  The deploy command must fail if number of replicas is zero
-#    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --scale 0
-#             Should not be equal  ${res.rc}  ${0}
-#             Should contain       ${res.stderr}  should be greater then 0
-
-# TODO: revert test after developing of model deployment webhook validation
-#Deploy. Negative number of replicas
-#    [Documentation]  The deploy command must fail if number of replicas is negative
-#    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --scale -3
-#             Should not be equal  ${res.rc}  ${0}
-#             Should contain       ${res.stderr}  should be greater then 0
+Deploy. Negative number of replicas
+    [Documentation]  The deploy command must fail if number of replicas is negative
+    [Setup]  Run Keyword And Ignore Error  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
+    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --replicas -3
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  Number of replicas parameter must not be less than 0
 
 Deploy. Zero timeout parameter
     [Documentation]  The deploy command must fail if timeout parameter is zero
@@ -131,14 +105,14 @@ Deploy. Zero timeout parameter
 
 Deploy. Negative timeout parameter
     [Documentation]  The deploy command must fail if it contains negative timeout parameter
-    [Setup]  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_NAME} --ignore-not-found
+    [Setup]  Shell  legionctl --verbose md delete ${TEST_MODEL_NAME} --ignore-not-found
     ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --timeout=-500
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  should be positive integer
 
 Deploy. Negative timeout with no-wait parameter
     [Documentation]  Ignore negative timeout parameter due to using no-wait parameter
-    [Setup]  Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID}
+    [Setup]  Shell  legionctl --verbose md delete ${TEST_MODEL_NAME} --ignore-not-found
     ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --no-wait --timeout=-500
              Should be equal  ${res.rc}  ${0}
 
@@ -227,21 +201,19 @@ Get token from EDI with expiration date set
 
     Ensure component auth page requires authorization   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_VERSION}/info  ${token}  ${2}  ${6}
 
-# TODO: revert test after developing of model deployment webhook validation
-#Deploy fails when memory resource is incorect
-#    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
-#    [Documentation]  Deploy fails when memory resource is incorect
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_IMAGE} --memory wrong
-#             Should not be equal  ${res.rc}  ${0}
-#             Should contain       ${res.stderr}  Malformed mem resource
+Deploy fails when memory resource is incorect
+    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
+    [Documentation]  Deploy fails when memory resource is incorect
+    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --memory-limit wrong
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  quantities must match the regular expression
 
-# TODO: revert test after developing of model deployment webhook validation
-#Deploy fails when cpu resource is incorect
-#    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
-#    [Documentation]  Deploy fails when cpu resource is incorect
-#    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_IMAGE} --cpu wrong
-#             Should not be equal  ${res.rc}  ${0}
-#             Should contain       ${res.stderr}  Malformed cpu resource
+Deploy fails when cpu resource is incorect
+    [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
+    [Documentation]  Deploy fails when cpu resource is incorect
+    ${res}=  Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --cpu-request wrong
+             Should not be equal  ${res.rc}  ${0}
+             Should contain       ${res.stderr}  quantities must match the regular expression
 
 Invoke. Empty model service url
     [Documentation]  Fails if model service url is empty
@@ -253,6 +225,7 @@ Invoke. Empty model service url
 
 Invoke. Empty jwt
     [Documentation]  Fails if jwt is empty
+    [Teardown]  Login to the edi and edge
     # Ensure that next command will not use the config file
     Remove File  ${LOCAL_CONFIG}
 
@@ -262,6 +235,7 @@ Invoke. Empty jwt
 
 Invoke. Wrong jwt
     [Documentation]  Fails if jwt is wrong
+    [Setup]  StrictShell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE}
     ${res}=  Shell  legionctl --verbose model invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} -p a=1 -p b=2 --model-server-url ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN} --jwt wrong
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Wrong jwt model token

@@ -31,11 +31,11 @@ type ModelDeploymentSpec struct {
 	// Annotations for model pods.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Number of pods for model. By default the replicas parameter equals 1.
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// Initial delay for liveness probe of model pod
-	LivenessProbeInitialDelay int32 `json:"livenessProbeInitialDelay,omitempty"`
+	LivenessProbeInitialDelay *int32 `json:"livenessProbeInitialDelay,omitempty"`
 	// Initial delay for readiness probe of model pod
-	ReadinessProbeInitialDelay int32 `json:"readinessProbeInitialDelay,omitempty"`
+	ReadinessProbeInitialDelay *int32 `json:"readinessProbeInitialDelay,omitempty"`
 }
 
 type ModelDeploymentState string

@@ -109,7 +109,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Can't decode %s vcs ssh key", vcsInstance.Name))
 
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	rawPublicKey := vcsInstance.Spec.PublicKey
@@ -127,6 +127,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 		publicKey, err = base64.StdEncoding.DecodeString(rawPublicKey)
 		if err != nil {
 			log.Error(err, "Can't decode % vcs public key", rawPublicKey)
+			return reconcile.Result{}, nil
 		}
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 	"time"
 
@@ -71,6 +72,17 @@ var (
 			utils.GitSSHKeyFileName: []byte(vscCredential),
 		},
 	}
+	defaultModelResources = corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse("256m"),
+			"memory": resource.MustParse("256Mi"),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse("128m"),
+			"memory": resource.MustParse("128Mi"),
+		},
+	}
+	modelImage = "test/image:123"
 )
 
 func setupConfig() {
@@ -111,6 +123,8 @@ func TestBasicReconcile(t *testing.T) {
 			ToolchainType: "python",
 			VCSName:       vcsName,
 			Entrypoint:    "some entrypoint",
+			Resources:     &defaultModelResources,
+			Image:         modelImage,
 		},
 	}
 

@@ -20,12 +20,21 @@ spec:
       {{- if .Values.rbac }}
       serviceAccountName: "{{ .Release.Name }}-operator"
       {{- end }}
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: "{{ .Release.Name }}-webhook-server-secret"
       containers:
       - image: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.server "tpl" "%sk8s-operator:%s") }}"
         imagePullPolicy: Always
         name: manager
+        volumeMounts:
+          - mountPath: /tmp/cert
+            name: cert
+            readOnly: true
         env:
-          - name: POD_NAMESPACE
+          - name: NAMESPACE
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
@@ -55,9 +64,18 @@ spec:
             value: {{ .Values.modelMetrics.host | quote }}
           - name: METRICS_PORT
             value: {{ .Values.modelMetrics.port | quote }}
+          - name: WEBHOOK_SECRET_NAME
+            value: "{{ .Release.Name }}-webhook-server-secret"
+          - name: WEBHOOK_SERVICE_NAME
+            value: "{{ .Release.Name }}-operator"
+          - name: WEBHOOK_PORT
+            value: "9876"
         resources:
           {{- toYaml .Values.operator.server.resources | nindent 10 }}
         ports:
+        - containerPort: 9876
+          name: webhook-server
+          protocol: TCP
         - containerPort: 7777
           name: metrics
           protocol: TCP
@@ -74,6 +92,14 @@ data:
   docker.registry.password: {{ .Values.modelStorage.external.password | b64enc | quote }}
 ---
 apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    component: "legion-operator"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+  name: "{{ .Release.Name }}-webhook-server-secret"
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: "{{ .Release.Name }}-operator"
@@ -88,4 +114,8 @@ spec:
   - name: metrics
     targetPort: 7777
     port: 7777
+    protocol: TCP
+  - name: webhook
+    targetPort: 9876
+    port: 443
     protocol: TCP

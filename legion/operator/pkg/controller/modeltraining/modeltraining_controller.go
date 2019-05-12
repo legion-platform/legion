@@ -95,16 +95,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 var _ reconcile.Reconciler = &ReconcileModelTraining{}
 
 var (
-	defaultModelResources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("256m"),
-			"memory": resource.MustParse("256Mi"),
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("128m"),
-			"memory": resource.MustParse("128Mi"),
-		},
-	}
 	builderResources = corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
 			"cpu":    resource.MustParse("256m"),
@@ -132,7 +122,6 @@ const (
 	gitSecretPath          = "/home/root/.ssh"
 	sharedDirPath          = "/var/legion"
 	sharedDirName          = "shared-dir"
-	defaultModelFileName   = "/var/legion/robot.model"
 	modelContainerName     = "model"
 	dockerSocketVolumeName = "docker-socket"
 	dockerSocketVolumePath = "/var/run/docker.sock"
@@ -142,14 +131,14 @@ const (
 )
 
 // FindVCSInstance finds relevant VCS instance for ModelTraining instance
-func (r *ReconcileModelTraining) findVCSInstance(vcsName string, namespace string) (vscCR *legionv1alpha1.VCSCredential, err error) {
+func (r *ReconcileModelTraining) findVCSInstance(vcsName string, namespace string) (vcsCR *legionv1alpha1.VCSCredential, err error) {
 	vcsInstanceName := types.NamespacedName{
 		Name:      vcsName,
 		Namespace: namespace,
 	}
-	vscCR = &legionv1alpha1.VCSCredential{}
+	vcsCR = &legionv1alpha1.VCSCredential{}
 
-	if err = r.Get(context.TODO(), vcsInstanceName, vscCR); err != nil {
+	if err = r.Get(context.TODO(), vcsInstanceName, vcsCR); err != nil {
 		log.Error(err, "Cannot fetch VCS Credential with name")
 
 		return
@@ -165,26 +154,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 		return nil, err
 	}
 
-	branch := modelBuilderCR.Spec.Reference
-	if branch == "" {
-		branch = vcsInstance.Spec.DefaultReference
-	}
-
 	vcsSecretName := legion.GenerateVcsSecretName(vcsInstance.Name)
-
-	modelFileName := modelBuilderCR.Spec.ModelFile
-	if modelFileName == "" {
-		modelFileName = defaultModelFileName
-	}
-
-	modelImage := modelBuilderCR.Spec.Image
-	if modelImage == "" {
-		modelImage, err = legion.GetToolchainImage(modelBuilderCR.Spec.ToolchainType)
-
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	modelCommand, err := legion.GenerateModelCommand(
 		modelBuilderCR.Spec.ToolchainType,
@@ -193,11 +163,6 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 	)
 	if err != nil {
 		return nil, err
-	}
-
-	modelResources := modelBuilderCR.Spec.Resources
-	if modelResources == nil {
-		modelResources = &defaultModelResources
 	}
 
 	pod = &corev1.Pod{
@@ -246,7 +211,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 			Containers: []corev1.Container{
 				{
 					Name:    modelContainerName,
-					Image:   modelImage,
+					Image:   modelBuilderCR.Spec.Image,
 					Command: []string{"/bin/tiny"},
 					Args:    []string{"--", "cat"},
 					Stdin:   true,
@@ -265,7 +230,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 						},
 						{
 							Name:  legion.ModelFile,
-							Value: modelFileName,
+							Value: modelBuilderCR.Spec.ModelFile,
 						},
 						{
 							Name:  legion.DockerRegistry,
@@ -280,7 +245,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 							Value: viper.GetString(legion.DockerRegistryPassword),
 						},
 					},
-					Resources: *modelResources,
+					Resources: *modelBuilderCR.Spec.Resources,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							MountPath: sharedDirPath,
@@ -326,11 +291,11 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 						},
 						{
 							Name:  legion.Reference,
-							Value: branch,
+							Value: modelBuilderCR.Spec.Reference,
 						},
 						{
 							Name:  legion.ModelFile,
-							Value: modelFileName,
+							Value: modelBuilderCR.Spec.ModelFile,
 						},
 						{
 							Name:  legion.ModelCommand,

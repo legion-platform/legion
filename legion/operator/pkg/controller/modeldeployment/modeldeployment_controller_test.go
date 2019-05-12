@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"testing"
 	"time"
@@ -33,14 +34,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	timeout      = time.Second * 5
-	mdImage      = "test/image:123"
-	mdName       = "test-md"
-	mdNamespace  = "default"
-	modelId      = "id-1"
-	modelVersion = "2"
-	k8sName      = "model-id-1-2"
+var (
+	timeout          = time.Second * 5
+	mdImage          = "test/image:123"
+	mdName           = "test-md"
+	mdReplicas       = int32(2)
+	mdReadinessDelay = int32(2)
+	mdLivenessDelay  = int32(2)
+	mdNamespace      = "default"
+	modelId          = "id-1"
+	modelVersion     = "2"
+	k8sName          = "model-id-1-2"
 )
 
 var (
@@ -55,6 +59,16 @@ var (
 		legion.DomainModelId:      modelId,
 		legion.DomainModelVersion: modelVersion,
 	}
+	mdResources = &corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse("256m"),
+			"memory": resource.MustParse("256Mi"),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse("128m"),
+			"memory": resource.MustParse("128Mi"),
+		},
+	}
 )
 
 func mockExtractLabel(image string) (map[string]string, error) {
@@ -66,7 +80,11 @@ func TestReconcile(t *testing.T) {
 	instance := &legionv1alpha1.ModelDeployment{
 		ObjectMeta: metav1.ObjectMeta{Name: mdName, Namespace: mdNamespace},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
-			Image: mdImage,
+			Image:                      mdImage,
+			Replicas:                   &mdReplicas,
+			ReadinessProbeInitialDelay: &mdReadinessDelay,
+			LivenessProbeInitialDelay:  &mdLivenessDelay,
+			Resources:                  mdResources,
 		},
 	}
 
