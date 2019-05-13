@@ -217,6 +217,14 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 					Stdin:   true,
 					Env: []corev1.EnvVar{
 						{
+							Name: legion.Namespace,
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+							},
+						},
+						{
 							Name:  legion.MetricHost,
 							Value: viper.GetString(legion.MetricHost),
 						},

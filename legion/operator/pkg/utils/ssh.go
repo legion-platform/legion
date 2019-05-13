@@ -28,7 +28,7 @@ import (
 const PublicSshKeyName = "ssh_known_hosts"
 
 var (
-	SshUrlRegexp = regexp.MustCompile(`(?P<User>\w+)@(?P<Host>[\w.]+):.*`)
+	SshUrlRegexp = regexp.MustCompile(`(?P<User>.+)@(?P<Host>[\w.]+)[/:].*`)
 	logSsh       = logf.Log.WithName("ssh")
 )
 

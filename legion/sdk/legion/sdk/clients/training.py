@@ -36,6 +36,7 @@ class ModelTraining(typing.NamedTuple):
     toolchain_type: str
     entrypoint: str
     args: typing.List[str] = []
+    resources: typing.Mapping[str, typing.Any] = {}
     vcs_name: str = ""
     reference: str = ""
     model_id: str = ""
@@ -55,6 +56,7 @@ class ModelTraining(typing.NamedTuple):
         return ModelTraining(
             name=mt.get("name"),
             toolchain_type=mt_spec.get('toolchain', ''),
+            resources=mt_spec.get('resources', ''),
             entrypoint=mt_spec.get('entrypoint', ''),
             args=mt_spec.get('args', []),
             vcs_name=mt_spec.get('vcsName', ''),
@@ -73,6 +75,7 @@ class ModelTraining(typing.NamedTuple):
             'name': self.name,
             'spec': {
                 'toolchain': self.toolchain_type,
+                'resources': self.resources,
                 'entrypoint': self.entrypoint,
                 'args': self.args,
                 'vcsName': self.vcs_name,

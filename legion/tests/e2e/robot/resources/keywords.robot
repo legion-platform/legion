@@ -21,8 +21,15 @@ Shell
 
 StrictShell
     [Arguments]           ${command}
-    ${res}=  Shell  ${command}
-    Should Be Equal  ${res.rc}  ${0}
+    ${res}=   Shell  ${command}
+              Should Be Equal  ${res.rc}  ${0}
+    [Return]  ${res}
+
+FailedShell
+    [Arguments]           ${command}
+    ${res}=   Shell  ${command}
+              Should Not Be Equal  ${res.rc}  ${0}
+    [Return]  ${res}
 
 Url stay the same after dex log in
     [Arguments]  ${service_url}

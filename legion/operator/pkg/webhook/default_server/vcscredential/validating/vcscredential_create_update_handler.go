@@ -36,7 +36,6 @@ const (
 var log = logf.Log.WithName(webhookName)
 
 func init() {
-	webhookName := "validating-create-update-vcscredential"
 	if HandlerMap[webhookName] == nil {
 		HandlerMap[webhookName] = []admission.Handler{}
 	}

@@ -251,7 +251,7 @@ class ModelClient:
             kwargs['timeout'] = self._timeout
         return kwargs
 
-    def _request(self, http_method, url, data=None, files=None, retries=3, sleep=1, **kwargs):
+    def _request(self, http_method, url, data=None, files=None, retries=40, sleep=3, **kwargs):
         """
         Send request with provided method and other parameters
         :param http_method: HTTP method

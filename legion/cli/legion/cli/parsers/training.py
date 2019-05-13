@@ -22,7 +22,7 @@ import time
 
 from texttable import Texttable
 
-from legion.cli.parsers import security
+from legion.cli.parsers import security, prepare_resources, add_resources_params
 from legion.sdk.clients import edi
 from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.training import build_client, ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
@@ -79,6 +79,7 @@ def create(args: argparse.Namespace):
         name=args.name,
         toolchain_type=args.toolchain_type,
         entrypoint=args.entrypoint,
+        resources=prepare_resources(args),
         args=args.arg,
         vcs_name=args.vcs_name,
         reference=args.reference
@@ -100,6 +101,7 @@ def edit(args: argparse.Namespace):
         name=args.name,
         toolchain_type=args.toolchain_type,
         entrypoint=args.entrypoint,
+        resources=prepare_resources(args),
         args=args.arg,
         vcs_name=args.vcs_name,
         reference=args.reference
@@ -148,8 +150,10 @@ def wait_training_finish(args: argparse.Namespace, mt_client: ModelTrainingClien
                 return
             elif mt.state == TRAINING_FAILED_STATE:
                 raise Exception(f'Model training {args.name} was failed.')
-
-            print(f'Current training state is {mt.state}. Sleeping...')
+            elif mt.state == "":
+                print(f"Can't determine the state of {mt.name}. Sleeping...")
+            else:
+                print(f'Current training state is {mt.state}. Sleeping...')
 
         except WrongHttpStatusCode:
             LOGGER.info('Callback have not confirmed completion of the operation')
@@ -180,6 +184,7 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_create_parser.add_argument('--arg', '-a', action='append', help='Model Training name')
     mt_create_parser.add_argument('--vcs-name', '--vcs', type=str, help='Model Training name', required=True)
     mt_create_parser.add_argument('--reference', type=str, help='Model Training name')
+    add_resources_params(mt_create_parser)
     edi.add_arguments_for_wait_operation(mt_create_parser)
     security.add_edi_arguments(mt_create_parser)
     mt_create_parser.set_defaults(func=create)
@@ -191,6 +196,7 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_edit_parser.add_argument('--arg', '-a', action='append', help='Model Training name')
     mt_edit_parser.add_argument('--vcs-name', '--vcs', type=str, help='Model Training name', required=True)
     mt_edit_parser.add_argument('--reference', type=str, help='Model Training name')
+    add_resources_params(mt_edit_parser)
     security.add_edi_arguments(mt_edit_parser)
     mt_edit_parser.set_defaults(func=edit)
 

@@ -190,16 +190,15 @@ Get token from EDI with expiration date set
     [Documentation]  Try to get token from EDI and set it`s expiration date
     ${expiration_date} =    Get future time           ${10}  %Y-%m-%dT%H:%M:%S
     Log  ${expiration_date}
-    ${res} =                Shell                     legionctl --verbose generate-token --expiration-date ${expiration_date} --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION}
-                            Should be equal           ${res.rc}  ${0}
+    ${res} =                StrictShell                   legionctl --verbose generate-token --expiration-date ${expiration_date} --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION}
                             Log  ${res.stdout}
-    ${token} =              Set variable              ${res.stdout}
-    &{res} =                Get component auth page   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_VERSION}/info  ${token}
-                            Dictionary Should Contain Item    ${res}    response_code    200
-    ${auth_page} =          Get From Dictionary       ${res}    response_text
-                            Should not contain        ${auth_page}    401 Authorization Required
+    ${token} =              Set variable          ${res.stdout}
+    ${res}=                 StrictShell           legionctl --verbose model info --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --jwt ${token}
+                            Should not contain    ${res.stdout}    401 Authorization Required
+                            Should contain        ${res.stdout}    ${TEST_MODEL_ID}
+                            Should contain        ${res.stdout}    ${TEST_MODEL_VERSION}
 
-    Ensure component auth page requires authorization   ${HOST_PROTOCOL}://edge-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/model/${TEST_MODEL_ID}/${TEST_MODEL_VERSION}/info  ${token}  ${2}  ${6}
+    Wait Until Keyword Succeeds  2 min  5 sec  FailedShell  legionctl --verbose model info --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --jwt ${token}
 
 Deploy fails when memory resource is incorect
     [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}

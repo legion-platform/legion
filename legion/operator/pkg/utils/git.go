@@ -73,7 +73,6 @@ func CloneUserRepo(cloneDir string, repositoryUrl string, sshKeyPath string, ref
 	})
 	if err != nil {
 		log.Error(err, "Fetching additional references")
-		return err
 	}
 
 	hash, err := tryGetHash(repository, referenceName)

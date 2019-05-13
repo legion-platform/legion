@@ -43,7 +43,7 @@ class ModelTaskSet(TaskSet):
     def on_start(self):
         self._model_client = ModelClient('income', '1.1', use_relative_url=True, http_client=self.client,
                                          http_exception=RequestException,
-                                         token=build_client().get_token('income', '1.0'))
+                                         token=build_client().get_token('income', '1.1'))
 
 
 class TestLocust(HttpLocust):

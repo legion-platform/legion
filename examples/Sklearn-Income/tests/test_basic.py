@@ -13,11 +13,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import os
 
 from legion.sdk.clients.model import ModelClient
 from legion.sdk.clients.edi import build_client
-from legion import config
+from legion.sdk import config
 
 import unittest2
 

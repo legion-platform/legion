@@ -7,4 +7,4 @@ metadata:
 spec:
   toolchain: jupyter
   vcsName: legion
-  entrypoint: "examples/sklearn-income/Income-wo-df.ipynb"
+  entrypoint: "examples/Sklearn-Income/Income-wo-df.ipynb"

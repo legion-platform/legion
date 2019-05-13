@@ -41,6 +41,8 @@ type imageAttrs struct {
 
 type LabelExtractor func(image string) (map[string]string, error)
 
+// Extracts image attributes: host, name, tag
+// All these attributes must be present in image name
 func parseImage(image string) (*imageAttrs, error) {
 	submatch := dockerImageRegexp.FindStringSubmatch(image)
 	host, name, tag := submatch[1], submatch[2], submatch[3]

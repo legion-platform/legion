@@ -23,7 +23,7 @@ import typing
 
 from texttable import Texttable
 
-from legion.cli.parsers import security
+from legion.cli.parsers import security, prepare_resources, add_resources_params
 from legion.sdk.clients import edi
 from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDeploymentClient, SUCCESS_STATE, \
     FAILED_STATE
@@ -85,31 +85,6 @@ def get(args: argparse.Namespace):
     print(table.draw() + "\n")
 
 
-def _prepare_resources(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
-    """
-    Convert cli parameters to k8s resources
-    :param args: cli parameters
-    :return: k8s resources
-    """
-    resources = {"limits": {}, "requests": {}}
-    if args.memory_limit:
-        resources["limits"]["memory"] = args.memory_limit
-    if args.memory_request:
-        resources["requests"]["memory"] = args.memory_request
-    if args.cpu_limit:
-        resources["limits"]["cpu"] = args.cpu_limit
-    if args.cpu_request:
-        resources["requests"]["cpu"] = args.cpu_request
-
-    if not resources["limits"]:
-        del resources["limits"]
-
-    if not resources["requests"]:
-        del resources["requests"]
-
-    return resources or None
-
-
 def create(args: argparse.Namespace):
     """
     Create Model Deployment
@@ -124,7 +99,7 @@ def create(args: argparse.Namespace):
     message = md_client.create(ModelDeployment(
         name=args.name,
         image=args.image,
-        resources=_prepare_resources(args),
+        resources=prepare_resources(args),
         annotations=args.annotations,
         replicas=args.replicas,
         liveness_probe_initial_delay=args.livenesstimeout,
@@ -146,7 +121,7 @@ def edit(args: argparse.Namespace):
     message = md_client.edit(ModelDeployment(
         name=args.name,
         image=args.image,
-        resources=_prepare_resources(args),
+        resources=prepare_resources(args),
         annotations=args.arg,
         replicas=args.replicas,
         liveness_probe_initial_delay=args.livenesstimeout,
@@ -214,25 +189,15 @@ def wait_operation_finish(args: argparse.Namespace, md_client: ModelDeploymentCl
                 return
             elif md.state == FAILED_STATE:
                 raise Exception(f'Model deployment {args.name} was failed')
-
-            print(f'Current deployment state is {md.state}. Sleeping...')
+            elif md.state == "":
+                print(f"Can't determine the state of {md.name}. Sleeping...")
+            else:
+                print(f'Current deployment state is {md.state}. Sleeping...')
         except WrongHttpStatusCode:
             LOGGER.info('Callback have not confirmed completion of the operation')
 
         LOGGER.debug('Sleep before next request')
         time.sleep(DEFAULT_WAIT_TIMEOUT)
-
-
-def _add_resources_params(parser: argparse.ArgumentParser) -> None:
-    """
-    Add resources parameters
-    :param parser: Argument Parser
-    """
-    parser.add_argument('--memory-limit', default=None, type=str, help='limit memory for model deployment')
-    parser.add_argument('--memory-request', '--memory', default=None, type=str,
-                        help='request memory for model deployment')
-    parser.add_argument('--cpu-limit', default=None, type=str, help='limit cpu for model deployment')
-    parser.add_argument('--cpu-request', default=None, type=str, help='request cpu for model deployment')
 
 
 def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
@@ -259,7 +224,7 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
                                   help='model startup timeout for liveness probe')
     md_create_parser.add_argument('--readinesstimeout', default=2, type=int,
                                   help='model startup timeout for readiness probe')
-    _add_resources_params(md_create_parser)
+    add_resources_params(md_create_parser)
     edi.add_arguments_for_wait_operation(md_create_parser)
     security.add_edi_arguments(md_create_parser)
     md_create_parser.set_defaults(func=create)
@@ -276,7 +241,7 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
                                 help='model startup timeout for liveness probe')
     md_edit_parser.add_argument('--readinesstimeout', default=2, type=int,
                                 help='model startup timeout for readiness probe')
-    _add_resources_params(md_edit_parser)
+    add_resources_params(md_edit_parser)
     security.add_edi_arguments(md_edit_parser)
     md_edit_parser.set_defaults(func=create)
 
