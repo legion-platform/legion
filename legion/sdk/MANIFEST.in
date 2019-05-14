@@ -1,1 +1,2 @@
 include Pipfile*
+graft legion/sdk/templates
