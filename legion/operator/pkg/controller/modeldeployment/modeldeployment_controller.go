@@ -179,7 +179,7 @@ func (r *ReconcileModelDeployment) reconcileService(modelContainerMeta *modelCon
 }
 
 func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *modelContainerMetaInformation,
-	modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	modelDeploymentCR *legionv1alpha1.ModelDeployment) (appsv1.Deployment, error) {
 
 	httpGetAction := &corev1.HTTPGetAction{
 		Path: "/healthcheck",
@@ -244,7 +244,7 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 	}
 
 	if err := controllerutil.SetControllerReference(modelDeploymentCR, modelDeployment, r.scheme); err != nil {
-		return err
+		return *modelDeployment, err
 	}
 
 	found := &appsv1.Deployment{}
@@ -254,9 +254,9 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 	if err != nil && errors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("Creating %s k8s deployment", modelDeployment.ObjectMeta.Name))
 		err = r.Create(context.TODO(), modelDeployment)
-		return err
+		return *modelDeployment, err
 	} else if err != nil {
-		return err
+		return *modelDeployment, err
 	}
 
 	if !reflect.DeepEqual(modelDeployment.Spec, found.Spec) {
@@ -264,11 +264,11 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 		log.Info(fmt.Sprintf("Updating %s k8s deployment", modelDeployment.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
 		if err != nil {
-			return err
+			return *found, err
 		}
 	}
 
-	return nil
+	return *found, nil
 }
 
 // Reconcile reads that state of the cluster for a ModelDeployment object and makes changes based on the state read
@@ -362,7 +362,7 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 		k8sAnnotations: labels,
 	}
 
-	err = r.reconcileDeployment(&modelContainerMeta, modelDeploymentCR)
+	modelDeployment, err := r.reconcileDeployment(&modelContainerMeta, modelDeploymentCR)
 	if err != nil {
 		log.Error(err, "Reconcile k8s deployment")
 		return reconcile.Result{}, err
@@ -385,6 +385,7 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 	modelDeploymentCR.Status.ServiceURL = fmt.Sprintf(
 		"http://%s.%s.svc.cluster.local:%d", modelContainerMeta.k8sName, modelDeploymentCR.Namespace, defaultModelPort,
 	)
+	modelDeploymentCR.Status.AvailableReplicas = modelDeployment.Status.AvailableReplicas
 
 	if modelDeploymentCR.ObjectMeta.Labels == nil {
 		modelDeploymentCR.ObjectMeta.Labels = map[string]string{}

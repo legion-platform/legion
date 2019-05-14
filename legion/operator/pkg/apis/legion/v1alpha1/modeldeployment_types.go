@@ -61,6 +61,8 @@ type ModelDeploymentStatus struct {
 	Service string `json:"service,omitempty"`
 	// The model k8s service name
 	ServiceURL string `json:"serviceURL,omitempty"`
+	// Number of available pods
+	AvailableReplicas int32 `json:"availableReplicas,omitempty"`
 }
 
 // +genclient
@@ -71,6 +73,7 @@ type ModelDeploymentStatus struct {
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="Model image",type="string",JSONPath=".spec.image"
 // +kubebuilder:printcolumn:name="Service URL",type="string",JSONPath=".status.serviceURL"
+// +kubebuilder:printcolumn:name="Available Replicas",type="string",JSONPath=".status.availableReplicas"
 // +kubebuilder:resource:shortName=md
 type ModelDeployment struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -1039,6 +1039,10 @@ var doc = `{
         "v1alpha1.ModelDeploymentStatus": {
             "type": "object",
             "properties": {
+                "availableReplicas": {
+                    "description": "Number of available pods",
+                    "type": "integer"
+                },
                 "deployment": {
                     "description": "The model k8s deployment name",
                     "type": "string"

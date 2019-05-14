@@ -116,6 +116,9 @@ definitions:
     type: object
   v1alpha1.ModelDeploymentStatus:
     properties:
+      availableReplicas:
+        description: Number of available pods
+        type: integer
       deployment:
         description: The model k8s deployment name
         type: string

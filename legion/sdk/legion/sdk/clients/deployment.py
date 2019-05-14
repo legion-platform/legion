@@ -41,6 +41,7 @@ class ModelDeployment(typing.NamedTuple):
     readiness_probeInitial_delay: int = 3
     state: str = ""
     service_url: str = ""
+    available_replicas: bool = ""
 
     @staticmethod
     def from_json(md: typing.Dict[str, str]) -> 'ModelDeployment':
@@ -49,19 +50,20 @@ class ModelDeployment(typing.NamedTuple):
         :param md: raw dict
         :return: a Model Deployment
         """
-        mt_spec = md.get('spec', {})
-        mt_status = md.get('status', {})
+        md_spec = md.get('spec', {})
+        md_status = md.get('status', {})
 
         return ModelDeployment(
             name=md.get("name"),
-            image=mt_spec.get('image', ''),
-            resources=mt_spec.get('resources', ''),
-            annotations=mt_spec.get('annotations', []),
-            replicas=mt_spec.get('replicas', ''),
-            liveness_probe_initial_delay=mt_spec.get('livenessProbeInitialDelay', ''),
-            readiness_probeInitial_delay=mt_spec.get('readinessProbeInitialDelay', ''),
-            state=mt_status.get('state', ''),
-            service_url=mt_status.get('serviceURL', '')
+            image=md_spec.get('image', ''),
+            resources=md_spec.get('resources', ''),
+            annotations=md_spec.get('annotations', []),
+            replicas=md_spec.get('replicas', ''),
+            liveness_probe_initial_delay=md_spec.get('livenessProbeInitialDelay', ''),
+            readiness_probeInitial_delay=md_spec.get('readinessProbeInitialDelay', ''),
+            state=md_status.get('state', ''),
+            service_url=md_status.get('serviceURL', ''),
+            available_replicas=md_status.get('availableReplicas'),
         )
 
     def to_json(self) -> typing.Dict[str, str]:

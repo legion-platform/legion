@@ -34,7 +34,7 @@ DEFAULT_WIDTH = 80
 
 DEFAULT_WAIT_TIMEOUT = 5
 
-MD_HEADER = ["Name", "State", "Replicas", "Service URL"]
+MD_HEADER = ["Name", "State", "Replicas", "Service URL", "Available Replicas"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -80,7 +80,8 @@ def get(args: argparse.Namespace):
         md.name,
         md.state,
         md.replicas,
-        md.service_url
+        md.service_url,
+        md.available_replicas
     ] for md in model_deployments])
     print(table.draw() + "\n")
 
@@ -184,9 +185,13 @@ def wait_operation_finish(args: argparse.Namespace, md_client: ModelDeploymentCl
         try:
             md = md_client.get(args.name)
             if md.state == SUCCESS_STATE:
-                print(f'Model {args.name} was deployed. '
-                      f'Deployment process took is {round(time.time() - start)} seconds')
-                return
+                if md.replicas == md.available_replicas:
+                    print(f'Model {args.name} was deployed. '
+                          f'Deployment process took is {round(time.time() - start)} seconds')
+                    return
+                else:
+                    print(f'Model {args.name} was deployed. '
+                          f'Number of available pods is {md.available_replicas}/{md.replicas}')
             elif md.state == FAILED_STATE:
                 raise Exception(f'Model deployment {args.name} was failed')
             elif md.state == "":

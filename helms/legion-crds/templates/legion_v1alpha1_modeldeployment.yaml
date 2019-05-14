@@ -17,6 +17,9 @@ spec:
   - JSONPath: .status.serviceURL
     name: Service URL
     type: string
+  - JSONPath: .status.availableReplicas
+    name: Available Replicas
+    type: string
   group: legion.legion-platform.org
   names:
     kind: ModelDeployment
@@ -69,6 +72,10 @@ spec:
           type: object
         status:
           properties:
+            availableReplicas:
+              description: Number of available pods
+              format: int32
+              type: integer
             deployment:
               description: The model k8s deployment name
               type: string
