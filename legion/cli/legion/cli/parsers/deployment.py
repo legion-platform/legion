@@ -36,7 +36,7 @@ DEFAULT_WIDTH = 80
 MD_HEADER = ["Name", "State", "Replicas", "Service URL", "Available Replicas"]
 
 DEFAULT_WIDTH_LOCAL = 160
-MD_LOCAL_HEADER = ["Name", "Image", "Port"]
+MD_LOCAL_HEADER = ["Name", "Image", "Port", "Model ID", "Model Version"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,7 +75,9 @@ def get_local(args: argparse.Namespace):
     table.add_rows([MD_LOCAL_HEADER] + [[
         md.deployment_name,
         md.image,
-        md.local_port
+        md.local_port,
+        md.id_and_version.id,
+        md.id_and_version.version
     ] for md in model_deployments])
     print(table.draw() + "\n")
 
