@@ -30,11 +30,13 @@ from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDe
 from legion.sdk.clients.edi import WrongHttpStatusCode, LocalEdiClient
 from legion.sdk.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
 
-DEFAULT_WIDTH = 80
-
 DEFAULT_WAIT_TIMEOUT = 5
 
+DEFAULT_WIDTH = 80
 MD_HEADER = ["Name", "State", "Replicas", "Service URL", "Available Replicas"]
+
+DEFAULT_WIDTH_LOCAL = 160
+MD_LOCAL_HEADER = ["Name", "Image", "Port"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,15 +61,37 @@ def _prepare_labels(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
     return labels
 
 
+def get_local(args: argparse.Namespace):
+    """
+    Get all Model Deployments or by name
+    :param args: cli parameters
+    """
+    md_client = LocalEdiClient()
+    model_deployments = md_client.inspect(args.name, args.model_id, args.model_version)
+
+    table = Texttable(max_width=DEFAULT_WIDTH_LOCAL)
+    table.set_cols_align("c" * len(MD_LOCAL_HEADER))
+    table.set_cols_valign("t" * len(MD_LOCAL_HEADER))
+    table.add_rows([MD_LOCAL_HEADER] + [[
+        md.deployment_name,
+        md.image,
+        md.local_port
+    ] for md in model_deployments])
+    print(table.draw() + "\n")
+
+
 def get(args: argparse.Namespace):
     """
     Get all Model Deployments or by name
     :param args: cli parameters
     """
-    md_client = build_client(args)
-
     if args.name and (args.model_id or args.model_version):
         raise ValueError(f'You should specify model deployment name or labels')
+
+    if args.local:
+        return get_local(args)
+
+    md_client = build_client(args)
 
     model_deployments = [md_client.get(args.name)] if args.name else md_client.get_all(_prepare_labels(args))
     if not model_deployments:
@@ -93,7 +117,7 @@ def create(args: argparse.Namespace):
     """
     if args.local:
         md_client = LocalEdiClient()
-        return md_client.deploy(args.image, args.port)
+        return md_client.deploy(args.name, args.image, args.port)
 
     md_client = build_client(args)
 
@@ -117,6 +141,10 @@ def edit(args: argparse.Namespace):
     Edit Model Deployments by name
     :param args: cli parameters
     """
+    if args.local:
+        print('Local mode is not supported for edit action.')
+        return
+
     md_client = build_client(args)
 
     message = md_client.edit(ModelDeployment(
@@ -137,6 +165,10 @@ def scale(args: argparse.Namespace):
     Change number of Model Deployments replicas
     :param args: cli parameters
     """
+    if args.local:
+        print('Local mode is not supported for edit action.')
+        return
+
     md_client = build_client(args)
 
     message = md_client.scale(args.name, args.replicas)
@@ -149,6 +181,14 @@ def delete(args: argparse.Namespace):
     Delete Model Deployment by name
     :param args: cli parameters
     """
+    if args.local:
+        md_client = LocalEdiClient()
+        if not args.name:
+            print('Please specify name of deployment')
+            return
+
+        return md_client.undeploy(args.name)
+
     md_client = build_client(args)
 
     try:
@@ -239,8 +279,7 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     md_edit_parser.add_argument('name', type=str, help='VCS Credential name', default="")
     md_edit_parser.add_argument('--image', type=str, help='docker image', required=True)
     md_edit_parser.add_argument('--local', action='store_true',
-                                help='deploy model locally. Incompatible with other arguments')
-    md_edit_parser.add_argument('--port', default=0, type=int, help='port to listen on. Only for --local mode')
+                                help='edit locally deployed model. Incompatible with other arguments')
     md_edit_parser.add_argument('--replicas', default=1, type=int, help='count of instances')
     md_edit_parser.add_argument('--livenesstimeout', default=2, type=int,
                                 help='model startup timeout for liveness probe')
@@ -252,6 +291,8 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
 
     md_get_parser = md_subparser.add_parser('get', description='get information about currently deployed models')
     md_get_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
+    md_get_parser.add_argument('--local', action='store_true',
+                               help='get locally deployed models. Incompatible with other arguments')
     md_get_parser.add_argument('--model-id', type=str, help='model ID')
     md_get_parser.add_argument('--model-version', type=str, help='model version')
     security.add_edi_arguments(md_get_parser)
@@ -259,17 +300,19 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
 
     md_scale_parser = md_subparser.add_parser('scale', description='change count of model pods')
     md_scale_parser.add_argument('name', type=str, help='VCS Credential name', default="")
+    md_scale_parser.add_argument('--local', action='store_true',
+                                 help='scale locally deployed models. Incompatible with other arguments')
     md_scale_parser.add_argument('--replicas', type=int, help='new count of replicas', required=True)
     security.add_edi_arguments(md_scale_parser)
     md_scale_parser.set_defaults(func=scale)
 
     md_delete_parser = md_subparser.add_parser('delete', description='undeploy model deployment')
     md_delete_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
+    md_delete_parser.add_argument('--local', action='store_true',
+                                  help='delete locally deployed models. Incompatible with other arguments')
     md_delete_parser.add_argument('--model-id', type=str, help='model ID')
     md_delete_parser.add_argument('--model-version', type=str, help='model version')
     md_delete_parser.add_argument('--ignore-not-found', action='store_true',
                                   help='ignore if Model Deployment is not found')
-    md_delete_parser.add_argument('--local', action='store_true',
-                                  help='un-deploy local deployed model. Incompatible with --grace-period')
     security.add_edi_arguments(md_delete_parser)
     md_delete_parser.set_defaults(func=delete)

@@ -96,3 +96,7 @@ def main():
     except Exception as exception:
         root_logger.exception(exception)
         sys.exit(2)
+
+
+if __name__ == '__main__':
+    main()

@@ -25,7 +25,7 @@
   "HostnamePath": "/var/lib/docker/containers/00d32111629cdbc809084b7d711b1ce6b457dbf9000e3a1a3b83f38423945d05/hostname",
   "HostsPath": "/var/lib/docker/containers/00d32111629cdbc809084b7d711b1ce6b457dbf9000e3a1a3b83f38423945d05/hosts",
   "LogPath": "/var/lib/docker/containers/00d32111629cdbc809084b7d711b1ce6b457dbf9000e3a1a3b83f38423945d05/00d32111629cdbc809084b7d711b1ce6b457dbf9000e3a1a3b83f38423945d05-json.log",
-  "Name": "/unruffled_murdock",
+  "Name": "/test-math-deployment-2",
   "RestartCount": 0,
   "Driver": "overlay2",
   "Platform": "linux",

@@ -180,32 +180,27 @@ class RemoteEdiClient:
 
 class LocalEdiClient:
 
-    def inspect(self, model=None, version=None):
+    def inspect(self, deployment_name=None, model=None, version=None):
         """
         Perform inspect query on EDI server
 
-        :param model: model id
+        :param deployment_name: (Optional) name of deployment
+        :type deployment_name: str
+        :param model: (Optional) model id
         :type model: str
         :param version: (Optional) model version
         :type version: str
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
         """
         client = build_docker_client()
-        return local_deploy.get_models(client, model, version)
+        return local_deploy.get_models(client, deployment_name, model, version)
 
-    def info(self):
-        """
-        Perform info query on EDI server
-
-        :return: dict[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
-        """
-        LOGGER.debug('Returning {} as a information for local deployment server')
-        return {}
-
-    def deploy(self, image, local_port=None):
+    def deploy(self, deployment_name, image, local_port=None):
         """
         Deploy API endpoint
 
+        :param deployment_name: name of deployment
+        :type deployment_name: str
         :param image: Docker image for deploy (for kubernetes deployment and local pull)
         :type image: str
         :param local_port: (Optional) port to deploy model on (for local mode deploy)
@@ -213,16 +208,16 @@ class LocalEdiClient:
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         client = build_docker_client()
-        return local_deploy.deploy_model(client, image, local_port=local_port)
+        return local_deploy.deploy_model(client, deployment_name, image, local_port=local_port)
 
-    def undeploy(self, model, version=None, ignore_not_found=False):
+    def undeploy(self, deployment_name=None, model=None, version=None, ignore_not_found=False):
         """
         Undeploy API endpoint
 
-        :param model: model id
+        :param deployment_name: (Optional) name of deployment
+        :type deployment_name: str
+        :param model: (Optional) model id
         :type model: str
-        :param grace_period: grace period for removing
-        :type grace_period: int
         :param version: (Optional) model version
         :type version: str
         :param ignore_not_found: (Optional) ignore if cannot find models
@@ -230,38 +225,7 @@ class LocalEdiClient:
         :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
         """
         client = build_docker_client()
-        return local_deploy.undeploy_model(client, model, version, ignore_not_found)
-
-    def scale(self, model, count, version=None):
-        """
-        Scale model
-
-        :param model: model id
-        :type model: str
-        :param count: count of pods to create
-        :type count: int
-        :param version: (Optional) model version
-        :type version: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        raise Exception('Scale command is not supported for local deployment')
-
-    def get_token(self, model_id, model_version, expiration_date=None):
-        """
-        Get API token
-
-        :param model_id: model ID
-        :type model_id: str
-        :param model_version: model version
-        :type model_version: str
-        :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
-        :type expiration_date: str
-        :return: str -- return API Token
-        """
-        LOGGER.debug('Returning empty token for local-deployed model {!r} version {!r} (exp data: {})'.format(
-            model_id, model_version, expiration_date
-        ))
-        return ''
+        return local_deploy.undeploy_model(client, deployment_name, model, version, ignore_not_found)
 
     def __repr__(self):
         """

@@ -120,6 +120,7 @@ class ModelDeploymentDescription:
 
     def __init__(self,
                  status,
+                 deployment_name,
                  model, version,
                  image,
                  scale, ready_replicas,
@@ -133,6 +134,8 @@ class ModelDeploymentDescription:
 
         :param status: status of model deployment
         :type status: str
+        :param deployment_name: name of deployment
+        :type deployment_name: str
         :param model: model ID
         :type model: str
         :param version: model version
@@ -157,6 +160,7 @@ class ModelDeploymentDescription:
         :type model_api_info: dict or None
         """
         self._status = status
+        self._deployment_name = deployment_name
         self._model = model
         self._version = version
         self._image = image
@@ -168,32 +172,6 @@ class ModelDeploymentDescription:
         self._local_port = local_port
         self._model_api_ok = model_api_ok
         self._model_api_info = model_api_info
-
-    @staticmethod
-    def build_from_model_service(model_service, model_api_ok=None, model_api_info=None):
-        """
-        Build from existed model service
-
-        :param model_service: model service
-        :type model_service: :py:class:`legion.k8s.services.ModelService`
-        :param model_api_ok: (Optional) model API state from EDGE invocation
-        :type model_api_ok: bool or None
-        :param model_api_info: (Optional) model API info from EDGE invocation
-        :type model_api_info: dict or None
-        :return: :py:class:`legion.k8s.definitions.ModelDeploymentDescription` -- built model deployment
-        """
-        return ModelDeploymentDescription(
-            status=model_service.status,
-            model=model_service.id,
-            version=model_service.version,
-            image=model_service.image,
-            scale=model_service.desired_scale,
-            ready_replicas=model_service.scale,
-            deploy_mode=ModelDeploymentDescription.MODE_CLUSTER,
-            namespace=model_service.namespace,
-            model_api_ok=model_api_ok,
-            model_api_info=model_api_info,
-        )
 
     @staticmethod
     def build_from_docker_container_info(docker_container_info, model_api_ok=None, model_api_info=None):
@@ -225,11 +203,16 @@ class ModelDeploymentDescription:
             LOGGER.debug('Cannot find port {} for container {}'.format(config.LEGION_PORT,
                                                                        docker_container_info.id))
 
+        image = docker_container_info.image.short_id
+        if len(docker_container_info.image.tags) == 1:
+            image = docker_container_info.image.tags[0]
+
         return ModelDeploymentDescription(
             status=STATUS_OK if is_working else STATUS_FAIL,
+            deployment_name=docker_container_info.name,
             model=docker_container_info.labels[headers.DOMAIN_MODEL_ID],
             version=docker_container_info.labels[headers.DOMAIN_MODEL_VERSION],
-            image=docker_container_info.image.id,
+            image=image,
             scale=1 if is_working else 0,
             ready_replicas=1 if is_working else 0,
             deploy_mode=ModelDeploymentDescription.MODE_LOCAL,
@@ -238,6 +221,15 @@ class ModelDeploymentDescription:
             model_api_ok=model_api_ok,
             model_api_info=model_api_info,
         )
+
+    @property
+    def deployment_name(self):
+        """
+        Get name of deployment
+
+        :return: :py:class:`legion.k8s.definitions.ModelIdVersion`
+        """
+        return self._deployment_name
 
     @property
     def id_and_version(self):
@@ -364,6 +356,7 @@ class ModelDeploymentDescription:
         """
         return {
             'status': self._status,
+            'deployment_name': self._deployment_name,
             'model': self._model,
             'version': self._version,
             'image': self._image,
@@ -388,7 +381,7 @@ class ModelDeploymentDescription:
         return isinstance(other, ModelDeploymentDescription) and all([
             getattr(self, field) == getattr(other, field)
             for field in (
-                'status', 'model', 'version',
+                'status', 'deployment_name', 'model', 'version',
                 'image', 'scale', 'ready_replicas',
                 'deploy_mode', 'namespace', 'container_id', 'local_port'
             )
@@ -414,7 +407,7 @@ class ModelDeploymentDescription:
         :return: str -- string representation
         """
         args = ",".join(repr(arg) for arg in [
-            self.status, self.model, self.version, self.image,
+            self.status, self.deployment_name, self.model, self.version, self.image,
             self.scale, self.ready_replicas, self.deploy_mode,
             self.namespace, self.container_id, self.local_port,
             self.model_api_ok, self.model_api_info
