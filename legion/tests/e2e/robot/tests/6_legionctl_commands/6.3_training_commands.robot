@@ -75,7 +75,7 @@ Failed Training
     ${logs}=  Get model training logs  ${TRAINING_NAME}
     Should contain  ${logs}  training is failed
 
-    Check all containers terminated  ${TRAINING_NAME}
+    Wait Until Keyword Succeeds  2m  5 sec  Check all containers terminated  ${TRAINING_NAME}
 
 Not existed VCS Credential
     [Documentation]  Creation of training must failed if there is vcs credential

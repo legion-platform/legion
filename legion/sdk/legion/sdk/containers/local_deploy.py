@@ -23,7 +23,6 @@ import docker.errors
 
 from legion.sdk import config
 from legion.sdk import definitions
-from legion.sdk.clients import model
 from legion.sdk.containers import definitions as container_definitions
 from legion.sdk.containers import headers
 from legion.sdk.containers.exceptions import IncompatibleLegionModelDockerImage
