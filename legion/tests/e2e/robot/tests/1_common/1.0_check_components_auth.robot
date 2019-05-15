@@ -14,7 +14,7 @@ Service url stay the same after log in
     [Documentation]  Service url stay the same after log in
     [Template]    Url stay the same after dex log in
     service_url=https://dashboard.${HOST_BASE_DOMAIN}/?a=1
-    service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/info?xx=22&yy=33
+    service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/swagger/index.html
     service_url=https://grafana.${HOST_BASE_DOMAIN}/?orgId=1&x=2
     service_url=https://prometheus.${HOST_BASE_DOMAIN}/graph?x=2&y=3
     service_url=https://alertmanager.${HOST_BASE_DOMAIN}/?orgId=1&x=2
@@ -25,7 +25,7 @@ Invalid credentials raise Auth error
     [Documentation]  Invalid credentials raise Auth error on dex
     [Template]    Dex should raise auth error
     service_url=https://dashboard.${HOST_BASE_DOMAIN}/?a=1
-    service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/api/1.0/info?xx=22&yy=33
+    service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/swagger/index.html
     service_url=https://grafana.${HOST_BASE_DOMAIN}/?orgId=1&x=2
     service_url=https://prometheus.${HOST_BASE_DOMAIN}/graph?x=2&y=3
     service_url=https://alertmanager.${HOST_BASE_DOMAIN}/?orgId=1&x=2

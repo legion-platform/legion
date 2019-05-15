@@ -21,13 +21,12 @@ import sys
 import responses
 
 import unittest2
-
 from legion.sdk.clients.edi import LocalEdiClient
+
 from legion.sdk.containers.definitions import ModelDeploymentDescription
 from legion.sdk.containers.docker import build_docker_client
 
 sys.path.extend(os.path.dirname(__file__))
-
 
 from legion_test_utils import \
     add_response_from_file
@@ -46,9 +45,10 @@ MODEL_A_CONTAINER = '3ab2137c44bb1442c4fb4214c98ec6e7d6df99e8b9710d2cc465fd4f221
 MODEL_A_INFO_URL = 'http://localhost:32768/api/model/test-math/1.0/info'
 MODEL_A_DEPLOYMENT_DESCRIPTION = ModelDeploymentDescription(
     'ok',
+    'test-math-deployment',
     'test-math',
     '1.0',
-    'sha256:50d4b8ffcbea59707422d862fe5fea018f6387df2094925241e41ee3846e04b9',
+    'legion-model-test-math:1.0.190206145904.root.0000',
     1,
     1,
     'local',
@@ -75,9 +75,10 @@ MODEL_B_CONTAINER = '00d32111629cdbc809084b7d711b1ce6b457dbf9000e3a1a3b83f384239
 MODEL_B_INFO_URL = 'http://localhost:32768/api/model/test-math/1.1/info'
 MODEL_B_DEPLOYMENT_DESCRIPTION = ModelDeploymentDescription(
     'ok',
+    'test-math-deployment-2',
     'test-math',
     '1.1',
-    'sha256:c10216153fa6dee020dfa2c0a6df96b0cdec9fb0cc406b036c35b66ae5c8d2a7',
+    'legion-model-test-math:1.0.190206145335.root.0000',
     1,
     1,
     'local',
@@ -271,28 +272,9 @@ class TestEDILocalDeploy(TestEDILocal):
         items = self.client.inspect()
         self.assertListEqual(items, [])
 
-        affected_models = self.client.deploy(image=MODEL_A_IMAGE_REF)
+        affected_models = self.client.deploy(deployment_name='test-math-deployment', image=MODEL_A_IMAGE_REF)
         self.assertEqual(len(affected_models), 1, 'could not find one model')
         self.assertEqual(affected_models[0], MODEL_A_DEPLOYMENT_DESCRIPTION)
-
-    @responses.activate
-    def test_deploy_on_duplicate(self):
-        add_response_from_file(self.prefix + '/images/{}/json'.format(MODEL_A_IMAGE_REF),
-                               'local_deploy_docker_image_a_info')
-
-        add_response_from_file(self.prefix + DOCKER_INSPECT_API_CALL,
-                               'local_deploy_docker_list_one_a')
-
-        add_response_from_file(self.prefix + '/containers/{}/json'.format(MODEL_A_CONTAINER),
-                               'local_deploy_docker_container_a_info')
-
-        add_response_from_file(self.prefix + '/images/{}/json'.format(MODEL_A_IMAGE),
-                               'local_deploy_docker_image_a_info')
-
-        with self.assertRaises(Exception) as exc_info:
-            self.client.deploy(image=MODEL_A_IMAGE_REF)
-
-        self.assertTupleEqual(exc_info.exception.args, ('Model with same id and version already has been deployed', ))
 
 
 class TestEDILocalUndeploy(TestEDILocal):
@@ -303,7 +285,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID)
 
-        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
+        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found',))
 
     @responses.activate
     def test_undeploy_correct(self):
@@ -353,7 +335,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID)
 
-        self.assertTupleEqual(exc_info.exception.args, ('Please specify version of model', ))
+        self.assertTupleEqual(exc_info.exception.args, ('Please specify version of model',))
 
     @responses.activate
     def test_undeploy_incorrect_id_filter(self):
@@ -362,7 +344,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID + '_incorrect')
 
-        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
+        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found',))
 
     @responses.activate
     def test_undeploy_incorrect_id_version_filter(self):
@@ -371,16 +353,7 @@ class TestEDILocalUndeploy(TestEDILocal):
         with self.assertRaises(Exception) as exc_info:
             self.client.undeploy(model=MODEL_A_ID, version=MODEL_A_VERSION + '_incorrect')
 
-        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found', ))
-
-
-class TestEDILocalScale(TestEDILocal):
-    @responses.activate
-    def test_scale_exception(self):
-        with self.assertRaises(Exception) as exc_info:
-            self.client.scale(model=MODEL_A_ID, count=10)
-
-        self.assertTupleEqual(exc_info.exception.args, ('Scale command is not supported for local deployment', ))
+        self.assertTupleEqual(exc_info.exception.args, ('No one model can be found',))
 
 
 if __name__ == '__main__':

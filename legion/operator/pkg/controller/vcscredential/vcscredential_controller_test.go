@@ -18,20 +18,20 @@ package vcscredential
 
 import (
 	"encoding/base64"
+	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"testing"
 	"time"
 
-	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -41,6 +41,7 @@ const (
 	vscDefaultReference = "refs/heads/master"
 	vscUri              = "git@github.com:legion-platform/legion.git"
 	vscType             = "git"
+	vcsPublicKey        = "hardcodedKey"
 )
 
 var (
@@ -52,7 +53,11 @@ var (
 	}
 )
 
-func checkSecret(g *gomega.GomegaWithT, creds string) {
+func mocKeyEvaluator(image string) (string, error) {
+	return vcsPublicKey, nil
+}
+
+func checkSecret(g *GomegaWithT, creds string) {
 	secret := &corev1.Secret{}
 	err := c.Get(context.TODO(),
 		types.NamespacedName{
@@ -61,18 +66,20 @@ func checkSecret(g *gomega.GomegaWithT, creds string) {
 		},
 		secret,
 	)
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	expectedIdRsa, err := base64.StdEncoding.DecodeString(creds)
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(string(secret.Data[utils.GitSSHKeyFileName])).Should(gomega.BeIdenticalTo(string(expectedIdRsa)))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(string(secret.Data[utils.GitSSHKeyFileName])).Should(BeIdenticalTo(string(expectedIdRsa)))
+
+	g.Expect(string(secret.Data[utils.PublicSshKeyName])).To(Equal(vcsPublicKey))
 }
 
 func TestBasicReconcile(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
+	g := NewGomegaWithT(t)
 
 	creds := "bG9sCg=="
-	vsc := &legionv1alpha1.VCSCredential{
+	vcs := &legionv1alpha1.VCSCredential{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      vcsName,
 			Namespace: vcsNamespace,
@@ -86,11 +93,11 @@ func TestBasicReconcile(t *testing.T) {
 	}
 
 	mgr, err := manager.New(cfg, manager.Options{})
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 	c = mgr.GetClient()
 
-	recFn, requests := SetupTestReconcile(newReconciler(mgr))
-	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	recFn, requests := SetupTestReconcile(newConfigurableReconciler(mgr, mocKeyEvaluator))
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -99,22 +106,20 @@ func TestBasicReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	g.Expect(c.Create(context.TODO(), vsc)).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), vsc)
+	g.Expect(c.Create(context.TODO(), vcs)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), vcs)
 
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	// Skip event of secret creation
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	checkSecret(g, creds)
 
-	// Try to update vsc credentials and check secret state
+	// Try to update vcs credentials and check secret state
 	newCreds := "a2VrCg=="
-	vsc.Spec.Credential = newCreds
+	vcs.Spec.Credential = newCreds
 
-	g.Expect(c.Update(context.TODO(), vsc)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Update(context.TODO(), vcs)).NotTo(HaveOccurred())
 
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	checkSecret(g, newCreds)
 }

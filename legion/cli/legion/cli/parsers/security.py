@@ -99,7 +99,7 @@ def generate_token(args):
 
     if token:
         update_config_file(section=MODEL_JWT_TOKEN_SECTION,
-                        **{model_config_prefix(args.model_id, args.model_version): token})
+                           **{model_config_prefix(args.model_id, args.model_version): token})
 
         print(token)
     else:
@@ -120,6 +120,6 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     generate_token_parser.add_argument('--model-id', type=str, help='Model ID')
     generate_token_parser.add_argument('--model-version', type=str, help='Model version')
     generate_token_parser.add_argument('--expiration-date', type=str,
-                                       help='Token expiration date in utc: %Y-%m-%dT%H:%M:%S')
+                                       help='Token expiration date in utc: %%Y-%%m-%%dT%%H:%%M:%%S')
     add_edi_arguments(generate_token_parser)
     generate_token_parser.set_defaults(func=generate_token)

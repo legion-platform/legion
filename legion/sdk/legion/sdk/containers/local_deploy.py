@@ -23,7 +23,6 @@ import docker.errors
 
 from legion.sdk import config
 from legion.sdk import definitions
-from legion.sdk.clients import model
 from legion.sdk.containers import definitions as container_definitions
 from legion.sdk.containers import headers
 from legion.sdk.containers.exceptions import IncompatibleLegionModelDockerImage
@@ -31,59 +30,56 @@ from legion.sdk.containers.exceptions import IncompatibleLegionModelDockerImage
 LOGGER = logging.getLogger(__name__)
 
 
-def get_models(client, model_id=None, model_version=None):
+def get_models(client, name=None, model_id=None, model_version=None):
     """
     Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
 
     :param client: Docker client
     :type client: :py:class:`docker.client.DockerClient`
+    :param name: name of deployment
+    :type name: str
     :param model_id: model id or */None for all models
     :type model_id: str or None
     :param model_version: (Optional) model version or */None for all
     :type model_version: str or None
     :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
     """
+    # Gather all deployments (valid)
     containers = [container
                   for container in client.containers.list()
                   if container.labels
                   and headers.DOMAIN_MODEL_ID in container.labels
                   and headers.DOMAIN_MODEL_VERSION in container.labels
-                  and model_id in (None, '*', container.labels[headers.DOMAIN_MODEL_ID])
-                  and model_version in (None, '*', container.labels[headers.DOMAIN_MODEL_VERSION])
-                  ]
+    ]
+
+    # First - filter by deployment name, if it exist
+    if name:
+        containers = [
+            container
+            for container in containers
+            if container.name == name
+        ]
+
+    # Next - filter by model_id & model_version, it they are present
+    if model_id or model_version:
+        containers = [container
+                      for container in containers
+                      if model_id in (None, '*', container.labels[headers.DOMAIN_MODEL_ID])
+                      and model_version in (None, '*', container.labels[headers.DOMAIN_MODEL_VERSION])
+                      ]
 
     prepared_containers = []
 
     for container in containers:
-        container_info = container_definitions.ModelDeploymentDescription.build_from_docker_container_info(
-            container
-        )
-
-        model_api_info = {}
-
-        model_client = model.ModelClient(container_info.id_and_version.id,
-                                         container_info.id_and_version.version,
-                                         host='{}:{}'.format(config.LOCAL_DEPLOY_HOSTNAME,
-                                                             container_info.local_port))
-
-        try:
-            model_api_info['result'] = model_client.info()
-            model_api_ok = True
-        except Exception as model_api_exception:
-            LOGGER.error('Cannot connect to model container {} to get info: {}'.format(container.id,
-                                                                                       model_api_exception))
-            model_api_info['exception'] = str(model_api_exception)
-            model_api_ok = False
-
         prepared_containers.append(
             container_definitions.ModelDeploymentDescription.build_from_docker_container_info(
-                container, model_api_ok, model_api_info
+                container
             ))
 
-    return sorted(prepared_containers, key=lambda ms: '{}/{}'.format(ms.id_and_version.id, ms.id_and_version.version))
+    return sorted(prepared_containers, key=lambda ms: ms.deployment_name)
 
 
-def get_models_strict(client, model_id, model_version=None, ignore_not_found=False):
+def get_models_strict(client, name=None, model_id=None, model_version=None, ignore_not_found=False):
     """
     Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
     If more that one model would be found with unstrict criterion - exception would be raised
@@ -91,7 +87,9 @@ def get_models_strict(client, model_id, model_version=None, ignore_not_found=Fal
 
     :param client: Docker client
     :type client: :py:class:`docker.client.DockerClient`
-    :param model_id: model id or * for all models
+    :param name: (Optional) name of deployment
+    :type name: str
+    :param model_id: (Optional) model id or * for all models
     :type model_id: str
     :param model_version: (Optional) model version
     :type model_version: str
@@ -99,7 +97,7 @@ def get_models_strict(client, model_id, model_version=None, ignore_not_found=Fal
     :type ignore_not_found: bool
     :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
     """
-    model_services = get_models(client, model_id, model_version)
+    model_services = get_models(client, name, model_id, model_version)
 
     ignore_strictness = model_id == '*' or model_version == '*'
 
@@ -118,12 +116,14 @@ def get_models_strict(client, model_id, model_version=None, ignore_not_found=Fal
     return model_services
 
 
-def deploy_model(client, image, local_port=0):
+def deploy_model(client, name, image, local_port=0):
     """
     Deploy legion image locally
 
     :param client: Docker client
     :type client: :py:class:`docker.client.DockerClient`
+    :param name: name of deployment
+    :type name: str
     :param image: Docker image to deploy
     :type image: str
     :param local_port: port to deploy on
@@ -151,7 +151,7 @@ def deploy_model(client, image, local_port=0):
 
     LOGGER.debug('Image {} contains model: {!r} version {!r}'.format(image, model_id, model_version))
 
-    if get_models(client, model_id, model_version):
+    if get_models(client, name):
         raise Exception('Model with same id and version already has been deployed')
 
     port_configuration = {
@@ -164,30 +164,33 @@ def deploy_model(client, image, local_port=0):
                      f'{definitions.LEGION_COMPONENT_LABEL}.model_version': model_version}
 
     container = client.containers.run(docker_image,
+                                      name=name,
                                       ports=port_configuration,
                                       labels=docker_labels,
                                       detach=True,
                                       remove=True)
     LOGGER.debug('Container {} has been stared'.format(container.id))
 
-    return get_models(client, model_id, model_version)
+    return get_models(client, name)
 
 
-def undeploy_model(client, model_id, model_version, ignore_not_found):
+def undeploy_model(client, name, model_id, model_version, ignore_not_found):
     """
     Undeploy local deployed image
 
     :param client: Docker client
     :type client: :py:class:`docker.client.DockerClient`
+    :param name: name of model deployment
+    :type name: (Optional) str
     :param model_id: model id
-    :type model_id: strset jinja folder
+    :type model_id: (Optional) str
     :param model_version: (Optional) specific model version
     :type model_version: str or None
     :param ignore_not_found: (Optional) ignore exception if cannot find models
     :type ignore_not_found: bool
     :return: list[:py:class:`legion.k8s.ModelService`] -- affected model services
     """
-    target_deployments = get_models_strict(client, model_id, model_version, ignore_not_found)
+    target_deployments = get_models_strict(client, name, model_id, model_version, ignore_not_found)
     for deployment in target_deployments:
         container = client.containers.get(deployment.container_id)
         container.stop()

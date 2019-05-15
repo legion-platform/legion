@@ -45,8 +45,14 @@ func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
 
+type PublicKeyEvaluator func(string) (string, error)
+
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileVCSCredential{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return newConfigurableReconciler(mgr, utils.EvaluatePublicKey)
+}
+
+func newConfigurableReconciler(mgr manager.Manager, keyEvaluator PublicKeyEvaluator) reconcile.Reconciler {
+	return &ReconcileVCSCredential{Client: mgr.GetClient(), scheme: mgr.GetScheme(), keyEvaluator: keyEvaluator}
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
@@ -76,7 +82,8 @@ var _ reconcile.Reconciler = &ReconcileVCSCredential{}
 
 type ReconcileVCSCredential struct {
 	client.Client
-	scheme *runtime.Scheme
+	scheme       *runtime.Scheme
+	keyEvaluator PublicKeyEvaluator
 }
 
 // Create a ks8 secret which holds vcs credentials.
@@ -102,7 +109,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Can't decode %s vcs ssh key", vcsInstance.Name))
 
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	rawPublicKey := vcsInstance.Spec.PublicKey
@@ -110,7 +117,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 	if rawPublicKey == "" {
 		log.Info("Public key is empty. Extract from vcs url")
 
-		rawPublicKey, err = utils.EvaluatePublicKey(vcsInstance.Spec.Uri)
+		rawPublicKey, err = r.keyEvaluator(vcsInstance.Spec.Uri)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -120,6 +127,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 		publicKey, err = base64.StdEncoding.DecodeString(rawPublicKey)
 		if err != nil {
 			log.Error(err, "Can't decode % vcs public key", rawPublicKey)
+			return reconcile.Result{}, nil
 		}
 	}
 
@@ -131,7 +139,7 @@ func (r *ReconcileVCSCredential) Reconcile(request reconcile.Request) (reconcile
 		},
 		Data: map[string][]byte{
 			utils.GitSSHKeyFileName: decodedRsa,
-			utils.PublicSshKeyName: publicKey,
+			utils.PublicSshKeyName:  publicKey,
 		},
 	}
 

@@ -12,7 +12,5 @@ ${S3_LOCATION_MODELS_META_LOG}      model_log/request_response
 ${S3_LOCATION_MODELS_RESP_LOG}      model_log/response_body
 ${S3_LOCATION_MODELS_FEEDBACK}      model_log/feedback
 ${S3_PARTITIONING_PATTERN}          year=%Y/month=%m/day=%d/%Y%m%d%H
-# TODO: Two next lines should be removed when closing LEGION #499, #313, #316
-${SERVICE_ACCOUNT}                  admin
-${SERVICE_PASSWORD}                 admin
 ${GRAFANA_MAIN_DASHBOARD_UID}       f000cf13-581b-459c-b35e-f5d89fded48f
+${TEST_VCS}                         legion

@@ -1,0 +1,1159 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a EDI server.",
+        "title": "EDI API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "{{.Host}}",
+    "basePath": "{{.BasePath}}",
+    "paths": {
+        "/api/v1/model/deployment": {
+            "get": {
+                "description": "Get list of Model deployments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Get list of Model deployments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "model id label",
+                        "name": "com.epam.legion.model.id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "model version label",
+                        "name": "com.epam.legion.model.version",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.MDResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a Model deployment. Result is updated Model deployment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Update a Model deployment",
+                "parameters": [
+                    {
+                        "description": "Update a Model deployment",
+                        "name": "md",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a Model deployment. Result is created Model deployment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Create a Model deployment",
+                "parameters": [
+                    {
+                        "description": "Create a Model deployment",
+                        "name": "md",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete list of Model deployments by labels",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Delete list of Model deployments by labels",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "model id label",
+                        "name": "com.epam.legion.model.id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "model version label",
+                        "name": "com.epam.legion.model.version",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/deployment/{name}": {
+            "get": {
+                "description": "Get a Model deployment by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Get a Model deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Model deployment name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MDResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Model deployment by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Delete a Model deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Model deployment name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/deployment/{name}/scale": {
+            "put": {
+                "description": "Scale a Model deployment. Result is updated Model deployment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelDeployment"
+                ],
+                "summary": "Scale a Model deployment",
+                "parameters": [
+                    {
+                        "description": "Scale a Model deployment",
+                        "name": "md",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MDReplicas"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of Model Deployment",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/token": {
+            "post": {
+                "description": "Create a JWT token for access to the model service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token"
+                ],
+                "summary": "Create a model JWT token",
+                "parameters": [
+                    {
+                        "description": "Create a model JWT token",
+                        "name": "token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.TokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.TokenResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/training": {
+            "get": {
+                "description": "Get list of Model Trainings",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Get list of Model Trainings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "model id label",
+                        "name": "com.epam.legion.model.id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "model version label",
+                        "name": "com.epam.legion.model.version",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.MTResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a Model Training. Result is updated Model Training.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Update a Model Training",
+                "parameters": [
+                    {
+                        "description": "Update a Model Training",
+                        "name": "mt",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MTRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a Model Training. Result is created Model Training.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Create a Model Training",
+                "parameters": [
+                    {
+                        "description": "Create a Model Training",
+                        "name": "mt",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MTRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MTResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete list of  Model Training by labels",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Delete list of Model Trainings by labels",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "model id label",
+                        "name": "com.epam.legion.model.id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "model version label",
+                        "name": "com.epam.legion.model.version",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/training/{name}": {
+            "get": {
+                "description": "Get a Model Training by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Get a Model Training",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Model Training name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MTResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Get a Model Training by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Get a Model Training",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Model Training name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vcs": {
+            "get": {
+                "description": "Get list of VCS Credentials",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VCSCredential"
+                ],
+                "summary": "Get list of VCS Credentials",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.VCSEntity"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a VCS Credential. Result is updated VCS Credential.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VCSCredential"
+                ],
+                "summary": "Update a VCS Credential",
+                "parameters": [
+                    {
+                        "description": "Update a VCS Credential",
+                        "name": "vcs",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.VCSEntity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a VCS Credential. Result is created VCS Credential.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VCSCredential"
+                ],
+                "summary": "Create a VCS Credential",
+                "parameters": [
+                    {
+                        "description": "Create a VCS Credential",
+                        "name": "vcs",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.VCSEntity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.VCSEntity"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vcs/{name}": {
+            "get": {
+                "description": "Get a VCS Credential by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VCSCredential"
+                ],
+                "summary": "Get a VCS Credential",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VCS Credential name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.VCSEntity"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a VCS Credential by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VCSCredential"
+                ],
+                "summary": "Delete a VCS Credential",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VCS Credential name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "routes.HTTPResult": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Success of error message",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.MDReplicas": {
+            "type": "object",
+            "properties": {
+                "replicas": {
+                    "description": "New number of replicas",
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.MDRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Model deployment name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "Model Deployment specification. It is the same as ModelDeployment CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelDeploymentSpec"
+                }
+            }
+        },
+        "v1.MDResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Model deployment name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "Model Deployment specification. It is the same as ModelDeployment CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelDeploymentSpec"
+                },
+                "status": {
+                    "description": "Model Deployment specification. It is the same as ModelDeployment CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelDeploymentStatus"
+                }
+            }
+        },
+        "v1.MTRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "MT name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "MT specification. It is the same as ModelTraining CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelTrainingSpec"
+                }
+            }
+        },
+        "v1.MTResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "MT name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "MT specification. It is the same as ModelTraining CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelTrainingSpec"
+                },
+                "status": {
+                    "description": "MT status. It is the same as ModelTraining CRD status",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelTrainingStatus"
+                }
+            }
+        },
+        "v1.TokenRequest": {
+            "type": "object",
+            "properties": {
+                "expiration_date": {
+                    "description": "Explicitly set expiration date for token",
+                    "type": "string"
+                },
+                "model_id": {
+                    "description": "Model id",
+                    "type": "string"
+                },
+                "model_version": {
+                    "description": "Model version",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.VCSEntity": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "VCS name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "VCS specification. It is the same as VCSCredential CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.VCSCredentialSpec"
+                }
+            }
+        },
+        "v1alpha1.ModelDeploymentSpec": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Annotations for model pods.",
+                    "type": "object"
+                },
+                "image": {
+                    "description": "Model Docker image",
+                    "type": "string"
+                },
+                "livenessProbeInitialDelay": {
+                    "description": "Initial delay for liveness probe of model pod",
+                    "type": "integer"
+                },
+                "readinessProbeInitialDelay": {
+                    "description": "Initial delay for readiness probe of model pod",
+                    "type": "integer"
+                },
+                "replicas": {
+                    "description": "Number of pods for model. By default the replicas parameter equals 1.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources for model deployment\nThe same format like k8s uses for pod resources.",
+                    "type": "string"
+                }
+            }
+        },
+        "v1alpha1.ModelDeploymentStatus": {
+            "type": "object",
+            "properties": {
+                "availableReplicas": {
+                    "description": "Number of available pods",
+                    "type": "integer"
+                },
+                "deployment": {
+                    "description": "The model k8s deployment name",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "The message describes the state in more details.",
+                    "type": "string"
+                },
+                "service": {
+                    "description": "The model k8s service name",
+                    "type": "string"
+                },
+                "serviceURL": {
+                    "description": "The model k8s service name",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "The state of a model deployment.\n  \"DeploymentFailed\" - A model was not deployed. Because some parameters of the\n                       custom resource are wrong. For example, there is not a model\n                       image in a Docker registry.\n  \"DeploymentCreated\" - A model was deployed successfully.",
+                    "type": "string"
+                }
+            }
+        },
+        "v1alpha1.ModelTrainingSpec": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "entrypoint": {
+                    "description": "Model training file. It can be python\\bash script or jupiter notebook",
+                    "type": "string"
+                },
+                "env": {
+                    "description": "Custom environment variables that should be setted before entrypoint invocation.\nIn ENVname:value format",
+                    "type": "object"
+                },
+                "hyperparameters": {
+                    "description": "Model training hyperparameters in parameter:value format",
+                    "type": "object"
+                },
+                "image": {
+                    "description": "Train image",
+                    "type": "string"
+                },
+                "modelFile": {
+                    "description": "Model file",
+                    "type": "string"
+                },
+                "reference": {
+                    "description": "VCS Reference",
+                    "type": "string"
+                },
+                "resources": {
+                    "description": "Resources for model container\nThe same format like k8s uses for pod resources.",
+                    "type": "string"
+                },
+                "toolchain": {
+                    "description": "Type of toolchain. Currently supports only python.\n+kubebuilder:validation:Enum=python,jupyter",
+                    "type": "string"
+                },
+                "vcsName": {
+                    "description": "Name of VCSCredential resource. Must exists",
+                    "type": "string"
+                }
+            }
+        },
+        "v1alpha1.ModelTrainingStatus": {
+            "type": "object",
+            "properties": {
+                "exitCode": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "modelImage": {
+                    "type": "string"
+                },
+                "podName": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "state": {
+                    "description": "+kubebuilder:validation:Enum=scheduling,fetching-code,running,capturing,succeeded,failed,unknown",
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1alpha1.VCSCredentialSpec": {
+            "type": "object",
+            "properties": {
+                "credential": {
+                    "description": "Creds for VCS. Is not required. In case of GIT should be base64-encoded private key.",
+                    "type": "string"
+                },
+                "defaultReference": {
+                    "description": "Default reference in VCS, e.g. branch, commit, tag and etc.",
+                    "type": "string"
+                },
+                "publicKey": {
+                    "description": "Public keys in base64 format for ssh know hosts. You can gather it using \"ssh-keyscan\"",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of VCS. Currently supports only git.\n+kubebuilder:validation:Enum=git",
+                    "type": "string"
+                },
+                "uri": {
+                    "description": "VCS uri.\nFor Git valid formats are:\n* git@github.com:legion-platform/legion.git",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

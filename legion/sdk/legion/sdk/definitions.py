@@ -44,15 +44,18 @@ ModelContainerMetaInformation = typing.NamedTuple('ModelContainerMetaInformation
     ('kubernetes_annotations', typing.Dict[str, str]),
 ])
 
-EDI_VERSION = '1.0'
+EDI_VERSION = 'v1'
 EDI_ROOT = '/'
 EDI_API_ROOT = '/api/'
 EDI_DEPLOY = '/api/{version}/deploy'
 EDI_UNDEPLOY = '/api/{version}/undeploy'
 EDI_SCALE = '/api/{version}/scale'
 EDI_INSPECT = '/api/{version}/inspect'
-EDI_INFO = '/api/{version}/info'
-EDI_GENERATE_TOKEN = '/api/{version}/generate_token'
+
+VCS_URL = '/api/{version}/vcs'
+MODEL_TRAINING_URL = '/api/{version}/model/training'
+MODEL_DEPLOYMENT_URL = '/api/{version}/model/deployment'
+MODEL_TOKEN_TOKEN_URL = '/api/{version}/model/token'
 
 DOCKER_BUILD_URL = '/api/1.0/build'
 

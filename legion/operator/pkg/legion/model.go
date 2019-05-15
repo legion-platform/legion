@@ -1,3 +1,19 @@
+//
+//    Copyright 2019 EPAM Systems
+//
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+//
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+//
+
 package legion
 
 import (
@@ -9,6 +25,8 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"log"
+	"regexp"
+	"strings"
 )
 
 type Model struct {
@@ -17,10 +35,14 @@ type Model struct {
 }
 
 const (
-	ManifestFile  = "manifest.json"
-	ModelImageKey = "model-image"
-	ModelIDKey = "model-id"
+	ManifestFile    = "manifest.json"
+	ModelImageKey   = "model-image"
+	ModelIDKey      = "model-id"
 	ModelVersionKey = "model-version"
+)
+
+var (
+	invalidCharsRegexp = regexp.MustCompile("[^a-zA-Z0-9-]")
 )
 
 func ExtractModel(modelFile string) (model Model, err error) {
@@ -62,4 +84,15 @@ func ExtractModel(modelFile string) (model Model, err error) {
 
 func BuildModelImageName(dockerRegistry string, imagePrefix string, modelID string, modelVersion string) string {
 	return fmt.Sprintf("%s/%s/%s:%s", dockerRegistry, imagePrefix, modelID, modelVersion)
+}
+
+func ConvertTok8sName(modelId string, modelVersion string) string {
+	name := fmt.Sprintf("model-%s-%s", modelId, modelVersion)
+
+	invalidDelimiters := []string{" ", "_", "+", "."}
+	for _, char := range invalidDelimiters {
+		name = strings.Replace(name, char, "-", -1)
+	}
+
+	return invalidCharsRegexp.ReplaceAllString(name, "")
 }

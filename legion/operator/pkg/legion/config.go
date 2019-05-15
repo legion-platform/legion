@@ -18,83 +18,121 @@ package legion
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
-var (
-	OperatorConf OperatorConfig
+const (
+	RepositoryURL          = "REPOSITORY_URL"
+	PodName                = "POD_NAME"
+	DockerRegistry         = "DOCKER_REGISTRY"
+	SharedDirPath          = "SHARED_DIR_PATH"
+	Reference              = "REFERENCE"
+	ImagePrefix            = "BUILD_IMAGE_PREFIX"
+	Namespace              = "NAMESPACE"
+	GitSSHKeyPath          = "GIT_SSH_KEY_PATH"
+	ModelFile              = "MODEL_FILE"
+	ModelCommand           = "MODEL_COMMAND"
+	BuilderImage           = "BUILDER_IMAGE"
+	MetricHost             = "METRICS_HOST"
+	MetricPort             = "METRICS_PORT"
+	MetricEnabled          = "MODEL_TRAIN_METRICS_ENABLED"
+	PythonToolchainImage   = "PYTHON_TOOLCHAIN_IMAGE"
+	DockerRegistryUser     = "DOCKER_REGISTRY_USER"
+	DockerRegistryPassword = "DOCKER_REGISTRY_PASSWORD"
+	JwtSecret              = "JWT_SECRET"
+	JwtTtlMinutes          = "JWT_TTL_MINUTES"
+	JwtMaxTtlMinutes       = "JWT_MAX_TTL_MINUTES"
+	JwtExpDatetime         = "JWT_EXP_DATETIME"
+	TemplateFolder         = "TEMPLATE_FOLDER"
+	BuilderServiceAccount  = "BUILDER_SERVICE_ACCOUNT"
+	WebhookSecretName      = "WEBHOOK_SECRET_NAME"
+	WebhookServiceName     = "WEBHOOK_SERVICE_NAME"
+	WebhookPort            = "WEBHOOK_PORT"
+	MutatingWebhookName    = "MUTATING_WEBHOOK_NAME"
+	ValidatingWebhookName  = "VALIDATING_WEBHOOK_NAME"
 )
 
-type BuilderConfig struct {
-	RepositoryURL     string
-	PodName           string
-	DockerRegistry    string
-	SharedDirPath     string
-	Reference         string
-	ResultImagePrefix string
-	Namespace         string
-	Model             ModelConfig
-	GitSSHKeyPath     string
+// TODO:
+// It is just a first attempt of using viper
+// Later we must to add default values and reading from a config file which mounts from k8s config map.
+func SetUpBuilderConfig() {
+	setNotEmptyParam(RepositoryURL)
+	setNotEmptyParam(PodName)
+	setNotEmptyParam(DockerRegistry)
+	setNotEmptyParam(SharedDirPath)
+	setNotEmptyParam(Reference)
+	setNotEmptyParam(ImagePrefix)
+	setNotEmptyParam(Namespace)
+	setNotEmptyParam(GitSSHKeyPath)
+	setNotEmptyParam(ModelFile)
+	setNotEmptyParam(ModelCommand)
 }
 
-type ModelConfig struct {
-	FilePath string
-	Command  string
+func SetUpOperatorConfig() {
+	setNotEmptyParam(BuilderImage)
+	setNotEmptyParam(MetricHost)
+	setNotEmptyParam(MetricPort)
+	setNotEmptyParam(MetricEnabled)
+	setNotEmptyParam(PythonToolchainImage)
+	setNotEmptyParam(DockerRegistry)
+
+	viper.SetDefault(ImagePrefix, "legion")
+	panicIfError(viper.BindEnv(ImagePrefix))
+
+	viper.SetDefault(BuilderServiceAccount, "legion-builder")
+	panicIfError(viper.BindEnv(BuilderServiceAccount))
+
+	panicIfError(viper.BindEnv(DockerRegistryUser))
+	panicIfError(viper.BindEnv(DockerRegistryPassword))
+
+	viper.SetDefault(Namespace, "default")
+	panicIfError(viper.BindEnv(Namespace))
+
+	viper.SetDefault(WebhookSecretName, "webhook-server-secret")
+	panicIfError(viper.BindEnv(WebhookSecretName))
+
+	viper.SetDefault(WebhookServiceName, "legion-webhook-server-service")
+	panicIfError(viper.BindEnv(WebhookServiceName))
+
+	viper.SetDefault(WebhookPort, 9876)
+	panicIfError(viper.BindEnv(WebhookPort))
+
+	viper.SetDefault(MutatingWebhookName, "legion-mutating-webhook-configuration")
+	viper.SetDefault(ValidatingWebhookName, "legion-validating-webhook-configuration")
+
 }
 
-func NewBuilderConfig() BuilderConfig {
-	return BuilderConfig{
-		RepositoryURL:     envNotEmpty("REPOSITORY_URL"),
-		PodName:           envNotEmpty("POD_NAME"),
-		DockerRegistry:    envNotEmpty("DOCKER_REGISTRY"),
-		SharedDirPath:     envNotEmpty("SHARED_DIR_PATH"),
-		Reference:         envNotEmpty("BRANCH"),
-		ResultImagePrefix: envNotEmpty("RESULT_IMAGE_PREFIX"),
-		Namespace:         envNotEmpty("NAMESPACE"),
-		GitSSHKeyPath:     envNotEmpty("GIT_SSH_KEY_PATH"),
-		Model: ModelConfig{
-			FilePath: envNotEmpty("MODEL_FILE"),
-			Command:  envNotEmpty("MODEL_COMMAND"),
-		},
+func SetUpEDIConfig() {
+	viper.SetDefault(Namespace, "default")
+	panicIfError(viper.BindEnv(Namespace))
+
+	viper.SetDefault(JwtTtlMinutes, 120)
+	panicIfError(viper.BindEnv(JwtTtlMinutes))
+
+	viper.SetDefault(JwtSecret, "")
+	panicIfError(viper.BindEnv(JwtSecret))
+
+	viper.SetDefault(JwtMaxTtlMinutes, 259200)
+	panicIfError(viper.BindEnv(JwtMaxTtlMinutes))
+
+	viper.SetDefault(JwtExpDatetime, "")
+	panicIfError(viper.BindEnv(JwtExpDatetime))
+
+	viper.SetDefault(TemplateFolder, "legion/operator/templates")
+	panicIfError(viper.BindEnv(TemplateFolder))
+}
+
+func setNotEmptyParam(paramName string) {
+	panicIfError(viper.BindEnv(paramName))
+
+	if !viper.IsSet(paramName) {
+		panic(errors.New(fmt.Sprintf("The environment variable %s must be set", paramName)))
 	}
 }
 
-type OperatorConfig struct {
-	BuilderImage           string
-	MetricHost             string
-	MetricPort             string
-	MetricEnabled          string
-	PythonToolchainImage   string
-	BuildImagePrefix       string
-	DockerRegistry         string
-	DockerRegistryUser     string
-	DockerRegistryPassword string
-	BuilderServiceAccount  string
-}
-
-func NewOperatorConfig() OperatorConfig {
-	return OperatorConfig{
-		BuilderImage:           envNotEmpty("BUILDER_IMAGE"),
-		MetricHost:             envNotEmpty("METRICS_HOST"),
-		MetricPort:             envNotEmpty("METRICS_PORT"),
-		MetricEnabled:          envNotEmpty("MODEL_TRAIN_METRICS_ENABLED"),
-		PythonToolchainImage:   envNotEmpty("PYTHON_TOOLCHAIN_IMAGE"),
-		BuildImagePrefix:       envNotEmpty("BUILD_IMAGE_PREFIX"),
-		DockerRegistry:         envNotEmpty("DOCKER_REGISTRY"),
-		DockerRegistryUser:     envNotEmpty("DOCKER_REGISTRY_USER"),
-		DockerRegistryPassword: envNotEmpty("DOCKER_REGISTRY_PASSWORD"),
-		BuilderServiceAccount:  envNotEmpty("BUILDER_SERVICE_ACCOUNT"),
+func panicIfError(err error) {
+	if err != nil {
+		panic(err)
 	}
-}
-
-func envNotEmpty(envName string) (value string) {
-	envValue, present := os.LookupEnv(envName)
-
-	if present {
-		return envValue
-	}
-
-	panic(errors.New(fmt.Sprintf("The environment variable %s must be set", envName)))
 }

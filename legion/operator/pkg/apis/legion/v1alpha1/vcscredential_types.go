@@ -33,11 +33,11 @@ type VCSCredentialSpec struct {
 	// * git@github.com:legion-platform/legion.git
 	Uri string `json:"uri"`
 	// Default reference in VCS, e.g. branch, commit, tag and etc.
-	DefaultReference string `json:"defaultReference"`
+	DefaultReference string `json:"defaultReference,omitempty"`
 	// Creds for VCS. Is not required. In case of GIT should be base64-encoded private key.
-	Credential string `json:"credential,omitempty"`
+	Credential string `json:"credential"`
 	// Public keys in base64 format for ssh know hosts. You can gather it using "ssh-keyscan"
-	PublicKey string  `json:"publicKey,omitempty"`
+	PublicKey string `json:"publicKey,omitempty"`
 }
 
 // VCSCredentialStatus defines the observed state of VCSCredential

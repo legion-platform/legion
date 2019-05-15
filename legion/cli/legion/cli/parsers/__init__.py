@@ -16,3 +16,43 @@
 """
 CLI parsers
 """
+import argparse
+
+import typing
+
+
+def prepare_resources(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
+    """
+    Convert cli parameters to k8s resources
+    :param args: cli parameters
+    :return: k8s resources
+    """
+    resources = {"limits": {}, "requests": {}}
+    if args.memory_limit:
+        resources["limits"]["memory"] = args.memory_limit
+    if args.memory_request:
+        resources["requests"]["memory"] = args.memory_request
+    if args.cpu_limit:
+        resources["limits"]["cpu"] = args.cpu_limit
+    if args.cpu_request:
+        resources["requests"]["cpu"] = args.cpu_request
+
+    if not resources["limits"]:
+        del resources["limits"]
+
+    if not resources["requests"]:
+        del resources["requests"]
+
+    return resources or None
+
+
+def add_resources_params(parser: argparse.ArgumentParser) -> None:
+    """
+    Add resources parameters
+    :param parser: Argument Parser
+    """
+    parser.add_argument('--memory-limit', default=None, type=str, help='limit memory for model deployment')
+    parser.add_argument('--memory-request', '--memory', default=None, type=str,
+                        help='request memory for model deployment')
+    parser.add_argument('--cpu-limit', default=None, type=str, help='limit cpu for model deployment')
+    parser.add_argument('--cpu-request', default=None, type=str, help='request cpu for model deployment')

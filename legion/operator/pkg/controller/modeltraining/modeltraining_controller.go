@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
+	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -57,6 +59,7 @@ func Add(mgr manager.Manager) error {
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileModelTraining{
 		Client:   mgr.GetClient(),
+		config:   mgr.GetConfig(),
 		scheme:   mgr.GetScheme(),
 		recorder: mgr.GetRecorder("legion-operator"),
 	}
@@ -92,16 +95,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 var _ reconcile.Reconciler = &ReconcileModelTraining{}
 
 var (
-	defaultModelResources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("256m"),
-			"memory": resource.MustParse("256Mi"),
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("128m"),
-			"memory": resource.MustParse("128Mi"),
-		},
-	}
 	builderResources = corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
 			"cpu":    resource.MustParse("256m"),
@@ -113,7 +106,7 @@ var (
 		},
 	}
 	secretDefaultMode             = int32(420)
-	terminationGracePeriodSeconds = int64(60)
+	terminationGracePeriodSeconds = int64(0)
 )
 
 // ReconcileModelTraining reconciles a ModelTraining object
@@ -121,6 +114,7 @@ type ReconcileModelTraining struct {
 	client.Client
 	scheme   *runtime.Scheme
 	recorder record.EventRecorder
+	config   *rest.Config
 }
 
 const (
@@ -128,7 +122,6 @@ const (
 	gitSecretPath          = "/home/root/.ssh"
 	sharedDirPath          = "/var/legion"
 	sharedDirName          = "shared-dir"
-	defaultModelFileName   = "/var/legion/robot.model"
 	modelContainerName     = "model"
 	dockerSocketVolumeName = "docker-socket"
 	dockerSocketVolumePath = "/var/run/docker.sock"
@@ -138,14 +131,14 @@ const (
 )
 
 // FindVCSInstance finds relevant VCS instance for ModelTraining instance
-func (r *ReconcileModelTraining) findVCSInstance(vcsName string, namespace string) (vscCR *legionv1alpha1.VCSCredential, err error) {
+func (r *ReconcileModelTraining) findVCSInstance(vcsName string, namespace string) (vcsCR *legionv1alpha1.VCSCredential, err error) {
 	vcsInstanceName := types.NamespacedName{
 		Name:      vcsName,
 		Namespace: namespace,
 	}
-	vscCR = &legionv1alpha1.VCSCredential{}
+	vcsCR = &legionv1alpha1.VCSCredential{}
 
-	if err = r.Get(context.TODO(), vcsInstanceName, vscCR); err != nil {
+	if err = r.Get(context.TODO(), vcsInstanceName, vcsCR); err != nil {
 		log.Error(err, "Cannot fetch VCS Credential with name")
 
 		return
@@ -161,26 +154,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 		return nil, err
 	}
 
-	branch := modelBuilderCR.Spec.Reference
-	if branch == "" {
-		branch = vcsInstance.Spec.DefaultReference
-	}
-
 	vcsSecretName := legion.GenerateVcsSecretName(vcsInstance.Name)
-
-	modelFileName := modelBuilderCR.Spec.ModelFile
-	if modelFileName == "" {
-		modelFileName = defaultModelFileName
-	}
-
-	modelImage := modelBuilderCR.Spec.Image
-	if modelImage == "" {
-		modelImage, err = legion.GetToolchainImage(modelBuilderCR.Spec.ToolchainType, legion.OperatorConf)
-
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	modelCommand, err := legion.GenerateModelCommand(
 		modelBuilderCR.Spec.ToolchainType,
@@ -191,11 +165,6 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 		return nil, err
 	}
 
-	modelResources := modelBuilderCR.Spec.Resources
-	if modelResources == nil {
-		modelResources = &defaultModelResources
-	}
-
 	pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      legion.GenerateBuildModelName(modelBuilderCR.Name),
@@ -203,7 +172,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
-			ServiceAccountName:            legion.OperatorConf.BuilderServiceAccount,
+			ServiceAccountName:            viper.GetString(legion.BuilderServiceAccount),
 			TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 			Volumes: []corev1.Volume{
 				{
@@ -242,40 +211,49 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 			Containers: []corev1.Container{
 				{
 					Name:    modelContainerName,
-					Image:   modelImage,
-					Command: []string{"sleep"},
-					Args:    []string{"infinity"},
+					Image:   modelBuilderCR.Spec.Image,
+					Command: []string{"/bin/tiny"},
+					Args:    []string{"--", "cat"},
+					Stdin:   true,
 					Env: []corev1.EnvVar{
 						{
-							Name:  "METRICS_HOST",
-							Value: legion.OperatorConf.MetricHost,
+							Name: legion.Namespace,
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+							},
 						},
 						{
-							Name:  "METRICS_PORT",
-							Value: legion.OperatorConf.MetricPort,
+							Name:  legion.MetricHost,
+							Value: viper.GetString(legion.MetricHost),
 						},
 						{
-							Name:  "MODEL_TRAIN_METRICS_ENABLED",
-							Value: legion.OperatorConf.MetricEnabled,
+							Name:  legion.MetricPort,
+							Value: viper.GetString(legion.MetricPort),
 						},
 						{
-							Name:  "MODEL_FILE",
-							Value: modelFileName,
+							Name:  legion.MetricEnabled,
+							Value: viper.GetString(legion.MetricEnabled),
 						},
 						{
-							Name:  "DOCKER_REGISTRY",
-							Value: legion.OperatorConf.DockerRegistry,
+							Name:  legion.ModelFile,
+							Value: modelBuilderCR.Spec.ModelFile,
 						},
 						{
-							Name:  "DOCKER_REGISTRY_USER",
-							Value: legion.OperatorConf.DockerRegistryUser,
+							Name:  legion.DockerRegistry,
+							Value: viper.GetString(legion.DockerRegistry),
 						},
 						{
-							Name:  "DOCKER_REGISTRY_PASSWORD",
-							Value: legion.OperatorConf.DockerRegistryPassword,
+							Name:  legion.DockerRegistryUser,
+							Value: viper.GetString(legion.DockerRegistryUser),
+						},
+						{
+							Name:  legion.DockerRegistryPassword,
+							Value: viper.GetString(legion.DockerRegistryPassword),
 						},
 					},
-					Resources: *modelResources,
+					Resources: *modelBuilderCR.Spec.Resources,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							MountPath: sharedDirPath,
@@ -289,10 +267,10 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 				},
 				{
 					Name:  builderContainerName,
-					Image: legion.OperatorConf.BuilderImage,
+					Image: viper.GetString(legion.BuilderImage),
 					Env: []corev1.EnvVar{
 						{
-							Name: "POD_NAME",
+							Name: legion.PodName,
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									FieldPath: "metadata.name",
@@ -300,7 +278,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 							},
 						},
 						{
-							Name: "NAMESPACE",
+							Name: legion.Namespace,
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									FieldPath: "metadata.namespace",
@@ -308,43 +286,43 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 							},
 						},
 						{
-							Name:  "REPOSITORY_URL",
+							Name:  legion.RepositoryURL,
 							Value: vcsInstance.Spec.Uri,
 						},
 						{
-							Name:  "RESULT_IMAGE_PREFIX",
-							Value: legion.OperatorConf.BuildImagePrefix,
+							Name:  legion.ImagePrefix,
+							Value: viper.GetString(legion.ImagePrefix),
 						},
 						{
-							Name:  "SHARED_DIR_PATH",
+							Name:  legion.SharedDirPath,
 							Value: sharedDirPath,
 						},
 						{
-							Name:  "BRANCH",
-							Value: branch,
+							Name:  legion.Reference,
+							Value: modelBuilderCR.Spec.Reference,
 						},
 						{
-							Name:  "MODEL_FILE",
-							Value: modelFileName,
+							Name:  legion.ModelFile,
+							Value: modelBuilderCR.Spec.ModelFile,
 						},
 						{
-							Name:  "MODEL_COMMAND",
+							Name:  legion.ModelCommand,
 							Value: modelCommand,
 						},
 						{
-							Name:  "DOCKER_REGISTRY",
-							Value: legion.OperatorConf.DockerRegistry,
+							Name:  legion.DockerRegistry,
+							Value: viper.GetString(legion.DockerRegistry),
 						},
 						{
-							Name:  "DOCKER_REGISTRY_USER",
-							Value: legion.OperatorConf.DockerRegistryUser,
+							Name:  legion.DockerRegistryUser,
+							Value: viper.GetString(legion.DockerRegistryUser),
 						},
 						{
-							Name:  "DOCKER_REGISTRY_PASSWORD",
-							Value: legion.OperatorConf.DockerRegistryPassword,
+							Name:  legion.DockerRegistryPassword,
+							Value: viper.GetString(legion.DockerRegistryPassword),
 						},
 						{
-							Name:  "GIT_SSH_KEY_PATH",
+							Name:  legion.GitSSHKeyPath,
 							Value: fmt.Sprintf("%s/%s", gitSecretPath, utils.GitSSHKeyFileName),
 						},
 					},
@@ -427,6 +405,24 @@ func (r *ReconcileModelTraining) syncK8SInstances(modelBuilderCR *legionv1alpha1
 		err = r.Delete(context.TODO(), modelBuilderPod)
 
 		if err != nil && !errors.IsNotFound(err) {
+			log.Error(err, fmt.Sprintf("Delete %s model builder pod", modelBuilderPod.Name))
+			return err
+		}
+
+		log.Info(fmt.Sprintf("%s model builder pod was deleted", modelBuilderPod.Name))
+	}
+
+	if modelBuilderCR.Status.TrainingState == legionv1alpha1.ModelTrainingFailed {
+		err := utils.ExecToPodThroughAPI(
+			[]string{"/bin/kill", "1"},
+			modelContainerName,
+			modelBuilderPod.Name,
+			modelBuilderCR.Namespace,
+			r.config,
+		)
+
+		if err != nil {
+			log.Error(err, "Cannot kill the model container")
 			return err
 		}
 	}
@@ -456,8 +452,19 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, modelCrd *legionv
 					if container.State.Terminated.ExitCode == 0 {
 						modelCrd.Status.TrainingState = legionv1alpha1.ModelTrainingSucceeded
 						modelCrd.Status.ModelImage = pod.Annotations[legion.ModelImageKey]
-						modelCrd.Status.ModelID = pod.Annotations[legion.ModelIDKey]
-						modelCrd.Status.ModelVersion = pod.Annotations[legion.ModelVersionKey]
+
+						modelId := pod.Annotations[legion.ModelIDKey]
+						modelVersion := pod.Annotations[legion.ModelVersionKey]
+
+						if modelCrd.ObjectMeta.Labels == nil {
+							modelCrd.ObjectMeta.Labels = map[string]string{}
+						}
+
+						modelCrd.ObjectMeta.Labels[legion.DomainModelId] = modelId
+						modelCrd.ObjectMeta.Labels[legion.DomainModelVersion] = modelVersion
+
+						modelCrd.Status.ModelID = modelId
+						modelCrd.Status.ModelVersion = modelVersion
 					} else {
 						modelCrd.Status.TrainingState = legionv1alpha1.ModelTrainingFailed
 					}
@@ -469,7 +476,8 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, modelCrd *legionv
 					modelCrd.Status.TrainingState = legionv1alpha1.ModelTrainingScheduling
 				}
 			} else {
-				fmt.Println("kek")
+				log.Info(fmt.Sprintf("Skip processing of %s container with %+v state",
+					container.Name, container.State))
 			}
 		}
 	case corev1.PodSucceeded:
@@ -487,6 +495,7 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, modelCrd *legionv
 // and what is in the ModelTraining.Spec
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=core,resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeltrainings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeltrainings/status,verbs=get;update;patch

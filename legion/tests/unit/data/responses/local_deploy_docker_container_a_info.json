@@ -25,7 +25,7 @@
   "HostnamePath": "/var/lib/docker/containers/3ab2137c44bb1442c4fb4214c98ec6e7d6df99e8b9710d2cc465fd4f221f1429/hostname",
   "HostsPath": "/var/lib/docker/containers/3ab2137c44bb1442c4fb4214c98ec6e7d6df99e8b9710d2cc465fd4f221f1429/hosts",
   "LogPath": "/var/lib/docker/containers/3ab2137c44bb1442c4fb4214c98ec6e7d6df99e8b9710d2cc465fd4f221f1429/3ab2137c44bb1442c4fb4214c98ec6e7d6df99e8b9710d2cc465fd4f221f1429-json.log",
-  "Name": "/epic_cartwright",
+  "Name": "/test-math-deployment",
   "RestartCount": 0,
   "Driver": "overlay2",
   "Platform": "linux",

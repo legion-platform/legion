@@ -39,3 +39,6 @@ username : unicode
 .*//\\+safeToCommit
 # Secret variable
 .*secret \:\=.*
+.*Token: token.*
+.*Token: "".*
+.*Secret: .*

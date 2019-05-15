@@ -2,7 +2,7 @@
   {
     "Id": "00d32111629cdbc809084b7d711b1ce6b457dbf9000e3a1a3b83f38423945d05",
     "Names": [
-      "/unruffled_murdock"
+      "/test-math-deployment-2"
     ],
     "Image": "sha256:c10216153fa6dee020dfa2c0a6df96b0cdec9fb0cc406b036c35b66ae5c8d2a7",
     "ImageID": "sha256:c10216153fa6dee020dfa2c0a6df96b0cdec9fb0cc406b036c35b66ae5c8d2a7",
