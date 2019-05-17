@@ -153,10 +153,11 @@ def _check_python_packages() -> None:
         raise Exception('Some packages are missed: {}'.format(', '.join(missed_packages_requirements_list)))
 
 
-def _copy_model_files(model_file: str, target_model_file: str) -> None:
+def _copy_model_files(working_directory: str, model_file: str, target_model_file: str) -> None:
     """
     Copy model files to the workspace
 
+    :param working_directory: working directory
     :param model_file: a serialized model file
     :param target_model_file: path to the target model file location
     """
@@ -170,24 +171,24 @@ def _copy_model_files(model_file: str, target_model_file: str) -> None:
         raise
 
     try:
-        workspace_path = os.getcwd()
-        LOGGER.info('Copying model workspace from {!r} to {!r}'.format(workspace_path, MODEL_TARGET_WORKSPACE))
-        copy_directory_contents(workspace_path, MODEL_TARGET_WORKSPACE)
+        LOGGER.info('Copying model workspace from {!r} to {!r}'.format(working_directory, MODEL_TARGET_WORKSPACE))
+        copy_directory_contents(working_directory, MODEL_TARGET_WORKSPACE)
     except Exception as model_workspace_copy_exception:
         LOGGER.exception('Unable to move model workspace to persistent location',
                          exc_info=model_workspace_copy_exception)
         raise
 
 
-def prepare_build(model_id: str, model_file: str) -> None:
+def prepare_build(working_directory: str, model_id: str, model_file: str) -> None:
     """
     Execute some actions before building image
 
+    :param working_directory: working directory
     :param model_id: model id
     :param model_file: path to model file (in the temporary directory)
     :return: docker.models.Image
     """
-    _copy_model_files(model_file, os.path.join(model_id))
+    _copy_model_files(working_directory, model_file, os.path.join(working_directory, model_id))
 
 
 def build_docker_image(client: docker.client.DockerClient, params: ModelBuildParameters,

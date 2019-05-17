@@ -39,21 +39,26 @@ func GetToolchainImage(toolchainName string) (image string, err error) {
 	return "", errors.New(fmt.Sprintf("Can't find %s toolchain", toolchainName))
 }
 
-func GenerateModelCommand(toolchainName string, entrypoint string,
+func GenerateModelCommand(workDir string, toolchainName string, entrypoint string,
 	args []string) (string, error) {
+	var pythonCommand strings.Builder
+	if len(workDir) != 0 {
+		pythonCommand.WriteString(fmt.Sprintf("cd %s && ", fmt.Sprintf(workDir)))
+	}
+
 	switch toolchainName {
 	case PythonToolchainName:
-		var pythonCommand strings.Builder
 		pythonCommand.WriteString(fmt.Sprintf("python3 %s", entrypoint))
 
 		for _, arg := range args {
 			pythonCommand.WriteString(" " + arg)
 		}
-		return pythonCommand.String(), nil
 	case JupiterToolchainName:
 		// TODO: need to think about jupyter parameters
-		return fmt.Sprintf("jupyter nbconvert --execute %s", entrypoint), nil
+		pythonCommand.WriteString(fmt.Sprintf("jupyter nbconvert --execute %s", entrypoint))
+	default:
+		return "", errors.New(fmt.Sprintf("Can't find %s toolchain", toolchainName))
 	}
 
-	return "", errors.New(fmt.Sprintf("Can't find %s toolchain", toolchainName))
+	return pythonCommand.String(), nil
 }

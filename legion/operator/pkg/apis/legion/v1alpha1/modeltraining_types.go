@@ -31,6 +31,8 @@ type ModelTrainingSpec struct {
 	CustomEnvs map[string]string `json:"env,omitempty"`
 	// Model training hyperparameters in parameter:value format
 	Hyperparameters map[string]string `json:"hyperparameters,omitempty"`
+	// Directory with model scripts/files in a git repository
+	WorkDir string `json:"workDir,omitempty"`
 	// Model training file. It can be python\bash script or jupiter notebook
 	Entrypoint          string   `json:"entrypoint"`
 	EntrypointArguments []string `json:"args,omitempty"`

@@ -82,7 +82,8 @@ def create(args: argparse.Namespace):
         resources=prepare_resources(args),
         args=args.arg,
         vcs_name=args.vcs_name,
-        reference=args.reference
+        reference=args.reference,
+        work_dir=args.workdir
     ))
 
     wait_training_finish(args, mt_client)
@@ -104,7 +105,8 @@ def edit(args: argparse.Namespace):
         resources=prepare_resources(args),
         args=args.arg,
         vcs_name=args.vcs_name,
-        reference=args.reference
+        reference=args.reference,
+        work_dir=args.workdir
     ))
 
     print(message)
@@ -180,10 +182,12 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_create_parser.add_argument('name', type=str, help='Model Training name')
     mt_create_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python',
                                   required=True)
-    mt_create_parser.add_argument('--entrypoint', '-e', type=str, help='Model Training name', required=True)
-    mt_create_parser.add_argument('--arg', '-a', action='append', help='Model Training name')
-    mt_create_parser.add_argument('--vcs-name', '--vcs', type=str, help='Model Training name', required=True)
-    mt_create_parser.add_argument('--reference', type=str, help='Model Training name')
+    mt_create_parser.add_argument('--entrypoint', '-e', type=str, help='Model training file. It can be python\\bash'
+                                                                       ' script or jupiter notebook', required=True)
+    mt_create_parser.add_argument('--arg', '-a', action='append', help='Parameter for entrypoint script')
+    mt_create_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource', required=True)
+    mt_create_parser.add_argument('--workdir', type=str, help='Directory with model scripts/files in a git repository')
+    mt_create_parser.add_argument('--reference', type=str, help='Commit\\tag\\branch name')
     add_resources_params(mt_create_parser)
     edi.add_arguments_for_wait_operation(mt_create_parser)
     security.add_edi_arguments(mt_create_parser)
@@ -191,11 +195,14 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
 
     mt_edit_parser = mt_subparser.add_parser('edit', description='Get all ModelTrainings')
     mt_edit_parser.add_argument('name', type=str, help='Model Training name')
-    mt_edit_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Model Training name', required=True)
-    mt_edit_parser.add_argument('--entrypoint', type=str, help='Model Training name', required=True)
-    mt_edit_parser.add_argument('--arg', '-a', action='append', help='Model Training name')
-    mt_edit_parser.add_argument('--vcs-name', '--vcs', type=str, help='Model Training name', required=True)
-    mt_edit_parser.add_argument('--reference', type=str, help='Model Training name')
+    mt_edit_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python',
+                                required=True)
+    mt_edit_parser.add_argument('--entrypoint', '-e', type=str, help='Model training file. It can be python\\bash'
+                                                                     ' script or jupiter notebook', required=True)
+    mt_edit_parser.add_argument('--arg', '-a', action='append', help='Parameter for entrypoint script')
+    mt_edit_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource', required=True)
+    mt_edit_parser.add_argument('--workdir', type=str, help='Directory with model scripts/files in a git repository')
+    mt_edit_parser.add_argument('--reference', type=str, help='Commit\\tag\\branch name')
     add_resources_params(mt_edit_parser)
     security.add_edi_arguments(mt_edit_parser)
     mt_edit_parser.set_defaults(func=edit)

@@ -32,16 +32,20 @@ ZIP_FILE_INFO = 'manifest.json'
 PROPERTY_MODEL_ID = 'model.id'
 PROPERTY_MODEL_VERSION = 'model.version'
 PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
+PROPERTY_TRAINING_WORKING_DIRECTORY = 'model.trainWorkDir'
 
 
 class ModelMeta:
-    def __init__(self, model_id: str, model_version: str,
+    def __init__(self,
+                 model_id: str,
+                 model_version: str,
                  meta_information: typing.Dict[str, typing.Any] = None):
         """
         Build model meta
 
         :param model_id: model ID
         :param model_version: model version
+        :param meta_information: model meta information
         """
         if meta_information is None:
             meta_information = {}

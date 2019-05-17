@@ -16,7 +16,12 @@
 """
 Model functionality
 """
+import typing
+
+import pandas as pd
 from legion.sdk.utils import normalize_name
+from legion.toolchain import metrics
+from legion.toolchain.metrics import clear_metric_store
 from legion.toolchain.pymodel.model import Model
 from legion.toolchain.types import int8, uint8, int16, uint16, int32, uint32, int64, uint64
 from legion.toolchain.types import float32, float64
@@ -80,6 +85,8 @@ def init(model_id, model_version, model_type=Model.NAME):
         raise Exception('More then 1 builder have been found for type {}'.format(model_type))
 
     _model = builder[0](model_id, model_version)
+
+    clear_metric_store(model_id, model_version)
 
     return _model
 
@@ -169,3 +176,20 @@ def save(path=None):
         raise Exception('Context has not been defined')
 
     return _model.save(path)
+
+
+def show_metrics(model_id: typing.Optional[str] = None, model_version: typing.Optional[str] = None) -> pd.DataFrame:
+    """
+    Show metrics from local store
+
+    :param model_id: model ID
+    :param model_version: model version
+    :return: Metrics which converted to Dataframe
+    """
+    if not model_id:
+        if not _model:
+            raise Exception('You should define model context or specify model id explicitly')
+
+        model_id = _model.model_id
+
+    return metrics.show_metrics(model_id, model_version)

@@ -25,6 +25,13 @@ Test Teardown       Run EDI undeploy model without version and check    ${TEST_M
 Force Tags          edi  cli  enclave
 
 *** Test Cases ***
+Working directory
+    [Documentation]  Check that python modules and resource files are accessible from working directory
+    [Tags]  apps
+    ${res}=  Shell  legionctl --verbose model invoke --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --endpoint workdir -p value=2
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  42
+
 Check if EDGE has been secured by token
      [Tags]  apps
      [Documentation]  Deploy one model, and try to get model info without token

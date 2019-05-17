@@ -7,4 +7,5 @@ metadata:
 spec:
   toolchain: jupyter
   vcsName: legion
-  entrypoint: "examples/Test-Summation/Summation.ipynb"
+  workDir: "examples/Test-Summation"
+  entrypoint: "Summation.ipynb"

@@ -60,3 +60,4 @@ Running, waiting and checks jobs in Jenkins
     [Template]  Test model pipeline result
     model_name=Digit-Recognition
     model_name=Test-Summation
+    model_name=Sklearn-Income

@@ -36,7 +36,7 @@ const (
 	BuilderImage           = "BUILDER_IMAGE"
 	MetricHost             = "METRICS_HOST"
 	MetricPort             = "METRICS_PORT"
-	MetricEnabled          = "MODEL_TRAIN_METRICS_ENABLED"
+	MetricEnabled          = "MODEL_CLUSTER_TRAIN_METRICS_ENABLED"
 	PythonToolchainImage   = "PYTHON_TOOLCHAIN_IMAGE"
 	DockerRegistryUser     = "DOCKER_REGISTRY_USER"
 	DockerRegistryPassword = "DOCKER_REGISTRY_PASSWORD"

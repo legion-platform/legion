@@ -26,7 +26,7 @@ from legion.sdk import config, utils
 from legion.sdk.containers import docker
 from legion.sdk.containers.definitions import ModelBuildParameters
 from legion.sdk.containers.docker import prepare_build, build_model_docker_image
-from legion.sdk.model import load_meta_model
+from legion.sdk.model import load_meta_model, PROPERTY_TRAINING_WORKING_DIRECTORY
 
 BUILD_TYPE_DOCKER_SOCKET = 'docker-socket'
 BUILD_TYPE_DOCKER_REMOTE = 'docker-remote'
@@ -55,14 +55,16 @@ def build_model(args):
     container = load_meta_model(model_file)
     model_id = container.model_id
     model_version = container.model_version
-    workspace_path = os.getcwd()
+    workspace_path = container.meta_information.get(PROPERTY_TRAINING_WORKING_DIRECTORY, os.getcwd())
+    LOGGER.info('Building model %s (id: %s, version: %s) in directory %s',
+                model_file, model_id, model_version, workspace_path)
 
     image_labels = docker.generate_docker_labels_for_image(model_file, model_id)
     new_image_tag = args.docker_image_tag
     if not new_image_tag:
         new_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, utils.deduce_extra_version())
 
-    prepare_build(model_id, model_file)
+    prepare_build(workspace_path, model_id, model_file)
 
     params = ModelBuildParameters(model_id, workspace_path, image_labels, new_image_tag, args.push_to_registry,
                                   build_id=str(uuid.uuid4()))
