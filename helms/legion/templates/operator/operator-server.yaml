@@ -6,6 +6,7 @@ metadata:
     component: "legion-operator"
     {{- include "legion.helm-labels" . | nindent 4 }}
 spec:
+  serviceName: "legion-operator"
   replicas: {{ .Values.operator.server.replicas }}
   selector:
     matchLabels:

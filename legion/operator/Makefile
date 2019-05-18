@@ -1,5 +1,4 @@
 LEGION_OPERATOR_GENERATED_ENTITIES = ../../helms/legion/templates/operator/generated
-LEGION_OPERATOR_CRDS = ../../helms/legion-crds/templates
 
 all: help
 
@@ -39,22 +38,23 @@ manifests:  swag
 	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
 
 	mkdir -p ${LEGION_OPERATOR_GENERATED_ENTITIES}
-	mkdir -p ${LEGION_OPERATOR_CRDS}
 	@echo "removing old manifests from HELM's generated dictionary"
 
 	rm -fv ${LEGION_OPERATOR_GENERATED_ENTITIES}/*.yaml
-	rm -fv ${LEGION_OPERATOR_CRDS}/*.yaml
 	@echo "copying actual manifests to HELM's generated dictionary"
-	cp -f ./config/crds/*.yaml ${LEGION_OPERATOR_CRDS}
+	cp -f ./config/crds/*.yaml ${LEGION_OPERATOR_GENERATED_ENTITIES}
 	cp config/rbac/rbac_role.yaml ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 
 	# All Legion CRD's and operator role are generated resources.
 	# We cannot add, for example, a custom label during the generation process.
 	# That's why we add them using sed tool after generation.
-	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" . | nindent 4 }}' ${LEGION_OPERATOR_CRDS}/*.yaml
 
 	sed -i '/^  name:.*$$/a \ \ labels:' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
-	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" . | nindent 4 }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
+	sed -i '/^  name:.*$$/a \ \ annotations:' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*v1alpha1*.yaml
+
+	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" . | nindent 4 }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*.yaml
+	sed -i '/^  annotations:$$/a \ \ \ \ "helm.sh/hook": "crd-install"' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*v1alpha1*.yaml
+
 	sed -i '/^  labels:$$/a \ \ \ \ component: "legion-operator"' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 	sed -i 's/manager-role/"{{ .Release.Name }}-operator"/g' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 	sed -i '1i{{- if .Values.rbac }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
