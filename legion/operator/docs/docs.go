@@ -1109,6 +1109,10 @@ var doc = `{
                 "vcsName": {
                     "description": "Name of VCSCredential resource. Must exists",
                     "type": "string"
+                },
+                "workDir": {
+                    "description": "Directory with model scripts/files in a git repository",
+                    "type": "string"
                 }
             }
         },

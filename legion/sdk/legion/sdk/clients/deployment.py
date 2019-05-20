@@ -63,7 +63,7 @@ class ModelDeployment(typing.NamedTuple):
             readiness_probeInitial_delay=md_spec.get('readinessProbeInitialDelay', ''),
             state=md_status.get('state', ''),
             service_url=md_status.get('serviceURL', ''),
-            available_replicas=md_status.get('availableReplicas'),
+            available_replicas=md_status.get('availableReplicas', 0),
         )
 
     def to_json(self) -> typing.Dict[str, str]:

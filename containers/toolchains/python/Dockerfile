@@ -21,7 +21,7 @@ WORKDIR "${WORK_DIR}/"
 RUN wget https://github.com/krallin/tini/releases/download/v0.18.0/tini-amd64 -qO /bin/tiny && \
     chmod a+x /bin/tiny
 
-RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 ptvsd==4.2.2
+RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 ptvsd==4.2.2 jupyterlab==0.35.6
 
 COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock "${WORK_DIR}/legion/sdk/"
 RUN  cd legion/sdk && pipenv install --system --three

@@ -157,6 +157,7 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 	vcsSecretName := legion.GenerateVcsSecretName(vcsInstance.Name)
 
 	modelCommand, err := legion.GenerateModelCommand(
+		modelBuilderCR.Spec.WorkDir,
 		modelBuilderCR.Spec.ToolchainType,
 		modelBuilderCR.Spec.Entrypoint,
 		modelBuilderCR.Spec.EntrypointArguments,

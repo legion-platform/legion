@@ -42,6 +42,7 @@ ZIP_FILE_CALLBACK = 'callback'
 PROPERTY_MODEL_ID = 'model.id'
 PROPERTY_MODEL_VERSION = 'model.version'
 PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
+PROPERTY_TRAINING_WORKING_DIRECTORY = 'model.trainWorkDir'
 
 
 class ModelEndpoint:
@@ -302,6 +303,7 @@ class Model(ModelMeta):
         meta_information_to_save[PROPERTY_MODEL_ID] = self.model_id
         meta_information_to_save[PROPERTY_MODEL_VERSION] = self.model_version
         meta_information_to_save[PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
+        meta_information_to_save[PROPERTY_TRAINING_WORKING_DIRECTORY] = os.getcwd()
 
         self._path = path
 
@@ -472,4 +474,4 @@ class Model(ModelMeta):
         :type value: float or int
         :return: None
         """
-        return metrics.send_metric(self.model_id, metric, value)
+        return metrics.send_metric(self.model_id, self.model_version, metric, value)

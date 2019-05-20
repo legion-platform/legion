@@ -209,7 +209,8 @@ class K8s:
                     "name": generate_stub_model(model_id, model_version)
                 },
                 "spec": {
-                    "entrypoint": 'legion/tests/e2e/models/simple.py',
+                    "workDir": "legion/tests/e2e/models",
+                    "entrypoint": 'simple.py',
                     'args': ['--id', model_id, '--version', model_version],
                     "toolchain": "python",
                     "vcsName": self._default_vcs

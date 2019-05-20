@@ -19,6 +19,7 @@ TAG=
 # Example of DOCKER_REGISTRY: nexus.domain.com:443/
 DOCKER_REGISTRY=
 HELM_ADDITIONAL_PARAMS=
+SANDBOX_IMAGE=legion/python-toolchain:latest
 
 -include .env
 
@@ -200,6 +201,13 @@ e2e-python:
 ## update-python-deps: Update all python dependecies in the Pipfiles
 update-python-deps:
 	scripts/update_python_deps.sh
+
+## run-sandbox: Start Python toolchain sandbox
+run-sandbox:
+	rm -rf ./legion-activate.sh
+	legionctl create-sandbox --image ${SANDBOX_IMAGE}
+
+	./legion-activate.sh
 
 ## help: Show the help message
 help: Makefile

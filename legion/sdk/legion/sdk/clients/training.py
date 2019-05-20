@@ -38,6 +38,7 @@ class ModelTraining(typing.NamedTuple):
     args: typing.List[str] = []
     resources: typing.Mapping[str, typing.Any] = {}
     vcs_name: str = ""
+    work_dir: str = ""
     reference: str = ""
     model_id: str = ""
     model_version: str = ""
@@ -60,6 +61,7 @@ class ModelTraining(typing.NamedTuple):
             entrypoint=mt_spec.get('entrypoint', ''),
             args=mt_spec.get('args', []),
             vcs_name=mt_spec.get('vcsName', ''),
+            work_dir=mt_spec.get('workDir', ''),
             reference=mt_spec.get('reference', ''),
             model_id=mt_status.get('id', ''),
             model_version=mt_status.get('version', ''),
@@ -79,6 +81,7 @@ class ModelTraining(typing.NamedTuple):
                 'entrypoint': self.entrypoint,
                 'args': self.args,
                 'vcsName': self.vcs_name,
+                'workDir': self.work_dir,
                 'reference': self.reference
             }
         }

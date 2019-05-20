@@ -4,8 +4,9 @@
 
 Main aim of this container - to provide you a way to run your model training on local machine.
 
-1. To run jupyter notebook use "jupyter notebook" command
-2. To run custom python script use "python3 <script>"
+1. To run jupyter lab use "jupyter lab" command
+2. To run jupyter notebook use "jupyter notebook" command
+3. To run custom python script use "python3 <script>"
 
 During training you have to call legion.model functions and call legion.model.save() at the end of script.
 After legion.model.save() invocation your binary-serialized models will be stored inside container file-system.

@@ -59,7 +59,7 @@ spec:
               secretKeyRef:
                 name: "{{ .Release.Name }}-operator-config"
                 key: docker.registry.password
-          - name: MODEL_TRAIN_METRICS_ENABLED
+          - name: MODEL_CLUSTER_TRAIN_METRICS_ENABLED
             value: "{{ .Values.modelMetrics.enabled }}"
           - name: METRICS_HOST
             value: {{ .Values.modelMetrics.host | quote }}

@@ -7,4 +7,5 @@ metadata:
 spec:
   toolchain: python
   vcsName: legion
-  entrypoint: "examples/MovieLens/surprise.v3.py"
+  workDir: "examples/MovieLens"
+  entrypoint: "surprise.v3.py"

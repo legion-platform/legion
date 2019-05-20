@@ -7,4 +7,5 @@ metadata:
 spec:
   toolchain: jupyter
   vcsName: legion
-  entrypoint: "examples/Digit-Recognition/Recognizing_digits.ipynb"
+  workDir: examples/Digit-Recognition
+  entrypoint: "Recognizing_digits.ipynb"

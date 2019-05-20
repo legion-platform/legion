@@ -2,7 +2,8 @@
 ${LOCAL_CONFIG}         legion/config_6_3
 ${TRAINING_NAME}        test-vcs
 ${TRAINING_ARGS}        --id test --version 2.0
-${TRAINING_ENTRYPOINT}  legion/tests/e2e/models/simple.py
+${TRAINING_WORKDIR}     legion/tests/e2e/models
+${TRAINING_ENTRYPOINT}  simple.py
 ${TRAINING_VCS}         legion
 ${TRAINING_TOOLCHAIN}   python
 ${TRAINING_TIMEOUT}     200
@@ -37,7 +38,7 @@ Getting of all Model Training
 Creating of a Model Training
     [Documentation]  Creating of a Model Training
     [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
-    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a '${TRAINING_ARGS}'
+    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a '${TRAINING_ARGS}'
              Should be equal  ${res.rc}  ${0}
 
     ${res}=  Shell  legionctl --verbose mt get ${TRAINING_NAME}
@@ -50,7 +51,7 @@ Creating of a Model Training
 Deleting of a Model Training
     [Documentation]  Deleting of a Model Training
     [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
-    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a '${TRAINING_ARGS}'
+    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a '${TRAINING_ARGS}'
              Should be equal  ${res.rc}  ${0}
 
     ${res}=  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
@@ -69,7 +70,7 @@ Deleting of nonexistent Model Training
 Failed Training
     [Documentation]  Check logs and pod state after failed training
     [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
-    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
+    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
              Should not be equal  ${res.rc}  ${0}
 
     ${logs}=  Get model training logs  ${TRAINING_NAME}
@@ -79,6 +80,6 @@ Failed Training
 
 Not existed VCS Credential
     [Documentation]  Creation of training must failed if there is vcs credential
-    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --toolchain ${TRAINING_TOOLCHAIN} --vcs wrong-vcs -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
+    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs wrong-vcs -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
              Should not be equal  ${res.rc}  ${0}
              should contain  ${res.stderr}  not found

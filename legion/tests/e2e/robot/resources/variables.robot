@@ -1,6 +1,6 @@
 *** Variables ***
 @{ENCLAVE_SUBDOMAINS}               edi  edge
-@{TEST_MODELS}                      Digit-Recognition  Test-Summation
+@{TEST_MODELS}                      Digit-Recognition  Test-Summation  Sklearn-Income
 ${MODEL_WITH_PROPS}                 Test-Summation
 ${MODEL_WITH_PROPS_ENDPOINT}        sum_and_pow
 ${MODEL_WITH_PROPS_PROP}            number.pow_of_ten
