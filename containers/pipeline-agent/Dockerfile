@@ -41,7 +41,7 @@ RUN curl -fsSLO https://storage.googleapis.com/kubernetes-release/release/${KUBE
     chmod a+x /usr/local/bin/kubectl
 
 # Install Helm
-ENV HELM_VERSION=v2.10.0
+ENV HELM_VERSION=v2.14.0
 RUN curl -fsSLO https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz && \
     mkdir -p /tmp/helm && mv helm-${HELM_VERSION}-linux-amd64.tar.gz /tmp/helm && \
     tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \

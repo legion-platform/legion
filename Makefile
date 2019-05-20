@@ -143,18 +143,10 @@ docker-push-feedback-aggregator:  check-tag
 ## docker-push-all: Push all docker images
 docker-push-all:  docker-push-pipeline-agent  docker-push-python-toolchain  docker-push-edi  docker-push-edge  docker-push-model-builder  docker-push-operator  docker-push-feedback-aggregator
 
-## helm-install-crds: Install the crds helm chart from source code
-helm-install-crds:
-	helm delete --purge legion-crds || true
-	helm install helms/legion-crds --wait --timeout 30 --name legion-crds ${HELM_ADDITIONAL_PARAMS}
-
-## helm-install-legion: Install the legion helm chart from source code
-helm-install-legion:
+## helm-install: Install the legion helm chart from source code
+helm-install:
 	helm delete --purge legion || true
 	helm install helms/legion --wait --timeout 60 --name legion --debug ${HELM_ADDITIONAL_PARAMS}
-
-## helm-install-all: Install all legion helm charts from source code
-helm-install-all:  helm-install-crds  helm-install-legion
 
 ## install-unittests: Install unit tests
 install-unittests:
