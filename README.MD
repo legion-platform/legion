@@ -40,6 +40,10 @@ Legion provides:
 
 Please find it here [CHANGELOG](CHANGELOG.md)
 
+## Backlog and Kanban Board
+* [Backlog](https://github.com/legion-platform/legion/issues)
+* [Kanban Board](https://github.com/orgs/legion-platform/projects/1)
+
 ## Contact Us
 If you are interested in contribution to Legion feel free to create a pull request or create an issue report.
 If you interested in hearing more about Legion implementation, existing case studies, questions or concerns  feel free to contact us at [Legion discussion group](https://groups.google.com/forum/#!forum/legion-platform/new). 
