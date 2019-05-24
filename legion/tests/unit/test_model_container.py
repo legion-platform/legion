@@ -27,7 +27,7 @@ from legion.toolchain.pymodel.model import Model, ModelEndpoint
 
 LOGGER = logging.getLogger(__name__)
 MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model.bin')
-MODEL_ID = 'demo-model'
+MODEL_NAME = 'demo-model'
 MODEL_VERSION = '1.3'
 
 
@@ -95,7 +95,7 @@ class TestModelContainer(unittest2.TestCase):
         model.reset_context()
 
     def test_square_with_cast(self):
-        model.init(MODEL_ID, MODEL_VERSION) \
+        model.init(MODEL_NAME, MODEL_VERSION) \
             .export(make_square, {
                     'value': model.int32,
                     'are_you_sure': types.ColumnInformation(CustomBoolObject())
@@ -110,7 +110,7 @@ class TestModelContainer(unittest2.TestCase):
         self.assertEqual(invoke({'value': 10, 'are_you_sure': 'not sure'}), 10)
 
     def test_model_pack_native_multiple_endpoints(self):
-        model.init(MODEL_ID, MODEL_VERSION) \
+        model.init(MODEL_NAME, MODEL_VERSION) \
             .export_untyped(apply_add, endpoint='add') \
             .export_untyped(apply_sub, endpoint='sub') \
             .save(MODEL_PATH)
@@ -119,7 +119,7 @@ class TestModelContainer(unittest2.TestCase):
 
         container = Model.load(MODEL_PATH)
 
-        self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
+        self.assertEqual(container.model_name, MODEL_NAME, 'invalid model id')
         self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
 
         endpoints = container.endpoints
@@ -139,7 +139,7 @@ class TestModelContainer(unittest2.TestCase):
         self.assertEqual(sub_endpoint.apply({'a': 80, 'b': 32}), 48)
 
     def test_model_pack_with_df_single_endpoint(self):
-        model.init(MODEL_ID, MODEL_VERSION) \
+        model.init(MODEL_NAME, MODEL_VERSION) \
             .export_df(apply_pd, df, prepare_func=prepare_pd) \
             .save(MODEL_PATH)
 
@@ -147,7 +147,7 @@ class TestModelContainer(unittest2.TestCase):
 
         container = Model.load(MODEL_PATH)
 
-        self.assertEqual(container.model_id, MODEL_ID, 'invalid model id')
+        self.assertEqual(container.model_name, MODEL_NAME, 'invalid model id')
         self.assertEqual(container.model_version, MODEL_VERSION, 'invalid model version')
 
         endpoints = container.endpoints

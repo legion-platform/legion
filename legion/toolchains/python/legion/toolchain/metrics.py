@@ -32,7 +32,7 @@ from legion.sdk.utils import normalize_name
 MODEL_UPDATED_AT_TEMPLATE = '%m/%d/%y %H:%M:%S'
 
 STATSD_METRIC_FORMAT = "{}:{}|c"
-MODEL_ID_HEADER = "Model ID"
+MODEL_NAME_HEADER = "Model Name"
 MODEL_VALUE_HEADER = "Model Version"
 MODEL_UPDATED_AT_HEADER = "Last Update"
 LOGGER = logging.getLogger(__name__)
@@ -72,29 +72,29 @@ def get_build_number():
         raise Exception('Cannot parse build number as integer')
 
 
-def get_metric_name(metric, model_id):
+def get_metric_name(metric, model_name):
     """
     Get metric name on stats server
 
     :param metric: instance of Metric or custom name
     :type metric: :py:class:`legion.metrics.Metric` or str
-    :param model_id: model ID
-    :type model_id: str
+    :param model_name: model name
+    :type model_name: str
     :return: str -- metric name on stats server
     """
     name = metric.value if isinstance(metric, Metric) else str(metric)
-    return normalize_name('{}.metrics.{}'.format(model_id, name))
+    return normalize_name('{}.metrics.{}'.format(model_name, name))
 
 
-def get_build_metric_name(model_id):
+def get_build_metric_name(model_name):
     """
     Get build # name on stats server
 
-    :param model_id: model ID
-    :type model_id: str
+    :param model_name: model name
+    :type model_name: str
     :return: str -- build # name on stats server
     """
-    return '{}.metrics.build'.format(model_id)
+    return '{}.metrics.build'.format(model_name)
 
 
 def send_udp(host, port, message):
@@ -135,11 +135,11 @@ def send_tcp(host: str, port: str, messages: typing.List[str]) -> None:
     sock.close()
 
 
-def _send_metrics_remotely(model_id: str, metric: str, value: float):
+def _send_metrics_remotely(model_name: str, metric: str, value: float):
     """
     Send build metric values remotely using statsd format
 
-    :param model_id: model ID
+    :param model_name: model name
     :param metric: metric type or metric name
     :param value: metric value
     :return: None
@@ -147,21 +147,21 @@ def _send_metrics_remotely(model_id: str, metric: str, value: float):
     host, port, namespace = get_metric_endpoint()
     messages: typing.List[str] = []
 
-    message = STATSD_METRIC_FORMAT.format(f'{namespace}.{get_metric_name(metric, model_id)}', float(value))
+    message = STATSD_METRIC_FORMAT.format(f'{namespace}.{get_metric_name(metric, model_name)}', float(value))
     messages.append(message)
 
     build_no = get_build_number()
-    message = STATSD_METRIC_FORMAT.format(f'{namespace}.{get_metric_name("build", model_id)}', build_no)
+    message = STATSD_METRIC_FORMAT.format(f'{namespace}.{get_metric_name("build", model_name)}', build_no)
     messages.append(message)
 
     send_tcp(host, port, messages)
 
 
-def _save_metrics_locally(model_id: str, model_version: str, metric: typing.Union[str, Metric], value: float):
+def _save_metrics_locally(model_name: str, model_version: str, metric: typing.Union[str, Metric], value: float):
     """
     Save metrics locally to a file
 
-    :param model_id: model ID
+    :param model_name: model name
     :param model_version: model version
     :param metric: metric type or metric name
     :param value: metric value
@@ -177,24 +177,25 @@ def _save_metrics_locally(model_id: str, model_version: str, metric: typing.Unio
         with open(metrics_store_path, 'r') as f:
             build_metrics = json.load(f)
 
-    if not build_metrics.get(model_id):
-        build_metrics[model_id] = {}
+    if not build_metrics.get(model_name):
+        build_metrics[model_name] = {}
 
-    if not build_metrics[model_id].get(model_version):
-        build_metrics[model_id][model_version] = {}
+    if not build_metrics[model_name].get(model_version):
+        build_metrics[model_name][model_version] = {}
 
-    build_metrics[model_id][model_version][metric] = value
-    build_metrics[model_id][model_version][MODEL_UPDATED_AT_HEADER] = datetime.now().strftime(MODEL_UPDATED_AT_TEMPLATE)
+    build_metrics[model_name][model_version][metric] = value
+    build_metrics[model_name][model_version][MODEL_UPDATED_AT_HEADER] = \
+        datetime.now().strftime(MODEL_UPDATED_AT_TEMPLATE)
 
     with open(metrics_store_path, 'w') as f:
         json.dump(build_metrics, f)
 
 
-def clear_metric_store(model_id: str, model_version: str):
+def clear_metric_store(model_name: str, model_version: str):
     """
     Clear metrics from local storage
 
-    :param model_id: model ID
+    :param model_name: model name
     :param model_version: model version
     :return: None
     """
@@ -208,23 +209,23 @@ def clear_metric_store(model_id: str, model_version: str):
     with open(metrics_store_path, 'r') as f:
         build_metrics = json.load(f)
 
-    if model_id in build_metrics.items():
-        if model_version in build_metrics[model_id]:
-            del build_metrics[model_id][model_version]
+    if model_name in build_metrics.items():
+        if model_version in build_metrics[model_name]:
+            del build_metrics[model_name][model_version]
 
-        if not build_metrics[model_id]:
-            del build_metrics[model_id]
+        if not build_metrics[model_name]:
+            del build_metrics[model_name]
 
     with open(metrics_store_path, 'w') as f:
         json.dump(build_metrics, f)
 
 
-def show_local_metrics(model_id: typing.Optional[str] = None,
+def show_local_metrics(model_name: typing.Optional[str] = None,
                        model_version: typing.Optional[str] = None) -> pd.DataFrame:
     """
     Show metrics from local store
 
-    :param model_id: (Optional) model ID
+    :param model_name: (Optional) model name
     :param model_version: (Optional) model version
     :return: Metrics which converted to Dataframe
     """
@@ -242,15 +243,15 @@ def show_local_metrics(model_id: typing.Optional[str] = None,
 
     metric_keys = set()
     models = []
-    for md_id, model_versions in build_metrics.items():
-        if model_id and model_id != md_id:
+    for md_name, model_versions in build_metrics.items():
+        if model_name and model_name != md_name:
             continue
 
         for version, metrics in model_versions.items():
             if model_version and model_version != version:
                 continue
 
-            current_model = {MODEL_ID_HEADER: md_id, MODEL_VALUE_HEADER: version}
+            current_model = {MODEL_NAME_HEADER: md_name, MODEL_VALUE_HEADER: version}
             models.append(current_model)
 
             for metric_name, metric_value in metrics.items():
@@ -260,16 +261,16 @@ def show_local_metrics(model_id: typing.Optional[str] = None,
                 current_model[metric_name] = metric_value
 
     metric_keys = list(sorted(metric_keys))
-    table_header = [MODEL_ID_HEADER, MODEL_VALUE_HEADER, MODEL_UPDATED_AT_HEADER] + metric_keys
+    table_header = [MODEL_NAME_HEADER, MODEL_VALUE_HEADER, MODEL_UPDATED_AT_HEADER] + metric_keys
     return pd.DataFrame([[model.get(name) for name in table_header] for model in models],
                         columns=table_header)
 
 
-def send_metric(model_id: str, model_version: str, metric: typing.Union[str, Metric], value: float):
+def send_metric(model_name: str, model_version: str, metric: typing.Union[str, Metric], value: float):
     """
     Send build metric value
 
-    :param model_id: model ID
+    :param model_name: model name
     :param model_version: model version
     :param metric: metric type or metric name
     :param value: metric value
@@ -277,6 +278,6 @@ def send_metric(model_id: str, model_version: str, metric: typing.Union[str, Met
     """
     metric = metric.value if isinstance(metric, Metric) else str(metric)
     if not config.MODEL_CLUSTER_TRAIN_METRICS_ENABLED:
-        _save_metrics_locally(model_id, model_version, metric, value)
+        _save_metrics_locally(model_name, model_version, metric, value)
     else:
-        _send_metrics_remotely(model_id, metric, value)
+        _send_metrics_remotely(model_name, metric, value)

@@ -39,20 +39,6 @@ var doc = `{
                     "ModelDeployment"
                 ],
                 "summary": "Get list of Model deployments",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "model id label",
-                        "name": "com.epam.legion.model.id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "model version label",
-                        "name": "com.epam.legion.model.version",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -173,20 +159,6 @@ var doc = `{
                     "ModelDeployment"
                 ],
                 "summary": "Delete list of Model deployments by labels",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "model id label",
-                        "name": "com.epam.legion.model.id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "model version label",
-                        "name": "com.epam.legion.model.version",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -297,9 +269,30 @@ var doc = `{
                 }
             }
         },
-        "/api/v1/model/deployment/{name}/scale": {
-            "put": {
-                "description": "Scale a Model deployment. Result is updated Model deployment.",
+        "/api/v1/model/jwks": {
+            "get": {
+                "description": "Retrieve model jwks for model services",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "JWT"
+                ],
+                "summary": "Retrieve model jwks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.Jwks"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/route": {
+            "get": {
+                "description": "Get list of Model routes",
                 "consumes": [
                     "application/json"
                 ],
@@ -307,23 +300,180 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ModelDeployment"
+                    "ModelRoute"
                 ],
-                "summary": "Scale a Model deployment",
+                "summary": "Get list of Model routes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.MRResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a Model route. Result is updated Model route.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelRoute"
+                ],
+                "summary": "Update a Model route",
                 "parameters": [
                     {
-                        "description": "Scale a Model deployment",
-                        "name": "md",
+                        "description": "Update a Model route",
+                        "name": "mr",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/v1.MDReplicas"
+                            "$ref": "#/definitions/v1.MDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a Model route. Result is created Model route.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelRoute"
+                ],
+                "summary": "Create a Model route",
+                "parameters": [
+                    {
+                        "description": "Create a Model route",
+                        "name": "mr",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MRRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/model/route/{name}": {
+            "get": {
+                "description": "Get a Model route by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelRoute"
+                ],
+                "summary": "Get a Model route",
+                "parameters": [
                     {
                         "type": "string",
-                        "description": "Name of Model Deployment",
+                        "description": "Model route name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/v1.MRResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.HTTPResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Model route by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ModelRoute"
+                ],
+                "summary": "Delete a Model route",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Model route name",
                         "name": "name",
                         "in": "path",
                         "required": true
@@ -364,7 +514,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Token"
+                    "JWT"
                 ],
                 "summary": "Create a model JWT token",
                 "parameters": [
@@ -410,20 +560,6 @@ var doc = `{
                     "ModelTraining"
                 ],
                 "summary": "Get list of Model Trainings",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "model id label",
-                        "name": "com.epam.legion.model.id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "model version label",
-                        "name": "com.epam.legion.model.version",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -544,20 +680,6 @@ var doc = `{
                     "ModelTraining"
                 ],
                 "summary": "Delete list of Model Trainings by labels",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "model id label",
-                        "name": "com.epam.legion.model.id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "model version label",
-                        "name": "com.epam.legion.model.version",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -937,12 +1059,14 @@ var doc = `{
                 }
             }
         },
-        "v1.MDReplicas": {
+        "v1.Jwks": {
             "type": "object",
             "properties": {
-                "replicas": {
-                    "description": "New number of replicas",
-                    "type": "integer"
+                "keys": {
+                    "type": "array",
+                    "items": {
+                        "type": "\u0026{%!s(token.Pos=1395) string string}"
+                    }
                 }
             }
         },
@@ -976,6 +1100,39 @@ var doc = `{
                     "description": "Model Deployment specification. It is the same as ModelDeployment CRD specification",
                     "type": "object",
                     "$ref": "#/definitions/v1alpha1.ModelDeploymentStatus"
+                }
+            }
+        },
+        "v1.MRRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Model route name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "Model Route specification. It is the same as ModelRoute CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelRouteSpec"
+                }
+            }
+        },
+        "v1.MRResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Model route name",
+                    "type": "string"
+                },
+                "spec": {
+                    "description": "Model Route specification. It is the same as ModelRoute CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelRouteSpec"
+                },
+                "status": {
+                    "description": "Model Route specification. It is the same as ModelRoute CRD specification",
+                    "type": "object",
+                    "$ref": "#/definitions/v1alpha1.ModelRouteStatus"
                 }
             }
         },
@@ -1019,12 +1176,8 @@ var doc = `{
                     "description": "Explicitly set expiration date for token",
                     "type": "string"
                 },
-                "model_id": {
-                    "description": "Model id",
-                    "type": "string"
-                },
-                "model_version": {
-                    "description": "Model version",
+                "role_name": {
+                    "description": "Model Deployment name",
                     "type": "string"
                 }
             }
@@ -1066,16 +1219,24 @@ var doc = `{
                     "description": "Initial delay for liveness probe of model pod",
                     "type": "integer"
                 },
+                "maxReplicas": {
+                    "description": "Maximum number of pods for model. By default the max replicas parameter equals 1.",
+                    "type": "integer"
+                },
+                "minReplicas": {
+                    "description": "Minimum number of pods for model. By default the min replicas parameter equals 0.",
+                    "type": "integer"
+                },
                 "readinessProbeInitialDelay": {
                     "description": "Initial delay for readiness probe of model pod",
                     "type": "integer"
                 },
-                "replicas": {
-                    "description": "Number of pods for model. By default the replicas parameter equals 1.",
-                    "type": "integer"
-                },
                 "resources": {
                     "description": "Resources for model deployment\nThe same format like k8s uses for pod resources.",
+                    "type": "string"
+                },
+                "roleName": {
+                    "description": "Initial delay for readiness probe of model pod",
                     "type": "string"
                 }
             }
@@ -1091,9 +1252,13 @@ var doc = `{
                     "description": "The model k8s deployment name",
                     "type": "string"
                 },
-                "message": {
-                    "description": "The message describes the state in more details.",
+                "lastRevisionName": {
+                    "description": "Last applied ready knative revision",
                     "type": "string"
+                },
+                "replicas": {
+                    "description": "Current number of pods",
+                    "type": "integer"
                 },
                 "service": {
                     "description": "The model k8s service name",
@@ -1104,7 +1269,53 @@ var doc = `{
                     "type": "string"
                 },
                 "state": {
-                    "description": "The state of a model deployment.\n  \"DeploymentFailed\" - A model was not deployed. Because some parameters of the\n                       custom resource are wrong. For example, there is not a model\n                       image in a Docker registry.\n  \"DeploymentCreated\" - A model was deployed successfully.",
+                    "description": "The state of a model deployment.\n  \"Processing\" - A model was not deployed. Because some parameters of the\n                 custom resource are wrong. For example, there is not a model\n                 image in a Docker registry.\n  \"Ready\" - A model was deployed successfully.",
+                    "type": "string"
+                }
+            }
+        },
+        "v1alpha1.ModelDeploymentTarget": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Model Deployment name",
+                    "type": "string"
+                },
+                "weight": {
+                    "description": "The proportion of traffic to be forwarded to the Model Deployment.",
+                    "type": "integer"
+                }
+            }
+        },
+        "v1alpha1.ModelRouteSpec": {
+            "type": "object",
+            "properties": {
+                "mirror": {
+                    "description": "Mirror HTTP traffic to a another Model deployment in addition to forwarding\nthe requests to the model deployments.",
+                    "type": "string"
+                },
+                "modelDeployments": {
+                    "description": "A http rule can forward traffic to Model Deployments.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1alpha1.ModelDeploymentTarget"
+                    }
+                },
+                "urlPrefix": {
+                    "description": "Url prefix for model deployment. For example: /custom/test\nPrefix must start with slash\n\"/feedback\" and \"/model\" are reserved for internal usage",
+                    "type": "string"
+                }
+            }
+        },
+        "v1alpha1.ModelRouteStatus": {
+            "type": "object",
+            "properties": {
+                "edgeUrl": {
+                    "description": "Full url with prefix to a model deployment service",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "State of Model Route",
                     "type": "string"
                 }
             }
@@ -1169,13 +1380,16 @@ var doc = `{
                 "exitCode": {
                     "type": "integer"
                 },
-                "id": {
-                    "type": "string"
-                },
                 "message": {
                     "type": "string"
                 },
                 "modelImage": {
+                    "type": "string"
+                },
+                "modelName": {
+                    "type": "string"
+                },
+                "modelVersion": {
                     "type": "string"
                 },
                 "podName": {
@@ -1186,9 +1400,6 @@ var doc = `{
                 },
                 "state": {
                     "description": "+kubebuilder:validation:Enum=scheduling,fetching-code,running,capturing,succeeded,failed,unknown",
-                    "type": "string"
-                },
-                "version": {
                     "type": "string"
                 }
             }

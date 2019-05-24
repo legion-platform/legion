@@ -46,7 +46,6 @@ func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConf
 	routeGroup.POST(createModelDeploymentUrl, mdController.createMD)
 	routeGroup.PUT(updateModelDeploymentUrl, mdController.updateMD)
 	routeGroup.DELETE(deleteModelDeploymentUrl, mdController.deleteMD)
-	routeGroup.PUT(scaleModelDeploymentUrl, mdController.scaleMD)
 	routeGroup.DELETE(deleteModelDeploymentByLabelsUrl, mdController.deleteMDByLabels)
 
 	// ModelTraining
@@ -65,6 +64,18 @@ func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConf
 
 	// Token
 	routeGroup.POST(createModelJwt, generateToken)
+	routeGroup.GET(getJwks, jwks)
+
+	// ModelRoute
+	mrController := ModelRouteController{
+		k8sClient: k8sClient,
+		namespace: viper.GetString(legion.Namespace),
+	}
+	routeGroup.GET(getModelRouteUrl, mrController.getMR)
+	routeGroup.GET(getAllModelRouteUrl, mrController.getAllMR)
+	routeGroup.POST(createModelRouteUrl, mrController.createMR)
+	routeGroup.PUT(updateModelRouteUrl, mrController.updateMR)
+	routeGroup.DELETE(deleteModelRouteUrl, mrController.deleteMR)
 }
 
 // Pass through k8s error

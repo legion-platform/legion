@@ -5,8 +5,7 @@ metadata:
   creationTimestamp: null
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "legion-operator"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
 rules:
 - apiGroups:
   - apps
@@ -26,28 +25,12 @@ rules:
   - deployments/status
   verbs:
   - get
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
   - list
   - watch
   - create
   - update
   - patch
   - delete
-- apiGroups:
-  - ""
-  resources:
-  - services/status
-  verbs:
-  - get
-  - update
-  - patch
 - apiGroups:
   - legion.legion-platform.org
   resources:
@@ -66,8 +49,36 @@ rules:
   - modeldeployments/status
   verbs:
   - get
+  - list
+  - watch
+  - create
   - update
   - patch
+  - delete
+- apiGroups:
+  - serving.knative.dev
+  resources:
+  - configurations
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - envoyfilters
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - ""
   resources:
@@ -75,6 +86,42 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - modelroutes
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - modelroutes/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - virtualservices
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - ""
   resources:

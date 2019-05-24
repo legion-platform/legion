@@ -233,7 +233,7 @@ class TestLocalRun(unittest2.TestCase):
                         'use_df': False,
                     }
                 },
-                'model_id': 'test-math',
+                'model_name': 'test-math',
                 'model_version': '1.0'
             }, 'invalid model information')
 

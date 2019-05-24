@@ -30,31 +30,34 @@ type ModelDeploymentSpec struct {
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Annotations for model pods.
 	Annotations map[string]string `json:"annotations,omitempty"`
-	// Number of pods for model. By default the replicas parameter equals 1.
-	Replicas *int32 `json:"replicas,omitempty"`
+	// Minimum number of pods for model. By default the min replicas parameter equals 0.
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// Maximum number of pods for model. By default the max replicas parameter equals 1.
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// Initial delay for liveness probe of model pod
 	LivenessProbeInitialDelay *int32 `json:"livenessProbeInitialDelay,omitempty"`
 	// Initial delay for readiness probe of model pod
 	ReadinessProbeInitialDelay *int32 `json:"readinessProbeInitialDelay,omitempty"`
+	// Initial delay for readiness probe of model pod
+	RoleName *string `json:"roleName,omitempty"`
 }
 
 type ModelDeploymentState string
 
 const (
-	ModelDeploymentFailed  ModelDeploymentState = "DeploymentFailed"
-	ModelDeploymentCreated ModelDeploymentState = "DeploymentCreated"
+	ModelDeploymentStateProcessing ModelDeploymentState = "Processing"
+	ModelDeploymentStateReady      ModelDeploymentState = "Ready"
+	ModelDeploymentStateFailed     ModelDeploymentState = "Failed"
 )
 
 // ModelDeploymentStatus defines the observed state of ModelDeployment
 type ModelDeploymentStatus struct {
 	// The state of a model deployment.
-	//   "DeploymentFailed" - A model was not deployed. Because some parameters of the
-	//                        custom resource are wrong. For example, there is not a model
-	//                        image in a Docker registry.
-	//   "DeploymentCreated" - A model was deployed successfully.
+	//   "Processing" - A model was not deployed. Because some parameters of the
+	//                  custom resource are wrong. For example, there is not a model
+	//                  image in a Docker registry.
+	//   "Ready" - A model was deployed successfully.
 	State ModelDeploymentState `json:"state,omitempty"`
-	// The message describes the state in more details.
-	Message string `json:"message,omitempty"`
 	// The model k8s deployment name
 	Deployment string `json:"deployment,omitempty"`
 	// The model k8s service name
@@ -63,6 +66,10 @@ type ModelDeploymentStatus struct {
 	ServiceURL string `json:"serviceURL,omitempty"`
 	// Number of available pods
 	AvailableReplicas int32 `json:"availableReplicas,omitempty"`
+	// Current number of pods
+	Replicas int32 `json:"replicas,omitempty"`
+	// Last applied ready knative revision
+	LastRevisionName string `json:"lastRevisionName,omitempty"`
 }
 
 // +genclient

@@ -39,10 +39,28 @@ ZIP_FILE_MODEL = 'model'
 ZIP_FILE_INFO = 'manifest.json'
 ZIP_FILE_CALLBACK = 'callback'
 
-PROPERTY_MODEL_ID = 'model.id'
+PROPERTY_MODEL_NAME = 'model.name'
 PROPERTY_MODEL_VERSION = 'model.version'
 PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
 PROPERTY_TRAINING_WORKING_DIRECTORY = 'model.trainWorkDir'
+
+
+def load_image(path):
+    """
+    Load image for model
+
+    :param path: path to local image
+    :type path: str
+    :return: bytes -- image content
+    """
+    from PIL import Image as PYTHON_Image
+
+    with PYTHON_Image.open(path) as image:
+        if not isinstance(image, PYTHON_Image.Image):
+            raise Exception('Invalid image type')
+
+        with open(path, 'rb') as stream:
+            return stream.read()
 
 
 class ModelEndpoint:
@@ -169,19 +187,19 @@ class ModelEndpoint:
 class Model(ModelMeta):
     NAME = 'pymodel'
 
-    def __init__(self, model_id: str = None, model_version: str = None):
+    def __init__(self, model_name: str = None, model_version: str = None):
         """
         Build empty model container
 
-        :param model_id: model ID
+        :param model_name: model name
         :param model_version: model version
         """
-        super().__init__(model_id, model_version)
+        super().__init__(model_name, model_version)
 
         self._endpoints = {}  # type: dict or None
         self._path = None  # type: str or None
 
-        send_header_to_stderr(headers.MODEL_ID, self.model_id)
+        send_header_to_stderr(headers.MODEL_NAME, self.model_name)
         send_header_to_stderr(headers.MODEL_VERSION, self.model_version)
 
     def _load_from_archive(self, path):
@@ -219,10 +237,10 @@ class Model(ModelMeta):
             with open(manifest_path, 'r') as manifest_file:
                 manifest_data = json.load(manifest_file)
 
-                model_id = manifest_data[PROPERTY_MODEL_ID]
+                model_name = manifest_data[PROPERTY_MODEL_NAME]
                 model_version = manifest_data[PROPERTY_MODEL_VERSION]
 
-        instance = Model(model_id, model_version)
+        instance = Model(model_name, model_version)
         instance._load_from_archive(path)
 
         return instance
@@ -261,7 +279,7 @@ class Model(ModelMeta):
         :return: dict[str, any] -- model description
         """
         return {
-            'model_id': self.model_id,
+            'model_name': self.model_name,
             'model_version': self.model_version,
             'endpoints': {ep.name: ep.description for ep in self.endpoints.values()}
         }
@@ -299,8 +317,8 @@ class Model(ModelMeta):
         meta_information_to_save = self._meta_information.copy()
         meta_information_to_save.update(self._collect_build_info())
 
-        # Add model id, model version, model endpoint
-        meta_information_to_save[PROPERTY_MODEL_ID] = self.model_id
+        # Add model name, model version, model endpoint
+        meta_information_to_save[PROPERTY_MODEL_NAME] = self.model_name
         meta_information_to_save[PROPERTY_MODEL_VERSION] = self.model_version
         meta_information_to_save[PROPERTY_ENDPOINT_NAMES] = list(self._endpoints.keys())
         meta_information_to_save[PROPERTY_TRAINING_WORKING_DIRECTORY] = os.getcwd()
@@ -314,9 +332,9 @@ class Model(ModelMeta):
                 LOGGER.debug('Got target file name from ENV: {!r}'.format(file_name_from_env))
                 self._path = file_name_from_env
             else:
-                LOGGER.debug('Deducing target file name for model id={!r} version={!r}'
-                             .format(self.model_id, self.model_version))
-                self._path = deduce_model_file_name(self.model_id, self.model_version)
+                LOGGER.debug('Deducing target file name for model name={!r} version={!r}'
+                             .format(self.model_name, self.model_version))
+                self._path = deduce_model_file_name(self.model_name, self.model_version)
 
         LOGGER.info('Saving model to {}'.format(self._path))
 
@@ -474,4 +492,4 @@ class Model(ModelMeta):
         :type value: float or int
         :return: None
         """
-        return metrics.send_metric(self.model_id, self.model_version, metric, value)
+        return metrics.send_metric(self.model_name, self.model_version, metric, value)

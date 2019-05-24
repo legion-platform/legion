@@ -173,14 +173,14 @@ func (mb *ModelBuilder) buildModel(model legion.Model) (err error) {
 		return err
 	}
 
-	localImageTag := fmt.Sprintf("legion_ci_%s_%s_%d", model.ID, model.Version, rand.Int())
+	localImageTag := fmt.Sprintf("legion_ci_%s_%s_%d", model.Name, model.Version, rand.Int())
 	externalImageTag := legion.BuildModelImageName(viper.GetString(legion.DockerRegistry), viper.GetString(legion.ImagePrefix),
-		model.ID, model.Version)
+		model.Name, model.Version)
 
 	// It's a hack to return the model information
 	err = mb.updateAnnotations(map[string]string{
 		legion.ModelImageKey:   externalImageTag,
-		legion.ModelIDKey:      model.ID,
+		legion.ModelNameKey:    model.Name,
 		legion.ModelVersionKey: model.Version,
 	})
 	if err != nil {

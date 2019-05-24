@@ -4,8 +4,7 @@ kind: ServiceMonitor
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
-    component: "legion-edi"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 4 }}
     {{- range $key, $value := .Values.metrics.serviceMonitoringLabels }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
@@ -19,6 +18,5 @@ spec:
     - "{{ .Release.Namespace }}"
   selector:
     matchLabels:
-      component: "legion-edi"
-      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
+      {{- include "legion.helm-labels-for-search" (dict "component" "edi" "root" .) | nindent 6 }}
 {{- end }}

@@ -35,7 +35,7 @@ from legion.sdk.clients.training import build_client, ModelTraining, ModelTraini
 DEFAULT_WIDTH = 240
 DEFAULT_WAIT_TIMEOUT = 1
 MT_HEADER = ["Name", "State", "Toolchain Type", "Entrypoint", "Arguments", "VCS Credential", "Reference",
-             "Model ID", "Model Version", "Trained Docker image"]
+             "Model Name", "Model Version", "Trained Docker image"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def get(args: argparse.Namespace):
         mt.args,
         mt.vcs_name,
         mt.reference,
-        mt.model_id,
+        mt.model_name,
         mt.model_version,
         mt.trained_image
     ] for mt in mt_credentials])
@@ -149,8 +149,14 @@ def delete(args: argparse.Namespace):
     else:
         mt_name = args.name
 
-    message = mt_client.delete(mt_name)
-    print(message)
+    try:
+        message = mt_client.delete(mt_name)
+        print(message)
+    except WrongHttpStatusCode as e:
+        if e.status_code != 404 or not args.ignore_not_found:
+            raise e
+
+        print(f'Model deployment {mt_name} was not found. Ignore')
 
 
 def wait_training_finish(args: argparse.Namespace, mt_name: str, mt_client: ModelTrainingClient):
@@ -242,6 +248,8 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_delete_parser = mt_subparser.add_parser('delete', description='Get all ModelTrainings')
     mt_delete_parser.add_argument('name', nargs='?', type=str, help='Model Training name', default="")
     mt_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Training')
+    mt_delete_parser.add_argument('--ignore-not-found', action='store_true',
+                                  help='ignore if Model Deployment is not found')
     security.add_edi_arguments(mt_delete_parser)
     mt_delete_parser.set_defaults(func=delete)
 

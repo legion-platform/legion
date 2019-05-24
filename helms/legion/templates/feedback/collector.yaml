@@ -1,0 +1,173 @@
+{{ if .Values.feedback.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-feedback-collector-patch"
+  namespace: "{{ .Values.feedback.istio_namespace}}"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-collector" "root" .) | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+data:
+    patch.yaml: |-
+        spec:
+          template:
+            spec:
+              containers:
+                - name: collector
+                  image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.collector "tpl" "%sk8s-feedback-collector:%s") }}"
+                  env:
+                      - name: GIN_MODE
+                        value: "release"
+                  command:
+                      - ./collector
+                  args:
+                      - "--fluentd-host"
+                      - "{{ .Release.Name }}-fluentd.{{ .Release.Namespace }}.svc.cluster.local"
+                      - "--fluentd-port"
+                      - "24224"
+                  ports:
+                      - containerPort: 7777
+                        name: api
+                        protocol: TCP
+                  livenessProbe:
+                      httpGet:
+                          path: /metrics
+                          port: 7777
+                      initialDelaySeconds: 10
+                      timeoutSeconds: 8
+                      failureThreshold: 5
+                      periodSeconds: 10
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: "{{ .Release.Name }}-feedback-collector-patcher"
+  namespace: "{{ .Values.feedback.istio_namespace }}"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-collector-patcher" "root" .) | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+    - apps
+    resources:
+      - deployments/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+        - extensions
+    resources:
+        - deployments
+    verbs:
+        - get
+        - list
+        - watch
+        - create
+        - update
+        - patch
+        - delete
+  - apiGroups:
+        - extensions
+    resources:
+        - deployments/status
+    verbs:
+        - get
+        - list
+        - watch
+        - create
+        - update
+        - patch
+        - delete
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "{{ .Release.Name }}-feedback-collector-patcher"
+  namespace: "{{ .Values.feedback.istio_namespace }}"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-collector-patcher" "root" .) | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: "{{ .Release.Name }}-feedback-collector-patcher"
+    namespace: "{{ .Values.feedback.istio_namespace }}"
+roleRef:
+  kind: Role
+  name: "{{ .Release.Name }}-feedback-collector-patcher"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-feedback-collector-patcher"
+  namespace: "{{ .Values.feedback.istio_namespace }}"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  labels:
+      {{- include "legion.helm-labels" (dict "component" "feedback-collector-patcher" "root" .) | nindent 4 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{.Release.Name}}-feedback-collector-patcher"
+  namespace: "{{ .Values.feedback.istio_namespace }}"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-collector-patcher" "root" .) | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 4
+  template:
+    metadata:
+      name: "{{.Release.Name}}-feedback-collector-patcher"
+      labels:
+        {{- include "legion.helm-labels" (dict "component" "feedback-collector-patcher" "root" .) | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: "{{ .Release.Name }}-feedback-collector-patcher"
+      volumes:
+        - name: patch
+          configMap:
+            name: "{{ .Release.Name }}-feedback-collector-patch"
+      containers:
+        - name: post-install-job
+          image: "bitnami/kubectl:1.13.4-ol-7-r134"
+          volumeMounts:
+              - mountPath: /etc/legion
+                name: patch
+          command:
+            - "/bin/bash"
+          args:
+            - "-c"
+            - 'kubectl -n {{ .Values.feedback.istio_namespace}} patch deployments. istio-ingressgateway --patch "$(cat /etc/legion/patch.yaml)"'
+{{- end }}

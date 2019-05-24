@@ -132,22 +132,13 @@ class DeploymentCreateRequest(BaseModel):
         )
 
 
-class ScaleRequest(BaseModel):
-    """
-    Request to scale deployment
-    """
-
-    name: str
-    newScale: int
-
-
 class IssueTokenRequest(BaseModel):
     """
     Request to issue new model API token
     """
 
-    model_id: str
-    model_version: str
+    # Model deployment name
+    md_name: str
 
 
 class ApplyFromFileRequest(BaseModel):

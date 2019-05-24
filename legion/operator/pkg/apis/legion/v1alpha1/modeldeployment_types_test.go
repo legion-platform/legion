@@ -25,34 +25,148 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const (
+	mdImage    = "test:image"
+	mdNewImage = "test:new_image"
+	mdName     = "foo"
+)
+
 func TestStorageModelDeployment(t *testing.T) {
-	key := types.NamespacedName{
-		Name:      "foo",
-		Namespace: "default",
+	g := NewGomegaWithT(t)
+
+	mdKey := types.NamespacedName{
+		Name:      mdName,
+		Namespace: testNamespace,
 	}
 	created := &ModelDeployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		}}
-	g := NewGomegaWithT(t)
+			Name:      mdName,
+			Namespace: testNamespace,
+		},
+		Spec: ModelDeploymentSpec{
+			Image: mdImage,
+		},
+	}
 
-	// Test Create
-	fetched := &ModelDeployment{}
+	g.Expect(created.DeepCopy().ValidatesAndSetDefaults()).NotTo(HaveOccurred())
 	g.Expect(c.Create(context.TODO(), created)).NotTo(HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(HaveOccurred())
+	fetched := &ModelDeployment{}
+	g.Expect(c.Get(context.TODO(), mdKey, fetched)).NotTo(HaveOccurred())
 	g.Expect(fetched).To(Equal(created))
 
-	// Test Updating the Labels
 	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
+	updated.Spec.Image = mdNewImage
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(HaveOccurred())
+	g.Expect(c.Get(context.TODO(), mdKey, fetched)).NotTo(HaveOccurred())
 	g.Expect(fetched).To(Equal(updated))
+	g.Expect(fetched.Spec.Image).To(Equal(mdNewImage))
 
-	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(HaveOccurred())
-	g.Expect(c.Get(context.TODO(), key, fetched)).To(HaveOccurred())
+	g.Expect(c.Get(context.TODO(), mdKey, fetched)).To(HaveOccurred())
+}
+
+func TestMDDefaultValues(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{},
+	}
+	_ = md.ValidatesAndSetDefaults()
+
+	g.Expect(*md.Spec.MinReplicas).To(Equal(mdDefaultMinimumReplicas))
+	g.Expect(*md.Spec.MaxReplicas).To(Equal(mdDefaultMaximumReplicas))
+	g.Expect(*md.Spec.Resources).To(Equal(*mdDefaultResources))
+	g.Expect(*md.Spec.ReadinessProbeInitialDelay).To(Equal(mdDefaultReadinessProbeInitialDelay))
+	g.Expect(*md.Spec.LivenessProbeInitialDelay).To(Equal(mdDefaultLivenessProbeInitialDelay))
+}
+
+func TestValidateMinimumReplicas(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	minReplicas := int32(-1)
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{
+			MinReplicas: &minReplicas,
+		},
+	}
+
+	err := md.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(mdMinReplicasErrorMessage))
+}
+
+func TestValidateMaximumReplicas(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	maxReplicas := int32(-1)
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{
+			MaxReplicas: &maxReplicas,
+		},
+	}
+
+	err := md.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(mdMaxReplicasErrorMessage))
+}
+
+func TestValidateMinLessMaxReplicas(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	minReplicas := int32(2)
+	maxReplicas := int32(1)
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{
+			MinReplicas: &minReplicas,
+			MaxReplicas: &maxReplicas,
+		},
+	}
+
+	err := md.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(mdMinMoreThanMinReplicasErrorMessage))
+}
+
+func TestValidateImage(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{},
+	}
+
+	err := md.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(mdEmptyImageErrorMessage))
+}
+
+func TestValidateReadinessProbe(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	readinessProbe := int32(-1)
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{
+			ReadinessProbeInitialDelay: &readinessProbe,
+		},
+	}
+
+	err := md.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(mdReadinessProbeErrorMessage))
+}
+
+func TestValidateLivenessProbe(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	livenessProbe := int32(-1)
+	md := ModelDeployment{
+		Spec: ModelDeploymentSpec{
+			LivenessProbeInitialDelay: &livenessProbe,
+		},
+	}
+
+	err := md.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(mdLivenessProbeErrorMessage))
 }

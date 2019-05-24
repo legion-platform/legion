@@ -1,0 +1,15 @@
+{
+    "kind": "ModelRoute",
+    "metadata": {
+        "name": "stub-rote65"
+    },
+    "spec": {
+        "modelDeployments": [
+            {
+                "name": "stub-model-6-5-1",
+                "weight": 100
+            }
+        ],
+        "urlPrefix": "/test6-5/url/original"
+    }
+}

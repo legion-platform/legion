@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
   labels:
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
     controller-tools.k8s.io: "1.0"
   name: modeltrainings.legion.legion-platform.org
   annotations:
@@ -19,11 +19,11 @@ spec:
   - JSONPath: .spec.vcsName
     name: VCS name
     type: string
-  - JSONPath: .status.id
-    name: ID
+  - JSONPath: .status.modelName
+    name: Model name
     type: string
-  - JSONPath: .status.version
-    name: Version
+  - JSONPath: .status.modelVersion
+    name: Model version
     type: string
   - JSONPath: .status.modelImage
     name: Model image
@@ -104,11 +104,13 @@ spec:
             exitCode:
               format: int32
               type: integer
-            id:
-              type: string
             message:
               type: string
             modelImage:
+              type: string
+            modelName:
+              type: string
+            modelVersion:
               type: string
             podName:
               type: string
@@ -123,8 +125,6 @@ spec:
               - succeeded
               - failed
               - unknown
-              type: string
-            version:
               type: string
           type: object
   version: v1alpha1

@@ -40,7 +40,6 @@ func SetUpIndexPage(server *gin.Engine) {
 	server.GET("/", func(c *gin.Context) {
 		token, err := c.Cookie(authCookieName)
 		if err != nil {
-			logIndex.Error(err, "Token extraction")
 			token = ""
 		}
 

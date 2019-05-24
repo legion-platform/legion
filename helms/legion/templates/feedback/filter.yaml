@@ -1,0 +1,23 @@
+{{ if .Values.feedback.enabled -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: "{{ .Release.Name }}-feedback"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-aggregator" "root" .) | nindent 4 }}
+  namespace: istio-system
+spec:
+  workloadLabels:
+    app: istio-ingressgateway
+  filters:
+    - listenerMatch:
+        portNumber: 80
+        listenerType: GATEWAY
+        listenerProtocol: HTTP
+      filterName: envoy.filters.http.tap
+      filterType: HTTP
+      filterConfig:
+        common_config:
+          admin_config:
+            config_id: legion_feedback
+{{- end }}

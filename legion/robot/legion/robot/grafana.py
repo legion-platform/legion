@@ -98,37 +98,37 @@ class GrafanaClient:
         """
         self._query('/api/dashboards/%s' % dashboard_uri, action='DELETE')
 
-    def remove_dashboard_for_model(self, model_id):
+    def remove_dashboard_for_model(self, model_name):
         """
         Remove model's dashboard
 
-        :param model_id: model id
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :return: None
         """
-        if self.is_dashboard_exists(model_id):
-            dashboard = self.get_model_dashboard(model_id)
+        if self.is_dashboard_exists(model_name):
+            dashboard = self.get_model_dashboard(model_name)
             self.delete_dashboard(dashboard['uri'])
 
-    def is_dashboard_exists(self, model_id):
+    def is_dashboard_exists(self, model_name):
         """
         Check if model's dashboard exists
 
-        :param model_id: model id
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :return: bool -- is dashboard exists
         """
-        return self.get_model_dashboard(model_id) is not None
+        return self.get_model_dashboard(model_name) is not None
 
-    def get_model_dashboard(self, model_id):
+    def get_model_dashboard(self, model_name):
         """
         Search for model's dashboard
 
-        :param model_id: model id
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :return: dict with dashboard information or None
         """
-        data = self._query('/api/search/?tag=model_%s' % model_id)
+        data = self._query('/api/search/?tag=model_%s' % model_name)
         if not data:
             return None
 

@@ -36,7 +36,7 @@
       "LC_ALL=en_US.UTF-8",
       "LANG=en_US.UTF-8",
       "LANGUAGE=en_US.UTF-8",
-      "MODEL_ID=test-math",
+      "MODEL_NAME=test-math",
       "VERBOSE=true",
       "MODEL_PORT=5000"
     ],
@@ -63,13 +63,13 @@
       "com.epam.jenkins.node_name": "None",
       "com.epam.legion.class": "pyserve",
       "com.epam.legion.container_type": "model",
-      "com.epam.legion.model.id": "test-math",
+      "com.epam.legion.model.name": "test-math",
       "com.epam.legion.model.property_values": "{}",
       "com.epam.legion.model.version": "1.1",
       "com.epam.legion.version": "0.10.0",
       "com.epam.mode.properties_callback_exists": "True",
       "com.epam.model.endpoints": "sum, mul",
-      "com.epam.model.id": "test-math",
+      "com.epam.model.name": "test-math",
       "com.epam.model.required_properties": "",
       "com.epam.model.version": "1.1"
     }
@@ -104,7 +104,7 @@
       "LC_ALL=en_US.UTF-8",
       "LANG=en_US.UTF-8",
       "LANGUAGE=en_US.UTF-8",
-      "MODEL_ID=test-math",
+      "MODEL_NAME=test-math",
       "VERBOSE=true",
       "MODEL_PORT=5000"
     ],
@@ -131,13 +131,13 @@
       "com.epam.jenkins.node_name": "None",
       "com.epam.legion.class": "pyserve",
       "com.epam.legion.container_type": "model",
-      "com.epam.legion.model.id": "test-math",
+      "com.epam.legion.model.name": "test-math",
       "com.epam.legion.model.property_values": "{}",
       "com.epam.legion.model.version": "1.1",
       "com.epam.legion.version": "0.10.0",
       "com.epam.mode.properties_callback_exists": "True",
       "com.epam.model.endpoints": "sum, mul",
-      "com.epam.model.id": "test-math",
+      "com.epam.model.name": "test-math",
       "com.epam.model.required_properties": "",
       "com.epam.model.version": "1.1"
     }

@@ -30,6 +30,7 @@ VCS_HEADER = ["Name", "Type", "URI", "Default Reference", "Credential", "Public 
 
 LOGGER = logging.getLogger(__name__)
 
+DEFAULT_WIDTH = 120
 INSPECT_FORMAT_COLORIZED = 'colorized'
 INSPECT_FORMAT_TABULAR = 'column'
 VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
@@ -63,7 +64,7 @@ def get(args: argparse.Namespace):
 
     vcs_credentials = [vcs_client.get(args.name)] if args.name else vcs_client.get_all()
 
-    table = Texttable()
+    table = Texttable(max_width=DEFAULT_WIDTH)
     table.set_cols_align("c" * len(VCS_HEADER))
     table.set_cols_valign("t" * len(VCS_HEADER))
     table.add_rows([VCS_HEADER] + [[

@@ -1,4 +1,5 @@
 #
+#
 #    Copyright 2017 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +16,22 @@
 #
 import os
 
+from legion.sdk import config
 from legion.sdk.clients import edi, model
-from legion.sdk.clients.model import load_image
+from legion.toolchain.pymodel.model import load_image
 from locust import HttpLocust, task, TaskSet
-from requests.exceptions import RequestException
 
 
 class ModelTaskSet(TaskSet):
     @task()
     def invoke_nine_decode(self):
-        image = load_image(os.path.join('files', 'nine.png'))
-        self._model_client.invoke(image=image)
+        self._model_client.invoke(image=self._image)
 
     def on_start(self):
-        self._model_client = model.ModelClient('recognize_digits', '1.0',
-                                               token=edi.build_client().get_token('recognize_digits', '1.0'),
-                                               use_relative_url=True, http_client=self.client,
-                                               http_exception=RequestException)
+        self._model_client = model.ModelClient(model.calculate_url_from_config(),
+                                               token=edi.build_client().get_token(config.MODEL_DEPLOYMENT_NAME),
+                                               http_client=self.client)
+        self._image = load_image(os.path.join('performance', 'files', 'nine.png'))
 
 
 class TestLocust(HttpLocust):

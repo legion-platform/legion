@@ -22,11 +22,14 @@ Arguments:
     - . - root HELM scope
 */}}
 {{- define "legion.helm-labels" -}}
-app.kubernetes.io/instance: {{ .Release.Name | quote }}
-app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+app.kubernetes.io/component: {{ .component | quote }}
+app.kubernetes.io/version: "{{ include "legion.application-version" .root }}"
+app: {{ .component | quote }}
+version: "{{ include "legion.application-version" .root }}"
+app.kubernetes.io/instance: {{ .root.Release.Name | quote }}
+app.kubernetes.io/managed-by: {{ .root.Release.Service | quote }}
 app.kubernetes.io/name: "legion"
-helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-app.kubernetes.io/version: "{{ include "legion.application-version" . }}"
+helm.sh/chart: "{{ .root.Chart.Name }}-{{ .root.Chart.Version }}"
 {{- end -}}
 
 {{/*
@@ -35,7 +38,9 @@ Arguments:
     - . - root HELM scope
 */}}
 {{- define "legion.helm-labels-for-search" -}}
-app.kubernetes.io/instance: {{ .Release.Name | quote }}
+app.kubernetes.io/component: {{ .component | quote }}
+app: {{ .component | quote }}
+app.kubernetes.io/instance: {{ .root.Release.Name | quote }}
 {{- end -}}
 
 {{/*
@@ -104,7 +109,7 @@ Arguments:
     - .tpl - template for URI
 */}}
 {{- define "legion.ingress-domain-name" -}}
-{{ ternary .local.domain (printf .tpl .root.Release.Namespace .root.Values.ingress.globalDomain) (hasKey .local "domain") }}
+{{ ternary .local.domain (printf .tpl .root.Values.ingress.globalDomain) (hasKey .local "domain") }}
 {{- end -}}
 
 {{/*

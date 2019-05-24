@@ -42,7 +42,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("modeltraining_controller")
+const (
+	controllerName = "modeltraining_controller"
+)
+
+var log = logf.Log.WithName(controllerName)
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -61,7 +65,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		Client:   mgr.GetClient(),
 		config:   mgr.GetConfig(),
 		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder("legion-operator"),
+		recorder: mgr.GetRecorder(controllerName),
 	}
 }
 
@@ -168,9 +172,11 @@ func (r *ReconcileModelTraining) generateModelBuildPod(modelBuilderCR *legionv1a
 
 	pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        legion.GenerateBuildModelName(modelBuilderCR.Name),
-			Namespace:   modelBuilderCR.Namespace,
-			Annotations: map[string]string{},
+			Name:      legion.GenerateBuildModelName(modelBuilderCR.Name),
+			Namespace: modelBuilderCR.Namespace,
+			Annotations: map[string]string{
+				"sidecar.istio.io/inject": "false",
+			},
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
@@ -477,17 +483,17 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, modelCrd *legionv
 						modelCrd.Status.TrainingState = legionv1alpha1.ModelTrainingSucceeded
 						modelCrd.Status.ModelImage = pod.Annotations[legion.ModelImageKey]
 
-						modelId := pod.Annotations[legion.ModelIDKey]
+						modelName := pod.Annotations[legion.ModelNameKey]
 						modelVersion := pod.Annotations[legion.ModelVersionKey]
 
 						if modelCrd.ObjectMeta.Labels == nil {
 							modelCrd.ObjectMeta.Labels = map[string]string{}
 						}
 
-						modelCrd.ObjectMeta.Labels[legion.DomainModelId] = modelId
+						modelCrd.ObjectMeta.Labels[legion.DomainModelName] = modelName
 						modelCrd.ObjectMeta.Labels[legion.DomainModelVersion] = modelVersion
 
-						modelCrd.Status.ModelID = modelId
+						modelCrd.Status.ModelName = modelName
 						modelCrd.Status.ModelVersion = modelVersion
 					} else {
 						modelCrd.Status.TrainingState = legionv1alpha1.ModelTrainingFailed

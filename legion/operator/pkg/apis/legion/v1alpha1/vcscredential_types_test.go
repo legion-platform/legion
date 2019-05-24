@@ -26,23 +26,27 @@ import (
 )
 
 const (
-	vcsName             = "test-vcs"
-	vcsNamespace        = "default"
-	vscDefaultReference = "refs/heads/master"
-	vscUri              = "git@github.com:legion-platform/legion.git"
-	vscType             = "git"
-	vscCreds            = "bG9sCg=="
+	vcsName                    = "test-vcs"
+	vscDefaultReference        = "refs/heads/master"
+	vscUri                     = "git@github.com:legion-platform/legion.git"
+	vscType                    = "git"
+	vscCreds                   = "bG9sCg=="
+	vscNewCreds                = "a2VrCg=="
+	notValidBase64             = "not valid base64"
+	notValidBase64ErrorMessage = "illegal base64 data"
 )
 
 func TestStorageVCSCredential(t *testing.T) {
+	g := NewGomegaWithT(t)
+
 	key := types.NamespacedName{
-		Name:      "foo",
-		Namespace: "default",
+		Name:      vcsName,
+		Namespace: testNamespace,
 	}
 	created := &VCSCredential{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
+			Name:      vcsName,
+			Namespace: testNamespace,
 		},
 		Spec: VCSCredentialSpec{
 			Type:             vscType,
@@ -51,24 +55,64 @@ func TestStorageVCSCredential(t *testing.T) {
 			Credential:       vscCreds,
 		},
 	}
-	g := NewGomegaWithT(t)
 
-	// Test Create
-	fetched := &VCSCredential{}
+	g.Expect(created.DeepCopy().ValidatesAndSetDefaults()).NotTo(HaveOccurred())
 	g.Expect(c.Create(context.TODO(), created)).NotTo(HaveOccurred())
 
+	fetched := &VCSCredential{}
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(HaveOccurred())
 	g.Expect(fetched).To(Equal(created))
 
-	// Test Updating the Labels
 	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
+	updated.Spec.Credential = vscNewCreds
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(HaveOccurred())
 	g.Expect(fetched).To(Equal(updated))
+	g.Expect(fetched.Spec.Credential).To(Equal(vscNewCreds))
 
-	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(HaveOccurred())
 	g.Expect(c.Get(context.TODO(), key, fetched)).To(HaveOccurred())
+}
+
+func TestValidateCredentials(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	vcs := VCSCredential{
+		Spec: VCSCredentialSpec{
+			Credential: notValidBase64,
+		},
+	}
+
+	err := vcs.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(notValidBase64ErrorMessage))
+}
+
+func TestValidatePublicKey(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	vcs := VCSCredential{
+		Spec: VCSCredentialSpec{
+			PublicKey: notValidBase64,
+		},
+	}
+
+	err := vcs.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(notValidBase64ErrorMessage))
+}
+
+func TestValidateUri(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	vcs := VCSCredential{
+		Spec: VCSCredentialSpec{
+			Uri: "",
+		},
+	}
+
+	err := vcs.ValidatesAndSetDefaults()
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(emptyUriErrorMessage))
 }

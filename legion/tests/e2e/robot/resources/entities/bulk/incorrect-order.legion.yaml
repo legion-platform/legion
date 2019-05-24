@@ -7,7 +7,7 @@ spec:
   toolchain: python
   vcsName: bulk-test-vcs-2
   args:
-    - "--id bulk-test-mt-3 --version 3.0"
+    - "--name bulk-test-mt-3 --version 3.0"
   workDir: legion/tests/e2e/models
 ---
 apiVersion: legion.legion-platform.org/v1alpha1

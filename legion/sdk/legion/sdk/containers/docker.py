@@ -178,16 +178,16 @@ def _copy_model_files(working_directory: str, model_file: str, target_model_file
         raise
 
 
-def prepare_build(working_directory: str, model_id: str, model_file: str) -> None:
+def prepare_build(working_directory: str, model_name: str, model_file: str) -> None:
     """
     Execute some actions before building image
 
     :param working_directory: working directory
-    :param model_id: model id
+    :param model_name: model name
     :param model_file: path to model file (in the temporary directory)
     :return: docker.models.Image
     """
-    _copy_model_files(working_directory, model_file, os.path.join(working_directory, model_id))
+    _copy_model_files(working_directory, model_file, os.path.join(working_directory, model_name))
 
 
 def build_docker_image(client: docker.client.DockerClient, params: ModelBuildParameters,
@@ -206,22 +206,22 @@ def build_docker_image(client: docker.client.DockerClient, params: ModelBuildPar
         raise Exception('Cannot find model binary {}'.format(params.model_file))
 
     container = load_meta_model(params.model_file)
-    model_id = container.model_id
+    model_name = container.model_name
     model_version = container.model_version
     workspace_path = container.meta_information.get(PROPERTY_TRAINING_WORKING_DIRECTORY, os.getcwd())
-    LOGGER.info('Building model %s (id: %s, version: %s) in directory %s',
-                params.model_file, model_id, model_version, workspace_path)
+    LOGGER.info('Building model %s (name: %s, version: %s) in directory %s',
+                params.model_file, model_name, model_version, workspace_path)
 
     local_image_tag = params.local_image_tag
     if not local_image_tag:
-        local_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, utils.deduce_extra_version())
+        local_image_tag = 'legion-model-{}:{}.{}'.format(model_name, model_version, utils.deduce_extra_version())
 
-    image_labels = generate_docker_labels_for_image(params.model_file, model_id)
+    image_labels = generate_docker_labels_for_image(params.model_file, model_name)
 
-    prepare_build(workspace_path, model_id, params.model_file)
+    prepare_build(workspace_path, model_name, params.model_file)
 
     with utils.TemporaryFolder('legion-docker-build') as temp_directory:
-        target_model_file = os.path.join(MODEL_TARGET_WORKSPACE, model_id)
+        target_model_file = os.path.join(MODEL_TARGET_WORKSPACE, model_name)
 
         # Copy additional files for docker build
         additional_directory = os.path.abspath(os.path.join(
@@ -249,7 +249,7 @@ def build_docker_image(client: docker.client.DockerClient, params: ModelBuildPar
         docker_file_content = utils.render_template('Dockerfile.tmpl', {
             'MODEL_PORT': config.LEGION_PORT,
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
-            'MODEL_ID': model_id,
+            'MODEL_NAME': model_name,
             'MODEL_FILE': target_model_file,
             'CREATE_SYMLINK_COMMAND': symlink_create_command
         })
@@ -280,20 +280,20 @@ def build_docker_image(client: docker.client.DockerClient, params: ModelBuildPar
         return image
 
 
-def generate_docker_labels_for_image(model_file, model_id):
+def generate_docker_labels_for_image(model_file, model_name):
     """
     Generate docker image labels from model file
 
     :param model_file: path to model file
     :type model_file: str
-    :param model_id: model id
-    :type model_id: str
+    :param model_name: model name
+    :type model_name: str
     :return: dict[str, str] of labels
     """
     model_meta = load_meta_model(model_file)
 
     base = {
-        headers.DOMAIN_MODEL_ID: model_id,
+        headers.DOMAIN_MODEL_NAME: model_name,
         headers.DOMAIN_MODEL_VERSION: model_meta.model_version,
         headers.DOMAIN_CLASS: 'pyserve',
         headers.DOMAIN_CONTAINER_TYPE: 'model'

@@ -32,7 +32,7 @@ from legion.toolchain.metrics import send_metric, show_local_metrics
 sys.path.extend(os.path.dirname(__file__))
 from legion_test_utils import patch_config
 
-MODEL_ID = 'test-model'
+MODEL_NAME = 'test-model'
 
 
 class TestMetrics(unittest2.TestCase):
@@ -50,9 +50,9 @@ class TestMetrics(unittest2.TestCase):
 
     def test_metrics_name_building(self):
         metric = metrics.Metric.TEST_ACCURACY
-        model_id = 'test-model'
-        metrics_name = metrics.get_metric_name(metric, model_id)
-        self.assertEqual(metrics_name, '{}.metrics.{}'.format(model_id, metric.value))
+        model_name = 'test-model'
+        metrics_name = metrics.get_metric_name(metric, model_name)
+        self.assertEqual(metrics_name, '{}.metrics.{}'.format(model_name, metric.value))
 
     def test_metrics_get_build_number(self):
         build_number = 10
@@ -60,7 +60,7 @@ class TestMetrics(unittest2.TestCase):
             self.assertEqual(metrics.get_build_number(), build_number)
 
     def test_metrics_send(self):
-        model_id = 'demo'
+        model_name = 'demo'
         model_version = '1.0'
         build_number = 10
         metric = metrics.Metric.TEST_ACCURACY
@@ -76,7 +76,7 @@ class TestMetrics(unittest2.TestCase):
         with patch_config(additional_environment):
             with patch('legion.toolchain.metrics.send_tcp') as send_tcp_mock, patch('time.time',
                                                                                     return_value=timestamp):
-                metrics.send_metric(model_id, model_version, metric, value)
+                metrics.send_metric(model_name, model_version, metric, value)
 
                 self.assertEqual(1, len(send_tcp_mock.call_args_list), '2 calls have not been founded')
                 for call in send_tcp_mock.call_args_list:
@@ -88,11 +88,11 @@ class TestMetrics(unittest2.TestCase):
 
                 call_with_metric, call_with_build_number = tuple(passed_metrics)
 
-                self.assertEqual(call_with_metric, f'{namespace}.{model_id}.metrics.{metric.value}:{value}|c')
-                self.assertEqual(call_with_build_number, f'{namespace}.{model_id}.metrics.build:{build_number}|c')
+                self.assertEqual(call_with_metric, f'{namespace}.{model_name}.metrics.{metric.value}:{value}|c')
+                self.assertEqual(call_with_build_number, f'{namespace}.{model_name}.metrics.build:{build_number}|c')
 
     def test_metrics_send_disabled(self):
-        model_id = 'demo'
+        model_name = 'demo'
         model_version = '1.0'
         build_number = 10
         metric = metrics.Metric.TEST_ACCURACY
@@ -104,7 +104,7 @@ class TestMetrics(unittest2.TestCase):
         }
         with patch_config(additional_environment):
             with patch('legion.toolchain.metrics.send_tcp') as send_tcp_mock:
-                metrics.send_metric(model_id, model_version, metric, value)
+                metrics.send_metric(model_name, model_version, metric, value)
 
                 self.assertTrue(len(send_tcp_mock.call_args_list) == 0, '0 calls have not been founded')
 
@@ -122,11 +122,11 @@ class TestMetrics(unittest2.TestCase):
         self.assertTrue(df.empty)
 
     def test_show_local_metrics_multiple_models(self):
-        model_id_1 = "model_id_1"
+        model_name_1 = "model_name_1"
         model_version_1_1 = "1.0"
         model_version_1_2 = "2.0"
 
-        model_id_2 = "model_id_2"
+        model_name_2 = "model_name_2"
         model_version_2_1 = "1.0"
 
         metric_name_1 = "metric-name-1"
@@ -141,23 +141,23 @@ class TestMetrics(unittest2.TestCase):
         metric_value_2_2 = 222.0
         metric_value_2_3 = 333.0
 
-        send_metric(model_id_1, model_version_1_1, metric_name_1, metric_value_1)
-        send_metric(model_id_1, model_version_1_1, metric_name_2, metric_value_2)
-        send_metric(model_id_1, model_version_1_2, metric_name_1, metric_value_1)
-        send_metric(model_id_1, model_version_1_2, metric_name_3, metric_value_3)
+        send_metric(model_name_1, model_version_1_1, metric_name_1, metric_value_1)
+        send_metric(model_name_1, model_version_1_1, metric_name_2, metric_value_2)
+        send_metric(model_name_1, model_version_1_2, metric_name_1, metric_value_1)
+        send_metric(model_name_1, model_version_1_2, metric_name_3, metric_value_3)
 
-        metrics_1 = show_local_metrics(model_id_1)
+        metrics_1 = show_local_metrics(model_name_1)
         self.assertFalse(metrics_1.empty)
-        self.assertTrue(show_local_metrics(model_id_2).empty)
+        self.assertTrue(show_local_metrics(model_name_2).empty)
 
         # Check that the following dataframe will be returned
         #      Model ID Model Version  metric-name-1  metric-name-2  metric-name-3
-        # 0  model_id_1           1.0           11.0           22.0            NaN
-        # 1  model_id_1           2.0           11.0            NaN           33.0
+        # 0  model_name_1           1.0           11.0           22.0            NaN
+        # 1  model_name_1           2.0           11.0            NaN           33.0
         self.assertEqual(2, len(list(metrics_1.iterrows())))
         for metric in metrics_1.iterrows():
             series = metric[1]
-            self.assertEqual(model_id_1, series[0])
+            self.assertEqual(model_name_1, series[0])
 
             model_version = series[1]
             if model_version_1_1 == model_version:
@@ -171,24 +171,24 @@ class TestMetrics(unittest2.TestCase):
                 self.assertTrue(pd.isna(series[4]))
                 self.assertEqual(metric_value_3, series[5])
 
-        send_metric(model_id_2, model_version_2_1, metric_name_1, metric_value_2_1)
-        send_metric(model_id_2, model_version_2_1, metric_name_2, metric_value_2_2)
-        send_metric(model_id_2, model_version_2_1, metric_name_3, metric_value_2_3)
+        send_metric(model_name_2, model_version_2_1, metric_name_1, metric_value_2_1)
+        send_metric(model_name_2, model_version_2_1, metric_name_2, metric_value_2_2)
+        send_metric(model_name_2, model_version_2_1, metric_name_3, metric_value_2_3)
 
-        metrics_df_2 = show_local_metrics(model_id_2)
+        metrics_df_2 = show_local_metrics(model_name_2)
 
-        print(metrics_df_2.to_string(columns=["Model ID", "Model Version", metric_name_1, metric_name_2,
+        print(metrics_df_2.to_string(columns=["Model Name", "Model Version", metric_name_1, metric_name_2,
                                               metric_name_3]))
         self.assertFalse(metrics_df_2.empty)
-        self.assertFalse(show_local_metrics(model_id_1).empty)
+        self.assertFalse(show_local_metrics(model_name_1).empty)
 
         # Check that the following dataframe will be returned
         #      Model ID Model Version  metric-name-1  metric-name-2  metric-name-3
-        # 0  model_id_2           1.0          111.0          222.0          333.0
+        # 0  model_name_2           1.0          111.0          222.0          333.0
         self.assertEqual(1, len(list(metrics_df_2.iterrows())))
 
         metrics_series_2 = next(metrics_df_2.iterrows())[1]
-        self.assertEqual(model_id_2, metrics_series_2[0])
+        self.assertEqual(model_name_2, metrics_series_2[0])
         self.assertEqual(model_version_2_1, metrics_series_2[1])
         self.assertEqual(metric_value_2_1, metrics_series_2[3])
         self.assertEqual(metric_value_2_2, metrics_series_2[4])

@@ -13,12 +13,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from legion.sdk.clients.model import ModelClient
-from requests.exceptions import RequestException
-
+from legion.sdk import config
+from legion.sdk.clients import edi, model
 
 from locust import HttpLocust, task, TaskSet
-from legion.sdk.clients.edi import build_client
 
 
 class ModelTaskSet(TaskSet):
@@ -41,9 +39,9 @@ class ModelTaskSet(TaskSet):
         self._model_client.invoke(**dataset)
 
     def on_start(self):
-        self._model_client = ModelClient('income', '1.1', use_relative_url=True, http_client=self.client,
-                                         http_exception=RequestException,
-                                         token=build_client().get_token('income', '1.1'))
+        self._model_client = model.ModelClient(model.calculate_url_from_config(),
+                                               token=edi.build_client().get_token(config.MODEL_DEPLOYMENT_NAME),
+                                               http_client=self.client)
 
 
 class TestLocust(HttpLocust):

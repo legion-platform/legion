@@ -40,7 +40,7 @@ const (
 	PythonToolchainImage   = "PYTHON_TOOLCHAIN_IMAGE"
 	DockerRegistryUser     = "DOCKER_REGISTRY_USER"
 	DockerRegistryPassword = "DOCKER_REGISTRY_PASSWORD"
-	JwtSecret              = "JWT_SECRET"
+	JwtEnabled             = "JWT_ENABLED"
 	JwtTtlMinutes          = "JWT_TTL_MINUTES"
 	JwtMaxTtlMinutes       = "JWT_MAX_TTL_MINUTES"
 	JwtExpDatetime         = "JWT_EXP_DATETIME"
@@ -52,6 +52,14 @@ const (
 	MutatingWebhookName    = "MUTATING_WEBHOOK_NAME"
 	ValidatingWebhookName  = "VALIDATING_WEBHOOK_NAME"
 	LogFlushSize           = "LOG_FLUSH_SIZE"
+	PrometheusMetricsPort  = "PROMETHEUS_METRICS_PORT"
+	EdgeHost               = "EDGE_HOST"
+	FeedbackEnabled        = "FEEDBACK_ENABLED"
+	DefaultRoleName        = "DEFAULT_ROLE_NAME"
+	ModelJwtPrivateKey     = "MODEL_JWT_PRIVATE_KEY"
+	ModelJwtPublicKey      = "MODEL_JWT_PUBLIC_KEY"
+	JwksUrl                = "JWKS_URL"
+	JwksCluster            = "JWKS_CLUSTER"
 )
 
 // TODO:
@@ -71,11 +79,12 @@ func SetUpBuilderConfig() {
 }
 
 func SetUpOperatorConfig() {
+	viper.SetConfigName("operator")
+
 	setNotEmptyParam(BuilderImage)
 	setNotEmptyParam(MetricHost)
 	setNotEmptyParam(MetricPort)
 	setNotEmptyParam(MetricEnabled)
-	setNotEmptyParam(PythonToolchainImage)
 	setNotEmptyParam(DockerRegistry)
 
 	viper.SetDefault(ImagePrefix, "legion")
@@ -87,7 +96,38 @@ func SetUpOperatorConfig() {
 	panicIfError(viper.BindEnv(DockerRegistryUser))
 	panicIfError(viper.BindEnv(DockerRegistryPassword))
 
-	viper.SetDefault(Namespace, "default")
+	viper.SetDefault(Namespace, "legion")
+	panicIfError(viper.BindEnv(Namespace))
+
+	viper.SetDefault(PrometheusMetricsPort, 7777)
+	panicIfError(viper.BindEnv(PrometheusMetricsPort))
+
+	viper.SetDefault(EdgeHost, "https://edge.legion-test.epm.kharlamov.biz")
+	panicIfError(viper.BindEnv(EdgeHost))
+
+	viper.SetDefault(JwtEnabled, false)
+	panicIfError(viper.BindEnv(JwtEnabled))
+
+	viper.SetDefault(JwksUrl, "http://legion-edi.legion.svc.cluster.local/api/v1/model/jwks")
+	panicIfError(viper.BindEnv(JwksUrl))
+
+	viper.SetDefault(JwksCluster, "outbound|80||legion-edi.legion.svc.cluster.local")
+	panicIfError(viper.BindEnv(JwksCluster))
+
+	viper.SetDefault(FeedbackEnabled, false)
+	panicIfError(viper.BindEnv(FeedbackEnabled))
+
+	viper.SetDefault(ModelJwtPrivateKey, "legion/operator/private_key.pem")
+	panicIfError(viper.BindEnv(ModelJwtPrivateKey))
+
+	viper.SetDefault(ModelJwtPublicKey, "legion/operator/public_key.pem")
+	panicIfError(viper.BindEnv(ModelJwtPublicKey))
+}
+
+func SetUpWebhookConfig() {
+	setNotEmptyParam(PythonToolchainImage)
+
+	viper.SetDefault(Namespace, "legion")
 	panicIfError(viper.BindEnv(Namespace))
 
 	viper.SetDefault(WebhookSecretName, "webhook-server-secret")
@@ -101,17 +141,23 @@ func SetUpOperatorConfig() {
 
 	viper.SetDefault(MutatingWebhookName, "legion-mutating-webhook-configuration")
 	viper.SetDefault(ValidatingWebhookName, "legion-validating-webhook-configuration")
+
+	viper.SetDefault(PrometheusMetricsPort, 7777)
+	panicIfError(viper.BindEnv(PrometheusMetricsPort))
+
+	viper.SetDefault(DefaultRoleName, "default-legion")
+	panicIfError(viper.BindEnv(DefaultRoleName))
 }
 
 func SetUpEDIConfig() {
-	viper.SetDefault(Namespace, "default")
+	viper.SetDefault(Namespace, "legion")
 	panicIfError(viper.BindEnv(Namespace))
 
 	viper.SetDefault(JwtTtlMinutes, 120)
 	panicIfError(viper.BindEnv(JwtTtlMinutes))
 
-	viper.SetDefault(JwtSecret, "")
-	panicIfError(viper.BindEnv(JwtSecret))
+	viper.SetDefault(JwtEnabled, false)
+	panicIfError(viper.BindEnv(JwtEnabled))
 
 	viper.SetDefault(JwtMaxTtlMinutes, 259200)
 	panicIfError(viper.BindEnv(JwtMaxTtlMinutes))
@@ -124,6 +170,15 @@ func SetUpEDIConfig() {
 
 	viper.SetDefault(LogFlushSize, 32)
 	panicIfError(viper.BindEnv(LogFlushSize))
+
+	viper.SetDefault(ModelJwtPrivateKey, "legion/operator/private_key.pem")
+	panicIfError(viper.BindEnv(ModelJwtPrivateKey))
+
+	viper.SetDefault(ModelJwtPublicKey, "legion/operator/public_key.pem")
+	panicIfError(viper.BindEnv(ModelJwtPublicKey))
+
+	viper.SetDefault(DefaultRoleName, "default-legion")
+	panicIfError(viper.BindEnv(DefaultRoleName))
 }
 
 func setNotEmptyParam(paramName string) {

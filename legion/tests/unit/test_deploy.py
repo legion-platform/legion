@@ -41,8 +41,8 @@ class TestDeploy(unittest2.TestCase):
     def test_summation_model_build_and_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('summation_model')
-            model_id, model_version, model_file, _ = context.execute_model()
-            self.assertEqual(model_id, 'test-summation', 'incorrect model id')
+            model_name, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_name, 'test-summation', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
             self.assertIsNotNone(model_file)
             image_id, _ = context.build_model_container()
@@ -56,7 +56,7 @@ class TestDeploy(unittest2.TestCase):
                         'use_df': False,
                     }
                 },
-                'model_id': model_id,
+                'model_name': model_name,
                 'model_version': model_version
             }, 'invalid model information')
 
@@ -77,8 +77,8 @@ class TestDeploy(unittest2.TestCase):
     def test_math_model_build_and_query_with_multiple_endpoints(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('math_model')
-            model_id, model_version, model_file, _ = context.execute_model()
-            self.assertEqual(model_id, 'test-math', 'incorrect model id')
+            model_name, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_name, 'test-math', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
             self.assertIsNotNone(model_file)
             image_id, _ = context.build_model_container()
@@ -97,7 +97,7 @@ class TestDeploy(unittest2.TestCase):
                         'use_df': False,
                     }
                 },
-                'model_id': model_id,
+                'model_name': model_name,
                 'model_version': model_version
             }, 'invalid model information')
 
@@ -133,8 +133,8 @@ class TestDeploy(unittest2.TestCase):
     def test_io_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('model_with_io_operations')
-            model_id, model_version, model_file, _ = context.execute_model()
-            self.assertEqual(model_id, 'io-model', 'incorrect model id')
+            model_name, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_name, 'io-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
             self.assertIsNotNone(model_file)
             image_id, _ = context.build_model_container()
@@ -148,7 +148,7 @@ class TestDeploy(unittest2.TestCase):
                         'use_df': False,
                     }
                 },
-                'model_id': model_id,
+                'model_name': model_name,
                 'model_version': model_version
             }, 'invalid model information')
 
@@ -157,8 +157,8 @@ class TestDeploy(unittest2.TestCase):
     def test_native_model_build_and_simple_query(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('model_with_native')
-            model_id, model_version, model_file, _ = context.execute_model()
-            self.assertEqual(model_id, 'native-model', 'incorrect model id')
+            model_name, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_name, 'native-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
             self.assertIsNotNone(model_file)
             image_id, _ = context.build_model_container()
@@ -172,7 +172,7 @@ class TestDeploy(unittest2.TestCase):
                         'use_df': False,
                     },
                 },
-                'model_id': model_id,
+                'model_name': model_name,
                 'model_version': model_version
             }, 'invalid model information')
 
@@ -181,8 +181,8 @@ class TestDeploy(unittest2.TestCase):
     def test_columns_ordering(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('columns_model')
-            model_id, model_version, model_file, _ = context.execute_model()
-            self.assertEqual(model_id, 'columns-model', 'incorrect model id')
+            model_name, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_name, 'columns-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
             self.assertIsNotNone(model_file)
             image_id, _ = context.build_model_container()
@@ -194,8 +194,8 @@ class TestDeploy(unittest2.TestCase):
     def test_with_model_file_declaration(self):
         with ModelDockerBuilderContainerContext() as context:
             context.copy_model('columns_model_with_model_file_declaration')
-            model_id, model_version, model_file, _ = context.execute_model()
-            self.assertEqual(model_id, 'columns-model', 'incorrect model id')
+            model_name, model_version, model_file, _ = context.execute_model()
+            self.assertEqual(model_name, 'columns-model', 'incorrect model id')
             self.assertEqual(model_version, '1.0', 'incorrect model version')
             image_id, _ = context.build_model_container(model_file)
 

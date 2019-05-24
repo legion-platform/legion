@@ -17,7 +17,7 @@ spec:
   toolchain: python
   vcsName: bulk-test-vcs-1
   args:
-    - "--id bulk-test-mt-1 --version 1.0"
+    - "--name bulk-test-mt-1 --version 1.0"
   workDir: legion/tests/e2e/models
 ---
 apiVersion: legion.legion-platform.org/v1alpha1
@@ -29,7 +29,7 @@ spec:
   toolchain: python
   vcsName: legion
   args:
-    - "--id bulk-test-mt-2 --version 2.0"
+    - "--name bulk-test-mt-2 --version 2.0"
   workDir: legion/tests/e2e/models
 ---
 apiVersion: legion.legion-platform.org/v1alpha1
@@ -38,4 +38,4 @@ metadata:
   name: bulk-test-md-1
 spec:
   image: nexus-local.cc.epm.kharlamov.biz:8084/legion-test/3:1
-  replicas: 1
+  maxReplicas: 1

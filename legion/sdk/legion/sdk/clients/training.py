@@ -40,7 +40,7 @@ class ModelTraining(typing.NamedTuple):
     vcs_name: str = ""
     work_dir: str = ""
     reference: str = ""
-    model_id: str = ""
+    model_name: str = ""
     model_version: str = ""
     state: str = ""
     trained_image: str = ""
@@ -65,8 +65,8 @@ class ModelTraining(typing.NamedTuple):
             vcs_name=mt_spec.get('vcsName', ''),
             work_dir=mt_spec.get('workDir', ''),
             reference=mt_spec.get('reference', ''),
-            model_id=mt_status.get('id', ''),
-            model_version=mt_status.get('version', ''),
+            model_name=mt_status.get('modelName', ''),
+            model_version=mt_status.get('modelVersion', ''),
             state=mt_status.get('state', ''),
             trained_image=mt_status.get('modelImage', '')
         )
@@ -91,8 +91,8 @@ class ModelTraining(typing.NamedTuple):
         }
         if with_status:
             result['status'] = {
-                'id': self.model_id,
-                'version': self.model_version,
+                'modelName': self.model_name,
+                'modelVersion': self.model_version,
                 'state': self.state,
                 'modelImage': self.trained_image
             }

@@ -66,8 +66,8 @@ type ModelTrainingStatus struct {
 	// +kubebuilder:validation:Enum=scheduling,fetching-code,running,capturing,succeeded,failed,unknown
 	TrainingState ModelTrainingState `json:"state,omitempty"`
 	ModelImage    string             `json:"modelImage,omitempty"`
-	ModelID       string             `json:"id,omitempty"`
-	ModelVersion  string             `json:"version,omitempty"`
+	ModelName     string             `json:"modelName,omitempty"`
+	ModelVersion  string             `json:"modelVersion,omitempty"`
 	ExitCode      int32              `json:"exitCode,omitempty"`
 	Reason        string             `json:"reason,omitempty"`
 	Message       string             `json:"message,omitempty"`
@@ -83,8 +83,8 @@ type ModelTrainingStatus struct {
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="Toolchain",type="string",JSONPath=".spec.toolchain"
 // +kubebuilder:printcolumn:name="VCS name",type="string",JSONPath=".spec.vcsName"
-// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".status.id"
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version"
+// +kubebuilder:printcolumn:name="Model name",type="string",JSONPath=".status.modelName"
+// +kubebuilder:printcolumn:name="Model version",type="string",JSONPath=".status.modelVersion"
 // +kubebuilder:printcolumn:name="Model image",type="string",JSONPath=".status.modelImage"
 // +kubebuilder:resource:shortName=mt
 type ModelTraining struct {

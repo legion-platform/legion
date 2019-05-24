@@ -5,8 +5,8 @@ PYLINT_FOLDER="target/pylint"
 PYDOCSTYLE_FOLDER="target/pydocstyle"
 
 # Because of https://github.com/PyCQA/pylint/issues/352 or need to fix PYTHONPATH in unit tests
-touch legion/tests/unit/__init__.py legion/tests/e2e/python/__init__.py
-trap "rm legion/tests/unit/__init__.py legion/tests/e2e/python/__init__.py" SIGINT SIGTERM SIGHUP SIGQUIT EXIT ERR
+touch legion/tests/unit/__init__.py
+trap "rm legion/tests/unit/__init__.py" SIGINT SIGTERM SIGHUP SIGQUIT EXIT ERR
 
 function pylint_cmd() {
     package_dir="${1}"
@@ -22,10 +22,8 @@ pylint_cmd sdk/legion sdk
 pylint_cmd cli/legion cli
 pylint_cmd robot/legion robot
 pylint_cmd jupyterlab-plugin/legion jupyterlab_plugin
-pylint_cmd services/legion services
 pylint_cmd toolchains/python/legion toolchain
 pylint_cmd tests/unit unit
-pylint_cmd tests/e2e/python e2e
 
 function pydocstyle_cmd() {
     package_dir="${1}"
@@ -41,7 +39,6 @@ pydocstyle_cmd sdk/legion sdk
 pydocstyle_cmd cli/legion cli
 pydocstyle_cmd robot/legion robot
 pydocstyle_cmd jupyterlab-plugin/legion jupyterlab_plugin
-pydocstyle_cmd services/legion services
 pydocstyle_cmd toolchains/python/legion toolchain
 
 FAIL=0

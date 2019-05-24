@@ -17,6 +17,6 @@ spec:
   toolchain: python
   vcsName: bulk-test-vcs-1
   args:
-    - "--id bulk-test-mt-1 --version 1.0"
+    - "--name bulk-test-mt-1 --version 1.0"
   workDir: legion/tests/e2e/models
 ---

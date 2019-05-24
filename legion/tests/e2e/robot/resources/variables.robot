@@ -1,5 +1,6 @@
 *** Variables ***
-@{ENCLAVE_SUBDOMAINS}                 edi  edge
+@{LEGION_SUBDOMAINS}                  edi  edge
+${LEGION_NAMESPACE}                   legion
 @{TEST_MODELS}                        Digit-Recognition  Test-Summation  Sklearn-Income
 ${MODEL_WITH_PROPS}                   Test-Summation
 ${MODEL_WITH_PROPS_ENDPOINT}          sum_and_pow

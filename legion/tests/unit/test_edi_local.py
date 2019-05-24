@@ -37,7 +37,7 @@ from legion_test_utils import \
 
 DOCKER_INSPECT_API_CALL = '/containers/json?limit=-1&all=0&size=0&trunc_cmd=0'
 DOCKER_LIST_IMAGES_API_CALL = '/images/json?only_ids=0&all=0&filters=%' + \
-                              '7B%22label%22%3A+%5B%22com.epam.legion.model.id%22%5D%7D'
+                              '7B%22label%22%3A+%5B%22com.epam.legion.model.name%22%5D%7D'
 
 MODEL_A_ID = 'test-math'
 MODEL_A_VERSION = '1.0'
@@ -64,7 +64,7 @@ MODEL_A_DEPLOYMENT_DESCRIPTION = ModelDeploymentDescription(
                 'mul': {'input_params': False, 'name': 'mul', 'use_df': False},
                 'sum': {'input_params': False, 'name': 'sum', 'use_df': False}
             },
-            'model_id': 'test-math', 'model_version': '1.0'
+            'model_name': 'test-math', 'model_version': '1.0'
         }
     }
 )
@@ -94,7 +94,7 @@ MODEL_B_DEPLOYMENT_DESCRIPTION = ModelDeploymentDescription(
                 'mul': {'input_params': False, 'name': 'mul', 'use_df': False},
                 'sum': {'input_params': False, 'name': 'sum', 'use_df': False}
             },
-            'model_id': 'test-math', 'model_version': '1.1'
+            'model_name': 'test-math', 'model_version': '1.1'
         }
     }
 )
@@ -194,7 +194,9 @@ class TestEDILocal(unittest2.TestCase):
         add_response_from_file(self.prefix + '/images/{}/json'.format(IMAGE_D_ID),
                                'local_deploy_docker_image_d_info')
 
+
 class TestEDILocalInspect(TestEDILocal):
+
     @responses.activate
     def test_inspect_empty(self):
         self._register_no_models_inspect()
@@ -228,7 +230,7 @@ class TestEDILocalInspect(TestEDILocal):
         self.assertEqual(items[1], MODEL_B_DEPLOYMENT_DESCRIPTION)
 
     @responses.activate
-    def test_inspect_one_alive_model_id_correct(self):
+    def test_inspect_one_alive_model_name_correct(self):
         self._register_model_a_inspect()
 
         items = self.client.inspect(model=MODEL_A_ID)
@@ -236,7 +238,7 @@ class TestEDILocalInspect(TestEDILocal):
         self.assertEqual(items[0], MODEL_A_DEPLOYMENT_DESCRIPTION)
 
     @responses.activate
-    def test_inspect_one_alive_model_id_asterisk(self):
+    def test_inspect_one_alive_model_name_asterisk(self):
         self._register_model_a_inspect()
 
         items = self.client.inspect(model='*')
@@ -244,14 +246,14 @@ class TestEDILocalInspect(TestEDILocal):
         self.assertEqual(items[0], MODEL_A_DEPLOYMENT_DESCRIPTION)
 
     @responses.activate
-    def test_inspect_one_alive_model_id_incorrect(self):
+    def test_inspect_one_alive_model_name_incorrect(self):
         self._register_model_a_inspect()
 
         items = self.client.inspect(model=MODEL_A_ID + '_incorrect')
         self.assertListEqual(items, [])
 
     @responses.activate
-    def test_inspect_one_alive_model_id_version_correct(self):
+    def test_inspect_one_alive_model_name_version_correct(self):
         self._register_model_a_inspect()
 
         items = self.client.inspect(model=MODEL_A_ID, version=MODEL_A_VERSION)
@@ -259,7 +261,7 @@ class TestEDILocalInspect(TestEDILocal):
         self.assertEqual(items[0], MODEL_A_DEPLOYMENT_DESCRIPTION)
 
     @responses.activate
-    def test_inspect_one_alive_model_id_version_asterisk(self):
+    def test_inspect_one_alive_model_name_version_asterisk(self):
         self._register_model_a_inspect()
 
         items = self.client.inspect(model=MODEL_A_ID, version='*')
@@ -267,7 +269,7 @@ class TestEDILocalInspect(TestEDILocal):
         self.assertEqual(items[0], MODEL_A_DEPLOYMENT_DESCRIPTION)
 
     @responses.activate
-    def test_inspect_one_alive_model_id_version_incorrect(self):
+    def test_inspect_one_alive_model_name_version_incorrect(self):
         self._register_model_a_inspect()
 
         items = self.client.inspect(model=MODEL_A_ID, version=MODEL_A_VERSION + '_incorrect')
@@ -300,8 +302,8 @@ class TestEDILocalListBuilds(TestEDILocal):
         self.assertEqual(len(items), 2, 'count of detected images is incorrect')
         self.assertListEqual(items, [
             ModelBuildInformation(image_name='legion-model-test-summation:1.0.190517145902.root.0000',
-                                  model_id='test-summation', model_version='1.0'),
-            ModelBuildInformation(image_name='sha256:a4d8852b0d', model_id='test-summation', model_version='1.0')
+                                  model_name='test-summation', model_version='1.0'),
+            ModelBuildInformation(image_name='sha256:a4d8852b0d', model_name='test-summation', model_version='1.0')
         ])
 
 

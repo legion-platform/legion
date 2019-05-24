@@ -18,8 +18,6 @@ package validating
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
 	"net/http"
 
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
@@ -47,25 +45,11 @@ type VCSCredentialCreateUpdateHandler struct {
 	Decoder types.Decoder
 }
 
-func (h *VCSCredentialCreateUpdateHandler) validatingVCSCredentialFn(ctx context.Context, obj *legionv1alpha1.VCSCredential) (bool, string, error) {
-	// Check that credential is base64 encoded
-	if len(obj.Spec.Credential) != 0 {
-		_, err := base64.StdEncoding.DecodeString(obj.Spec.Credential)
+func (h *VCSCredentialCreateUpdateHandler) validatingVCSCredentialFn(ctx context.Context, vcs *legionv1alpha1.VCSCredential) (bool, string, error) {
+	if err := vcs.ValidatesAndSetDefaults(); err != nil {
+		log.Info("VCS Credential validation error", "error", err.Error(), "name", vcs.Name)
 
-		if err != nil {
-			return false,
-				fmt.Sprintf("Can't decode credential as base64 format: %s", obj.Spec.Credential), nil
-		}
-	}
-
-	// Check that publicKey is base64 encoded
-	if len(obj.Spec.PublicKey) != 0 {
-		_, err := base64.StdEncoding.DecodeString(obj.Spec.PublicKey)
-
-		if err != nil {
-			return false,
-				fmt.Sprintf("Can't decode PublicKey as base64 format: %s", obj.Spec.Credential), nil
-		}
+		return false, err.Error(), nil
 	}
 
 	return true, "allowed to be admitted", nil
@@ -75,19 +59,22 @@ var _ admission.Handler = &VCSCredentialCreateUpdateHandler{}
 
 // Handle handles admission requests.
 func (h *VCSCredentialCreateUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &legionv1alpha1.VCSCredential{}
+	vcs := &legionv1alpha1.VCSCredential{}
 
-	err := h.Decoder.Decode(req, obj)
+	err := h.Decoder.Decode(req, vcs)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	log.Info("Validating of the VCS Credential", "name", obj.Name)
+	log.Info("Validating of the VCS Credential", "name", vcs.Name)
 
-	allowed, reason, err := h.validatingVCSCredentialFn(ctx, obj)
+	allowed, reason, err := h.validatingVCSCredentialFn(ctx, vcs)
 	if err != nil {
-		log.Error(err, "Validation process was failed", "name", obj.Name)
+		log.Error(err, "Validation process was failed", "name", vcs.Name, "error", err.Error())
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
+
+	log.Info("Validation finished successfully for VCS Credential", "name", vcs.Name)
+
 	return admission.ValidationResponse(allowed, reason)
 }
 

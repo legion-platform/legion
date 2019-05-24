@@ -1,6 +1,8 @@
 import argparse
+import random
 import time
 import typing
+from functools import partial
 
 from legion.toolchain import model
 from legion.toolchain.model import init, save
@@ -9,7 +11,11 @@ from pandas import DataFrame
 import store
 
 
-def default(df: DataFrame) -> typing.Dict[str, int]:
+def default(fail_threshold: int, df: DataFrame) -> typing.Dict[str, int]:
+    random_value = random.random()
+    if random_value < fail_threshold:
+        raise Exception(f'Expected error. Random value is {random_value}. Fail percent is {fail_threshold}')
+
     return {'result': 42}
 
 
@@ -44,16 +50,16 @@ def workdir(df: DataFrame) -> typing.Dict[str, str]:
     return _read_resource_from_file() + store.VALUE + value
 
 
-def build_model(id: str, version: str) -> None:
+def build_model(name: str, version: str) -> None:
     """
     Build mock model for robot tests
 
-    :param id: model id
+    :param name: model name
     :param version: model version
     """
-    init(id, version)
+    init(name, version)
 
-    model.export(apply_func=default, column_types={"a": model.string, "b": model.string})
+    model.export(apply_func=partial(default, args.fail_threshold), column_types={"a": model.string, "b": model.string})
     model.export(apply_func=feedback, column_types={"str": model.string,
                                                     "copies": model.int64}, endpoint='feedback')
     model.export(apply_func=sleep, column_types={"seconds": model.int64}, endpoint='sleep')
@@ -64,8 +70,9 @@ def build_model(id: str, version: str) -> None:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--id', help='model id', required=True)
+    parser.add_argument('--name', help='model name', required=True)
     parser.add_argument('--version', help='model version', required=True)
+    parser.add_argument('--fail-threshold', type=float, default=0, required=False)
     args = parser.parse_args()
 
-    build_model(args.id, args.version)
+    build_model(args.name, args.version)

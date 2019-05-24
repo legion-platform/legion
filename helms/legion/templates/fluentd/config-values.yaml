@@ -4,8 +4,7 @@ apiVersion: v1
 metadata:
   name: "{{ .Release.Name }}-fluentd-config"
   labels:
-    component: "legion-fluentd"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 4 }}
 data:
   fluent.conf: |
     <source>
@@ -69,7 +68,7 @@ data:
       utc
 
       # Buffering
-      <buffer tag,time,model_id,model_version>
+      <buffer tag,time,model_name,model_version>
         @type file
         path {{ .Values.feedback.output.buffering.path }}/default
         timekey {{ .Values.feedback.output.buffering.timekey }}

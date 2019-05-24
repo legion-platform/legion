@@ -37,7 +37,7 @@ var (
 
 // Add adds itself to the manager
 func Add(mgr manager.Manager) error {
-	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
+	svr, err := webhook.NewServer("webhook-server", mgr, webhook.ServerOptions{
 		Port:    viper.GetInt32(legion.WebhookPort),
 		CertDir: "/tmp/cert",
 		BootstrapOptions: &webhook.BootstrapOptions{
@@ -53,7 +53,7 @@ func Add(mgr manager.Manager) error {
 				Name:      viper.GetString(legion.WebhookServiceName),
 				// Selectors should select the pods that runs this webhook server.
 				Selectors: map[string]string{
-					"component": "legion-operator",
+					"app.kubernetes.io/component": "webhook-server",
 				},
 			},
 		},

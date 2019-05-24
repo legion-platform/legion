@@ -19,6 +19,21 @@ required = [
 [prune]
   go-tests = true
 
+[[override]]
+  name = "k8s.io/apimachinery"
+  version="kubernetes-1.13.1"
+
+[[override]]
+  name = "sigs.k8s.io/controller-runtime"
+  version="v0.1.10"
+
+[[override]]
+  name = "k8s.io/client-go"
+  version="kubernetes-1.13.1"
+
+[[override]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.13.1"
 
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 
@@ -39,3 +54,7 @@ version="v1.4.7"
 [[constraint]]
   name = "gopkg.in/src-d/go-git.v4"
   version = "4.10.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/aspenmesh/istio-client-go"

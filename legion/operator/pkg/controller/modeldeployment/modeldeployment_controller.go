@@ -18,17 +18,26 @@ package modeldeployment
 
 import (
 	"context"
+	"github.com/spf13/viper"
+	appsv1 "k8s.io/api/apps/v1"
+	"strconv"
+	"time"
+
 	"fmt"
+	networkingv1alpha3 "github.com/aspenmesh/istio-client-go/pkg/apis/networking/v1alpha3"
+	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	networkingv1alpha3_istio "istio.io/api/networking/v1alpha3"
+
+	prototypes "github.com/gogo/protobuf/types"
+
+	"github.com/knative/serving/pkg/apis/serving/v1beta1"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
-	"github.com/legion-platform/legion/legion/operator/pkg/utils"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -41,21 +50,33 @@ import (
 )
 
 const (
-	labelSelectorKey                 = "deployment"
-	controllerName                   = "modeldeployemnt-controller"
-	defaultModelPort                 = 5000
-	defaultLivenessFailureThreshold  = 10
-	defaultLivenessPeriod            = 10
-	defaultLivenessTimeout           = 2
-	defaultReadinessFailureThreshold = 5
-	defaultReadinessPeriod           = 10
-	defaultReadinessTimeout          = 2
-	defaultModelPortName             = "api"
-	modelContainerName               = "model"
+	controllerName                       = "modeldeployment_controller"
+	defaultModelPort                     = int32(5000)
+	defaultLivenessFailureThreshold      = 15
+	defaultLivenessPeriod                = 1
+	defaultLivenessTimeout               = 1
+	defaultReadinessFailureThreshold     = 15
+	defaultReadinessPeriod               = 1
+	defaultReadinessTimeout              = 1
+	defaultRequeueDelay                  = 10 * time.Second
+	defaultPortName                      = "http1"
+	knativeMinReplicasKey                = "autoscaling.knative.dev/minScale"
+	knativeMaxReplicasKey                = "autoscaling.knative.dev/maxScale"
+	knativeAutoscalingTargetKey          = "autoscaling.knative.dev/target"
+	knativeAutoscalingTargetDefaultValue = "10"
+	knativeAutoscalingClass              = "autoscaling.knative.dev/class"
+	knativeAutoscalingMetric             = "autoscaling.knative.dev/metric"
+	defaultKnativeAutoscalingMetric      = "concurrency"
+	defaultKnativeAutoscalingClass       = "kpa.autoscaling.knative.dev"
+	modelNameAnnotationKey               = "modelName"
+	latestReadyRevisionKey               = "latestReadyRevision"
+	authProviderName                     = "edi"
 )
 
 var (
-	log = logf.Log.WithName(controllerName)
+	log                      = logf.Log.WithName(controllerName)
+	defaultWeight            = int32(100)
+	defaultTerminationPeriod = int64(15)
 )
 
 func Add(mgr manager.Manager) error {
@@ -63,15 +84,14 @@ func Add(mgr manager.Manager) error {
 }
 
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return newConfigurableReconciler(mgr, utils.ExtractDockerLabels)
+	return newConfigurableReconciler(mgr)
 }
 
-func newConfigurableReconciler(mgr manager.Manager, labelExtractor utils.LabelExtractor) reconcile.Reconciler {
+func newConfigurableReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileModelDeployment{
-		Client:         mgr.GetClient(),
-		scheme:         mgr.GetScheme(),
-		labelExtractor: labelExtractor,
-		recorder:       mgr.GetRecorder(controllerName),
+		Client:   mgr.GetClient(),
+		scheme:   mgr.GetScheme(),
+		recorder: mgr.GetRecorder(controllerName),
 	}
 }
 
@@ -88,7 +108,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &knservingv1alpha1.Configuration{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &legionv1alpha1.ModelDeployment{},
 	})
@@ -96,7 +116,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &legionv1alpha1.ModelRoute{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &legionv1alpha1.ModelDeployment{},
 	})
@@ -112,139 +132,110 @@ var _ reconcile.Reconciler = &ReconcileModelDeployment{}
 // ReconcileModelDeployment reconciles a ModelDeployment object
 type ReconcileModelDeployment struct {
 	client.Client
-	scheme         *runtime.Scheme
-	labelExtractor utils.LabelExtractor
-	recorder       record.EventRecorder
+	scheme   *runtime.Scheme
+	recorder record.EventRecorder
 }
 
-type modelContainerMetaInformation struct {
-	k8sName        string
-	modelId        string
-	modelVersion   string
-	k8sLabels      map[string]string
-	k8sAnnotations map[string]string
+func knativeConfigurationName(md *legionv1alpha1.ModelDeployment) string {
+	return md.Name
 }
 
-func (r *ReconcileModelDeployment) reconcileService(modelContainerMeta *modelContainerMetaInformation,
-	modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+func knativeDeploymentName(revisionName string) string {
+	return fmt.Sprintf("%s-deployment", revisionName)
+}
 
-	modelService := &corev1.Service{
+func modelRouteName(md *legionv1alpha1.ModelDeployment) string {
+	return md.Name
+}
+
+func (r *ReconcileModelDeployment) ReconcileModelRoute(modelDeploymentCR *legionv1alpha1.ModelDeployment,
+	latestReadyRevision string) error {
+	modelRoute := &legionv1alpha1.ModelRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        modelContainerMeta.k8sName,
-			Namespace:   modelDeploymentCR.Namespace,
-			Labels:      modelContainerMeta.k8sLabels,
-			Annotations: modelContainerMeta.k8sAnnotations,
+			Name:      modelRouteName(modelDeploymentCR),
+			Namespace: modelDeploymentCR.Namespace,
+			Annotations: map[string]string{
+				legionv1alpha1.SkipUrlValidationKey: legionv1alpha1.SkipUrlValidationValue,
+				latestReadyRevisionKey:              latestReadyRevision,
+			},
 		},
-		Spec: corev1.ServiceSpec{
-			Selector: modelContainerMeta.k8sLabels,
-			Ports: []corev1.ServicePort{
+		Spec: legionv1alpha1.ModelRouteSpec{
+			UrlPrefix: fmt.Sprintf("/model/%s", modelDeploymentCR.Name),
+			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
-					Name:       defaultModelPortName,
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromString(defaultModelPortName),
-					Port:       int32(defaultModelPort),
+					Name:   modelDeploymentCR.Name,
+					Weight: &defaultWeight,
 				},
 			},
 		},
 	}
 
-	if err := legion.StoreHash(modelService); err != nil {
+	if err := controllerutil.SetControllerReference(modelDeploymentCR, modelRoute, r.scheme); err != nil {
+		return err
+	}
+
+	if err := legion.StoreHash(modelRoute); err != nil {
 		log.Error(err, "Cannot apply obj hash")
 		return err
 	}
 
-	if err := controllerutil.SetControllerReference(modelDeploymentCR, modelService, r.scheme); err != nil {
-		return err
-	}
-
-	found := &corev1.Service{}
+	found := &legionv1alpha1.ModelRoute{}
 	err := r.Get(context.TODO(), types.NamespacedName{
-		Name: modelService.Name, Namespace: modelService.Namespace,
+		Name: modelRoute.Name, Namespace: modelRoute.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("Creating %s k8s service", modelService.ObjectMeta.Name))
-		err = r.Create(context.TODO(), modelService)
+		log.Info(fmt.Sprintf("Creating %s k8s model route", modelRoute.ObjectMeta.Name))
+		err = r.Create(context.TODO(), modelRoute)
 		return err
 	} else if err != nil {
 		return err
 	}
 
-	if !legion.ObjsEqualByHash(modelService, found) {
-		log.Info(fmt.Sprintf("Service hashes don't equal. Update service %s", modelService.Name))
+	if !legion.ObjsEqualByHash(modelRoute, found) {
+		log.Info(fmt.Sprintf("Model Route hashes don't equal. Update the %s Model route", modelRoute.Name))
 
-		modelService.Spec.ClusterIP = found.Spec.ClusterIP
-		found.Spec = modelService.Spec
-		found.ObjectMeta.Annotations = modelService.ObjectMeta.Annotations
-		found.ObjectMeta.Labels = modelService.ObjectMeta.Labels
+		found.Spec = modelRoute.Spec
+		found.ObjectMeta.Annotations = modelRoute.ObjectMeta.Annotations
+		found.ObjectMeta.Labels = modelRoute.ObjectMeta.Labels
 
-		log.Info(fmt.Sprintf("Updating %s k8s service", modelService.ObjectMeta.Name))
+		log.Info(fmt.Sprintf("Updating %s k8s model route", modelRoute.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Service hashes equal. Skip updating of service %s", modelService.Name))
+		log.Info(fmt.Sprintf("Model Route hashes equal. Skip updating of the %s model route", modelRoute.Name))
 	}
 
 	return nil
 }
 
-func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *modelContainerMetaInformation,
-	modelDeploymentCR *legionv1alpha1.ModelDeployment) (*appsv1.Deployment, error) {
-
-	httpGetAction := &corev1.HTTPGetAction{
-		Path: "/healthcheck",
-		Port: intstr.FromInt(defaultModelPort),
-	}
-
-	modelContainerMeta.k8sAnnotations[labelSelectorKey] = modelContainerMeta.k8sName
-
-	modelDeployment := &appsv1.Deployment{
+func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	knativeConfiguration := &knservingv1alpha1.Configuration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        modelContainerMeta.k8sName,
-			Namespace:   modelDeploymentCR.Namespace,
-			Labels:      modelContainerMeta.k8sLabels,
-			Annotations: modelContainerMeta.k8sAnnotations,
+			Name:      knativeConfigurationName(modelDeploymentCR),
+			Namespace: modelDeploymentCR.Namespace,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: modelContainerMeta.k8sLabels,
-			},
-			Replicas: modelDeploymentCR.Spec.Replicas,
-			Template: corev1.PodTemplateSpec{
+		Spec: knservingv1alpha1.ConfigurationSpec{
+			Template: &knservingv1alpha1.RevisionTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: modelContainerMeta.k8sLabels,
+					Labels: map[string]string{
+						modelNameAnnotationKey: modelDeploymentCR.Name,
+					},
+					Annotations: map[string]string{
+						knativeAutoscalingClass:     defaultKnativeAutoscalingClass,
+						knativeAutoscalingMetric:    defaultKnativeAutoscalingMetric,
+						knativeMinReplicasKey:       strconv.Itoa(int(*modelDeploymentCR.Spec.MinReplicas)),
+						knativeMaxReplicasKey:       strconv.Itoa(int(*modelDeploymentCR.Spec.MaxReplicas)),
+						knativeAutoscalingTargetKey: knativeAutoscalingTargetDefaultValue,
+					},
 				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:      modelContainerName,
-							Image:     modelDeploymentCR.Spec.Image,
-							Resources: *modelDeploymentCR.Spec.Resources,
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          defaultModelPortName,
-									ContainerPort: int32(defaultModelPort),
-									Protocol:      corev1.ProtocolTCP,
-								},
-							},
-							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: httpGetAction,
-								},
-								FailureThreshold:    defaultLivenessFailureThreshold,
-								InitialDelaySeconds: *modelDeploymentCR.Spec.LivenessProbeInitialDelay,
-								PeriodSeconds:       defaultLivenessPeriod,
-								TimeoutSeconds:      defaultLivenessTimeout,
-							},
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: httpGetAction,
-								},
-								FailureThreshold:    defaultReadinessFailureThreshold,
-								InitialDelaySeconds: *modelDeploymentCR.Spec.ReadinessProbeInitialDelay,
-								PeriodSeconds:       defaultReadinessPeriod,
-								TimeoutSeconds:      defaultReadinessTimeout,
+				Spec: knservingv1alpha1.RevisionSpec{
+					RevisionSpec: v1beta1.RevisionSpec{
+						TimeoutSeconds: &defaultTerminationPeriod,
+						PodSpec: v1beta1.PodSpec{
+							Containers: []corev1.Container{
+								r.createModelContainer(modelDeploymentCR),
 							},
 						},
 					},
@@ -253,54 +244,332 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 		},
 	}
 
-	if err := legion.StoreHash(modelDeployment); err != nil {
+	if err := controllerutil.SetControllerReference(modelDeploymentCR, knativeConfiguration, r.scheme); err != nil {
+		return err
+	}
+
+	if err := legion.StoreHashKnative(knativeConfiguration); err != nil {
 		log.Error(err, "Cannot apply obj hash")
-		return nil, err
+		return err
 	}
 
-	if err := controllerutil.SetControllerReference(modelDeploymentCR, modelDeployment, r.scheme); err != nil {
-		return nil, err
-	}
-
-	found := &appsv1.Deployment{}
+	found := &knservingv1alpha1.Configuration{}
 	err := r.Get(context.TODO(), types.NamespacedName{
-		Name: modelDeployment.Name, Namespace: modelDeployment.Namespace,
+		Name: knativeConfiguration.Name, Namespace: knativeConfiguration.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("Creating %s k8s deployment", modelDeployment.ObjectMeta.Name))
-		err = r.Create(context.TODO(), modelDeployment)
-		return modelDeployment, err
+		log.Info(fmt.Sprintf("Creating %s k8s Knative Configuration", knativeConfiguration.ObjectMeta.Name))
+		err = r.Create(context.TODO(), knativeConfiguration)
+		return err
 	} else if err != nil {
-		return modelDeployment, err
+		return err
 	}
 
-	if !legion.ObjsEqualByHash(modelDeployment, found) {
-		log.Info(fmt.Sprintf("Deployment hashes don't equal. Update the deployment %s", modelDeployment.Name))
+	if !legion.ObjsEqualByHash(knativeConfiguration, found) {
+		log.Info(fmt.Sprintf("Knative Configuration hashes don't equal. Update the %s Knative Configuration", knativeConfiguration.Name))
 
-		found.Spec = modelDeployment.Spec
-		found.ObjectMeta.Annotations = modelDeployment.ObjectMeta.Annotations
-		found.ObjectMeta.Labels = modelDeployment.ObjectMeta.Labels
+		found.Spec = knativeConfiguration.Spec
+		found.ObjectMeta.Annotations = knativeConfiguration.ObjectMeta.Annotations
+		found.ObjectMeta.Labels = knativeConfiguration.ObjectMeta.Labels
 
-		log.Info(fmt.Sprintf("Updating %s k8s deployment", modelDeployment.ObjectMeta.Name))
+		log.Info(fmt.Sprintf("Updating %s Knative Configuration", knativeConfiguration.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
 		if err != nil {
-			return found, err
+			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Deployment hashes equal. Skip updating of the deployment %s", modelDeployment.Name))
+		log.Info(fmt.Sprintf("Knative Configuration hashes equal. Skip updating of the %s Knative Configuration", knativeConfiguration.Name))
 	}
 
-	return found, nil
+	return nil
 }
 
-// Reconcile reads that state of the cluster for a ModelDeployment object and makes changes based on the state read
-// and what is in the ModelDeployment.Spec
+func (r *ReconcileModelDeployment) createModelContainer(modelDeploymentCR *legionv1alpha1.ModelDeployment) corev1.Container {
+	httpGetAction := &corev1.HTTPGetAction{
+		Path: "/healthcheck",
+	}
+
+	return corev1.Container{
+		Image:     modelDeploymentCR.Spec.Image,
+		Resources: *modelDeploymentCR.Spec.Resources,
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          defaultPortName,
+				ContainerPort: defaultModelPort,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		LivenessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: httpGetAction,
+			},
+			FailureThreshold:    defaultLivenessFailureThreshold,
+			InitialDelaySeconds: *modelDeploymentCR.Spec.LivenessProbeInitialDelay,
+			PeriodSeconds:       defaultLivenessPeriod,
+			TimeoutSeconds:      defaultLivenessTimeout,
+		},
+		ReadinessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: httpGetAction,
+			},
+			FailureThreshold:    defaultReadinessFailureThreshold,
+			InitialDelaySeconds: *modelDeploymentCR.Spec.ReadinessProbeInitialDelay,
+			PeriodSeconds:       defaultReadinessPeriod,
+			TimeoutSeconds:      defaultReadinessTimeout,
+		},
+	}
+}
+
+func generateAuthProvider(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Value_StructValue {
+	return &prototypes.Value_StructValue{
+		StructValue: &prototypes.Struct{
+			Fields: map[string]*prototypes.Value{
+				"audiences": {
+					Kind: &prototypes.Value_ListValue{
+						ListValue: &prototypes.ListValue{
+							Values: []*prototypes.Value{
+								{
+									Kind: &prototypes.Value_StringValue{
+										StringValue: *modelDeploymentCR.Spec.RoleName,
+									},
+								},
+							},
+						},
+					},
+				},
+				"issuer": {
+					Kind: &prototypes.Value_StringValue{
+						StringValue: authProviderName,
+					},
+				},
+				"remote_jwks": {
+					Kind: &prototypes.Value_StructValue{
+						StructValue: &prototypes.Struct{
+							Fields: map[string]*prototypes.Value{
+								"http_uri": {
+									Kind: &prototypes.Value_StructValue{
+										StructValue: &prototypes.Struct{
+											Fields: map[string]*prototypes.Value{
+												"uri": {
+													Kind: &prototypes.Value_StringValue{
+														StringValue: viper.GetString(legion.JwksUrl),
+													},
+												},
+												"cluster": {
+													Kind: &prototypes.Value_StringValue{
+														StringValue: viper.GetString(legion.JwksCluster),
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func generateAuthRule(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Value_StructValue {
+	return &prototypes.Value_StructValue{
+		StructValue: &prototypes.Struct{
+			Fields: map[string]*prototypes.Value{
+				"match": {
+					Kind: &prototypes.Value_StructValue{
+						StructValue: &prototypes.Struct{
+							Fields: map[string]*prototypes.Value{
+								"prefix": {
+									Kind: &prototypes.Value_StringValue{
+										StringValue: "/api",
+									},
+								},
+							},
+						},
+					},
+				},
+				"requires": {
+					Kind: &prototypes.Value_StructValue{
+						StructValue: &prototypes.Struct{
+							Fields: map[string]*prototypes.Value{
+								"provider_and_audiences": {
+									Kind: &prototypes.Value_StructValue{
+										StructValue: &prototypes.Struct{
+											Fields: map[string]*prototypes.Value{
+												"provider_name": {
+													Kind: &prototypes.Value_StringValue{
+														StringValue: authProviderName,
+													},
+												},
+												"audiences": {
+													Kind: &prototypes.Value_ListValue{
+														ListValue: &prototypes.ListValue{
+															Values: []*prototypes.Value{
+																{
+																	Kind: &prototypes.Value_StringValue{
+																		StringValue: *modelDeploymentCR.Spec.RoleName,
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				"forward": {
+					Kind: &prototypes.Value_BoolValue{
+						BoolValue: true,
+					},
+				},
+			},
+		},
+	}
+}
+
+func generateAuthFilterConfig(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Struct {
+	// TODO: rewrite lol
+	return &prototypes.Struct{
+		Fields: map[string]*prototypes.Value{
+			"providers": {
+				Kind: &prototypes.Value_StructValue{
+					StructValue: &prototypes.Struct{
+						Fields: map[string]*prototypes.Value{
+							authProviderName: {
+								Kind: generateAuthProvider(modelDeploymentCR),
+							},
+						},
+					},
+				},
+			},
+			"rules": {
+				Kind: &prototypes.Value_ListValue{
+					ListValue: &prototypes.ListValue{
+						Values: []*prototypes.Value{
+							{
+								Kind: generateAuthRule(modelDeploymentCR),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (r *ReconcileModelDeployment) reconcileEnvoyAuthFilter(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	envoyAuthFilter := &networkingv1alpha3.EnvoyFilter{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      modelDeploymentCR.Name,
+			Namespace: modelDeploymentCR.Namespace,
+		},
+		Spec: networkingv1alpha3.EnvoyFilterSpec{
+			EnvoyFilter: networkingv1alpha3_istio.EnvoyFilter{
+				WorkloadLabels: map[string]string{
+					modelNameAnnotationKey: modelDeploymentCR.Name,
+				},
+				Filters: []*networkingv1alpha3_istio.EnvoyFilter_Filter{
+					{
+						ListenerMatch: &networkingv1alpha3_istio.EnvoyFilter_ListenerMatch{
+							ListenerType:     networkingv1alpha3_istio.EnvoyFilter_ListenerMatch_SIDECAR_INBOUND,
+							ListenerProtocol: networkingv1alpha3_istio.EnvoyFilter_ListenerMatch_HTTP,
+						},
+						FilterName:   "envoy.filters.http.jwt_authn",
+						FilterType:   networkingv1alpha3_istio.EnvoyFilter_Filter_HTTP,
+						FilterConfig: generateAuthFilterConfig(modelDeploymentCR),
+					},
+				},
+			},
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(modelDeploymentCR, envoyAuthFilter, r.scheme); err != nil {
+		return err
+	}
+
+	if err := legion.StoreHash(envoyAuthFilter); err != nil {
+		log.Error(err, "Cannot apply obj hash")
+		return err
+	}
+
+	found := &networkingv1alpha3.EnvoyFilter{}
+	err := r.Get(context.TODO(), types.NamespacedName{
+		Name: envoyAuthFilter.Name, Namespace: envoyAuthFilter.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info(fmt.Sprintf("Creating %s k8s Istio Envoy Filter", envoyAuthFilter.ObjectMeta.Name))
+		err = r.Create(context.TODO(), envoyAuthFilter)
+		return err
+	} else if err != nil {
+		return err
+	}
+
+	if !legion.ObjsEqualByHash(envoyAuthFilter, found) {
+		log.Info(fmt.Sprintf("Istio Envoy Filter hashes don't equal. Update the %s Model route", envoyAuthFilter.Name))
+
+		found.Spec = envoyAuthFilter.Spec
+		found.ObjectMeta.Annotations = envoyAuthFilter.ObjectMeta.Annotations
+		found.ObjectMeta.Labels = envoyAuthFilter.ObjectMeta.Labels
+
+		log.Info(fmt.Sprintf("Updating %s k8s Istio Envoy Filter", envoyAuthFilter.ObjectMeta.Name))
+		err = r.Update(context.TODO(), found)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Info(fmt.Sprintf("Istio Envoy Filter hashes equal. Skip updating of the %s Istio Envoy Filter", envoyAuthFilter.Name))
+	}
+
+	return nil
+}
+
+func (r *ReconcileModelDeployment) getLatestReadyRevision(modelDeploymentCR *legionv1alpha1.ModelDeployment) (string, error) {
+	knativeConfiguration := &knservingv1alpha1.Configuration{}
+	if err := r.Get(context.TODO(), types.NamespacedName{
+		Name: modelDeploymentCR.Name, Namespace: modelDeploymentCR.Namespace,
+	}, knativeConfiguration); errors.IsNotFound(err) {
+		return "", nil
+	} else if err != nil {
+		log.Error(err, "Getting Knative Configuration")
+		return "", err
+	}
+
+	return knativeConfiguration.Status.LatestReadyRevisionName, nil
+}
+
+func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1alpha1.ModelDeployment,
+	state legionv1alpha1.ModelDeploymentState, latestReadyRevision string) error {
+
+	modelDeploymentCR.Status.State = state
+
+	if len(latestReadyRevision) != 0 {
+		modelDeploymentCR.Status.ServiceURL = fmt.Sprintf(
+			"%s.%s.svc.cluster.local", latestReadyRevision, modelDeploymentCR.Namespace,
+		)
+		modelDeploymentCR.Status.LastRevisionName = latestReadyRevision
+	}
+
+	if err := r.Update(context.TODO(), modelDeploymentCR); err != nil {
+		log.Error(err, fmt.Sprintf("Update status of %s model deployment custom resource", modelDeploymentCR.Name))
+		return err
+	}
+
+	return nil
+}
+
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=services/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments/status,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=serving.knative.dev,resources=configurations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.istio.io,resources=envoyfilters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ModelDeployment modelDeploymentCR
@@ -308,118 +577,76 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 	err := r.Get(context.TODO(), request.NamespacedName, modelDeploymentCR)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Object not found, return.  Created objects are automatically garbage collected.
-			// For additional cleanup logic use finalizers.
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
+
 		return reconcile.Result{}, err
 	}
 
-	labels, err := r.labelExtractor(modelDeploymentCR.Spec.Image)
-	if err != nil {
-		errorMessage := fmt.Sprintf("Label extraction from %s image is failed", modelDeploymentCR.Spec.Image)
-		log.Error(err, errorMessage)
+	if viper.GetBool(legion.JwtEnabled) {
+		log.Info("Reconcile Auth Filter", "Model Deployment name", modelDeploymentCR.Name)
 
-		modelDeploymentCR.Status.State = legionv1alpha1.ModelDeploymentFailed
-		modelDeploymentCR.Status.Message = errorMessage
-
-		r.recorder.Event(modelDeploymentCR,
-			"Normal", string(legionv1alpha1.ModelDeploymentFailed),
-			fmt.Sprintf("Exception: %s. Reason: %s", errorMessage, err.Error()),
-		)
-
-		err := r.Update(context.TODO(), modelDeploymentCR)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Update status of %s model deployment custom resource", modelDeploymentCR.Name))
+		if err := r.reconcileEnvoyAuthFilter(modelDeploymentCR); err != nil {
+			log.Error(err, "Reconcile Istio Envoy Filter")
 			return reconcile.Result{}, err
 		}
-
-		return reconcile.Result{}, nil
 	}
 
-	modelId := labels[legion.DomainModelId]
-	modelVersion := labels[legion.DomainModelVersion]
-
-	if modelId == "" || modelVersion == "" {
-		errorMessage := fmt.Sprintf(
-			"Model docker labels for %s model image are missed: [%s, %s]",
-			modelDeploymentCR.Spec.Image,
-			legion.DomainModelId,
-			legion.DomainModelVersion,
-		)
-		log.Error(err, errorMessage)
-
-		modelDeploymentCR.Status.State = legionv1alpha1.ModelDeploymentFailed
-		modelDeploymentCR.Status.Message = errorMessage
-
-		r.recorder.Event(modelDeploymentCR,
-			"Normal", string(legionv1alpha1.ModelDeploymentFailed),
-			fmt.Sprintf("Exception: %s. Reason: %s", errorMessage, err.Error()),
-		)
-
-		err := r.Update(context.TODO(), modelDeploymentCR)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Update status of %s model deployment custom resource", modelDeploymentCR.Name))
-			return reconcile.Result{}, err
-		}
-
-		return reconcile.Result{}, nil
-	}
-
-	for k, v := range modelDeploymentCR.Spec.Annotations {
-		labels[k] = v
-	}
-
-	modelContainerMeta := modelContainerMetaInformation{
-		modelId:      modelId,
-		modelVersion: modelVersion,
-		k8sName:      legion.ConvertTok8sName(modelId, modelVersion),
-		k8sLabels: map[string]string{
-			legion.ComponentLabel:     legion.ComponentNameModel,
-			legion.SystemLabel:        legion.SystemValue,
-			legion.DomainModelId:      modelId,
-			legion.DomainModelVersion: modelVersion,
-		},
-		k8sAnnotations: labels,
-	}
-
-	modelDeployment, err := r.reconcileDeployment(&modelContainerMeta, modelDeploymentCR)
-	if err != nil {
-		log.Error(err, "Reconcile k8s deployment")
+	if err := r.ReconcileKnativeConfiguration(modelDeploymentCR); err != nil {
+		log.Error(err, "Reconcile Knative Configuration")
 		return reconcile.Result{}, err
 	}
 
-	err = r.reconcileService(&modelContainerMeta, modelDeploymentCR)
+	latestReadyRevision, err := r.getLatestReadyRevision(modelDeploymentCR)
 	if err != nil {
-		log.Error(err, "Reconcile k8s service")
+		log.Error(err, "Getting latest revision", "Model Deployment name", modelDeploymentCR.Name)
 		return reconcile.Result{}, err
 	}
 
-	statusMessage := "Deployment and service were created"
-	modelDeploymentCR.Status.Message = statusMessage
-	// TODO: Consider using of deployment states
-	modelDeploymentCR.Status.State = legionv1alpha1.ModelDeploymentCreated
-	modelDeploymentCR.Status.Deployment = modelContainerMeta.k8sName
-	modelDeploymentCR.Status.Service = modelContainerMeta.k8sName
-	// TODO: add model edge url
-	// TODO: add model id and version
-	modelDeploymentCR.Status.ServiceURL = fmt.Sprintf(
-		"http://%s.%s.svc.cluster.local:%d", modelContainerMeta.k8sName, modelDeploymentCR.Namespace, defaultModelPort,
-	)
+	if len(latestReadyRevision) == 0 {
+		log.Info("Can not get latest ready revision. Put the Model Deployment back in the queue", "Model Deployment name", modelDeploymentCR.Name)
+
+		_ = r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateProcessing, "")
+
+		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
+	}
+
+	log.Info("Reconcile default Model Route", "Model Deployment name", modelDeploymentCR.Name)
+
+	if err := r.ReconcileModelRoute(modelDeploymentCR, latestReadyRevision); err != nil {
+		log.Error(err, "Reconcile the default Model Route")
+		return reconcile.Result{}, err
+	}
+
+	modelDeployment := &appsv1.Deployment{}
+	modelDeploymentKey := types.NamespacedName{
+		Name:      knativeDeploymentName(latestReadyRevision),
+		Namespace: viper.GetString(legion.Namespace),
+	}
+
+	if err := r.Client.Get(context.TODO(), modelDeploymentKey, modelDeployment); errors.IsNotFound(err) {
+		_ = r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateProcessing, latestReadyRevision)
+
+		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
+	} else if err != nil {
+		log.Error(err, "Getting of model deployment", "Model Deployment name", modelDeploymentCR.Name,
+			"K8s Deployment name", modelDeploymentKey.Name)
+
+		return reconcile.Result{}, err
+	}
+
+	modelDeploymentCR.Status.Replicas = modelDeployment.Status.Replicas
 	modelDeploymentCR.Status.AvailableReplicas = modelDeployment.Status.AvailableReplicas
+	modelDeploymentCR.Status.Deployment = modelDeployment.Name
 
-	if modelDeploymentCR.ObjectMeta.Labels == nil {
-		modelDeploymentCR.ObjectMeta.Labels = map[string]string{}
+	if modelDeploymentCR.Status.Replicas != modelDeploymentCR.Status.AvailableReplicas {
+		_ = r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateProcessing, latestReadyRevision)
+
+		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	}
 
-	for k, v := range modelContainerMeta.k8sLabels {
-		modelDeploymentCR.ObjectMeta.Labels[k] = v
-	}
-
-	err = r.Update(context.TODO(), modelDeploymentCR)
-	if err != nil {
-		log.Error(err, fmt.Sprintf("Update status of %s model deployment custom resource", modelDeploymentCR.Name))
+	if err := r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateReady, latestReadyRevision); err != nil {
+		log.Error(err, "Reconcile Model Deployment Status", "Model Deployment name", modelDeploymentCR.Name)
 		return reconcile.Result{}, err
 	}
 

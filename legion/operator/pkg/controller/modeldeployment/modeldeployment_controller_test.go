@@ -18,33 +18,30 @@ package modeldeployment
 
 import (
 	"context"
+	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"testing"
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strconv"
+	"testing"
+	"time"
 )
 
 var (
 	timeout          = time.Second * 5
-	mdImage          = "test/image:123"
+	image            = "test/image:123"
 	mdName           = "test-md"
-	mdReplicas       = int32(2)
-	mdReadinessDelay = int32(2)
-	mdLivenessDelay  = int32(2)
+	mdMinReplicas    = int32(1)
+	mdMaxReplicas    = int32(2)
+	mdReadinessDelay = int32(33)
+	mdLivenessDelay  = int32(44)
 	mdNamespace      = "default"
-	modelId          = "id-1"
-	modelVersion     = "2"
-	k8sName          = "model-id-1-2"
 )
 
 var (
@@ -54,10 +51,6 @@ var (
 			Name:      mdName,
 			Namespace: mdNamespace,
 		},
-	}
-	imageLabels = map[string]string{
-		legion.DomainModelId:      modelId,
-		legion.DomainModelVersion: modelVersion,
 	}
 	mdResources = &corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
@@ -71,17 +64,14 @@ var (
 	}
 )
 
-func mockExtractLabel(image string) (map[string]string, error) {
-	return imageLabels, nil
-}
-
 func TestReconcile(t *testing.T) {
 	g := NewGomegaWithT(t)
-	instance := &legionv1alpha1.ModelDeployment{
+	md := &legionv1alpha1.ModelDeployment{
 		ObjectMeta: metav1.ObjectMeta{Name: mdName, Namespace: mdNamespace},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
-			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			Image:                      image,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			ReadinessProbeInitialDelay: &mdReadinessDelay,
 			LivenessProbeInitialDelay:  &mdLivenessDelay,
 			Resources:                  mdResources,
@@ -92,7 +82,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	c = mgr.GetClient()
 
-	recFn, requests := SetupTestReconcile(newConfigurableReconciler(mgr, mockExtractLabel))
+	recFn, requests := SetupTestReconcile(newConfigurableReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
@@ -102,30 +92,42 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Create the ModelDeployment object and expect the Reconcile and Deployment to be created
-	err = c.Create(context.TODO(), instance)
+	err = c.Create(context.TODO(), md)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer c.Delete(context.TODO(), md)
 
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	modelDepKey := types.NamespacedName{
-		Name:      k8sName,
-		Namespace: mdNamespace,
-	}
-	modelDep := &appsv1.Deployment{}
-	g.Eventually(func() error { return c.Get(context.TODO(), modelDepKey, modelDep) }, timeout).
-		Should(Succeed())
-	containers := modelDep.Spec.Template.Spec.Containers
-	g.Expect(modelDep.Spec.Template.Spec.Containers).To(HaveLen(1))
-	g.Expect(containers[0].Image).To(Equal(mdImage))
+	configuration := &knservingv1alpha1.Configuration{}
+	configurationKey := types.NamespacedName{Name: knativeConfigurationName(md), Namespace: mdNamespace}
+	g.Expect(c.Get(context.TODO(), configurationKey, configuration)).ToNot(HaveOccurred())
 
-	modelServiceKey := types.NamespacedName{
-		Name:      k8sName,
-		Namespace: mdNamespace,
-	}
-	modelService := &corev1.Service{}
-	g.Eventually(func() error { return c.Get(context.TODO(), modelServiceKey, modelService) }, timeout).
-		Should(Succeed())
+	configurationAnnotations := configuration.Spec.Template.ObjectMeta.Annotations
+	g.Expect(configurationAnnotations).Should(HaveLen(5))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeMinReplicasKey, strconv.Itoa(int(mdMinReplicas))))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeMaxReplicasKey, strconv.Itoa(int(mdMaxReplicas))))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeAutoscalingTargetKey, knativeAutoscalingTargetDefaultValue))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeAutoscalingClass, defaultKnativeAutoscalingClass))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeAutoscalingMetric, defaultKnativeAutoscalingMetric))
+
+	configurationLabels := configuration.Spec.Template.ObjectMeta.Labels
+	g.Expect(configurationLabels).Should(HaveLen(1))
+	g.Expect(configurationLabels).Should(HaveKeyWithValue(modelNameAnnotationKey, md.Name))
+
+	podSpec := configuration.Spec.Template.Spec
+	g.Expect(podSpec.Containers).To(HaveLen(1))
+	g.Expect(*podSpec.TimeoutSeconds).To(Equal(defaultTerminationPeriod))
+
+	containerSpec := podSpec.Containers[0]
+	g.Expect(containerSpec.Resources).To(Equal(*mdResources))
+	g.Expect(containerSpec.Image).To(Equal(image))
+	g.Expect(containerSpec.Ports).To(HaveLen(1))
+	g.Expect(containerSpec.Ports).To(HaveLen(1))
+	g.Expect(containerSpec.Ports[0].Name).To(Equal(defaultPortName))
+	g.Expect(containerSpec.Ports[0].ContainerPort).To(Equal(defaultModelPort))
+	g.Expect(containerSpec.LivenessProbe).NotTo(BeNil())
+	g.Expect(containerSpec.LivenessProbe.InitialDelaySeconds).To(Equal(mdLivenessDelay))
+	g.Expect(containerSpec.ReadinessProbe).NotTo(BeNil())
+	g.Expect(containerSpec.ReadinessProbe.InitialDelaySeconds).To(Equal(mdReadinessDelay))
 }

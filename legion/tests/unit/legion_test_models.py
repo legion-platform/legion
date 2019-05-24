@@ -20,7 +20,7 @@ import pandas
 from legion.toolchain import model
 
 
-def create_simple_summation_model_by_df(model_id, model_version, path):
+def create_simple_summation_model_by_df(model_name, model_version, path):
     def apply(x):
         a = x.iloc[0]['a']
         b = x.iloc[0]['b']
@@ -31,10 +31,10 @@ def create_simple_summation_model_by_df(model_id, model_version, path):
         'b': 1,
     }])
 
-    return model.init(model_id, model_version).export_df(apply, df).save(path)
+    return model.init(model_name, model_version).export_df(apply, df).save(path)
 
 
-def create_simple_summation_model_by_df_with_prepare(model_id, model_version, path):
+def create_simple_summation_model_by_df_with_prepare(model_name, model_version, path):
     def apply(x):
         return {'x': int(x['a'] + x['b'])}
 
@@ -43,12 +43,12 @@ def create_simple_summation_model_by_df_with_prepare(model_id, model_version, pa
         'b': 1,
     }])
 
-    model.init(model_id, model_version)
+    model.init(model_name, model_version)
 
     return model.export_df(apply, df).save(path)
 
 
-def create_simple_summation_model_by_types(model_id, model_version, path):
+def create_simple_summation_model_by_types(model_name, model_version, path):
     def apply(x):
         return {'x': int(x['a'] + x['b'])}
 
@@ -57,19 +57,19 @@ def create_simple_summation_model_by_types(model_id, model_version, path):
         'b': model.int32,
     }
 
-    return model.init(model_id, model_version).export(apply, parameters).save(path)
+    return model.init(model_name, model_version).export(apply, parameters).save(path)
 
 
-def create_simple_summation_model_untyped(model_id, model_version, path):
+def create_simple_summation_model_untyped(model_name, model_version, path):
     def apply(x):
         keys = sorted(tuple(x.keys()))
 
         return {'keys': ','.join(keys), 'sum': sum(int(val) for val in x.values())}
 
-    return model.init(model_id, model_version).export_untyped(apply).save(path)
+    return model.init(model_name, model_version).export_untyped(apply).save(path)
 
 
-def create_simple_summation_model_lists(model_id, model_version, path):
+def create_simple_summation_model_lists(model_name, model_version, path):
     def apply(x):
         movie_matrix = dict(zip(x['movie'], x['rate']))
 
@@ -78,10 +78,10 @@ def create_simple_summation_model_lists(model_id, model_version, path):
 
         return {'best': best, 'worth': worth}
 
-    return model.init(model_id, model_version).export_untyped(apply).save(path)
+    return model.init(model_name, model_version).export_untyped(apply).save(path)
 
 
-def create_simple_summation_model_lists_with_files_info(model_id, model_version, path):
+def create_simple_summation_model_lists_with_files_info(model_name, model_version, path):
     def apply(x):
         movie_matrix = {}
 
@@ -94,4 +94,4 @@ def create_simple_summation_model_lists_with_files_info(model_id, model_version,
 
         return {'best': best, 'worth': worth}
 
-    return model.init(model_id, model_version).export_untyped(apply).save(path)
+    return model.init(model_name, model_version).export_untyped(apply).save(path)

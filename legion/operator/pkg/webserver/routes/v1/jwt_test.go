@@ -19,26 +19,31 @@ package v1
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
 const (
-	testModelID      = "test-model-id"
-	testModelVersion = "test-model-version"
+	testModelDeploymentName = "test-model-deployment-name"
 )
 
 func TestGenerateTokenWithoutExpirationDate(t *testing.T) {
+	dir, _ := os.Getwd()
+	fmt.Println(dir)
+	viper.Set(legion.ModelJwtPrivateKey, "../../../../hack/tests/keys/private_key.pem")
+
 	g := NewGomegaWithT(t)
 	server, _ := createEnvironment()
 
-	viper.Set(legion.JwtSecret, "some-secret")
+	viper.Set(legion.JwtEnabled, true)
 
-	tokenRequest := &TokenRequest{ModelID: testModelID, ModelVersion: testModelVersion}
+	tokenRequest := &TokenRequest{RoleName: testModelDeploymentName}
 	tokenRequestBody, err := json.Marshal(tokenRequest)
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -59,9 +64,9 @@ func TestDisabledJWT(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, _ := createEnvironment()
 
-	viper.Set(legion.JwtSecret, "")
+	viper.Set(legion.JwtEnabled, false)
 
-	tokenRequest := &TokenRequest{ModelID: testModelID, ModelVersion: testModelVersion}
+	tokenRequest := &TokenRequest{RoleName: testModelDeploymentName}
 	tokenRequestBody, err := json.Marshal(tokenRequest)
 	g.Expect(err).NotTo(HaveOccurred())
 

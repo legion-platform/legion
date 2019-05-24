@@ -13,6 +13,8 @@ var log = logf.Log.WithName("edi-main")
 func main() {
 	utils.SetupLogger()
 	legion.SetUpEDIConfig()
+	utils.Jwks()
+	utils.SignKey()
 
 	mainServer, err := webserver.SetUPMainServer()
 	if err != nil {

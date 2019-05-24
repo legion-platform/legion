@@ -156,7 +156,6 @@ if __name__ == '__main__':
         for dir, package in [('sdk', 'sdk'),
                              ('cli', 'cli'),
                              ('robot', 'robot'),
-                             ('services', 'services'),
                              ('toolchains/python', 'toolchain'),
                              ('jupyterlab-plugin', 'jupyterlab')]:
             build_version = work(args, 'legion/{dir}/legion/{package}/version.py'.format(dir=dir, package=package))

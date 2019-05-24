@@ -162,7 +162,7 @@ class Utils:
         """
         Check if model return valid code for get request
 
-        :param url: url with model_id for checking
+        :param url: url with model_name for checking
         :type url: str
         :param token: token for the authorization
         :type token: str

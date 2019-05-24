@@ -4,19 +4,18 @@ kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-fluentd"
   labels:
-    component: "legion-fluentd"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 4 }}
 spec:
   # FluentD is limited to 1 replica to avoid data overwriting
   replicas: 1
   selector:
     matchLabels:
-      component: "legion-fluentd"
-      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
+      {{- include "legion.helm-labels-for-search" (dict "component" "fluentd" "root" .) | nindent 6 }}
   template:
     metadata:
       {{- if and (eq .Values.feedback.output.target "s3") (eq .Values.feedback.output.s3.authorization "iam" ) }}
       annotations:
+        sidecar.istio.io/inject: "false"
         iam.amazonaws.com/role: {{ ternary $.Values.feedback.output.s3.customIAMRole (printf "%s-%s-collector-role" $.Values.ingress.globalDomain $.Release.Namespace) (hasKey $.Values.feedback.output.s3 "customIAMRole") }}
       {{- end }}
       {{- if and (eq .Values.feedback.output.target "gcs") (eq .Values.feedback.output.gcs.authorization "sa" ) }}
@@ -25,8 +24,7 @@ spec:
         accounts.google.com/scopes: "https://www.googleapis.com/auth/devstorage.read_write"
       {{- end }}
       labels:
-        component: "legion-fluentd"
-        {{- include "legion.helm-labels" . | nindent 8 }}
+        {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 8 }}
     spec:
       containers:
       - name: fluentd
@@ -86,12 +84,10 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}-fluentd"
   labels:
-    component: "legion-fluentd"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 4 }}
 spec:
   selector:
-    component: "legion-fluentd"
-    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
+    {{- include "legion.helm-labels-for-search" (dict "component" "fluentd" "root" .) | nindent 4 }}
   ports:
   - name: input
     port: {{ .Values.feedback.fluentd.port }}

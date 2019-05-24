@@ -11,6 +11,6 @@
       "use_df": false
     }
   },
-  "model_id": "test-math",
+  "model_name": "test-math",
   "model_version": "1.0"
 }
