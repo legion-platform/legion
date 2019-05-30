@@ -1,0 +1,11 @@
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  name: test-mt
+spec:
+  entrypoint: simple.py
+  toolchain: python
+  vcsName: legion
+  args:
+    - "--id new-test --version 3.0"
+  workDir: legion/tests/e2e/models

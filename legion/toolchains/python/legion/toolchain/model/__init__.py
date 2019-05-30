@@ -178,7 +178,8 @@ def save(path=None):
     return _model.save(path)
 
 
-def show_metrics(model_id: typing.Optional[str] = None, model_version: typing.Optional[str] = None) -> pd.DataFrame:
+def show_local_metrics(model_id: typing.Optional[str] = None,
+                       model_version: typing.Optional[str] = None) -> pd.DataFrame:
     """
     Show metrics from local store
 
@@ -192,4 +193,4 @@ def show_metrics(model_id: typing.Optional[str] = None, model_version: typing.Op
 
         model_id = _model.model_id
 
-    return metrics.show_metrics(model_id, model_version)
+    return metrics.show_local_metrics(model_id, model_version)

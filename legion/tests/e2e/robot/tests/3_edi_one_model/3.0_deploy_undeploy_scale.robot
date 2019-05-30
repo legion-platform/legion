@@ -24,6 +24,42 @@ Test Setup          Run EDI deploy and check model started            ${TEST_MOD
 Test Teardown       Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
 Force Tags          edi  cli  enclave
 
+*** Keywords ***
+Check commands with file parameter
+    [Arguments]  ${create_file}  ${edit_file}  ${delete_file}
+    ${res}=  Shell  legionctl --verbose md create -f ${LEGION_ENTITIES_DIR}/md/${create_file}
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  legionctl --verbose md get ${TEST_MODEL_NAME}
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  1/1
+
+    ${res}=  Shell  legionctl --verbose md edit -f ${LEGION_ENTITIES_DIR}/md/${edit_file}
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  legionctl --verbose md get ${TEST_MODEL_NAME}
+             Should be equal  ${res.rc}  ${0}
+             Should contain   ${res.stdout}  2/2
+
+    ${res}=  Shell  legionctl --verbose md delete -f ${LEGION_ENTITIES_DIR}/md/${delete_file}
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  legionctl --verbose md get ${TEST_MODEL_NAME}
+             Should not be equal  ${res.rc}  ${0}
+             Should contain   ${res.stderr}  not found
+
+File not found
+    [Arguments]  ${command}
+        ${res}=  Shell  legionctl --verbose md ${command} -f wrong-file
+                 Should not be equal  ${res.rc}  ${0}
+                 Should contain       ${res.stderr}  No such file or directory
+
+Invoke command without parameters
+    [Arguments]  ${command}
+        ${res}=  Shell  legionctl --verbose md ${command}
+                 Should not be equal  ${res.rc}  ${0}
+                 Should contain       ${res.stderr}  Provide name of a Model Deployment or path to a file
+
 *** Test Cases ***
 Check EDI deploy procedure
     [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
@@ -46,7 +82,7 @@ Check EDI deploy with scale to 1
     ${resp}=        Run EDI inspect with parse
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_NAME}
                     Log                            ${model}
-                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated  1
+                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated  1/1
 
 Check EDI deploy with scale to 2
     [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
@@ -60,7 +96,7 @@ Check EDI deploy with scale to 2
     ${resp}=        Run EDI inspect with parse
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_NAME}
                     Log                            ${model}
-                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   2
+                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   2/2
 
 Check EDI invalid model name deploy procedure
     [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
@@ -100,7 +136,7 @@ Check EDI scale up procedure
     ${resp}=        Run EDI inspect with parse
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_NAME}
                     Log                            ${model}
-                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   2
+                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   2/2
 
 Check EDI scale down procedure
     [Documentation]  Try to scale up model through EDI console
@@ -110,14 +146,14 @@ Check EDI scale down procedure
     ${resp}=        Run EDI inspect with parse
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_NAME}
                     Log                            ${model}
-                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   2
+                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   2/2
 
     ${resp}=        Shell  legionctl --verbose md scale ${TEST_MODEL_NAME} --replicas 1
                     Should Be Equal As Integers    ${resp.rc}          0
     ${resp}=        Run EDI inspect with parse
     ${model}=       Find model information in edi  ${resp}    ${TEST_MODEL_NAME}
                     Log                            ${model}
-                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   1
+                    Verify model info from edi     ${model}   ${TEST_MODEL_NAME}  DeploymentCreated   1/1
 
 Check EDI invalid model id scale up procedure
     [Documentation]  Try to scale up dummy model with invalid name through EDI console
@@ -153,3 +189,23 @@ Check setting of default resource values
     Should be equal  256Mi  ${model_resources.limits["memory"]}
     Should be equal  128m  ${model_resources.requests["cpu"]}
     Should be equal  128Mi  ${model_resources.requests["memory"]}
+
+Check commands with file parameters
+    [Documentation]  Model Deployment commands with differenet file formats
+    [Setup]  None
+    [Teardown]  None
+    [Template]  Check commands with file parameter
+    create_file=k8s.json     edit_file=k8s-changed.yaml     delete_file=k8s-changed
+    create_file=legion.json  edit_file=legion-changed.yaml  delete_file=legion-changed
+
+File with entitiy not found
+    [Documentation]  Invoke Model Deployment commands with not existed file
+    [Template]  File not found
+    command=create
+    command=edit
+
+User must specify filename or mt name
+    [Documentation]  Invoke Model Deployment commands without paramteres
+    [Template]  Invoke command without parameters
+    command=create
+    command=edit

@@ -21,7 +21,7 @@ import logging
 
 from texttable import Texttable
 
-from legion.cli.parsers import security
+from legion.cli.parsers import security, read_entity
 from legion.sdk.clients.vcs import build_client, VCSCredential
 
 VCS_HEADER = ["Name", "Type", "URI", "Default Reference", "Credential", "Public Key"]
@@ -31,6 +31,22 @@ LOGGER = logging.getLogger(__name__)
 INSPECT_FORMAT_COLORIZED = 'colorized'
 INSPECT_FORMAT_TABULAR = 'column'
 VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
+
+
+def _convert_vcs_from_args(args: argparse.Namespace) -> VCSCredential:
+    if args.filename:
+        return VCSCredential.from_json(read_entity(args.filename))
+    elif args.name:
+        return VCSCredential(
+            name=args.name,
+            type=args.type,
+            uri=args.uri,
+            default_reference=args.default_reference,
+            credential=args.credential,
+            public_key=args.public_key
+        )
+    else:
+        raise ValueError(f'Provide name of a VCS Credential or path to a file')
 
 
 def get(args: argparse.Namespace):
@@ -63,14 +79,7 @@ def create(args: argparse.Namespace):
     """
     vcs_client = build_client(args)
 
-    message = vcs_client.create(VCSCredential(
-        name=args.name,
-        type=args.type,
-        uri=args.uri,
-        default_reference=args.default_reference,
-        credential=args.credential,
-        public_key=args.public_key
-    ))
+    message = vcs_client.create(_convert_vcs_from_args(args))
 
     print(message)
 
@@ -82,14 +91,7 @@ def edit(args: argparse.Namespace):
     """
     vcs_client = build_client(args)
 
-    message = vcs_client.edit(VCSCredential(
-        name=args.name,
-        type=args.type,
-        uri=args.uri,
-        default_reference=args.default_reference,
-        credential=args.credential,
-        public_key=args.public_key
-    ))
+    message = vcs_client.edit(_convert_vcs_from_args(args))
 
     print(message)
 
@@ -101,7 +103,11 @@ def delete(args: argparse.Namespace):
     """
     vcs_client = build_client(args)
 
-    message = vcs_client.delete(args.name)
+    if not args.filename and not args.name:
+        raise ValueError(f'Provide name of a VCS Credential or path to a file')
+
+    vcs_name = args.name if args.name else VCSCredential.from_json(read_entity(args.filename)).name
+    message = vcs_client.delete(vcs_name)
 
     print(message)
 
@@ -122,32 +128,35 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     vcs_get_parser.set_defaults(func=get)
 
     vcs_create_parser = vcs_subparser.add_parser('create', description='Create a VCSCredential')
-    vcs_create_parser.add_argument('name', type=str, help='VCS Credential name')
-    vcs_create_parser.add_argument('--type', type=str, help='VCS Credential type: git', required=True)
+    vcs_create_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name')
+    vcs_create_parser.add_argument('--type', type=str, help='VCS Credential type: git')
     vcs_create_parser.add_argument('--uri', type=str,
-                                   help='VCS Credential URI. For example: git@github.com:legion-platform/legion.git',
-                                   required=True)
+                                   help='VCS Credential URI. For example: git@github.com:legion-platform/legion.git')
     vcs_create_parser.add_argument('--default-reference', type=str,
-                                   help='Git reference: commit, branch ot tag', required=True)
+                                   help='Git reference: commit, branch ot tag')
     vcs_create_parser.add_argument('--credential', type=str, help='GIT SSH key')
     vcs_create_parser.add_argument('--public-key', type=str, help='Server public key')
+    vcs_create_parser.add_argument('--filename', '-f', type=str, help='Filename to use to create the VCSCredential. '
+                                                                      'This option ignores other VCS parameters!')
     security.add_edi_arguments(vcs_create_parser)
     vcs_create_parser.set_defaults(func=create)
 
     vcs_edit_parser = vcs_subparser.add_parser('edit', description='Get all VCSCredentials')
-    vcs_edit_parser.add_argument('name', type=str, help='VCS Credential name')
-    vcs_edit_parser.add_argument('--type', type=str, help='VCS Credential type: git', required=True)
+    vcs_edit_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name')
+    vcs_edit_parser.add_argument('--type', type=str, help='VCS Credential type: git')
     vcs_edit_parser.add_argument('--uri', type=str,
-                                 help='VCS Credential URI. For example: git@github.com:legion-platform/legion.git',
-                                 required=True)
-    vcs_edit_parser.add_argument('--default-reference', type=str, help='Git reference: commit, branch ot tag',
-                                 required=True)
+                                 help='VCS Credential URI. For example: git@github.com:legion-platform/legion.git')
+    vcs_edit_parser.add_argument('--default-reference', type=str, help='Git reference: commit, branch ot tag')
     vcs_edit_parser.add_argument('--credential', type=str, help='GIT SSH key')
     vcs_edit_parser.add_argument('--public-key', type=str, help='Server public key')
+    vcs_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to edit the VCSCredential. '
+                                                                    'This option ignores other VCS parameters!')
     security.add_edi_arguments(vcs_edit_parser)
     vcs_edit_parser.set_defaults(func=edit)
 
     vcs_delete_parser = vcs_subparser.add_parser('delete', description='Get all VCSCredentials')
-    vcs_delete_parser.add_argument('name', type=str, help='VCS Credential name')
+    vcs_delete_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name')
+    vcs_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the VCSCredential. '
+                                                                      'This option ignores other VCS parameters!')
     security.add_edi_arguments(vcs_delete_parser)
     vcs_delete_parser.set_defaults(func=delete)

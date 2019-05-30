@@ -27,7 +27,7 @@ import unittest2
 # Extend PYTHONPATH in order to import test tools and models
 from legion.sdk import config
 from legion.toolchain import metrics
-from legion.toolchain.metrics import send_metric, show_metrics
+from legion.toolchain.metrics import send_metric, show_local_metrics
 
 sys.path.extend(os.path.dirname(__file__))
 from legion_test_utils import patch_config
@@ -117,11 +117,11 @@ class TestMetrics(unittest2.TestCase):
     def test_default_is_metrics_enabled(self):
         self.assertFalse(config.MODEL_CLUSTER_TRAIN_METRICS_ENABLED)
 
-    def test_show_metrics_empty(self):
-        df = show_metrics("non-valid-id")
+    def test_show_local_metrics_empty(self):
+        df = show_local_metrics("non-valid-id")
         self.assertTrue(df.empty)
 
-    def test_show_metrics_multiple_models(self):
+    def test_show_local_metrics_multiple_models(self):
         model_id_1 = "model_id_1"
         model_version_1_1 = "1.0"
         model_version_1_2 = "2.0"
@@ -146,9 +146,9 @@ class TestMetrics(unittest2.TestCase):
         send_metric(model_id_1, model_version_1_2, metric_name_1, metric_value_1)
         send_metric(model_id_1, model_version_1_2, metric_name_3, metric_value_3)
 
-        metrics_1 = show_metrics(model_id_1)
+        metrics_1 = show_local_metrics(model_id_1)
         self.assertFalse(metrics_1.empty)
-        self.assertTrue(show_metrics(model_id_2).empty)
+        self.assertTrue(show_local_metrics(model_id_2).empty)
 
         # Check that the following dataframe will be returned
         #      Model ID Model Version  metric-name-1  metric-name-2  metric-name-3
@@ -175,12 +175,12 @@ class TestMetrics(unittest2.TestCase):
         send_metric(model_id_2, model_version_2_1, metric_name_2, metric_value_2_2)
         send_metric(model_id_2, model_version_2_1, metric_name_3, metric_value_2_3)
 
-        metrics_df_2 = show_metrics(model_id_2)
+        metrics_df_2 = show_local_metrics(model_id_2)
 
         print(metrics_df_2.to_string(columns=["Model ID", "Model Version", metric_name_1, metric_name_2,
                                               metric_name_3]))
         self.assertFalse(metrics_df_2.empty)
-        self.assertFalse(show_metrics(model_id_1).empty)
+        self.assertFalse(show_local_metrics(model_id_1).empty)
 
         # Check that the following dataframe will be returned
         #      Model ID Model Version  metric-name-1  metric-name-2  metric-name-3

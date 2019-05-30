@@ -17,11 +17,14 @@
 CLI parsers
 """
 import argparse
+import json
+import os
+from typing import Any, Dict
 
-import typing
+import yaml
 
 
-def prepare_resources(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
+def prepare_resources(args: argparse.Namespace) -> Dict[str, Any]:
     """
     Convert cli parameters to k8s resources
     :param args: cli parameters
@@ -56,3 +59,36 @@ def add_resources_params(parser: argparse.ArgumentParser) -> None:
                         help='request memory for model deployment')
     parser.add_argument('--cpu-limit', default=None, type=str, help='limit cpu for model deployment')
     parser.add_argument('--cpu-request', default=None, type=str, help='request cpu for model deployment')
+
+
+def read_entity(file_path: str) -> Dict[str, Any]:
+    """
+    Read a MT/MD/VCS entity from the file
+    :param file_path: file which contains a MT/MD/VCS
+    :return: name and spec of MT/MD/VCS
+    """
+    _, ext = os.path.splitext(file_path)
+    data: Dict[str, Any] = {}
+
+    # We will use 1.2 yaml specification in the next golang cli implementation
+    # Yaml 1.2 is superset of json format
+    # We can avoid the following weird extension check
+    with open(file_path) as f:
+        # If the file doesn't contain extension than we assume that it's a yaml file.
+        if not ext or ext == '.yaml' or ext == '.yml':
+            data = yaml.safe_load(f)
+        elif ext == '.json':
+            data = json.load(f)
+        else:
+            raise ValueError("CLI can only read from yaml/json files")
+
+    # Legionctl supports own rest api and k8s schemas
+    name: str = data.get('name') or data.get('metadata', {}).get('name')
+    if not name:
+        raise ValueError(f'Unsupported file schema. Name is not provided. Read documentation about valid schema')
+
+    spec: Dict[str, Any] = data.get('spec')
+    if not spec:
+        raise ValueError(f'Unsupported file schema. Spec is not provided. Read documentation about valid schema')
+
+    return {"name": name, "spec": spec}

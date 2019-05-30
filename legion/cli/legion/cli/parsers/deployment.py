@@ -23,7 +23,7 @@ import typing
 
 from texttable import Texttable
 
-from legion.cli.parsers import security, prepare_resources, add_resources_params
+from legion.cli.parsers import security, prepare_resources, add_resources_params, read_entity
 from legion.sdk.clients import edi
 from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDeploymentClient, SUCCESS_STATE, \
     FAILED_STATE
@@ -33,7 +33,7 @@ from legion.sdk.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
 DEFAULT_WAIT_TIMEOUT = 5
 
 DEFAULT_WIDTH = 120
-MD_HEADER = ["Name", "State", "Replicas", "Service URL", "Available Replicas"]
+MD_HEADER = ["Name", "State", "Replicas", "Service URL"]
 
 DEFAULT_WIDTH_LOCAL = 160
 MD_LOCAL_HEADER = ["Name", "Image", "Port", "Model ID", "Model Version"]
@@ -43,6 +43,23 @@ LOGGER = logging.getLogger(__name__)
 INSPECT_FORMAT_COLORIZED = 'colorized'
 INSPECT_FORMAT_TABULAR = 'column'
 VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
+
+
+def _convert_md_from_args(args: argparse.Namespace) -> ModelDeployment:
+    if args.filename:
+        return ModelDeployment.from_json(read_entity(args.filename))
+    elif args.name:
+        return ModelDeployment(
+            name=args.name,
+            image=args.image,
+            resources=prepare_resources(args),
+            annotations=args.annotations,
+            replicas=args.replicas,
+            liveness_probe_initial_delay=args.livenesstimeout,
+            readiness_probe_initial_delay=args.readinesstimeout
+        )
+    else:
+        raise ValueError(f'Provide name of a Model Deployment or path to a file')
 
 
 def _prepare_labels(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
@@ -105,9 +122,8 @@ def get(args: argparse.Namespace):
     table.add_rows([MD_HEADER] + [[
         md.name,
         md.state,
-        md.replicas,
-        md.service_url,
-        md.available_replicas
+        f'{md.replicas}/{md.available_replicas}',
+        md.service_url
     ] for md in model_deployments])
     print(table.draw() + "\n")
 
@@ -123,17 +139,10 @@ def create(args: argparse.Namespace):
 
     md_client = build_client(args)
 
-    message = md_client.create(ModelDeployment(
-        name=args.name,
-        image=args.image,
-        resources=prepare_resources(args),
-        annotations=args.annotations,
-        replicas=args.replicas,
-        liveness_probe_initial_delay=args.livenesstimeout,
-        readiness_probeInitial_delay=args.readinesstimeout
-    ))
+    md = _convert_md_from_args(args)
+    message = md_client.create(md)
 
-    wait_operation_finish(args, md_client)
+    wait_operation_finish(args, md.name, md_client)
 
     print(message)
 
@@ -149,15 +158,10 @@ def edit(args: argparse.Namespace):
 
     md_client = build_client(args)
 
-    message = md_client.edit(ModelDeployment(
-        name=args.name,
-        image=args.image,
-        resources=prepare_resources(args),
-        annotations=args.arg,
-        replicas=args.replicas,
-        liveness_probe_initial_delay=args.livenesstimeout,
-        readiness_probeInitial_delay=args.readinesstimeout
-    ))
+    md = _convert_md_from_args(args)
+    message = md_client.edit(md)
+
+    wait_operation_finish(args, md.name, md_client)
 
     print(message)
 
@@ -174,6 +178,8 @@ def scale(args: argparse.Namespace):
     md_client = build_client(args)
 
     message = md_client.scale(args.name, args.replicas)
+
+    wait_operation_finish(args, args.name, md_client)
 
     print(message)
 
@@ -193,22 +199,27 @@ def delete(args: argparse.Namespace):
 
     md_client = build_client(args)
 
+    md_name = args.name
+    if args.filename:
+        md_name = ModelDeployment.from_json(read_entity(args.filename)).name
+
     try:
-        message = md_client.delete(args.name) if args.name else md_client.delete_all(_prepare_labels(args))
+        message = md_client.delete(md_name) if md_name else md_client.delete_all(_prepare_labels(args))
         print(message)
     except WrongHttpStatusCode as e:
         if e.status_code != 404 or not args.ignore_not_found:
             raise e
 
-        print(f'Model deployment {args.name} was not found. Ignore')
+        print(f'Model deployment {md_name} was not found. Ignore')
 
 
-def wait_operation_finish(args: argparse.Namespace, md_client: ModelDeploymentClient):
+def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
     """
-    Wait training to finish according command line arguments
+    Wait deployment to finish according command line arguments
 
+    :param md_name: Model Deployment name
     :param args: command arguments with .model_id, .namespace
-    :param md_client: Model Training Client
+    :param md_client: Model Deployment Client
 
     :return: None
     """
@@ -225,17 +236,17 @@ def wait_operation_finish(args: argparse.Namespace, md_client: ModelDeploymentCl
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            md = md_client.get(args.name)
+            md = md_client.get(md_name)
             if md.state == SUCCESS_STATE:
                 if md.replicas == md.available_replicas:
-                    print(f'Model {args.name} was deployed. '
+                    print(f'Model {md_name} was deployed. '
                           f'Deployment process took is {round(time.time() - start)} seconds')
                     return
                 else:
-                    print(f'Model {args.name} was deployed. '
+                    print(f'Model {md_name} was deployed. '
                           f'Number of available pods is {md.available_replicas}/{md.replicas}')
             elif md.state == FAILED_STATE:
-                raise Exception(f'Model deployment {args.name} was failed')
+                raise Exception(f'Model deployment {md_name} was failed')
             elif md.state == "":
                 print(f"Can't determine the state of {md.name}. Sleeping...")
             else:
@@ -247,20 +258,20 @@ def wait_operation_finish(args: argparse.Namespace, md_client: ModelDeploymentCl
         time.sleep(DEFAULT_WAIT_TIMEOUT)
 
 
-def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
+def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pylint: disable=R0915
     """
     Generate cli parsers
 
     :param main_subparser: parent cli parser
     """
     md_subparser = main_subparser.add_parser('model-deployment', aliases=('md', 'deployment'),
-                                             description='Model Training manipulations').add_subparsers()
+                                             description='Model Deployment manipulations').add_subparsers()
 
     md_create_parser = md_subparser.add_parser('create',
                                                description='deploys a model into a kubernetes cluster')
-    md_create_parser.add_argument('name', type=str, help='VCS Credential name', default="")
+    md_create_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
     md_create_parser.add_argument('--image',
-                                  type=str, help='docker image', required=True)
+                                  type=str, help='docker image')
     md_create_parser.add_argument('--local', action='store_true',
                                   help='deploy model locally. Incompatible with other arguments')
     md_create_parser.add_argument('--port', default=0,
@@ -274,12 +285,13 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     add_resources_params(md_create_parser)
     edi.add_arguments_for_wait_operation(md_create_parser)
     security.add_edi_arguments(md_create_parser)
+    md_create_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
     md_create_parser.set_defaults(func=create)
 
     md_edit_parser = md_subparser.add_parser('edit',
                                              description='deploys a model into a kubernetes cluster')
-    md_edit_parser.add_argument('name', type=str, help='VCS Credential name', default="")
-    md_edit_parser.add_argument('--image', type=str, help='docker image', required=True)
+    md_edit_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
+    md_edit_parser.add_argument('--image', type=str, help='docker image')
     md_edit_parser.add_argument('--local', action='store_true',
                                 help='edit locally deployed model. Incompatible with other arguments')
     md_edit_parser.add_argument('--replicas', default=1, type=int, help='count of instances')
@@ -288,8 +300,10 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     md_edit_parser.add_argument('--readinesstimeout', default=2, type=int,
                                 help='model startup timeout for readiness probe')
     add_resources_params(md_edit_parser)
+    md_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
     security.add_edi_arguments(md_edit_parser)
-    md_edit_parser.set_defaults(func=create)
+    edi.add_arguments_for_wait_operation(md_edit_parser)
+    md_edit_parser.set_defaults(func=edit)
 
     md_get_parser = md_subparser.add_parser('get', description='get information about currently deployed models')
     md_get_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
@@ -301,10 +315,11 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     md_get_parser.set_defaults(func=get)
 
     md_scale_parser = md_subparser.add_parser('scale', description='change count of model pods')
-    md_scale_parser.add_argument('name', type=str, help='VCS Credential name', default="")
+    md_scale_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
     md_scale_parser.add_argument('--local', action='store_true',
                                  help='scale locally deployed models. Incompatible with other arguments')
-    md_scale_parser.add_argument('--replicas', type=int, help='new count of replicas', required=True)
+    md_scale_parser.add_argument('--replicas', type=int, help='new count of replicas')
+    edi.add_arguments_for_wait_operation(md_scale_parser)
     security.add_edi_arguments(md_scale_parser)
     md_scale_parser.set_defaults(func=scale)
 
@@ -316,5 +331,6 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     md_delete_parser.add_argument('--model-version', type=str, help='model version')
     md_delete_parser.add_argument('--ignore-not-found', action='store_true',
                                   help='ignore if Model Deployment is not found')
+    md_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
     security.add_edi_arguments(md_delete_parser)
     md_delete_parser.set_defaults(func=delete)

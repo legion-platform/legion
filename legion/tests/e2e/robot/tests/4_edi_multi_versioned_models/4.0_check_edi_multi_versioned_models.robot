@@ -67,8 +67,8 @@ Check EDI undeploy all model instances by version
                     Log                             ${model_1}
     ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_NAME_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   2/2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1/1
 
     ${resp}=   Shell  legionctl --verbose md delete --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION_1}
                     Should Be Equal     ${resp.rc}         ${0}
@@ -98,8 +98,8 @@ Check EDI scale up 1 of 2 models with different versions but the same id
                     Log                             ${model_1}
     ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_NAME_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   2/2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1/1
 
 Check EDI scale down 1 of 2 models with different versions but the same id
     [Tags]  apps
@@ -110,8 +110,8 @@ Check EDI scale down 1 of 2 models with different versions but the same id
                     Log                             ${model_1}
     ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_NAME_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   2
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   2/2
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1/1
 
     ${resp}=        Shell  legionctl --verbose md scale ${TEST_MODEL_NAME_1} --replicas 1
                     Should Be Equal As Integers     ${resp.rc}              0
@@ -120,8 +120,8 @@ Check EDI scale down 1 of 2 models with different versions but the same id
                     Log                             ${model_1}
     ${model_2}=     Find model information in edi   ${resp}      ${TEST_MODEL_NAME_2}
                     Log                             ${model_2}
-                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   1
-                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1
+                    Verify model info from edi      ${model_1}   ${TEST_MODEL_NAME_1}  DeploymentCreated   1/1
+                    Verify model info from edi      ${model_2}   ${TEST_MODEL_NAME_2}  DeploymentCreated   1/1
 
 Check default model urls
     [Setup]  NONE
