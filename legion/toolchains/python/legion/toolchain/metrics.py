@@ -219,7 +219,7 @@ def clear_metric_store(model_id: str, model_version: str):
         json.dump(build_metrics, f)
 
 
-def show_metrics(model_id: str, model_version: typing.Optional[str] = None) -> pd.DataFrame:
+def show_local_metrics(model_id: str, model_version: typing.Optional[str] = None) -> pd.DataFrame:
     """
     Show metrics from local store
 
@@ -227,6 +227,10 @@ def show_metrics(model_id: str, model_version: typing.Optional[str] = None) -> p
     :param model_version: model version
     :return: Metrics which converted to Dataframe
     """
+    if config.MODEL_CLUSTER_TRAIN_METRICS_ENABLED:
+        LOGGER.warning('Local metrics are unavailable in a cloud mode. Use the Grafana dashboard.')
+        return pd.DataFrame()
+
     metrics_store_path = Path(config.MODEL_LOCAL_METRIC_STORE)
     if not metrics_store_path.exists():
         print(f"Can't find local store: {metrics_store_path}", file=sys.stderr)

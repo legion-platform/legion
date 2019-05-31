@@ -1,0 +1,6 @@
+name: test-vcs
+spec:
+  credential: bG9sCg==
+  defaultReference: origin/develop
+  type: git
+  uri: git@github.com:legion-platform/legion.git

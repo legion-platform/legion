@@ -22,24 +22,42 @@ import time
 
 from texttable import Texttable
 
-from legion.cli.parsers import security, prepare_resources, add_resources_params
+from legion.cli.parsers import security, prepare_resources, add_resources_params, read_entity
 from legion.sdk.clients import edi
 from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.training import build_client, ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
     TRAINING_FAILED_STATE
 
-DEFAULT_WIDTH = 120
+DEFAULT_WIDTH = 240
 
 DEFAULT_WAIT_TIMEOUT = 5
 
 MT_HEADER = ["Name", "State", "Toolchain Type", "Entrypoint", "Arguments", "VCS Credential", "Reference",
-             "Model ID", "Model Version"]
+             "Model ID", "Model Version", "Trained Docker image"]
 
 LOGGER = logging.getLogger(__name__)
 
 INSPECT_FORMAT_COLORIZED = 'colorized'
 INSPECT_FORMAT_TABULAR = 'column'
 VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
+
+
+def _convert_mt_from_args(args: argparse.Namespace) -> ModelTraining:
+    if args.filename:
+        return ModelTraining.from_json(read_entity(args.filename))
+    elif args.name:
+        return ModelTraining(
+            name=args.name,
+            toolchain_type=args.toolchain_type,
+            entrypoint=args.entrypoint,
+            resources=prepare_resources(args),
+            args=args.arg,
+            vcs_name=args.vcs_name,
+            reference=args.reference,
+            work_dir=args.workdir
+        )
+    else:
+        raise ValueError(f'Provide name of a Model Training or path to a file')
 
 
 def get(args: argparse.Namespace):
@@ -63,7 +81,8 @@ def get(args: argparse.Namespace):
         mt.vcs_name,
         mt.reference,
         mt.model_id,
-        mt.model_version
+        mt.model_version,
+        mt.trained_image
     ] for mt in mt_credentials])
     print(table.draw() + "\n")
 
@@ -75,18 +94,10 @@ def create(args: argparse.Namespace):
     """
     mt_client = build_client(args)
 
-    message = mt_client.create(ModelTraining(
-        name=args.name,
-        toolchain_type=args.toolchain_type,
-        entrypoint=args.entrypoint,
-        resources=prepare_resources(args),
-        args=args.arg,
-        vcs_name=args.vcs_name,
-        reference=args.reference,
-        work_dir=args.workdir
-    ))
+    mt = _convert_mt_from_args(args)
+    message = mt_client.create(mt)
 
-    wait_training_finish(args, mt_client)
+    wait_training_finish(args, mt.name, mt_client)
 
     print(message)
 
@@ -98,16 +109,7 @@ def edit(args: argparse.Namespace):
     """
     mt_client = build_client(args)
 
-    message = mt_client.edit(ModelTraining(
-        name=args.name,
-        toolchain_type=args.toolchain_type,
-        entrypoint=args.entrypoint,
-        resources=prepare_resources(args),
-        args=args.arg,
-        vcs_name=args.vcs_name,
-        reference=args.reference,
-        work_dir=args.workdir
-    ))
+    message = mt_client.edit(_convert_mt_from_args(args))
 
     print(message)
 
@@ -119,15 +121,20 @@ def delete(args: argparse.Namespace):
     """
     mt_client = build_client(args)
 
-    message = mt_client.delete(args.name)
+    if not args.name and not args.filename:
+        raise ValueError(f'Provide name of a Model Training or path to a file')
+
+    mt_name = args.name if args.name else ModelTraining.from_json(read_entity(args.filename)).name
+    message = mt_client.delete(mt_name)
 
     print(message)
 
 
-def wait_training_finish(args: argparse.Namespace, mt_client: ModelTrainingClient):
+def wait_training_finish(args: argparse.Namespace, mt_name: str, mt_client: ModelTrainingClient):
     """
     Wait training to finish according command line arguments
 
+    :param mt_name: Model Training name
     :param args: command arguments with .model_id, .namespace
     :param mt_client: Model Training Client
 
@@ -146,12 +153,12 @@ def wait_training_finish(args: argparse.Namespace, mt_client: ModelTrainingClien
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            mt = mt_client.get(args.name)
+            mt = mt_client.get(mt_name)
             if mt.state == TRAINING_SUCCESS_STATE:
-                print(f'Model {args.name} was trained. Training took {round(time.time() - start)} seconds')
+                print(f'Model {mt_name} was trained. Training took {round(time.time() - start)} seconds')
                 return
             elif mt.state == TRAINING_FAILED_STATE:
-                raise Exception(f'Model training {args.name} was failed.')
+                raise Exception(f'Model training {mt_name} was failed.')
             elif mt.state == "":
                 print(f"Can't determine the state of {mt.name}. Sleeping...")
             else:
@@ -179,35 +186,36 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_get_parser.set_defaults(func=get)
 
     mt_create_parser = mt_subparser.add_parser('create', description='Create a ModelTraining')
-    mt_create_parser.add_argument('name', type=str, help='Model Training name')
-    mt_create_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python',
-                                  required=True)
+    mt_create_parser.add_argument('name', nargs='?', type=str, help='Model Training name')
+    mt_create_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python')
     mt_create_parser.add_argument('--entrypoint', '-e', type=str, help='Model training file. It can be python\\bash'
-                                                                       ' script or jupiter notebook', required=True)
+                                                                       ' script or jupiter notebook')
     mt_create_parser.add_argument('--arg', '-a', action='append', help='Parameter for entrypoint script')
-    mt_create_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource', required=True)
+    mt_create_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource')
     mt_create_parser.add_argument('--workdir', type=str, help='Directory with model scripts/files in a git repository')
     mt_create_parser.add_argument('--reference', type=str, help='Commit\\tag\\branch name')
+    mt_create_parser.add_argument('--filename', '-f', type=str, help='Filename to use to create the Model Training')
     add_resources_params(mt_create_parser)
     edi.add_arguments_for_wait_operation(mt_create_parser)
     security.add_edi_arguments(mt_create_parser)
     mt_create_parser.set_defaults(func=create)
 
     mt_edit_parser = mt_subparser.add_parser('edit', description='Get all ModelTrainings')
-    mt_edit_parser.add_argument('name', type=str, help='Model Training name')
-    mt_edit_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python',
-                                required=True)
+    mt_edit_parser.add_argument('name', nargs='?', type=str, help='Model Training name')
+    mt_edit_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python')
     mt_edit_parser.add_argument('--entrypoint', '-e', type=str, help='Model training file. It can be python\\bash'
-                                                                     ' script or jupiter notebook', required=True)
+                                                                     ' script or jupiter notebook')
     mt_edit_parser.add_argument('--arg', '-a', action='append', help='Parameter for entrypoint script')
-    mt_edit_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource', required=True)
+    mt_edit_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource')
     mt_edit_parser.add_argument('--workdir', type=str, help='Directory with model scripts/files in a git repository')
     mt_edit_parser.add_argument('--reference', type=str, help='Commit\\tag\\branch name')
+    mt_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to edit the Model Training')
     add_resources_params(mt_edit_parser)
     security.add_edi_arguments(mt_edit_parser)
     mt_edit_parser.set_defaults(func=edit)
 
     mt_delete_parser = mt_subparser.add_parser('delete', description='Get all ModelTrainings')
-    mt_delete_parser.add_argument('name', type=str, help='Model Training name')
+    mt_delete_parser.add_argument('name', nargs='?', type=str, help='Model Training name', default="")
+    mt_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Training')
     security.add_edi_arguments(mt_delete_parser)
     mt_delete_parser.set_defaults(func=delete)

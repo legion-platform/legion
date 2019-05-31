@@ -1,0 +1,13 @@
+{
+    "apiVersion": "legion.legion-platform.org/v1alpha1",
+    "kind": "VCSCredential",
+    "metadata": {
+        "name": "test-vcs"
+    },
+    "spec": {
+        "credential": "a2VrCg==",
+        "defaultReference": "origin/develop",
+        "type": "git",
+        "uri": "git@github.com:legion-platform/legion.git"
+    }
+}
