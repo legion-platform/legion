@@ -147,7 +147,7 @@ func (r *ReconcileModelTraining) findVCSInstance(vcsName string, namespace strin
 	return
 }
 
-func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alpha1.ModelTraining) (pod *corev1.Pod, err error) {
+func (r *ReconcileModelTraining) generateModelBuildPod(modelBuilderCR *legionv1alpha1.ModelTraining) (pod *corev1.Pod, err error) {
 	vcsInstance, err := r.findVCSInstance(modelBuilderCR.Spec.VCSName, modelBuilderCR.Namespace)
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Finding vcs %s instanse", modelBuilderCR.Spec.VCSName))
@@ -168,8 +168,9 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 
 	pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      legion.GenerateBuildModelName(modelBuilderCR.Name),
-			Namespace: modelBuilderCR.Namespace,
+			Name:        legion.GenerateBuildModelName(modelBuilderCR.Name),
+			Namespace:   modelBuilderCR.Namespace,
+			Annotations: map[string]string{},
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
@@ -351,12 +352,35 @@ func (r *ReconcileModelTraining) createModelBuildPod(modelBuilderCR *legionv1alp
 		},
 	}
 
+	if err := legion.StoreHash(pod); err != nil {
+		log.Error(err, "Cannot apply obj hash")
+		return nil, err
+	}
+
 	if err = controllerutil.SetControllerReference(modelBuilderCR, pod, r.scheme); err != nil {
 		log.Error(err, "Cannot attach owner info to Secret")
 		return
 	}
 
 	return pod, nil
+}
+
+func (r *ReconcileModelTraining) createTrainingPod(trainingPod *corev1.Pod) (err error) {
+	log.Info("Creating pod")
+
+	err = r.Create(context.TODO(), trainingPod)
+	if err != nil {
+		log.Error(err, "Cannot create Pod")
+
+		r.recorder.Event(trainingPod, "Warning", "CannotSpawn",
+			fmt.Sprintf("Cannot create Pod %s. Failed", trainingPod.Namespace))
+
+		return err
+	}
+
+	log.Info("Created Pod")
+
+	return nil
 }
 
 func (r *ReconcileModelTraining) syncK8SInstances(modelBuilderCR *legionv1alpha1.ModelTraining) (err error) {
@@ -366,32 +390,38 @@ func (r *ReconcileModelTraining) syncK8SInstances(modelBuilderCR *legionv1alpha1
 		return nil
 	}
 
-	modelBuilderPod, err := r.createModelBuildPod(modelBuilderCR)
+	modelBuilderPod, err := r.generateModelBuildPod(modelBuilderCR)
 	if err != nil {
 		log.Error(err, "Create model builder pod")
 
 		return err
 	}
+	deployedK8sModelBuilderPod := &corev1.Pod{}
 
 	podNamespacedName := types.NamespacedName{Name: modelBuilderPod.Name, Namespace: modelBuilderCR.Namespace}
 
-	if err = r.Get(context.TODO(), podNamespacedName, modelBuilderPod); err != nil && errors.IsNotFound(err) {
-		log.Info("Creating pod")
-
-		err = r.Create(context.TODO(), modelBuilderPod)
-		if err != nil {
-			log.Error(err, "Cannot create Pod")
-
-			r.recorder.Event(modelBuilderCR, "Warning", "CannotSpawn",
-				fmt.Sprintf("Cannot create Pod %s. Failed", podNamespacedName))
-
-			return
+	if err = r.Get(context.TODO(), podNamespacedName, deployedK8sModelBuilderPod); err != nil && errors.IsNotFound(err) {
+		if err := r.createTrainingPod(modelBuilderPod); err != nil {
+			return err
 		}
-
-		log.Info("Created Pod")
 	} else if err != nil {
 		log.Error(err, "Cannot fetch actual pods")
 		return
+	} else {
+		if !legion.ObjsEqualByHash(modelBuilderPod, deployedK8sModelBuilderPod) {
+			log.Info(fmt.Sprintf("Pod hashes don't equal. Recreate the pod %s", modelBuilderPod.Name))
+			if err := r.Delete(context.TODO(), deployedK8sModelBuilderPod); err != nil {
+				log.Error(err, "Can't delete model training pod")
+				return err
+			}
+
+			if err := r.createTrainingPod(modelBuilderPod); err != nil {
+				return err
+			}
+		} else {
+			log.Info(fmt.Sprintf("Pod hashes equal. Skip recreation of the pod %s", deployedK8sModelBuilderPod.Name))
+			modelBuilderPod = deployedK8sModelBuilderPod
+		}
 	}
 
 	err = r.syncCrdState(modelBuilderPod, modelBuilderCR)
@@ -402,18 +432,8 @@ func (r *ReconcileModelTraining) syncK8SInstances(modelBuilderCR *legionv1alpha1
 		modelBuilderCR.Status.PodName = modelBuilderCR.Name
 	}
 
-	if modelBuilderCR.Status.TrainingState == legionv1alpha1.ModelTrainingSucceeded {
-		err = r.Delete(context.TODO(), modelBuilderPod)
-
-		if err != nil && !errors.IsNotFound(err) {
-			log.Error(err, fmt.Sprintf("Delete %s model builder pod", modelBuilderPod.Name))
-			return err
-		}
-
-		log.Info(fmt.Sprintf("%s model builder pod was deleted", modelBuilderPod.Name))
-	}
-
-	if modelBuilderCR.Status.TrainingState == legionv1alpha1.ModelTrainingFailed {
+	if modelBuilderCR.Status.TrainingState == legionv1alpha1.ModelTrainingFailed ||
+		modelBuilderCR.Status.TrainingState == legionv1alpha1.ModelTrainingSucceeded {
 		err := utils.ExecToPodThroughAPI(
 			[]string{"/bin/kill", "1"},
 			modelContainerName,
@@ -424,7 +444,6 @@ func (r *ReconcileModelTraining) syncK8SInstances(modelBuilderCR *legionv1alpha1
 
 		if err != nil {
 			log.Error(err, "Cannot kill the model container")
-			return err
 		}
 	}
 
@@ -441,6 +460,10 @@ func (r *ReconcileModelTraining) syncK8SInstances(modelBuilderCR *legionv1alpha1
 // Determine crd state by child pod.
 // If pod has RUNNING state then we determine crd state by state of builder container in the pod
 func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, modelCrd *legionv1alpha1.ModelTraining) error {
+	if commitId, ok := pod.Annotations[legion.ModelCommitID]; ok {
+		modelCrd.Status.CommitID = commitId
+	}
+
 	switch pod.Status.Phase {
 	case corev1.PodPending:
 		modelCrd.Status.TrainingState = legionv1alpha1.ModelTrainingScheduling

@@ -66,7 +66,7 @@ func NewModelBuilder() (*ModelBuilder, error) {
 //   3) Extract model information from model file and save in annotations of current pod
 //   3) Launch legionctl command to build a model docker image
 func (mb *ModelBuilder) Start() (err error) {
-	err = utils.CloneUserRepo(
+	commitID, err := utils.CloneUserRepo(
 		viper.GetString(legion.SharedDirPath),
 		viper.GetString(legion.RepositoryURL),
 		viper.GetString(legion.GitSSHKeyPath),
@@ -75,6 +75,10 @@ func (mb *ModelBuilder) Start() (err error) {
 	if err != nil {
 		log.Error(err, "Error occurs during cloning project")
 		return err
+	}
+
+	if err := mb.updateAnnotations(map[string]string{legion.ModelCommitID: commitID}); err != nil {
+		log.Error(err, "Cannot save the commit id")
 	}
 
 	commands := []string{

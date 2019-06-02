@@ -35,13 +35,15 @@ LOGGER = logging.getLogger(__name__)
 
 class WrongHttpStatusCode(Exception):
 
-    def __init__(self, status_code: int, http_result: typing.Dict[str, str]):
+    def __init__(self, status_code: int, http_result: typing.Dict[str, str] = None):
         """
         Wrong Http Status Code
         :param status_code: HTTP status code
         :param http_result: HTTP data
         """
-        super().__init__(f'Got error from server: {http_result["message"]}')
+        if http_result is None:
+            http_result = {}
+        super().__init__(f'Got error from server: {http_result.get("message")}')
 
         self.status_code = status_code
 
@@ -67,7 +69,8 @@ class RemoteEdiClient:
         self._version = EDI_VERSION
         self._retries = retries
 
-    def _request(self, action, url, data=None, headers=None, cookies=None):
+    def _request(self, url_template: str, payload: typing.Mapping[typing.Any, typing.Any] = None, action: str = 'GET',
+                 stream: bool = False):
         """
         Make HTTP request
         :param action: request action, e.g. get / post / delete
@@ -82,20 +85,6 @@ class RemoteEdiClient:
         :type cookies: dict[str, str] or None
         :return: :py:class:`requests.Response` -- response
         """
-        return requests.request(action.lower(), url, headers=headers, cookies=cookies, json=data)
-
-    def query(self, url_template, payload=None, action='GET'):
-        """
-        Perform query to EDI server
-
-        :param url_template: url template from legion.const.api
-        :type url_template: str
-        :param payload: payload (will be converted to JSON) or None
-        :type payload: dict[str, any]
-        :param action: HTTP method (GET, POST, PUT, DELETE)
-        :type action: str
-        :return: dict[str, any] -- response content
-        """
         sub_url = url_template.format(version=self._version)
         target_url = self._base.strip('/') + sub_url
         cookies = {'_oauth2_proxy': self._token} if self._token else {}
@@ -105,8 +94,13 @@ class RemoteEdiClient:
         while left_retries > 0:
             try:
                 LOGGER.debug('Requesting {}'.format(target_url))
+                request_kwargs = {'params' if action.lower() == 'get' else 'json': payload}
 
-                response = self._request(action, target_url, payload, cookies=cookies)
+                if stream:
+                    request_kwargs['headers'] = {'Content-type': 'text/event-stream'}
+
+                response = requests.request(action.lower(), target_url, cookies=cookies, stream=stream,
+                                            **request_kwargs)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
@@ -132,10 +126,23 @@ class RemoteEdiClient:
                 )
             )
 
+        return response
+
+    def query(self, url_template: str, payload: typing.Mapping[typing.Any, typing.Any] = None, action: str = 'GET'):
+        """
+        Perform query to EDI server
+
+        :param url_template: url template from legion.const.api
+        :param payload: payload (will be converted to JSON) or None
+        :param action: HTTP method (GET, POST, PUT, DELETE)
+        :return: dict[str, any] -- response content
+        """
+        response = self._request(url_template, payload, action)
+
         try:
             answer = json.loads(response.text)
             LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
-                         .format(answer, response.status_code, target_url))
+                         .format(answer, response.status_code, payload))
         except ValueError as json_decode_exception:
             raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
 
@@ -144,6 +151,24 @@ class RemoteEdiClient:
 
         LOGGER.debug('Query has been completed, parsed and validated')
         return answer
+
+    def stream(self, url_template: str, action: str = 'GET', params: typing.Mapping[str, typing.Any] = None):
+        """
+        Perform query to EDI server
+
+        :param url_template: url template from legion.const.api
+        :param params: payload (will be converted to JSON) or None
+        :param action: HTTP method (GET, POST, PUT, DELETE)
+        :return: dict[str, any] -- response content
+        """
+        response = self._request(url_template, action=action, stream=True, payload=params)
+
+        with response:
+            if not response.ok:
+                raise WrongHttpStatusCode(response.status_code)
+
+            for line in response.iter_lines():
+                yield line.decode("utf-8")
 
     def get_token(self, model_id, model_version, expiration_date=None):
         """

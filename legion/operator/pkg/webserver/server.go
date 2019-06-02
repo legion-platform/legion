@@ -44,7 +44,7 @@ func SetUPMainServer() (*gin.Engine, error) {
 	routes.SetUpIndexPage(server)
 
 	v1Group := server.Group("/api/v1")
-	v1Routes.SetupV1Routes(v1Group, mgr.GetClient())
+	v1Routes.SetupV1Routes(v1Group, mgr.GetClient(), mgr.GetConfig())
 
 	return server, nil
 }

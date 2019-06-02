@@ -99,6 +99,8 @@ spec:
           type: object
         status:
           properties:
+            commitID:
+              type: string
             exitCode:
               format: int32
               type: integer

@@ -21,7 +21,12 @@ import json
 import os
 from typing import Any, Dict
 
+import colorama
 import yaml
+from termcolor import colored
+
+TRAIN_LOGS_COLOR = 'cyan'
+colorama.init()
 
 
 def prepare_resources(args: argparse.Namespace) -> Dict[str, Any]:
@@ -92,3 +97,11 @@ def read_entity(file_path: str) -> Dict[str, Any]:
         raise ValueError(f'Unsupported file schema. Spec is not provided. Read documentation about valid schema')
 
     return {"name": name, "spec": spec}
+
+
+def print_training_logs(msg: str):
+    """
+    Print model training logs
+    :param msg: training log
+    """
+    print(colored(msg, TRAIN_LOGS_COLOR))

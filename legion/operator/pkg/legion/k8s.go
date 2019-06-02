@@ -16,10 +16,17 @@
 
 package legion
 
-import "fmt"
+import (
+	"crypto/sha512"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 const (
-	podNameTemplate = "%s-training-pod"
+	podNameTemplate           = "%s-training-pod"
+	LastAppliedHashAnnotation = "operator.legion.org/last-applied-hash"
 )
 
 func GenerateVcsSecretName(vcsName string) string {
@@ -28,4 +35,31 @@ func GenerateVcsSecretName(vcsName string) string {
 
 func GenerateBuildModelName(mtCRName string) string {
 	return fmt.Sprintf(podNameTemplate, mtCRName)
+}
+
+// Compute hash and store it in the annotations
+func StoreHash(obj metav1.Object) error {
+	h := sha512.New()
+	jsonData, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	h.Write(jsonData)
+	fmt.Println(string(jsonData))
+
+	annotations := map[string]string{}
+	if obj.GetAnnotations() != nil {
+		for k, v := range obj.GetAnnotations() {
+			annotations[k] = v
+		}
+	}
+	annotations[LastAppliedHashAnnotation] = base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	obj.SetAnnotations(annotations)
+
+	return nil
+}
+
+func ObjsEqualByHash(firstObj, secondObj metav1.Object) bool {
+	return firstObj.GetAnnotations()[LastAppliedHashAnnotation] == secondObj.GetAnnotations()[LastAppliedHashAnnotation]
 }

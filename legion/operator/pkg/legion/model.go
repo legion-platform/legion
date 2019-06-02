@@ -39,6 +39,7 @@ const (
 	ModelImageKey   = "model-image"
 	ModelIDKey      = "model-id"
 	ModelVersionKey = "model-version"
+	ModelCommitID   = "model-commit-id"
 )
 
 var (

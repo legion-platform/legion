@@ -5,6 +5,12 @@ metadata:
   name: "{{ .Release.Name }}-edi"
 rules:
   - apiGroups:
+      - ""
+    resources:
+      - pods/log
+    verbs:
+      - get
+  - apiGroups:
       - legion.legion-platform.org
     resources:
       - modeldeployments

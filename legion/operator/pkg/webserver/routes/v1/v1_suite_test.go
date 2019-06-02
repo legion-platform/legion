@@ -95,7 +95,7 @@ func createEnvironment() (*gin.Engine, client.Client) {
 	server := gin.Default()
 	v1Group := server.Group("/api/v1")
 	k8Client := mgr.GetClient()
-	SetupV1Routes(v1Group, k8Client)
+	SetupV1Routes(v1Group, k8Client, mgr.GetConfig())
 
 	return server, k8Client
 }
