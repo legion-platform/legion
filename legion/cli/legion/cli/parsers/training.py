@@ -20,18 +20,17 @@ import argparse
 import logging
 import time
 
+from http.client import HTTPException
 from texttable import Texttable
 
-from legion.cli.parsers import security, prepare_resources, add_resources_params, read_entity
+from legion.cli.parsers import security, prepare_resources, add_resources_params, read_entity, print_training_logs
 from legion.sdk.clients import edi
 from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.training import build_client, ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
     TRAINING_FAILED_STATE
 
 DEFAULT_WIDTH = 240
-
-DEFAULT_WAIT_TIMEOUT = 5
-
+DEFAULT_WAIT_TIMEOUT = 1
 MT_HEADER = ["Name", "State", "Toolchain Type", "Entrypoint", "Arguments", "VCS Credential", "Reference",
              "Model ID", "Model Version", "Trained Docker image"]
 
@@ -95,11 +94,20 @@ def create(args: argparse.Namespace):
     mt_client = build_client(args)
 
     mt = _convert_mt_from_args(args)
-    message = mt_client.create(mt)
+    mt_client.create(mt)
 
     wait_training_finish(args, mt.name, mt_client)
 
-    print(message)
+
+def logs(args: argparse.Namespace):
+    """
+    Stream training logs
+    :param args: cli parameters
+    """
+    mt_client = build_client(args)
+
+    for msg in mt_client.log(args.name, args.follow):
+        print_training_logs(msg)
 
 
 def edit(args: argparse.Namespace):
@@ -109,7 +117,10 @@ def edit(args: argparse.Namespace):
     """
     mt_client = build_client(args)
 
-    message = mt_client.edit(_convert_mt_from_args(args))
+    mt = _convert_mt_from_args(args)
+    message = mt_client.edit(mt)
+
+    wait_training_finish(args, mt.name, mt_client)
 
     print(message)
 
@@ -162,9 +173,10 @@ def wait_training_finish(args: argparse.Namespace, mt_name: str, mt_client: Mode
             elif mt.state == "":
                 print(f"Can't determine the state of {mt.name}. Sleeping...")
             else:
-                print(f'Current training state is {mt.state}. Sleeping...')
+                for msg in mt_client.log(mt.name, follow=True):
+                    print_training_logs(msg)
 
-        except WrongHttpStatusCode:
+        except (WrongHttpStatusCode, HTTPException):
             LOGGER.info('Callback have not confirmed completion of the operation')
 
         LOGGER.debug('Sleep before next request')
@@ -212,6 +224,7 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to edit the Model Training')
     add_resources_params(mt_edit_parser)
     security.add_edi_arguments(mt_edit_parser)
+    edi.add_arguments_for_wait_operation(mt_edit_parser)
     mt_edit_parser.set_defaults(func=edit)
 
     mt_delete_parser = mt_subparser.add_parser('delete', description='Get all ModelTrainings')
@@ -219,3 +232,9 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     mt_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Training')
     security.add_edi_arguments(mt_delete_parser)
     mt_delete_parser.set_defaults(func=delete)
+
+    mt_log_parser = mt_subparser.add_parser('logs', description='Stream training logs')
+    mt_log_parser.add_argument('name', type=str, help='Model Training name', default="")
+    mt_log_parser.add_argument('--follow', '-f', action='store_true', help='Follow logs stream')
+    security.add_edi_arguments(mt_log_parser)
+    mt_log_parser.set_defaults(func=logs)

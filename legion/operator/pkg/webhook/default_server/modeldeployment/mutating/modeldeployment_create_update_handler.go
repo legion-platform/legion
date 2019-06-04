@@ -79,7 +79,7 @@ func (h *ModelDeploymentCreateUpdateHandler) mutatingModelDeploymentFn(ctx conte
 
 	if obj.Spec.Resources == nil {
 		log.Info("Deployment resources parameter is nil. Set the default value",
-			"name", obj.Name, "resources", defaultNumberOfReplicas)
+			"name", obj.Name, "resources", defaultModelDeploymentResources)
 		obj.Spec.Resources = defaultModelDeploymentResources
 	}
 

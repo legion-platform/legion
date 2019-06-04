@@ -46,10 +46,11 @@ var (
 )
 
 // Clone repository and checkout user specific reference
-func CloneUserRepo(cloneDir string, repositoryUrl string, sshKeyPath string, referenceName string) (err error) {
+// Return commit id
+func CloneUserRepo(cloneDir string, repositoryUrl string, sshKeyPath string, referenceName string) (string, error) {
 	gitAuth, err := getSshKeyAuth(sshKeyPath)
 	if err != nil {
-		return
+		return "", err
 	}
 
 	_ = os.RemoveAll(cloneDir)
@@ -61,7 +62,7 @@ func CloneUserRepo(cloneDir string, repositoryUrl string, sshKeyPath string, ref
 	})
 	if err != nil {
 		log.Error(err, "Cloning git repository")
-		return err
+		return "", err
 	}
 
 	// Fetch additional references. For example, github pull request references
@@ -78,12 +79,12 @@ func CloneUserRepo(cloneDir string, repositoryUrl string, sshKeyPath string, ref
 	hash, err := tryGetHash(repository, referenceName)
 	if err != nil {
 		log.Error(err, "Determine full reference name")
-		return err
+		return "", err
 	}
 
 	w, err := repository.Worktree()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = w.Checkout(&git.CheckoutOptions{
@@ -93,7 +94,7 @@ func CloneUserRepo(cloneDir string, repositoryUrl string, sshKeyPath string, ref
 		log.Error(err, fmt.Sprintf("Checkout reference: %s", referenceName))
 	}
 
-	return nil
+	return hash.String(), err
 }
 
 func getSshKeyAuth(sshKeyPath string) (transport.AuthMethod, error) {

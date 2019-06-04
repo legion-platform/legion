@@ -72,6 +72,7 @@ type ModelTrainingStatus struct {
 	Reason        string             `json:"reason,omitempty"`
 	Message       string             `json:"message,omitempty"`
 	PodName       string             `json:"podName,omitempty"`
+	CommitID      string             `json:"commitID,omitempty"`
 }
 
 // +genclient

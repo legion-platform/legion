@@ -21,12 +21,18 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
+	"github.com/spf13/viper"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strconv"
 )
 
 var logMT = logf.Log.WithName("mt-controller")
@@ -34,6 +40,7 @@ var logMT = logf.Log.WithName("mt-controller")
 const (
 	getModelTrainingUrl            = "/model/training/:name"
 	getAllModelTrainingUrl         = "/model/training"
+	getModelTrainingLogs           = "/model/training/:name/log"
 	createModelTrainingUrl         = "/model/training"
 	updateModelTrainingUrl         = "/model/training"
 	deleteModelTrainingUrl         = "/model/training/:name"
@@ -42,6 +49,7 @@ const (
 
 type ModelTrainingController struct {
 	k8sClient client.Client
+	k8sConfig *rest.Config
 	namespace string
 }
 
@@ -188,6 +196,7 @@ func (controller *ModelTrainingController) updateMT(c *gin.Context) {
 
 	// TODO: think about update, not replacing as for now
 	mt.Spec = mtEntity.Spec
+	mt.Status.TrainingState = v1alpha1.ModelTrainingUnknown
 
 	if err := controller.k8sClient.Update(context.TODO(), &mt); err != nil {
 		logMT.Error(err, fmt.Sprintf("Creation of the mt: %+v", mt))
@@ -287,4 +296,60 @@ func (controller *ModelTrainingController) deleteMTByLabels(c *gin.Context) {
 	}
 
 	routes.AbortWithSuccess(c, http.StatusOK, "Model training were removed")
+}
+
+// @Summary Stream logs from model training pod
+// @Description Stream logs from model training pod
+// @Tags ModelTraining
+// @Name name
+// @Produce  plain
+// @Accept  plain
+// @Param follow query bool false "follow logs"
+// @Param name path string true "Model Training name"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Router /api/v1/model/training/{name}/log [get]
+func (controller *ModelTrainingController) getModelTrainingLog(c *gin.Context) {
+	mtName := c.Param("name")
+	follow := false
+	var err error
+
+	urlParameters := c.Request.URL.Query()
+	followParam := urlParameters.Get("follow")
+
+	if len(followParam) != 0 {
+		follow, err = strconv.ParseBool(followParam)
+		if err != nil {
+			errMessage := fmt.Sprintf("Convert %s to bool", followParam)
+			logMT.Error(err, errMessage)
+			routes.AbortWithError(c, http.StatusBadRequest, errMessage)
+			return
+		}
+	}
+
+	reader, err := utils.StreamTrainingLogs(controller.k8sConfig, mtName, follow)
+	if err != nil {
+		routes.AbortWithError(c, http.StatusBadRequest, "Creation of log stream")
+		return
+	}
+	defer reader.Close()
+	clientGone := c.Writer.CloseNotify()
+	for {
+		logFlushSize := viper.GetInt64(legion.LogFlushSize)
+
+		select {
+		case <-clientGone:
+			return
+		default:
+			_, err := io.CopyN(c.Writer, reader, logFlushSize)
+			if err != nil {
+				if err != io.EOF {
+					logMT.Error(err, "Error during coping of log stream")
+				}
+				return
+			}
+
+			c.Writer.Flush()
+		}
+	}
 }

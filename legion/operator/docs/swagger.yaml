@@ -186,6 +186,8 @@ definitions:
     type: object
   v1alpha1.ModelTrainingStatus:
     properties:
+      commitID:
+        type: string
       exitCode:
         type: integer
       id:
@@ -674,6 +676,35 @@ paths:
             $ref: '#/definitions/routes.HTTPResult'
             type: object
       summary: Get a Model Training
+      tags:
+      - ModelTraining
+  /api/v1/model/training/{name}/log:
+    get:
+      consumes:
+      - text/plain
+      description: Stream logs from model training pod
+      parameters:
+      - description: follow logs
+        in: query
+        name: follow
+        type: boolean
+      - description: Model Training name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Stream logs from model training pod
       tags:
       - ModelTraining
   /api/v1/vcs:

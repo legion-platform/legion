@@ -145,3 +145,36 @@ User must specify filename or mt name
     command=create
     command=edit
     command=delete
+
+Retraining of failed model and checking of training logs
+    [Documentation]  Retrin failed model
+    [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
+    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
+             Should not be equal  ${res.rc}  ${0}
+             should contain  ${res.stdout}   training is failed
+
+    ${res}=  Shell  legionctl --verbose mt logs ${TRAINING_NAME}
+             Should be equal  ${res.rc}  ${0}
+             should contain  ${res.stdout}   training is failed
+
+    ${res}=  Shell  legionctl --verbose mt edit ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a '${TRAINING_ARGS}'
+             Should be equal  ${res.rc}  ${0}
+             should not contain  ${res.stdout}   training is failed
+
+    ${res}=  Shell  legionctl --verbose mt logs ${TRAINING_NAME}
+             Should be equal  ${res.rc}  ${0}
+             should not contain  ${res.stdout}   training is failed
+
+Force model retraining
+    [Documentation]  Force retrin failed model
+    [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
+    ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --no-wait --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
+             Should be equal  ${res.rc}  ${0}
+
+    ${res}=  Shell  legionctl --verbose mt edit ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a '${TRAINING_ARGS}'
+             Should be equal  ${res.rc}  ${0}
+             should not contain  ${res.stdout}   training is failed
+
+    ${res}=  Shell  legionctl --verbose mt logs ${TRAINING_NAME}
+             Should be equal  ${res.rc}  ${0}
+             should not contain  ${res.stdout}   training is failed

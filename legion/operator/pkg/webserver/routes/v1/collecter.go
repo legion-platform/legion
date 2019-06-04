@@ -26,10 +26,11 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client) {
+func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConfig *rest.Config) {
 	// VCS
 	vcsController := VCSController{k8sClient: k8sClient, namespace: viper.GetString(legion.Namespace)}
 	routeGroup.GET(getVcsUrl, vcsController.getVCS)
@@ -49,9 +50,14 @@ func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client) {
 	routeGroup.DELETE(deleteModelDeploymentByLabelsUrl, mdController.deleteMDByLabels)
 
 	// ModelTraining
-	mtController := ModelTrainingController{k8sClient: k8sClient, namespace: viper.GetString(legion.Namespace)}
+	mtController := ModelTrainingController{
+		k8sClient: k8sClient,
+		k8sConfig: k8sConfig,
+		namespace: viper.GetString(legion.Namespace),
+	}
 	routeGroup.GET(getModelTrainingUrl, mtController.getMT)
 	routeGroup.GET(getAllModelTrainingUrl, mtController.getAllMT)
+	routeGroup.GET(getModelTrainingLogs, mtController.getModelTrainingLog)
 	routeGroup.POST(createModelTrainingUrl, mtController.createMT)
 	routeGroup.PUT(updateModelTrainingUrl, mtController.updateMT)
 	routeGroup.DELETE(deleteModelTrainingUrl, mtController.deleteMT)

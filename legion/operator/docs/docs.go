@@ -668,6 +668,50 @@ var doc = `{
                 }
             }
         },
+        "/api/v1/model/training/{name}/log": {
+            "get": {
+                "description": "Stream logs from model training pod",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "ModelTraining"
+                ],
+                "summary": "Stream logs from model training pod",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "follow logs",
+                        "name": "follow",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Model Training name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/vcs": {
             "get": {
                 "description": "Get list of VCS Credentials",
@@ -1119,6 +1163,9 @@ var doc = `{
         "v1alpha1.ModelTrainingStatus": {
             "type": "object",
             "properties": {
+                "commitID": {
+                    "type": "string"
+                },
                 "exitCode": {
                     "type": "integer"
                 },

@@ -51,6 +51,7 @@ const (
 	WebhookPort            = "WEBHOOK_PORT"
 	MutatingWebhookName    = "MUTATING_WEBHOOK_NAME"
 	ValidatingWebhookName  = "VALIDATING_WEBHOOK_NAME"
+	LogFlushSize           = "LOG_FLUSH_SIZE"
 )
 
 // TODO:
@@ -100,7 +101,6 @@ func SetUpOperatorConfig() {
 
 	viper.SetDefault(MutatingWebhookName, "legion-mutating-webhook-configuration")
 	viper.SetDefault(ValidatingWebhookName, "legion-validating-webhook-configuration")
-
 }
 
 func SetUpEDIConfig() {
@@ -121,6 +121,9 @@ func SetUpEDIConfig() {
 
 	viper.SetDefault(TemplateFolder, "legion/operator/templates")
 	panicIfError(viper.BindEnv(TemplateFolder))
+
+	viper.SetDefault(LogFlushSize, 32)
+	panicIfError(viper.BindEnv(LogFlushSize))
 }
 
 func setNotEmptyParam(paramName string) {

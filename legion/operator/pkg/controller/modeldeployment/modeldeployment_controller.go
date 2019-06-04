@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -149,6 +148,11 @@ func (r *ReconcileModelDeployment) reconcileService(modelContainerMeta *modelCon
 		},
 	}
 
+	if err := legion.StoreHash(modelService); err != nil {
+		log.Error(err, "Cannot apply obj hash")
+		return err
+	}
+
 	if err := controllerutil.SetControllerReference(modelDeploymentCR, modelService, r.scheme); err != nil {
 		return err
 	}
@@ -165,21 +169,28 @@ func (r *ReconcileModelDeployment) reconcileService(modelContainerMeta *modelCon
 		return err
 	}
 
-	if !reflect.DeepEqual(modelService.Spec, found.Spec) {
+	if !legion.ObjsEqualByHash(modelService, found) {
+		log.Info(fmt.Sprintf("Service hashes don't equal. Update service %s", modelService.Name))
+
 		modelService.Spec.ClusterIP = found.Spec.ClusterIP
 		found.Spec = modelService.Spec
+		found.ObjectMeta.Annotations = modelService.ObjectMeta.Annotations
+		found.ObjectMeta.Labels = modelService.ObjectMeta.Labels
+
 		log.Info(fmt.Sprintf("Updating %s k8s service", modelService.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Info(fmt.Sprintf("Service hashes equal. Skip updating of service %s", modelService.Name))
 	}
 
 	return nil
 }
 
 func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *modelContainerMetaInformation,
-	modelDeploymentCR *legionv1alpha1.ModelDeployment) (appsv1.Deployment, error) {
+	modelDeploymentCR *legionv1alpha1.ModelDeployment) (*appsv1.Deployment, error) {
 
 	httpGetAction := &corev1.HTTPGetAction{
 		Path: "/healthcheck",
@@ -202,8 +213,7 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 			Replicas: modelDeploymentCR.Spec.Replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      modelContainerMeta.k8sLabels,
-					Annotations: modelContainerMeta.k8sAnnotations,
+					Labels: modelContainerMeta.k8sLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -243,8 +253,13 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 		},
 	}
 
+	if err := legion.StoreHash(modelDeployment); err != nil {
+		log.Error(err, "Cannot apply obj hash")
+		return nil, err
+	}
+
 	if err := controllerutil.SetControllerReference(modelDeploymentCR, modelDeployment, r.scheme); err != nil {
-		return *modelDeployment, err
+		return nil, err
 	}
 
 	found := &appsv1.Deployment{}
@@ -254,21 +269,28 @@ func (r *ReconcileModelDeployment) reconcileDeployment(modelContainerMeta *model
 	if err != nil && errors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("Creating %s k8s deployment", modelDeployment.ObjectMeta.Name))
 		err = r.Create(context.TODO(), modelDeployment)
-		return *modelDeployment, err
+		return modelDeployment, err
 	} else if err != nil {
-		return *modelDeployment, err
+		return modelDeployment, err
 	}
 
-	if !reflect.DeepEqual(modelDeployment.Spec, found.Spec) {
+	if !legion.ObjsEqualByHash(modelDeployment, found) {
+		log.Info(fmt.Sprintf("Deployment hashes don't equal. Update the deployment %s", modelDeployment.Name))
+
 		found.Spec = modelDeployment.Spec
+		found.ObjectMeta.Annotations = modelDeployment.ObjectMeta.Annotations
+		found.ObjectMeta.Labels = modelDeployment.ObjectMeta.Labels
+
 		log.Info(fmt.Sprintf("Updating %s k8s deployment", modelDeployment.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
 		if err != nil {
-			return *found, err
+			return found, err
 		}
+	} else {
+		log.Info(fmt.Sprintf("Deployment hashes equal. Skip updating of the deployment %s", modelDeployment.Name))
 	}
 
-	return *found, nil
+	return found, nil
 }
 
 // Reconcile reads that state of the cluster for a ModelDeployment object and makes changes based on the state read

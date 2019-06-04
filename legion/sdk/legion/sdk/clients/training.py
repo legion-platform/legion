@@ -139,6 +139,16 @@ class ModelTrainingClient(RemoteEdiClient):
         """
         return self.query(f'{MODEL_TRAINING_URL}/{name}', action='DELETE')['message']
 
+    def log(self, name: str, follow: bool = False) -> str:
+        """
+        Stream logs from training
+
+        :param follow: follow stream
+        :param name: Name of a Model Training
+        :return Message from EDI server
+        """
+        return self.stream(f'{MODEL_TRAINING_URL}/{name}/log', 'GET', params={'follow': follow})
+
 
 def build_client(args: argparse.Namespace = None) -> ModelTrainingClient:
     """
