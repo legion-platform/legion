@@ -7,8 +7,6 @@ class Globals {
     static String dockerCacheArg = null
 }
 
-def chartNames = null
-
 pipeline {
     agent { label 'ec2builder'}
 
@@ -126,8 +124,7 @@ pipeline {
                 }
             }
         }
-
-        stage("Build base images") {
+        stage("Build Docker images & Run Tests") {
             parallel {
                 stage("Build toolchains Docker image"){
                     steps {
@@ -145,10 +142,6 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-        stage("Build Docker images & Run Tests") {
-            parallel {
                 stage("Build Edge Docker image") {
                     steps {
                         script {
@@ -163,6 +156,52 @@ pipeline {
                         }
                     }
                 }
+                stage("Build model builder and operator images") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('operator-dependencies', ".", "containers/operator/Dockerfile", "--target builder")
+                            legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+
+                            docker.image("legion/operator-dependencies:${Globals.buildVersion}").inside() {
+                                sh """
+                                    gocover-cobertura < "\${OPERATOR_DIR}/operator-cover.out" > ./operator-cover.xml
+                                    cp "\${OPERATOR_DIR}/operator-report.xml" ./
+                                """
+
+                                junit 'operator-report.xml'
+                                stash name: "operator-cover", includes: "operator-cover.xml"
+
+                                sh 'rm -rf operator-report.xml operator-cover.xml'
+                            }
+                        }
+                    }
+                }
+                stage("Build feedback-aggregator image") {
+                    steps {
+                        script {
+                            legion.buildLegionImage('feedback-dependencies', ".", "containers/feedback-aggregator/Dockerfile", "--target builder")
+                            legion.buildLegionImage('k8s-feedback-aggregator', ".", "containers/feedback-aggregator/Dockerfile", "--target server --cache-from legion/feedback-dependencies:${Globals.buildVersion}")
+
+                            docker.image("legion/feedback-dependencies:${Globals.buildVersion}").inside() {
+                                sh """
+                                    gocover-cobertura < "\${FEEDBACK_DIR}/feedback-cover.out" > ./feedback-cover.xml
+                                    cp "\${FEEDBACK_DIR}/feedback-report.xml" ./
+                                """
+
+                                junit 'feedback-report.xml'
+                                stash name: "feedback-cover", includes: "feedback-cover.xml"
+
+                                sh 'rm -rf feedback-report.xml feedback-cover.xml'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("Run tests") {
+            parallel {
                 stage('Build docs') {
                     steps {
                         script {
@@ -179,53 +218,37 @@ pipeline {
                         }
                     }
                 }
-                stage("Build model builder and operator images") {
+                stage("Run python unittests") {
                     steps {
                         script {
-                            legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder")
-                            legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator")
-                            legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi")
-                            legion.buildLegionImage('operator-tests', ".", "containers/operator/Dockerfile", "--target tests")
-
-                            docker.image("legion/operator-tests:${Globals.buildVersion}").inside() {
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                 sh """
-                                    gocover-cobertura < "\${OPERATOR_DIR}/operator-cover.out" > ./operator-cover.xml
-                                    cp "\${OPERATOR_DIR}/operator-report.xml" ./
+                                    CURRENT_DIR="\$(pwd)"
+                                    cd /opt/legion
+                                    make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
+                                         TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
                                 """
+                                sh 'cp -r /opt/legion/target/legion-cover.xml /opt/legion/target/nosetests.xml /opt/legion/target/cover ./'
+                                junit 'nosetests.xml'
 
-                                junit 'operator-report.xml'
-                                // cobertura coberturaReportFile: 'operator-cover.xml'
-                                stash name: "operator-cover", includes: "operator-cover.xml"
+                                stash name: "python-cover", includes: "legion-cover.xml"
 
-                                sh 'rm -rf operator-report.xml operator-cover.xml'
-                            }
-                        }
-                    }
-                }
-                stage("Build feedback-aggregator image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-feedback-aggregator', ".", "containers/feedback-aggregator/Dockerfile", "--target server")
-                            legion.buildLegionImage('feedback-tests', ".", "containers/feedback-aggregator/Dockerfile", "--target tests")
-
-                            docker.image("legion/feedback-tests:${Globals.buildVersion}").inside() {
-                                sh """
-                                    gocover-cobertura < "\${FEEDBACK_DIR}/feedback-cover.out" > ./feedback-cover.xml
-                                    cp "\${FEEDBACK_DIR}/feedback-report.xml" ./
-                                """
-
-                                junit 'feedback-report.xml'
-                                // cobertura coberturaReportFile: 'feedback-cover.xml'
-                                stash name: "feedback-cover", includes: "feedback-cover.xml"
-
-                                sh 'rm -rf feedback-report.xml feedback-cover.xml'
+                                publishHTML (target: [
+                                        allowMissing: false,
+                                        alwaysLinkToLastBuild: false,
+                                        keepAll: true,
+                                        reportDir: 'cover',
+                                        reportFiles: 'index.html',
+                                        reportName: "Test Coverage Report"
+                                ])
+                                sh 'rm -rf *-cover.xml nosetests.xml cover'
                             }
                         }
                     }
                 }
                 stage('Run Python code analyzers') {
                     steps {
-                        script{
+                        script {
                             docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
                                 def statusCode = sh script:'make lint', returnStatus:true
 
@@ -236,13 +259,13 @@ pipeline {
                                 archiveArtifacts 'target/pylint/legion.log'
                                 archiveArtifacts 'target/pydocstyle/legion.log'
                                 step([
-                                    $class                     : 'WarningsPublisher',
-                                    parserConfigurations       : [[
-                                                                        parserName: 'PYLint',
-                                                                        pattern   : 'target/pylint/legion.log'
-                                                                ]],
-                                    unstableTotalAll           : '0',
-                                    usePreviousBuildAsReference: true
+                                        $class                     : 'WarningsPublisher',
+                                        parserConfigurations       : [[
+                                                                              parserName: 'PYLint',
+                                                                              pattern   : 'target/pylint/legion.log'
+                                                                      ]],
+                                        unstableTotalAll           : '0',
+                                        usePreviousBuildAsReference: true
                                 ])
                             }
                         }
@@ -250,39 +273,21 @@ pipeline {
                 }
             }
         }
-        stage("Run unittests") {
-            steps {
-                script {
-                    docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
-                            sh """
-                                CURRENT_DIR="\$(pwd)"
-                                cd /opt/legion
-                                make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
-                                     TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
-                            """
-                            sh 'cp -r /opt/legion/target/legion-cover.xml /opt/legion/target/nosetests.xml /opt/legion/target/cover ./'
-                            junit 'nosetests.xml'
-
-                            unstash 'feedback-cover'
-                            unstash 'operator-cover'
-
-                            cobertura coberturaReportFile: '*-cover.xml'
-                            publishHTML (target: [
-                              allowMissing: false,
-                              alwaysLinkToLastBuild: false,
-                              keepAll: true,
-                              reportDir: 'cover',
-                              reportFiles: 'index.html',
-                              reportName: "Test Coverage Report"
-                            ])
-                            sh 'rm -rf *-cover.xml nosetests.xml cover'
-                    }
-                }
-            }
-        }
 
         stage('Upload artifacts'){
             parallel {
+                stage("Upload coverage files") {
+                    steps {
+                        script {
+                            unstash 'feedback-cover'
+                            unstash 'operator-cover'
+                            unstash 'python-cover'
+
+                            cobertura coberturaReportFile: '*-cover.xml'
+                        }
+
+                    }
+                }
                 stage("Upload Legion package") {
                     steps {
                         script {
@@ -395,6 +400,20 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-fluentd')
+                        }
+                    }
+                }
+                stage('Upload Operator dependencies') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('operator-dependencies')
+                        }
+                    }
+                }
+                stage('Upload Feedback dependencies') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('feedback-dependencies')
                         }
                     }
                 }
