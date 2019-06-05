@@ -16,19 +16,26 @@
 
 FROM golang:1.11.6-alpine3.9 as builder
 
-RUN wget https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
-    chmod +x /usr/local/bin/dep
+ENV OPERATOR_DIR="/go/src/github.com/legion-platform/legion/legion/operator"
+WORKDIR "${OPERATOR_DIR}"
 
-RUN apk add -u git gcc musl-dev make
-
-WORKDIR /go/src/github.com/legion-platform/legion/legion/operator
+RUN apk add -u ca-certificates git gcc musl-dev make && \
+    wget https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
+    chmod +x /usr/local/bin/dep && \
+    wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
+    tar -zxvf /tmp/kubebuilder.tar.gz -C /usr/local/ && mv /usr/local/kubebuilder_* /usr/local/kubebuilder && \
+    wget https://github.com/swaggo/swag/releases/download/v1.5.0/swag_1.5.0_Linux_x86_64.tar.gz -O /tmp/swag.tar.gz && \
+    tar -zxvf /tmp/swag.tar.gz -C /usr/local/ && mv /usr/local/swag /usr/bin/ && \
+    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
+    tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
+    go get github.com/t-yuki/gocover-cobertura
 
 COPY legion/operator/Gopkg.toml legion/operator/Gopkg.lock ./
 RUN dep ensure -vendor-only
 
 COPY legion/operator/ ./
 
-RUN GOOS=linux GOARCH=amd64 make build-all
+RUN GOOS=linux GOARCH=amd64 make build-all && make test
 
 #########################################################
 #########################################################
@@ -91,25 +98,3 @@ COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/bu
 WORKDIR "${LEGION_DIR}"
 
 CMD ["./builder"]
-
-#########################################################
-#########################################################
-#########################################################
-
-FROM golang:1.11.6-alpine3.9 as tests
-
-RUN apk add -u ca-certificates make gcc musl-dev git && \
-    wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
-    tar -zxvf /tmp/kubebuilder.tar.gz -C /usr/local/ && mv /usr/local/kubebuilder_* /usr/local/kubebuilder && \
-    wget https://github.com/swaggo/swag/releases/download/v1.5.0/swag_1.5.0_Linux_x86_64.tar.gz -O /tmp/swag.tar.gz && \
-    tar -zxvf /tmp/swag.tar.gz -C /usr/local/ && mv /usr/local/swag /usr/bin/ && \
-    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
-    tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
-    go get github.com/t-yuki/gocover-cobertura
-
-ENV OPERATOR_DIR="/go/src/github.com/legion-platform/legion/legion/operator"
-WORKDIR "${OPERATOR_DIR}"
-
-COPY --from=builder "${OPERATOR_DIR}" ./
-
-RUN make test

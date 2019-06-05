@@ -16,19 +16,22 @@
 
 FROM golang:1.11.6-alpine3.9 as builder
 
-RUN wget https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
-    chmod +x /usr/local/bin/dep
+ENV FEEDBACK_DIR="/go/src/github.com/legion-platform/legion/legion/feedback-aggregator"
+WORKDIR "${FEEDBACK_DIR}"
 
-RUN apk add -u git gcc musl-dev make
-
-WORKDIR /go/src/github.com/legion-platform/legion/legion/feedback-aggregator
+RUN apk add -u ca-certificates git gcc musl-dev make && \
+    wget https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
+    chmod +x /usr/local/bin/dep && \
+    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
+    tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
+    go get github.com/t-yuki/gocover-cobertura
 
 COPY legion/feedback-aggregator/Gopkg.toml legion/feedback-aggregator/Gopkg.lock ./
 RUN dep ensure -vendor-only
 
 COPY legion/feedback-aggregator/ ./
 
-RUN GOOS=linux GOARCH=amd64 make build
+RUN GOOS=linux GOARCH=amd64 make build && make test
 
 #########################################################
 #########################################################
@@ -45,17 +48,3 @@ CMD ["./feedback"]
 #########################################################
 #########################################################
 #########################################################
-
-FROM golang:1.11.6-alpine3.9 as tests
-
-RUN apk add -u ca-certificates gcc musl-dev make git && \
-    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
-    tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
-    go get github.com/t-yuki/gocover-cobertura
-
-ENV FEEDBACK_DIR="/go/src/github.com/legion-platform/legion/legion/feedback-aggregator"
-WORKDIR "${FEEDBACK_DIR}"
-
-COPY --from=builder "${FEEDBACK_DIR}" ./
-
-RUN make test

@@ -327,9 +327,28 @@ func (controller *ModelTrainingController) getModelTrainingLog(c *gin.Context) {
 		}
 	}
 
+	var mt v1alpha1.ModelTraining
+	if err := controller.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: mtName, Namespace: controller.namespace},
+		&mt,
+	); err != nil {
+		throwK8sError(c, err, fmt.Sprintf("Retrieving mt with name %s", mtName))
+
+		return
+	} else {
+		if mt.Status.TrainingState != v1alpha1.ModelTrainingFailed &&
+			mt.Status.TrainingState != v1alpha1.ModelTrainingRunning &&
+			mt.Status.TrainingState != v1alpha1.ModelTrainingSucceeded {
+			routes.AbortWithError(c, http.StatusBadRequest,
+				fmt.Sprintf("Model Training %s has not started yet", mtName))
+			return
+		}
+	}
+
 	reader, err := utils.StreamTrainingLogs(controller.k8sConfig, mtName, follow)
 	if err != nil {
-		routes.AbortWithError(c, http.StatusBadRequest, "Creation of log stream")
+		routes.AbortWithError(c, http.StatusBadRequest,
+			fmt.Sprintf("Error during creation of log stream: %s", err.Error()))
 		return
 	}
 	defer reader.Close()
