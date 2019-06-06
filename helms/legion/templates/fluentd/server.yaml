@@ -19,6 +19,11 @@ spec:
       annotations:
         iam.amazonaws.com/role: {{ ternary $.Values.feedback.output.s3.customIAMRole (printf "%s-%s-collector-role" $.Values.ingress.globalDomain $.Release.Namespace) (hasKey $.Values.feedback.output.s3 "customIAMRole") }}
       {{- end }}
+      {{- if and (eq .Values.feedback.output.target "gcs") (eq .Values.feedback.output.gcs.authorization "sa" ) }}
+      annotations:
+        accounts.google.com/service-account: {{ ternary $.Values.feedback.output.gcs.customSA (printf "%s-collector-sa@%s.iam.gserviceaccount.com" $.Values.clusterName $.Values.feedback.output.gcs.projectID) (hasKey $.Values.feedback.output.gcs "customSA") }}
+        accounts.google.com/scopes: "https://www.googleapis.com/auth/devstorage.read_write"
+      {{- end }}
       labels:
         component: "legion-fluentd"
         {{- include "legion.helm-labels" . | nindent 8 }}

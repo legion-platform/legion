@@ -239,10 +239,29 @@ feedback:
 
   output:
     # Where feedback data should be stored
-    # Only S3 is supported nowadays
     # Valid values:
     # s3 - AWS S3
-    target: s3
+    # gcs - Google Cloud Storage
+    target: "s3"
+
+    # Detail configuration for storing on GCS
+    gcs:
+      # Type of authorization on S3
+      # Valid values are:
+      # - sa - requires k8s-gke-service-account-assigner to be installed in cluster,
+      #        adds annotation "accounts.google.com/service-account" to FluentD Pod
+      #        value of annotation could be specified in .feedback.output.gcs.customSA
+      authorization: "sa"
+
+      # Custom name for Service Account for sa-based authorization mode of FluentD
+      # For details see authorization directive above
+      # By default "<.ingress.globalDomain>-<.Release.Namespace>-collector-sa" is used
+      # Type: string
+      #customSA: ~
+
+      # GCS bucket name
+      # Type: string
+      bucket: "legion-test-store"
 
     # Detail configuration for storing on S3
     s3:
@@ -254,7 +273,7 @@ feedback:
       # - secret - provide AWS Key ID and AWS Secret Key in ENV variables for FluentD server
       #            AWS Key ID and AWS Secret Key should be specified in
       #            .feedback.output.s3.AWSKeyID and .feedback.output.s3.AWSSecretKey
-      authorization: iam
+      authorization: "iam"
 
       # Custom name for IAM for iam-based authorization mode of FluentD
       # For details see authorization directive above
@@ -280,43 +299,52 @@ feedback:
       # Type: string
       region: ~
 
-      # Directory for data storing
+    # Storage type
+    # Type: string
+    # Valid values:
+    # - gzip (default)
+    # - json
+    # - text
+    storeAs: "json"
+
+    # Storage format
+    # Type: string
+    # Valid values:
+    # - out_file (default)
+    # - json
+    # - ltsv
+    # - single_value
+    format: "json"
+
+    # Directory for data storing
+    # Type: string
+    path: "model_log/${tag}/${model_id}/${model_version}/year=%Y/month=%m/day=%d/"
+
+    # Format of file names
+    # Type: string
+    objectKeyFormat: "%{path}%{time_slice}_%{index}.%{file_extension}"
+
+    # Slicing format
+    # Type: string
+    timeSliceFormat: "%Y%m%d%H"
+
+    # Slicing wait time
+    # Type: string
+    timeSliceWait: "5m"
+
+    # Buffering (chunking)
+    buffering:
+      # Chunks length (window size)
       # Type: string
-      path: "model_log/${tag}/${model_id}/${model_version}/year=%Y/month=%m/day=%d/"
+      timekey: 1m
 
-      # Format of file names
+      # Delay for flush (after end of window)
       # Type: string
-      objectKeyFormat: "%{path}%{time_slice}_%{index}.%{file_extension}"
+      timekeyWait: 0s
 
-      # Slicing format
+      # Temporary buffering location
       # Type: string
-      timeSliceFormat: "%Y%m%d%H"
-
-      # Slicing wait time
-      # Type: string
-      timeSliceWait: "5m"
-
-      # Storage type
-      # Type: string
-      storeAs: "json"
-
-      # Storage format
-      # Type: string
-      format: "json"
-
-      # Buffering (chunking)
-      buffering:
-        # Chunks length (window size)
-        # Type: string
-        timekey: 1m
-
-        # Delay for flush (after end of window)
-        # Type: string
-        timekeyWait: 0s
-
-        # Temporary buffering location
-        # Type: string
-        path: /tmp
+      path: /tmp
 
 # Operator configuration
 # Operator handles all Legion's CustomResources such as ModelTraining and etc.
