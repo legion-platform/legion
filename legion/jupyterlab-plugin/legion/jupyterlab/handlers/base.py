@@ -21,10 +21,22 @@ import json
 from notebook.base.handlers import APIHandler
 
 
+# pylint: disable=W0223
 class BaseLegionHandler(APIHandler):
     """
     Base handler for Legion plugin back-end
     """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Construct base handler w/o state & logger
+
+        :param args: additional args (is passed to parent)
+        :param kwargs: additional k-v args (is passed to parent)
+        """
+        super().__init__(*args, **kwargs)
+        self.state = None
+        self.logger = None
 
     def initialize(self, state, logger, **kwargs):
         """

@@ -18,7 +18,7 @@ Entry point for using Legion plugin handlers
 """
 from notebook.utils import url_path_join
 
-from .cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
+from legion.jupyterlab.handlers.cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
     CloudAllEntitiesHandler, CloudDeploymentsScaleHandler, CloudTokenIssueHandler, CloudTrainingsFromFileHandler
 

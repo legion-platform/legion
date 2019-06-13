@@ -16,7 +16,8 @@
 """
 Main plugin's entry point
 """
-__version__ = "0.1.0"
+# Re-export version variable for Jupyter Lab
+from .version import __version__
 
 
 def _jupyter_server_extension_paths():

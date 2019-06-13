@@ -18,8 +18,8 @@ Main extension module
 """
 from notebook.utils import url_path_join
 
-from .api_state import ApiState
-from .handlers import register_all_handlers
+from legion.jupyterlab.api_state import ApiState
+from legion.jupyterlab.handlers import register_all_handlers
 
 LEGION_API_ROOT = 'legion', 'api'
 

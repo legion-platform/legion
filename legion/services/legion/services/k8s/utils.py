@@ -29,8 +29,9 @@ import kubernetes.config
 import kubernetes.config.config_exception
 import urllib3
 import urllib3.exceptions
-import yaml
 from docker_registry_client import DockerRegistryClient
+import yaml
+
 from legion.sdk import config
 from legion.sdk.containers import headers
 from legion.sdk.containers.exceptions import IncompatibleLegionModelDockerImage

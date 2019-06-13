@@ -17,12 +17,9 @@
 CLI parsers
 """
 import argparse
-import json
-import os
 from typing import Any, Dict
 
 import colorama
-import yaml
 from termcolor import colored
 
 TRAIN_LOGS_COLOR = 'cyan'

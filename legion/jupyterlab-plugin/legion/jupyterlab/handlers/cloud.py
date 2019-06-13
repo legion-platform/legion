@@ -18,6 +18,7 @@ Declaration of cloud handlers
 """
 import os
 import functools
+import typing
 from subprocess import Popen, PIPE, check_output, CalledProcessError
 
 from tornado.web import HTTPError
@@ -29,8 +30,8 @@ from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
 from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
 from legion.sdk.clients.vcs import VcsClient, VCSCredential
 
-from .base import BaseLegionHandler
-from .datamodels.cloud import *
+from legion.jupyterlab.handlers.base import BaseLegionHandler
+import legion.jupyterlab.handlers.datamodels.cloud as models
 
 LEGION_CLOUD_CREDENTIALS_EDI = 'X-Legion-Cloud-Endpoint'
 LEGION_CLOUD_CREDENTIALS_TOKEN = 'X-Legion-Cloud-Token'
@@ -151,19 +152,11 @@ def _get_remotes(path: str) -> typing.List[str]:
     return remotes
 
 
+# pylint: disable=W0223
 class BaseCloudLegionHandler(BaseLegionHandler):
     """
     Base handler for cloud API
     """
-
-    def initialize(self, **kwargs):
-        """
-        Initialize base handler
-
-        :param kwargs: args to init
-        :return: None
-        """
-        super().initialize(**kwargs)
 
     @staticmethod
     def transform_cloud_training(training: ModelTraining) -> dict:
@@ -263,7 +256,7 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = TrainingCreateRequest(**self.get_json_body())
+        data = models.TrainingCreateRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelTrainingClient)
@@ -279,7 +272,7 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = BasicNameRequest(**self.get_json_body())
+        data = models.BasicNameRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelTrainingClient)
@@ -324,7 +317,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = DeploymentCreateRequest(**self.get_json_body())
+        data = models.DeploymentCreateRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
@@ -340,7 +333,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = BasicNameRequest(**self.get_json_body())
+        data = models.BasicNameRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
@@ -363,8 +356,8 @@ class CloudDeploymentsScaleHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = ScaleRequest(**self.get_json_body())
-        
+        data = models.ScaleRequest(**self.get_json_body())
+
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
             client.scale(data.name, data.newScale)
@@ -385,7 +378,7 @@ class CloudTokenIssueHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = IssueTokenRequest(**self.get_json_body())
+        data = models.IssueTokenRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(RemoteEdiClient)
@@ -407,7 +400,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = FileInformationRequest(**self.get_json_body())
+        data = models.FileInformationRequest(**self.get_json_body())
 
         try:
             path = data.path
@@ -416,7 +409,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
 
             git_present = _is_git_cli_present()
             if not git_present:
-                self.finish_with_json(FileInformationResponse(
+                self.finish_with_json(models.FileInformationResponse(
                     path=path,
                     workDir=dir_name,
                     extension=extension
@@ -425,7 +418,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
 
             file_path_in_repo = _get_file_path_in_repo(path)
             if not file_path_in_repo:
-                self.finish_with_json(FileInformationResponse(
+                self.finish_with_json(models.FileInformationResponse(
                     path=path,
                     workDir=dir_name,
                     extension=extension,
@@ -440,7 +433,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
                 file_path_in_repo = file_path_in_repo[start + len(dir_name_in_repo):]
                 file_path_in_repo = file_path_in_repo.strip('/\\')
 
-            self.finish_with_json(FileInformationResponse(
+            self.finish_with_json(models.FileInformationResponse(
                 path=file_path_in_repo,
                 workDir=dir_name_in_repo,
                 extension=extension,
@@ -477,7 +470,7 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = ApplyFromFileRequest(**self.get_json_body())
+        data = models.ApplyFromFileRequest(**self.get_json_body())
         client = self.build_cloud_client(RemoteEdiClient)
 
         try:
