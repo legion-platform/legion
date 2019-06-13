@@ -58,7 +58,7 @@ RUN pip3 install --disable-pip-version-check jupyterlab==$JUPYTERLAB_VERSION
 RUN jupyter lab build
 
 # Copy and install Legion's plugin
-COPY --from=plugin-frontend-builder /opt/legion-plugin/jupyter_legion-0.1.0.tgz jupyter_legion.tgz
+COPY --from=plugin-frontend-builder /opt/legion-plugin/jupyter_legion-*.tgz jupyter_legion.tgz
 RUN jupyter labextension install jupyter_legion.tgz
 # We have to remove folder with node_modules and other build-related staff that is not required for running
 RUN rm -rf /usr/local/share/jupyter/lab/staging
