@@ -79,8 +79,8 @@ export class LogView extends React.Component<
     render() {
         if (this.state.data.length == 0) {
             return (
-                <div className={`${style.widgetPane} ${style.localMetricsWidget}`}>
-                    <p className={style.localMetricsWidgetNoDataLine}>NO DATA</p>
+                <div className={`${style.widgetPane} ${style.generalWidgetCentered}`}>
+                    <p className={style.noDataLine}>NO DATA</p>
                 </div>
             )
         }

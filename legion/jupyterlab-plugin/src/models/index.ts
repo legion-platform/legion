@@ -13,5 +13,4 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-export { IApiLocalState, IApiCloudState } from './apiState';
-export { ILocalDeploymentInformation } from './local';
+export {  IApiCloudState } from './apiState';

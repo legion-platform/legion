@@ -38,17 +38,17 @@ export interface ICloudWidgetViewNodeState {
 }
 
 /** Interface for GitPanel component props */
-export interface ILocalWidgetViewNodeProps {
+export interface ICloudWidgetViewNodeProps {
   app: JupyterLab;
   dataState: IApiCloudState;
 }
 
 /** A React component for the git extension's main display */
 export class CloudWidgetView extends React.Component<
-  ILocalWidgetViewNodeProps,
+  ICloudWidgetViewNodeProps,
   ICloudWidgetViewNodeState
   > {
-  constructor(props: ILocalWidgetViewNodeProps) {
+  constructor(props: ICloudWidgetViewNodeProps) {
     super(props);
     this.state = {
       cloudData: props.dataState,
@@ -68,7 +68,7 @@ export class CloudWidgetView extends React.Component<
         credentialsIsNotEmpty: this.props.dataState.credentials != null
       });
     } catch (err) {
-      showErrorMessage('Can not update local widget', err);
+      showErrorMessage('Can not update cloud widget', err);
     }
   };
 

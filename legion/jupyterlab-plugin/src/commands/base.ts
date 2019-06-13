@@ -19,7 +19,7 @@ import { ISplashScreen, InstanceTracker } from "@jupyterlab/apputils";
 import { FileBrowser } from '@jupyterlab/filebrowser';
 import { Widget } from '@phosphor/widgets';
 
-import { IApiCloudState, IApiLocalState } from '../models';
+import { IApiCloudState } from '../models';
 import { ILegionApi } from '../api';
 import { WidgetRegistry } from '../components/Widgets';
 
@@ -31,19 +31,12 @@ import { WidgetRegistry } from '../components/Widgets';
 export namespace CommandIDs {
     // UI
     export const openCloudModelPlugin = 'legion:ui-cloud-mode';
-    export const openLocalModelPlugin = 'legion:ui-local-mode';
     export const mainRepository = 'legion:main-repository';
 
     // Authorize
     export const unAuthorizeOnCluster = 'legion:cloud-reset-auth';
     export const authorizeOnCluster = 'legion:cloud-start-auth';
 
-    // Local
-    export const newLocalBuild = 'legion:local-build-new';
-    export const newLocalDeployment = 'legion:local-deployment-new';
-    export const removeLocalDeployment = 'legion:local-deployment-remove';
-    export const openLocalMetrics = 'legion:open-local-metrics';
-    export const openLocalBuildLogs = 'legion:open-local-build-logs';
 
     // Cloud
     export const newCloudTraining = 'legion:cloud-training-new';
@@ -58,30 +51,20 @@ export namespace CommandIDs {
     export const removeCloudResources = 'legion:resources:remove';
 
     // Settings
-    export const refreshLocal = 'legion:refresh-local-mode';
-    export const refreshLocalBuildStatus = 'legion:refresh-local-mode-build-status';
     export const refreshCloud = 'legion:refresh-cloud-mode';
 
     export const palleteCommands = [
         // UI
         openCloudModelPlugin,
-        openLocalModelPlugin,
         mainRepository,
         // Authorize
         unAuthorizeOnCluster,
         authorizeOnCluster,
 
-        // Local
-        openLocalMetrics,
-
         // Cloud
         scaleCloudDeployment,
         removeCloudDeployment,
         issueNewCloudAccessToken,
-
-        // Settings
-        refreshLocal,
-        refreshLocalBuildStatus,
         refreshCloud,
     ];
 }
@@ -92,12 +75,6 @@ export interface IAddCommandsOptions {
     services: ServiceManager;
     api: ILegionApi;
     splash: ISplashScreen;
-}
-
-export interface IAddLocalCommandsOptions extends IAddCommandsOptions {
-    state: IApiLocalState;
-    metricsWidget: Widget;
-    buildLogsWidget: Widget;
 }
 
 export interface IAddCloudCommandsOptions extends IAddCommandsOptions {

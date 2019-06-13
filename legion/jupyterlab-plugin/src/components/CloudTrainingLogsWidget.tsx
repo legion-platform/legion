@@ -91,7 +91,7 @@ export class CloudTrainingLogsWidget extends BaseLegionWidget {
         super.show();
         // Start update timer
         if (this._timerId === undefined) {
-            console.log('Starting local metrics update loop');
+            console.log('Starting cloud log update loop');
             this._timerId = setInterval(_ => this.refreshData(), WIDGET_UPDATE_TIME);
         }
         // Force on show

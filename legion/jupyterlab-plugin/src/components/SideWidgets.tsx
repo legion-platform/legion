@@ -22,7 +22,6 @@ import { JupyterLab } from '@jupyterlab/application';
 
 import { BaseLegionWidget, IWidgetOptions } from './Widgets';
 
-import { LocalWidgetView } from './LocalWidgetView';
 import { CloudWidgetView } from './CloudWidgetView';
 
 
@@ -54,14 +53,6 @@ export class LegionSideWidget extends BaseLegionWidget {
     this.component = ReactDOM.render(element, this.node);
     this.component.refresh();
   }
-}
-
-export function createLocalSidebarWidget(app: JupyterLab, options: ILegionSideWidgetExternalOptions) : LegionSideWidget {
-  const extendedOptions = {
-    ...options,
-    targetReactComponent: LocalWidgetView
-  }
-  return new LegionSideWidget(app, extendedOptions);
 }
 
 export function createCloudSidebarWidget(app: JupyterLab, options: ILegionSideWidgetExternalOptions) : LegionSideWidget {

@@ -18,8 +18,6 @@ Entry point for using Legion plugin handlers
 """
 from notebook.utils import url_path_join
 
-from .local import LocalBuildsHandler, LocalBuildStatusHandler, LocalDeploymentsHandler, LocalAllEntitiesHandler, \
-    LocalMetricsHandler
 from .cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
     CloudAllEntitiesHandler, CloudDeploymentsScaleHandler, CloudTokenIssueHandler, CloudTrainingsFromFileHandler
@@ -28,12 +26,6 @@ from .cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
 List of all back-end handlers with prefixes
 """
 ALL_HANDLERS = (
-    # Local
-    (LocalBuildStatusHandler, ('local', 'builds', 'status')),
-    (LocalBuildsHandler, ('local', 'builds')),
-    (LocalDeploymentsHandler, ('local', 'deployments')),
-    (LocalMetricsHandler, ('local', 'metrics')),
-    (LocalAllEntitiesHandler, ('local',)),
     # Cloud
     (CloudTrainingsHandler, ('cloud', 'trainings')),
     (CloudTrainingLogsHandler, ('cloud', 'trainings', '(.*)', 'logs')),

@@ -15,5 +15,4 @@
  */
 export { showChooseDialog, showChooseOrInputDialog, showPromptDialog } from './base';
 export { showLoginDialog, showLogoutDialog } from './authorize';
-export { showLocalDeploymentInformationDialog, REMOVE_DEPLOYMENT_LABEL } from './local';
 export { showApplyResultsDialog } from './cloud';
