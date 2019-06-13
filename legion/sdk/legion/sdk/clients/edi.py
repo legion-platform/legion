@@ -151,7 +151,6 @@ class RemoteEdiClient:
                                             timeout=connection_timeout,
                                             **request_kwargs)
             except requests.exceptions.ConnectionError as exception:
-                print(repr(exception))
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
             else:
@@ -160,8 +159,6 @@ class RemoteEdiClient:
 
             left_retries -= 1
         else:
-            print('FINAL')
-            print(repr(raised_exception))
             raise EDIConnectionException('Can not reach {}'.format(self._base)) from raised_exception
 
         # We assume if there were redirects then credentials are out of date
