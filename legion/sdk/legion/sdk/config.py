@@ -382,8 +382,8 @@ MODEL_CLUSTER_TRAIN_METRICS_ENABLED = ConfigVariableDeclaration(
     'MODEL_CLUSTER_TRAIN_METRICS_ENABLED', False, cast_bool, 'Send model metrics on train', False
 )
 MODEL_LOCAL_METRIC_STORE = ConfigVariableDeclaration(
-    'MODEL_LOCAL_METRIC_STORE', '.legion/build_metric_store.json', cast_bool,
-    'File name where model build metric are saved', False
+    'MODEL_LOCAL_METRIC_STORE', '.legion/build_metric_store.json', str,
+    'File name where model build metric are saved', True
 )
 METRICS_HOST = ConfigVariableDeclaration('METRICS_HOST', 'graphite', str,
                                          'Host that gets train metrics. It is used during model training', False)

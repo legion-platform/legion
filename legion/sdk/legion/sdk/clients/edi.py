@@ -34,10 +34,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class WrongHttpStatusCode(Exception):
+    """
+    Exception for wrong HTTP status code
+    """
 
     def __init__(self, status_code: int, http_result: typing.Dict[str, str] = None):
         """
-        Wrong Http Status Code
+        Initialize Wrong Http Status Code exception
+
         :param status_code: HTTP status code
         :param http_result: HTTP data
         """
@@ -48,12 +52,28 @@ class WrongHttpStatusCode(Exception):
         self.status_code = status_code
 
 
+class EDIConnectionException(Exception):
+    """
+    Exception that says that client can not reach EDI server
+    """
+
+    pass
+
+
+class IncorrectAuthorizationToken(EDIConnectionException):
+    """
+    Exception that says that provided EDI authorization token is incorrect
+    """
+
+    pass
+
+
 class RemoteEdiClient:
     """
     EDI client
     """
 
-    def __init__(self, base, token=None, retries=3):
+    def __init__(self, base, token=None, retries=3, timeout=10):
         """
         Build client
 
@@ -63,14 +83,28 @@ class RemoteEdiClient:
         :type token: str or None
         :param retries: command retries or less then 2 if disabled
         :type retries: int
+        :param timeout: timeout for connection in seconds. 0 for disabling
+        :type timeout: int
         """
         self._base = base
         self._token = token
         self._version = EDI_VERSION
         self._retries = retries
+        self._timeout = timeout
+
+    @classmethod
+    def construct_from_other(cls, other):
+        """
+        Construct EDI-based client from another EDI-based client
+
+        :param other: EDI-based client to get connection options from
+        :type other: RemoteEdiClient
+        :return: self -- new client
+        """
+        return cls(other._base, other._token, other._retries, other._timeout)
 
     def _request(self, url_template: str, payload: typing.Mapping[typing.Any, typing.Any] = None, action: str = 'GET',
-                 stream: bool = False):
+                 stream: bool = False, timeout: typing.Optional[int] = None):
         """
         Make HTTP request
         :param action: request action, e.g. get / post / delete
@@ -83,6 +117,8 @@ class RemoteEdiClient:
         :type headers: dict[str, str] or None
         :param cookies: (Optional) HTTP cookies
         :type cookies: dict[str, str] or None
+        :param timeout: (Optional) custom timeout in seconds (overrides default). 0 for disabling
+        :type timeout: typing.Optional[int]
         :return: :py:class:`requests.Response` -- response
         """
         sub_url = url_template.format(version=self._version)
@@ -90,7 +126,19 @@ class RemoteEdiClient:
         cookies = {'_oauth2_proxy': self._token} if self._token else {}
 
         left_retries = self._retries if self._retries > 0 else 1
+
+        connection_timeout = timeout if timeout is not None else self._timeout
+
+        if connection_timeout == 0:
+            connection_timeout = None
+
+        if stream:
+            connection_timeout = (connection_timeout, None)
+        else:
+            connection_timeout = connection_timeout
+
         raised_exception = None
+
         while left_retries > 0:
             try:
                 LOGGER.debug('Requesting {}'.format(target_url))
@@ -100,8 +148,10 @@ class RemoteEdiClient:
                     request_kwargs['headers'] = {'Content-type': 'text/event-stream'}
 
                 response = requests.request(action.lower(), target_url, cookies=cookies, stream=stream,
+                                            timeout=connection_timeout,
                                             **request_kwargs)
             except requests.exceptions.ConnectionError as exception:
+                print(repr(exception))
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
                 raised_exception = exception
             else:
@@ -110,21 +160,19 @@ class RemoteEdiClient:
 
             left_retries -= 1
         else:
-            raise Exception('Failed to connect to {}. No one retry left. Exception: {}'.format(
-                self._base, raised_exception
-            ))
+            print('FINAL')
+            print(repr(raised_exception))
+            raise EDIConnectionException('Can not reach {}'.format(self._base)) from raised_exception
 
         # We assume if there were redirects then credentials are out of date
         if response.history:
             LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
 
             parse_result = urlparse(target_url)
-
-            raise Exception(
+            raise IncorrectAuthorizationToken(
                 'Credentials are not correct. You should open {}://{} url in a browser to get fresh token'.format(
                     parse_result.scheme, parse_result.netloc
-                )
-            )
+                )) from raised_exception
 
         return response
 
@@ -251,6 +299,15 @@ class LocalEdiClient:
         """
         client = build_docker_client()
         return local_deploy.undeploy_model(client, deployment_name, model, version, ignore_not_found)
+
+    def get_builds(self):
+        """
+        Get available builds
+
+        :return: list[:py:class:`legion.containers.definitions.ModelBuildInformation`] -- registered model builds
+        """
+        client = build_docker_client()
+        return local_deploy.get_local_builds(client)
 
     def __repr__(self):
         """

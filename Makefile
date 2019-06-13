@@ -38,7 +38,7 @@ check-tag:
 	fi
 
 ## install-all: Install all python packages
-install-all: install-sdk install-services install-cli install-python-toolchain install-robot
+install-all: install-sdk install-services install-cli install-python-toolchain install-jupyterlab-plugin install-robot
 
 ## install-sdk: Install sdk python package
 install-sdk:
@@ -57,6 +57,13 @@ install-cli:
 ## install-services: Install services python package
 install-services:
 	cd legion/services && \
+		pip3 install ${BUILD_PARAMS} -e . && \
+		python setup.py sdist && \
+    	python setup.py bdist_wheel
+
+## install-jupyterlab-plugin: Install python package for JupyterLab
+install-jupyterlab-plugin:
+	cd legion/jupyterlab-plugin && \
 		pip3 install ${BUILD_PARAMS} -e . && \
 		python setup.py sdist && \
     	python setup.py bdist_wheel

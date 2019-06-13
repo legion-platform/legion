@@ -17,6 +17,16 @@
 !legion/feedback-aggregator/Gopkg.toml
 !legion/feedback-aggregator/Gopkg.lock
 !legion/feedback-aggregator/Makefile
+!legion/jupyterlab-plugin/*.json
+!legion/jupyterlab-plugin/*.py
+!legion/jupyterlab-plugin/Pipfile*
+!legion/jupyterlab-plugin/README.md
+!legion/jupyterlab-plugin/yarn*
+!legion/jupyterlab-plugin/src/**
+!legion/jupyterlab-plugin/style/**
+!legion/jupyterlab-plugin/schema/**
+!legion/jupyterlab-plugin/jupyter-config/**
+!legion/jupyterlab-plugin/jupyter_legion/**
 !legion/robot/**
 !legion/sdk/**
 !legion/services/**

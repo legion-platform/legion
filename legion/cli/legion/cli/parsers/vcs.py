@@ -21,8 +21,10 @@ import logging
 
 from texttable import Texttable
 
-from legion.cli.parsers import security, read_entity
+from legion.cli.parsers import security
 from legion.sdk.clients.vcs import build_client, VCSCredential
+from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
+
 
 VCS_HEADER = ["Name", "Type", "URI", "Default Reference", "Credential", "Public Key"]
 
@@ -35,7 +37,10 @@ VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
 def _convert_vcs_from_args(args: argparse.Namespace) -> VCSCredential:
     if args.filename:
-        return VCSCredential.from_json(read_entity(args.filename))
+        resource = parse_resources_file_with_one_item(args.filename).resource
+        if not isinstance(resource, VCSCredential):
+            raise ValueError(f'VCSCredential expected, but {type(resource)} provided')
+        return resource
     elif args.name:
         return VCSCredential(
             name=args.name,
@@ -106,9 +111,15 @@ def delete(args: argparse.Namespace):
     if not args.filename and not args.name:
         raise ValueError(f'Provide name of a VCS Credential or path to a file')
 
-    vcs_name = args.name if args.name else VCSCredential.from_json(read_entity(args.filename)).name
-    message = vcs_client.delete(vcs_name)
+    if args.filename:
+        resource = parse_resources_file_with_one_item(args.filename)
+        if not isinstance(resource.resource, VCSCredential):
+            raise ValueError(f'VCSCredential expected, but {type(resource.resource)} provided')
+            vcs_name = resource.name
+    else:
+        vcs_name = args.name
 
+    message = vcs_client.delete(vcs_name)
     print(message)
 
 

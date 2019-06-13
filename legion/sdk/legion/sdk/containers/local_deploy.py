@@ -196,3 +196,27 @@ def undeploy_model(client, name, model_id, model_version, ignore_not_found):
         container.stop()
 
     return target_deployments
+
+
+def get_local_builds(client):
+    """
+    Get local builds
+
+    :param client: Docker client
+    :type client: :py:class:`docker.client.DockerClient`
+    :return: list[:py:class:`legion.containers.definitions.ModelBuildInformation`] -- registered model builds
+    """
+    response = []
+    for image in client.images.list(filters={'label': headers.DOMAIN_MODEL_ID}):
+        if headers.DOMAIN_MODEL_VERSION in image.labels:
+            image_name = image.short_id
+            if len(image.tags) == 1:
+                image_name = image.tags[0]
+
+            response.append(container_definitions.ModelBuildInformation(
+                image_name=image_name,
+                model_id=image.labels.get(headers.DOMAIN_MODEL_ID),
+                model_version=image.labels.get(headers.DOMAIN_MODEL_VERSION)
+            ))
+
+    return response

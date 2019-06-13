@@ -23,8 +23,9 @@ import typing
 
 from texttable import Texttable
 
-from legion.cli.parsers import security, prepare_resources, add_resources_params, read_entity
+from legion.cli.parsers import security, prepare_resources, add_resources_params
 from legion.sdk.clients import edi
+from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDeploymentClient, SUCCESS_STATE, \
     FAILED_STATE
 from legion.sdk.clients.edi import WrongHttpStatusCode, LocalEdiClient
@@ -47,7 +48,10 @@ VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
 def _convert_md_from_args(args: argparse.Namespace) -> ModelDeployment:
     if args.filename:
-        return ModelDeployment.from_json(read_entity(args.filename))
+        resource = parse_resources_file_with_one_item(args.filename).resource
+        if not isinstance(resource, ModelDeployment):
+            raise ValueError(f'ModelDeployment expected, but {type(resource)} provided')
+        return resource
     elif args.name:
         return ModelDeployment(
             name=args.name,
@@ -201,7 +205,10 @@ def delete(args: argparse.Namespace):
 
     md_name = args.name
     if args.filename:
-        md_name = ModelDeployment.from_json(read_entity(args.filename)).name
+        resource = parse_resources_file_with_one_item(args.filename)
+        if not isinstance(resource.resource, ModelDeployment):
+            raise ValueError(f'ModelDeployment expected, but {type(resource.resource)} provided')
+        md_name = resource.name
 
     try:
         message = md_client.delete(md_name) if md_name else md_client.delete_all(_prepare_labels(args))

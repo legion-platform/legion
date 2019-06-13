@@ -1,0 +1,23 @@
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  name: test-mt-bulk-1
+spec:
+  entrypoint: simple.py
+  toolchain: python
+  vcsName: legion
+  args:
+    - "--id new-test-sub-1 --version 3.0"
+  workDir: legion/tests/e2e/models
+---
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: ModelTraining
+metadata:
+  name: test-mt-bulk-2
+spec:
+  entrypoint: simple.py
+  toolchain: python
+  vcsName: legion
+  args:
+    - "--id new-test-sub-2 --version 3.0"
+  workDir: legion/tests/e2e/models

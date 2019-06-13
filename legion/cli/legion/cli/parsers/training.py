@@ -23,9 +23,10 @@ import time
 from http.client import HTTPException
 from texttable import Texttable
 
-from legion.cli.parsers import security, prepare_resources, add_resources_params, read_entity, print_training_logs
+from legion.cli.parsers import security, prepare_resources, add_resources_params, print_training_logs
 from legion.sdk.clients import edi
 from legion.sdk.clients.edi import WrongHttpStatusCode
+from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 from legion.sdk.clients.training import build_client, ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
     TRAINING_FAILED_STATE
 
@@ -43,7 +44,10 @@ VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
 def _convert_mt_from_args(args: argparse.Namespace) -> ModelTraining:
     if args.filename:
-        return ModelTraining.from_json(read_entity(args.filename))
+        resource = parse_resources_file_with_one_item(args.filename).resource
+        if not isinstance(resource, ModelTraining):
+            raise ValueError(f'ModelTraining expected, but {type(resource)} provided')
+        return resource
     elif args.name:
         return ModelTraining(
             name=args.name,
@@ -135,9 +139,15 @@ def delete(args: argparse.Namespace):
     if not args.name and not args.filename:
         raise ValueError(f'Provide name of a Model Training or path to a file')
 
-    mt_name = args.name if args.name else ModelTraining.from_json(read_entity(args.filename)).name
-    message = mt_client.delete(mt_name)
+    if args.filename:
+        resource = parse_resources_file_with_one_item(args.filename)
+        if not isinstance(resource.resource, ModelTraining):
+            raise ValueError(f'ModelTraining expected, but {type(resource.resource)} provided')
+        mt_name = resource.name
+    else:
+        mt_name = args.name
 
+    message = mt_client.delete(mt_name)
     print(message)
 
 
