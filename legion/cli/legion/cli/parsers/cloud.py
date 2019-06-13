@@ -58,11 +58,11 @@ def process_bulk_operation(edi_client: RemoteEdiClient, filename: str, is_remova
     resources = parse_resources_file(filename)
     result = apply(resources, edi_client, is_removal)
     output = ['Operation completed']
-    if len(result.created) > 0:
+    if result.created:
         output.append(f'created resources: {_print_resources_info_counter(result.created)}')
-    if len(result.changed) > 0:
+    if result.changed:
         output.append(f'changed resources: {_print_resources_info_counter(result.changed)}')
-    if len(result.removed) > 0:
+    if result.removed:
         output.append(f'removed resources: {_print_resources_info_counter(result.removed)}')
     print(', '.join(output))
 
@@ -111,4 +111,3 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     security.add_edi_arguments(remove_parser)
     remove_parser.add_argument('filename', type=str, help='Path to file with resources declaration (YAML/JSON)')
     remove_parser.set_defaults(func=remove_command)
-
