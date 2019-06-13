@@ -65,6 +65,8 @@ COPY legion/tests/unit/requirements/Pipfile legion/tests/unit/requirements/Pipfi
 RUN  cd /opt/legion/legion/tests/unit && pipenv install --system --three --dev
 COPY legion/toolchains/python/Pipfile legion/toolchains/python/Pipfile.lock /opt/legion/legion/toolchains/python/
 RUN  cd /opt/legion/legion/toolchains/python && pipenv install --system --three
+COPY legion/jupyterlab-plugin/Pipfile legion/jupyterlab-plugin/Pipfile.lock /opt/legion/legion/jupyterlab-plugin/
+RUN  cd /opt/legion/legion/jupyterlab-plugin && pipenv install --system --three
 
 COPY scripts /opt/legion/scripts
 RUN chmod -R a+x /opt/legion/scripts/*
