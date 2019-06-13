@@ -96,6 +96,6 @@ RUN pip3 install --no-deps -e legion/sdk && \
     pip3 install --no-deps -e legion/toolchains/python && \
     pip3 install --no-deps -e legion/cli && \
     pip3 install -e legion/jupyterlab-plugin && \
-    jupyter serverextension enable --py jupyter_legion && \
+    jupyter serverextension enable --py legion.jupyterlab && \
     echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc && \
     cat /opt/legion/legion-doc.txt > /etc/motd

@@ -1,5 +1,5 @@
 #
-#    Copyright 2019 EPAM Systems
+#    Copyright 2017 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,17 +14,6 @@
 #    limitations under the License.
 #
 """
-Main plugin's entry point
+Version file
 """
-__version__ = "0.1.0"
-
-
-def _jupyter_server_extension_paths():
-    """
-    Get path for extension module
-
-    :return: str -- path to extension module
-    """
-    return [{
-        "module": "jupyter_legion.extension"
-    }]
+__version__ = '1.0.0'

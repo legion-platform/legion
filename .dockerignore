@@ -26,7 +26,8 @@
 !legion/jupyterlab-plugin/style/**
 !legion/jupyterlab-plugin/schema/**
 !legion/jupyterlab-plugin/jupyter-config/**
-!legion/jupyterlab-plugin/jupyter_legion/**
+!legion/jupyterlab-plugin/legion/**
+!legion/jupyterlab-plugin/MANIFEST.in
 !legion/robot/**
 !legion/sdk/**
 !legion/services/**

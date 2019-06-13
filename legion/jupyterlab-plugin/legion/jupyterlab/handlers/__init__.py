@@ -22,9 +22,7 @@ from .cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
     CloudAllEntitiesHandler, CloudDeploymentsScaleHandler, CloudTokenIssueHandler, CloudTrainingsFromFileHandler
 
-"""
-List of all back-end handlers with prefixes
-"""
+# List of all back-end handlers with prefixes
 ALL_HANDLERS = (
     # Cloud
     (CloudTrainingsHandler, ('cloud', 'trainings')),

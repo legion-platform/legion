@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c0cdc9022a249074ec5c3a24d5a3126c6abc795cd33f54ca7e5741785457a733"
+            "sha256": "7e24b53a045c1712dbfe3f06b3f94cd4a5c4ac18cc5535c279b28177f92ef8d1"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -44,6 +44,14 @@
                 "sha256:3fdf7f77adcf649c9911387df51254b813185e32b2c6619f690b593a617e19fa"
             ],
             "version": "==3.1.0"
+        },
+        "dataclasses": {
+            "hashes": [
+                "sha256:454a69d788c7fda44efd71e259be79577822f5e3f53f029a22d08004e951dc9f",
+                "sha256:6988bd2b895eef432d562370bb707d540f32f7360ab13da45340101bc2307d84"
+            ],
+            "markers": "python_version < '3.7'",
+            "version": "==0.6"
         },
         "decorator": {
             "hashes": [
@@ -196,6 +204,7 @@
                 "sha256:573e0ae650c5d76b18b6e564ba6d21bf321d00847de1d215b418acb64f056eb8",
                 "sha256:f64fa6624d2323fbef6210a621817d6505a45d0d4a9367f1843b20a38a4666ee"
             ],
+            "index": "pypi",
             "version": "==5.7.8"
         },
         "pandocfilters": {
@@ -228,9 +237,9 @@
         },
         "prometheus-client": {
             "hashes": [
-                "sha256:1b38b958750f66f208bcd9ab92a633c0c994d8859c831f7abc1f46724fcee490"
+                "sha256:ee0c90350595e4a9f36591f291e6f9933246ea67d7cd7d1d6139a9781b14eaae"
             ],
-            "version": "==0.6.0"
+            "version": "==0.7.0"
         },
         "prompt-toolkit": {
             "hashes": [
@@ -248,12 +257,20 @@
             "markers": "os_name != 'nt'",
             "version": "==0.6.0"
         },
+        "pydantic": {
+            "hashes": [
+                "sha256:b72e0df2463cee746cf42639845d4106c19f30136375e779352d710e69617731",
+                "sha256:dab99d3070e040b8b2e987dfbe237350ab92d5d57a22d4e0e268ede2d85c7964"
+            ],
+            "index": "pypi",
+            "version": "==0.26"
+        },
         "pygments": {
             "hashes": [
-                "sha256:31cba6ffb739f099a85e243eff8cb717089fdd3c7300767d9fc34cb8e1b065f5",
-                "sha256:5ad302949b3c98dd73f8d9fcdc7e9cb592f120e32a18e23efd7f3dc51194472b"
+                "sha256:71e430bc85c88a430f000ac1d9b331d2407f681d6f6aec95e8bcfbc3df5b0127",
+                "sha256:881c4c157e45f30af185c1ffe8d549d48ac9127433f2c380c24b84572ad66297"
             ],
-            "version": "==2.4.0"
+            "version": "==2.4.2"
         },
         "pyrsistent": {
             "hashes": [
