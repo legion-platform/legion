@@ -61,7 +61,7 @@ File not found
     [Arguments]  ${command}
         ${res}=  Shell  legionctl --verbose mt ${command} -f wrong-file
                  Should not be equal  ${res.rc}  ${0}
-                 Should contain       ${res.stderr}  No such file or directory
+                 Should contain       ${res.stderr}  Resource file 'wrong-file' not found
 
 Invoke command without parameters
     [Arguments]  ${command}

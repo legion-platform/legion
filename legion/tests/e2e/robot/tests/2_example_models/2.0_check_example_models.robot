@@ -28,7 +28,7 @@ Delete the examples models
 Build the example models
     [Documentation]  Start building models
     :FOR  ${model_name}  IN  @{TEST_MODELS}
-    \    Create model training from yaml  examples/${model_name}/modeltraining.yaml
+    \    Create model training from yaml  examples/${model_name}/modeltraining.legion.yaml
 
 Test model pipeline result
     [Arguments]          ${model_name}
