@@ -29,23 +29,35 @@ import { Token } from '@phosphor/coreutils';
 
 import '../style/variables.css';
 
-import { cloudModeTabStyle } from './componentsStyle/GeneralWidgetStyle';
+import {
+  localModeTabStyle,
+  cloudModeTabStyle
+} from './componentsStyle/GeneralWidgetStyle';
 
 import { WidgetRegistry } from './components/Widgets';
 
 import {
+  createLocalSidebarWidget,
   createCloudSidebarWidget,
   LegionSideWidget
 } from './components/SideWidgets';
+import { LocalMetricsWidget } from './components/LocalMetricsWidget';
+import { LocalBuildLogsWidget } from './components/LocalBuildLogsWidget';
 import { CloudTrainingLogsWidget } from './components/CloudTrainingLogsWidget';
-import { addCloudCommands, CommandIDs } from './commands';
+import { addLocalCommands, addCloudCommands, CommandIDs } from './commands';
 
 import { LegionApi } from './api';
-import { IApiCloudState, buildInitialCloudAPIState } from './models/apiState';
+import {
+  IApiLocalState,
+  IApiCloudState,
+  buildInitialLocalAPIState,
+  buildInitialCloudAPIState
+} from './models/apiState';
 import { ILegionPluginMode } from './models/core';
 
 export const PLUGIN_ID = 'jupyter.extensions.legion';
 export const PLUGIN_ID_CLOUD = PLUGIN_ID + ':cloud';
+export const PLUGIN_ID_LOCAL = PLUGIN_ID + ':local';
 export const EXTENSION_ID = 'jupyter.extensions.jupyter_legion';
 
 const FILE_MANAGER_NOT_DIRECTORY = '.jp-DirListing-item[data-isdir="false"]';
@@ -80,10 +92,18 @@ const cloudPlugin: JupyterLabPlugin<ILegionExtension> = {
   autoStart: true
 };
 
+const localPlugin: JupyterLabPlugin<ILegionExtension> = {
+  id: PLUGIN_ID_LOCAL,
+  requires: pluginRequirements,
+  provides: ILegionExtension,
+  activate: activateLocalPlugin,
+  autoStart: true
+};
+
 /**
  * Export the plugins as default.
  */
-const plugins: JupyterLabPlugin<any>[] = [cloudPlugin];
+const plugins: JupyterLabPlugin<any>[] = [cloudPlugin, localPlugin];
 export default plugins;
 
 class BaseLegionExtension {
@@ -100,7 +120,70 @@ class BaseLegionExtension {
   /**
    * API state
    */
+  apiLocalState?: IApiLocalState;
   apiCloudState?: IApiCloudState;
+}
+
+/**
+ * Declare extension constructor
+ */
+export class LegionLocalExtension extends BaseLegionExtension
+  implements ILegionExtension {
+  private _localMetricsWidget: LocalMetricsWidget;
+  private _localBuildLogsWidget: LocalBuildLogsWidget;
+
+  /**
+   * Construct extension
+   * @param app JupyterLab target JupyterLab
+   * @param restorer ILayoutRestorer layout restorer
+   */
+  constructor(app: JupyterLab, restorer: ILayoutRestorer) {
+    super();
+
+    this.api = new LegionApi();
+    this.apiLocalState = buildInitialLocalAPIState();
+    this.sideWidget = createLocalSidebarWidget(app, {
+      manager: app.serviceManager,
+      state: this.apiLocalState,
+      defaultRenderHolder: 'legion-cloud-sidebar-widget'
+    });
+    this.sideWidget.id = 'legion-local-sessions-widget';
+    this.sideWidget.title.iconClass = `jp-SideBar-tabIcon ${localModeTabStyle}`;
+    this.sideWidget.title.caption = 'Legion local mode';
+
+    this.apiLocalState.onDataChanged.connect(_ => this.sideWidget.refresh());
+
+    restorer.add(this.sideWidget, 'legion-local-sessions');
+    app.shell.addToLeftArea(this.sideWidget, { rank: 200 });
+
+    app.restored.then(() => {
+      setInterval(
+        () => app.commands.execute(CommandIDs.refreshLocalBuildStatus),
+        1000
+      );
+    });
+
+    this._localMetricsWidget = new LocalMetricsWidget(app, this.api.local, {
+      defaultRenderHolder: 'legion-local-metrics-widget'
+    });
+    restorer.add(this._localMetricsWidget, this._localMetricsWidget.id);
+
+    this._localBuildLogsWidget = new LocalBuildLogsWidget(this.apiLocalState, {
+      defaultRenderHolder: 'legion-local-build-logs-widget'
+    });
+    restorer.add(this._localBuildLogsWidget, this._localBuildLogsWidget.id);
+    this.apiLocalState.onDataChanged.connect(_ =>
+      this._localBuildLogsWidget.refresh()
+    );
+  }
+
+  get localMetricsWidget(): LocalMetricsWidget {
+    return this._localMetricsWidget;
+  }
+
+  get localBuildLogsWidget(): LocalBuildLogsWidget {
+    return this._localBuildLogsWidget;
+  }
 }
 
 /**
@@ -178,13 +261,55 @@ function buildTopMenu(
           CommandIDs.unAuthorizeOnCluster,
           CommandIDs.issueNewCloudAccessToken
         ]
-      : [];
+      : [
+          CommandIDs.refreshLocal,
+          CommandIDs.newLocalBuild,
+          CommandIDs.refreshLocalBuildStatus,
+          CommandIDs.openLocalMetrics,
+          CommandIDs.openLocalBuildLogs
+        ];
 
   commandsToAdd.forEach(command => {
     menu.addItem({ command });
   });
 
   return menu;
+}
+
+/**
+ * Activate Legion plugin (build & return LegionExtension, register commands)
+ */
+function activateLocalPlugin(
+  app: JupyterLab,
+  mainMenu: IMainMenu,
+  restorer: ILayoutRestorer,
+  splash: ISplashScreen,
+  state: IStateDB,
+  factory: IFileBrowserFactory
+): ILegionExtension {
+  // Build extension
+  let legionExtension = new LegionLocalExtension(app, restorer);
+
+  // Build options for commands
+  const addCommandsOptions = {
+    app,
+    services: app.serviceManager,
+    state: legionExtension.apiLocalState,
+    api: legionExtension.api,
+    splash,
+    tracker: factory.tracker,
+    metricsWidget: legionExtension.localMetricsWidget,
+    buildLogsWidget: legionExtension.localBuildLogsWidget
+  };
+
+  // Register commands in JupyterLab
+  addLocalCommands(addCommandsOptions);
+
+  // Create top menu for appropriate mode
+  mainMenu.addMenu(buildTopMenu(app.commands, ILegionPluginMode.LOCAL), {
+    rank: 60
+  });
+  return legionExtension;
 }
 
 /**

@@ -48,6 +48,10 @@ export const authDisclaimerText = style({
   textAlign: 'center'
 });
 
+export const localModeTabStyle = style({
+  backgroundImage: 'var(--jp-icon-legion-local)'
+});
+
 export const cloudModeTabStyle = style({
   backgroundImage: 'var(--jp-icon-legion-cloud)'
 });
@@ -72,6 +76,34 @@ export const generalWidgetCentered = style({
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center'
+});
+
+export const localMetricsTable = style({
+  textAlign: 'center'
+});
+
+export const localMetricsTableHeadTrTh = style({
+  padding: '2px 5px',
+  border: '1px solid #cacaca',
+  borderRight: 'none',
+  fontWeight: 'bold',
+  $nest: {
+    '&:last-of-type': {
+      borderRight: '1px solid #cacaca'
+    }
+  }
+});
+
+export const localMetricsTableBodyTrTd = style({
+  padding: '2px 5px',
+  border: '1px solid #cacaca',
+  borderTop: 'none',
+  borderRight: 'none',
+  $nest: {
+    '&:last-of-type': {
+      borderRight: '1px solid #cacaca'
+    }
+  }
 });
 
 export const noDataLine = style({

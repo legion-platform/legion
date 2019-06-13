@@ -17,10 +17,25 @@ import { ISignal, Signal } from '@phosphor/signaling';
 import { IStateDB } from '@jupyterlab/coreutils';
 
 import { ICloudCredentials } from '../api/base';
+import * as local from './local';
 import * as cloud from './cloud';
 
 export const PLUGIN_CREDENTIALS_STORE_CLUSTER = `legion.cluster:credentials-cluster`;
 export const PLUGIN_CREDENTIALS_STORE_TOKEN = `legion.cluster:credentials-token`;
+
+export interface IApiLocalState {
+  builds: Array<local.ILocalBuildInformation>;
+  deployments: Array<local.ILocalDeploymentInformation>;
+  buildStatus: local.ILocalBuildStatus;
+
+  isLoading: boolean;
+  signalLoadingStarted(): void;
+  onDataChanged: ISignal<this, void>;
+
+  updateAllState(data?: local.ILocalAllEntitiesResponse): void;
+  updateBuildState(data: local.ILocalBuildStatus): void;
+  updateBuildStateStarted(): void;
+}
 
 export interface IApiCloudState {
   trainings: Array<cloud.ICloudTrainingResponse>;
@@ -38,6 +53,73 @@ export interface IApiCloudState {
     skipPersisting?: boolean
   ): void;
   tryToLoadCredentialsFromSettings(): void;
+}
+
+class APILocalStateImplementation implements IApiLocalState {
+  private _builds: Array<local.ILocalBuildInformation>;
+  private _deployments: Array<local.ILocalDeploymentInformation>;
+  private _buildStatus: local.ILocalBuildStatus;
+
+  private _isLoading: boolean;
+  private _dataChanged = new Signal<this, void>(this);
+
+  constructor() {
+    this._isLoading = false;
+    this._builds = [];
+    this._deployments = [];
+    this._buildStatus = {
+      started: false,
+      finished: false,
+      logs: ''
+    };
+  }
+
+  get builds(): Array<local.ILocalBuildInformation> {
+    return this._builds;
+  }
+  get deployments(): Array<local.ILocalDeploymentInformation> {
+    return this._deployments;
+  }
+  get buildStatus(): local.ILocalBuildStatus {
+    return this._buildStatus;
+  }
+
+  get isLoading(): boolean {
+    return this._isLoading;
+  }
+
+  get onDataChanged(): ISignal<this, void> {
+    return this._dataChanged;
+  }
+
+  signalLoadingStarted(): void {
+    this._isLoading = true;
+    this._dataChanged.emit(null);
+  }
+
+  updateAllState(data?: local.ILocalAllEntitiesResponse): void {
+    if (data) {
+      this._builds = data.builds;
+      this._deployments = data.deployments;
+      this._buildStatus = data.buildStatus;
+    }
+    this._isLoading = false;
+    this._dataChanged.emit(null);
+  }
+
+  updateBuildState(data: local.ILocalBuildStatus): void {
+    this._buildStatus = data;
+    this._dataChanged.emit(null);
+  }
+
+  updateBuildStateStarted(): void {
+    this._buildStatus = {
+      started: true,
+      finished: false,
+      logs: ''
+    };
+    this._dataChanged.emit(null);
+  }
 }
 
 class APICloudStateImplementation implements IApiCloudState {
@@ -165,6 +247,10 @@ class APICloudStateImplementation implements IApiCloudState {
         console.error('Can not load credentials from store', err);
       });
   }
+}
+
+export function buildInitialLocalAPIState(): IApiLocalState {
+  return new APILocalStateImplementation();
 }
 
 export function buildInitialCloudAPIState(appState: IStateDB): IApiCloudState {

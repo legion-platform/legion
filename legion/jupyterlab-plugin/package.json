@@ -1,7 +1,7 @@
 {
   "name": "jupyter_legion",
   "version": "0.1.0",
-  "description": "Integration with Legion Platform (Cluster mode only)",
+  "description": "Integration with Legion Platform (Cluster and Local modes)",
   "keywords": [
     "jupyter",
     "jupyterlab",

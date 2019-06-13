@@ -16,6 +16,10 @@
 """
 Declare plugin state handlers
 """
+import os
+import typing
+import tempfile
+import subprocess
 
 
 class ApiState:
@@ -27,4 +31,34 @@ class ApiState:
         """
         Initialize state
         """
-        pass
+        self._local_build_process = None
+        # Create temporary directory (without removal)
+        self._local_build_storage = os.path.join(tempfile.mkdtemp(), 'log')
+        with open(self._local_build_storage, 'w') as log_stream:
+            log_stream.write('')
+
+    def register_local_build(self, process: subprocess.Popen):
+        """
+        Register local build
+
+        :param process: local build process
+        :type process: subprocess.Popen
+        :return: None
+        """
+        self._local_build_process = process
+
+    @property
+    def local_build_process(self) -> typing.Optional[subprocess.Popen]:
+        """
+        Get registered local build process or None
+
+        :return: subprocess.Popen or None -- previously registered local build process
+        """
+        return self._local_build_process
+
+    @property
+    def local_build_storage(self) -> str:
+        """
+        Get storage for local build logs
+        """
+        return self._local_build_storage

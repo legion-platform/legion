@@ -14,18 +14,27 @@
  *   limitations under the License.
  */
 import * as authorize from './authorize';
+import * as local from './local';
 import * as cloud from './cloud';
-import { IAddCloudCommandsOptions } from './base';
-export { CommandIDs, IAddCloudCommandsOptions } from './base';
+import { IAddLocalCommandsOptions, IAddCloudCommandsOptions } from './base';
+export {
+  CommandIDs,
+  IAddLocalCommandsOptions,
+  IAddCloudCommandsOptions
+} from './base';
 
-/**
- * List of cloud command handlers
- */
-const CLOUD_HANDLERS = [authorize, cloud];
+const LOCAL_HANDLERS = [local];
+const CLOUD_HANDLERS = [cloud, authorize];
 
 /**
  * Add the commands for the legion extension.
  */
+export function addLocalCommands(options: IAddLocalCommandsOptions) {
+  LOCAL_HANDLERS.forEach(handler => {
+    handler.addCommands(options);
+  });
+}
+
 export function addCloudCommands(options: IAddCloudCommandsOptions) {
   CLOUD_HANDLERS.forEach(handler => {
     handler.addCommands(options);
