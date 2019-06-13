@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 import { ISignal, Signal } from '@phosphor/signaling';
-import { IStateDB } from "@jupyterlab/coreutils";
+import { IStateDB } from '@jupyterlab/coreutils';
 
 import { ICloudCredentials } from '../api/base';
 import * as cloud from './cloud';
@@ -23,132 +23,150 @@ export const PLUGIN_CREDENTIALS_STORE_CLUSTER = `legion.cluster:credentials-clus
 export const PLUGIN_CREDENTIALS_STORE_TOKEN = `legion.cluster:credentials-token`;
 
 export interface IApiCloudState {
-    trainings: Array<cloud.ICloudTrainingResponse>,
-    deployments: Array<cloud.ICloudDeploymentResponse>,
-    vcss: Array<cloud.IVCSResponse>
+  trainings: Array<cloud.ICloudTrainingResponse>;
+  deployments: Array<cloud.ICloudDeploymentResponse>;
+  vcss: Array<cloud.IVCSResponse>;
 
-    isLoading: boolean;
-    signalLoadingStarted(): void;
-    onDataChanged: ISignal<this, void>;
-    updateAllState(data?: cloud.ICloudAllEntitiesResponse): void;
+  isLoading: boolean;
+  signalLoadingStarted(): void;
+  onDataChanged: ISignal<this, void>;
+  updateAllState(data?: cloud.ICloudAllEntitiesResponse): void;
 
-    credentials: ICloudCredentials;
-    setCredentials(credentials?: ICloudCredentials, skipPersisting?: boolean): void;
-    tryToLoadCredentialsFromSettings(): void;
+  credentials: ICloudCredentials;
+  setCredentials(
+    credentials?: ICloudCredentials,
+    skipPersisting?: boolean
+  ): void;
+  tryToLoadCredentialsFromSettings(): void;
 }
 
 class APICloudStateImplementation implements IApiCloudState {
-    private _trainings: Array<cloud.ICloudTrainingResponse>;
-    private _deployments: Array<cloud.ICloudDeploymentResponse>;
-    private _vcss: Array<cloud.IVCSResponse>
+  private _trainings: Array<cloud.ICloudTrainingResponse>;
+  private _deployments: Array<cloud.ICloudDeploymentResponse>;
+  private _vcss: Array<cloud.IVCSResponse>;
 
-    private _isLoading: boolean;
-    private _dataChanged = new Signal<this, void>(this);
+  private _isLoading: boolean;
+  private _dataChanged = new Signal<this, void>(this);
 
-    private _credentials?: ICloudCredentials;
-    private _appState: IStateDB;
+  private _credentials?: ICloudCredentials;
+  private _appState: IStateDB;
 
-    constructor(appState: IStateDB) {
-        this._isLoading = false;
-        this._trainings = [];
-        this._deployments = [];
-        this._vcss = [];
-        this._credentials = null;
-        this._appState = appState;
+  constructor(appState: IStateDB) {
+    this._isLoading = false;
+    this._trainings = [];
+    this._deployments = [];
+    this._vcss = [];
+    this._credentials = null;
+    this._appState = appState;
+  }
+
+  get trainings(): Array<cloud.ICloudTrainingResponse> {
+    return this._trainings;
+  }
+
+  get deployments(): Array<cloud.ICloudDeploymentResponse> {
+    return this._deployments;
+  }
+
+  get vcss(): Array<cloud.IVCSResponse> {
+    return this._vcss;
+  }
+
+  get isLoading(): boolean {
+    return this._isLoading;
+  }
+
+  get onDataChanged(): ISignal<this, void> {
+    return this._dataChanged;
+  }
+
+  signalLoadingStarted(): void {
+    this._isLoading = true;
+    this._dataChanged.emit(null);
+  }
+
+  updateAllState(data?: cloud.ICloudAllEntitiesResponse): void {
+    if (data) {
+      this._trainings = data.trainings;
+      this._deployments = data.deployments;
+      this._vcss = data.vcss;
+    }
+    this._isLoading = false;
+    this._dataChanged.emit(null);
+  }
+
+  get credentials(): ICloudCredentials {
+    return this._credentials;
+  }
+
+  setCredentials(
+    credentials?: ICloudCredentials,
+    skipPersisting?: boolean
+  ): void {
+    if (credentials != undefined) {
+      console.log('Updating credentials for ', credentials.cluster);
+      this._credentials = credentials;
+    } else {
+      console.log('Resetting credentials');
+      this._credentials = null;
     }
 
-    get trainings(): Array<cloud.ICloudTrainingResponse> {
-        return this._trainings;
-    }
-
-    get deployments(): Array<cloud.ICloudDeploymentResponse> {
-        return this._deployments;
-    }
-
-    get vcss(): Array<cloud.IVCSResponse> {
-        return this._vcss;
-    }
-
-    get isLoading(): boolean {
-        return this._isLoading;
-    }
-
-    get onDataChanged(): ISignal<this, void> {
-        return this._dataChanged;
-    }
-
-    signalLoadingStarted(): void {
-        this._isLoading = true;
-        this._dataChanged.emit(null);
-    }
-
-    updateAllState(data?: cloud.ICloudAllEntitiesResponse): void {
-        if (data) {
-            this._trainings = data.trainings;
-            this._deployments = data.deployments;
-            this._vcss = data.vcss;
-        }
-        this._isLoading = false;
-        this._dataChanged.emit(null);
-    }
-
-    get credentials(): ICloudCredentials {
-        return this._credentials;
-    }
-
-    setCredentials(credentials?: ICloudCredentials, skipPersisting?: boolean): void {
-        if (credentials != undefined) {
-            console.log('Updating credentials for ', credentials.cluster);
-            this._credentials = credentials;
-        } else {
-            console.log('Resetting credentials');
-            this._credentials = null;
-        }
-
-        if (skipPersisting !== true) {
-            if (this._credentials) {
-                Promise.all([
-                    this._appState.save(PLUGIN_CREDENTIALS_STORE_CLUSTER, this._credentials.cluster),
-                    this._appState.save(PLUGIN_CREDENTIALS_STORE_TOKEN, this._credentials.authString),
-                ]).then(() => {
-                    console.log('Cluster and token have been persisted in settings');
-                }).catch(err => {
-                    console.error('Can not persist cluster and token in settings', err);
-                });
-            } else {
-                Promise.all([
-                    this._appState.remove(PLUGIN_CREDENTIALS_STORE_CLUSTER),
-                    this._appState.remove(PLUGIN_CREDENTIALS_STORE_TOKEN)
-                ]).then(() => {
-                    console.log('Cluster and token have been removed from storage');
-                }).catch(err => {
-                    console.error('Can not remove cluster and token from storage', err);
-                });
-            }
-        }
-        this._dataChanged.emit(null);
-    }
-
-    tryToLoadCredentialsFromSettings(): void {
+    if (skipPersisting !== true) {
+      if (this._credentials) {
         Promise.all([
-            this._appState.fetch(PLUGIN_CREDENTIALS_STORE_CLUSTER),
-            this._appState.fetch(PLUGIN_CREDENTIALS_STORE_TOKEN),
-        ]).then((answers) => {
-            if (!answers[0]) {
-                console.warn('Empty data loaded from credentials store');
-            } else {
-                let credentials = {
-                    cluster: answers[0] as string,
-                    authString: answers[1] as string
-                };
-                this.setCredentials(credentials, true);
-            }
-        }).catch(err => {
-            console.error('Can not load credentials from store', err);
-        });
+          this._appState.save(
+            PLUGIN_CREDENTIALS_STORE_CLUSTER,
+            this._credentials.cluster
+          ),
+          this._appState.save(
+            PLUGIN_CREDENTIALS_STORE_TOKEN,
+            this._credentials.authString
+          )
+        ])
+          .then(() => {
+            console.log('Cluster and token have been persisted in settings');
+          })
+          .catch(err => {
+            console.error('Can not persist cluster and token in settings', err);
+          });
+      } else {
+        Promise.all([
+          this._appState.remove(PLUGIN_CREDENTIALS_STORE_CLUSTER),
+          this._appState.remove(PLUGIN_CREDENTIALS_STORE_TOKEN)
+        ])
+          .then(() => {
+            console.log('Cluster and token have been removed from storage');
+          })
+          .catch(err => {
+            console.error('Can not remove cluster and token from storage', err);
+          });
+      }
     }
+    this._dataChanged.emit(null);
+  }
+
+  tryToLoadCredentialsFromSettings(): void {
+    Promise.all([
+      this._appState.fetch(PLUGIN_CREDENTIALS_STORE_CLUSTER),
+      this._appState.fetch(PLUGIN_CREDENTIALS_STORE_TOKEN)
+    ])
+      .then(answers => {
+        if (!answers[0]) {
+          console.warn('Empty data loaded from credentials store');
+        } else {
+          let credentials = {
+            cluster: answers[0] as string,
+            authString: answers[1] as string
+          };
+          this.setCredentials(credentials, true);
+        }
+      })
+      .catch(err => {
+        console.error('Can not load credentials from store', err);
+      });
+  }
 }
 
 export function buildInitialCloudAPIState(appState: IStateDB): IApiCloudState {
-    return new APICloudStateImplementation(appState);
+  return new APICloudStateImplementation(appState);
 }

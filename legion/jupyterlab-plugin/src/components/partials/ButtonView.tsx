@@ -17,7 +17,7 @@ import * as React from 'react';
 import * as style from '../../componentsStyle/ButtonStyle';
 
 /** Interface for ButtonView component state */
-export interface IButtonViewNodeState { }
+export interface IButtonViewNodeState {}
 
 /** Interface for ButtonView component props */
 export interface IButtonViewNodeProps {
@@ -37,13 +37,17 @@ export interface IButtonViewWithStyleNodeProps extends IButtonViewNodeProps {
 export class ButtonView extends React.Component<
   IButtonViewWithStyleNodeProps,
   IButtonViewNodeState
-  > {
+> {
   constructor(props: IButtonViewWithStyleNodeProps) {
     super(props);
   }
 
   getStyle() {
-    let finalStyle = "jp-Dialog-button " + this.props.style + " jp-mod-styled " + style.normalButtonStyle;
+    let finalStyle =
+      'jp-Dialog-button ' +
+      this.props.style +
+      ' jp-mod-styled ' +
+      style.normalButtonStyle;
     if (this.props.disabled) {
       finalStyle += ' ' + style.buttonDisabled;
     }
@@ -52,10 +56,12 @@ export class ButtonView extends React.Component<
 
   render() {
     return (
-      <button className={this.getStyle()}
-        onClick={e => this.props.disabled ? null : this.props.onClick()}>
-        <div className={"jp-Dialog-buttonIcon"}></div>
-        <div className={"jp-Dialog-buttonLabel"}>{this.props.text}</div>
+      <button
+        className={this.getStyle()}
+        onClick={e => (this.props.disabled ? null : this.props.onClick())}
+      >
+        <div className={'jp-Dialog-buttonIcon'} />
+        <div className={'jp-Dialog-buttonLabel'}>{this.props.text}</div>
       </button>
     );
   }
@@ -64,7 +70,7 @@ export class ButtonView extends React.Component<
 export class SmallButtonView extends React.Component<
   IButtonViewWithIconNodeProps,
   IButtonViewNodeState
-  > {
+> {
   constructor(props: IButtonViewWithIconNodeProps) {
     super(props);
   }
@@ -79,13 +85,23 @@ export class SmallButtonView extends React.Component<
 
   render() {
     return (
-      <button className={this.getStyle()}
-        onClick={e => this.props.disabled ? null : this.props.onClick()}
+      <button
+        className={this.getStyle()}
+        onClick={e => (this.props.disabled ? null : this.props.onClick())}
         style={{
-          cursor: this.props.cursor !== undefined ? this.props.cursor : 'pointer'
+          cursor:
+            this.props.cursor !== undefined ? this.props.cursor : 'pointer'
         }}
-        title={this.props.text}>
-        <span className={'' + this.props.iconClass + ' jp-Icon jp-Icon-16 ' + style.smallButtonStyleImage}></span>
+        title={this.props.text}
+      >
+        <span
+          className={
+            '' +
+            this.props.iconClass +
+            ' jp-Icon jp-Icon-16 ' +
+            style.smallButtonStyleImage
+          }
+        />
       </button>
     );
   }

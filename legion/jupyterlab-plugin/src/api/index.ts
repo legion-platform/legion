@@ -16,18 +16,17 @@
 import { CloudApi, ICloudApi } from './cloud';
 
 export interface ILegionApi {
-    cloud: ICloudApi
-};
-
+  cloud: ICloudApi;
+}
 
 export class LegionApi implements ILegionApi {
-    cloudApi: ICloudApi;
+  cloudApi: ICloudApi;
 
-    constructor(){
-        this.cloudApi = new CloudApi();
-    }
+  constructor() {
+    this.cloudApi = new CloudApi();
+  }
 
-    get cloud() : ICloudApi {
-        return this.cloudApi;
-    }
+  get cloud(): ICloudApi {
+    return this.cloudApi;
+  }
 }

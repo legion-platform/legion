@@ -14,12 +14,11 @@
  *   limitations under the License.
  */
 
-//import * as React from 'react';
-//import * as ReactDOM from 'react-dom';
+// import * as React from 'react';
+// import * as ReactDOM from 'react-dom';
 
 import { Message } from '@phosphor/messaging';
 import { Widget } from '@phosphor/widgets';
-
 
 export interface IWidgetOptions {
   defaultRenderHolder: string;
@@ -64,7 +63,9 @@ export class BaseLegionWidget extends Widget {
    */
   constructor(options: IWidgetOptions) {
     super({
-      node: (options.renderer || new Renderer(options.defaultRenderHolder)).createNode()
+      node: (
+        options.renderer || new Renderer(options.defaultRenderHolder)
+      ).createNode()
     });
   }
 
@@ -88,7 +89,6 @@ export class BaseLegionWidget extends Widget {
   get renderer(): IRenderer {
     return this._renderer;
   }
-
 
   /**
    * Dispose of the resources used by the widget.
@@ -169,19 +169,22 @@ export interface IWidgetRegistry<TargetWidget> {
   getOrConstruct(name: string): TargetWidget;
 }
 
-export type WidgetRegistryBuilder<TargetWidget> = (name: string) => TargetWidget;
+export type WidgetRegistryBuilder<TargetWidget> = (
+  name: string
+) => TargetWidget;
 
-export class WidgetRegistry<TargetWidget> implements IWidgetRegistry<TargetWidget> {
+export class WidgetRegistry<TargetWidget>
+  implements IWidgetRegistry<TargetWidget> {
   private _storage: Map<string, TargetWidget>;
   private _builder: WidgetRegistryBuilder<TargetWidget>;
 
-  constructor(builder: WidgetRegistryBuilder<TargetWidget>){
+  constructor(builder: WidgetRegistryBuilder<TargetWidget>) {
     this._storage = new Map<string, TargetWidget>();
     this._builder = builder;
   }
 
   getOrConstruct(name: string): TargetWidget {
-    if (!this._storage.has(name)){
+    if (!this._storage.has(name)) {
       this._storage.set(name, this._builder(name));
     }
 

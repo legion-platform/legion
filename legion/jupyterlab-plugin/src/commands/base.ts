@@ -15,7 +15,7 @@
  */
 import { JupyterLab } from '@jupyterlab/application';
 import { ServiceManager } from '@jupyterlab/services';
-import { ISplashScreen, InstanceTracker } from "@jupyterlab/apputils";
+import { ISplashScreen, InstanceTracker } from '@jupyterlab/apputils';
 import { FileBrowser } from '@jupyterlab/filebrowser';
 import { Widget } from '@phosphor/widgets';
 
@@ -23,61 +23,60 @@ import { IApiCloudState } from '../models';
 import { ILegionApi } from '../api';
 import { WidgetRegistry } from '../components/Widgets';
 
-
 /**
  * CommandIDs contains IDs of all Legion commands.
  * This commands can be used outside of Legion system.
  */
 export namespace CommandIDs {
+  // UI
+  export const openCloudModelPlugin = 'legion:ui-cloud-mode';
+  export const mainRepository = 'legion:main-repository';
+
+  // Authorize
+  export const unAuthorizeOnCluster = 'legion:cloud-reset-auth';
+  export const authorizeOnCluster = 'legion:cloud-start-auth';
+
+  // Cloud
+  export const newCloudTraining = 'legion:cloud-training-new';
+  export const newCloudTrainingFromContextMenu =
+    'legion:cloud-training-new-from-context-menu';
+  export const removeCloudTraining = 'legion:cloud-training-remove';
+  export const newCloudDeployment = 'legion:cloud-deployment-new';
+  export const scaleCloudDeployment = 'legion:cloud-deployment-scale';
+  export const removeCloudDeployment = 'legion:cloud-deployment-remove';
+  export const issueNewCloudAccessToken = 'legion:cloud-issue-new-token';
+  export const openTrainingLogs = 'legion:cloud-training-logs';
+  export const applyCloudResources = 'legion:resources:apply';
+  export const removeCloudResources = 'legion:resources:remove';
+
+  // Settings
+  export const refreshCloud = 'legion:refresh-cloud-mode';
+
+  export const palleteCommands = [
     // UI
-    export const openCloudModelPlugin = 'legion:ui-cloud-mode';
-    export const mainRepository = 'legion:main-repository';
-
+    openCloudModelPlugin,
+    mainRepository,
     // Authorize
-    export const unAuthorizeOnCluster = 'legion:cloud-reset-auth';
-    export const authorizeOnCluster = 'legion:cloud-start-auth';
-
+    unAuthorizeOnCluster,
+    authorizeOnCluster,
 
     // Cloud
-    export const newCloudTraining = 'legion:cloud-training-new';
-    export const newCloudTrainingFromContextMenu = 'legion:cloud-training-new-from-context-menu';
-    export const removeCloudTraining = 'legion:cloud-training-remove';
-    export const newCloudDeployment = 'legion:cloud-deployment-new';
-    export const scaleCloudDeployment = 'legion:cloud-deployment-scale';
-    export const removeCloudDeployment = 'legion:cloud-deployment-remove';
-    export const issueNewCloudAccessToken = 'legion:cloud-issue-new-token';
-    export const openTrainingLogs = 'legion:cloud-training-logs';
-    export const applyCloudResources = 'legion:resources:apply';
-    export const removeCloudResources = 'legion:resources:remove';
-
-    // Settings
-    export const refreshCloud = 'legion:refresh-cloud-mode';
-
-    export const palleteCommands = [
-        // UI
-        openCloudModelPlugin,
-        mainRepository,
-        // Authorize
-        unAuthorizeOnCluster,
-        authorizeOnCluster,
-
-        // Cloud
-        scaleCloudDeployment,
-        removeCloudDeployment,
-        issueNewCloudAccessToken,
-        refreshCloud,
-    ];
+    scaleCloudDeployment,
+    removeCloudDeployment,
+    issueNewCloudAccessToken,
+    refreshCloud
+  ];
 }
 
 export interface IAddCommandsOptions {
-    app: JupyterLab;
-    tracker: InstanceTracker<FileBrowser>;
-    services: ServiceManager;
-    api: ILegionApi;
-    splash: ISplashScreen;
+  app: JupyterLab;
+  tracker: InstanceTracker<FileBrowser>;
+  services: ServiceManager;
+  api: ILegionApi;
+  splash: ISplashScreen;
 }
 
 export interface IAddCloudCommandsOptions extends IAddCommandsOptions {
-    state: IApiCloudState;
-    trainingLogs: WidgetRegistry<Widget>;
+  state: IApiCloudState;
+  trainingLogs: WidgetRegistry<Widget>;
 }

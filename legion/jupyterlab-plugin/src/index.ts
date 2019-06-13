@@ -18,12 +18,10 @@ import {
   JupyterLab,
   JupyterLabPlugin
 } from '@jupyterlab/application';
-import { ISplashScreen } from "@jupyterlab/apputils";
-import { IStateDB } from "@jupyterlab/coreutils";
+import { ISplashScreen } from '@jupyterlab/apputils';
+import { IStateDB } from '@jupyterlab/coreutils';
 import { IMainMenu } from '@jupyterlab/mainmenu';
-import {
-  IFileBrowserFactory
-} from '@jupyterlab/filebrowser';
+import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 
 import { Menu, Widget } from '@phosphor/widgets';
 import { CommandRegistry } from '@phosphor/commands';
@@ -31,23 +29,19 @@ import { Token } from '@phosphor/coreutils';
 
 import '../style/variables.css';
 
-import {
-  cloudModeTabStyle
-} from './componentsStyle/GeneralWidgetStyle';
+import { cloudModeTabStyle } from './componentsStyle/GeneralWidgetStyle';
+
+import { WidgetRegistry } from './components/Widgets';
 
 import {
-  WidgetRegistry
-} from './components/Widgets';
-
-import { createCloudSidebarWidget, LegionSideWidget } from './components/SideWidgets';
+  createCloudSidebarWidget,
+  LegionSideWidget
+} from './components/SideWidgets';
 import { CloudTrainingLogsWidget } from './components/CloudTrainingLogsWidget';
 import { addCloudCommands, CommandIDs } from './commands';
 
 import { LegionApi } from './api';
-import {
-  IApiCloudState,
-  buildInitialCloudAPIState
-} from './models/apiState';
+import { IApiCloudState, buildInitialCloudAPIState } from './models/apiState';
 import { ILegionPluginMode } from './models/core';
 
 export const PLUGIN_ID = 'jupyter.extensions.legion';
@@ -55,7 +49,8 @@ export const PLUGIN_ID_CLOUD = PLUGIN_ID + ':cloud';
 export const EXTENSION_ID = 'jupyter.extensions.jupyter_legion';
 
 const FILE_MANAGER_NOT_DIRECTORY = '.jp-DirListing-item[data-isdir="false"]';
-const FILE_MANAGER_LEGION_RESOURCE = '.jp-DirListing-item[title*="legion.yaml"]';
+const FILE_MANAGER_LEGION_RESOURCE =
+  '.jp-DirListing-item[title*="legion.yaml"]';
 const TRAIN_ON_CLOUD_COMMAND_RANK = 99;
 const APPLY_LEGION_RESOURCES = 100;
 const REMOVE_LEGION_RESOURCES = 101;
@@ -64,8 +59,7 @@ const REMOVE_LEGION_RESOURCES = 101;
 export const ILegionExtension = new Token<ILegionExtension>(EXTENSION_ID);
 
 /** Interface for extension class */
-export interface ILegionExtension {
-}
+export interface ILegionExtension {}
 
 const pluginRequirements = [
   IMainMenu,
@@ -74,7 +68,6 @@ const pluginRequirements = [
   IStateDB,
   IFileBrowserFactory
 ];
-
 
 /**
  * Plugins declarations
@@ -94,7 +87,6 @@ const plugins: JupyterLabPlugin<any>[] = [cloudPlugin];
 export default plugins;
 
 class BaseLegionExtension {
-
   /**
    * Instance of Legion Widget for appropriate mode
    */
@@ -114,7 +106,8 @@ class BaseLegionExtension {
 /**
  * Declare extension for cloud mode
  */
-export class LegionCloudExtension extends BaseLegionExtension implements ILegionExtension {
+export class LegionCloudExtension extends BaseLegionExtension
+  implements ILegionExtension {
   private _trainingLogs: WidgetRegistry<Widget>;
   private _app: JupyterLab;
 
@@ -123,26 +116,21 @@ export class LegionCloudExtension extends BaseLegionExtension implements ILegion
    * @param app JupyterLab target JupyterLab
    * @param restorer ILayoutRestorer layout restorer
    */
-  constructor(
-    app: JupyterLab,
-    restorer: ILayoutRestorer,
-    state: IStateDB
-  ) {
+  constructor(app: JupyterLab, restorer: ILayoutRestorer, state: IStateDB) {
     super();
 
     this._app = app;
     this.api = new LegionApi();
-    this._trainingLogs = new WidgetRegistry<Widget>(name => this.constructTrainingLogWidget(name));
+    this._trainingLogs = new WidgetRegistry<Widget>(name =>
+      this.constructTrainingLogWidget(name)
+    );
 
     this.apiCloudState = buildInitialCloudAPIState(state);
-    this.sideWidget = createCloudSidebarWidget(
-      app,
-      {
-        manager: app.serviceManager,
-        state: this.apiCloudState,
-        defaultRenderHolder: 'legion-cloud-sidebar-widget'
-      }
-    );
+    this.sideWidget = createCloudSidebarWidget(app, {
+      manager: app.serviceManager,
+      state: this.apiCloudState,
+      defaultRenderHolder: 'legion-cloud-sidebar-widget'
+    });
     this.sideWidget.id = 'legion-cloud-sessions-widget';
     this.sideWidget.title.iconClass = `jp-SideBar-tabIcon ${cloudModeTabStyle}`;
     this.sideWidget.title.caption = 'Legion cloud mode';
@@ -155,7 +143,6 @@ export class LegionCloudExtension extends BaseLegionExtension implements ILegion
     app.restored.then(() => {
       this.apiCloudState.tryToLoadCredentialsFromSettings();
     });
-
   }
 
   get trainingLogs(): WidgetRegistry<Widget> {
@@ -163,26 +150,39 @@ export class LegionCloudExtension extends BaseLegionExtension implements ILegion
   }
 
   private constructTrainingLogWidget(name: string): Widget {
-    return new CloudTrainingLogsWidget(this._app, this.api.cloud, name, this.apiCloudState, {
-      defaultRenderHolder: 'legion-cloud-' + name
-    });
+    return new CloudTrainingLogsWidget(
+      this._app,
+      this.api.cloud,
+      name,
+      this.apiCloudState,
+      {
+        defaultRenderHolder: 'legion-cloud-' + name
+      }
+    );
   }
 }
 
-function buildTopMenu(commands: CommandRegistry, mode: ILegionPluginMode): Menu {
+function buildTopMenu(
+  commands: CommandRegistry,
+  mode: ILegionPluginMode
+): Menu {
   let menu = new Menu({ commands });
-  menu.title.label = mode == ILegionPluginMode.CLOUD ? 'Legion cloud' : '';
+  menu.title.label =
+    mode === ILegionPluginMode.CLOUD ? 'Legion cloud' : 'UNKNOWN LEGION MODE';
 
-  const commandsToAdd = (mode == ILegionPluginMode.CLOUD) ?
-    [CommandIDs.refreshCloud, CommandIDs.authorizeOnCluster,
-      CommandIDs.unAuthorizeOnCluster, CommandIDs.issueNewCloudAccessToken] :
-    [];
+  const commandsToAdd =
+    mode === ILegionPluginMode.CLOUD
+      ? [
+          CommandIDs.refreshCloud,
+          CommandIDs.authorizeOnCluster,
+          CommandIDs.unAuthorizeOnCluster,
+          CommandIDs.issueNewCloudAccessToken
+        ]
+      : [];
 
-  commandsToAdd.forEach(
-    command => {
-      menu.addItem({ command });
-    }
-  );
+  commandsToAdd.forEach(command => {
+    menu.addItem({ command });
+  });
 
   return menu;
 }
@@ -234,6 +234,8 @@ function activateCloudPlugin(
   });
 
   // Create top menu for appropriate mode
-  mainMenu.addMenu(buildTopMenu(app.commands, ILegionPluginMode.CLOUD), { rank: 60 });
+  mainMenu.addMenu(buildTopMenu(app.commands, ILegionPluginMode.CLOUD), {
+    rank: 60
+  });
   return legionExtension;
 }

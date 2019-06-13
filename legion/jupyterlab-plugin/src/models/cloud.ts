@@ -15,148 +15,142 @@
  */
 
 export interface ICloudTrainingRequest {
-    name: string;
-    toolchain: string;
-    entrypoint: string;
-    image: string;
-    vcsName: string;
-    workDir: string;
-    reference: string;
-
+  name: string;
+  toolchain: string;
+  entrypoint: string;
+  image: string;
+  vcsName: string;
+  workDir: string;
+  reference: string;
 }
-
 
 export interface ICloudTrainingResponseSpec {
-    toolchain: string;
-    resources: string;
-    entrypoint: string;
-    args: Array<string>;
-    vcsName: string;
-    workDir: string;
-    reference: string;
+  toolchain: string;
+  resources: string;
+  entrypoint: string;
+  args: Array<string>;
+  vcsName: string;
+  workDir: string;
+  reference: string;
 }
 
-
 export interface ICloudTrainingResponseStatus {
-    id: string;
-    version: string;
-    state: string;
-    modelImage: string;
+  id: string;
+  version: string;
+  state: string;
+  modelImage: string;
 }
 
 export interface ICloudTrainingResponse {
-    name: string;
-    spec: ICloudTrainingResponseSpec;
-    status: ICloudTrainingResponseStatus;
+  name: string;
+  spec: ICloudTrainingResponseSpec;
+  status: ICloudTrainingResponseStatus;
 }
 
 export interface ICloudTrainingRemoveRequest {
-    name: string;
+  name: string;
 }
 
-
 export interface ICloudTrainingLogsRequest {
-    name: string;
+  name: string;
 }
 
 export interface ICloudTrainingLogsResponse {
-    data: string;
-    futureLogsExpected: boolean;
+  data: string;
+  futureLogsExpected: boolean;
 }
 
 export interface ICloudDeploymentCreateRequest {
-    name: string;
-    image: string;
-    replicas: number;
-    livenessProbeInitialDelay: number;
-    readinessProbeInitialDelay: number;
+  name: string;
+  image: string;
+  replicas: number;
+  livenessProbeInitialDelay: number;
+  readinessProbeInitialDelay: number;
 }
 
 export interface ICloudDeploymentScaleRequest {
-    name: string;
-    newScale: number;
+  name: string;
+  newScale: number;
 }
 
 export interface ICloudDeploymentRemoveRequest {
-    name: string;
+  name: string;
 }
 
 export interface ICloudDeploymentResponseSpec {
-    image: string
-    resources: string;
-    annotations: Array<string>;
-    replicas: number;
-    livenessProbeInitialDelay: number;
-    readinessProbeInitialDelay: number;
+  image: string;
+  resources: string;
+  annotations: Array<string>;
+  replicas: number;
+  livenessProbeInitialDelay: number;
+  readinessProbeInitialDelay: number;
 }
 
 export interface ICloudDeploymentResponseStatus {
-    state: string;
-    serviceURL: string;
-    availableReplicas: number;
+  state: string;
+  serviceURL: string;
+  availableReplicas: number;
 }
 
 export interface ICloudDeploymentResponse {
-    name: string;
-    spec: ICloudDeploymentResponseSpec;
-    status: ICloudDeploymentResponseStatus;
+  name: string;
+  spec: ICloudDeploymentResponseSpec;
+  status: ICloudDeploymentResponseStatus;
 }
 
 export interface IVCSResponseSpec {
-    type: string;
-    uri: string;
-    defaultReference: string;
-    credential: string;
-    publicKey: string;
+  type: string;
+  uri: string;
+  defaultReference: string;
+  credential: string;
+  publicKey: string;
 }
 
 export interface IVCSResponse {
-    name: string;
-    spec: IVCSResponseSpec;
+  name: string;
+  spec: IVCSResponseSpec;
 }
 
 /**
  * All data for cloud widget
  */
 export interface ICloudAllEntitiesResponse {
-    trainings: Array<ICloudTrainingResponse>,
-    deployments: Array<ICloudDeploymentResponse>,
-    vcss: Array<IVCSResponse>
+  trainings: Array<ICloudTrainingResponse>;
+  deployments: Array<ICloudDeploymentResponse>;
+  vcss: Array<IVCSResponse>;
 }
 
 export interface ICloudIssueTokenRequest {
-    model_id: string;
-    model_version: string;
+  model_id: string;
+  model_version: string;
 }
 
 export interface ICloudIssueTokenResponse {
-    token: string;  //+safeToCommit
+  token: string; // Secure fix: //+safeToCommit
 }
 
 export interface ILocalFileInformationRequest {
-    path: string;
-
+  path: string;
 }
 
 export interface ILocalFileInformationResponse {
-    path: string
-    workDir: string
-    extension: string
-    gitCommandAvailable: boolean;
-    fileInGitRepository: boolean;
-    remotes: Array<string>;
-    references: Array<string>;
+  path: string;
+  workDir: string;
+  extension: string;
+  gitCommandAvailable: boolean;
+  fileInGitRepository: boolean;
+  remotes: Array<string>;
+  references: Array<string>;
 }
 
-
 export interface IApplyFromFileRequest {
-    path: string;
-    removal: boolean;
+  path: string;
+  removal: boolean;
 }
 
 export interface IApplyFromFileResponse {
-    created: Array<string>;
-    changed: Array<string>;
-    removed: Array<string>;
-    errors: Array<string>;
+  created: Array<string>;
+  changed: Array<string>;
+  removed: Array<string>;
+  errors: Array<string>;
 }

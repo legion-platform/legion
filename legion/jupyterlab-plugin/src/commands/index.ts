@@ -16,16 +16,18 @@
 import * as authorize from './authorize';
 import * as cloud from './cloud';
 import { IAddCloudCommandsOptions } from './base';
-export { CommandIDs, IAddCloudCommandsOptions } from './base'
+export { CommandIDs, IAddCloudCommandsOptions } from './base';
 
-const CloudHandlers = [authorize, cloud];
+/**
+ * List of cloud command handlers
+ */
+const CLOUD_HANDLERS = [authorize, cloud];
 
 /**
  * Add the commands for the legion extension.
  */
-
 export function addCloudCommands(options: IAddCloudCommandsOptions) {
-    CloudHandlers.forEach(handler => {
-        handler.addCommands(options)
-    });
+  CLOUD_HANDLERS.forEach(handler => {
+    handler.addCommands(options);
+  });
 }

@@ -14,5 +14,5 @@
  *   limitations under the License.
  */
 export enum ILegionPluginMode {
-    CLOUD
-};
+  CLOUD
+}

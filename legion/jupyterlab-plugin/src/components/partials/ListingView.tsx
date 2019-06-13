@@ -17,10 +17,9 @@ import * as React from 'react';
 
 import * as style from '../../componentsStyle/ListingStyle';
 
-
 /** Interface for ListingView component state */
 export interface IListingViewNodeState {
-  firstLoading: boolean
+  firstLoading: boolean;
 }
 
 export interface IFlexColumnParameters {
@@ -56,7 +55,7 @@ export interface IListingViewNodeProps {
 export class ListingView extends React.Component<
   IListingViewNodeProps,
   IListingViewNodeState
-  > {
+> {
   constructor(props: IListingViewNodeProps) {
     super(props);
     this.state = {
@@ -66,11 +65,11 @@ export class ListingView extends React.Component<
 
   getHeaderItemStyleClasses(idx: number): string {
     let finalStyles = style.listingHeaderItem + ' ';
-    if (idx == 0) {
+    if (idx === 0) {
       finalStyles += style.listingFirstColumn;
-    }
-    else {
-      finalStyles += style.listingAdditionalColumn + ' ' + style.listingNonFirstHeaderItem;
+    } else {
+      finalStyles +=
+        style.listingAdditionalColumn + ' ' + style.listingNonFirstHeaderItem;
     }
 
     return finalStyles;
@@ -78,39 +77,56 @@ export class ListingView extends React.Component<
 
   getHeaderItemStyle(idx: number) {
     const columnInformation = this.props.columns[idx];
-    return columnInformation.flex != undefined ? {
-      flexGrow: columnInformation.flex.flexGrow,
-      flexShrink: 0,
-      flexBasis: columnInformation.flex.flexBasis,
-    } : {};
+    return columnInformation.flex != undefined
+      ? {
+          flexGrow: columnInformation.flex.flexGrow,
+          flexShrink: 0,
+          flexBasis: columnInformation.flex.flexBasis
+        }
+      : {};
   }
 
   getDataRowItemStyle(idx: number) {
-    return style.listingRowItem + ' ' + (idx == 0 ? style.listingFirstColumn : style.listingAdditionalColumn);
+    return (
+      style.listingRowItem +
+      ' ' +
+      (idx === 0 ? style.listingFirstColumn : style.listingAdditionalColumn)
+    );
   }
 
   renderRow(rowValue: IListingRowValue, idx: number) {
-    if (rowValue.items.length != this.props.columns.length) {
-      console.log('Row contains ' + rowValue.items.length + ' value(s), but header contains ' + this.props.columns.length + 'value(s)');
+    if (rowValue.items.length !== this.props.columns.length) {
+      console.log(
+        'Row contains ' +
+          rowValue.items.length +
+          ' value(s), but header contains ' +
+          this.props.columns.length +
+          'value(s)'
+      );
       return null;
     }
 
-    return <div
-      onClick={rowValue.onClick.bind(this)}
-      key={idx}
-      className={style.listingRow}>
-      {rowValue.items.map((column, colIdx) =>
-        <div key={colIdx}
-             className={this.getDataRowItemStyle(colIdx)}
-             style={this.getHeaderItemStyle(colIdx)}>
-          {column.value}
-        </div>
-      )}
-    </div>
+    return (
+      <div
+        onClick={rowValue.onClick.bind(this)}
+        key={idx}
+        className={style.listingRow}
+      >
+        {rowValue.items.map((column, colIdx) => (
+          <div
+            key={colIdx}
+            className={this.getDataRowItemStyle(colIdx)}
+            style={this.getHeaderItemStyle(colIdx)}
+          >
+            {column.value}
+          </div>
+        ))}
+      </div>
+    );
   }
 
   componentDidUpdate(prevProps: IListingViewNodeProps) {
-    if (prevProps.isLoading && !this.props.isLoading){
+    if (prevProps.isLoading && !this.props.isLoading) {
       this.setState({
         firstLoading: false
       });
@@ -119,22 +135,18 @@ export class ListingView extends React.Component<
 
   renderDataBlock() {
     if (this.props.isLoading && this.state.firstLoading) {
-      return (
-        <p className={style.listingDataLine}>Loading...</p>
-      )
+      return <p className={style.listingDataLine}>Loading...</p>;
     }
 
-    if (this.props.items.length == 0) {
-      return (
-        <p className={style.listingDataLine}>No data</p>
-      )
+    if (this.props.items.length === 0) {
+      return <p className={style.listingDataLine}>No data</p>;
     }
 
     return (
       <div className={style.listingData}>
         {this.props.items.map((row, idx) => this.renderRow(row, idx))}
       </div>
-    )
+    );
   }
 
   render() {
@@ -145,14 +157,15 @@ export class ListingView extends React.Component<
           {this.props.topButton}
         </div>
         <div className={style.listingHeader}>
-          {this.props.columns.map((columnInformation, idx) =>
+          {this.props.columns.map((columnInformation, idx) => (
             <span
               key={idx}
               className={this.getHeaderItemStyleClasses(idx)}
-              style={this.getHeaderItemStyle(idx)} >
+              style={this.getHeaderItemStyle(idx)}
+            >
               {columnInformation.name}
             </span>
-          )}
+          ))}
         </div>
         {this.renderDataBlock()}
       </div>

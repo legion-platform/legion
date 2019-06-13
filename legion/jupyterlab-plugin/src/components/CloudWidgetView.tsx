@@ -29,7 +29,6 @@ import { IApiCloudState } from '../models';
 import { ICloudAllEntitiesResponse } from '../models/cloud';
 import { ClusterInfoView } from './partials/ClusterInfoView';
 
-
 /** Interface for GitPanel component state */
 export interface ICloudWidgetViewNodeState {
   cloudData: ICloudAllEntitiesResponse;
@@ -47,7 +46,7 @@ export interface ICloudWidgetViewNodeProps {
 export class CloudWidgetView extends React.Component<
   ICloudWidgetViewNodeProps,
   ICloudWidgetViewNodeState
-  > {
+> {
   constructor(props: ICloudWidgetViewNodeProps) {
     super(props);
     this.state = {
@@ -72,8 +71,8 @@ export class CloudWidgetView extends React.Component<
     }
   };
 
-  onActivate(){
-    if (this.props.dataState.credentials){
+  onActivate() {
+    if (this.props.dataState.credentials) {
       this.props.app.commands.execute(CommandIDs.refreshCloud);
     }
   }
@@ -84,8 +83,16 @@ export class CloudWidgetView extends React.Component<
         <TitleBarView text={'Legion cloud mode'} onRefresh={null} />
         <div className={style.authSubPane}>
           <div className={style.authIcon}>&nbsp;</div>
-          <h2 className={style.authDisclaimerText}>Please, authorize on a cluster</h2>
-          <ButtonView text={'Login'} style={'jp-mod-accept'} onClick={() => this.props.app.commands.execute(CommandIDs.authorizeOnCluster)} />
+          <h2 className={style.authDisclaimerText}>
+            Please, authorize on a cluster
+          </h2>
+          <ButtonView
+            text={'Login'}
+            style={'jp-mod-accept'}
+            onClick={() =>
+              this.props.app.commands.execute(CommandIDs.authorizeOnCluster)
+            }
+          />
         </div>
       </div>
     );
@@ -96,16 +103,25 @@ export class CloudWidgetView extends React.Component<
       <div className={style.widgetPane}>
         <TitleBarView
           text={'Legion cluster mode'}
-          onRefresh={() => this.props.app.commands.execute(CommandIDs.refreshCloud)}
-          isRefreshing={this.state.isLoading} />
-        <ClusterInfoView clusterName={this.props.dataState.credentials.cluster} />
+          onRefresh={() =>
+            this.props.app.commands.execute(CommandIDs.refreshCloud)
+          }
+          isRefreshing={this.state.isLoading}
+        />
+        <ClusterInfoView
+          clusterName={this.props.dataState.credentials.cluster}
+        />
         <ListingView
           title={'Cloud trainings'}
-          topButton={(
+          topButton={
             <SmallButtonView
               text={'New training'}
               iconClass={'jp-AddIcon'}
-              onClick={() => this.props.app.commands.execute(CommandIDs.newCloudTraining)} />)}
+              onClick={() =>
+                this.props.app.commands.execute(CommandIDs.newCloudTraining)
+              }
+            />
+          }
           columns={[
             {
               name: 'Training',
@@ -133,32 +149,47 @@ export class CloudWidgetView extends React.Component<
                   value: training.status.state
                 }
               ],
-              onClick: () => dialog.showCloudTrainInformationDialog(training)
-              .then(({ button }) => {
-                if (button.label == dialog.CREATE_DEPLOYMENT_LABEL) {
-                  this.props.app.commands.execute(CommandIDs.newCloudDeployment, {
-                    image: training.status.modelImage
-                  });
-                } else if (button.label == dialog.REMOVE_TRAINING_LABEL) {
-                  this.props.app.commands.execute(CommandIDs.removeCloudTraining, {
-                    name: training.name
-                  });
-                } else if (button.label == dialog.LOGS_LABEL) {
-                  this.props.app.commands.execute(CommandIDs.openTrainingLogs, {
-                    name: training.name
-                  });
-                }
-              })
-            }
+              onClick: () =>
+                dialog
+                  .showCloudTrainInformationDialog(training)
+                  .then(({ button }) => {
+                    if (button.label === dialog.CREATE_DEPLOYMENT_LABEL) {
+                      this.props.app.commands.execute(
+                        CommandIDs.newCloudDeployment,
+                        {
+                          image: training.status.modelImage
+                        }
+                      );
+                    } else if (button.label === dialog.REMOVE_TRAINING_LABEL) {
+                      this.props.app.commands.execute(
+                        CommandIDs.removeCloudTraining,
+                        {
+                          name: training.name
+                        }
+                      );
+                    } else if (button.label === dialog.LOGS_LABEL) {
+                      this.props.app.commands.execute(
+                        CommandIDs.openTrainingLogs,
+                        {
+                          name: training.name
+                        }
+                      );
+                    }
+                  })
+            };
           })}
         />
         <ListingView
           title={'Cloud deployments'}
-          topButton={(
+          topButton={
             <SmallButtonView
               text={'New deployment'}
               iconClass={'jp-AddIcon'}
-              onClick={() => this.props.app.commands.execute(CommandIDs.newCloudDeployment)} />)}
+              onClick={() =>
+                this.props.app.commands.execute(CommandIDs.newCloudDeployment)
+              }
+            />
+          }
           columns={[
             {
               name: 'Deployment',
@@ -190,25 +221,38 @@ export class CloudWidgetView extends React.Component<
                   value: deployment.name
                 },
                 {
-                  value: '' + deployment.status.availableReplicas + '/' + deployment.spec.replicas
+                  value:
+                    '' +
+                    deployment.status.availableReplicas +
+                    '/' +
+                    deployment.spec.replicas
                 },
                 {
                   value: deployment.spec.image
                 }
               ],
-              onClick: () => dialog.showCloudDeploymentInformationDialog(deployment)
-              .then(({ button }) => {
-                if (button.label == dialog.REMOVE_DEPLOYMENT_LABEL) {
-                  this.props.app.commands.execute(CommandIDs.removeCloudDeployment, { name: deployment.name });
-                } else if (button.label == dialog.SCALE_DEPLOYMENT_LABEL){
-                  this.props.app.commands.execute(CommandIDs.scaleCloudDeployment, {
-                    name: deployment.name,
-                    currentAvailableReplicas: deployment.status.availableReplicas,
-                    currentDesiredReplicas: deployment.spec.replicas
-                  });
-                }
-              })
-            }
+              onClick: () =>
+                dialog
+                  .showCloudDeploymentInformationDialog(deployment)
+                  .then(({ button }) => {
+                    if (button.label === dialog.REMOVE_DEPLOYMENT_LABEL) {
+                      this.props.app.commands.execute(
+                        CommandIDs.removeCloudDeployment,
+                        { name: deployment.name }
+                      );
+                    } else if (button.label === dialog.SCALE_DEPLOYMENT_LABEL) {
+                      this.props.app.commands.execute(
+                        CommandIDs.scaleCloudDeployment,
+                        {
+                          name: deployment.name,
+                          currentAvailableReplicas:
+                            deployment.status.availableReplicas,
+                          currentDesiredReplicas: deployment.spec.replicas
+                        }
+                      );
+                    }
+                  })
+            };
           })}
         />
       </div>

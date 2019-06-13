@@ -18,80 +18,83 @@ import * as style from '../componentsStyle/GeneralWidgetStyle';
 
 /** Interface for LogView component state */
 export interface ILogViewState {
-    data: string;
-    scrollOnEnd: boolean;
+  data: string;
+  scrollOnEnd: boolean;
 }
 
 /** Interface for LogView component props */
 export interface ILogViewProps {
-    dataProvider: {
-        getData: () => string;
-    };
+  dataProvider: {
+    getData: () => string;
+  };
 }
 
 /** A React component for the git extension's main display */
-export class LogView extends React.Component<
-    ILogViewProps,
-    ILogViewState
-    > {
+export class LogView extends React.Component<ILogViewProps, ILogViewState> {
+  private _scrollableAreaRef: React.RefObject<HTMLDivElement>;
 
-    private _scrollableAreaRef: React.RefObject<HTMLDivElement>;
-
-    constructor(props: ILogViewProps) {
-        super(props);
-        this.state = {
-            data: props.dataProvider.getData(),
-            scrollOnEnd: true
-        };
-        this._scrollableAreaRef = React.createRef();
-    }
-
-    refresh = async () => {
-        this.setState({
-            data: this.props.dataProvider.getData()
-        });
+  constructor(props: ILogViewProps) {
+    super(props);
+    this.state = {
+      data: props.dataProvider.getData(),
+      scrollOnEnd: true
     };
+    this._scrollableAreaRef = React.createRef();
+  }
 
-    onActivate() { }
+  refresh = async () => {
+    this.setState({
+      data: this.props.dataProvider.getData()
+    });
+  };
 
-    scrollHandler(event) {
-        const percent = (event.target.scrollTop / (event.target.scrollHeight - event.target.clientHeight)) * 100;
-        if (percent > 99.9 && !this.state.scrollOnEnd){
-            this.setState({
-                scrollOnEnd: true
-            });
-        }
-        else if (percent < 99.9 && this.state.scrollOnEnd){
-            this.setState({
-                scrollOnEnd: false
-            });
-        }
+  onActivate() {}
+
+  scrollHandler(event) {
+    const percent =
+      (event.target.scrollTop /
+        (event.target.scrollHeight - event.target.clientHeight)) *
+      100;
+    if (percent > 99.9 && !this.state.scrollOnEnd) {
+      this.setState({
+        scrollOnEnd: true
+      });
+    } else if (percent < 99.9 && this.state.scrollOnEnd) {
+      this.setState({
+        scrollOnEnd: false
+      });
     }
+  }
 
-    componentDidUpdate(prevProps: ILogViewProps, prevState: ILogViewState){
-        if (prevState.scrollOnEnd && this.state.data != prevState.data){
-            if (this._scrollableAreaRef.current){
-                this._scrollableAreaRef.current.scrollTo(0, this._scrollableAreaRef.current.scrollHeight);
-            }
-        }
-    }
-
-    render() {
-        if (this.state.data.length == 0) {
-            return (
-                <div className={`${style.widgetPane} ${style.generalWidgetCentered}`}>
-                    <p className={style.noDataLine}>NO DATA</p>
-                </div>
-            )
-        }
-        return (
-            <div className={`${style.widgetPane} ${style.cloudTrainingLogWidget}`}
-                 onScroll={this.scrollHandler.bind(this)}
-                 ref={this._scrollableAreaRef}>
-                <div className={style.cloudTrainingLogWidgetText}>
-                    {this.state.data}
-                </div>
-            </div>
+  componentDidUpdate(prevProps: ILogViewProps, prevState: ILogViewState) {
+    if (prevState.scrollOnEnd && this.state.data !== prevState.data) {
+      if (this._scrollableAreaRef.current) {
+        this._scrollableAreaRef.current.scrollTo(
+          0,
+          this._scrollableAreaRef.current.scrollHeight
         );
+      }
     }
+  }
+
+  render() {
+    if (this.state.data.length === 0) {
+      return (
+        <div className={`${style.widgetPane} ${style.generalWidgetCentered}`}>
+          <p className={style.noDataLine}>NO DATA</p>
+        </div>
+      );
+    }
+    return (
+      <div
+        className={`${style.widgetPane} ${style.cloudTrainingLogWidget}`}
+        onScroll={this.scrollHandler.bind(this)}
+        ref={this._scrollableAreaRef}
+      >
+        <div className={style.cloudTrainingLogWidgetText}>
+          {this.state.data}
+        </div>
+      </div>
+    );
+  }
 }

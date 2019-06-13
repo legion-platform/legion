@@ -30,7 +30,7 @@ RUN yarn install --non-interactive --ignore-scripts
 COPY legion/jupyterlab-plugin/ \
        "${WORK_DIR}/"
 RUN yarn build
-#RUN yarn lint
+RUN yarn lint
 RUN npm pack .
 
 # Image for getting jupyterlab sources for linking

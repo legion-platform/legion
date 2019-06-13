@@ -40,10 +40,13 @@ export function httpRequest(
 
   let setting = ServerConnection.makeSettings({
     init: {
-      headers: credentials != null ? {
-        'X-Legion-Cloud-Endpoint': credentials.cluster,
-        'X-Legion-Cloud-Token': credentials.authString,
-      } : {}
+      headers:
+        credentials != null
+          ? {
+              'X-Legion-Cloud-Endpoint': credentials.cluster,
+              'X-Legion-Cloud-Token': credentials.authString
+            }
+          : {}
     }
   });
   let fullUrl = URLExt.join(setting.baseUrl, url);
@@ -55,6 +58,4 @@ export function httpRequest(
  */
 export const legionApiRootURL = '/legion/api';
 
-export interface IApiGroup {
-
-}
+export interface IApiGroup {}

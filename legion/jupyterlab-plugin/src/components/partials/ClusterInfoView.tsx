@@ -18,7 +18,6 @@ import * as React from 'react';
 
 import * as style from '../../componentsStyle/ClusterInfoStyle';
 
-
 /** Interface for ClusterInfoView component state */
 export interface IClusterInfoViewNodeState {}
 
@@ -40,7 +39,12 @@ export class ClusterInfoView extends React.Component<
       <div className={style.infoHolder}>
         <p className={style.infoTitle}>Cluster information</p>
 
-        <p className={style.infoPairLine}><span className={style.infoPairTitle}>Cluster:</span><a href={this.props.clusterName} target='_blank'>{this.props.clusterName}</a></p>
+        <p className={style.infoPairLine}>
+          <span className={style.infoPairTitle}>Cluster:</span>
+          <a href={this.props.clusterName} target="_blank">
+            {this.props.clusterName}
+          </a>
+        </p>
       </div>
     );
   }

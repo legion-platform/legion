@@ -18,69 +18,73 @@ import { Widget } from '@phosphor/widgets';
 
 import * as base from './base';
 
-
 interface ILoginDialogValues {
-    cluster: string;
-    authString: string;
+  cluster: string;
+  authString: string;
 }
 
 class LoginDialog extends Widget {
-    /**
-     * Construct a new "rename" dialog.
-     */
-    constructor() {
-        super({ node: Private.buildAuthorizeDialogBody() });
-        //this.addClass(FILE_DIALOG_CLASS);
-    }
+  /**
+   * Construct a new "rename" dialog.
+   */
+  constructor() {
+    super({ node: Private.buildAuthorizeDialogBody() });
+    // this.addClass(FILE_DIALOG_CLASS);
+  }
 
-    getInputNodeValue(no: number): string {
-        let allInputs = this.node.getElementsByTagName('input');
-        if (allInputs.length <= no) {
-            return undefined;
-        } else {
-            return allInputs[no].value;
-        }
+  getInputNodeValue(no: number): string {
+    let allInputs = this.node.getElementsByTagName('input');
+    if (allInputs.length <= no) {
+      return undefined;
+    } else {
+      return allInputs[no].value;
     }
+  }
 
-    /**
-     * Get the value of the widget.
-     */
-    getValue(): ILoginDialogValues {
-        return {
-            cluster: this.getInputNodeValue(0),
-            authString: this.getInputNodeValue(1)
-        };
-    }
+  /**
+   * Get the value of the widget.
+   */
+  getValue(): ILoginDialogValues {
+    return {
+      cluster: this.getInputNodeValue(0),
+      authString: this.getInputNodeValue(1)
+    };
+  }
 }
 
-
 export function showLoginDialog() {
-    return showDialog({
-        title: 'Authorization on a Legion cluster',
-        body: new LoginDialog(),
-        buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Login' })]
-    })
+  return showDialog({
+    title: 'Authorization on a Legion cluster',
+    body: new LoginDialog(),
+    buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Login' })]
+  });
 }
 
 export function showLogoutDialog(clusterName) {
-    return showDialog({
-        title: 'Logging out on a Legion cluster',
-        body: `Do you want to log out on legion cluster ${clusterName}?`,
-        buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Log out', displayType: 'warn' })]
-    })
+  return showDialog({
+    title: 'Logging out on a Legion cluster',
+    body: `Do you want to log out on legion cluster ${clusterName}?`,
+    buttons: [
+      Dialog.cancelButton(),
+      Dialog.okButton({ label: 'Log out', displayType: 'warn' })
+    ]
+  });
 }
 
 namespace Private {
+  export function buildAuthorizeDialogBody() {
+    let body = base.createDialogBody();
 
-    export function buildAuthorizeDialogBody() {
-        let body = base.createDialogBody();
+    body.appendChild(base.createDialogInputLabel('Cluster (EDI) url'));
+    body.appendChild(
+      base.createDialogInput(undefined, 'https://edi-company-a.example.com')
+    );
 
-        body.appendChild(base.createDialogInputLabel('Cluster (EDI) url'));
-        body.appendChild(base.createDialogInput(undefined, 'https://edi-company-a.example.com'));
+    body.appendChild(base.createDialogInputLabel('Dex token'));
+    body.appendChild(
+      base.createDialogInput(undefined, 'ZW1haWw6dGVzdHMtdXNlckBsZWdpb24uY....')
+    );
 
-        body.appendChild(base.createDialogInputLabel('Dex token'));
-        body.appendChild(base.createDialogInput(undefined, 'ZW1haWw6dGVzdHMtdXNlckBsZWdpb24uY....'));
-
-        return body;
-    }
+    return body;
+  }
 }

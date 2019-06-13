@@ -16,37 +16,35 @@
 import { style } from 'typestyle';
 
 export const fieldLabelStyle = style({
-    color: 'var(--jp-ui-font-color1)',
-    display: 'block',
-    fontSize: 'var(--jp-ui-font-size2)',
-    marginBottom: 5
+  color: 'var(--jp-ui-font-color1)',
+  display: 'block',
+  fontSize: 'var(--jp-ui-font-size2)',
+  marginBottom: 5
 });
 
 export const fieldTextStyle = style({
-    margin: 0
+  margin: 0
 });
 
-export const ulStyle = style({
-});
+export const ulStyle = style({});
 
-export const ulItemStyle = style({
-});
+export const ulItemStyle = style({});
 
 export const inputFieldStyle = style({
-    borderWidth: 1,
-    borderColor: 'var(--jp-ui-font-color1)',
-    backgroundColor: 'var(--jp-layout-color0)',
-    width: '100%',
-    resize: 'none'
+  borderWidth: 1,
+  borderColor: 'var(--jp-ui-font-color1)',
+  backgroundColor: 'var(--jp-layout-color0)',
+  width: '100%',
+  resize: 'none'
 });
 
 export const dialogLine = style({
-    marginBottom: 8
-})
+  marginBottom: 8
+});
 
 export const dialogInputLabel = style({
-    marginBottom: 3,
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    fontSize: 'var(--jp-ui-font-size0)'
+  marginBottom: 3,
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  fontSize: 'var(--jp-ui-font-size0)'
 });
