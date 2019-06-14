@@ -147,7 +147,7 @@ def parse_resources_file(path: str) -> LegionCloudResourcesUpdateList:
 
     for item in items:
         if not isinstance(item, dict):
-            raise ValueError('Invalid Legion resource in YAML file: {!r}'.format(item))
+            raise ValueError('Invalid Legion resource in file: {!r}'.format(item))
 
         result.append(build_resource(item))
 
