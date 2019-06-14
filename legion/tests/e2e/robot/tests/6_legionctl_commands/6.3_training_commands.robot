@@ -10,7 +10,7 @@ ${TRAINING_TOOLCHAIN}   python
 ${TRAINING_TIMEOUT}     200
 
 *** Settings ***
-Documentation       Legion's EDI operational check
+Documentation       Legion's EDI operational check for operations on ModelTraining resources
 Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot

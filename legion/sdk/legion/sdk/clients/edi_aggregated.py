@@ -143,6 +143,9 @@ def parse_resources_file(path: str) -> LegionCloudResourcesUpdateList:
     if not isinstance(items, list) and not isinstance(items, tuple):
         items = [items]
 
+    if isinstance(items[0], list) or isinstance(items[0], tuple):
+        items = items[0]
+
     result = []  # type: typing.List[LegionCloudResourceUpdatePair]
 
     for item in items:

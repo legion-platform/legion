@@ -9,7 +9,7 @@ ${VCS_NEW_GIT_URL}     git@github.com:legion-platform/legion-aws.git
 ${VCS_NEW_REFENRECE}   origin/feat
 
 *** Settings ***
-Documentation       Legion's EDI operational check
+Documentation       Legion's EDI operational check for operations on VCSCredentials resources
 Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
