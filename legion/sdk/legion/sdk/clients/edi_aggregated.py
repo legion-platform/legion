@@ -140,10 +140,10 @@ def parse_resources_file(path: str) -> LegionCloudResourcesUpdateList:
             except json.JSONDecodeError:
                 raise Exception('{!r} is not valid JSON or YAML file')
 
-    if not isinstance(items, list) and not isinstance(items, tuple):
+    if not isinstance(items, (list, tuple)):
         items = [items]
 
-    if isinstance(items[0], list) or isinstance(items[0], tuple):
+    if isinstance(items[0], (list, tuple)):
         items = items[0]
 
     result = []  # type: typing.List[LegionCloudResourceUpdatePair]
