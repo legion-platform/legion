@@ -168,9 +168,9 @@ def parse_resources_file_with_one_item(path: str) -> LegionCloudResourceUpdatePa
     :return: :py:class:LegionCloudResourceUpdatePair -- parsed resource
     """
     resources = parse_resources_file(path)
-    if len(resources) != 1:
+    if len(resources.changes) != 1:
         raise Exception('{!r} should contain 1 item, but {!r} founded'.format(path, len(resources)))
-    return resources[0]
+    return resources.changes[0]
 
 
 def apply(updates: LegionCloudResourcesUpdateList, edi_client: RemoteEdiClient, is_removal: bool) -> ApplyResult:

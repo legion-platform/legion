@@ -113,9 +113,9 @@ def delete(args: argparse.Namespace):
 
     if args.filename:
         resource = parse_resources_file_with_one_item(args.filename)
-        vcs_name = resource.name
         if not isinstance(resource.resource, VCSCredential):
             raise ValueError(f'VCSCredential expected, but {type(resource.resource)} provided')
+        vcs_name = resource.resource_name
     else:
         vcs_name = args.name
 

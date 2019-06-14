@@ -1,4 +1,0 @@
-name: stub-model-3-1
-spec:
-  image: nexus-local.cc.epm.kharlamov.biz:8084/legion-test/3:1
-  replicas: 2

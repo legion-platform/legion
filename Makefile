@@ -10,6 +10,7 @@ LEGION_VERSION=0.11.0
 SANDBOX_PYTHON_TOOLCHAIN_IMAGE=
 CREDENTIAL_SECRETS=.secrets.yaml
 ROBOT_FILES=**/*.robot
+ROBOT_THREADS=6
 CLUSTER_NAME=
 PATH_TO_PROFILES_DIR=profiles
 E2E_PYTHON_TAGS=
@@ -192,8 +193,8 @@ unittests:
 
 ## e2e-robot: Run e2e robot tests
 e2e-robot:
-	pabot --verbose --processes 6 \
-	      -v PATH_TO_PROFILES_DIR:profiles \
+	pabot --verbose --processes ${ROBOT_THREADS} \
+	      -v PATH_TO_PROFILES_DIR:${PATH_TO_PROFILES_DIR} \
 	      --listener legion.robot.process_reporter \
 	      --outputdir target legion/tests/e2e/robot/tests/${ROBOT_FILES}
 

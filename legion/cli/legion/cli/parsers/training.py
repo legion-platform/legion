@@ -143,7 +143,7 @@ def delete(args: argparse.Namespace):
         resource = parse_resources_file_with_one_item(args.filename)
         if not isinstance(resource.resource, ModelTraining):
             raise ValueError(f'ModelTraining expected, but {type(resource.resource)} provided')
-        mt_name = resource.name
+        mt_name = resource.resource_name
     else:
         mt_name = args.name
 

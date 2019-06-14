@@ -208,7 +208,7 @@ def delete(args: argparse.Namespace):
         resource = parse_resources_file_with_one_item(args.filename)
         if not isinstance(resource.resource, ModelDeployment):
             raise ValueError(f'ModelDeployment expected, but {type(resource.resource)} provided')
-        md_name = resource.name
+        md_name = resource.resource_name
 
     try:
         message = md_client.delete(md_name) if md_name else md_client.delete_all(_prepare_labels(args))

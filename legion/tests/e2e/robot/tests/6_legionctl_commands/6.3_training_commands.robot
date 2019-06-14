@@ -17,13 +17,17 @@ Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             legion.robot.libraries.utils.Utils
 Library             Collections
-Default Tags        edi  cli  enclave  apps
+Default Tags        edi  cli  enclave  apps  mt
 Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
 ...                               Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
-...                               Login to the edi and edge
+...                               Login to the edi and edge  AND
+...                               Cleanup resources
 Suite Teardown      Remove File  ${LOCAL_CONFIG}
 
 *** Keywords ***
+Cleanup resources
+    Shell  legionctl --verbose mt delete ${TRAINING_NAME}
+
 Check model training
     [Arguments]  ${state}  ${args}
     ${model_build_status}=  Get model training status  ${TRAINING_NAME}
@@ -130,7 +134,6 @@ Check commands with file parameters
     [Documentation]  Model Trainings commands with differenet file formats
     [Template]  Check commands with file parameter
     create_file=k8s.json     edit_file=k8s-changed.yaml     delete_file=k8s-changed
-    create_file=legion.json  edit_file=legion-changed.yaml  delete_file=legion-changed
 
 File with entitiy not found
     [Documentation]  Invoke Model Training commands with not existed file
