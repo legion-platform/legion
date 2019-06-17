@@ -18,7 +18,8 @@ FROM openresty/openresty:1.13.6.2-bionic
 ENV LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
     WORK_DIR="/opt/legion" \
-    NGINX_DIR="/usr/local/openresty/nginx"
+    NGINX_DIR="/usr/local/openresty/nginx" ё
+    DEBIAN_FRONTEND=noninteractive
 
 WORKDIR "${WORK_DIR}/"
 
