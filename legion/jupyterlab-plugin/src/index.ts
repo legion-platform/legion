@@ -251,7 +251,7 @@ function buildTopMenu(
 ): Menu {
   let menu = new Menu({ commands });
   menu.title.label =
-    mode === ILegionPluginMode.CLOUD ? 'Legion cloud' : 'UNKNOWN LEGION MODE';
+    mode === ILegionPluginMode.CLOUD ? 'Legion cloud' : 'Legion local';
 
   const commandsToAdd =
     mode === ILegionPluginMode.CLOUD
