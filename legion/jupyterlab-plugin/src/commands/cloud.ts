@@ -14,13 +14,10 @@
  *   limitations under the License.
  */
 import { showErrorMessage, showDialog, Dialog } from '@jupyterlab/apputils';
-import { ReadonlyJSONObject } from '@phosphor/coreutils';
 
 import { CommandIDs, IAddCloudCommandsOptions } from './base';
 import * as dialogs from '../components/dialogs';
-import * as models from '../models/cloud';
 import * as cloudDialogs from '../components/dialogs/cloud';
-import { cloudModeTabStyle } from '../componentsStyle/GeneralWidgetStyle';
 
 export interface ICloudScaleParameters {}
 
@@ -29,94 +26,6 @@ export interface ICloudScaleParameters {}
  */
 export function addCommands(options: IAddCloudCommandsOptions) {
   let { commands } = options.app;
-
-  commands.addCommand(CommandIDs.newCloudTraining, {
-    label: 'Train model in a cloud',
-    caption: 'Create new cloud training',
-    execute: args => {
-      let values = (args as unknown) as cloudDialogs.ICreateNewTrainingDialogValues;
-
-      cloudDialogs
-        .showCreateNewTrainingDialog(options.state.vcss, values)
-        .then(({ value, button }) => {
-          if (button.accept) {
-            if (!value.isFinished) {
-              showErrorMessage(
-                'Can not create cloud training',
-                'Not all fields are filled'
-              ).then(() =>
-                commands.execute(
-                  CommandIDs.newCloudTraining,
-                  (value as unknown) as ReadonlyJSONObject
-                )
-              );
-            } else {
-              let splashScreen = options.splash.show();
-              options.api.cloud
-                .createCloudTraining(
-                  value as models.ICloudTrainingRequest,
-                  options.state.credentials
-                )
-                .then(() => {
-                  splashScreen.dispose();
-                  commands.execute(CommandIDs.refreshCloud, {});
-                })
-                .catch(err => {
-                  splashScreen.dispose();
-                  showErrorMessage('Can not create cloud deployment', err);
-                  commands.execute(CommandIDs.refreshCloud, {});
-                });
-            }
-          }
-        });
-    }
-  });
-
-  // newCloudTrainingFromContextMenu
-  commands.addCommand(CommandIDs.newCloudTrainingFromContextMenu, {
-    label: 'Train model on a cloud',
-    iconClass: cloudModeTabStyle,
-    execute: () => {
-      const widget = options.tracker.currentWidget;
-      if (!widget) {
-        return;
-      }
-      const path = encodeURI(widget.selectedItems().next().path);
-
-      let splashScreen = options.splash.show();
-      options.api.cloud
-        .getLocalFileInformation({ path })
-        .then(response => {
-          let toolchain = undefined;
-          if (response.extension === '.py') {
-            toolchain = 'python';
-          } else if (response.extension === '.ipynb') {
-            toolchain = 'jupyter';
-          }
-
-          let value: cloudDialogs.ICreateNewTrainingDialogValues = {
-            entrypoint: response.path,
-            workDir: response.workDir,
-            toolchain,
-            reference:
-              response.references.length > 0
-                ? response.references[0]
-                : undefined,
-            isFinished: false
-          };
-
-          splashScreen.dispose();
-          commands.execute(
-            CommandIDs.newCloudTraining,
-            (value as unknown) as ReadonlyJSONObject
-          );
-        })
-        .catch(err => {
-          splashScreen.dispose();
-          showErrorMessage('Can not get information about file', err);
-        });
-    }
-  });
 
   commands.addCommand(CommandIDs.removeCloudTraining, {
     label: 'Remove cloud training',

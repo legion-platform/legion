@@ -14,16 +14,6 @@
  *   limitations under the License.
  */
 
-export interface ICloudTrainingRequest {
-  name: string;
-  toolchain: string;
-  entrypoint: string;
-  image: string;
-  vcsName: string;
-  workDir: string;
-  reference: string;
-}
-
 export interface ICloudTrainingResponseSpec {
   toolchain: string;
   resources: string;
@@ -127,20 +117,6 @@ export interface ICloudIssueTokenRequest {
 
 export interface ICloudIssueTokenResponse {
   token: string; // Secure fix: //+safeToCommit
-}
-
-export interface ILocalFileInformationRequest {
-  path: string;
-}
-
-export interface ILocalFileInformationResponse {
-  path: string;
-  workDir: string;
-  extension: string;
-  gitCommandAvailable: boolean;
-  fileInGitRepository: boolean;
-  remotes: Array<string>;
-  references: Array<string>;
 }
 
 export interface IApplyFromFileRequest {

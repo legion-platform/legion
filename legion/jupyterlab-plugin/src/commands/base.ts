@@ -37,9 +37,6 @@ export namespace CommandIDs {
   export const authorizeOnCluster = 'legion:cloud-start-auth';
 
   // Cloud
-  export const newCloudTraining = 'legion:cloud-training-new';
-  export const newCloudTrainingFromContextMenu =
-    'legion:cloud-training-new-from-context-menu';
   export const removeCloudTraining = 'legion:cloud-training-remove';
   export const newCloudDeployment = 'legion:cloud-deployment-new';
   export const scaleCloudDeployment = 'legion:cloud-deployment-scale';

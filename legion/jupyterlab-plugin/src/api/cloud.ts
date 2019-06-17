@@ -33,17 +33,11 @@ export namespace URLs {
   export const cloudAllDataUrl = legionApiRootURL + '/cloud';
   export const cloudIssueModelTokenUrl =
     legionApiRootURL + '/cloud/security/token';
-  export const cloudGetLocalFileInformationUrl =
-    legionApiRootURL + '/cloud/local-file';
   export const cloudApplyFileUrl = legionApiRootURL + '/cloud/apply';
 }
 
 export interface ICloudApi {
   // Trainings
-  createCloudTraining: (
-    request: models.ICloudTrainingRequest,
-    credentials: ICloudCredentials
-  ) => Promise<models.ICloudTrainingResponse>;
   getCloudTrainings: (
     credentials: ICloudCredentials
   ) => Promise<Array<models.ICloudTrainingResponse>>;
@@ -84,11 +78,6 @@ export interface ICloudApi {
     credentials: ICloudCredentials
   ) => Promise<models.ICloudIssueTokenResponse>;
 
-  // Get file information
-  getLocalFileInformation: (
-    request: models.ILocalFileInformationRequest
-  ) => Promise<models.ILocalFileInformationResponse>;
-
   // General
   applyFromFile: (
     request: models.IApplyFromFileRequest,
@@ -98,26 +87,6 @@ export interface ICloudApi {
 
 export class CloudApi implements IApiGroup, ICloudApi {
   // Trainings
-  async createCloudTraining(
-    request: models.ICloudTrainingRequest,
-    credentials: ICloudCredentials
-  ): Promise<models.ICloudTrainingResponse> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudTrainingsUrl,
-        'POST',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return null;
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
-    }
-  }
   async getCloudTrainings(
     credentials: ICloudCredentials
   ): Promise<Array<models.ICloudTrainingResponse>> {
@@ -288,24 +257,6 @@ export class CloudApi implements IApiGroup, ICloudApi {
         'POST',
         request,
         credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
-    }
-  }
-  async getLocalFileInformation(
-    request: models.ILocalFileInformationRequest
-  ): Promise<models.ILocalFileInformationResponse> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudGetLocalFileInformationUrl,
-        'POST',
-        request
       );
       if (response.status !== 200) {
         const data = await response.json();

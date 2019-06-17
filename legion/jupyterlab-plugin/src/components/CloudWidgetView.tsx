@@ -113,15 +113,7 @@ export class CloudWidgetView extends React.Component<
         />
         <ListingView
           title={'Cloud trainings'}
-          topButton={
-            <SmallButtonView
-              text={'New training'}
-              iconClass={'jp-AddIcon'}
-              onClick={() =>
-                this.props.app.commands.execute(CommandIDs.newCloudTraining)
-              }
-            />
-          }
+          topButton={null}
           columns={[
             {
               name: 'Training',

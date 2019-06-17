@@ -48,10 +48,8 @@ export const PLUGIN_ID = 'jupyter.extensions.legion';
 export const PLUGIN_ID_CLOUD = PLUGIN_ID + ':cloud';
 export const EXTENSION_ID = 'jupyter.extensions.jupyter_legion';
 
-const FILE_MANAGER_NOT_DIRECTORY = '.jp-DirListing-item[data-isdir="false"]';
 const FILE_MANAGER_LEGION_RESOURCE =
   '.jp-DirListing-item[title*="legion.yaml"]';
-const TRAIN_ON_CLOUD_COMMAND_RANK = 99;
 const APPLY_LEGION_RESOURCES = 100;
 const REMOVE_LEGION_RESOURCES = 101;
 
@@ -214,12 +212,6 @@ function activateCloudPlugin(
 
   // Register commands in JupyterLab
   addCloudCommands(addCommandsOptions);
-
-  app.contextMenu.addItem({
-    command: CommandIDs.newCloudTrainingFromContextMenu,
-    selector: FILE_MANAGER_NOT_DIRECTORY,
-    rank: TRAIN_ON_CLOUD_COMMAND_RANK
-  });
 
   app.contextMenu.addItem({
     command: CommandIDs.applyCloudResources,
