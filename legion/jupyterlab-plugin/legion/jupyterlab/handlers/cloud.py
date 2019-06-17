@@ -16,10 +16,8 @@
 """
 Declaration of cloud handlers
 """
-import os
 import functools
 import typing
-from subprocess import Popen, PIPE, check_output, CalledProcessError
 
 from tornado.web import HTTPError
 
@@ -53,103 +51,6 @@ def _decorate_handler_for_exception(function):
         except EDIConnectionException as base_exception:
             raise HTTPError(log_message=str(base_exception)) from base_exception
     return wrapper
-
-
-def _is_git_cli_present() -> bool:
-    """
-    Check is Git CLI available to use
-
-    :return: bool -- is Git CLI available
-    """
-    try:
-        check_output(
-            ['git', '--version']
-        )
-    except CalledProcessError:
-        return False
-    return True
-
-
-def _get_git_command_output(path: str, command: typing.List[str]) -> typing.Optional[str]:
-    """
-    Run Git CLI command and return output as string (or None if error is present)
-
-    :param path: path from which system call should be started
-    :type path: str
-    :param command: command to run
-    :type command: list[str]
-    :return: str or None -- output of command or None if error present
-    """
-    p = Popen(
-        command,
-        stdout=PIPE,
-        stderr=PIPE,
-        cwd=os.path.dirname(path),
-    )
-    output, _ = p.communicate()
-    if p.returncode == 0:
-        return output.decode('utf-8').strip().strip('\n')
-    return None
-
-
-def _get_file_path_in_repo(path: str) -> typing.Optional[str]:
-    """
-    Get path to file relative to Git repository root
-
-    :param path: path to file in repository
-    :type path: str
-    :return: str or None -- relative path to file or None if file is not in any Git repository
-    """
-    relative_dir = _get_git_command_output(path, ['git', 'rev-parse', '--show-prefix'])
-    _, filename = os.path.split(path)
-
-    if relative_dir:
-        return os.path.join(relative_dir, filename)
-
-    return None
-
-
-def _get_file_remote_references(path: str) -> typing.List[str]:
-    """
-    Find git references (commit ID, branch name and etc.)
-
-    :param path: path to file in repository
-    :type path: str
-    :return: list[str] -- references in Gir repository for target file
-    """
-    refs = []
-
-    current_branch = _get_git_command_output(path, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-    if current_branch:
-        command = ['git', 'rev-parse', '--abbrev-ref', '{}@{{upstream}}'.format(current_branch)]
-        current_branch_upstream = _get_git_command_output(path, command)
-        if current_branch_upstream:
-            refs.append(current_branch_upstream)
-
-    current_commit = _get_git_command_output(path, ['git', 'rev-parse', 'HEAD'])
-    if current_commit:
-        refs.append(current_commit)
-
-    return refs
-
-
-def _get_remotes(path: str) -> typing.List[str]:
-    """
-    Get remotes for repository (useful to auto-selection in interface)
-
-    :param path: path to file in repository
-    :return: list[str] -- list of remote URLs (http or SSH)
-    """
-    remotes = []
-
-    name_of_remotes = _get_git_command_output(path, ['git', 'remote'])
-    if name_of_remotes:
-        for remote_name in name_of_remotes.split('\n'):
-            url = _get_git_command_output(path, ['git', 'remote', 'get-url', remote_name])
-            if url:
-                remotes.append(url)
-
-    return remotes
 
 
 # pylint: disable=W0223
@@ -248,22 +149,6 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
     """
     Control cloud trainings
     """
-
-    @_decorate_handler_for_exception
-    def post(self):
-        """
-        Create of training
-
-        :return: None
-        """
-        data = TrainingCreateRequest(**self.get_json_body())
-
-        try:
-            client = self.build_cloud_client(ModelTrainingClient)
-            client.create(data.convert_to_training())
-            self.finish_with_json()
-        except Exception as query_exception:
-            raise HTTPError(log_message='Can not create cluster training') from query_exception
 
     @_decorate_handler_for_exception
     def delete(self):
@@ -386,65 +271,6 @@ class CloudTokenIssueHandler(BaseCloudLegionHandler):
             self.finish_with_json({'token': token})
         except Exception as query_exception:
             raise HTTPError(log_message='Can not query cloud deployments') from query_exception
-
-
-class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
-    """
-    Get information about file (path from vcs, extension and etc.)
-    """
-
-    @_decorate_handler_for_exception
-    def post(self):
-        """
-        Get file information relative to it's Git repository
-
-        :return: None
-        """
-        data = FileInformationRequest(**self.get_json_body())
-
-        try:
-            path = data.path
-            dir_name = os.path.dirname(path)
-            _, extension = os.path.splitext(path)
-
-            git_present = _is_git_cli_present()
-            if not git_present:
-                self.finish_with_json(FileInformationResponse(
-                    path=path,
-                    workDir=dir_name,
-                    extension=extension
-                ).to_json())
-                return
-
-            file_path_in_repo = _get_file_path_in_repo(path)
-            if not file_path_in_repo:
-                self.finish_with_json(FileInformationResponse(
-                    path=path,
-                    workDir=dir_name,
-                    extension=extension,
-                    gitCommandAvailable=True
-                ).to_json())
-                return
-            dir_name_in_repo = os.path.dirname(file_path_in_repo)
-
-            # Remove working directory from path
-            if file_path_in_repo.find(dir_name_in_repo) >= 0:
-                start = file_path_in_repo.find(dir_name_in_repo)
-                file_path_in_repo = file_path_in_repo[start + len(dir_name_in_repo):]
-                file_path_in_repo = file_path_in_repo.strip('/\\')
-
-            self.finish_with_json(FileInformationResponse(
-                path=file_path_in_repo,
-                workDir=dir_name_in_repo,
-                extension=extension,
-                gitCommandAvailable=True,
-                fileInGitRepository=True,
-                references=_get_file_remote_references(path),
-                remotes=_get_remotes(path)
-            ).to_json())
-        except Exception as query_exception:
-            self.logger.exception(query_exception)
-            raise HTTPError(log_message='Can not get file information') from query_exception
 
 
 class CloudApplyFromFileHandler(BaseCloudLegionHandler):
