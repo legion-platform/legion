@@ -152,7 +152,7 @@ def _get_remotes(path: str) -> typing.List[str]:
     return remotes
 
 
-# pylint: disable=W0223
+# pylint: disable=W0223, W0201
 class BaseCloudLegionHandler(BaseLegionHandler):
     """
     Base handler for cloud API

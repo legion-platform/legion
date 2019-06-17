@@ -33,25 +33,15 @@ from legion.jupyterlab.handlers.datamodels.local import *  # pylint: disable=W06
 BUILD_LOCK = multiprocessing.Lock()
 
 
-# pylint: disable=W0223
+# pylint: disable=W0223, W0201
 class BaseLocalLegionHandler(BaseLegionHandler):
     """
     Base handler for local mode of Legion plugin
     """
 
-    def __init__(self, *args, **kwargs):
-        """
-        Construct base handler
-
-        :param args: additional args (is passed to parent)
-        :param kwargs: additional k-v args (is passed to parent)
-        """
-        super().__init__(*args, **kwargs)
-        self.client = None
-
     def initialize(self, state, logger, **kwargs):
         """
-        Initialize base handler, create local client
+        Initialize base handler
 
         :param state: state of plugin back-end
         :param logger: logger to log data to
@@ -161,6 +151,7 @@ class BaseLocalLegionHandler(BaseLegionHandler):
         :return: dict -- build status
         """
         with BUILD_LOCK:
+            self.logger.error(f"ST: {self.state!r}")
             process = self.state.local_build_process  # type: typing.Optional[subprocess.Popen]
 
             is_alive = process is not None and process.poll() is None

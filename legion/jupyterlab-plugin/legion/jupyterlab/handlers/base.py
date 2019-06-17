@@ -27,17 +27,6 @@ class BaseLegionHandler(APIHandler):
     Base handler for Legion plugin back-end
     """
 
-    def __init__(self, *args, **kwargs):
-        """
-        Construct base handler w/o state & logger
-
-        :param args: additional args (is passed to parent)
-        :param kwargs: additional k-v args (is passed to parent)
-        """
-        super().__init__(*args, **kwargs)
-        self.state = None
-        self.logger = None
-
     def initialize(self, state, logger, **kwargs):
         """
         Initialize base handler
@@ -49,7 +38,7 @@ class BaseLegionHandler(APIHandler):
         """
         self.state = state
         self.logger = logger
-        self.logger.debug('%s initialized', self.__class__.__name__)
+        self.logger.error('%s initialized. ST %r', self.__class__.__name__, self.state)
 
     def finish_with_json(self, data=None):
         """
