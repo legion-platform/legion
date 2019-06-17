@@ -31,7 +31,7 @@ from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
 from legion.sdk.clients.vcs import VcsClient, VCSCredential
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
-import legion.jupyterlab.handlers.datamodels.cloud as models
+from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
 
 LEGION_CLOUD_CREDENTIALS_EDI = 'X-Legion-Cloud-Endpoint'
 LEGION_CLOUD_CREDENTIALS_TOKEN = 'X-Legion-Cloud-Token'
@@ -256,7 +256,7 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.TrainingCreateRequest(**self.get_json_body())
+        data = TrainingCreateRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelTrainingClient)
@@ -272,7 +272,7 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.BasicNameRequest(**self.get_json_body())
+        data = BasicNameRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelTrainingClient)
@@ -317,7 +317,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.DeploymentCreateRequest(**self.get_json_body())
+        data = DeploymentCreateRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
@@ -333,7 +333,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.BasicNameRequest(**self.get_json_body())
+        data = BasicNameRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
@@ -356,7 +356,7 @@ class CloudDeploymentsScaleHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.ScaleRequest(**self.get_json_body())
+        data = ScaleRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
@@ -378,7 +378,7 @@ class CloudTokenIssueHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.IssueTokenRequest(**self.get_json_body())
+        data = IssueTokenRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(RemoteEdiClient)
@@ -400,7 +400,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.FileInformationRequest(**self.get_json_body())
+        data = FileInformationRequest(**self.get_json_body())
 
         try:
             path = data.path
@@ -409,7 +409,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
 
             git_present = _is_git_cli_present()
             if not git_present:
-                self.finish_with_json(models.FileInformationResponse(
+                self.finish_with_json(FileInformationResponse(
                     path=path,
                     workDir=dir_name,
                     extension=extension
@@ -418,7 +418,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
 
             file_path_in_repo = _get_file_path_in_repo(path)
             if not file_path_in_repo:
-                self.finish_with_json(models.FileInformationResponse(
+                self.finish_with_json(FileInformationResponse(
                     path=path,
                     workDir=dir_name,
                     extension=extension,
@@ -433,7 +433,7 @@ class CloudTrainingsFromFileHandler(BaseCloudLegionHandler):
                 file_path_in_repo = file_path_in_repo[start + len(dir_name_in_repo):]
                 file_path_in_repo = file_path_in_repo.strip('/\\')
 
-            self.finish_with_json(models.FileInformationResponse(
+            self.finish_with_json(FileInformationResponse(
                 path=file_path_in_repo,
                 workDir=dir_name_in_repo,
                 extension=extension,
@@ -470,7 +470,7 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = models.ApplyFromFileRequest(**self.get_json_body())
+        data = ApplyFromFileRequest(**self.get_json_body())
         client = self.build_cloud_client(RemoteEdiClient)
 
         try:
