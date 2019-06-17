@@ -10,6 +10,7 @@ LEGION_VERSION=0.11.0
 SANDBOX_PYTHON_TOOLCHAIN_IMAGE=
 CREDENTIAL_SECRETS=.secrets.yaml
 ROBOT_FILES=**/*.robot
+ROBOT_THREADS=6
 CLUSTER_NAME=
 PATH_TO_PROFILES_DIR=profiles
 E2E_PYTHON_TAGS=
@@ -38,7 +39,7 @@ check-tag:
 	fi
 
 ## install-all: Install all python packages
-install-all: install-sdk install-services install-cli install-python-toolchain install-robot
+install-all: install-sdk install-services install-cli install-python-toolchain install-jupyterlab-plugin install-robot
 
 ## install-sdk: Install sdk python package
 install-sdk:
@@ -57,6 +58,13 @@ install-cli:
 ## install-services: Install services python package
 install-services:
 	cd legion/services && \
+		pip3 install ${BUILD_PARAMS} -e . && \
+		python setup.py sdist && \
+    	python setup.py bdist_wheel
+
+## install-jupyterlab-plugin: Install python package for JupyterLab
+install-jupyterlab-plugin:
+	cd legion/jupyterlab-plugin && \
 		pip3 install ${BUILD_PARAMS} -e . && \
 		python setup.py sdist && \
     	python setup.py bdist_wheel
@@ -185,8 +193,8 @@ unittests:
 
 ## e2e-robot: Run e2e robot tests
 e2e-robot:
-	pabot --verbose --processes 6 \
-	      -v PATH_TO_PROFILES_DIR:profiles \
+	pabot --verbose --processes ${ROBOT_THREADS} \
+	      -v PATH_TO_PROFILES_DIR:${PATH_TO_PROFILES_DIR} \
 	      --listener legion.robot.process_reporter \
 	      --outputdir target legion/tests/e2e/robot/tests/${ROBOT_FILES}
 

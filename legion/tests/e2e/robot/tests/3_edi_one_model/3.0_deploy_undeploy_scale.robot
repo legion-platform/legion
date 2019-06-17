@@ -52,7 +52,7 @@ File not found
     [Arguments]  ${command}
         ${res}=  Shell  legionctl --verbose md ${command} -f wrong-file
                  Should not be equal  ${res.rc}  ${0}
-                 Should contain       ${res.stderr}  No such file or directory
+                 Should contain       ${res.stderr}  Resource file 'wrong-file' not found
 
 Invoke command without parameters
     [Arguments]  ${command}
@@ -196,7 +196,6 @@ Check commands with file parameters
     [Teardown]  None
     [Template]  Check commands with file parameter
     create_file=k8s.json     edit_file=k8s-changed.yaml     delete_file=k8s-changed
-    create_file=legion.json  edit_file=legion-changed.yaml  delete_file=legion-changed
 
 File with entitiy not found
     [Documentation]  Invoke Model Deployment commands with not existed file

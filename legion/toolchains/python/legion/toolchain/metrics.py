@@ -219,12 +219,13 @@ def clear_metric_store(model_id: str, model_version: str):
         json.dump(build_metrics, f)
 
 
-def show_local_metrics(model_id: str, model_version: typing.Optional[str] = None) -> pd.DataFrame:
+def show_local_metrics(model_id: typing.Optional[str] = None,
+                       model_version: typing.Optional[str] = None) -> pd.DataFrame:
     """
     Show metrics from local store
 
-    :param model_id: model ID
-    :param model_version: model version
+    :param model_id: (Optional) model ID
+    :param model_version: (Optional) model version
     :return: Metrics which converted to Dataframe
     """
     if config.MODEL_CLUSTER_TRAIN_METRICS_ENABLED:
@@ -242,7 +243,7 @@ def show_local_metrics(model_id: str, model_version: typing.Optional[str] = None
     metric_keys = set()
     models = []
     for md_id, model_versions in build_metrics.items():
-        if model_id != md_id:
+        if model_id and model_id != md_id:
             continue
 
         for version, metrics in model_versions.items():

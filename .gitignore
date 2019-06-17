@@ -138,6 +138,10 @@ ENV/
 # mypy
 .mypy_cache/
 
+# Node Modules
+*.bundle.*
+node_modules/
+
 workspace/
 keys/
 

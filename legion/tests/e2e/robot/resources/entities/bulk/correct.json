@@ -1,0 +1,58 @@
+[
+    {
+        "apiVersion": "legion.legion-platform.org/v1alpha1",
+        "kind": "VCSCredential",
+        "metadata": {
+            "name": "bulk-test-vcs-1"
+        },
+        "spec": {
+            "credential": "a2VrCg==",
+            "defaultReference": "origin/develop",
+            "type": "git",
+            "uri": "git@github.com:legion-platform/legion.git"
+        }
+    },
+    {
+        "apiVersion": "legion.legion-platform.org/v1alpha1",
+        "kind": "ModelTraining",
+        "metadata": {
+            "name": "bulk-test-mt-1"
+        },
+        "spec": {
+            "entrypoint": "simple.py",
+            "args": [
+                "--id bulk-test-mt-1 --version 1.0"
+            ],
+            "toolchain": "python",
+            "vcsName": "legion",
+            "workDir": "legion/tests/e2e/models"
+        }
+    },
+    {
+        "apiVersion": "legion.legion-platform.org/v1alpha1",
+        "kind": "ModelTraining",
+        "metadata": {
+            "name": "bulk-test-mt-2"
+        },
+        "spec": {
+            "entrypoint": "simple.py",
+            "args": [
+                "--id bulk-test-mt-2 --version 2.0"
+            ],
+            "toolchain": "python",
+            "vcsName": "legion",
+            "workDir": "legion/tests/e2e/models"
+        }
+    },
+    {
+        "apiVersion": "legion.legion-platform.org/v1alpha1",
+        "kind": "ModelDeployment",
+        "metadata": {
+            "name": "bulk-test-md-1"
+        },
+        "spec": {
+            "image": "nexus-local.cc.epm.kharlamov.biz:8084/legion-test/3:1",
+            "replicas": 1
+        }
+    }
+]

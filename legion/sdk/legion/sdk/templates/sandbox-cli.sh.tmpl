@@ -50,6 +50,7 @@ docker run -ti {{ remove_arguments }} \
    -e "PTVSD_PORT=$PTVSD_PORT" \
    -e "PTVSD_HOST=0.0.0.0" \
    -e "PTVSD_WAIT_ATTACH=$PTVSD_WAIT_ATTACH" \
+   -e "MODEL_LOCAL_METRIC_STORE=/var/legion-metrics.json" \
    -e "MODEL_FILE={{ legion_data_directory }}{{ model_file }}" \
    -v {{ local_fs }}:{{ work_directory }} \
    -v {{ docker_socket_path }}:/var/run/docker.sock \

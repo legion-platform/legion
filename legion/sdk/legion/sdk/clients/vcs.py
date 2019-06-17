@@ -43,8 +43,10 @@ class VCSCredential(typing.NamedTuple):
         :return: a Model Deployment
         """
         vcs_spec = vcs.get('spec')
+        vcs_metadata = vcs.get('metadata', {})
+
         return VCSCredential(
-            name=vcs.get("name", ""),
+            name=vcs.get('name', vcs_metadata.get('name', '')),
             type=vcs_spec.get("type", ""),
             uri=vcs_spec.get("uri", ""),
             default_reference=vcs_spec.get("defaultReference", ""),

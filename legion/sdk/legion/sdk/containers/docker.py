@@ -26,12 +26,11 @@ from docker.models.containers import Container
 from docker.models.images import Image as DockerImage
 
 from legion.sdk.containers import headers
-from legion.sdk import config
+from legion.sdk import config, utils
 from legion.sdk.containers.definitions import ModelBuildParameters
 
-from legion.sdk.model import load_meta_model
+from legion.sdk.model import load_meta_model, PROPERTY_TRAINING_WORKING_DIRECTORY
 from legion.sdk.utils import get_installed_packages, get_list_of_requirements, copy_file, copy_directory_contents
-from legion.sdk import utils as legion_utils
 
 LOGGER = logging.getLogger(__name__)
 MODEL_TARGET_WORKSPACE = '/app'
@@ -201,44 +200,62 @@ def build_docker_image(client: docker.client.DockerClient, params: ModelBuildPar
     :param client: Docker client
     :return: model docker image
     """
-    LOGGER.info('Building docker image...')
+    LOGGER.info('Building docker image from model {!r}...'.format(params.model_file))
 
-    with legion_utils.TemporaryFolder('legion-docker-build') as temp_directory:
-        target_model_file = os.path.join(MODEL_TARGET_WORKSPACE, params.model_id)
+    if not os.path.exists(params.model_file):
+        raise Exception('Cannot find model binary {}'.format(params.model_file))
+
+    container = load_meta_model(params.model_file)
+    model_id = container.model_id
+    model_version = container.model_version
+    workspace_path = container.meta_information.get(PROPERTY_TRAINING_WORKING_DIRECTORY, os.getcwd())
+    LOGGER.info('Building model %s (id: %s, version: %s) in directory %s',
+                params.model_file, model_id, model_version, workspace_path)
+
+    local_image_tag = params.local_image_tag
+    if not local_image_tag:
+        local_image_tag = 'legion-model-{}:{}.{}'.format(model_id, model_version, utils.deduce_extra_version())
+
+    image_labels = generate_docker_labels_for_image(params.model_file, model_id)
+
+    prepare_build(workspace_path, model_id, params.model_file)
+
+    with utils.TemporaryFolder('legion-docker-build') as temp_directory:
+        target_model_file = os.path.join(MODEL_TARGET_WORKSPACE, model_id)
 
         # Copy additional files for docker build
         additional_directory = os.path.abspath(os.path.join(
             os.path.dirname(__file__),
             '..', 'templates', 'docker_files'
         ))
-        legion_utils.copy_directory_contents(additional_directory, temp_directory.path)
+        utils.copy_directory_contents(additional_directory, temp_directory.path)
 
         # ALL Filesystem modification below next line would be ignored
         captured_image_id = commit_image(client, container_id)
 
-        if params.workspace_path.count(os.path.sep) > 1:
-            symlink_holder = os.path.abspath(os.path.join(params.workspace_path, os.path.pardir))
+        if workspace_path.count(os.path.sep) > 1:
+            symlink_holder = os.path.abspath(os.path.join(workspace_path, os.path.pardir))
         else:
             symlink_holder = '/'
 
         # Remove old workspace (if exists), create path to old workspace's parent, create symlink
         symlink_create_command = 'rm -rf "{0}" && mkdir -p "{1}" && ln -s "{2}" "{0}"'.format(
-            params.workspace_path,
+            workspace_path,
             symlink_holder,
             MODEL_TARGET_WORKSPACE
         )
         LOGGER.info('Executing %s', symlink_create_command)
 
-        docker_file_content = legion_utils.render_template('Dockerfile.tmpl', {
+        docker_file_content = utils.render_template('Dockerfile.tmpl', {
             'MODEL_PORT': config.LEGION_PORT,
             'DOCKER_BASE_IMAGE_ID': captured_image_id,
-            'MODEL_ID': params.model_id,
+            'MODEL_ID': model_id,
             'MODEL_FILE': target_model_file,
             'CREATE_SYMLINK_COMMAND': symlink_create_command
         })
 
         labels = {k: str(v) if v else None
-                  for (k, v) in params.image_labels.items()}
+                  for (k, v) in image_labels.items()}
 
         with open(os.path.join(temp_directory.path, 'Dockerfile'), 'w') as file:
             file.write(docker_file_content)
@@ -246,7 +263,7 @@ def build_docker_image(client: docker.client.DockerClient, params: ModelBuildPar
         LOGGER.info('Building docker image in folder {}'.format(temp_directory.path))
         try:
             image, _ = client.images.build(
-                tag=params.local_image_tag,
+                tag=local_image_tag,
                 nocache=True,
                 path=temp_directory.path,
                 rm=True,
@@ -350,7 +367,7 @@ def push_image_to_registry(client, image, external_image_name):
     LOGGER.info('Successfully pushed image {}:{}'.format(image_and_registry, version))
 
     image_with_version = '{}/{}:{}'.format(registry, image_name, version)
-    legion_utils.send_header_to_stderr(headers.IMAGE_TAG_EXTERNAL, image_with_version)
+    utils.send_header_to_stderr(headers.IMAGE_TAG_EXTERNAL, image_with_version)
 
 
 def build_model_docker_image(params: ModelBuildParameters, container_id: typing.Optional[str] = None) -> str:
@@ -367,10 +384,10 @@ def build_model_docker_image(params: ModelBuildParameters, container_id: typing.
         client, params, container_id
     )
 
-    legion_utils.send_header_to_stderr(headers.IMAGE_ID_LOCAL, image.id)
+    utils.send_header_to_stderr(headers.IMAGE_ID_LOCAL, image.id)
 
     if image.tags:
-        legion_utils.send_header_to_stderr(headers.IMAGE_TAG_LOCAL, image.tags[0])
+        utils.send_header_to_stderr(headers.IMAGE_TAG_LOCAL, image.tags[0])
 
     if params.push_to_registry:
         push_image_to_registry(client, image, params.push_to_registry)

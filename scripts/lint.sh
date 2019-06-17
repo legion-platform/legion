@@ -21,6 +21,7 @@ mkdir -p "${PYLINT_FOLDER}"
 pylint_cmd sdk/legion sdk
 pylint_cmd cli/legion cli
 pylint_cmd robot/legion robot
+pylint_cmd jupyterlab-plugin/legion jupyterlab_plugin
 pylint_cmd services/legion services
 pylint_cmd toolchains/python/legion toolchain
 pylint_cmd tests/unit unit
@@ -39,6 +40,7 @@ mkdir -p "${PYDOCSTYLE_FOLDER}"
 pydocstyle_cmd sdk/legion sdk
 pydocstyle_cmd cli/legion cli
 pydocstyle_cmd robot/legion robot
+pydocstyle_cmd jupyterlab-plugin/legion jupyterlab_plugin
 pydocstyle_cmd services/legion services
 pydocstyle_cmd toolchains/python/legion toolchain
 

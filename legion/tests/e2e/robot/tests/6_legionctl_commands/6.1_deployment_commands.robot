@@ -5,14 +5,14 @@ ${TEST_MODEL_ID}       6
 ${TEST_MODEL_VERSION}  1
 
 *** Settings ***
-Documentation       Legion's EDI operational check
+Documentation       Legion's EDI operational check for operations on ModelDeployment resources
 Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             legion.robot.libraries.utils.Utils
 Library             Collections
-Default Tags        edi  cli  enclave  apps
+Default Tags        edi  cli  enclave  apps  md
 Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND

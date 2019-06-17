@@ -53,10 +53,11 @@ class ModelTraining(typing.NamedTuple):
         :return: a Model Training
         """
         mt_spec = mt.get('spec', {})
+        mt_metadata = mt.get('metadata', {})
         mt_status = mt.get('status', {})
 
         return ModelTraining(
-            name=mt.get("name"),
+            name=mt.get('name', mt_metadata.get('name')),
             toolchain_type=mt_spec.get('toolchain', ''),
             resources=mt_spec.get('resources', {}),
             entrypoint=mt_spec.get('entrypoint', ''),
@@ -70,12 +71,13 @@ class ModelTraining(typing.NamedTuple):
             trained_image=mt_status.get('modelImage', '')
         )
 
-    def to_json(self) -> typing.Dict[str, str]:
+    def to_json(self, with_status=False) -> typing.Dict[str, str]:
         """
         Convert a Model Training to raw json
+        :param with_status: add status fields
         :return: raw dict
         """
-        return {
+        result = {
             'name': self.name,
             'spec': {
                 'toolchain': self.toolchain_type,
@@ -87,6 +89,14 @@ class ModelTraining(typing.NamedTuple):
                 'reference': self.reference
             }
         }
+        if with_status:
+            result['status'] = {
+                'id': self.model_id,
+                'version': self.model_version,
+                'state': self.state,
+                'modelImage': self.trained_image
+            }
+        return result
 
 
 class ModelTrainingClient(RemoteEdiClient):

@@ -31,18 +31,22 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ModelBuildParameters(typing.NamedTuple):
-    model_id: str
-    workspace_path: str
-    image_labels: typing.Dict[str, str]
-    local_image_tag: str
+    model_file: str
+    build_id: str
+    local_image_tag: typing.Optional[str] = None
     push_to_registry: typing.Optional[str] = None
-    build_id: str = None
 
 
 class ModelBuildResult(typing.NamedTuple):
     ready: bool
     image_name: str = None
     error: str = None
+
+
+class ModelBuildInformation(typing.NamedTuple):
+    image_name: str
+    model_id: str
+    model_version: str
 
 
 class ModelIdVersion:

@@ -1,0 +1,181 @@
+{
+  "Id": "sha256:2dc048c72ef9d2480fcd8e9f95d7ad66e87abcacd314966654c3e48ea11aadd1",
+  "RepoTags": [
+    "legion-model-test-summation:1.0.190517145902.root.0000"
+  ],
+  "RepoDigests": [],
+  "Parent": "sha256:c3bb2641b0564828169ee529e83dc3fa0bf6ba04831068742b4bc34e04525dfb",
+  "Comment": "",
+  "Created": "2019-05-17T15:00:23.6419419Z",
+  "Container": "319b944ace7e16cc8c783e6ab13b408e0c314116ad08c07cdb1a9eb9bdc183bf",
+  "ContainerConfig": {
+    "Hostname": "eb59aa48ad72",
+    "Domainname": "",
+    "User": "",
+    "AttachStdin": true,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "5000/tcp": {},
+      "8090/tcp": {}
+    },
+    "Tty": true,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Env": [
+      "JUPYTER_PORT=8090",
+      "MODEL_FILE=/app/test-summation",
+      "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "GPG_KEY=0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D",
+      "PYTHON_VERSION=3.6.8",
+      "PYTHON_PIP_VERSION=19.1",
+      "WORK_DIR=/opt/legion",
+      "MODEL_ID=test-summation",
+      "VERBOSE=true",
+      "MODEL_PORT=5000"
+    ],
+    "Cmd": [
+      "/bin/sh",
+      "-c",
+      "#(nop) ",
+      "LABEL com.epam.model.version=1.0"
+    ],
+    "ArgsEscaped": true,
+    "Image": "sha256:c3bb2641b0564828169ee529e83dc3fa0bf6ba04831068742b4bc34e04525dfb",
+    "Volumes": null,
+    "WorkingDir": "/app",
+    "Entrypoint": null,
+    "OnBuild": null,
+    "Labels": {
+      "com.epam.jenkins.build_id": "None",
+      "com.epam.jenkins.build_number": "0",
+      "com.epam.jenkins.build_tag": "None",
+      "com.epam.jenkins.build_url": "None",
+      "com.epam.jenkins.git_branch": "None",
+      "com.epam.jenkins.git_commit": "None",
+      "com.epam.jenkins.job_name": "None",
+      "com.epam.jenkins.node_name": "None",
+      "com.epam.legion.class": "pyserve",
+      "com.epam.legion.container_type": "model",
+      "com.epam.legion.model.id": "test-summation",
+      "com.epam.legion.model.version": "1.0",
+      "com.epam.legion.version": "1.0.0",
+      "com.epam.model.endpoints": "default, sum_and_pow",
+      "com.epam.model.id": "test-summation",
+      "com.epam.model.trainWorkDir": "/work-directory/Test-Summation",
+      "com.epam.model.version": "1.0"
+    }
+  },
+  "DockerVersion": "18.09.2",
+  "Author": "",
+  "Config": {
+    "Hostname": "eb59aa48ad72",
+    "Domainname": "",
+    "User": "",
+    "AttachStdin": true,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "5000/tcp": {},
+      "8090/tcp": {}
+    },
+    "Tty": true,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Env": [
+      "JUPYTER_PORT=8090",
+      "MODEL_FILE=/app/test-summation",
+      "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "GPG_KEY=0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D",
+      "PYTHON_VERSION=3.6.8",
+      "PYTHON_PIP_VERSION=19.1",
+      "WORK_DIR=/opt/legion",
+      "MODEL_ID=test-summation",
+      "VERBOSE=true",
+      "MODEL_PORT=5000"
+    ],
+    "Cmd": [
+      "/usr/local/bin/uwsgi",
+      "--strict",
+      "--ini",
+      "/etc/uwsgi/uwsgi.ini"
+    ],
+    "ArgsEscaped": true,
+    "Image": "sha256:c3bb2641b0564828169ee529e83dc3fa0bf6ba04831068742b4bc34e04525dfb",
+    "Volumes": null,
+    "WorkingDir": "/app",
+    "Entrypoint": null,
+    "OnBuild": null,
+    "Labels": {
+      "com.epam.jenkins.build_id": "None",
+      "com.epam.jenkins.build_number": "0",
+      "com.epam.jenkins.build_tag": "None",
+      "com.epam.jenkins.build_url": "None",
+      "com.epam.jenkins.git_branch": "None",
+      "com.epam.jenkins.git_commit": "None",
+      "com.epam.jenkins.job_name": "None",
+      "com.epam.jenkins.node_name": "None",
+      "com.epam.legion.class": "pyserve",
+      "com.epam.legion.container_type": "model",
+      "com.epam.legion.model.id": "test-summation",
+      "com.epam.legion.model.version": "1.0",
+      "com.epam.legion.version": "1.0.0",
+      "com.epam.model.endpoints": "default, sum_and_pow",
+      "com.epam.model.id": "test-summation",
+      "com.epam.model.trainWorkDir": "/work-directory/Test-Summation",
+      "com.epam.model.version": "1.0"
+    }
+  },
+  "Architecture": "amd64",
+  "Os": "linux",
+  "Size": 1513514985,
+  "VirtualSize": 1513514985,
+  "GraphDriver": {
+    "Data": {
+      "LowerDir": "/var/lib/docker/overlay2/7345e3490ea305d1db767f1c8c9b33b212468325289547c2c41be2113d2b425b/diff:/var/lib/docker/overlay2/4c459b51888627ff342d3c0fd0a1cb1e6895fc62e89f70b98bf1490ce82b8178/diff:/var/lib/docker/overlay2/e908c7e022ff244d10d01fb8c325996b3b0bb80288240abc831a39bdc2c5b8b6/diff:/var/lib/docker/overlay2/c9289431e883f33abb61dc22558d9bc7a8903a68ae0f339f5d1e38151e2310b1/diff:/var/lib/docker/overlay2/a8af09465314885805c84c88d3e733d86b4dc2ab0b1e62039f62d2567d0a4b23/diff:/var/lib/docker/overlay2/0919b20bab79e42ceaa7299c9ea798c09ff456df44f7688bb760b136f2b958cb/diff:/var/lib/docker/overlay2/cc552b2950d783f05cef2c736dc5b6e0c3f9d8ca7d5913ea26a434563b070514/diff:/var/lib/docker/overlay2/ead66f2fd151f4b9e4da0394e701db6d60f5061ba322e4ac31aefc9f1209a415/diff:/var/lib/docker/overlay2/40dd611e2329d88f52602c7bf924cd11b8d48fb3a38aa0bb54364eb16a7bb3d7/diff:/var/lib/docker/overlay2/e95cd236fca02769d78d1cb1d8c5a2a29a8b63292caaa79a493d9fe78d2405ca/diff:/var/lib/docker/overlay2/8196986950cff9d20e61c9b9912307ac8457a2192377b1f89b5982bf78b259af/diff:/var/lib/docker/overlay2/4a2b3afe884070e0a552d638ccc74cbd1111c962abf96d5767c5f09d64870627/diff:/var/lib/docker/overlay2/48404cc89e9bf2d3a2c1f704fb3a3108c932e108c92446b164a2151837581f2d/diff:/var/lib/docker/overlay2/c33c97cc339045819f41d2e8313df163ccc696b49a2deae7a5dcd11c42b72c36/diff:/var/lib/docker/overlay2/2c9340adac1a151910f4575e18e7b3bfc7c4cfd69b9552ffad05348bd9f03ef8/diff:/var/lib/docker/overlay2/bbd96fff510c7963b1c91b83ee8831dd8406498a20c4733e6514e592f82d0642/diff:/var/lib/docker/overlay2/259d0978d92bb6460728341117ca2cf81e66afdb0b3a7669da4ecab37d55adf9/diff:/var/lib/docker/overlay2/981dcc93adb28d6783505e0a6214d71bad0cd9a38876fa8527ffd769d5f8d1ac/diff:/var/lib/docker/overlay2/c20b2ac5e70c979d0ca85eae89dd0400fee508acdf0da3da3357949b747a4d53/diff:/var/lib/docker/overlay2/7ed93dcb53dc80f1bde09100a52b760393c6dce7c74399848607521b7ded308f/diff:/var/lib/docker/overlay2/58ea16095f2423b67df8b48b6378f11defc2342b5e71195150c5ba24477ac051/diff:/var/lib/docker/overlay2/05f8f0c6c77d33d447328af80e6c3f5a6b240b0e43668c76fc05a9a9d2f61175/diff:/var/lib/docker/overlay2/f7c56d8a45159a7703a0514738476298cc25c42f5869332bf62121008189f95b/diff:/var/lib/docker/overlay2/e8c5f743eba589be754a7c19d846cb61659a8fc7ab4bf45b9008c12621a93b24/diff:/var/lib/docker/overlay2/ffb2e2de796b9541c6ece3f58c0ce22b8905c4e414b52e6bcd023a54316e19ec/diff:/var/lib/docker/overlay2/e1ce1b797c416c05b98c48f58c95aed107223d5eb7415a8d68087a73265d63bb/diff:/var/lib/docker/overlay2/a02adfe74d0ee8e91622bc1c65f79e67230fe30b38bde0ba17ea51b9d9e4fe61/diff:/var/lib/docker/overlay2/8ddce4029ff82518b441bb5ba7e1d5d6e9f0f3a59db2f1723bec3e87a5b3291b/diff",
+      "MergedDir": "/var/lib/docker/overlay2/9eb3b88b00ceebd98b2b1a291174a112a552947c5b9875ea51a6752df5c6ee47/merged",
+      "UpperDir": "/var/lib/docker/overlay2/9eb3b88b00ceebd98b2b1a291174a112a552947c5b9875ea51a6752df5c6ee47/diff",
+      "WorkDir": "/var/lib/docker/overlay2/9eb3b88b00ceebd98b2b1a291174a112a552947c5b9875ea51a6752df5c6ee47/work"
+    },
+    "Name": "overlay2"
+  },
+  "RootFS": {
+    "Type": "layers",
+    "Layers": [
+      "sha256:fbb641a8b94349e89886f65d79928e4673530e2a2b4d33c2c95e0426713f78e4",
+      "sha256:604829a174eb966a2102e2e68c7669e1fe56721e8d7ea27f9a286aa33be8be20",
+      "sha256:12cb127eee44270330891b1b610ce34e81f53a91a22e3a7f53f0632391d99892",
+      "sha256:b17cc31e431beb2f39988dff23d04f85ba4b446fc0a13f304774852fa3c87d85",
+      "sha256:0fe19df8b8f8eb5f545f50e11f958bf37d27ab7da5c260a9bd2bc0ff6fb760a4",
+      "sha256:bd5afbfde642719533703ba3d1571305ab7707a911e92e4d0326d4ce387e3d67",
+      "sha256:4d29b148a1478247eb020dced644fcdb01dde7191a30477a29ce9035173a5eab",
+      "sha256:8296c34d06418cc528f0ed5f694b813a00885c99907b2892267b199c3c05dc9f",
+      "sha256:5d5d86989c42a0e0475eaadff6cf58c43cc9640ede94de52b76466b2efe68dd3",
+      "sha256:c2316135b31dfced3246bd006bbe5bafe01dd3246f882333f48a9f6b6fc7da57",
+      "sha256:2b2118356f21d5d7e5cce7180b9897a5c6a615c07f15e83a92fdb3afd5b8039c",
+      "sha256:c346b431209429deccaead94960418c3e49048cc78f058241fda91f038f38634",
+      "sha256:32847afba6243bd77ae0e6e1dfb3ca0cba31e14e3426cfd7ecf26b247689f2a2",
+      "sha256:b75a0d9abc70774281dad30ba59f2075cd68984bf8a216c607c3345543e6bbd6",
+      "sha256:64109f3ce54020453e5deccae14c234feccf039f204f85305261c49f8c156768",
+      "sha256:9321be4a7eef35c4478827159fef23e2f23d9dc6e4f98ff647a7fed79ab2e05f",
+      "sha256:4f3aa73a63856b97b5a7cdf90e2e3c8f8bb45e5064d939e49a599d78c9f009af",
+      "sha256:28f6929a660bf1f9fad00cf0dd82696d08703b2341391940703d0a43735b80a0",
+      "sha256:93c3bcd1bd61d3923ef26010f9090a9fab676224ae1f02061a5c24d89f588374",
+      "sha256:668a65e5a877a6b349afdf0aa81051c17a79de4cc10392abdc3649b0aefdde7f",
+      "sha256:7984127cb4e89403f8c9317c74f48a819fc4b563e673581a0fb43a1006fbc3bd",
+      "sha256:4add1d8ae08dce365d28071cbae6d49a954b363922038b50b123e5ac63845150",
+      "sha256:9c86c0cba1aeddd15f0748c12feb2268027d2fc530ded03fe374945ddd3ce434",
+      "sha256:d30bcd8e0d322c86880486ced890033c256ed726db5d54865d0678b38b157169",
+      "sha256:48e193aa7e26a93164d4819f0f2d5f7a1ec20a1bf175730d12e176a2400f8923",
+      "sha256:491319423ac32fc2ce7f2271acef3d3c362a415c25e3a91b44e0111e59dbb866",
+      "sha256:1bfefc868a7de20ecb5aa468b528beecf19f553f2f1000025e3fdc59094dceef",
+      "sha256:2825fc266b39d36eebc781e4a0cec885981b2b2bd975b30e32ddfb9897bd753f",
+      "sha256:26e71958840ac756bda7e5798eebac6aacb775d65fb887e82097dc8642328104"
+    ]
+  },
+  "Metadata": {
+    "LastTagTime": "2019-05-17T15:00:23.7026467Z"
+  }
+}

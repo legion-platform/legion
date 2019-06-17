@@ -9,20 +9,24 @@ ${VCS_NEW_GIT_URL}     git@github.com:legion-platform/legion-aws.git
 ${VCS_NEW_REFENRECE}   origin/feat
 
 *** Settings ***
-Documentation       Legion's EDI operational check
+Documentation       Legion's EDI operational check for operations on VCSCredentials resources
 Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             legion.robot.libraries.utils.Utils
 Library             Collections
-Default Tags        edi  cli  enclave  apps
+Default Tags        edi  cli  enclave  apps  vcs
 Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
 ...                               Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
-...                               Login to the edi and edge
+...                               Login to the edi and edge  AND
+...                               Cleanup resources
 Suite Teardown      Remove File  ${LOCAL_CONFIG}
 
 *** Keywords ***
+Cleanup resources
+    Shell  legionctl --verbose vcs delete ${VCS_NAME}
+
 Check vcs
     [Arguments]  ${name}  ${type}  ${reference}  ${creds}
     ${res}=  Shell  legionctl --verbose vcs get ${VCS_NAME} --show-secrets
@@ -55,7 +59,7 @@ File not found
     [Arguments]  ${command}
         ${res}=  Shell  legionctl --verbose vcs ${command} -f wrong-file
                  Should not be equal  ${res.rc}  ${0}
-                 Should contain       ${res.stderr}  No such file or directory
+                 Should contain       ${res.stderr}  Resource file 'wrong-file' not found
 
 Invoke command without parameters
     [Arguments]  ${command}
@@ -136,7 +140,6 @@ Check commands with file parameters
     [Documentation]  Vcs commands with differenet file formats
     [Template]  Check commands with file parameter
     create_file=k8s.json     edit_file=k8s-changed.yaml     delete_file=k8s-changed
-    create_file=legion.json  edit_file=legion-changed.yaml  delete_file=legion-changed
 
 File with entitiy not found
     [Documentation]  Invoke vcs commands with not existed file
