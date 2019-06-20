@@ -24,7 +24,6 @@ Invalid credentials raise Auth error
     [Tags]  apps  e2t
     [Documentation]  Invalid credentials raise Auth error on dex
     [Template]    Dex should raise auth error
-    service_url=https://dashboard.${HOST_BASE_DOMAIN}/?a=1
     service_url=https://edi-${MODEL_TEST_ENCLAVE}.${HOST_BASE_DOMAIN}/swagger/index.html
     service_url=https://grafana.${HOST_BASE_DOMAIN}/?orgId=1&x=2
     service_url=https://prometheus.${HOST_BASE_DOMAIN}/graph?x=2&y=3

@@ -31,7 +31,7 @@ from legion.robot.utils import wait_until
 from legion.services.k8s import utils as k8s_utils
 
 FAT_POD_MEMORY = "4Gi"
-FAT_POD_CPU = "7"
+FAT_POD_CPU = "4"
 FAT_POD_IMAGE = 'alpine:3.9.3'
 FAT_POD_NAME = "fat-pod-name"
 
