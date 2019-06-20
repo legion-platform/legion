@@ -62,10 +62,24 @@ spec:
         volumeMounts:
         - name: fluentd-config
           mountPath: /opt/fluent-config
+        {{- if eq .Values.feedback.output.target "gcs" }}
+        {{- if eq .Values.feedback.output.gcs.authorization "keyfile" }}
+        - name: fluentd-keyfile
+          mountPath: /opt/fluent-keyfile
+          readOnly: true
+        {{- end }}
+        {{- end }}
       volumes:
       - name: fluentd-config
         configMap:
           name: "{{ .Release.Name }}-fluentd-config"
+      {{- if eq .Values.feedback.output.target "gcs" }}
+      {{- if eq .Values.feedback.output.gcs.authorization "keyfile" }}
+      - name: fluentd-keyfile
+        configMap:
+          name: "{{ .Release.Name }}-fluentd-keyfile"
+      {{- end }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

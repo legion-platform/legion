@@ -242,26 +242,63 @@ feedback:
     # Valid values:
     # s3 - AWS S3
     # gcs - Google Cloud Storage
-    target: "s3"
+    target: "gcs"
 
     # Detail configuration for storing on GCS
     gcs:
-      # Type of authorization on S3
+      # Type of authorization on GCS
       # Valid values are:
       # - sa - requires k8s-gke-service-account-assigner to be installed in cluster,
       #        adds annotation "accounts.google.com/service-account" to FluentD Pod
       #        value of annotation could be specified in .feedback.output.gcs.customSA
+      # - keyfile - requires Google Cloud Service Account with GCS permissions.
       authorization: "sa"
 
       # Custom name for Service Account for sa-based authorization mode of FluentD
       # For details see authorization directive above
       # By default "<.ingress.globalDomain>-<.Release.Namespace>-collector-sa" is used
       # Type: string
-      #customSA: ~
+      # customSA: ~
 
       # GCS bucket name
       # Type: string
       bucket: "legion-test-store"
+
+      # Google Cloud project ID, required for keyfile based auth
+      # Type: string
+      # project: ~
+
+      # Keyfile private key ID
+      # Type: string
+      # private_key_id: ~
+
+      # Keyfile private key
+      # Type: string
+      # private_key: ~
+
+      # Keyfile client email
+      # Type: string
+      # client_email: ~
+
+      # Keyfile client ID
+      # Type: string
+      # client_id: ~
+
+      # Keyfile auth URI
+      # Type: string
+      # auth_uri: ~
+
+      # Keyfile token URI
+      # Type: string
+      # token_uri: ~
+
+      # Keyfile auth provider certificate URL
+      # Type: string
+      # auth_provider_x509_cert_url: ~
+
+      # Keyfile client certificate URL
+      # Type: string
+      # client_x509_cert_url: ~
 
     # Detail configuration for storing on S3
     s3:

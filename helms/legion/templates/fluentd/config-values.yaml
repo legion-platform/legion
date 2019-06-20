@@ -50,21 +50,16 @@ data:
     <match *>
       @type gcs
 
-      {{- if eq .Values.feedback.output.s3.authorization "secret" }}
+      {{- if eq .Values.feedback.output.gcs.authorization "keyfile" }}
       # Auth based on secrets from HELM configuration
       # Secrets are attached as secretKeyRefs from "{{ .Release.Name }}-fluentd-secret" secret
-      aws_key_id "#{ENV['AWS_ACCESS_KEY_ID']}"
-      aws_sec_key "#{ENV['AWS_SECRET_ACCESS_KEY']}"
-      {{- end }}
-      {{- if eq .Values.feedback.output.s3.authorization "iam" }}
-      # IAM based authorization does not require any configuration
-      #  it only appends appropriate annotation for IAM service to FluentD pod
-      {{- end }}
+      project {{ .Values.feedback.output.gcs.project }}
+      keyfile /opt/fluent-keyfile/keyfile.json
 
-      # Connection
-      bucket {{ required "GCS bucket value is required" .Values.feedback.output.gcs.bucket }}
+      {{- end }}
 
       # Storing
+      bucket {{ required "GCS bucket value is required" .Values.feedback.output.gcs.bucket }}
       object_key_format {{ .Values.feedback.output.objectKeyFormat }}
     {{- end }}
       path {{ .Values.feedback.output.path }}
