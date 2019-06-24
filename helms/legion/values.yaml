@@ -242,7 +242,7 @@ feedback:
     # Valid values:
     # s3 - AWS S3
     # gcs - Google Cloud Storage
-    target: "gcs"
+    target: "s3"
 
     # Detail configuration for storing on GCS
     gcs:
