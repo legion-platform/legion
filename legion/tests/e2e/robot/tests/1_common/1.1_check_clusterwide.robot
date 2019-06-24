@@ -19,8 +19,8 @@ Checking if all replica sets, stateful sets, deployments are up and running
     [Documentation]  Gather information from kubernetes through API and check state of all required componens
     [Tags]  k8s  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edge          namespace=${enclave}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edi           namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-edge          namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-edi           namespace=${enclave}
 
 Check Vertical Scailing
     [Documentation]  Start the fat pod to test vertical scailing
@@ -35,4 +35,4 @@ Check Vertical Scailing
 
     Get cluster nodes and their count    after
     Should Not Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
-    Wait node scale down           ${NODES_COUNT_BEFORE}  900
+    Wait node scale down           ${NODES_COUNT_BEFORE}  1800

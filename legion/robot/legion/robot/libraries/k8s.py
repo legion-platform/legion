@@ -504,7 +504,7 @@ class K8s:
         nodes = core_api.list_node().items
         return nodes
 
-    def wait_node_scale_down(self, expected_count, timeout=600, sleep=10):
+    def wait_node_scale_down(self, expected_count, timeout=600, sleep=60):
         """
         Wait finish of last job build
 
