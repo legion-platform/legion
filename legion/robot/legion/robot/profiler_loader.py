@@ -82,9 +82,7 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
         'CLUSTER_NAME': data['cluster_name'],
         'NEXUS_DOCKER_REPO': data['docker_repo'],
         'TEMP_DIRECTORY': data['tmp_dir'],
-        'FEEDBACK_BUCKET': '{}-{}-{}'.format(data['legion_data_bucket_prefix'],
-                                             data['env_name'],
-                                             data['enclaves'][0]),
+        'FEEDBACK_BUCKET': data['legion_data_bucket'],
         'GRAFANA_USER': data['grafana']['admin']['username'],
         'GRAFANA_PASSWORD': data['grafana']['admin']['password'],
         'MONITORING_NAMESPACE': data.get('monitoring_namespace', 'kube-monitoring')
