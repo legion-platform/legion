@@ -67,7 +67,7 @@ Check EDI deploy procedure
     [Tags]  one_version  apps
     ${resp}=        Run EDI deploy                      ${TEST_MODEL_NAME}   ${TEST_MODEL_IMAGE}
                     Should Be Equal As Integers         ${resp.rc}         0
-    ${response}=    Check model started                 ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
+    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started                 ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
                     Should contain                      ${response}         'model_version': '${TEST_MODEL_VERSION}'
 
 Check EDI deploy with scale to 1
@@ -76,7 +76,7 @@ Check EDI deploy with scale to 1
     [Tags]  one_version  apps
     ${resp}=        Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --replicas 1
                     Should Be Equal As Integers    ${resp.rc}         0
-    ${response}=    Check model started            ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
+    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started            ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
                     Should contain                 ${response}         'model_version': '${TEST_MODEL_VERSION}'
 
     ${resp}=        Run EDI inspect with parse
@@ -90,7 +90,7 @@ Check EDI deploy with scale to 2
     [Tags]  one_version  apps
     ${resp}=        Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE} --replicas 2
                     Should Be Equal As Integers    ${resp.rc}         0
-    ${response}=    Check model started            ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
+    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started            ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
                     Should contain                 ${response}             'model_version': '${TEST_MODEL_VERSION}'
 
     ${resp}=        Run EDI inspect with parse
@@ -112,11 +112,11 @@ Check EDI double deploy procedure for the same model
     [Tags]  one_version  apps
     ${resp}=        Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE}
                     Should Be Equal As Integers   ${resp.rc}         0
-    ${response}=    Check model started           ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
+    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started           ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
                     Should contain                ${response}             'model_version': '${TEST_MODEL_VERSION}'
     ${resp}=        Shell  legionctl --verbose md create ${TEST_MODEL_NAME} --image ${TEST_MODEL_IMAGE}
                     should not be equal as integers  ${resp.rc}         0
-    ${response}=    Check model started           ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
+    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started           ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION}
                     Should contain                ${response}             'model_version': '${TEST_MODEL_VERSION}'
 
 Check EDI undeploy procedure
@@ -199,12 +199,16 @@ Check commands with file parameters
 
 File with entitiy not found
     [Documentation]  Invoke Model Deployment commands with not existed file
+    [Setup]  None
+    [Teardown]  None
     [Template]  File not found
     command=create
     command=edit
 
 User must specify filename or mt name
     [Documentation]  Invoke Model Deployment commands without paramteres
+    [Setup]  None
+    [Teardown]  None
     [Template]  Invoke command without parameters
     command=create
     command=edit

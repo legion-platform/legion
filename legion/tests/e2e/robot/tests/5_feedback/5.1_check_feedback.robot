@@ -10,7 +10,7 @@ Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
 Library             Collections
-Library             legion.robot.libraries.s3.S3
+Library             legion.robot.libraries.feedback.Feedback  ${CLOUD_TYPE}  ${FEEDBACK_BUCKET}
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords
@@ -32,7 +32,6 @@ ${REQUEST_ID_CHECK_RETRIES}         30
 Check model API logging without request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - without request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK_BUCKET}
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
     ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
@@ -41,7 +40,7 @@ Check model API logging without request ID and one chunk
     Validate model API response      ${response}    result=${expected_response}
 
     ${request_id}=          Get model API last response ID
-    ${meta_log_locations}=       Get S3 paths with lag  ${S3_LOCATION_MODELS_META_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${meta_log_locations}=       Get paths with lag  ${FEEDBACK_LOCATION_MODELS_META_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
 
     ${meta_log_entry}=           Find log lines with content   ${meta_log_locations}  ${request_id}  1  ${True}
     Validate model API meta log entry                   ${meta_log_entry}
@@ -51,7 +50,7 @@ Check model API logging without request ID and one chunk
     Validate model API meta ID and version              ${meta_log_entry}   ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}
 
     ${count_of_chunks}=                Get count of invocation chunks from model API meta log entry response   ${meta_log_entry}
-    ${body_log_locations}=             Get S3 paths with lag  ${S3_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${body_log_locations}=             Get paths with lag  ${FEEDBACK_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
     @{response_log_entries}=           Find log lines with content   ${body_log_locations}  ${request_id}  ${count_of_chunks}  ${False}
 
     Validate model API body log entry for all entries   ${response_log_entries}
@@ -63,7 +62,6 @@ Check model API logging without request ID and one chunk
 Check model API logging with request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - with specified request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK_BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
@@ -76,7 +74,7 @@ Check model API logging with request ID and one chunk
     Log                            Response ID is ${actual_request_id}
     Should Be Equal                ${actual_request_id}            ${request_id}
 
-    ${meta_log_locations}=       Get S3 paths with lag  ${S3_LOCATION_MODELS_META_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${meta_log_locations}=       Get paths with lag  ${FEEDBACK_LOCATION_MODELS_META_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
 
     ${meta_log_entry}=           Find log lines with content   ${meta_log_locations}  ${request_id}  1  ${True}
     Validate model API meta log entry                   ${meta_log_entry}
@@ -86,7 +84,7 @@ Check model API logging with request ID and one chunk
     Validate model API meta ID and version              ${meta_log_entry}   ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}
 
     ${count_of_chunks}=                Get count of invocation chunks from model API meta log entry response   ${meta_log_entry}
-    ${body_log_locations}=             Get S3 paths with lag  ${S3_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${body_log_locations}=             Get paths with lag  ${FEEDBACK_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
     @{response_log_entries}=           Find log lines with content   ${body_log_locations}  ${request_id}  ${count_of_chunks}  ${False}
 
     Validate model API body log entry for all entries   ${response_log_entries}
@@ -97,7 +95,6 @@ Check model API logging with request ID and one chunk
 Check model API logging with request ID and many chunks
     [Documentation]  Checking that model API log is being persisted - with specified request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK_BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${expected_response}=   Repeat string N times    ${TEST_MODEL_ARG_STR}   ${TEST_MODEL_ARG_COPIES}
 
@@ -108,7 +105,7 @@ Check model API logging with request ID and many chunks
     Log                            Response ID is ${actual_request_id}
     Should Be Equal                ${actual_request_id}            ${request_id}
 
-    ${meta_log_locations}=         Get S3 paths with lag  ${S3_LOCATION_MODELS_META_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${meta_log_locations}=         Get paths with lag  ${FEEDBACK_LOCATION_MODELS_META_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
 
     ${meta_log_entry}=             Find log lines with content   ${meta_log_locations}  ${request_id}  1  ${True}
     Validate model API meta log entry                   ${meta_log_entry}
@@ -119,7 +116,7 @@ Check model API logging with request ID and many chunks
 
     ${count_of_chunks}=                Get count of invocation chunks from model API meta log entry response   ${meta_log_entry}
     Should Not Be Equal As Integers    ${count_of_chunks}  1
-    ${body_log_locations}=             Get S3 paths with lag  ${S3_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${body_log_locations}=             Get paths with lag  ${FEEDBACK_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
     @{response_log_entries}=           Find log lines with content   ${body_log_locations}  ${request_id}  ${count_of_chunks}  ${False}
 
     Validate model API body log entry for all entries   ${response_log_entries}
@@ -147,7 +144,6 @@ Check model API request generation have no duplicates
 Check model API feedback with request ID
     [Documentation]  Checking that model API feedback is being persisted - without request ID
     [Tags]  fluentd  aws
-    Choose bucket           ${FEEDBACK_BUCKET}
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
@@ -156,7 +152,7 @@ Check model API feedback with request ID
     ${response_error}=      Get From Dictionary         ${response}     error
     Should Not Be True      ${response_error}
 
-    ${log_locations}=       Get S3 paths with lag  ${S3_LOCATION_MODELS_FEEDBACK}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${S3_PARTITIONING_PATTERN}
+    ${log_locations}=       Get paths with lag  ${FEEDBACK_LOCATION_MODELS_FEEDBACK}  ${TEST_MODEL_ID}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
 
     ${log_entry}=          Find log lines with content   ${log_locations}  ${request_id}  1  ${True}
     Validate model feedback log entry                   ${log_entry}

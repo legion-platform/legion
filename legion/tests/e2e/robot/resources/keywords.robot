@@ -134,7 +134,7 @@ Run EDI deploy and check model started
     Log  ${DEX_TOKEN}
     ${edi_state}=   Shell  legionctl --verbose md create ${name} --image ${image}
     Should Be Equal As Integers          ${edi_state.rc}         0
-    ${response}=    Check model started  ${model_id}             ${model_ver}
+    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started  ${model_id}             ${model_ver}
     Should contain                       ${response}             'model_version': '${model_ver}'
 
     # --------- UNDEPLOY COMMAND SECTION -----------

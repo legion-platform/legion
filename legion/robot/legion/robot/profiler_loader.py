@@ -85,7 +85,8 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
         'FEEDBACK_BUCKET': data['legion_data_bucket'],
         'GRAFANA_USER': data['grafana']['admin']['username'],
         'GRAFANA_PASSWORD': data['grafana']['admin']['password'],
-        'MONITORING_NAMESPACE': data.get('monitoring_namespace', 'kube-monitoring')
+        'MONITORING_NAMESPACE': data.get('monitoring_namespace', 'kube-monitoring'),
+        'CLOUD_TYPE': data.get('cloud_type', 'gcp')
     }
 
     variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'

@@ -3,5 +3,5 @@ kind: ModelDeployment
 metadata:
   name: stub-model-3-1
 spec:
-  image: us.gcr.io/or2-msq-epmd-legn-t1iylu/legion-dev/3:1
+  image: nexus-local.cc.epm.kharlamov.biz:8084/legion-test/3:1
   replicas: 2

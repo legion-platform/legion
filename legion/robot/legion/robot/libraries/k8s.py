@@ -308,7 +308,7 @@ class K8s:
         :param expected_state: expected state
         """
         if not wait_until(lambda: self.get_model_training_status(name.lower()).get("state") == expected_state,
-                          iteration_duration=10, iterations=36):
+                          iteration_duration=10, iterations=60):
             raise Exception(f"Timeout")
 
     def service_is_running(self, service_name, namespace=None):
