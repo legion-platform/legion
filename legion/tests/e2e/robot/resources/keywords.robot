@@ -31,17 +31,6 @@ FailedShell
               Should Not Be Equal  ${res.rc}  ${0}
     [Return]  ${res}
 
-Url stay the same after dex log in
-    [Arguments]  ${service_url}
-    ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
-    should be equal  ${service_url}  ${resp.url}
-
-Dex should raise auth error
-    [Arguments]  ${service_url}
-    ${resp}=  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  admin  admin
-    Log              Response for ${service_url} is ${resp}
-    Should contain   ${resp.text}    Invalid Email Address and password
-
 Connect to main Grafana
     Connect to Grafana    ${HOST_PROTOCOL}://grafana.${HOST_BASE_DOMAIN}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 

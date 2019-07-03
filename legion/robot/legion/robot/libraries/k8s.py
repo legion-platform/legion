@@ -97,7 +97,7 @@ class K8s:
 
         self.build_client()
 
-    def start_fat_pod(self):
+    def start_fat_pod(self, node_taint_key, node_taint_value):
         """
         Start fat pod
         """
@@ -116,9 +116,9 @@ class K8s:
                 priority=0,
                 tolerations=[
                     V1Toleration(
-                        key="dedicated",
+                        key=node_taint_key,
                         operator="Equal",
-                        value="jenkins-slave",
+                        value=node_taint_value,
                         effect="NoSchedule",
                     )
                 ],
@@ -166,7 +166,7 @@ class K8s:
         pod_completed_lambda = lambda: core_api.read_namespaced_pod(
             FAT_POD_NAME, self._namespace
         ).status.phase == "Succeeded"
-        if not wait_until(pod_completed_lambda, iteration_duration=10, iterations=78):
+        if not wait_until(pod_completed_lambda, iteration_duration=10, iterations=120):
             raise Exception("Timeout")
 
     def delete_stub_model_training(self, model_id, model_version):
@@ -179,15 +179,14 @@ class K8s:
 
     def delete_model_training(self, name):
         """
-        Delete model trainig resource
+        Delete model training resource
         :param name: name of training resource
         """
         crds = kubernetes.client.CustomObjectsApi()
 
         try:
             crds.delete_namespaced_custom_object(*self._model_training_info, name.lower(),
-                                                 V1DeleteOptions(propagation_policy='Foreground',
-                                                                 grace_period_seconds=0))
+                                                 V1DeleteOptions(propagation_policy='Foreground'))
         except ApiException as e:
             if e.status != 404:
                 raise e
@@ -504,12 +503,10 @@ class K8s:
         nodes = core_api.list_node().items
         return nodes
 
-    def wait_node_scale_down(self, expected_count, timeout=600, sleep=60):
+    def wait_nodes_scale_down(self, node_taint_key, node_taint_value, timeout=600, sleep=60):
         """
         Wait finish of last job build
 
-        :param expected_count: expected node count
-        :type expected_count: int
         :raises: Exception
         :return: None
         """
@@ -522,15 +519,25 @@ class K8s:
         time.sleep(sleep)
 
         while True:
-            nodes_num = len(core_api.list_node().items)
+            nodes_num = 0
+
+            for node in core_api.list_node().items:
+                if not node.spec.taints:
+                    continue
+
+                for taint in node.spec.taints:
+                    if taint.key == node_taint_key and taint.value == node_taint_value:
+                        nodes_num += 1
+                        break
+
             elapsed = time.time() - start
-            if nodes_num == expected_count:
+
+            if nodes_num == 0:
                 print('Scaled node was successfully unscaled after {} seconds'
                       .format(elapsed))
                 return
             elif elapsed > timeout > 0:
                 raise Exception('Node was not unscaled after {} seconds wait'.format(timeout))
             else:
-                print('Current node count {}, but not as expected {}. Sleep {} seconds and try again'
-                      .format(nodes_num, expected_count, sleep))
+                print(f'Current node count {nodes_num}. Sleep {sleep} seconds and try again')
                 time.sleep(sleep)

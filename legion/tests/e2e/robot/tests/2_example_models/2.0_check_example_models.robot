@@ -54,6 +54,8 @@ Test model pipeline result
 
     Ensure metric present  ${model_id}  ${model_version}  ${MODEL_WITH_PROPS_ENDPOINT}
 
+    Shell  legionctl md delete ${model_name}
+
 *** Test Cases ***
 Running, waiting and checks jobs in Jenkins
     [Documentation]  Build and check every example in Jenkins

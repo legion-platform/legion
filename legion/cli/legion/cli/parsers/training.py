@@ -21,6 +21,8 @@ import logging
 import time
 
 from http.client import HTTPException
+
+from requests import RequestException
 from texttable import Texttable
 
 from legion.cli.parsers import security, prepare_resources, add_resources_params, print_training_logs
@@ -186,8 +188,8 @@ def wait_training_finish(args: argparse.Namespace, mt_name: str, mt_client: Mode
                 for msg in mt_client.log(mt.name, follow=True):
                     print_training_logs(msg)
 
-        except (WrongHttpStatusCode, HTTPException):
-            LOGGER.info('Callback have not confirmed completion of the operation')
+        except (WrongHttpStatusCode, HTTPException, RequestException) as e:
+            LOGGER.info('Callback have not confirmed completion of the operation. Exception: %s', str(e))
 
         LOGGER.debug('Sleep before next request')
         time.sleep(DEFAULT_WAIT_TIMEOUT)

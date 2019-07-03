@@ -8,6 +8,19 @@ Library             legion.robot.libraries.utils.Utils
 Force Tags          core  security  auth
 Test Setup          Choose cluster context            ${CLUSTER_NAME}
 
+*** Keywords ***
+
+Url stay the same after dex log in
+    [Arguments]  ${service_url}
+    ${resp}=  Wait Until Keyword Succeeds  2m  5 sec  Wait Until Keyword Succeeds  2m  5 sec  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
+    should be equal  ${service_url}  ${resp.url}
+
+Dex should raise auth error
+    [Arguments]  ${service_url}
+    ${resp}=  Wait Until Keyword Succeeds  2m  5 sec  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  admin  admin
+    Log              Response for ${service_url} is ${resp}
+    Should contain   ${resp.text}    Invalid Email Address and password
+
 *** Test Cases ***
 Service url stay the same after log in
     [Tags]  apps

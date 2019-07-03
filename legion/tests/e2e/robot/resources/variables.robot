@@ -15,3 +15,5 @@ ${FEEDBACK_PARTITIONING_PATTERN}      year=%Y/month=%m/day=%d/%Y%m%d%H
 ${GRAFANA_MAIN_DASHBOARD_UID}         f000cf13-581b-459c-b35e-f5d89fded48f
 ${TEST_VCS}                           legion
 ${LEGION_ENTITIES_DIR}                ${CURDIR}/entities
+${NODE_TAINT_KEY}                     dedicated
+${NODE_TAINT_VALUE}                   jenkins-slave
