@@ -186,20 +186,6 @@ Get token from EDI
               Should not be equal   ${res.rc}  ${0}
               Should contain        ${res.stderr}  Credentials are not correct
 
-Get token from EDI with expiration date set
-    [Documentation]  Try to get token from EDI and set it`s expiration date
-    ${expiration_date} =    Get future time           ${40}  %Y-%m-%dT%H:%M:%S
-    Log  ${expiration_date}
-    ${res} =                StrictShell                   legionctl --verbose generate-token --expiration-date ${expiration_date} --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION}
-                            Log  ${res.stdout}
-    ${token} =              Set variable          ${res.stdout}
-    ${res}=                 StrictShell           legionctl --verbose model info --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --jwt ${token}
-                            Should not contain    ${res.stdout}    401 Authorization Required
-                            Should contain        ${res.stdout}    ${TEST_MODEL_ID}
-                            Should contain        ${res.stdout}    ${TEST_MODEL_VERSION}
-
-    Wait Until Keyword Succeeds  3 min  5 sec  FailedShell  legionctl --verbose model info --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --jwt ${token}
-
 Deploy fails when memory resource is incorect
     [Setup]         Run EDI undeploy model without version and check    ${TEST_MODEL_NAME}
     [Documentation]  Deploy fails when memory resource is incorect

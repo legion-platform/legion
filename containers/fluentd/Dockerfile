@@ -17,4 +17,7 @@
 FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
 
 # Install fluentd-s3 plugin
-RUN gem install -N fluent-plugin-s3 -v '~>1.1.4'
+RUN gem install -N fluent-plugin-s3 -v '~>1.1.4' --no-document
+
+# Install fluentd-gcs plugin
+RUN gem install -N fluent-plugin-gcs -v "0.4.0" --no-document

@@ -27,7 +27,7 @@ AUTHENTICATION_HOSTNAME = 'https://dex.{}/'
 PARAM_NAME_LOGIN = 'login'
 PARAM_NAME_PASSWORD = 'password'
 SESSION_ID_COOKIE_NAMES = ('_oauth2_proxy', 'JSESSION')
-AUTH_ENDPOINT_URLS = ('https://dashboard.{}/',)
+AUTH_ENDPOINT_URLS = ('https://grafana.{}/',)
 AUTH_RETRY_TIMEOUT = 10
 NUMBER_AUTH_RETRIES = 10
 

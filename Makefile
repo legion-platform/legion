@@ -21,6 +21,8 @@ TAG=
 DOCKER_REGISTRY=
 HELM_ADDITIONAL_PARAMS=
 SANDBOX_IMAGE=legion/python-toolchain:latest
+# Specify gcp auth keys
+GOOGLE_APPLICATION_CREDENTIALS=
 
 -include .env
 

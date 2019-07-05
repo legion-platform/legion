@@ -47,6 +47,12 @@ RUN curl -fsSLO https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSI
     tar xzf /tmp/helm/helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm && \
     mv /tmp/helm/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm
 
+# Install gcloud
+RUN CLOUD_SDK_REPO="cloud-sdk-bionic" && \
+    echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    apt-get update -y && apt-get install google-cloud-sdk -y
+
 # Used for robot tests
 COPY examples /opt/legion/
 

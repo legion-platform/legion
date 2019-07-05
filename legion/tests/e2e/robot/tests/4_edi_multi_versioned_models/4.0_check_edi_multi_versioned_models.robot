@@ -42,11 +42,11 @@ Check EDI deploy 2 models with different versions but the same id
     [Tags]  apps
     ${resp}=        Shell  legionctl --verbose md create ${TEST_MODEL_NAME_1} --image ${TEST_MODEL_IMAGE_1}
                     Should Be Equal     ${resp.rc}         ${0}
-    ${resp}=        Check model started             ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}
+    ${resp}=        Wait Until Keyword Succeeds  1m  0 sec  Check model started             ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_1}
                     Should contain                  ${resp}                 'model_version': '${TEST_MODEL_VERSION_1}'
     ${resp}=        Shell  legionctl --verbose md create ${TEST_MODEL_NAME_2} --image ${TEST_MODEL_IMAGE_2}
                     Should Be Equal     ${resp.rc}         ${0}
-    ${resp}=        Check model started             ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_2}
+    ${resp}=        Wait Until Keyword Succeeds  1m  0 sec  Check model started             ${TEST_MODEL_ID}    ${TEST_MODEL_VERSION_2}
                     Should contain                  ${resp}                 'model_version': '${TEST_MODEL_VERSION_2}'
 
 Check EDI undeploy 1 of 2 models with different versions but the same id

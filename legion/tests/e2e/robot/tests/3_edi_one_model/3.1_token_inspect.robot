@@ -164,3 +164,18 @@ Check EDI enclave inspect procedure without deployed model
     ${resp}=        Shell  legionctl --verbose md get
                     Should Be Equal As Integers    ${resp.rc}          0
                     Should Not Contain             ${resp.stdout}      ${TEST_MODEL_NAME}
+
+Get token from EDI with expiration date set
+    [Documentation]  Try to get token from EDI and set it`s expiration date
+    [Tags]  one_version  apps
+    ${expiration_date} =    Get future time           ${40}  %Y-%m-%dT%H:%M:%S
+    Log  ${expiration_date}
+    ${res} =                StrictShell                   legionctl --verbose generate-token --expiration-date ${expiration_date} --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION}
+                            Log  ${res.stdout}
+    ${token} =              Set variable          ${res.stdout}
+    ${res}=                 StrictShell           legionctl --verbose model info --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --jwt ${token}
+                            Should not contain    ${res.stdout}    401 Authorization Required
+                            Should contain        ${res.stdout}    ${TEST_MODEL_ID}
+                            Should contain        ${res.stdout}    ${TEST_MODEL_VERSION}
+
+    Wait Until Keyword Succeeds  3 min  5 sec  FailedShell  legionctl --verbose model info --model-id ${TEST_MODEL_ID} --model-version ${TEST_MODEL_VERSION} --jwt ${token}

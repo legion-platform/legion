@@ -23,8 +23,8 @@ data:
     </filter>
 
     {{- if .Values.feedback.output }}
+    # {{ .Values.feedback.output.target }} output
     {{- if eq .Values.feedback.output.target "s3"}}
-    # S3 output
     <match *>
       @type s3
 
@@ -44,27 +44,43 @@ data:
       s3_region {{ required "S3 region values is required" .Values.feedback.output.s3.region }}
 
       # Storing
-      path {{ .Values.feedback.output.s3.path }}
-      s3_object_key_format {{ .Values.feedback.output.s3.objectKeyFormat }}
-      time_slice_format {{ .Values.feedback.output.s3.timeSliceFormat }}
-      time_slice_wait {{ .Values.feedback.output.s3.timeSliceWait }}
+      s3_object_key_format {{ .Values.feedback.output.objectKeyFormat }}
+    {{- end }}
+    {{- if eq .Values.feedback.output.target "gcs"}}
+    <match *>
+      @type gcs
+
+      {{- if eq .Values.feedback.output.gcs.authorization "keyfile" }}
+      # Auth based on secrets from HELM configuration
+      # Secrets are attached as secretKeyRefs from "{{ .Release.Name }}-fluentd-secret" secret
+      project {{ .Values.feedback.output.gcs.project }}
+      keyfile /opt/fluent-keyfile/keyfile.json
+
+      {{- end }}
+
+      # Storing
+      bucket {{ required "GCS bucket value is required" .Values.feedback.output.gcs.bucket }}
+      object_key_format {{ .Values.feedback.output.objectKeyFormat }}
+    {{- end }}
+      path {{ .Values.feedback.output.path }}
+      store_as {{ .Values.feedback.output.storeAs }}
+      time_slice_format {{ .Values.feedback.output.timeSliceFormat }}
+      time_slice_wait {{ .Values.feedback.output.timeSliceWait }}
       utc
-      store_as {{ .Values.feedback.output.s3.storeAs }}
 
       # Buffering
       <buffer tag,time,model_id,model_version>
         @type file
-        path {{ .Values.feedback.output.s3.buffering.path }}/default
-        timekey {{ .Values.feedback.output.s3.buffering.timekey }}
-        timekey_wait {{ .Values.feedback.output.s3.buffering.timekeyWait }}
+        path {{ .Values.feedback.output.buffering.path }}/default
+        timekey {{ .Values.feedback.output.buffering.timekey }}
+        timekey_wait {{ .Values.feedback.output.buffering.timekeyWait }}
         timekey_use_utc true
       </buffer>
 
       # Formatting
       <format>
-        @type {{ .Values.feedback.output.s3.format }}
+        @type {{ .Values.feedback.output.format }}
       </format>
     </match>
-    {{- end }}
     {{- end }}
 {{- end }}

@@ -19,20 +19,17 @@ Checking if all replica sets, stateful sets, deployments are up and running
     [Documentation]  Gather information from kubernetes through API and check state of all required componens
     [Tags]  k8s  infra
     :FOR    ${enclave}    IN    @{ENCLAVES}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edge          namespace=${enclave}
-    \  Deployment is running   ${DEPLOYMENT}-${enclave}-edi           namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-edge          namespace=${enclave}
+    \  Deployment is running   ${DEPLOYMENT}-edi           namespace=${enclave}
 
 Check Vertical Scailing
     [Documentation]  Start the fat pod to test vertical scailing
     [Tags]  k8s  scaling  infra
     [Setup]  Delete fat pod
     [Teardown]  Delete fat pod
-    Get cluster nodes and their count    before
 
-    Start fat pod
+    Start fat pod  ${NODE_TAINT_KEY}  ${NODE_TAINT_VALUE}
     Wait fat pod completion
     Delete fat pod
 
-    Get cluster nodes and their count    after
-    Should Not Be Equal As Integers    ${NODES_COUNT_BEFORE}    ${NODES_COUNT_AFTER}
-    Wait node scale down           ${NODES_COUNT_BEFORE}  900
+    Wait nodes scale down  ${NODE_TAINT_KEY}  ${NODE_TAINT_VALUE}  1800
