@@ -57,9 +57,10 @@ RUN pip3 install --disable-pip-version-check jupyterlab==$JUPYTERLAB_VERSION
 # Run installation w/o any code to warm up nodejs cache
 RUN jupyter lab build
 
-# Copy and install Legion's plugin
+# Copy and install (w/o rebuild) Legion's plugin and git plugin (optional for jupyterlab)
 COPY --from=plugin-frontend-builder /opt/legion-plugin/jupyter_legion-*.tgz jupyter_legion.tgz
-RUN jupyter labextension install jupyter_legion.tgz
+RUN jupyter labextension install --no-build jupyter_legion.tgz && \
+    jupyter labextension install @jupyterlab/git
 # We have to remove folder with node_modules and other build-related staff that is not required for running
 RUN rm -rf /usr/local/share/jupyter/lab/staging
 
@@ -96,6 +97,8 @@ RUN pip3 install --no-deps -e legion/sdk && \
     pip3 install --no-deps -e legion/toolchains/python && \
     pip3 install --no-deps -e legion/cli && \
     pip3 install -e legion/jupyterlab-plugin && \
+    pip3 install jupyterlab-git && \
     jupyter serverextension enable --py legion.jupyterlab && \
+    jupyter serverextension enable --py jupyterlab_git && \
     echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc && \
     cat /opt/legion/legion-doc.txt > /etc/motd
