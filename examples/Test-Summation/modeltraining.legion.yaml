@@ -9,3 +9,10 @@ spec:
   vcsName: legion
   workDir: "examples/Test-Summation"
   entrypoint: "Summation.ipynb"
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 128m
+    limits:
+      memory: 256Mi
+      cpu: 256m

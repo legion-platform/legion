@@ -9,3 +9,10 @@ spec:
   vcsName: legion
   workDir: "examples/MovieLens"
   entrypoint: "surprise.v3.py"
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 128m
+    limits:
+      memory: 256Mi
+      cpu: 256m
