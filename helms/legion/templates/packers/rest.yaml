@@ -9,4 +9,44 @@ metadata:
 spec:
   entrypoint: "/usr/local/bin/legion-pack-to-rest"
   defaultImage: "{{ include "legion.image-name" (dict "root" . "service" .Values.packers.rest "tpl" "%spacker-rest:%s") }}"
+  schema:
+    required:
+      - dockerfilePush
+    properties:
+      dockerfilePush:
+        description: Push built Docker image to. It works only if dockerfileBuild is true.
+        type: string
+        default: ''
+      dockerfileAddCondaInstallation:
+        description: Add conda installation code to Dockerfile
+        type: boolean
+        default: true
+      dockerfileBaseImage:
+        description: Base image for Dockerfile.
+        type: string
+        default: 'python:3.6'
+      dockerfileCondaEnvsLocation:
+        description: Conda env location in Dockerfile.
+        type: string
+        default: /opt/conda/envs/
+      host:
+        description: Host to bind.
+        type: string
+        default: 0.0.0.0
+      port:
+        description: Port to bind.
+        type: integer
+        default: 5000
+      timeout:
+        description: Serving timeout in seconds.
+        type: integer
+        default: 60
+      workers:
+        description: Count of serving workers.
+        type: integer
+        default: 1
+      threads:
+        description: Count of serving threads.
+        type: integer
+        default: 4
 {{- end }}

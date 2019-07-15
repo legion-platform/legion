@@ -77,6 +77,30 @@ class LegionProjectManifest(pydantic.BaseModel):
     toolchain: typing.Optional[LegionProjectManifestToolchain]
 
 
+class PackagingResourceArguments(pydantic.BaseModel):
+    """
+    Legion Packaging Resource Arguments
+    """
+
+    dockerfilePush: str
+    dockerfileAddCondaInstallation: bool
+    dockerfileBaseImage: str
+    dockerfileCondaEnvsLocation: str
+    host: str
+    port: int
+    timeout: int
+    workers: int
+    threads: int
+
+
+class PackagingResource(pydantic.BaseModel):
+    """
+    Legion Packaging Resource
+    """
+
+    arguments: PackagingResourceArguments
+
+
 def get_model_manifest(model: str) -> LegionProjectManifest:
     """
     Extract model manifest from file to object
@@ -192,48 +216,13 @@ def load_template(template_name) -> str:
         return template_stream.read()
 
 
-@click.command()
-@click.argument('model', type=click.Path())
-@click.argument('output_folder', type=click.Path())
-@click.option('--conda-env',
-              type=click.Choice(['create', 'update'], case_sensitive=False),
-              default='create', show_default=True,
-              help='Mode for working with env - create new env or update existed')
-@click.option('--ignore-conda',
-              is_flag=True,
-              help='Do not do any actions with conda. It does not affect Dockerfile.')
-@click.option('--conda-env-name',
-              type=str, default=None, show_default=True,
-              help='Set specific conda env name')
-@click.option('--dockerfile',
-              is_flag=True,
-              help='Create Dockerfile in target folder')
-@click.option('--dockerfile-add-conda-installation',
-              is_flag=True,
-              help='Add conda installation section to Dockerfile (may be not compatible with base docker image)')
-@click.option('--dockerfile-base-image',
-              type=str, default='python:3.6', show_default=True,
-              help='Set base image for Dockerfile')
-@click.option('--dockerfile-conda-envs-location',
-              type=str, default='/opt/conda/envs/', show_default=True,
-              help='Location of conda envs in Docker image')
-@click.option('--host',
-              type=str, default='0.0.0.0', show_default=True)
-@click.option('--port',
-              type=int, default=5000, show_default=True)
-@click.option('--timeout',
-              type=int, default=60, show_default=True)
-@click.option('--workers',
-              type=int, default=1, show_default=True)
-@click.option('--threads',
-              type=int, default=4, show_default=True)
-def work(model, output_folder, conda_env, ignore_conda, conda_env_name,
-         dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
-         host, port, timeout, workers, threads):
+def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
+          dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
+          host, port, timeout, workers, threads):
     """
     Create REST API wrapper (does packaging) from Legion's General Python Prediction Interface (GPPI)
 
-    :param model: Path to Legion's General Python Prediction Interface (GPPI) (zip archive or unpacked to folder)
+    :param model: Path to Legion's General Python Prediction Interface (GPPI) (zip archive unpacked to folder)
     :type model: str
     :param output_folder: Path to save results to
     :type output_folder: str
@@ -268,8 +257,6 @@ def work(model, output_folder, conda_env, ignore_conda, conda_env_name,
 
     # Output status to console
     output(f'Trying to make REST service from model {model} in {output_folder}')
-
-    # TODO: Add unpacking
 
     # Parse and validate manifest
     manifest = get_model_manifest(model)
@@ -385,5 +372,59 @@ def work(model, output_folder, conda_env, ignore_conda, conda_env_name,
         make_executable(dockerfile_target)
 
 
+@click.command()
+@click.argument('model', type=click.Path())
+@click.argument('output_folder', type=click.Path())
+@click.option('--conda-env',
+              type=click.Choice(['create', 'update'], case_sensitive=False),
+              default='create', show_default=True,
+              help='Mode for working with env - create new env or update existed')
+@click.option('--ignore-conda',
+              is_flag=True,
+              help='Do not do any actions with conda. It does not affect Dockerfile.')
+@click.option('--conda-env-name',
+              type=str, default=None, show_default=True,
+              help='Set specific conda env name')
+@click.option('--dockerfile',
+              is_flag=True,
+              help='Create Dockerfile in target folder')
+@click.option('--dockerfile-add-conda-installation',
+              is_flag=True,
+              help='Add conda installation section to Dockerfile (may be not compatible with base docker image)')
+@click.option('--dockerfile-base-image',
+              type=str, default='python:3.6', show_default=True,
+              help='Set base image for Dockerfile')
+@click.option('--dockerfile-conda-envs-location',
+              type=str, default='/opt/conda/envs/', show_default=True,
+              help='Location of conda envs in Docker image')
+@click.option('--host',
+              type=str, default='0.0.0.0', show_default=True)
+@click.option('--port',
+              type=int, default=5000, show_default=True)
+@click.option('--timeout',
+              type=int, default=60, show_default=True)
+@click.option('--workers',
+              type=int, default=1, show_default=True)
+@click.option('--threads',
+              type=int, default=4, show_default=True)
+def work_cli(model, output_folder, conda_env, ignore_conda, conda_env_name,
+             dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
+             host, port, timeout, workers, threads):
+    """
+    Create REST API wrapper (does packaging) from Legion's General Python Prediction Interface (GPPI)
+    """
+    return _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
+                 dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
+                 host, port, timeout, workers, threads)
+
+
+@click.command()
+@click.argument('model', type=click.Path(exists=True, dir_okay=True, readable=True))
+@click.argument('resource_file', type=click.Path(exists=True, file_okay=True, readable=True))
+def work_resource_file(model, resource_file):
+    pass
+
+
 if __name__ == '__main__':
-    work()
+    work_cli()
+
