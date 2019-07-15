@@ -550,3 +550,13 @@ toolchains:
     # This variable can be uncommented to setup custom image name for python
     # Type: string
     # image: custom-image:1.0
+
+packers:
+  rest:
+    # REST packer could be disabled
+    # Type: bool
+    enabled: true
+
+    # This variable can be uncommented to setup custom image name for REST packer
+    # Type: string
+    # image: custom-image:1.0

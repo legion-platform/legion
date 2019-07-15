@@ -134,6 +134,14 @@ pipeline {
                         }
                     }
                 }
+                stage("Build REST packer Docker image"){
+                    steps {
+                        script {
+                            legion.buildLegionImage('packer-rest', '.', 'containers/ai-packers/rest/Dockerfile')
+                            legion.uploadDockerImage('packer-rest')
+                        }
+                    }
+                }
                 stage('Build pipeline Docker agent') {
                     steps {
                         script {
@@ -314,6 +322,7 @@ pipeline {
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/sdk/dist/legion-*'
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/cli/dist/legion-*'
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/toolchains/python/dist/legion-*'
+                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/packers/rest/dist/legion-*'
                                 """
 
                                 if (env.param_stable_release.toBoolean()) {

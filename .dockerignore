@@ -33,6 +33,7 @@
 !legion/services/**
 !legion/tests/**
 !legion/toolchains/**
+!legion/packer/**
 !scripts/**
 !docs/**
 !examples/**

@@ -1,0 +1,12 @@
+{{- if .Values.packers.rest.enabled -}}
+apiVersion: legion.legion-platform.org/v1alpha1
+kind: PackagingIntegration
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+    {{- include "legion.helm-labels" . | nindent 4 }}
+  name: rest-integration
+spec:
+  entrypoint: "/usr/local/bin/legion-pack-to-rest"
+  defaultImage: "{{ include "legion.image-name" (dict "root" . "service" .Values.packers.rest "tpl" "%spacker-rest:%s") }}"
+{{- end }}

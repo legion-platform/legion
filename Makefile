@@ -78,6 +78,13 @@ install-python-toolchain:
 		python setup.py sdist && \
     	python setup.py bdist_wheel
 
+## install-rest-packer: Install REST packer
+install-rest-packer:
+	cd legion/packer/rest && \
+		pip3 install ${BUILD_PARAMS} -e . && \
+		python setup.py sdist && \
+    	python setup.py bdist_wheel
+
 ## install-robot: Install robot tests
 install-robot:
 	cd legion/robot && \
@@ -92,6 +99,10 @@ docker-build-pipeline-agent:
 ## docker-build-python-toolchain: Build python toolchain docker image
 docker-build-python-toolchain:
 	docker build -t legion/python-toolchain:latest -f containers/toolchains/python/Dockerfile .
+
+## docker-build-rest-packer: Build REST packer docker image
+docker-build-rest-packer:
+	docker build -t legion/packer-rest:latest -f containers/ai-packers/rest/Dockerfile .
 
 ## docker-build-edi: Build edi docker image
 docker-build-edi:
