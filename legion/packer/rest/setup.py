@@ -62,7 +62,7 @@ def extract_version() -> str:
 setup(
     name='legion-packer-rest',
     version=extract_version(),
-    description='Legion\'s gppi to rest CLI',
+    description='Legion\'s GPPI to rest CLI',
     packages=find_namespace_packages(),
     url='https://github.com/legion-platform/legion',
     author='Legion Platform Team',

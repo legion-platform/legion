@@ -14,7 +14,7 @@ spec:
       - dockerfilePush
     properties:
       dockerfilePush:
-        description: Push built Docker image to. It works only if dockerfileBuild is true.
+        description: Push built Docker image to. By default name of source model is used
         type: string
         default: ''
       dockerfileAddCondaInstallation:

@@ -3,11 +3,10 @@ kind: ModelTraining
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  annotations:
-    version: "0.9"
-    name: movie-lens
   name: movie-lens-training
 spec:
+  name: movie-lens
+  version: "0.9"
   toolchain: python
   vcsName: legion
   workDir: "examples/MovieLens"

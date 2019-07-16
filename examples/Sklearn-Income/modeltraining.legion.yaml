@@ -3,11 +3,10 @@ kind: ModelTraining
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  annotations:
-    version: "1.1"
-    name: income-prediction
   name: sklearn-income-training
 spec:
+  name: income-prediction
+  version: "1.1"
   toolchain: jupyter
   vcsName: legion
   workDir: "examples/Sklearn-Income"
@@ -19,15 +18,3 @@ spec:
     limits:
       memory: 256Mi
       cpu: 256m
-  data:
-  - connection: <Connection Name>
-    localPath: <xxx>
-    filter: "asd/train_1.*"
-
----
-kind: Connection
-type: s3
-login:
-password:
-role: k2iam
-url: <bucket name>

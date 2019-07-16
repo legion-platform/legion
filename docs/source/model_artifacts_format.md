@@ -34,6 +34,11 @@ with [Legion Model Environments](#legion-model-environments) chosen in `binaries
 
 * `model` - section that describes where model artifacts is. Model artifact format depends on [Legion Model Environment](#legion-model-environments).
 
+* `model.name` - name of model, `[a-Z0-9\-]+` string that does not start from digit.
+
+* `model.version` - version of model. Format is `<Apache Version>-<Additional suffix>`, 
+where `Additional suffix` is a `[a-Z0-9\-\.]+` string.
+
 * `model.workDir` - working directory to start model from.
 
 * `model.entrypoint` - name of model artifact (e.g. Python module or Java JAR file).
@@ -57,6 +62,8 @@ binaries:
   dependencies: conda
   conda_path: mlflow/model/mlflow_env.yml
 model:
+  name: wine-quality
+  version: 1.0.0-12333122
   workDir: mlflow/model
   entrypoint: entrypoint
 legionVersion: '1.0'
