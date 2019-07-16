@@ -3,6 +3,9 @@ kind: ModelTraining
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
+  annotations:
+    version: "1.0"
+    name: digit-recognition-training
   name: digit-recognition
 spec:
   toolchain: jupyter
