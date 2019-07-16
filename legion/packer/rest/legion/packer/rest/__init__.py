@@ -17,4 +17,4 @@
 Init file
 """
 from legion.packer.rest.version import __version__
-from legion.packer.rest.packer import work
+from legion.packer.rest.packer import work, work_cli, work_resource_file

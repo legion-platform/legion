@@ -18,6 +18,7 @@ import os.path
 import stat
 import io
 import typing
+import logging
 import subprocess
 import shutil
 import uuid
@@ -26,11 +27,15 @@ import click
 import yaml
 import pydantic
 
+from .version import __version__
+
+
 PROJECT_FILE = 'legion.project.yaml'
 LEGION_SUB_PATH_NAME = 'legion_model'
 CONDA_FILE_NAME = 'conda.yaml'
 RESOURCES_FOLDER = os.path.join(os.path.dirname(__file__), 'resources')
 ENTRYPOINT_TEMPLATE = 'entrypoint.sh'
+DESCRIPTION_TEMPLATE = 'description.txt'
 ENTRYPOINT_DOCKER_TEMPLATE = 'entrypoint.docker.sh'
 DOCKERFILE_TEMPLATE = 'Dockerfile'
 DOCKERFILE_CONDA_INST_INSTRUCTIONS_TEMPLATE = 'conda.Dockerfile'
@@ -53,6 +58,8 @@ class LegionProjectManifestModel(pydantic.BaseModel):
     Legion Project Manifest's Model description
     """
 
+    name: str
+    version: str
     workDir: str
     entrypoint: str
 
@@ -125,6 +132,26 @@ def get_model_manifest(model: str) -> LegionProjectManifest:
         raise Exception(f'Legion manifest file is in incorrect format: {valid_error}')
 
 
+def parse_resource_file(resource_file: str) -> PackagingResource:
+    """
+    Extract resource information
+
+    :param resource_file: path to resource file
+    :type resource_file: str
+    :return: None
+    """
+    try:
+        with open(resource_file, 'r') as resource_file_stream:
+            data = yaml.load(resource_file_stream)
+    except yaml.YAMLError as yaml_error:
+        raise Exception(f'Can not parse YAML file: {yaml_error}')
+
+    try:
+        return PackagingResource(**data)
+    except pydantic.ValidationError as valid_error:
+        raise Exception(f'Legion resource file is in incorrect format: {valid_error}')
+
+
 def make_executable(path: str) -> None:
     """
     Make file executable
@@ -152,19 +179,27 @@ def validate_model_manifest(manifest: LegionProjectManifest) -> None:
     if manifest.binaries.dependencies != 'conda':
         raise Exception(f'Unsupported model dependencies type: {manifest.binaries.dependencies}')
 
+    if not manifest.model:
+        raise Exception('Model section is not set')
+
+    if not manifest.legionVersion:
+        raise Exception('legionVersion is not set')
+
     if not manifest.binaries.conda_path:
         raise Exception('Conda path is not set')
 
 
-def output(message: str) -> None:
+def setup_logging(verbose: bool = False) -> None:
     """
-    Pretty print a message to console
+    Setup logging instance
 
-    :param message: message to print
-    :type message: str
-    :return: None
+    :param verbose: use verbose output
+    :type verbose: bool
     """
-    print(f'=== {message} ===')
+    log_level = logging.DEBUG if verbose else logging.INFO
+
+    logging.basicConfig(format='[legion][%(levelname)5s] %(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                        level=log_level)
 
 
 def run(*args: str, cwd=None, stream_output: bool = True):
@@ -180,7 +215,7 @@ def run(*args: str, cwd=None, stream_output: bool = True):
              or exit_code + stdout + stderr.
     """
     args_line = ' '.join(args)
-    output(f'Running command "{args_line}"')
+    logging.info(f'Running command "{args_line}"')
 
     cmd_env = os.environ.copy()
     if stream_output:
@@ -210,15 +245,15 @@ def load_template(template_name) -> str:
     :type template_name: str
     :return: str -- template file content
     """
-    output(f'Loading template file {template_name} from {RESOURCES_FOLDER}')
+    logging.info(f'Loading template file {template_name} from {RESOURCES_FOLDER}')
     template_path = os.path.join(RESOURCES_FOLDER, template_name)
     with open(template_path, 'r') as template_stream:
         return template_stream.read()
 
 
-def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
-          dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
-          host, port, timeout, workers, threads):
+def work(model, output_folder, conda_env, ignore_conda, conda_env_name,
+         dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
+         host, port, timeout, workers, threads):
     """
     Create REST API wrapper (does packaging) from Legion's General Python Prediction Interface (GPPI)
 
@@ -256,7 +291,7 @@ def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
     output_folder = os.path.abspath(output_folder)
 
     # Output status to console
-    output(f'Trying to make REST service from model {model} in {output_folder}')
+    logging.info(f'Trying to make REST service from model {model} in {output_folder}')
 
     # Parse and validate manifest
     manifest = get_model_manifest(model)
@@ -265,26 +300,26 @@ def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
     # Choose name for conda env name
     env_id = str(uuid.uuid4())
     if conda_env_name:
-        output(f'Using specified conda env name {conda_env_name!r} instead of generation')
+        logging.info(f'Using specified conda env name {conda_env_name!r} instead of generation')
         env_id = conda_env_name
     else:
-        output(f'Conda env name {env_id!r} has been generated')
+        logging.info(f'Conda env name {env_id!r} has been generated')
+    conda_dep_list = os.path.join(model, manifest.binaries.conda_path)
 
     if not ignore_conda:
-        output('Working with local conda installation')
+        logging.info('Working with local conda installation')
         if conda_env == 'create':
-            output(f'Creating conda env with name {env_id!r}')
+            logging.info(f'Creating conda env with name {env_id!r}')
             run('conda', 'create', '--yes', '-vv', '--name', env_id)
         else:
-            output('Ignoring creation of conda env due to passed argument')
+            logging.info('Ignoring creation of conda env due to passed argument')
 
         # Install requirements from dep. list
-        conda_dep_list = os.path.join(model, manifest.binaries.conda_path)
-        output(f'Installing mandatory requirements from {conda_dep_list} to {env_id!r}')
+        logging.info(f'Installing mandatory requirements from {conda_dep_list} to {env_id!r}')
         run('conda', 'env', 'update', f'--name={env_id}', f'--file={conda_dep_list}')
 
         # Export conda env
-        output(f'Exporting conda env {env_id}')
+        logging.info(f'Exporting conda env {env_id}')
         _1, stdout, _2 = run('conda', 'env', 'export', '-n', env_id, stream_output=False)
         buffer = io.StringIO(stdout)
         conda_info = yaml.load(buffer)
@@ -293,34 +328,39 @@ def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
         conda_prefix = conda_info.get('prefix')
 
         # Install additional requirements to env (gunicorn)
-        output(f'Installing additional packages (gunicorn) in env {env_id} at {conda_prefix}')
+        logging.info(f'Installing additional packages (gunicorn) in env {env_id} at {conda_prefix}')
         run(f'{conda_prefix}/bin/pip', 'install', 'gunicorn[gevent]')
         run(f'{conda_prefix}/bin/pip', 'install', 'flask')
     else:
-        output(f'Local usage of conda has been disabled due to flag specified')
+        logging.info(f'Local usage of conda has been disabled due to flag specified')
+        conda_prefix = dockerfile_conda_envs_location
 
     # Copying of model to destination subdirectory
     model_location = os.path.join(model, manifest.model.workDir)
     target_model_location = os.path.join(output_folder, LEGION_SUB_PATH_NAME)
-    output(f'Copying {model_location} to {target_model_location}')
+    logging.info(f'Copying {model_location} to {target_model_location}')
     shutil.copytree(model_location, target_model_location)
 
     # Copying of handler function
     handler_location = os.path.join(RESOURCES_FOLDER, f'{HANDLER_MODULE}.py')
     target_handler_location = os.path.join(output_folder, f'{HANDLER_MODULE}.py')
-    output(f'Copying handler {handler_location} to {target_handler_location}')
+    logging.info(f'Copying handler {handler_location} to {target_handler_location}')
     shutil.copy(handler_location, target_handler_location)
 
     # Copying of conda env
     target_conda_env_location = os.path.join(output_folder, CONDA_FILE_NAME)
-    output(f'Copying handler {conda_dep_list} to {target_conda_env_location}')
+    logging.info(f'Copying handler {conda_dep_list} to {target_conda_env_location}')
     shutil.copy(conda_dep_list, target_conda_env_location)
 
     # Building of variables for template file and generating of output
     entrypoint_template = load_template(ENTRYPOINT_TEMPLATE)
     entrypoint_docker_template = load_template(ENTRYPOINT_TEMPLATE)
-    output(f'Building context for template')
+    logging.info(f'Building context for template')
     context = {
+        'model_name': manifest.model.name,
+        'model_version': manifest.model.version,
+        'legion_version': manifest.legionVersion,
+        'packer_version': __version__,
         'path': f'{conda_prefix}/bin',
         'path_docker': f'{dockerfile_conda_envs_location}/{env_id}/bin',
         'conda_env_name': env_id,
@@ -346,14 +386,22 @@ def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
 
     # Saving formatted string to file
     entrypoint_target = os.path.join(output_folder, ENTRYPOINT_TEMPLATE)
-    output(f'Dumping {ENTRYPOINT_TEMPLATE} to {entrypoint_target}')
+    logging.info(f'Dumping {ENTRYPOINT_TEMPLATE} to {entrypoint_target}')
     with open(entrypoint_target, 'w') as out_stream:
         out_stream.write(final_entrypoint)
     make_executable(entrypoint_target)
 
+    # Save description file
+    description_template = load_template(DESCRIPTION_TEMPLATE)
+    description_target = os.path.join(output_folder, DESCRIPTION_TEMPLATE)
+    logging.info(f'Dumping {DESCRIPTION_TEMPLATE} to {entrypoint_target}')
+    description_data = description_template.format(**context)
+    with open(description_target, 'w') as out_stream:
+        out_stream.write(description_data)
+
     if dockerfile:
         entrypoint_docker_target = os.path.join(output_folder, ENTRYPOINT_DOCKER_TEMPLATE)
-        output(f'Dumping {ENTRYPOINT_DOCKER_TEMPLATE} to {entrypoint_target}')
+        logging.info(f'Dumping {ENTRYPOINT_DOCKER_TEMPLATE} to {entrypoint_target}')
         with open(entrypoint_docker_target, 'w') as out_stream:
             out_stream.write(final_entrypoint_docker)
 
@@ -365,7 +413,7 @@ def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
         dockerfile_template = load_template(DOCKERFILE_TEMPLATE)
         dockerfile_content = dockerfile_template.format(**context)
         dockerfile_target = os.path.join(output_folder, DOCKERFILE_TEMPLATE)
-        output(f'Dumping {DOCKERFILE_TEMPLATE} to {dockerfile_target}')
+        logging.info(f'Dumping {DOCKERFILE_TEMPLATE} to {dockerfile_target}')
 
         with open(dockerfile_target, 'w') as out_stream:
             out_stream.write(dockerfile_content)
@@ -407,22 +455,45 @@ def _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
               type=int, default=1, show_default=True)
 @click.option('--threads',
               type=int, default=4, show_default=True)
+@click.option('--verbose',
+              is_flag=True,
+              help='Verbose output')
 def work_cli(model, output_folder, conda_env, ignore_conda, conda_env_name,
              dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
-             host, port, timeout, workers, threads):
+             host, port, timeout, workers, threads, verbose):
     """
     Create REST API wrapper (does packaging) from Legion's General Python Prediction Interface (GPPI)
     """
-    return _work(model, output_folder, conda_env, ignore_conda, conda_env_name,
-                 dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
-                 host, port, timeout, workers, threads)
+    setup_logging(verbose)
+    return work(model, output_folder, conda_env, ignore_conda, conda_env_name,
+                dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
+                host, port, timeout, workers, threads)
 
 
 @click.command()
 @click.argument('model', type=click.Path(exists=True, dir_okay=True, readable=True))
 @click.argument('resource_file', type=click.Path(exists=True, file_okay=True, readable=True))
-def work_resource_file(model, resource_file):
-    pass
+@click.option('--verbose',
+              is_flag=True,
+              help='Verbose output')
+def work_resource_file(model, resource_file, verbose):
+    setup_logging(verbose)
+    resource_info = parse_resource_file(resource_file)
+
+    return work(model,
+                output_folder,
+                conda_env='create',
+                ignore_conda=True,
+                conda_env_name='',
+                dockerfile=True,
+                dockerfile_base_image=resource_info.arguments.dockerfileBaseImage,
+                dockerfile_add_conda_installation=resource_info.arguments.dockerfileAddCondaInstallation,
+                dockerfile_conda_envs_location=resource_info.arguments.dockerfileCondaEnvsLocation,
+                host=resource_info.arguments.host,
+                port=resource_info.arguments.port,
+                timeout=resource_info.arguments.timeout,
+                workers=resource_info.arguments.workers,
+                threads=resource_info.arguments.threads)
 
 
 if __name__ == '__main__':
