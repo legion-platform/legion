@@ -13,8 +13,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from legion.packer.rest.packer import work_resource_file
 
 
-if __name__ == '__main__':
-    work_resource_file()
+def build_image_name(model_name: str, model_version: str) -> str:
+    return f'{model_name}:{model_version}'
+
+
+def build_archive_name(model_name: str, model_version: str) -> str:
+    return f'{model_name}-{model_version}.zip'

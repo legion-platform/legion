@@ -13,10 +13,6 @@ spec:
     required:
       - dockerfilePush
     properties:
-      dockerfilePush:
-        description: Push built Docker image to. By default name of source model is used
-        type: string
-        default: ''
       dockerfileAddCondaInstallation:
         description: Add conda installation code to Dockerfile
         type: boolean

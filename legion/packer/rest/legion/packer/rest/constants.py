@@ -13,8 +13,22 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-from legion.packer.rest.packer import work_resource_file
+"""
+Tool constants
+"""
+import os
 
+PROJECT_FILE = 'legion.project.yaml'
+LEGION_SUB_PATH_NAME = 'legion_model'
+CONDA_FILE_NAME = 'conda.yaml'
+RESOURCES_FOLDER = os.path.join(os.path.dirname(__file__), 'resources')
+ENTRYPOINT_TEMPLATE = 'entrypoint.sh'
+DESCRIPTION_TEMPLATE = 'description.txt'
+ENTRYPOINT_DOCKER_TEMPLATE = 'entrypoint.docker.sh'
+DOCKERFILE_TEMPLATE = 'Dockerfile'
+DOCKERFILE_CONDA_INST_INSTRUCTIONS_TEMPLATE = 'conda.Dockerfile'
+HANDLER_MODULE = 'legion_handler'
+HANDLER_APP = 'app'
 
-if __name__ == '__main__':
-    work_resource_file()
+TARGET_DOCKER_REGISTRY = 'docker-registry'
+TARGET_ARCHIVE_STORAGE = 'archive-storage'

@@ -7,6 +7,8 @@ name = "pypi"
 click = "==7.0"
 PyYAML = "==5.1.1"
 pydantic = "==0.29"
+docker = "*"
+apache-libcloud = "*"
 
 [requires]
 python_version = "3.6"
