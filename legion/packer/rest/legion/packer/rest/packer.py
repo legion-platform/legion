@@ -19,10 +19,12 @@ import tempfile
 import click
 
 from .manifest_and_resource import parse_resource_file, extract_connection_from_resource
-from .io_proc_utils import setup_logging, remove_directory, create_zip_archive, upload_file_to_connection
+from .io_proc_utils import setup_logging, remove_directory, create_zip_archive
 from .pipeline import work
-from .constants import TARGET_DOCKER_REGISTRY, TARGET_ARCHIVE_STORAGE
+from .constants import TARGET_DOCKER_REGISTRY, TARGET_ARCHIVE_STORAGE, DOCKERFILE_TEMPLATE, PULL_DOCKER_REGISTRY
 from .utils import build_archive_name, build_image_name
+from .external_storage import upload_file_to_connection
+from .docker import build_docker_image
 
 
 @click.command()
@@ -50,12 +52,6 @@ from .utils import build_archive_name, build_image_name
 @click.option('--dockerfile-conda-envs-location',
               type=str, default='/opt/conda/envs/', show_default=True,
               help='Location of conda envs in Docker image.')
-@click.option('--docker-build',
-              type=str, show_default=True,
-              help='Build Docker image from generated Dockerfile. Ignored if --dockerfile is not set')
-@click.option('--docker-push',
-              type=str, show_default=True,
-              help='Push built image. Ignored if --dockerfile and --docker-build are not set.')
 @click.option('--host',
               type=str, default='0.0.0.0', show_default=True)
 @click.option('--port',
@@ -71,7 +67,6 @@ from .utils import build_archive_name, build_image_name
               help='Verbose output')
 def work_cli(model, output_folder, conda_env, ignore_conda, conda_env_name,
              dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
-             docker_build, docker_push,
              host, port, timeout, workers, threads, verbose):
     """
     Create REST API wrapper (does packaging) from Legion's General Python Prediction Interface (GPPI)
@@ -80,14 +75,6 @@ def work_cli(model, output_folder, conda_env, ignore_conda, conda_env_name,
     work(model, output_folder, conda_env, ignore_conda, conda_env_name,
          dockerfile, dockerfile_base_image, dockerfile_add_conda_installation, dockerfile_conda_envs_location,
          host, port, timeout, workers, threads)
-
-    if docker_build:
-        # Start Docker build
-
-        if docker_push:
-            # Push Docker image to remote
-            pass
-
 
 
 @click.command()
@@ -130,10 +117,16 @@ def work_resource_file(model, resource_file, verbose):
         remove_directory(zip_output_folder)
 
     # Check if docker target is set
+    docker_pull_connection = extract_connection_from_resource(resource_info, PULL_DOCKER_REGISTRY)
     docker_target_connection = extract_connection_from_resource(resource_info, TARGET_DOCKER_REGISTRY)
     if docker_target_connection:
         # Start docker build & push mechanism
-        pass
+        image_name = build_image_name(manifest.model.name, manifest.model.version)
+        build_docker_image(output_folder,
+                           DOCKERFILE_TEMPLATE,
+                           image_name,
+                           docker_target_connection,
+                           docker_pull_connection)
 
     logging.info('Removing temporary directory %r', output_folder)
     remove_directory(output_folder)

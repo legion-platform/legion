@@ -13,16 +13,27 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-FROM python:3.6.8-stretch
-ARG JUPYTERLAB_VERSION
+FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV LANG C.UTF-8
+ENV LANGUAGE C:en
+ENV LC_ALL C.UTF-8
 
 ENV WORK_DIR="/opt/legion"
 WORKDIR "${WORK_DIR}/"
+
+RUN apt-get update -qq && \
+    apt-get install -y python3.6 wget curl python3-pip vim software-properties-common uidmap && \
+    add-apt-repository -y ppa:projectatomic/ppa && \
+    apt-get update -qq && \
+    apt-get -qq -y install buildah iptables libdevmapper-event1.02.1
 
 RUN wget https://github.com/krallin/tini/releases/download/v0.18.0/tini-amd64 -qO /bin/tiny && \
     chmod a+x /bin/tiny
 
 RUN pip3 install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
+
 
 COPY legion/packer/rest/Pipfile legion/packer/rest/Pipfile.lock "${WORK_DIR}/legion/packer/rest/"
 RUN  cd legion/packer/rest && pipenv install --system --three
@@ -30,3 +41,7 @@ RUN  cd legion/packer/rest && pipenv install --system --three
 COPY legion/packer/rest "${WORK_DIR}/legion/packer/rest"
 
 RUN pip3 install --no-deps -e legion/packer/rest
+
+COPY containers/ai-packers/rest/registries.conf \
+     containers/ai-packers/rest/storage.conf \
+       /etc/containers/

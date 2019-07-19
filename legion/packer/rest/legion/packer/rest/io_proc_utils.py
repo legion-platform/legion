@@ -137,13 +137,15 @@ def create_zip_archive(source_folder: str, archive_name: str, target_folder: str
     :return: str -- path to final archive
     """
     target_path = os.path.join(target_folder, archive_name)
+    source_folder = os.path.abspath(source_folder)
+
     # Create archive
-    zipf = zipfile.ZipFile('Python.zip', 'w', zipfile.ZIP_DEFLATED)
-    zipdir('tmp/', zipf)
-    zipf.close()
+    zip_file = zipfile.ZipFile(target_path, 'w', zipfile.ZIP_DEFLATED)
+    for root, dirs, files in os.walk(source_folder):
+        for file in files:
+            local_path = os.path.join(root, file)
+            arcname = local_path.replace(source_folder, '').lstrip(os.path.sep)
+            zip_file.write(local_path, arcname=arcname)
+    zip_file.close()
 
     return target_path
-
-
-def upload_file_to_connection(local_path: str, remote_path: str, connection):
-    pass

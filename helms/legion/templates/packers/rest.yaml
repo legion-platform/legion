@@ -9,6 +9,7 @@ metadata:
 spec:
   entrypoint: "/usr/local/bin/legion-pack-to-rest"
   defaultImage: "{{ include "legion.image-name" (dict "root" . "service" .Values.packers.rest "tpl" "%spacker-rest:%s") }}"
+  privileged: true
   schema:
     required:
       - dockerfilePush

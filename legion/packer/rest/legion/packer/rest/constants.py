@@ -31,4 +31,5 @@ HANDLER_MODULE = 'legion_handler'
 HANDLER_APP = 'app'
 
 TARGET_DOCKER_REGISTRY = 'docker-registry'
+PULL_DOCKER_REGISTRY = 'docker-pull'
 TARGET_ARCHIVE_STORAGE = 'archive-storage'

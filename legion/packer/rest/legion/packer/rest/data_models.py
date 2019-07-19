@@ -83,10 +83,12 @@ class PackagingResourceConnectionBody(pydantic.BaseModel):
     """
 
     type: str
-    login: typing.Optional[str]
+    uri: str
+    user: typing.Optional[str]
     password: typing.Optional[str]
-    endpoint: str
-    annotation: bool
+    secret: typing.Optional[str]
+    key: typing.Optional[str]
+    role: typing.Optional[str]
 
 
 class PackagingResourceConnection(pydantic.BaseModel):

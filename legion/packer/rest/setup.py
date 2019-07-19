@@ -70,7 +70,7 @@ setup(
     license='Apache v2',
     entry_points={
         'console_scripts': [
-            'legion-pack-to-rest=legion.packer.rest:work_cli'
+            'legion-pack-to-rest=legion.packer.rest:work_cli',
             'legion-pack-to-rest-from-resource-file=legion.packer.rest:work_resource_file'
         ],
     },
