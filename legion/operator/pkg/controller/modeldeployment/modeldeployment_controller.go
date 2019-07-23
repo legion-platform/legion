@@ -533,7 +533,7 @@ func (r *ReconcileModelDeployment) reconcileEnvoyAuthFilter(modelDeploymentCR *l
 func (r *ReconcileModelDeployment) getLatestReadyRevision(modelDeploymentCR *legionv1alpha1.ModelDeployment) (string, error) {
 	knativeConfiguration := &knservingv1alpha1.Configuration{}
 	if err := r.Get(context.TODO(), types.NamespacedName{
-		Name: modelDeploymentCR.Name, Namespace: modelDeploymentCR.Namespace,
+		Name: knativeConfigurationName(modelDeploymentCR), Namespace: modelDeploymentCR.Namespace,
 	}, knativeConfiguration); errors.IsNotFound(err) {
 		return "", nil
 	} else if err != nil {
@@ -569,6 +569,14 @@ func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1al
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=serving.knative.dev,resources=configurations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=serving.knative.dev,resources=revisions,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=serving.knative.dev,resources=routes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.internal.knative.dev,resources=certificates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.internal.knative.dev,resources=serverlessservices,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.internal.knative.dev,resources=clusteringresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=caching.internal.knative.dev,resources=images,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling.internal.knative.dev,resources=podautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.istio.io,resources=envoyfilters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -582,6 +590,17 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 
 		return reconcile.Result{}, err
 	}
+
+	for _, finalizer := range modelDeploymentCR.ObjectMeta.Finalizers {
+		if finalizer == metav1.FinalizerDeleteDependents {
+			log.Info(fmt.Sprintf("Found %s finalizer. Skip reconciling", metav1.FinalizerDeleteDependents),
+				"Model Deployment name", modelDeploymentCR.Name)
+
+			return reconcile.Result{}, err
+		}
+	}
+
+	log.Info("Start reconciling of model deployment", "Name", modelDeploymentCR.Name)
 
 	if viper.GetBool(legion.JwtEnabled) {
 		log.Info("Reconcile Auth Filter", "Model Deployment name", modelDeploymentCR.Name)

@@ -108,7 +108,7 @@ Template. Apply good profile, check resources and remove on teardown
     Check model training not exist    ${TRAINING_1_NAME}
     Check model training not exist    ${TRAINING_2_NAME}
     Check model training not exist    ${TRAINING_3_NAME}
-    Check model deployment not exist  ${DEPLOY_1_NAME}
+    Wait Until Keyword Succeeds  3m  5 sec  Check model deployment not exist  ${DEPLOY_1_NAME}
     Apply bulk file and check counters     ${file}  4  0  0
     Check VCS               ${VCS_1_NAME}
     Check model training    ${TRAINING_1_NAME}
@@ -131,7 +131,7 @@ Apply changes on a good profile, remove on teardown
     Check model training not exist    ${TRAINING_1_NAME}
     Check model training not exist    ${TRAINING_2_NAME}
     Check model training not exist    ${TRAINING_3_NAME}
-    Check model deployment not exist  ${DEPLOY_1_NAME}
+    Wait Until Keyword Succeeds  3m  5 sec  Check model deployment not exist  ${DEPLOY_1_NAME}
     Apply bulk file and check counters     correct.legion.yaml     4  0  0
     Check VCS               ${VCS_1_NAME}
     Check model training    ${TRAINING_1_NAME}

@@ -56,5 +56,5 @@ Running, waiting and checks jobs in Jenkins
     [Documentation]  Build and check every example in Jenkins
     [Template]  Test model pipeline result
     md_name=Digit-Recognition
-    #md_name=Test-Summation
-    #md_name=Sklearn-Income
+    md_name=Test-Summation
+    md_name=Sklearn-Income

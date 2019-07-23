@@ -38,6 +38,11 @@ const (
 	updateModelDeploymentUrl         = "/model/deployment"
 	deleteModelDeploymentUrl         = "/model/deployment/:name"
 	deleteModelDeploymentByLabelsUrl = "/model/deployment"
+	defaultGracePeriod               = 10
+)
+
+var (
+	defaultMDDeleteOption = metav1.DeletePropagationForeground
 )
 
 type ModelDeploymentController struct {
@@ -201,6 +206,26 @@ func (controller *ModelDeploymentController) updateMD(c *gin.Context) {
 	routes.AbortWithSuccess(c, http.StatusOK, fmt.Sprintf("Model deployment %s was updated", md.Name))
 }
 
+func (controller *ModelDeploymentController) deleteModelDeployment(mdName string) error {
+	md := &v1alpha1.ModelDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mdName,
+			Namespace: controller.namespace,
+		},
+	}
+
+	if err := controller.k8sClient.Delete(
+		context.TODO(),
+		md,
+		client.GracePeriodSeconds(defaultGracePeriod),
+		client.PropagationPolicy(defaultMDDeleteOption),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // @Summary Delete a Model deployment
 // @Description Delete a Model deployment by name
 // @Tags ModelDeployment
@@ -215,17 +240,8 @@ func (controller *ModelDeploymentController) updateMD(c *gin.Context) {
 func (controller *ModelDeploymentController) deleteMD(c *gin.Context) {
 	mdName := c.Param("name")
 
-	md := &v1alpha1.ModelDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mdName,
-			Namespace: controller.namespace,
-		},
-	}
-
-	if err := controller.k8sClient.Delete(context.TODO(),
-		md,
-	); err != nil {
-		throwK8sError(c, err, fmt.Sprintf("Dlete md with name %s", mdName))
+	if err := controller.deleteModelDeployment(mdName); err != nil {
+		throwK8sError(c, err, fmt.Sprintf("Delete md with name %s", mdName))
 
 		return
 	}
@@ -278,7 +294,7 @@ func (controller *ModelDeploymentController) deleteMDByLabels(c *gin.Context) {
 	for _, md := range mdList.Items {
 		logMD.Info(fmt.Sprintf("Try to delete %s model deployment", md.Name))
 
-		if err := controller.k8sClient.Delete(context.TODO(), &md); err != nil {
+		if err := controller.deleteModelDeployment(md.Name); err != nil {
 			logMD.Error(err, "Model deployment deletion")
 			routes.AbortWithError(c, http.StatusOK, fmt.Sprintf("%s model deployment deletion is failed", md.Name))
 		} else {

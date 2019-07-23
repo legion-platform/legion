@@ -92,6 +92,9 @@ func createEnvironment() (*gin.Engine, client.Client) {
 		panic(err)
 	}
 
+	// For now unit test k8s api doesn't support foreground option
+	defaultMDDeleteOption = metav1.DeletePropagationBackground
+
 	server := gin.Default()
 	v1Group := server.Group("/api/v1")
 	k8Client := mgr.GetClient()

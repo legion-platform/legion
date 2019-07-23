@@ -210,7 +210,7 @@ Check model API feedback with request ID
 
 Check model API logging without request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - without request ID
-    [Tags]  fluentd  aws  kek
+    [Tags]  fluentd  aws
     ${a_value}=             Generate Random String   4   [LETTERS]
     ${b_value}=             Generate Random String   4   [LETTERS]
     ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}

@@ -37,6 +37,7 @@ DEFAULT_WIDTH = 120
 MD_HEADER = ["Name", "State", "Min/Current/Max Replicas", "Service URL"]
 
 DEFAULT_WIDTH_LOCAL = 160
+DELETION_TIMEOUT = 60
 MD_LOCAL_HEADER = ["Name", "Image", "Port", "Model Name", "Model Version"]
 
 LOGGER = logging.getLogger(__name__)
@@ -184,7 +185,7 @@ def delete(args: argparse.Namespace):
 
         return md_client.undeploy(args.name)
 
-    md_client = build_client(args)
+    md_client = build_client(args, timeout=DELETION_TIMEOUT)
 
     md_name = args.name
     if args.filename:
@@ -194,13 +195,51 @@ def delete(args: argparse.Namespace):
         md_name = resource.resource_name
 
     try:
-        message = md_client.delete(md_name) if md_name else md_client.delete_all(_prepare_labels(args))
-        print(message)
+        if md_name:
+            md_client.delete(md_name)
+        else:
+            md_client.delete_all(_prepare_labels(args))
+
+        wait_delete_operation_finish(args, md_name, md_client)
     except WrongHttpStatusCode as e:
         if e.status_code != 404 or not args.ignore_not_found:
             raise e
 
         print(f'Model deployment {md_name} was not found. Ignore')
+
+
+def wait_delete_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
+    """
+    Wait delete operation
+
+    :param md_name: Model Deployment name
+    :param args: command arguments with .model_name, .namespace
+    :param md_client: Model Deployment Client
+
+    :return: None
+    """
+    if args.no_wait:
+        return
+
+    start = time.time()
+    if args.timeout <= 0:
+        raise Exception('Invalid --timeout argument: should be positive integer')
+
+    while True:
+        elapsed = time.time() - start
+        if elapsed > args.timeout:
+            raise Exception('Time out: operation has not been confirmed')
+
+        try:
+            md_client.get(md_name)
+        except WrongHttpStatusCode as e:
+            if e.status_code == 404:
+                print(f'Model deployment {md_name} was deleted')
+                return
+            LOGGER.info('Callback have not confirmed completion of the operation')
+
+        print(f'Model deployment {md_name} is still being deleted...')
+        time.sleep(DEFAULT_WAIT_TIMEOUT)
 
 
 def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
@@ -313,4 +352,5 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pyl
                                   help='ignore if Model Deployment is not found')
     md_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
     security.add_edi_arguments(md_delete_parser)
+    edi.add_arguments_for_wait_operation(md_delete_parser)
     md_delete_parser.set_defaults(func=delete)

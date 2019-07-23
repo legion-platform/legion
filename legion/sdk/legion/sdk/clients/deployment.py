@@ -171,10 +171,12 @@ class ModelDeploymentClient(RemoteEdiClient):
         return self.query(url, action='DELETE')['message']
 
 
-def build_client(args: argparse.Namespace = None) -> ModelDeploymentClient:
+def build_client(args: argparse.Namespace = None, retries=3, timeout=10) -> ModelDeploymentClient:
     """
     Build Model Deployment client from from ENV and from command line arguments
 
+    :param timeout: request timeout in seconds
+    :param retries: number of retries
     :param args: (optional) command arguments with .namespace
     """
     host, token = None, None
@@ -191,7 +193,7 @@ def build_client(args: argparse.Namespace = None) -> ModelDeploymentClient:
         token = token or config.EDI_TOKEN
 
     if host:
-        client = ModelDeploymentClient(host, token)
+        client = ModelDeploymentClient(host, token, retries=retries, timeout=timeout)
     else:
         raise Exception('EDI endpoint is not configured')
 

@@ -46,11 +46,6 @@ Undeploy. Nonexistent model service
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  not found
 
-Undeploy. Nonexistent version of model service
-    [Documentation]  The undeploy command must fail if a model cannot be found by version and name
-    ${res}=  Shell  legionctl --verbose md delete --model-version this-version-does-not-exsit
-             Should be equal  ${res.rc}  ${0}
-
 Undeploy. Nonexistent model service with ignore-not-found parameter
     [Documentation]  The undeploy command must finish successfully if a model does not exists but we there is --ignore-not-found parameter
     ${res}=  Shell  legionctl --verbose md delete this-model-does-not-exsit --ignore-not-found
