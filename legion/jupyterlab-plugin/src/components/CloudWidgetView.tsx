@@ -213,11 +213,7 @@ export class CloudWidgetView extends React.Component<
                   value: deployment.name
                 },
                 {
-                  value:
-                    '' +
-                    deployment.status.availableReplicas +
-                    '/' +
-                    deployment.spec.replicas
+                  value: '' + deployment.status.availableReplicas
                 },
                 {
                   value: deployment.spec.image
@@ -231,16 +227,6 @@ export class CloudWidgetView extends React.Component<
                       this.props.app.commands.execute(
                         CommandIDs.removeCloudDeployment,
                         { name: deployment.name }
-                      );
-                    } else if (button.label === dialog.SCALE_DEPLOYMENT_LABEL) {
-                      this.props.app.commands.execute(
-                        CommandIDs.scaleCloudDeployment,
-                        {
-                          name: deployment.name,
-                          currentAvailableReplicas:
-                            deployment.status.availableReplicas,
-                          currentDesiredReplicas: deployment.spec.replicas
-                        }
                       );
                     }
                   })

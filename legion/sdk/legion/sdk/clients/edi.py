@@ -221,7 +221,7 @@ class RemoteEdiClient:
 
         :param md_role_name: model name
         :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
-        :return: API Mmdel token
+        :return: str -- API Model token
         """
         payload = {'role_name': md_role_name}
 

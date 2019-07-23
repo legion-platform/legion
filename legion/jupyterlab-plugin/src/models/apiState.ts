@@ -14,7 +14,6 @@
  *   limitations under the License.
  */
 import { ISignal, Signal } from '@phosphor/signaling';
-import { IStateDB } from '@jupyterlab/coreutils';
 
 import { ICloudCredentials } from '../api/base';
 import * as cloud from './cloud';
@@ -49,15 +48,13 @@ class APICloudStateImplementation implements IApiCloudState {
   private _dataChanged = new Signal<this, void>(this);
 
   private _credentials?: ICloudCredentials;
-  private _appState: IStateDB;
 
-  constructor(appState: IStateDB) {
+  constructor() {
     this._isLoading = false;
     this._trainings = [];
     this._deployments = [];
     this._vcss = [];
     this._credentials = null;
-    this._appState = appState;
   }
 
   get trainings(): Array<cloud.ICloudTrainingResponse> {
@@ -113,60 +110,40 @@ class APICloudStateImplementation implements IApiCloudState {
 
     if (skipPersisting !== true) {
       if (this._credentials) {
-        Promise.all([
-          this._appState.save(
-            PLUGIN_CREDENTIALS_STORE_CLUSTER,
-            this._credentials.cluster
-          ),
-          this._appState.save(
-            PLUGIN_CREDENTIALS_STORE_TOKEN,
-            this._credentials.authString
-          )
-        ])
-          .then(() => {
-            console.log('Cluster and token have been persisted in settings');
-          })
-          .catch(err => {
-            console.error('Can not persist cluster and token in settings', err);
-          });
+        localStorage.setItem(
+          PLUGIN_CREDENTIALS_STORE_CLUSTER,
+          this._credentials.cluster
+        );
+        localStorage.setItem(
+          PLUGIN_CREDENTIALS_STORE_TOKEN,
+          this._credentials.authString
+        );
       } else {
-        Promise.all([
-          this._appState.remove(PLUGIN_CREDENTIALS_STORE_CLUSTER),
-          this._appState.remove(PLUGIN_CREDENTIALS_STORE_TOKEN)
-        ])
-          .then(() => {
-            console.log('Cluster and token have been removed from storage');
-          })
-          .catch(err => {
-            console.error('Can not remove cluster and token from storage', err);
-          });
+        localStorage.removeItem(PLUGIN_CREDENTIALS_STORE_CLUSTER);
+        localStorage.removeItem(PLUGIN_CREDENTIALS_STORE_TOKEN);
       }
     }
     this._dataChanged.emit(null);
   }
 
   tryToLoadCredentialsFromSettings(): void {
-    Promise.all([
-      this._appState.fetch(PLUGIN_CREDENTIALS_STORE_CLUSTER),
-      this._appState.fetch(PLUGIN_CREDENTIALS_STORE_TOKEN)
-    ])
-      .then(answers => {
-        if (!answers[0]) {
-          console.warn('Empty data loaded from credentials store');
-        } else {
-          let credentials = {
-            cluster: answers[0] as string,
-            authString: answers[1] as string
-          };
-          this.setCredentials(credentials, true);
-        }
-      })
-      .catch(err => {
-        console.error('Can not load credentials from store', err);
-      });
+    const cluster = localStorage.getItem(PLUGIN_CREDENTIALS_STORE_CLUSTER);
+    const authString = localStorage.getItem(PLUGIN_CREDENTIALS_STORE_TOKEN);
+
+    if (cluster && authString) {
+      this.setCredentials(
+        {
+          cluster,
+          authString
+        },
+        true
+      );
+    } else {
+      console.error('Can not load credentials from store');
+    }
   }
 }
 
-export function buildInitialCloudAPIState(appState: IStateDB): IApiCloudState {
-  return new APICloudStateImplementation(appState);
+export function buildInitialCloudAPIState(): IApiCloudState {
+  return new APICloudStateImplementation();
 }

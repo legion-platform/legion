@@ -198,7 +198,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
     @_decorate_handler_for_exception
     def post(self):
         """
-        Get information about cloud deployments
+        Create new cloud deployment
 
         :return: None
         """
@@ -209,7 +209,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
             client.create(data.convert_to_deployment())
             self.finish_with_json()
         except Exception as query_exception:
-            raise HTTPError(log_message='Can not query cloud deployments') from query_exception
+            raise HTTPError(log_message='Can not create new cloud deployment') from query_exception
 
     @_decorate_handler_for_exception
     def delete(self):
@@ -245,7 +245,7 @@ class CloudTokenIssueHandler(BaseCloudLegionHandler):
 
         try:
             client = self.build_cloud_client(RemoteEdiClient)
-            token = client.get_token(data.md_name)
+            token = client.get_token(data.role_name)
             self.finish_with_json({'token': token})
         except Exception as query_exception:
             raise HTTPError(log_message='Can not query cloud deployments') from query_exception
