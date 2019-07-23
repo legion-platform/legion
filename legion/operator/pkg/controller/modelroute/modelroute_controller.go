@@ -42,8 +42,10 @@ import (
 )
 
 const (
-	knativeRevisionHeader  = "knative-serving-revision"
-	knativeNamespaceHeader = "knative-serving-namespace"
+	knativeRevisionHeader    = "knative-serving-revision"
+	knativeNamespaceHeader   = "knative-serving-namespace"
+	defaultRetryAttempts     = 30
+	defaultListOfRetryCauses = "5xx,connect-failure,refused-stream"
 )
 
 var (
@@ -182,9 +184,9 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 				Http: []*v1alpha3_istio.HTTPRoute{
 					{
 						Retries: &v1alpha3_istio.HTTPRetry{
-							Attempts:      30,
+							Attempts:      defaultRetryAttempts,
 							PerTryTimeout: defaultTimeoutPerTry,
-							RetryOn:       "5xx,connect-failure,refused-stream",
+							RetryOn:       defaultListOfRetryCauses,
 						},
 						Match: []*v1alpha3_istio.HTTPMatchRequest{
 							{
@@ -203,9 +205,9 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 					},
 					{
 						Retries: &v1alpha3_istio.HTTPRetry{
-							Attempts:      30,
+							Attempts:      defaultRetryAttempts,
 							PerTryTimeout: defaultTimeoutPerTry,
-							RetryOn:       "5xx,connect-failure,refused-stream",
+							RetryOn:       defaultListOfRetryCauses,
 						},
 						Match: []*v1alpha3_istio.HTTPMatchRequest{
 							{

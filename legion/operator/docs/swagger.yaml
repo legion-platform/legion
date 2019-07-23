@@ -155,7 +155,7 @@ definitions:
         description: Last applied ready knative revision
         type: string
       replicas:
-        description: Current number of pods
+        description: Expected number of pods under current load
         type: integer
       service:
         description: The model k8s service name

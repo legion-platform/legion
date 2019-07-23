@@ -1257,7 +1257,7 @@ var doc = `{
                     "type": "string"
                 },
                 "replicas": {
-                    "description": "Current number of pods",
+                    "description": "Expected number of pods under current load",
                     "type": "integer"
                 },
                 "service": {

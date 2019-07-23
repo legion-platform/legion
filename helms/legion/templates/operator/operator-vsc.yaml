@@ -5,10 +5,10 @@ kind: VCSCredential
 metadata:
   name: "{{ $vcs.name }}"
   annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
   labels:
-    {{- include "legion.helm-labels" $ | nindent 4 }}
+     {{- include "legion.helm-labels" (dict "component" "operator" "root" $ ) | nindent 4 }}
 spec:
   type: "{{ $vcs.type }}"
   uri: "{{ $vcs.uri }}"
