@@ -53,7 +53,7 @@ func Add(mgr manager.Manager) error {
 				Name:      viper.GetString(legion.WebhookServiceName),
 				// Selectors should select the pods that runs this webhook server.
 				Selectors: map[string]string{
-					"app.kubernetes.io/component": "webhook-server",
+					"app.kubernetes.io/component": "legion-webhook-server",
 				},
 			},
 		},

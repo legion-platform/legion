@@ -226,7 +226,7 @@ def build_docker_image(client: docker.client.DockerClient, params: ModelBuildPar
         # Copy additional files for docker build
         additional_directory = os.path.abspath(os.path.join(
             os.path.dirname(__file__),
-            '..', 'templates', 'docker_files'
+            '..', 'templates'
         ))
         utils.copy_directory_contents(additional_directory, temp_directory.path)
 

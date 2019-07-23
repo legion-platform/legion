@@ -66,7 +66,7 @@ type ModelDeploymentStatus struct {
 	ServiceURL string `json:"serviceURL,omitempty"`
 	// Number of available pods
 	AvailableReplicas int32 `json:"availableReplicas,omitempty"`
-	// Current number of pods
+	// Expected number of pods under current load
 	Replicas int32 `json:"replicas,omitempty"`
 	// Last applied ready knative revision
 	LastRevisionName string `json:"lastRevisionName,omitempty"`

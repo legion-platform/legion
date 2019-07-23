@@ -3,18 +3,18 @@ kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-webhook-server"
   labels:
-    {{- include "legion.helm-labels" (dict "component" "webhook-server" "root" .) | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "legion-webhook-server" "root" .) | nindent 4 }}
 spec:
   replicas: {{ .Values.webhook.server.replicas }}
   selector:
     matchLabels:
-      {{- include "legion.helm-labels-for-search" (dict "component" "webhook-server" "root" .) | nindent 6 }}
+      {{- include "legion.helm-labels-for-search" (dict "component" "legion-webhook-server" "root" .) | nindent 6 }}
   template:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
       labels:
-        {{- include "legion.helm-labels" (dict "component" "webhook-server" "root" .) | nindent 8 }}
+        {{- include "legion.helm-labels" (dict "component" "legion-webhook-server" "root" .) | nindent 8 }}
     spec:
       {{- if .Values.rbac }}
       serviceAccountName: "{{ .Release.Name }}-operator"
@@ -61,7 +61,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   labels:
-    {{- include "legion.helm-labels" (dict "component" "webhook-server" "root" .) | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "legion-webhook-server" "root" .) | nindent 4 }}
   name: "{{ .Release.Name }}-webhook-server-secret"
 ---
 apiVersion: v1
@@ -69,10 +69,10 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}-webhook-server"
   labels:
-    {{- include "legion.helm-labels" (dict "component" "webhook-server" "root" .) | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "legion-webhook-server" "root" .) | nindent 4 }}
 spec:
   selector:
-    {{- include "legion.helm-labels-for-search" (dict "component" "webhook-server" "root" .) | nindent 4 }}
+    {{- include "legion.helm-labels-for-search" (dict "component" "legion-webhook-server" "root" .) | nindent 4 }}
   ports:
   - name: metrics
     targetPort: 7777

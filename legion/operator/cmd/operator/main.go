@@ -58,7 +58,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Registerifng Components.")
+	log.Info("Registering Components.")
 
 	log.Info("Setting up Legion scheme")
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
