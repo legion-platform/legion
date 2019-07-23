@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	uriFormat = "/feedback/*any"
+	feedbackUri = "/feedback/*any"
 
 	dataLoggingInstance = "dataLoggingInstance"
 	dataLoggingTag      = "dataLoggingTag"
@@ -41,7 +41,7 @@ type FeedbackResponse struct {
 
 func attachRoutes(router *gin.Engine) {
 	router.GET("/", handleIndex)
-	router.POST(uriFormat, handleFeedbackEndpoint)
+	router.POST(feedbackUri, handleFeedbackEndpoint)
 	router.NoRoute(handleNoRoute)
 
 	p := ginprometheus.NewPrometheus("gin")

@@ -20,6 +20,7 @@ import logging
 from urllib.parse import parse_qs
 
 import flask
+from flask import request
 from legion.sdk import config
 from legion.sdk.containers import headers
 from legion.sdk.utils import normalize_name
@@ -128,6 +129,10 @@ def prepare_response(response_data, model_name=None, model_version=None, model_e
 
     if model_endpoint:
         response.headers[headers.MODEL_ENDPOINT] = normalize_name(model_endpoint)
+
+    request_id = request.headers.get(headers.MODEL_REQUEST_ID) or request.headers.get(headers.REQUEST_ID)
+    if request_id:
+        response.headers[headers.MODEL_REQUEST_ID] = request_id
 
     return response
 

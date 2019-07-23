@@ -19,14 +19,16 @@ package aggregator
 import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/feedback-aggregator/pkg/feedback"
-	"log"
 	"net/http"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/gin-gonic/gin"
 )
 
+var logH = logf.Log.WithName("aggregator-handlers")
+
 func handleIndex(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"links": []string{uriFormat}})
+	c.JSON(http.StatusOK, gin.H{"links": []string{feedbackUri}})
 }
 
 func handleFeedbackEndpoint(c *gin.Context) {
@@ -55,16 +57,25 @@ func handleFeedbackEndpoint(c *gin.Context) {
 		return
 	}
 
-	message.Payload = ParseRequestDataset(c)
+	payload, err := ParseRequestDataset(c)
+	if err != nil {
+		logH.Error(err, "Parsing failed")
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot parse data"})
+		return
+	}
+
+	message.Payload = payload
 
 	logger := c.MustGet(dataLoggingInstance).(feedback.DataLogging)
 	loggerTag := c.MustGet(dataLoggingTag).(string)
 
-	err := logger.Post(loggerTag, message)
+	err = logger.Post(loggerTag, message)
 
 	if err != nil {
+		logH.Error(err, "Cannot deliver message")
+
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Cannot deliver message"})
-		log.Printf("Cannot deliver message: %s\n", err)
 	} else {
 		collectedFeedback.Add(1)
 		c.JSON(http.StatusOK, FeedbackResponse{Message: message})

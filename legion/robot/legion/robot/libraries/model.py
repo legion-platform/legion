@@ -18,6 +18,8 @@ Robot test library - model API
 """
 import requests
 
+from legion.sdk.containers import headers as legion_headers
+
 
 class Model:
     """
@@ -74,9 +76,9 @@ class Model:
         """
         headers = {
             'Authorization': 'Bearer {}'.format(token),
-            'Request-ID': request_id,
-            'x-model-name': model_name,
-            'x-model-version': model_version,
+            legion_headers.MODEL_REQUEST_ID: request_id,
+            legion_headers.MODEL_NAME: model_name,
+            legion_headers.MODEL_VERSION: model_version,
         }
 
         url = f'{edge}/feedback/model/{md_name}/api/model'
@@ -94,7 +96,7 @@ class Model:
 
         return response.json()
 
-    def invoke_model_api(self, md_name, edge, token, endpoint, request_id, **payload):
+    def invoke_model_api(self, md_name, edge, token, endpoint, request_id=None, **payload):
         """
         Invoke model through API
 
@@ -106,7 +108,9 @@ class Model:
         :param payload: payload dict
         :return: dict -- response
         """
-        headers = {'Authorization': 'Bearer {}'.format(token), 'Request-ID': request_id}
+        headers = {'Authorization': 'Bearer {}'.format(token)}
+        if request_id:
+            headers[legion_headers.MODEL_REQUEST_ID] = request_id
 
         url = f'{edge}/model/{md_name}/api/model/invoke/{endpoint}'
 
@@ -121,7 +125,7 @@ class Model:
         if response.status_code != 200:
             raise Exception('Returned wrong status code: {}'.format(response.status_code))
 
-        self._last_response_id = request_id
+        self._last_response_id = response.headers.get(legion_headers.MODEL_REQUEST_ID)
         self._last_response = response.json()
         return self._last_response
 

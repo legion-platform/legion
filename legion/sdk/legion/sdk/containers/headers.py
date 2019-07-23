@@ -19,10 +19,12 @@ legion headers (for meta-information)
 
 STDERR_PREFIX = 'X-Legion-'
 
-MODEL_NAME = 'X-Model-Name'
+REQUEST_ID = 'x-request-id'
+MODEL_REQUEST_ID = 'request-id'
+MODEL_NAME = 'Model-Name'
 MODEL_PATH = 'Model-Path'
-MODEL_VERSION = 'X-Model-Version'
-MODEL_ENDPOINT = 'X-Model-Endpoint'
+MODEL_VERSION = 'Model-Version'
+MODEL_ENDPOINT = 'Model-Endpoint'
 IMAGE_TAG_EXTERNAL = 'Model-Image-Tag-External'
 IMAGE_ID_LOCAL = 'Model-Image-Name-Local'
 IMAGE_TAG_LOCAL = 'Model-Image-Tag-Local'

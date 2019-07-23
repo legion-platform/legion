@@ -207,3 +207,17 @@ Check model API feedback with request ID
     @{desired_a_values}=    Create List    ${a_value}
     @{desired_b_values}=    Create List    ${b_value}
     Validate model feedback log entry params            ${log_entry}   a=${desired_a_values}  b=${desired_b_values}
+
+Check model API logging without request ID and one chunk
+    [Documentation]  Checking that model API log is being persisted - without request ID
+    [Tags]  fluentd  aws  kek
+    ${a_value}=             Generate Random String   4   [LETTERS]
+    ${b_value}=             Generate Random String   4   [LETTERS]
+    ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
+
+    ${response}=   Invoke deployed model  ${TEST_MD_NAME}  a=${a_value}  b=${b_value}
+    Validate model API response      ${response}    result=${expected_response}
+
+    ${request_id}=          Get model API last response ID
+    ${meta_log_entry}=  Validate model feedback  ${request_id}  ${response}  ${expected_response}
+    Validate model API meta log entry POST arguments    ${meta_log_entry}   a=${a_value}  b=${b_value}

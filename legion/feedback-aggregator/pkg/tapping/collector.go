@@ -19,6 +19,8 @@ const (
 	TapUrl                 = "/tap"
 	filterHeaderKey        = ":path"
 	filterRegexHeaderValue = ".*/api/model/invoke.*"
+	urlEncodedHeader       = "application/x-www-form-urlencoded"
+	contentTypeHeader      = "content-type"
 	defaultBufferSize      = 1024 * 1024
 )
 
@@ -159,14 +161,16 @@ func convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.R
 			requestResponse.RequestGetArgs = parseUrlencodedParams(uri.Query())
 		}
 	} else {
-		requestBytes, err := base64.StdEncoding.DecodeString(message.HttpBufferedTrace.Request.Body.AsBytes)
-		if err != nil {
-			// Impossible situation
-			panic(err)
-		}
-		params, err := url.ParseQuery(string(requestBytes))
-		if err == nil {
-			requestResponse.RequestPostArgs = parseUrlencodedParams(params)
+		if header, ok := requestResponse.RequestHttpHeaders[contentTypeHeader]; ok && header == urlEncodedHeader {
+			requestBytes, err := base64.StdEncoding.DecodeString(message.HttpBufferedTrace.Request.Body.AsBytes)
+			if err != nil {
+				// Impossible situation
+				panic(err)
+			}
+			params, err := url.ParseQuery(string(requestBytes))
+			if err == nil {
+				requestResponse.RequestPostArgs = parseUrlencodedParams(params)
+			}
 		}
 	}
 

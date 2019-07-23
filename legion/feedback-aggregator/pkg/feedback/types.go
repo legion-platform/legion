@@ -1,8 +1,8 @@
 package feedback
 
 const (
-	ModelNameHeaderKey       = "x-model-name"
-	ModelVersionHeaderKey    = "x-model-version"
+	ModelNameHeaderKey       = "model-name"
+	ModelVersionHeaderKey    = "model-version"
 	ModelEndpointHeaderKey   = "model-endpoint"
 	RequestIdHeaderKey       = "x-request-id"
 	LegionRequestIdHeaderKey = "request-id"

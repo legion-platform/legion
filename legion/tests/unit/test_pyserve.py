@@ -33,6 +33,7 @@ from legion_test_models import create_simple_summation_model_by_df, \
     create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
     create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
     create_simple_summation_model_lists_with_files_info
+from legion.sdk.containers import headers as legion_headers
 from legion.toolchain.server import pyserve
 
 
@@ -153,6 +154,22 @@ class TestModelApiEndpoints(unittest2.TestCase):
 
             self.assertIsInstance(result, dict, 'Result not a dict')
             self.assertDictEqual(result, {'x': a + b})
+
+    def test_request_id_header(self):
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            a = randint(1, 1000)
+            b = randint(1, 1000)
+            test_request = "bd9aba8c-ad59-11e9-a2a3-2a2ae2dbcce4"
+
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
+                                                      model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
+
+            response = model.client.get(url, headers=[(legion_headers.MODEL_REQUEST_ID, test_request)])
+            self.assertEqual(response.headers.get(legion_headers.MODEL_REQUEST_ID), test_request)
+
+            response = model.client.get(url, headers=[(legion_headers.REQUEST_ID, test_request)])
+            self.assertEqual(response.headers.get(legion_headers.MODEL_REQUEST_ID), test_request)
 
     def test_model_invoke_summation_with_df_post_request(self):
         with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
