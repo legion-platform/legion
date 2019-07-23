@@ -34,7 +34,7 @@ Legion provides:
 * R (not supported yet)
 	
 ## Documentation
-* [Model REST API](legion/docs/source/model_rest_api.md)
+* [Model REST API](docs/source/model_rest_api.md)
 
 ## Changelog
 
