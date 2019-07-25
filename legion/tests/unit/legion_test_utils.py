@@ -770,7 +770,7 @@ class ModelDockerBuilderContainerContext:
         command = 'python3 "{}"'.format(python_file)
         output = self.exec(command, workdir=self.workspace)
 
-        model_id = None
+        model_name = None
         model_version = None
         model_file = None
 
@@ -778,14 +778,14 @@ class ModelDockerBuilderContainerContext:
             if line.startswith(headers.STDERR_PREFIX):
                 line = line[len(headers.STDERR_PREFIX):]
                 header, value = line.split(':', maxsplit=1)
-                if header == headers.MODEL_ID:
-                    model_id = value
+                if header == headers.MODEL_NAME:
+                    model_name = value
                 elif header == headers.MODEL_VERSION:
                     model_version = value
                 elif header == headers.MODEL_PATH:
                     model_file = value
 
-        return model_id, model_version, model_file, output
+        return model_name, model_version, model_file, output
 
     def build_model_container(self, binary_model_file=None):
         """
@@ -823,16 +823,16 @@ class ModelServeTestBuild:
     Context manager for building and testing models with pyserve
     """
 
-    def __init__(self, model_id, model_version, model_builder):
+    def __init__(self, model_name, model_version, model_builder):
         """
         Create context
 
-        :param model_id: id of model (uses for building model and model client)
-        :type model_id: str
+        :param model_name: id of model (uses for building model and model client)
+        :type model_name: str
         :param model_version: version of model (passes to model builder)
         :param model_builder: str
         """
-        self._model_id = model_id
+        self._model_name = model_name
         self._model_version = model_version
         self._model_builder = model_builder
 
@@ -850,9 +850,9 @@ class ModelServeTestBuild:
         :return: self
         """
         try:
-            print('Building model file {} v {}'.format(self._model_id, self._model_version))
+            print('Building model file {} v {}'.format(self._model_name, self._model_version))
             model.reset_context()
-            self._model_builder(self._model_id, self._model_version, self._model_path)
+            self._model_builder(self._model_name, self._model_version, self._model_path)
             print('Model file has been built')
 
             print('Creating pyserve')
@@ -863,10 +863,7 @@ class ModelServeTestBuild:
                 self.application = pyserve.init_application(None)
                 self.application.testing = True
                 self.client = self.application.test_client()
-                self.model_client = ModelClient(self._model_id,
-                                                self._model_version,
-                                                http_client=self.client,
-                                                use_relative_url=True)
+                self.model_client = ModelClient(url=config.MODEL_HOST, http_client=self.client)
 
             return self
         except Exception as build_exception:
@@ -948,7 +945,7 @@ class ModelLocalContainerExecutionContext:
 
         self._image = self._docker_client.images.get(self._image_id)
 
-        self._model_id = self._image.labels[headers.DOMAIN_MODEL_ID]
+        self._model_name = self._image.labels[headers.DOMAIN_MODEL_NAME]
         self._model_version = self._image.labels[headers.DOMAIN_MODEL_VERSION]
 
         self.container = None
@@ -964,7 +961,7 @@ class ModelLocalContainerExecutionContext:
         :return: self
         """
         try:
-            LOGGER.info('Deploying model {} v {} from image {}'.format(self._model_id,
+            LOGGER.info('Deploying model {} v {} from image {}'.format(self._model_name,
                                                                        self._model_version,
                                                                        self._image_id))
 
@@ -1014,7 +1011,7 @@ class ModelLocalContainerExecutionContext:
             LOGGER.info('Building client')
             url = 'http://{}:{}'.format('localhost', self.model_port)
             LOGGER.info('Target URI is {}'.format(url))
-            self.client = ModelClient(self._model_id, self._model_version, host=url)
+            self.client = ModelClient(url)
 
             LOGGER.info('Getting model information')
             self.model_information = self.client.info()

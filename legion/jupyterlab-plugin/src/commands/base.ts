@@ -39,7 +39,6 @@ export namespace CommandIDs {
   // Cloud
   export const removeCloudTraining = 'legion:cloud-training-remove';
   export const newCloudDeployment = 'legion:cloud-deployment-new';
-  export const scaleCloudDeployment = 'legion:cloud-deployment-scale';
   export const removeCloudDeployment = 'legion:cloud-deployment-remove';
   export const issueNewCloudAccessToken = 'legion:cloud-issue-new-token';
   export const openTrainingLogs = 'legion:cloud-training-logs';
@@ -58,7 +57,6 @@ export namespace CommandIDs {
     authorizeOnCluster,
 
     // Cloud
-    scaleCloudDeployment,
     removeCloudDeployment,
     issueNewCloudAccessToken,
     refreshCloud

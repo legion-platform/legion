@@ -30,17 +30,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	istioschema "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme"
+	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 var cfg *rest.Config
 
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crds")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "..", "config", "crds"),
+			filepath.Join("..", "..", "..", "hack", "tests", "thirdparty_crds"),
+		},
 	}
-	apis.AddToScheme(scheme.Scheme)
 
-	var err error
+	err := apis.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	istioschema.AddToScheme(scheme.Scheme)
+
+	if err := knservingv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+
 	if cfg, err = t.Start(); err != nil {
 		stdlog.Fatal(err)
 	}

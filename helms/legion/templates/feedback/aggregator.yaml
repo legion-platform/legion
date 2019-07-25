@@ -1,0 +1,80 @@
+{{ if .Values.feedback.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-feedback-aggregator"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-aggregator" "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.feedback.aggregator.replicas }}
+  selector:
+    matchLabels:
+      {{- include "legion.helm-labels-for-search" (dict "component" "feedback-aggregator" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        {{- include "legion.helm-labels" (dict "component" "feedback-aggregator" "root" .) | nindent 8 }}
+    spec:
+      volumes:
+      - name: config
+        configMap:
+          name: "{{ .Release.Name }}-feedback-aggregator"
+      containers:
+      - name: server
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.aggregator "tpl" "%sk8s-feedback-aggregator:%s") }}"
+        resources:
+          {{- toYaml .Values.feedback.aggregator.resources | nindent 10 }}
+        env:
+        - name: GIN_MODE
+          value: "release"
+        ports:
+        - containerPort: 8080
+          name: api
+          protocol: TCP
+        volumeMounts:
+          - name: config
+            mountPath: "/etc/legion"
+            readOnly: true
+        command:
+          - ./aggregator
+        args:
+          - "--config"
+          - "/etc/legion/config.yaml"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 8
+          failureThreshold: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-feedback-aggregator"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "feedback-aggregator" "root" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "legion.helm-labels-for-search" (dict "component" "feedback-aggregator" "root" .) | nindent 4 }}
+  ports:
+  - name: api
+    targetPort: 8080
+    port: {{ .Values.feedback.aggregator.port }}
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-feedback-aggregator"
+  labels:
+        {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 4 }}
+data:
+  config.yaml: |-
+    fluentd:
+      host: {{ .Release.Name }}-fluentd.{{ .Release.Namespace }}.svc.cluster.local
+      port: 24224
+{{- end }}

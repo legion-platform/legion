@@ -4,23 +4,26 @@ kind: Deployment
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
-    component: "legion-edi"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 4 }}
 spec:
   replicas: {{ .Values.edi.replicas }}
   selector:
     matchLabels:
-      component: "legion-edi"
-      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
+      {{- include "legion.helm-labels-for-search" (dict "component" "edi" "root" .) | nindent 6 }}
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
-        component: "legion-edi"
-        {{- include "legion.helm-labels" . | nindent 8 }}
+        {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 8 }}
     spec:
       {{- if .Values.rbac}}
       serviceAccountName: "{{ .Release.Name }}-edi"
       {{- end}}
+      volumes:
+        - name: keys
+          secret:
+            secretName: "{{ .Release.Name }}-edi-keys"
       containers:
       - name: edi
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%sk8s-edi:%s") }}"
@@ -46,14 +49,19 @@ spec:
           value: "{{ .Values.modelApiSecurity.jwt.defaultTokenTTLInMinutes }}"
         - name: JWT_MAX_TTL_MINUTES
           value: "{{ .Values.modelApiSecurity.jwt.maxTokenTTLInMinutes }}"
+        - name: JWT_ENABLED
+          value: {{ .Values.modelApiSecurity.enabled | quote }}
         - name: JWT_EXP_DATETIME
           value: "{{ .Values.modelApiSecurity.jwt.defaultTokenTTLEndDate }}"
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: "{{ .Release.Name }}-jwt-config"
-              key: jwt-secret
+        - name: MODEL_JWT_PUBLIC_KEY
+          value: "/etc/legion/public.pem"
+        - name: MODEL_JWT_PRIVATE_KEY
+          value: "/etc/legion/private.pem"
         {{- end }}
+        volumeMounts:
+          - name: keys
+            mountPath: "/etc/legion"
+            readOnly: true
         ports:
           - containerPort: 5000
             name: api
@@ -72,12 +80,10 @@ kind: Service
 metadata:
   name: "{{ .Release.Name }}-edi"
   labels:
-    component: "legion-edi"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 4 }}
 spec:
   selector:
-    component: "legion-edi"
-    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
+    {{- include "legion.helm-labels-for-search" (dict "component" "edi" "root" .) | nindent 4 }}
   ports:
   - name: api
     targetPort: 5000

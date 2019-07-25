@@ -26,18 +26,17 @@ import (
 	"io"
 	"log"
 	"regexp"
-	"strings"
 )
 
 type Model struct {
-	ID      string `json:"model.id"`
+	Name    string `json:"model.name"`
 	Version string `json:"model.version"`
 }
 
 const (
 	ManifestFile    = "manifest.json"
 	ModelImageKey   = "model-image"
-	ModelIDKey      = "model-id"
+	ModelNameKey    = "model-name"
 	ModelVersionKey = "model-version"
 	ModelCommitID   = "model-commit-id"
 )
@@ -83,17 +82,6 @@ func ExtractModel(modelFile string) (model Model, err error) {
 	return model, errors.New(fmt.Sprintf("Can't find %s file in the %s model file", ManifestFile, modelFile))
 }
 
-func BuildModelImageName(dockerRegistry string, imagePrefix string, modelID string, modelVersion string) string {
-	return fmt.Sprintf("%s/%s/%s:%s", dockerRegistry, imagePrefix, modelID, modelVersion)
-}
-
-func ConvertTok8sName(modelId string, modelVersion string) string {
-	name := fmt.Sprintf("model-%s-%s", modelId, modelVersion)
-
-	invalidDelimiters := []string{" ", "_", "+", "."}
-	for _, char := range invalidDelimiters {
-		name = strings.Replace(name, char, "-", -1)
-	}
-
-	return invalidCharsRegexp.ReplaceAllString(name, "")
+func BuildModelImageName(dockerRegistry string, imagePrefix string, modelName string, modelVersion string) string {
+	return fmt.Sprintf("%s/%s/%s:%s", dockerRegistry, imagePrefix, modelName, modelVersion)
 }

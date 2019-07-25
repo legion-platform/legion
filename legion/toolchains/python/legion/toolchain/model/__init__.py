@@ -55,12 +55,12 @@ def reset_context():
     _model = None
 
 
-def init(model_id, model_version, model_type=Model.NAME):
+def init(model_name, model_version, model_type=Model.NAME):
     """
     Initialize new model context
 
-    :param model_id: model name
-    :type model_id: str
+    :param model_name: model name
+    :type model_name: str
     :param model_version: model version
     :type model_version: str
     :param model_type: type of model, one of MODEL_TYPES names
@@ -72,8 +72,8 @@ def init(model_id, model_version, model_type=Model.NAME):
     if _model:
         raise Exception('Context already has been defined')
 
-    model_id = normalize_name(model_id)
-    if not model_id:
+    model_name = normalize_name(model_name)
+    if not model_name:
         raise Exception('Model name string length should be greater that 1 (after normalization)')
 
     builder = [m_type for m_type in MODEL_TYPES if m_type.NAME == model_type]
@@ -84,9 +84,9 @@ def init(model_id, model_version, model_type=Model.NAME):
     if len(builder) > 1:
         raise Exception('More then 1 builder have been found for type {}'.format(model_type))
 
-    _model = builder[0](model_id, model_version)
+    _model = builder[0](model_name, model_version)
 
-    clear_metric_store(model_id, model_version)
+    clear_metric_store(model_name, model_version)
 
     return _model
 
@@ -178,19 +178,19 @@ def save(path=None):
     return _model.save(path)
 
 
-def show_local_metrics(model_id: typing.Optional[str] = None,
+def show_local_metrics(model_name: typing.Optional[str] = None,
                        model_version: typing.Optional[str] = None) -> pd.DataFrame:
     """
     Show metrics from local store
 
-    :param model_id: model ID
+    :param model_name: model name
     :param model_version: model version
     :return: Metrics which converted to Dataframe
     """
-    if not model_id:
+    if not model_name:
         if not _model:
-            raise Exception('You should define model context or specify model id explicitly')
+            raise Exception('You should define model context or specify model name explicitly')
 
-        model_id = _model.model_id
+        model_name = _model.model_name
 
-    return metrics.show_local_metrics(model_id, model_version)
+    return metrics.show_local_metrics(model_name, model_version)

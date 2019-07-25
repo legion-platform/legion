@@ -17,20 +17,103 @@
 package utils
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/json"
+	"encoding/pem"
+	gojwt "github.com/dgrijalva/jwt-go"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/viper"
+	"io/ioutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"sync"
 	"time"
 )
 
 const (
 	expirationDateLayout = "2006-01-02T15:04:05"
+	defaultJwtKeyName    = "model"
+	defaultIss           = "edi"
+	defaultSub           = "edi"
 )
 
 var (
-	logJwt = logf.Log.WithName("jwt")
+	logJwt      = logf.Log.WithName("jwt")
+	jwks        = ""
+	initJwks    sync.Once
+	signKey     *rsa.PrivateKey
+	initSignKey sync.Once
 )
+
+func Jwks() string {
+	initJwks.Do(func() {
+		if !viper.GetBool(legion.JwtEnabled) {
+			log.Info("Jwt integration is disabled")
+			return
+		}
+
+		log.Info("Jwt integration is enabled")
+
+		bytes, err := ioutil.ReadFile(viper.GetString(legion.ModelJwtPublicKey))
+		if err != nil {
+			logJwt.Error(err, "Read file")
+			panic(err)
+		}
+
+		block, _ := pem.Decode(bytes)
+		parseResult, _ := x509.ParsePKIXPublicKey(block.Bytes)
+
+		key, err := jwk.New(parseResult)
+		if err != nil {
+			logJwt.Error(err, "Parse key")
+			panic(err)
+		}
+
+		err = key.Set(jwk.KeyIDKey, defaultJwtKeyName)
+		if err != nil {
+			logJwt.Error(err, "Set key")
+			panic(err)
+		}
+
+		jsonbuf, err := json.Marshal(key)
+		if err != nil {
+			logJwt.Error(err, "Marshal key")
+			panic(err)
+		}
+
+		jwks = `{"keys": [` + string(jsonbuf) + `]}`
+	})
+
+	return jwks
+}
+
+func SignKey() *rsa.PrivateKey {
+	initSignKey.Do(func() {
+		if !viper.GetBool(legion.JwtEnabled) {
+			log.Info("Jwt integration is disabled")
+			return
+		}
+
+		log.Info("Jwt integration is enabled")
+
+		signBytes, err := ioutil.ReadFile(viper.GetString(legion.ModelJwtPrivateKey))
+		if err != nil {
+			logJwt.Error(err, "Read file")
+			panic(err)
+		}
+
+		signKey, err = gojwt.ParseRSAPrivateKeyFromPEM(signBytes)
+		if err != nil {
+			logJwt.Error(err, "Parse key")
+			panic(err)
+		}
+	})
+
+	return signKey
+}
 
 func CalculateExpirationDate(expirationDateStr string) (unixExpirationDate int64, err error) {
 	if expirationDateStr == "" {
@@ -59,16 +142,29 @@ func CalculateExpirationDate(expirationDateStr string) (unixExpirationDate int64
 	return expirationDate.Unix(), err
 }
 
-// HS256 algorithm
-func GenerateModelToken(modelId, modelVersion string, expirationDateUnix int64) (string, error) {
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"model_id":      []string{modelId},
-		"model_version": []string{modelVersion},
-		"exp":           expirationDateUnix,
-	}).SignedString([]byte(viper.GetString(legion.JwtSecret)))
-	if err != nil {
+func GenerateModelToken(roleName string, expirationDateUnix int64) (string, error) {
+	token := jwt.New()
+
+	if err := token.Set(jwt.IssuerKey, defaultIss); err != nil {
+		return "", err
+	}
+	if err := token.Set(jwt.SubjectKey, defaultSub); err != nil {
+		return "", err
+	}
+	if err := token.Set(jwt.AudienceKey, roleName); err != nil {
+		return "", err
+	}
+	if err := token.Set(jwt.ExpirationKey, expirationDateUnix); err != nil {
+		return "", err
+	}
+	if err := token.Set(jwt.IssuedAtKey, time.Now()); err != nil {
 		return "", err
 	}
 
-	return token, nil
+	bytesToken, err := token.Sign(jwa.RS256, SignKey())
+	if err != nil {
+		panic(err)
+	}
+
+	return string(bytesToken), nil
 }

@@ -1,6 +1,6 @@
 *** Variables ***
 ${LOCAL_CONFIG}        legion/config_6_2
-${VCS_NAME}            test-vcs
+${VCS_NAME}            test-vcs-6-2
 ${VCS_CREDENTIAL}      a2VrCg==
 ${VCS_GIT_URL}         git@github.com:legion-platform/legion.git
 ${VCS_REFENRECE}       origin/develop
@@ -69,19 +69,19 @@ Invoke command without parameters
 
 *** Test Cases ***
 Getting of nonexistent VCS by name
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     ${res}=  Shell  legionctl --verbose vcs get ${VCS_NAME}
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  not found
 
 Getting of all VCS
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     ${res}=  Shell  legionctl --verbose vcs get
              Should be equal  ${res.rc}  ${0}
              Should not contain   ${res.stderr}  ${VCS_NAME}
 
 Creating of a VCS
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     [Teardown]  Shell  legionctl --verbose vcs delete ${VCS_NAME}
     ${res}=  Shell  legionctl --verbose vcs create ${VCS_NAME} --type git --uri ${VCS_GIT_URL} --default-reference ${VCS_REFENRECE} --credential ${VCS_CREDENTIAL}
              Should be equal  ${res.rc}  ${0}
@@ -95,19 +95,19 @@ Creating of a VCS
              Should contain   ${res.stdout}  ${VCS_CREDENTIAL}
 
 Creating of a VCS with wrong type
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     ${res}=  Shell  legionctl --verbose vcs create ${VCS_NAME} --type wrong-type --uri ${VCS_GIT_URL} --default-reference ${VCS_REFENRECE} --credential ${VCS_CREDENTIAL}
              Should not be equal  ${res.rc}  ${0}
              Should contain   ${res.stderr}  is invalid
 
 Creating of a VCS without required paramters
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     ${res}=  Shell  legionctl --verbose vcs create ${VCS_NAME} --default-reference ${VCS_REFENRECE} --credential ${VCS_CREDENTIAL}
              Should not be equal  ${res.rc}  ${0}
              Should contain   ${res.stderr}  spec.type in body should be one of
 
 Deleting of a VCS
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     [Teardown]  Shell  legionctl --verbose vcs delete ${VCS_NAME}
     ${res}=  Shell  legionctl --verbose vcs create ${VCS_NAME} --type git --uri ${VCS_GIT_URL} --default-reference ${VCS_REFENRECE} --credential ${VCS_CREDENTIAL}
              Should be equal  ${res.rc}  ${0}
@@ -120,13 +120,13 @@ Deleting of a VCS
              Should contain   ${res.stderr}  not found
 
 Deleting of nonexistent VCS
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     ${res}=  Shell  legionctl --verbose vcs delete ${VCS_NAME}
              Should not be equal  ${res.rc}  ${0}
              Should contain   ${res.stderr}  not found
 
 Editing of a VCS
-    [Documentation]  The scale command must fail if a model cannot be found by id
+    [Documentation]  The scale command must fail if a model cannot be found by name
     [Teardown]  Shell  legionctl --verbose vcs delete ${VCS_NAME}
     ${res}=  Shell  legionctl --verbose vcs create ${VCS_NAME} --type git --uri ${VCS_GIT_URL} --default-reference ${VCS_REFENRECE} --credential ${VCS_CREDENTIAL}
              Should be equal  ${res.rc}  ${0}

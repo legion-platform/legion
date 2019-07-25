@@ -17,9 +17,9 @@
 Flask app
 """
 
-import itertools
 import logging
 import os
+import typing
 
 from flask import Flask, Blueprint, request, jsonify, redirect
 from flask import current_app as app
@@ -30,11 +30,11 @@ LOGGER = logging.getLogger(__name__)
 blueprint = Blueprint('pyserve', __name__)
 
 SERVE_ROOT = '/'
-SERVE_INFO = '/api/model/{model_id}/{model_version}/info'
-SERVE_INVOKE = '/api/model/{model_id}/{model_version}/invoke/{endpoint}'
-SERVE_INVOKE_DEFAULT = '/api/model/{model_id}/{model_version}/invoke'
-SERVE_BATCH = '/api/model/{model_id}/{model_version}/batch/{endpoint}'
-SERVE_BATCH_DEFAULT = '/api/model/{model_id}/{model_version}/batch'
+SERVE_INFO = '/api/model/info'
+SERVE_INVOKE = '/api/model/invoke/{endpoint}'
+SERVE_INVOKE_DEFAULT = '/api/model/invoke'
+SERVE_BATCH = '/api/model/batch/{endpoint}'
+SERVE_BATCH_DEFAULT = '/api/model/batch'
 SERVE_HEALTH_CHECK = '/healthcheck'
 
 ALL_URLS = SERVE_ROOT, \
@@ -42,22 +42,6 @@ ALL_URLS = SERVE_ROOT, \
            SERVE_INVOKE, SERVE_INVOKE_DEFAULT, \
            SERVE_BATCH, SERVE_BATCH_DEFAULT, \
            SERVE_HEALTH_CHECK
-
-
-def validate_model_id(model_id, model_version):
-    """
-    Check that passed model info is equal to current model info
-
-    :param model_id: model id
-    :type model_id: str
-    :param model_version: model version
-    :type model_version: str
-    :return: None
-    """
-    if model_id != app.config['model'].model_id:
-        raise Exception('Invalid model handler: {}, not {}'.format(app.config['model'].model_id, model_id))
-    if model_version != app.config['model'].model_version:
-        raise Exception('Invalid model handler: {}, not {}'.format(app.config['model'].model_version, model_version))
 
 
 @blueprint.route(SERVE_ROOT)
@@ -70,42 +54,27 @@ def root():
     return redirect('index.html')
 
 
-@blueprint.route(SERVE_INFO.format(model_id='<model_id>', model_version='<model_version>'))
-def model_info(model_id, model_version):
+@blueprint.route(SERVE_INFO)
+def model_info():
     """
     Get model description
 
-    :param model_id: model id
-    :type model_id: str
-    :param model_version: model version
-    :type model_version: str
     :return: :py:class:`Flask.Response` -- model description
     """
-    validate_model_id(model_id, model_version)
-
     model = app.config['model']
 
     return jsonify(model.description)
 
 
-@blueprint.route(SERVE_INVOKE_DEFAULT.format(model_id='<model_id>', model_version='<model_version>'),
-                 methods=['POST', 'GET'])
-@blueprint.route(SERVE_INVOKE.format(model_id='<model_id>', model_version='<model_version>',
-                                     endpoint='<endpoint>'), methods=['POST', 'GET'])
-def model_invoke(model_id, model_version, endpoint='default'):
+@blueprint.route(SERVE_INVOKE_DEFAULT, methods=['POST', 'GET'])
+@blueprint.route(SERVE_INVOKE.format(endpoint='<endpoint>'), methods=['POST', 'GET'])
+def model_invoke(endpoint: str = 'default'):
     """
     Call model for calculation
 
-    :param model_id: model name
-    :type model_id: str
-    :param model_version: model version
-    :type model_version: str
     :param endpoint: target endpoint name
-    :type endpoint: str
     :return: :py:class:`Flask.Response` -- result of calculation
     """
-    validate_model_id(model_id, model_version)
-
     input_dict = parse_request(request)
 
     model = app.config['model']
@@ -113,28 +82,20 @@ def model_invoke(model_id, model_version, endpoint='default'):
         raise Exception('Unknown endpoint {!r}'.format(endpoint))
 
     output = model.endpoints[endpoint].invoke(input_dict)
-    return prepare_response(output, model_id=model_id, model_version=model_version,
+    return prepare_response(output, model_name=app.config['model'].model_name,
+                            model_version=app.config['model'].model_version,
                             model_endpoint=endpoint)
 
 
-@blueprint.route(SERVE_BATCH_DEFAULT.format(model_id='<model_id>', model_version='<model_version>'),
-                 methods=['POST'])
-@blueprint.route(SERVE_BATCH.format(model_id='<model_id>', model_version='<model_version>', endpoint='<endpoint>'),
-                 methods=['POST'])
-def model_batch(model_id, model_version, endpoint='default'):
+@blueprint.route(SERVE_BATCH_DEFAULT, methods=['POST'])
+@blueprint.route(SERVE_BATCH.format(endpoint='<endpoint>'), methods=['POST'])
+def model_batch(endpoint: str = 'default'):
     """
     Call model for calculation in batch mode
 
-    :param model_id: model name
-    :type model_id: str
-    :param model_version: model version
-    :type model_version: str
     :param endpoint: target endpoint name
-    :type endpoint: str
     :return: :py:class:`Flask.Response` -- result of calculation
     """
-    validate_model_id(model_id, model_version)
-
     input_dicts = parse_batch_request(request)
 
     model = app.config['model']
@@ -142,8 +103,8 @@ def model_batch(model_id, model_version, endpoint='default'):
         raise Exception('Unknown endpoint {!r}'.format(endpoint))
 
     responses = [model.endpoints[endpoint].invoke(input_dict) for input_dict in input_dicts]
-
-    return prepare_response(responses, model_id=model_id, model_version=model_version,
+    return prepare_response(responses, model_name=app.config['model'].model_name,
+                            model_version=app.config['model'].model_name,
                             model_endpoint=endpoint)
 
 
@@ -163,23 +124,16 @@ def build_sitemap():
 
     :return: list[str] -- list of urls
     """
-    non_endpoint = [
-        url.format(model_id=app.config['model'].model_id,
-                   model_version=app.config['model'].model_version)
-        for url in ALL_URLS
-        if '{endpoint}' not in url
-    ]
-    with_endpoint = [
-        [
-            url.format(model_id=app.config['model'].model_id,
-                       model_version=app.config['model'].model_version,
-                       endpoint=endpoint)
-            for url in ALL_URLS
-            if '{endpoint}' in url
-        ]
-        for endpoint in app.config['model'].endpoints.keys()
-    ]
-    return non_endpoint + list(itertools.chain(*with_endpoint))
+    endpoints: typing.List[str] = []
+
+    for url in ALL_URLS:
+        if '{endpoint}' in url:
+            for endpoint in app.config['model'].endpoints.keys():
+                endpoints.append(url.format(endpoint=endpoint))
+        else:
+            endpoints.append(url)
+
+    return endpoints
 
 
 def page_not_found_handler(e):

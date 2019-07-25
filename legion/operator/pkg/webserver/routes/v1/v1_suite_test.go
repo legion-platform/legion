@@ -44,7 +44,7 @@ const (
 	testDockerRegistryPassword = "test_password"
 	testModelVersion1          = "1"
 	testModelVersion2          = "2"
-	testModelId                = "id"
+	testModelName              = "test_name"
 )
 
 var (
@@ -92,6 +92,9 @@ func createEnvironment() (*gin.Engine, client.Client) {
 		panic(err)
 	}
 
+	// For now unit test k8s api doesn't support foreground option
+	defaultMDDeleteOption = metav1.DeletePropagationBackground
+
 	server := gin.Default()
 	v1Group := server.Group("/api/v1")
 	k8Client := mgr.GetClient()
@@ -106,13 +109,14 @@ func createModelDeployments(g *GomegaWithT, c client.Client) []*legionv1alpha1.M
 			Name:      testModelName1,
 			Namespace: testNamespace,
 			Labels: map[string]string{
-				legion.DomainModelId:      testModelId,
+				legion.DomainModelName:    testModelName,
 				legion.DomainModelVersion: testModelVersion1,
 			},
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -126,13 +130,14 @@ func createModelDeployments(g *GomegaWithT, c client.Client) []*legionv1alpha1.M
 			Name:      testModelName2,
 			Namespace: testNamespace,
 			Labels: map[string]string{
-				legion.DomainModelId:      testModelId,
+				legion.DomainModelName:    testModelName,
 				legion.DomainModelVersion: testModelVersion2,
 			},
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -150,7 +155,7 @@ func createModelTrainings(g *GomegaWithT, c client.Client) []*legionv1alpha1.Mod
 			Name:      testModelName1,
 			Namespace: testNamespace,
 			Labels: map[string]string{
-				legion.DomainModelId:      testModelId,
+				legion.DomainModelName:    testModelName,
 				legion.DomainModelVersion: testModelVersion1,
 			},
 		},
@@ -169,7 +174,7 @@ func createModelTrainings(g *GomegaWithT, c client.Client) []*legionv1alpha1.Mod
 			Name:      testModelName2,
 			Namespace: testNamespace,
 			Labels: map[string]string{
-				legion.DomainModelId:      testModelId,
+				legion.DomainModelName:    testModelName,
 				legion.DomainModelVersion: testModelVersion2,
 			},
 		},

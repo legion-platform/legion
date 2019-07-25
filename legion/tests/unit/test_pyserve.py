@@ -15,18 +15,16 @@
 #
 from __future__ import print_function
 
-import unittest.mock
 import json
-from random import randint
+import os
+import sys
+import unittest.mock
 import urllib.parse
 from io import BytesIO
-import sys
-import os
-from werkzeug.datastructures import FileMultiDict
+from random import randint
 
 import unittest2
-
-from legion.toolchain.server import pyserve
+from werkzeug.datastructures import FileMultiDict
 
 sys.path.extend(os.path.dirname(__file__))
 
@@ -35,12 +33,14 @@ from legion_test_models import create_simple_summation_model_by_df, \
     create_simple_summation_model_by_types, create_simple_summation_model_untyped, \
     create_simple_summation_model_by_df_with_prepare, create_simple_summation_model_lists, \
     create_simple_summation_model_lists_with_files_info
+from legion.sdk.containers import headers as legion_headers
+from legion.toolchain.server import pyserve
 
 
 class TestModelApiEndpoints(unittest2.TestCase):
     _multiprocess_can_split_ = True
 
-    MODEL_ID = 'temp'
+    MODEL_NAME = 'temp'
     MODEL_VERSION = '1.8'
 
     @staticmethod
@@ -59,7 +59,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
         return json.loads(data)
 
     def test_health_check(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             response = model.client.get(pyserve.SERVE_HEALTH_CHECK)
 
@@ -67,14 +67,14 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertEqual(self._load_response_text(response), 'OK')
 
     def test_model_info_with_df(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
-            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID,
+            response = model.client.get(pyserve.SERVE_INFO.format(model_name=self.MODEL_NAME,
                                                                   model_version=self.MODEL_VERSION))
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_name', data, 'Cannot find id field')
             self.assertIn('model_version', data, 'Cannot find version field')
             self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
@@ -93,14 +93,14 @@ class TestModelApiEndpoints(unittest2.TestCase):
                              'Incorrect model input_params')
 
     def test_model_info_with_typed_columns(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_types) as model:
-            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID,
+            response = model.client.get(pyserve.SERVE_INFO.format(model_name=self.MODEL_NAME,
                                                                   model_version=self.MODEL_VERSION))
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_name', data, 'Cannot find id field')
             self.assertIn('model_version', data, 'Cannot find version field')
             self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
@@ -119,14 +119,14 @@ class TestModelApiEndpoints(unittest2.TestCase):
                              'Incorrect model input_params')
 
     def test_model_info_with_untyped_columns(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_untyped) as model:
-            response = model.client.get(pyserve.SERVE_INFO.format(model_id=self.MODEL_ID,
+            response = model.client.get(pyserve.SERVE_INFO.format(model_name=self.MODEL_NAME,
                                                                   model_version=self.MODEL_VERSION))
             data = self._parse_json_response(response)
 
             self.assertIsInstance(data, dict, 'Data is not a dictionary')
-            self.assertIn('model_id', data, 'Cannot find id field')
+            self.assertIn('model_name', data, 'Cannot find id field')
             self.assertIn('model_version', data, 'Cannot find version field')
             self.assertEqual(data['model_version'], self.MODEL_VERSION, 'Incorrect model version')
 
@@ -142,12 +142,12 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertEqual(endpoint['input_params'], False, 'Incorrect model input_params')
 
     def test_model_invoke_summation_with_df(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                       model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
             response = model.client.get(url)
             result = self._parse_json_response(response)
@@ -155,13 +155,29 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertIsInstance(result, dict, 'Result not a dict')
             self.assertDictEqual(result, {'x': a + b})
 
+    def test_request_id_header(self):
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
+                                 create_simple_summation_model_by_df) as model:
+            a = randint(1, 1000)
+            b = randint(1, 1000)
+            test_request = "bd9aba8c-ad59-11e9-a2a3-2a2ae2dbcce4"
+
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
+                                                      model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
+
+            response = model.client.get(url, headers=[(legion_headers.MODEL_REQUEST_ID, test_request)])
+            self.assertEqual(response.headers.get(legion_headers.MODEL_REQUEST_ID), test_request)
+
+            response = model.client.get(url, headers=[(legion_headers.REQUEST_ID, test_request)])
+            self.assertEqual(response.headers.get(legion_headers.MODEL_REQUEST_ID), test_request)
+
     def test_model_invoke_summation_with_df_post_request(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                                              model_version=self.MODEL_VERSION),
                                          data={'a': a, 'b': b})
             result = self._parse_json_response(response)
@@ -170,20 +186,19 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertDictEqual(result, {'x': a + b})
 
     def test_ignore_url_parameters_in_post_request(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
             with self.assertRaisesRegex(Exception, 'Missed value for column a'):
-                url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+                url = pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                           model_version=self.MODEL_VERSION) + '?a={}'.format(a)
                 model.client.post(url, data={'b': b})
 
     def test_model_not_found_page(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
-
             with unittest.mock.patch('legion.sdk.clients.model.ModelClient.info_url',
                                      new_callable=unittest.mock.PropertyMock) as mock:
                 with self.assertRaises(Exception) as raised_exception:
@@ -193,7 +208,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertIn('not found', str(raised_exception.exception))
 
     def test_model_invoke_summation_in_batch_mode(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             parameters = [{'a': randint(1, 20), 'b': randint(2, 50)} for _ in range(10)]
             expected_answer = [{'x': pair['a'] + pair['b']} for pair in parameters]
@@ -204,7 +219,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertListEqual(response, expected_answer, 'Invalid answer')
 
     def test_model_invoke_summation_with_empty_list_in_batch_mode(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             parameters = []
             expected_answer = []
@@ -215,12 +230,12 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertListEqual(response, expected_answer, 'Invalid answer')
 
     def test_model_invoke_summation_with_df_and_files(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                                              model_version=self.MODEL_VERSION),
                                          data={
                                              'a': (BytesIO(str(a).encode('utf-8')), 'random file name a.txt'),
@@ -232,12 +247,12 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertDictEqual(result, {'x': a + b})
 
     def test_model_invoke_summation_with_df_with_prepare(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_df_with_prepare) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                       model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
             response = model.client.get(url)
             result = self._parse_json_response(response)
@@ -246,12 +261,12 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertDictEqual(result, {'x': a + b})
 
     def test_model_invoke_summation_with_typed_columns(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_by_types) as model:
             a = randint(1, 1000)
             b = randint(1, 1000)
 
-            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            url = pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                       model_version=self.MODEL_VERSION) + '?a={}&b={}'.format(a, b)
             response = model.client.get(url)
             result = self._parse_json_response(response)
@@ -260,9 +275,8 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertDictEqual(result, {'x': a + b})
 
     def test_model_invoke_summation_with_untyped_columns(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_untyped) as model:
-
             payload = {
                 'var_b': randint(1, 1000),
                 'var_a': randint(1, 1000),
@@ -270,7 +284,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             }
 
             payload_string = '?' + urllib.parse.urlencode(payload)
-            response = model.client.get(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            response = model.client.get(pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                                             model_version=self.MODEL_VERSION)
                                         + payload_string)
             result = self._parse_json_response(response)
@@ -279,7 +293,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertDictEqual(result, {'keys': 'var_a,var_b,var_c', 'sum': sum(payload.values())})
 
     def test_model_invoke_summation_with_untyped_columns_and_lists_in_batch_mode(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_lists) as model:
             payloads = [
                 {
@@ -303,7 +317,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertListEqual(result, expected_result)
 
     def test_model_invoke_summation_with_untyped_columns_and_lists(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_lists) as model:
             payload = {
                 'movies': ['Titanic', 'Avatar', 'Pulp_Fiction'],
@@ -314,7 +328,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
             payload_string += '&'.join('movie[]=' + str(value) for value in payload['movies'])
             payload_string += '&' + '&'.join('rate[]=' + str(value) for value in payload['ratings'])
 
-            response = model.client.get(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            response = model.client.get(pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                                             model_version=self.MODEL_VERSION)
                                         + payload_string)
             result = self._parse_json_response(response)
@@ -323,9 +337,8 @@ class TestModelApiEndpoints(unittest2.TestCase):
             self.assertDictEqual(result, {'worth': 'Avatar', 'best': 'Pulp_Fiction'})
 
     def test_model_invoke_summation_with_untyped_columns_and_lists_with_files_info(self):
-        with ModelServeTestBuild(self.MODEL_ID, self.MODEL_VERSION,
+        with ModelServeTestBuild(self.MODEL_NAME, self.MODEL_VERSION,
                                  create_simple_summation_model_lists_with_files_info) as model:
-
             films = {
                 'Titanic': 4,
                 'Avatar': 3,
@@ -339,7 +352,7 @@ class TestModelApiEndpoints(unittest2.TestCase):
 
                 files.add('file[]', (BytesIO(str(content).encode('utf-8')), file_name))
 
-            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_id=self.MODEL_ID,
+            response = model.client.post(pyserve.SERVE_INVOKE_DEFAULT.format(model_name=self.MODEL_NAME,
                                                                              model_version=self.MODEL_VERSION),
                                          data=files)
             result = self._parse_json_response(response)

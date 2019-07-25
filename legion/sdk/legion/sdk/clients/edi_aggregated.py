@@ -24,6 +24,7 @@ import json
 import yaml
 
 from legion.sdk.clients.edi import RemoteEdiClient, WrongHttpStatusCode
+from legion.sdk.clients.route import ModelRoute
 from legion.sdk.clients.training import ModelTrainingClient, ModelTraining
 from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
 from legion.sdk.clients.vcs import VcsClient, VCSCredential
@@ -102,7 +103,8 @@ def build_resource(declaration: dict) -> LegionCloudResourceUpdatePair:
     target_classes = {
         'ModelTraining': ModelTraining,
         'ModelDeployment': ModelDeployment,
-        'VCSCredential': VCSCredential
+        'VCSCredential': VCSCredential,
+        'ModelRoute': ModelRoute
     }
 
     if resource_type not in target_classes:

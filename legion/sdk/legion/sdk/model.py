@@ -29,7 +29,7 @@ ZIP_COMPRESSION = zipfile.ZIP_STORED
 ZIP_FILE_MODEL = 'model'
 ZIP_FILE_INFO = 'manifest.json'
 
-PROPERTY_MODEL_ID = 'model.id'
+PROPERTY_MODEL_NAME = 'model.name'
 PROPERTY_MODEL_VERSION = 'model.version'
 PROPERTY_ENDPOINT_NAMES = 'model.endpoints'
 PROPERTY_TRAINING_WORKING_DIRECTORY = 'model.trainWorkDir'
@@ -37,13 +37,13 @@ PROPERTY_TRAINING_WORKING_DIRECTORY = 'model.trainWorkDir'
 
 class ModelMeta:
     def __init__(self,
-                 model_id: str,
+                 model_name: str,
                  model_version: str,
                  meta_information: typing.Dict[str, typing.Any] = None):
         """
         Build model meta
 
-        :param model_id: model ID
+        :param model_name: model name
         :param model_version: model version
         :param meta_information: model meta information
         """
@@ -52,17 +52,17 @@ class ModelMeta:
 
         self._meta_information = meta_information
 
-        self._model_id = model_id
+        self._model_name = model_name
         self._model_version = model_version
 
     @property
-    def model_id(self) -> str:
+    def model_name(self) -> str:
         """
-        Get model id
+        Get model name
 
-        :return: model id
+        :return: model name
         """
-        return self._model_id
+        return self._model_name
 
     @property
     def model_version(self) -> str:
@@ -95,9 +95,9 @@ def load_meta_model(path: str) -> ModelMeta:
         with open(manifest_path, 'r') as manifest_file:
             meta_information = json.load(manifest_file)
 
-    model_id = meta_information[PROPERTY_MODEL_ID]
+    model_name = meta_information[PROPERTY_MODEL_NAME]
     model_version = meta_information[PROPERTY_MODEL_VERSION]
 
     LOGGER.debug('Loading has been finished')
 
-    return ModelMeta(model_id, model_version, meta_information)
+    return ModelMeta(model_name, model_version, meta_information)

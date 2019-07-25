@@ -4,13 +4,24 @@ all: help
 test:
 	gotestsum --junitfile feedback-report.xml -- -coverprofile=feedback-cover.out ./pkg/...
 
-## build: Launch feedback service
-run:
-	go run ./cmd/server.go
+## build-all: Buld all services
+build-all: build-aggregator build-collector
 
-## build: Build feedback service
-build:
-	go build -o feedback cmd/server.go
+## build-aggregator: Launch aggregator service
+run-aggregator:
+	go run ./cmd/aggregator/main.go
+
+## build-aggregator: Build aggregator service
+build-aggregator:
+	go build -o aggregator cmd/aggregator/main.go
+
+## build-collector: Launch collector service
+run-collector:
+	go run ./cmd/collector/main.go
+
+## build-collector: Build collector service
+build-collector:
+	go build -o collector cmd/collector/main.go
 
 ## help: Show the help message
 help: Makefile

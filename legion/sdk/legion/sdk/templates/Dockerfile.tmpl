@@ -17,17 +17,17 @@ FROM {{DOCKER_BASE_IMAGE_ID}}
 
 EXPOSE {{MODEL_PORT}}
 
-RUN pip3 install --disable-pip-version-check 'uwsgi==2.0.17.1' flask==0.12.4
-
-COPY uwsgi.ini /etc/uwsgi/
+RUN pip3 install --disable-pip-version-check 'gunicorn==19.9.0' flask==0.12.4
 
 ENTRYPOINT []
-CMD ["/usr/local/bin/uwsgi", "--strict", "--ini", "/etc/uwsgi/uwsgi.ini"]
 WORKDIR /app
 
 RUN {{CREATE_SYMLINK_COMMAND|safe}}
 
 ENV MODEL_FILE="{{MODEL_FILE}}" \
-    MODEL_ID="{{MODEL_ID}}" \
+    MODEL_NAME="{{MODEL_NAME}}" \
     VERBOSE="true" \
-    MODEL_PORT="{{MODEL_PORT}}"
+    MODEL_PORT="{{MODEL_PORT}}" \
+    GUNICORN_CMD_ARGS="--bind=0.0.0.0:5000 --workers=2 --threads 10 --preload"
+
+CMD ["/usr/local/bin/gunicorn", "legion.toolchain.server.pyserve:init_application()"]

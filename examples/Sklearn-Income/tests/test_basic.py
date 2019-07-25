@@ -13,18 +13,17 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-
-from legion.sdk.clients.model import ModelClient
-from legion.sdk.clients.edi import build_client
-from legion.sdk import config
-
 import unittest2
+from legion.sdk import config
+from legion.sdk.clients import model
+from legion.sdk.clients.edi import build_client
+from legion.sdk.clients.model import ModelClient
 
 
 class BasicTest(unittest2.TestCase):
     def setUp(self):
-        self._client = ModelClient(config.MODEL_ID, config.MODEL_VERSION,
-                                   token=build_client().get_token(config.MODEL_ID, config.MODEL_VERSION))
+        self._client = ModelClient(model.calculate_url_from_config(),
+                                   token=build_client().get_token(config.MODEL_DEPLOYMENT_NAME))
 
     def test_model(self):
         response = self._client.invoke(**{"age": "31",

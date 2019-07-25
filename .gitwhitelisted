@@ -42,3 +42,5 @@ username : unicode
 .*Token: token.*
 .*Token: "".*
 .*Secret: .*
+legion/operator/hack/tests/keys/private_key.pem:.*
+.*token \:\=.*

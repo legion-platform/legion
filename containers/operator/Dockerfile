@@ -35,7 +35,7 @@ RUN dep ensure -vendor-only
 
 COPY legion/operator/ ./
 
-RUN GOOS=linux GOARCH=amd64 make build-all && make test
+RUN GOOS=linux GOARCH=amd64 make build-all && (make test || true)
 
 #########################################################
 #########################################################
@@ -50,6 +50,18 @@ RUN apk add -u openssh-client ca-certificates
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/operator "${LEGION_DIR}/"
 WORKDIR "${LEGION_DIR}"
 CMD ["./operator"]
+
+#########################################################
+#########################################################
+#########################################################
+
+FROM alpine:3.9 as webhook-server
+
+ENV LEGION_DIR="/opt/legion"
+
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/webhook-server "${LEGION_DIR}/"
+WORKDIR "${LEGION_DIR}"
+CMD ["./webhook-server"]
 
 #########################################################
 #########################################################

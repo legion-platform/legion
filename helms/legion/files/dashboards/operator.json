@@ -78,7 +78,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(up{job=~\".*operator\", namespace=\"company-a\"})",
+          "expr": "sum(up{job=~\".*operator\", namespace=\"$namespace\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,

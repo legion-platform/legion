@@ -111,7 +111,6 @@ class DeploymentCreateRequest(BaseModel):
     image: str
     livenessProbeInitialDelay: int
     readinessProbeInitialDelay: int
-    replicas: int = 1
     resources: typing.Mapping[str, typing.Any] = {}
     annotations: typing.Mapping[str, str] = {}
 
@@ -126,19 +125,9 @@ class DeploymentCreateRequest(BaseModel):
             image=self.image,
             resources=self.resources,
             annotations=self.annotations,
-            replicas=self.replicas,
             liveness_probe_initial_delay=self.livenessProbeInitialDelay,
             readiness_probe_initial_delay=self.livenessProbeInitialDelay
         )
-
-
-class ScaleRequest(BaseModel):
-    """
-    Request to scale deployment
-    """
-
-    name: str
-    newScale: int
 
 
 class IssueTokenRequest(BaseModel):
@@ -146,8 +135,8 @@ class IssueTokenRequest(BaseModel):
     Request to issue new model API token
     """
 
-    model_id: str
-    model_version: str
+    # Role name
+    role_name: str
 
 
 class ApplyFromFileRequest(BaseModel):

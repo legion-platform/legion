@@ -55,34 +55,34 @@ class Grafana:
         self._client = GrafanaClient(self._url, self._user, self._password)
         self._client.set_cookies(get_session_cookies())
 
-    def dashboard_should_exists(self, model_id):
+    def dashboard_should_exists(self, model_name):
         """
         Check that dashboard for model exists
 
-        :param model_id: model ID
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :raises: Exception
         :return: None
         """
         if not self._client:
             raise Exception('Grafana client has not been initialized')
 
-        if not self._client.is_dashboard_exists(model_id):
+        if not self._client.is_dashboard_exists(model_name):
             raise Exception('Dashboard not exists')
 
-    def dashboard_should_not_exists(self, model_id):
+    def dashboard_should_not_exists(self, model_name):
         """
         Check that dashboard for model does not exist
 
-        :param model_id: model ID
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :raises: Exception
         :return: None
         """
         if not self._client:
             raise Exception('Grafana client has not been initialized')
 
-        if self._client.is_dashboard_exists(model_id):
+        if self._client.is_dashboard_exists(model_name):
             raise Exception('Dashboard exists')
 
     def get_dashboard_by(self, uid):

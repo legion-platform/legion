@@ -31,7 +31,7 @@
       "PYTHON_VERSION=3.6.8",
       "PYTHON_PIP_VERSION=19.1",
       "WORK_DIR=/opt/legion",
-      "MODEL_ID=test-summation",
+      "MODEL_NAME=test-summation",
       "VERBOSE=true",
       "MODEL_PORT=5000"
     ],
@@ -58,11 +58,11 @@
       "com.epam.jenkins.node_name": "None",
       "com.epam.legion.class": "pyserve",
       "com.epam.legion.container_type": "model",
-      "com.epam.legion.model.id": "test-summation",
+      "com.epam.legion.model.name": "test-summation",
       "com.epam.legion.model.version": "1.0",
       "com.epam.legion.version": "1.0.0",
       "com.epam.model.endpoints": "default, sum_and_pow",
-      "com.epam.model.id": "test-summation",
+      "com.epam.model.name": "test-summation",
       "com.epam.model.trainWorkDir": "/work-directory/Test-Summation",
       "com.epam.model.version": "1.0"
     }
@@ -92,7 +92,7 @@
       "PYTHON_VERSION=3.6.8",
       "PYTHON_PIP_VERSION=19.1",
       "WORK_DIR=/opt/legion",
-      "MODEL_ID=test-summation",
+      "MODEL_NAME=test-summation",
       "VERBOSE=true",
       "MODEL_PORT=5000"
     ],
@@ -119,11 +119,11 @@
       "com.epam.jenkins.node_name": "None",
       "com.epam.legion.class": "pyserve",
       "com.epam.legion.container_type": "model",
-      "com.epam.legion.model.id": "test-summation",
+      "com.epam.legion.model.name": "test-summation",
       "com.epam.legion.model.version": "1.0",
       "com.epam.legion.version": "1.0.0",
       "com.epam.model.endpoints": "default, sum_and_pow",
-      "com.epam.model.id": "test-summation",
+      "com.epam.model.name": "test-summation",
       "com.epam.model.trainWorkDir": "/work-directory/Test-Summation",
       "com.epam.model.version": "1.0"
     }

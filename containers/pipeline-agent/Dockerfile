@@ -61,8 +61,6 @@ COPY containers/pipeline-agent/Pipfile containers/pipeline-agent/Pipfile.lock /o
 RUN  cd /opt/legion/legion && pipenv install --system --three
 COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock /opt/legion/legion/sdk/
 RUN  cd /opt/legion/legion/sdk && pipenv install --system --three
-COPY legion/services/Pipfile legion/services/Pipfile.lock /opt/legion/legion/services/
-RUN  cd /opt/legion/legion/services && pipenv install --system --three
 COPY legion/cli/Pipfile legion/cli/Pipfile.lock /opt/legion/legion/cli/
 RUN  cd /opt/legion/legion/cli && pipenv install --system --three
 COPY legion/robot/Pipfile legion/robot/Pipfile.lock /opt/legion/legion/robot/

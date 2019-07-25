@@ -3,14 +3,14 @@ SHELL := /bin/bash
 PROJECTNAME := $(shell basename "$(PWD)")
 PYLINT_FOLDER=target/pylint
 PYDOCSTYLE_FOLDER=target/pydocstyle
-PROJECTS_PYLINT=sdk cli services toolchain tests
-PROJECTS_PYCODESTYLE="sdk cli services toolchain"
+PROJECTS_PYLINT=sdk cli toolchain tests
+PROJECTS_PYCODESTYLE="sdk cli toolchain"
 BUILD_PARAMS=
 LEGION_VERSION=0.11.0
 SANDBOX_PYTHON_TOOLCHAIN_IMAGE=
 CREDENTIAL_SECRETS=.secrets.yaml
 ROBOT_FILES=**/*.robot
-ROBOT_THREADS=6
+ROBOT_THREADS=3
 CLUSTER_NAME=
 PATH_TO_PROFILES_DIR=profiles
 E2E_PYTHON_TAGS=
@@ -28,7 +28,7 @@ GOOGLE_APPLICATION_CREDENTIALS=
 
 .EXPORT_ALL_VARIABLES:
 
-.PHONY: install-all install-cli install-services install-sdk
+.PHONY: install-all install-cli install-sdk
 
 all: help
 
@@ -41,7 +41,7 @@ check-tag:
 	fi
 
 ## install-all: Install all python packages
-install-all: install-sdk install-services install-cli install-python-toolchain install-jupyterlab-plugin install-robot
+install-all: install-sdk install-cli install-python-toolchain install-jupyterlab-plugin install-robot
 
 ## install-sdk: Install sdk python package
 install-sdk:
@@ -53,13 +53,6 @@ install-sdk:
 ## install-cli: Install cli python package
 install-cli:
 	cd legion/cli && \
-		pip3 install ${BUILD_PARAMS} -e . && \
-		python setup.py sdist && \
-    	python setup.py bdist_wheel
-
-## install-services: Install services python package
-install-services:
-	cd legion/services && \
 		pip3 install ${BUILD_PARAMS} -e . && \
 		python setup.py sdist && \
     	python setup.py bdist_wheel
@@ -97,10 +90,6 @@ docker-build-python-toolchain:
 docker-build-edi:
 	docker build --target edi -t legion/k8s-edi:latest -f containers/operator/Dockerfile .
 
-## docker-build-edge: Build edge docker image
-docker-build-edge:
-	docker build -t legion/k8s-edge:latest -f containers/edge/Dockerfile .
-
 ## docker-build-model-builder: Build model builder docker image
 docker-build-model-builder:
 	docker build --target model-builder -t legion/k8s-model-builder:latest -f containers/operator/Dockerfile .
@@ -114,7 +103,7 @@ docker-build-feedback-aggregator:
 	docker build --target server -t legion/k8s-feedback-aggregator:latest -f containers/feedback-aggregator/Dockerfile .
 
 ## docker-build-all: Build all docker images
-docker-build-all:  docker-build-pipeline-agent  docker-build-python-toolchain  docker-build-edi  docker-build-edge  docker-build-model-builder  docker-build-operator  docker-build-feedback-aggregator
+docker-build-all:  docker-build-pipeline-agent  docker-build-python-toolchain  docker-build-edi  docker-build-model-builder  docker-build-operator  docker-build-feedback-aggregator
 
 ## docker-push-pipeline-agent: Push pipeline agent docker image
 docker-push-pipeline-agent:
@@ -125,11 +114,6 @@ docker-push-pipeline-agent:
 docker-push-python-toolchain:  check-tag
 	docker tag legion/python-toolchain:latest ${DOCKER_REGISTRY}/legion/python-toolchain:${TAG}
 	docker push ${DOCKER_REGISTRY}/legion/python-toolchain:${TAG}
-
-## docker-push-edge: Push edge docker image
-docker-push-edge:  check-tag
-	docker tag legion/k8s-edge:latest ${DOCKER_REGISTRY}/legion/k8s-edge:${TAG}
-	docker push ${DOCKER_REGISTRY}/legion/k8s-edge:${TAG}
 
 ## docker-push-edi: Push edi docker image
 docker-push-edi:  check-tag
@@ -152,7 +136,7 @@ docker-push-feedback-aggregator:  check-tag
 	docker push ${DOCKER_REGISTRY}legion/k8s-feedback-aggregator:${TAG}
 
 ## docker-push-all: Push all docker images
-docker-push-all:  docker-push-pipeline-agent  docker-push-python-toolchain  docker-push-edi  docker-push-edge  docker-push-model-builder  docker-push-operator  docker-push-feedback-aggregator
+docker-push-all:  docker-push-pipeline-agent  docker-push-python-toolchain  docker-push-edi  docker-push-model-builder  docker-push-operator  docker-push-feedback-aggregator
 
 ## helm-install: Install the legion helm chart from source code
 helm-install:
@@ -199,14 +183,6 @@ e2e-robot:
 	      -v PATH_TO_PROFILES_DIR:${PATH_TO_PROFILES_DIR} \
 	      --listener legion.robot.process_reporter \
 	      --outputdir target legion/tests/e2e/robot/tests/${ROBOT_FILES}
-
-## e2e-python: Run e2e python tests
-e2e-python:
-	mkdir -p target
-	nosetests ${E2E_PYTHON_TAGS} --with-xunitmp \
-	          --logging-level DEBUG \
-	          --xunitmp-file target/nosetests.xml \
-	          -v legion/tests/e2e/python
 
 ## update-python-deps: Update all python dependecies in the Pipfiles
 update-python-deps:

@@ -3,6 +3,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: "{{ .Release.Name }}-edi"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -85,6 +87,38 @@ rules:
       - legion.legion-platform.org
     resources:
       - vcscredentials/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes/status
     verbs:
       - get
       - update

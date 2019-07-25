@@ -142,13 +142,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Build Edge Docker image") {
-                    steps {
-                        script {
-                            legion.buildLegionImage('k8s-edge', '.', 'containers/edge/Dockerfile')
-                        }
-                    }
-                }
                 stage("Build Fluentd Docker image") {
                     steps {
                         script {
@@ -163,6 +156,7 @@ pipeline {
                             legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('webhook-server', ".", "containers/operator/Dockerfile", "--target webhook-server --cache-from legion/operator-dependencies:${Globals.buildVersion}")
 
                             docker.image("legion/operator-dependencies:${Globals.buildVersion}").inside() {
                                 sh """
@@ -178,11 +172,12 @@ pipeline {
                         }
                     }
                 }
-                stage("Build feedback-aggregator image") {
+                stage("Build feedback images") {
                     steps {
                         script {
                             legion.buildLegionImage('feedback-dependencies', ".", "containers/feedback-aggregator/Dockerfile", "--target builder")
-                            legion.buildLegionImage('k8s-feedback-aggregator', ".", "containers/feedback-aggregator/Dockerfile", "--target server --cache-from legion/feedback-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-feedback-aggregator', ".", "containers/feedback-aggregator/Dockerfile", "--target aggregator --cache-from legion/feedback-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-feedback-collector', ".", "containers/feedback-aggregator/Dockerfile", "--target collector --cache-from legion/feedback-dependencies:${Globals.buildVersion}")
 
                             docker.image("legion/feedback-dependencies:${Globals.buildVersion}").inside() {
                                 sh """
@@ -382,10 +377,10 @@ pipeline {
                         }
                     }
                 }
-                stage('Upload Edge Docker Image') {
+                stage("Upload feedback collector image") {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-edge')
+                            legion.uploadDockerImage('k8s-feedback-collector')
                         }
                     }
                 }
@@ -407,6 +402,13 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('operator-dependencies')
+                        }
+                    }
+                }
+                stage('Upload Webhook server') {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('webhook-server')
                         }
                     }
                 }

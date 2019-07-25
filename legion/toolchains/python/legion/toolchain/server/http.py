@@ -20,6 +20,7 @@ import logging
 from urllib.parse import parse_qs
 
 import flask
+from flask import request
 from legion.sdk import config
 from legion.sdk.containers import headers
 from legion.sdk.utils import normalize_name
@@ -105,14 +106,14 @@ def parse_request(input_request):
     raise ValueError('Unexpected http method: {}'.format(input_request.method))
 
 
-def prepare_response(response_data, model_id=None, model_version=None, model_endpoint=None):
+def prepare_response(response_data, model_name=None, model_version=None, model_endpoint=None):
     """
     Produce an HTTP response from dict/list
 
     :param response_data: dict/list with data
     :type response_data: dict[str, any] or list[any]
-    :param model_id: model id
-    :type model_id: str
+    :param model_name: model name
+    :type model_name: str
     :param model_version: model version
     :type model_version: str
     :param model_endpoint: model endpoint
@@ -120,14 +121,18 @@ def prepare_response(response_data, model_id=None, model_version=None, model_end
     :return: bytes
     """
     response = flask.jsonify(response_data)
-    if model_id:
-        response.headers[headers.MODEL_ID] = normalize_name(model_id, dns_1035=True)
+    if model_name:
+        response.headers[headers.MODEL_NAME] = normalize_name(model_name)
 
     if model_version:
-        response.headers[headers.MODEL_VERSION] = normalize_name(model_version, dns_1035=True)
+        response.headers[headers.MODEL_VERSION] = normalize_name(model_version)
 
     if model_endpoint:
-        response.headers[headers.MODEL_ENDPOINT] = normalize_name(model_endpoint, dns_1035=True)
+        response.headers[headers.MODEL_ENDPOINT] = normalize_name(model_endpoint)
+
+    request_id = request.headers.get(headers.MODEL_REQUEST_ID) or request.headers.get(headers.REQUEST_ID)
+    if request_id:
+        response.headers[headers.MODEL_REQUEST_ID] = request_id
 
     return response
 

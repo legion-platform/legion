@@ -25,7 +25,7 @@ export interface ICloudTrainingResponseSpec {
 }
 
 export interface ICloudTrainingResponseStatus {
-  id: string;
+  name: string;
   version: string;
   state: string;
   modelImage: string;
@@ -53,7 +53,6 @@ export interface ICloudTrainingLogsResponse {
 export interface ICloudDeploymentCreateRequest {
   name: string;
   image: string;
-  replicas: number;
   livenessProbeInitialDelay: number;
   readinessProbeInitialDelay: number;
 }
@@ -70,8 +69,8 @@ export interface ICloudDeploymentRemoveRequest {
 export interface ICloudDeploymentResponseSpec {
   image: string;
   resources: string;
+  roleName: string;
   annotations: Array<string>;
-  replicas: number;
   livenessProbeInitialDelay: number;
   readinessProbeInitialDelay: number;
 }
@@ -111,8 +110,7 @@ export interface ICloudAllEntitiesResponse {
 }
 
 export interface ICloudIssueTokenRequest {
-  model_id: string;
-  model_version: string;
+  role_name: string;
 }
 
 export interface ICloudIssueTokenResponse {

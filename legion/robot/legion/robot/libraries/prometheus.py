@@ -16,6 +16,7 @@
 """
 Robot test library - prometheus
 """
+import time
 
 import requests
 from legion.robot.libraries.dex_client import get_session_cookies
@@ -35,41 +36,42 @@ class Prometheus:
         """
         self._url = url
 
-    def _get_model_metric(self, model_id, model_version, model_endpoint='default'):
+    def _get_model_metric(self, model_name, model_version, model_endpoint='default'):
         """
         Get model metric data and returns it
 
-        :param model_id: model ID
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :param model_version: model version
         :type model_version: str
         :param model_endpoint: model endpoint
         :type model_endpoint: str
         :return: list[dict], list with dict with metrics
         """
-        url = f'{self._url}/api/v1/query'
-        print(f'Get metrics for model_id: "{model_id}", model_version: "{model_version}",'
+        url = f'{self._url}/api/v1/query_range'
+        print(f'Get metrics for model_name: "{model_name}", model_version: "{model_version}",'
               f' model_endpoint: "{model_endpoint}"')
 
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        query = f'legion_model_request_counter{{model_id="{model_id}",model_version="{model_version}"}}'
+        query = f'legion_model_metrics{{model_name="{model_name}"}}'
 
-        response = requests.post(url, params={'query': query}, headers=headers, cookies=get_session_cookies())
+        params = {'query': query, 'start': time.time() - 10000, 'end': time.time() + 10000, 'step': 14}
+        response = requests.post(url, params=params, headers=headers, cookies=get_session_cookies())
         response.raise_for_status()
 
         print(f'Loading {query} metrics. Data: {response.text}')
 
         return response.json()
 
-    def metric_should_be_presented(self, model_id, model_version, model_endpoint='default'):
+    def metric_should_be_presented(self, model_name, model_version, model_endpoint='default'):
         """
         Check that requests count metric for model exists
 
-        :param model_id: model ID
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :param model_version: model version
         :type model_version: str
         :param model_endpoint: model endpoint
@@ -77,24 +79,26 @@ class Prometheus:
         :raises: Exception
         :return: None
         """
-        data = self._get_model_metric(model_id, model_version, model_endpoint=model_endpoint)
+        data = self._get_model_metric(model_name, model_version, model_endpoint=model_endpoint)
         if not data:
             raise Exception('Data is empty')
 
         datapoints = data['data']['result']
 
-        for val in map(lambda x: x['value'][0], datapoints):
-            if val is not None and val > 0:
+        # 0 -> one metric
+        # 1 -> value of metric
+        for val in map(lambda x: x['values'][0][1], datapoints):
+            if val is not None and float(val) > 0:
                 break
         else:
             raise Exception('Cannot find any value > 0')
 
-    def ensure_metric_present(self, model_id, model_version, model_endpoint='default'):
+    def ensure_metric_present(self, model_name, model_version, model_endpoint='default'):
         """
         Ensure that requests count metric for model exists
 
-        :param model_id: model ID
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :param model_version: model version
         :type model_version: str
         :param model_endpoint: model endpoint
@@ -104,7 +108,7 @@ class Prometheus:
         """
         def is_metric_present():
             try:
-                self.metric_should_be_presented(model_id, model_version, model_endpoint=model_endpoint)
+                self.metric_should_be_presented(model_name, model_version, model_endpoint=model_endpoint)
             except Exception as e:
                 print('Got metric_should_be_presented exception: {}'.format(e))
                 return False

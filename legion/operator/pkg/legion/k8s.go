@@ -22,6 +22,8 @@ import (
 	"encoding/json"
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 const (
@@ -45,7 +47,28 @@ func StoreHash(obj metav1.Object) error {
 		return err
 	}
 	h.Write(jsonData)
-	fmt.Println(string(jsonData))
+
+	annotations := map[string]string{}
+	if obj.GetAnnotations() != nil {
+		for k, v := range obj.GetAnnotations() {
+			annotations[k] = v
+		}
+	}
+	annotations[LastAppliedHashAnnotation] = base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	obj.SetAnnotations(annotations)
+
+	return nil
+}
+
+// Compute hash and store it in the annotations
+func StoreHashKnative(obj *knservingv1alpha1.Configuration) error {
+	h := sha512.New()
+	jsonData, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	h.Write(jsonData)
 
 	annotations := map[string]string{}
 	if obj.GetAnnotations() != nil {
@@ -63,3 +86,7 @@ func StoreHash(obj metav1.Object) error {
 func ObjsEqualByHash(firstObj, secondObj metav1.Object) bool {
 	return firstObj.GetAnnotations()[LastAppliedHashAnnotation] == secondObj.GetAnnotations()[LastAppliedHashAnnotation]
 }
+
+//func ObjectsModelDeploymentTemplateName(mdName string) {
+//	return fmt.Sprintf("md-")
+//}

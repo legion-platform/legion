@@ -215,19 +215,15 @@ class RemoteEdiClient:
             for line in response.iter_lines():
                 yield line.decode("utf-8")
 
-    def get_token(self, model_id, model_version, expiration_date=None):
+    def get_token(self, md_role_name: str, expiration_date: typing.Optional[str] = None) -> str:
         """
         Get API token
 
-        :param model_id: model ID
-        :type model_id: str
-        :param model_version: model version
-        :type model_version: str
+        :param md_role_name: model name
         :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
-        :type expiration_date: str
-        :return: str -- return API Token
+        :return: str -- API Model token
         """
-        payload = {'model_id': model_id, 'model_version': model_version}
+        payload = {'role_name': md_role_name}
 
         if expiration_date:
             payload['expiration_date'] = expiration_date
@@ -256,7 +252,7 @@ class LocalEdiClient:
 
         :param deployment_name: (Optional) name of deployment
         :type deployment_name: str
-        :param model: (Optional) model id
+        :param model: (Optional) model name
         :type model: str
         :param version: (Optional) model version
         :type version: str
@@ -286,7 +282,7 @@ class LocalEdiClient:
 
         :param deployment_name: (Optional) name of deployment
         :type deployment_name: str
-        :param model: (Optional) model id
+        :param model: (Optional) model name
         :type model: str
         :param version: (Optional) model version
         :type version: str
@@ -328,7 +324,7 @@ def add_arguments_for_wait_operation(parser):
     parser.add_argument('--no-wait',
                         action='store_true', help='no wait until scale will be finished')
     parser.add_argument('--timeout',
-                        default=300,
+                        default=600,
                         type=int, help='timeout in s. for wait (if no-wait is off)')
 
 

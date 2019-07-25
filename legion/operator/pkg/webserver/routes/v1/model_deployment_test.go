@@ -39,7 +39,8 @@ import (
 var (
 	mdName                  = "test-model-deployment"
 	mdImage                 = "test/test:123"
-	mdReplicas              = int32(2)
+	mdMinReplicas           = int32(1)
+	mdMaxReplicas           = int32(2)
 	mdLivenessInitialDelay  = int32(60)
 	mdReadinessInitialDelay = int32(30)
 )
@@ -69,7 +70,8 @@ func TestGetMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -151,7 +153,7 @@ func TestGetAllMD(t *testing.T) {
 	}
 }
 
-func TestGetAllMDByModelID(t *testing.T) {
+func TestGetAllMDByModelName(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, c := createEnvironment()
 
@@ -161,7 +163,7 @@ func TestGetAllMDByModelID(t *testing.T) {
 	}
 
 	params := url.Values{}
-	params.Add(legion.DomainModelId, testModelId)
+	params.Add(legion.DomainModelName, testModelName)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/model/deployment?%s", params.Encode()), nil)
@@ -239,7 +241,8 @@ func TestCreateMD(t *testing.T) {
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -282,7 +285,8 @@ func TestCreateDuplicateMD(t *testing.T) {
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -296,7 +300,8 @@ func TestCreateDuplicateMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -333,7 +338,8 @@ func TestUpdateMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -342,7 +348,7 @@ func TestUpdateMD(t *testing.T) {
 	g.Expect(c.Create(context.TODO(), md)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), md)
 
-	newReplicas := mdReplicas + 1
+	newMaxReplicas := mdMaxReplicas + 1
 	newMDLivenessIninitialDelay := mdLivenessInitialDelay + 1
 	newMDReadinessInitialDelay := mdReadinessInitialDelay + 1
 
@@ -350,7 +356,8 @@ func TestUpdateMD(t *testing.T) {
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      "new-image:123",
-			Replicas:                   &newReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &newMaxReplicas,
 			LivenessProbeInitialDelay:  &newMDLivenessIninitialDelay,
 			ReadinessProbeInitialDelay: &newMDReadinessInitialDelay,
 			Annotations:                nil,
@@ -382,7 +389,7 @@ func TestUpdateMDNotFound(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, _ := createEnvironment()
 
-	newReplicas := mdReplicas + 1
+	newReplicas := mdMaxReplicas + 1
 	newMDLivenessIninitialDelay := mdLivenessInitialDelay + 1
 	newMDReadinessInitialDelay := mdReadinessInitialDelay + 1
 
@@ -390,7 +397,8 @@ func TestUpdateMDNotFound(t *testing.T) {
 		Name: mdName,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      "new-image:123",
-			Replicas:                   &newReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &newReplicas,
 			LivenessProbeInitialDelay:  &newMDLivenessIninitialDelay,
 			ReadinessProbeInitialDelay: &newMDReadinessInitialDelay,
 		},
@@ -401,75 +409,6 @@ func TestUpdateMDNotFound(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPut, "/api/v1/model/deployment", bytes.NewReader(mdEntityBody))
-	g.Expect(err).NotTo(HaveOccurred())
-	server.ServeHTTP(w, req)
-
-	var result routes.HTTPResult
-	err = json.Unmarshal(w.Body.Bytes(), &result)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	g.Expect(w.Code).Should(Equal(http.StatusNotFound))
-	g.Expect(result.Message).Should(ContainSubstring("not found"))
-}
-
-func TestScaleMD(t *testing.T) {
-	g := NewGomegaWithT(t)
-	server, c := createEnvironment()
-
-	newReplicasNumber := mdReplicas + 1
-
-	md := &legionv1alpha1.ModelDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mdName,
-			Namespace: testNamespace,
-		},
-		Spec: legionv1alpha1.ModelDeploymentSpec{
-			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
-			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
-			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
-			Annotations:                mdAnnotations,
-		},
-	}
-	g.Expect(c.Create(context.TODO(), md)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), md)
-
-	replicasEntity := &MDReplicas{Replicas: newReplicasNumber}
-
-	mdEntityBody, err := json.Marshal(replicasEntity)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/model/deployment/%s/scale", mdName),
-		bytes.NewReader(mdEntityBody))
-	g.Expect(err).NotTo(HaveOccurred())
-	server.ServeHTTP(w, req)
-
-	var result routes.HTTPResult
-	err = json.Unmarshal(w.Body.Bytes(), &result)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	g.Expect(http.StatusOK).To(Equal(w.Code))
-	g.Expect(result.Message).To(ContainSubstring("was updated"))
-
-	md = &legionv1alpha1.ModelDeployment{}
-	err = c.Get(context.TODO(), types.NamespacedName{Name: mdName, Namespace: testNamespace}, md)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(newReplicasNumber).To(Equal(*md.Spec.Replicas))
-}
-
-func TestScaleMDNotFound(t *testing.T) {
-	g := NewGomegaWithT(t)
-	server, _ := createEnvironment()
-
-	mdReplicas := &MDReplicas{Replicas: 3}
-
-	mdEntityBody, err := json.Marshal(mdReplicas)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/model/deployment/%s/scale", "notfound"),
-		bytes.NewReader(mdEntityBody))
 	g.Expect(err).NotTo(HaveOccurred())
 	server.ServeHTTP(w, req)
 
@@ -492,7 +431,8 @@ func TestDeleteMD(t *testing.T) {
 		},
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
-			Replicas:                   &mdReplicas,
+			MinReplicas:                &mdMinReplicas,
+			MaxReplicas:                &mdMaxReplicas,
 			LivenessProbeInitialDelay:  &mdLivenessInitialDelay,
 			ReadinessProbeInitialDelay: &mdReadinessInitialDelay,
 			Annotations:                mdAnnotations,
@@ -596,7 +536,7 @@ func TestDeleteAllMDByWrongModelVersion(t *testing.T) {
 	g.Expect(mdList.Items).To(HaveLen(2))
 }
 
-func TestDeleteAllMDByModelID(t *testing.T) {
+func TestDeleteAllMDByModelName(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, c := createEnvironment()
 
@@ -606,7 +546,7 @@ func TestDeleteAllMDByModelID(t *testing.T) {
 	}
 
 	params := url.Values{}
-	params.Add(legion.DomainModelId, testModelId)
+	params.Add(legion.DomainModelName, testModelName)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/model/deployment?%s", params.Encode()), nil)

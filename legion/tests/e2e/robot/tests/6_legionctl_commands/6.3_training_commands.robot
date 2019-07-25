@@ -1,8 +1,8 @@
 *** Variables ***
 ${LOCAL_CONFIG}         legion/config_6_3
-${TRAINING_NAME}        test-mt
-${TRAINING_ARGS}        --id test --version 2.0
-${TRAINING_NEW_ARGS}    --id new-test --version 3.0
+${TRAINING_NAME}        test-mt-6-3
+${TRAINING_ARGS}        --name test --version 2.0
+${TRAINING_NEW_ARGS}    --name new-test --version 3.0
 ${TRAINING_WORKDIR}     legion/tests/e2e/models
 ${TRAINING_ENTRYPOINT}  simple.py
 ${TRAINING_VCS}         legion
@@ -30,8 +30,7 @@ Cleanup resources
 
 Check model training
     [Arguments]  ${state}  ${args}
-    ${model_build_status}=  Get model training status  ${TRAINING_NAME}
-    ${model_image}=  Get From Dictionary  ${model_build_status}  modelImage
+    ${mt}=  Get model training  ${TRAINING_NAME}
 
     ${res}=  Shell  legionctl --verbose mt get ${TRAINING_NAME}
              Should be equal  ${res.rc}      ${0}
@@ -40,7 +39,7 @@ Check model training
              Should contain   ${res.stdout}  ${args}
              Should contain   ${res.stdout}  ${TRAINING_TOOLCHAIN}
              Should contain   ${res.stdout}  ${TRAINING_VCS}
-             Should contain   ${res.stdout}  ${model_image}
+             Should contain   ${res.stdout}  ${mt.trained_image}
 
 Check commands with file parameter
     [Arguments]  ${create_file}  ${edit_file}  ${delete_file}
@@ -108,7 +107,7 @@ Deleting of a Model Training
              Should contain   ${res.stderr}  not found
 
 Deleting of nonexistent Model Training
-    [Documentation]  The delete command must fail if a training cannot be found by id
+    [Documentation]  The delete command must fail if a training cannot be found by name
     ${res}=  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
              Should not be equal  ${res.rc}  ${0}
              Should contain   ${res.stderr}  not found
@@ -119,8 +118,8 @@ Failed Training
     ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
              Should not be equal  ${res.rc}  ${0}
 
-    ${logs}=  Get model training logs  ${TRAINING_NAME}
-    Should contain  ${logs}  training is failed
+    ${logs}=  StrictShell  legionctl --verbose mt logs ${TRAINING_NAME}
+    Should contain  ${logs.stdout}  training is failed
 
     Wait Until Keyword Succeeds  2m  5 sec  Check all containers terminated  ${TRAINING_NAME}
 

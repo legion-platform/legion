@@ -3,37 +3,27 @@ kind: StatefulSet
 metadata:
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "legion-operator"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
 spec:
   serviceName: "legion-operator"
   replicas: {{ .Values.operator.server.replicas }}
   selector:
     matchLabels:
-      component: "legion-operator"
-      {{- include "legion.helm-labels-for-search" . | nindent 6 }}
+      {{- include "legion.helm-labels-for-search" (dict "component" "operator" "root" .) | nindent 6 }}
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
-        component: "legion-operator"
-        {{- include "legion.helm-labels" . | nindent 8 }}
+        {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 8 }}
     spec:
       {{- if .Values.rbac }}
       serviceAccountName: "{{ .Release.Name }}-operator"
       {{- end }}
-      volumes:
-        - name: cert
-          secret:
-            defaultMode: 420
-            secretName: "{{ .Release.Name }}-webhook-server-secret"
       containers:
       - image: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.server "tpl" "%sk8s-operator:%s") }}"
         imagePullPolicy: Always
-        name: manager
-        volumeMounts:
-          - mountPath: /tmp/cert
-            name: cert
-            readOnly: true
+        name: operator
         env:
           - name: NAMESPACE
             valueFrom:
@@ -43,8 +33,6 @@ spec:
             value: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.builder "tpl" "%sk8s-model-builder:%s") }}"
           - name: BUILDER_SERVICE_ACCOUNT
             value: "{{ .Release.Name }}-model-builder"
-          - name: PYTHON_TOOLCHAIN_IMAGE
-            value: "{{ include "legion.image-name" (dict "root" . "service" .Values.toolchains.python "tpl" "%spython-toolchain:%s") }}"
           - name: BUILD_IMAGE_PREFIX
             value: {{ .Values.modelStorage.buildPrefix | quote }}
           - name: DOCKER_REGISTRY
@@ -65,18 +53,19 @@ spec:
             value: {{ .Values.modelMetrics.host | quote }}
           - name: METRICS_PORT
             value: {{ .Values.modelMetrics.port | quote }}
-          - name: WEBHOOK_SECRET_NAME
-            value: "{{ .Release.Name }}-webhook-server-secret"
-          - name: WEBHOOK_SERVICE_NAME
-            value: "{{ .Release.Name }}-operator"
-          - name: WEBHOOK_PORT
-            value: "9876"
+          - name: PROMETHEUS_METRICS_PORT
+            value: "7777"
+          - name: JWT_ENABLED
+            value: {{ .Values.modelApiSecurity.enabled | quote }}
+          - name: JWKS_URL
+            value: "http://{{ .Release.Name }}-edi.{{ .Release.Namespace }}.svc.cluster.local/api/v1/model/jwks"
+          - name: JWKS_CLUSTER
+            value: "outbound|80||{{ .Release.Name }}-edi.{{ .Release.Namespace }}.svc.cluster.local"
+          - name: EDGE_HOST
+            value: https://{{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge.%s") }}
         resources:
           {{- toYaml .Values.operator.server.resources | nindent 10 }}
         ports:
-        - containerPort: 9876
-          name: webhook-server
-          protocol: TCP
         - containerPort: 7777
           name: metrics
           protocol: TCP
@@ -86,37 +75,22 @@ kind: Secret
 metadata:
   name: "{{ .Release.Name }}-operator-config"
   labels:
-    component: "legion-operator"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
 data:
   docker.registry.user: {{ .Values.modelStorage.external.user | b64enc | quote }}
   docker.registry.password: {{ .Values.modelStorage.external.password | b64enc | quote }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  labels:
-    component: "legion-operator"
-    {{- include "legion.helm-labels" . | nindent 4 }}
-  name: "{{ .Release.Name }}-webhook-server-secret"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: "{{ .Release.Name }}-operator"
   labels:
-    component: "legion-operator"
-    {{- include "legion.helm-labels" . | nindent 4 }}
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
 spec:
   selector:
-    component: "legion-operator"
-    {{- include "legion.helm-labels-for-search" . | nindent 4 }}
+    {{- include "legion.helm-labels-for-search" (dict "component" "operator" "root" .) | nindent 4 }}
   ports:
   - name: metrics
     targetPort: 7777
     port: 7777
-    protocol: TCP
-  - name: webhook
-    targetPort: 9876
-    port: 443
     protocol: TCP

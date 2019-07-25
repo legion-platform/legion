@@ -30,7 +30,7 @@ from legion.sdk.containers.exceptions import IncompatibleLegionModelDockerImage
 LOGGER = logging.getLogger(__name__)
 
 
-def get_models(client, name=None, model_id=None, model_version=None):
+def get_models(client, name=None, model_name=None, model_version=None):
     """
     Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
 
@@ -38,8 +38,8 @@ def get_models(client, name=None, model_id=None, model_version=None):
     :type client: :py:class:`docker.client.DockerClient`
     :param name: name of deployment
     :type name: str
-    :param model_id: model id or */None for all models
-    :type model_id: str or None
+    :param model_name: model name or */None for all models
+    :type model_name: str or None
     :param model_version: (Optional) model version or */None for all
     :type model_version: str or None
     :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
@@ -48,9 +48,9 @@ def get_models(client, name=None, model_id=None, model_version=None):
     containers = [container
                   for container in client.containers.list()
                   if container.labels
-                  and headers.DOMAIN_MODEL_ID in container.labels
+                  and headers.DOMAIN_MODEL_NAME in container.labels
                   and headers.DOMAIN_MODEL_VERSION in container.labels
-    ]
+                  ]
 
     # First - filter by deployment name, if it exist
     if name:
@@ -60,11 +60,11 @@ def get_models(client, name=None, model_id=None, model_version=None):
             if container.name == name
         ]
 
-    # Next - filter by model_id & model_version, it they are present
-    if model_id or model_version:
+    # Next - filter by model_name & model_version, it they are present
+    if model_name or model_version:
         containers = [container
                       for container in containers
-                      if model_id in (None, '*', container.labels[headers.DOMAIN_MODEL_ID])
+                      if model_name in (None, '*', container.labels[headers.DOMAIN_MODEL_NAME])
                       and model_version in (None, '*', container.labels[headers.DOMAIN_MODEL_VERSION])
                       ]
 
@@ -79,9 +79,9 @@ def get_models(client, name=None, model_id=None, model_version=None):
     return sorted(prepared_containers, key=lambda ms: ms.deployment_name)
 
 
-def get_models_strict(client, name=None, model_id=None, model_version=None, ignore_not_found=False):
+def get_models_strict(client, name=None, model_name=None, model_version=None, ignore_not_found=False):
     """
-    Get models that fit match criterions (model id and model version, model id may be *, model version may be *)
+    Get models that fit match criterions (model name and model version, model name may be *, model version may be *)
     If more that one model would be found with unstrict criterion - exception would be raised
     If no one model would be found - exception would be raised
 
@@ -89,21 +89,21 @@ def get_models_strict(client, name=None, model_id=None, model_version=None, igno
     :type client: :py:class:`docker.client.DockerClient`
     :param name: (Optional) name of deployment
     :type name: str
-    :param model_id: (Optional) model id or * for all models
-    :type model_id: str
+    :param model_name: (Optional) model name or * for all models
+    :type model_name: str
     :param model_version: (Optional) model version
     :type model_version: str
     :param ignore_not_found: (Optional) ignore exception if cannot find any model
     :type ignore_not_found: bool
     :return: list[:py:class:`legion.k8s.ModelService`] -- founded model services
     """
-    model_services = get_models(client, name, model_id, model_version)
+    model_services = get_models(client, name, model_name, model_version)
 
-    ignore_strictness = model_id == '*' or model_version == '*'
+    ignore_strictness = model_name == '*' or model_version == '*'
 
     if len(model_services) > 1:
-        LOGGER.info('More than one model was found for filter: id={!r} version={!r}'
-                    .format(model_id, model_version))
+        LOGGER.info('More than one model was found for filter: name={!r} version={!r}'
+                    .format(model_name, model_version))
         if not ignore_strictness and not model_version:
             raise Exception('Please specify version of model')
 
@@ -139,20 +139,20 @@ def deploy_model(client, name, image, local_port=0):
         docker_image = client.images.pull(image)
         LOGGER.debug('Image {} has been pulled'.format(image))
 
-    model_id = docker_image.labels.get(headers.DOMAIN_MODEL_ID)
+    model_name = docker_image.labels.get(headers.DOMAIN_MODEL_NAME)
     model_version = docker_image.labels.get(headers.DOMAIN_MODEL_VERSION)
 
-    if not model_id or not model_version:
+    if not model_name or not model_version:
         raise IncompatibleLegionModelDockerImage(
             'Legion docker labels for model image are missed: {}'.format(
-                ', '.join((headers.DOMAIN_MODEL_ID,
+                ', '.join((headers.DOMAIN_MODEL_NAME,
                            headers.DOMAIN_MODEL_VERSION,)),
             ))
 
-    LOGGER.debug('Image {} contains model: {!r} version {!r}'.format(image, model_id, model_version))
+    LOGGER.debug('Image {} contains model: {!r} version {!r}'.format(image, model_name, model_version))
 
     if get_models(client, name):
-        raise Exception('Model with same id and version already has been deployed')
+        raise Exception('Model with same name and version already has been deployed')
 
     port_configuration = {
         config.LEGION_PORT: None if not local_port else local_port
@@ -160,7 +160,7 @@ def deploy_model(client, name, image, local_port=0):
     LOGGER.debug('Creating container with image {!r} and port configuration {!r}'.format(image,
                                                                                          port_configuration))
 
-    docker_labels = {f'{definitions.LEGION_COMPONENT_LABEL}.model_id': model_id,
+    docker_labels = {f'{definitions.LEGION_COMPONENT_LABEL}.model_name': model_name,
                      f'{definitions.LEGION_COMPONENT_LABEL}.model_version': model_version}
 
     container = client.containers.run(docker_image,
@@ -174,7 +174,7 @@ def deploy_model(client, name, image, local_port=0):
     return get_models(client, name)
 
 
-def undeploy_model(client, name, model_id, model_version, ignore_not_found):
+def undeploy_model(client, name, model_name, model_version, ignore_not_found):
     """
     Undeploy local deployed image
 
@@ -182,15 +182,15 @@ def undeploy_model(client, name, model_id, model_version, ignore_not_found):
     :type client: :py:class:`docker.client.DockerClient`
     :param name: name of model deployment
     :type name: (Optional) str
-    :param model_id: model id
-    :type model_id: (Optional) str
+    :param model_name: model name
+    :type model_name: (Optional) str
     :param model_version: (Optional) specific model version
     :type model_version: str or None
     :param ignore_not_found: (Optional) ignore exception if cannot find models
     :type ignore_not_found: bool
     :return: list[:py:class:`legion.k8s.ModelService`] -- affected model services
     """
-    target_deployments = get_models_strict(client, name, model_id, model_version, ignore_not_found)
+    target_deployments = get_models_strict(client, name, model_name, model_version, ignore_not_found)
     for deployment in target_deployments:
         container = client.containers.get(deployment.container_id)
         container.stop()
@@ -207,7 +207,7 @@ def get_local_builds(client):
     :return: list[:py:class:`legion.containers.definitions.ModelBuildInformation`] -- registered model builds
     """
     response = []
-    for image in client.images.list(filters={'label': headers.DOMAIN_MODEL_ID}):
+    for image in client.images.list(filters={'label': headers.DOMAIN_MODEL_NAME}):
         if headers.DOMAIN_MODEL_VERSION in image.labels:
             image_name = image.short_id
             if len(image.tags) == 1:
@@ -215,7 +215,7 @@ def get_local_builds(client):
 
             response.append(container_definitions.ModelBuildInformation(
                 image_name=image_name,
-                model_id=image.labels.get(headers.DOMAIN_MODEL_ID),
+                model_name=image.labels.get(headers.DOMAIN_MODEL_NAME),
                 model_version=image.labels.get(headers.DOMAIN_MODEL_VERSION)
             ))
 

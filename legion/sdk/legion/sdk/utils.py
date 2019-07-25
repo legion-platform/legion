@@ -390,35 +390,6 @@ def send_header_to_stderr(header, value):
     print(message, file=sys.__stderr__, flush=True)
 
 
-def model_properties_storage_name(model_id, model_version):
-    """
-    Construct properties storage name
-
-    :param model_id: model ID
-    :type model_id: str
-    :param model_version: model version
-    :type model_version: str
-    :return: str -- name of properties storage
-    """
-    return normalize_name('model-{}-{}'.format(model_id, model_version), dns_1035=True)
-
-
-def parse_value_to_type(value, target_type):
-    """
-    Parse string value to target type
-
-    :param value: value to parse
-    :type value: any
-    :param target_type: target python type
-    :type target_type: :py:class:`type`
-    :return: :py:class:`type`() -- target instance
-    """
-    if target_type == bool:
-        return config.cast_bool(str(value))
-    else:
-        return target_type(value)
-
-
 def get_list_of_requirements():
     """
     Get list of requirements stored in data/Pipfile.lock
@@ -470,17 +441,17 @@ def deduce_extra_version():
     return '.'.join([date_string, user_id, commit_id])
 
 
-def deduce_model_file_name(model_id, model_version):
+def deduce_model_file_name(model_name, model_version):
     """
     Get model file name
 
-    :param model_id: ID of model
-    :type model_id: str
+    :param model_name: ID of model
+    :type model_name: str
     :param model_version: version of model
     :type model_version: str
     :return: str -- auto deduced file name
     """
-    file_name = '%s-%s+%s.model' % (model_id, str(model_version), deduce_extra_version())
+    file_name = '%s-%s+%s.model' % (model_name, str(model_version), deduce_extra_version())
 
     default_prefix = config.LOCAL_DEFAULT_RESOURCE_PREFIX
     if default_prefix:

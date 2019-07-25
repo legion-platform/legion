@@ -105,7 +105,6 @@ export function addCommands(options: IAddCloudCommandsOptions) {
                     {
                       name: value.name,
                       image,
-                      replicas: value.replicas,
                       livenessProbeInitialDelay: 5,
                       readinessProbeInitialDelay: 3
                     },
@@ -147,87 +146,6 @@ export function addCommands(options: IAddCloudCommandsOptions) {
         }
       } catch (err) {
         showErrorMessage('Can not deploy model on a cloud', err);
-      }
-    }
-  });
-
-  commands.addCommand(CommandIDs.scaleCloudDeployment, {
-    label: 'Scale model in a cloud',
-    caption: 'Change count of desired replicas in a cloud',
-    execute: args => {
-      try {
-        const name = args['name'] as string;
-        const currentAvailableReplicas = args[
-          'currentAvailableReplicas'
-        ] as number;
-        const currentDesiredReplicas = args['currentDesiredReplicas'] as number;
-        const newScale = args['newScale'] as number;
-        if (newScale !== undefined) {
-          let splashScreen = options.splash.show();
-          options.api.cloud
-            .scaleCloudDeployment(
-              {
-                name,
-                newScale
-              },
-              options.state.credentials
-            )
-            .then(_ => {
-              splashScreen.dispose();
-              commands.execute(CommandIDs.refreshCloud, {});
-            })
-            .catch(err => {
-              splashScreen.dispose();
-              showErrorMessage('Can not scale model in a cloud', err);
-            });
-        } else if (name !== undefined) {
-          dialogs
-            .showPromptDialog(
-              'Provide new desired count',
-              `Please provide new scale for model ${name} (currently ${currentAvailableReplicas}/${currentDesiredReplicas} replicas available)`,
-              'Scale',
-              false
-            )
-            .then(({ value, button }) => {
-              if (button.accept) {
-                commands.execute(CommandIDs.scaleCloudDeployment, {
-                  name,
-                  newScale: parseInt(value, 10)
-                });
-              }
-            });
-        } else {
-          dialogs
-            .showChooseDialog(
-              'Choose deployment to scale',
-              'Please choose one deployment from list',
-              options.state.deployments.map(deployment => {
-                return {
-                  value: deployment.name,
-                  text: deployment.name
-                };
-              }),
-              'Scale deployment',
-              false
-            )
-            .then(({ value, button }) => {
-              if (button.accept) {
-                const targetDeployment = options.state.deployments.find(
-                  deployment => deployment.name === value.value
-                );
-                if (targetDeployment != undefined) {
-                  commands.execute(CommandIDs.scaleCloudDeployment, {
-                    name: value.value,
-                    currentAvailableReplicas:
-                      targetDeployment.status.availableReplicas,
-                    currentDesiredReplicas: targetDeployment.spec.replicas
-                  });
-                }
-              }
-            });
-        }
-      } catch (err) {
-        showErrorMessage('Can not scale cloud model', err);
       }
     }
   });
@@ -300,15 +218,13 @@ export function addCommands(options: IAddCloudCommandsOptions) {
     caption: 'Create new JWT token',
     execute: args => {
       try {
-        const modelID = args['modelID'] as string;
-        const modelVersion = args['modelVersion'] as string;
-        if (modelID) {
+        const roleName = args['roleName'] as string;
+        if (roleName) {
           let splashScreen = options.splash.show();
           options.api.cloud
             .issueCloudAccess(
               {
-                model_id: modelID,
-                model_version: modelVersion
+                role_name: roleName
               },
               options.state.credentials
             )
@@ -328,8 +244,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
           cloudDialogs.showIssueModelAccessToken().then(({ value, button }) => {
             if (button.accept) {
               commands.execute(CommandIDs.issueNewCloudAccessToken, {
-                modelID: value.modelId,
-                modelVersion: value.modelVersion
+                roleName: value.roleName
               });
             }
           });

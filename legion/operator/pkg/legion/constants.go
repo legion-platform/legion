@@ -18,10 +18,10 @@ package legion
 
 const (
 	DomainPrefix       = "com.epam."
-	DomainModelId      = DomainPrefix + "legion.model.id"
+	DomainModelName    = DomainPrefix + "legion.model.name"
 	DomainModelVersion = DomainPrefix + "legion.model.version"
 	SystemLabel        = "app.kubernetes.io/name"
 	SystemValue        = "yes"
-	ComponentLabel     = "component"
+	ComponentLabel     = "app.kubernetes.io/component"
 	ComponentNameModel = "legion-model"
 )

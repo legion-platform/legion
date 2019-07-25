@@ -23,7 +23,6 @@ import * as base from './base';
 
 export const REMOVE_DEPLOYMENT_LABEL = 'Remove';
 export const REMOVE_TRAINING_LABEL = 'Remove';
-export const SCALE_DEPLOYMENT_LABEL = 'Scale';
 export const CREATE_DEPLOYMENT_LABEL = 'Deploy';
 export const LOGS_LABEL = 'Logs';
 
@@ -51,14 +50,10 @@ export function showCloudTrainInformationDialog(
             <p className={style.fieldTextStyle}>{training.spec.toolchain}</p>
           </React.Fragment>
         )}
-        <h3 className={style.fieldLabelStyle}>Model (id / version)</h3>
-        {training.status.id.length > 0 ? (
-          <p className={style.fieldTextStyle}>
-            {training.status.id} / {training.status.version}
-          </p>
-        ) : (
-          <p className={style.fieldTextStyle}>unknown</p>
-        )}
+        <h3 className={style.fieldLabelStyle}>Model (name / version)</h3>
+        <p className={style.fieldTextStyle}>
+          {training.status.name} / {training.status.version}
+        </p>
 
         <h3 className={style.fieldLabelStyle}>VCS</h3>
         <p className={style.fieldTextStyle}>
@@ -89,16 +84,19 @@ export function showCloudDeploymentInformationDialog(
       <div>
         <h3 className={style.fieldLabelStyle}>Deployment name</h3>
         <p className={style.fieldTextStyle}>{deploymentInformation.name}</p>
+        <h3 className={style.fieldLabelStyle}>Deployment role</h3>
+        <p className={style.fieldTextStyle}>
+          {deploymentInformation.spec.roleName}
+        </p>
         <h3 className={style.fieldLabelStyle}>Mode</h3>
         <p className={style.fieldTextStyle}>CLUSTER</p>
         <h3 className={style.fieldLabelStyle}>Image</h3>
         <p className={style.fieldTextStyle}>
           {deploymentInformation.spec.image}
         </p>
-        <h3 className={style.fieldLabelStyle}>Replicas (actual / desired)</h3>
+        <h3 className={style.fieldLabelStyle}>Replicas (actual)</h3>
         <p className={style.fieldTextStyle}>
-          {deploymentInformation.status.availableReplicas} /{' '}
-          {deploymentInformation.spec.replicas}
+          {deploymentInformation.status.availableReplicas}
         </p>
         <h3 className={style.fieldLabelStyle}>Probes (initial / readiness)</h3>
         <p className={style.fieldTextStyle}>
@@ -112,7 +110,6 @@ export function showCloudDeploymentInformationDialog(
         label: REMOVE_DEPLOYMENT_LABEL,
         displayType: 'warn'
       }),
-      Dialog.createButton({ label: SCALE_DEPLOYMENT_LABEL }),
       Dialog.okButton({ label: 'Close window' })
     ]
   });
@@ -176,7 +173,6 @@ export function showApplyResultsDialog(result: model.IApplyFromFileResponse) {
 
 export interface ICreateNewDeploymentDialogValues {
   name: string;
-  replicas: number;
 }
 
 class CreateNewDeploymentDetailsDialog extends Widget {
@@ -189,11 +185,9 @@ class CreateNewDeploymentDetailsDialog extends Widget {
   getValue(): ICreateNewDeploymentDialogValues {
     let inputs = this.node.getElementsByTagName('input');
     const nameInput = inputs[0] as HTMLInputElement;
-    const replicasInput = inputs[1] as HTMLInputElement;
 
     return {
-      name: nameInput.value,
-      replicas: parseInt(replicasInput.value, 10)
+      name: nameInput.value
     };
   }
 }
@@ -207,8 +201,7 @@ export function showCreateNewDeploymentDetails(deploymentImage: string) {
 }
 
 export interface IIssueModelAccessTokenDialogValues {
-  modelId: string;
-  modelVersion: string;
+  roleName: string;
 }
 
 class IssueModelAccessTokenDialog extends Widget {
@@ -218,12 +211,10 @@ class IssueModelAccessTokenDialog extends Widget {
 
   getValue(): IIssueModelAccessTokenDialogValues {
     let inputs = this.node.getElementsByTagName('input');
-    const modelIDInput = inputs[0] as HTMLInputElement;
-    const modelVersionInput = inputs[1] as HTMLInputElement;
+    const roleInput = inputs[0] as HTMLInputElement;
 
     return {
-      modelId: modelIDInput.value,
-      modelVersion: modelVersionInput.value
+      roleName: roleInput.value
     };
   }
 }
@@ -248,16 +239,12 @@ namespace Private {
     );
     body.appendChild(base.createDialogInputLabel('Deployment name'));
     body.appendChild(base.createDialogInput(undefined, 'name of deployment'));
-    body.appendChild(base.createDialogInputLabel('Count of replicas'));
-    body.appendChild(base.createDialogInput('1'));
     return body;
   }
 
   export function buildIssueModelAccessTokenDialog() {
     let body = base.createDialogBody();
-    body.appendChild(base.createDialogInputLabel('Model ID'));
-    body.appendChild(base.createDialogInput());
-    body.appendChild(base.createDialogInputLabel('Model version'));
+    body.appendChild(base.createDialogInputLabel('Role name'));
     body.appendChild(base.createDialogInput());
     return body;
   }

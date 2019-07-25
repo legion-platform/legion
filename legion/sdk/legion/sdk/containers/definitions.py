@@ -45,35 +45,35 @@ class ModelBuildResult(typing.NamedTuple):
 
 class ModelBuildInformation(typing.NamedTuple):
     image_name: str
-    model_id: str
+    model_name: str
     model_version: str
 
 
-class ModelIdVersion:
+class ModelNameVersion:
     """
-    Holder for model ID and version
+    Holder for model name and version
     """
 
-    def __init__(self, model_id, model_version):
+    def __init__(self, model_name, model_version):
         """
-        Build model ID and version holder
+        Build model name and version holder
 
-        :param model_id: model ID
-        :type model_id: str
+        :param model_name: model name
+        :type model_name: str
         :param model_version: model version
         :type model_version: str
         """
-        self._id = model_id
+        self._name = model_name
         self._version = model_version
 
     @property
-    def id(self):
+    def name(self):
         """
-        Get model ID
+        Get model name
 
-        :return: str -- model ID
+        :return: str -- model name
         """
-        return self._id
+        return self._name
 
     @property
     def version(self):
@@ -89,10 +89,10 @@ class ModelIdVersion:
         Check equation of self object with another by fields
 
         :param other: another object
-        :type other: :py:class:`legion.k8s.definitions.ModelIdVersion`
+        :type other: :py:class:`legion.k8s.definitions.ModelNameVersion`
         :return: bool -- result of equation
         """
-        return self.id == other.id and self.version == other.version
+        return self.name == other.name and self.version == other.version
 
     def __repr__(self):
         """
@@ -101,7 +101,7 @@ class ModelIdVersion:
         :return: str -- string representation
         """
         return '{}({}, {})'.format(self.__class__.__name__,
-                                   self.id, self.version)
+                                   self.name, self.version)
 
     def __hash__(self):
         """
@@ -109,7 +109,7 @@ class ModelIdVersion:
 
         :return: int -- hash of object
         """
-        return hash((self.id, self.version))
+        return hash((self.name, self.version))
 
     __str__ = __repr__
 
@@ -140,7 +140,7 @@ class ModelDeploymentDescription:
         :type status: str
         :param deployment_name: name of deployment
         :type deployment_name: str
-        :param model: model ID
+        :param model: model name
         :type model: str
         :param version: model version
         :type version: str
@@ -214,7 +214,7 @@ class ModelDeploymentDescription:
         return ModelDeploymentDescription(
             status=STATUS_OK if is_working else STATUS_FAIL,
             deployment_name=docker_container_info.name,
-            model=docker_container_info.labels[headers.DOMAIN_MODEL_ID],
+            model=docker_container_info.labels[headers.DOMAIN_MODEL_NAME],
             version=docker_container_info.labels[headers.DOMAIN_MODEL_VERSION],
             image=image,
             scale=1 if is_working else 0,
@@ -231,18 +231,18 @@ class ModelDeploymentDescription:
         """
         Get name of deployment
 
-        :return: :py:class:`legion.k8s.definitions.ModelIdVersion`
+        :return: :py:class:`legion.k8s.definitions.ModelNameVersion`
         """
         return self._deployment_name
 
     @property
-    def id_and_version(self):
+    def name_and_version(self):
         """
-        Build key from model id and model version
+        Build key from model name and model version
 
-        :return: :py:class:`legion.k8s.definitions.ModelIdVersion`
+        :return: :py:class:`legion.k8s.definitions.ModelNameVersion`
         """
-        return ModelIdVersion(self.model, self.version)
+        return ModelNameVersion(self.model, self.version)
 
     @property
     def status(self):
@@ -256,9 +256,9 @@ class ModelDeploymentDescription:
     @property
     def model(self):
         """
-        Get model ID
+        Get model name
 
-        :return: str -- model ID
+        :return: str -- model name
         """
         return self._model
 

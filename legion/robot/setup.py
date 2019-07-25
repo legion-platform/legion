@@ -32,12 +32,10 @@ def extract_requirements() -> typing.List[str]:
 
     :return: package names as strings
     """
-    legion_dependencies = [f'legion-services=={extract_version()}']
-
     with open(PIP_FILE_LOCK_PATH, 'r') as pip_file_lock_stream:
         pip_file_lock_data = json.load(pip_file_lock_stream)
         pip_file_section_data = pip_file_lock_data.get(PIPFILE_DEP_SECTION, {})
-        return legion_dependencies + [
+        return [
             key + value['version']
             for (key, value)
             in pip_file_section_data.items()

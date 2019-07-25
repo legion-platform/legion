@@ -20,7 +20,6 @@ import argparse
 import logging
 
 from legion.sdk.clients import edi
-from legion.sdk.clients.edge import model_config_prefix
 from legion.sdk.config import update_config_file, MODEL_JWT_TOKEN_SECTION
 
 LOG = logging.getLogger(__name__)
@@ -95,11 +94,12 @@ def generate_token(args):
     :return: str -- token
     """
     edi_client = edi.build_client(args)
-    token = edi_client.get_token(args.model_id, args.model_version, args.expiration_date)
+    token = edi_client.get_token(args.model_role_name, args.expiration_date)
 
     if token:
-        update_config_file(section=MODEL_JWT_TOKEN_SECTION,
-                           **{model_config_prefix(args.model_id, args.model_version): token})
+        if args.model_deployment_name:
+            update_config_file(section=MODEL_JWT_TOKEN_SECTION,
+                               **{args.model_deployment_name: token})
 
         print(token)
     else:
@@ -117,8 +117,9 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
     login_parser.set_defaults(func=login)
 
     generate_token_parser = main_subparser.add_parser('generate-token', description='generate JWT token for model')
-    generate_token_parser.add_argument('--model-id', type=str, help='Model ID')
-    generate_token_parser.add_argument('--model-version', type=str, help='Model version')
+    generate_token_parser.add_argument('--model-deployment-name', '--md-name', '--md', type=str, help='Model Name',
+                                       required=True)
+    generate_token_parser.add_argument('--model-role-name', '--md-role', '--role', type=str, help='Model role name')
     generate_token_parser.add_argument('--expiration-date', type=str,
                                        help='Token expiration date in utc: %%Y-%%m-%%dT%%H:%%M:%%S')
     add_edi_arguments(generate_token_parser)

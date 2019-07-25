@@ -22,7 +22,7 @@ import typing
 
 import yaml
 from legion.robot.libraries import dex_client
-from legion.robot.libraries.dex_client import init_session_id, init_session_id_from_data
+from legion.robot.libraries.dex_client import init_session_id
 
 PROFILE_ENVIRON_KEY = 'CLUSTER_NAME'
 PATH_TO_PROFILES_DIR = 'PATH_TO_PROFILES_DIR'
@@ -68,52 +68,30 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
     with open(secrets, 'r') as stream:
         data.update(yaml.safe_load(stream))
 
+    host_base_domain = data.get('test_base_domain', data['base_domain'])
     variables = {
-        'CLUSTER_NAMESPACE': data['namespace'],
-        'DEPLOYMENT': data['deployment'],
-
-        'HOST_BASE_DOMAIN': data.get('test_base_domain', data['base_domain']),
-        'USE_HTTPS_FOR_TESTS': data.get('use_https_for_tests', 'yes') == 'yes',
-
-        'EXAMPLES_TO_TEST': data['examples_to_test'],
-        'MODEL_ID': data['model_id_to_test'],
-        'ENCLAVES': data.get('enclaves', []),
-
+        'HOST_BASE_DOMAIN': host_base_domain,
         'CLUSTER_NAME': data['cluster_name'],
-        'NEXUS_DOCKER_REPO': data['docker_repo'],
-        'TEMP_DIRECTORY': data['tmp_dir'],
         'FEEDBACK_BUCKET': data['legion_data_bucket'],
         'GRAFANA_USER': data['grafana']['admin']['username'],
         'GRAFANA_PASSWORD': data['grafana']['admin']['password'],
-        'MONITORING_NAMESPACE': data.get('monitoring_namespace', 'kube-monitoring'),
-        'CLOUD_TYPE': data.get('cloud_type', 'gcp')
+        'CLOUD_TYPE': data.get('cloud_type', 'gcp'),
+
+        'EDGE_URL': os.getenv('EDGE_URL', f'https://edge.{host_base_domain}'),
+        'EDI_URL': os.getenv('EDI_URL', f'https://edi.{host_base_domain}'),
+        'GRAFANA_URL': os.getenv('GRAFANA_URL', f'https://grafana.{host_base_domain}'),
+        'PROMETHEUS_URL': os.getenv('PROMETHEUS_URL', f'https://prometheus.{host_base_domain}'),
+        'ALERTMANAGER_URL': os.getenv('ALERTMANAGER_URL', f'https://alertmanager.{host_base_domain}'),
+        'DASHBOARD_URL': os.getenv('DASHBOARD_URL', f'https://dashboard.{host_base_domain}'),
     }
-
-    variables['HOST_PROTOCOL'] = 'https' if variables['USE_HTTPS_FOR_TESTS'] else 'http'
-    variables['MODEL_TEST_ENCLAVE'] = variables['ENCLAVES'][0] if variables['ENCLAVES'] else 'UNKNOWN_ENCLAVE'
-
-    cookies = os.getenv(PATH_TO_COOKIES_FILE, "credentials.secret")
-    cookies_data = None
-    if cookies:
-        try:
-            with open(cookies, 'r') as stream:
-                lines = stream.readlines()
-                cookies_data = {
-                    'cookies': lines[2].rstrip()
-                }
-        except IOError:
-            pass
-        except IndexError:
-            pass
 
     if 'dex' in data and data['dex']['enabled'] and 'staticPasswords' in data['dex']['config'] and \
             data['dex']['config']['staticPasswords']:
         static_user = data['dex']['config']['staticPasswords'][0]
-        if not cookies_data:
-            init_session_id(static_user['email'], static_user['password'],
+
+        init_session_id(static_user['email'], static_user['password'],
                             data.get('test_base_domain', data['base_domain']))
-        else:
-            init_session_id_from_data(cookies_data)
+
         variables['STATIC_USER_EMAIL'] = static_user['email']
         variables['STATIC_USER_PASS'] = static_user['password']
 

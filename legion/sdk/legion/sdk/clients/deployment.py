@@ -27,21 +27,25 @@ from legion.sdk.definitions import MODEL_DEPLOYMENT_URL
 
 LOGGER = logging.getLogger(__name__)
 
-SUCCESS_STATE = "DeploymentCreated"
-FAILED_STATE = "DeploymentFailed"
+READY_STATE = "Ready"
+PROCESSING_STATE = "Processing"
+FAILED_STATE = "Failed"
 
 
 class ModelDeployment(typing.NamedTuple):
     name: str
     image: str
+    role_name: str = ""
     resources: typing.Mapping[str, typing.Any] = {}
     annotations: typing.Mapping[str, str] = {}
-    replicas: int = 1
+    min_replicas: int = 0
+    max_replicas: int = 1
     liveness_probe_initial_delay: int = 3
     readiness_probe_initial_delay: int = 3
     state: str = ""
     service_url: str = ""
-    available_replicas: bool = ""
+    available_replicas: int = 0
+    replicas: int = 0
 
     @staticmethod
     def from_json(md: typing.Dict[str, str]) -> 'ModelDeployment':
@@ -59,12 +63,15 @@ class ModelDeployment(typing.NamedTuple):
             image=md_spec.get('image', ''),
             resources=md_spec.get('resources', {}),
             annotations=md_spec.get('annotations', {}),
-            replicas=md_spec.get('replicas', ''),
+            role_name=md_spec.get('roleName', ''),
+            min_replicas=int(md_spec.get('minReplicas', 0)),
+            max_replicas=int(md_spec.get('maxReplicas', 1)),
             liveness_probe_initial_delay=md_spec.get('livenessProbeInitialDelay'),
             readiness_probe_initial_delay=md_spec.get('readinessProbeInitialDelay'),
             state=md_status.get('state', ''),
             service_url=md_status.get('serviceURL', ''),
-            available_replicas=md_status.get('availableReplicas', 0),
+            available_replicas=int(md_status.get('availableReplicas', 0)),
+            replicas=int(md_status.get('replicas', 0)),
         )
 
     def to_json(self, with_status=False) -> typing.Dict[str, str]:
@@ -78,7 +85,9 @@ class ModelDeployment(typing.NamedTuple):
                 'image': self.image,
                 'resources': self.resources,
                 'annotations': self.annotations,
-                'replicas': self.replicas,
+                'minReplicas': self.min_replicas,
+                'roleName': self.role_name,
+                'maxReplicas': self.max_replicas,
                 'livenessProbeInitialDelay': self.liveness_probe_initial_delay,
                 'readinessProbeInitialDelay': self.readiness_probe_initial_delay
             }
@@ -87,7 +96,8 @@ class ModelDeployment(typing.NamedTuple):
             result['status'] = {
                 'state': self.state,
                 'serviceURL': self.service_url,
-                'availableReplicas': self.available_replicas
+                'availableReplicas': self.available_replicas,
+                'replicas': self.replicas
             }
         return result
 
@@ -102,7 +112,6 @@ class ModelDeploymentClient(RemoteEdiClient):
         Get Model Deployment from EDI server
 
         :param name: Model Deployment name
-        :type version: str
         :return: Model Deployment
         """
         return ModelDeployment.from_json(self.query(f'{MODEL_DEPLOYMENT_URL}/{name}'))
@@ -138,17 +147,6 @@ class ModelDeploymentClient(RemoteEdiClient):
         """
         return self.query(MODEL_DEPLOYMENT_URL, action='PUT', payload=md.to_json())['message']
 
-    def scale(self, name: str, replicas: int) -> str:
-        """
-        Scale Model Deployment
-
-        :param replicas: new number of replicas
-        :param name: name of Model deployment
-        :return Message from EDI server
-        """
-        return self.query(f'{MODEL_DEPLOYMENT_URL}/{name}/scale', action='PUT',
-                          payload={'replicas': replicas})['message']
-
     def delete(self, name: str) -> str:
         """
         Delete Model Deployments
@@ -173,10 +171,12 @@ class ModelDeploymentClient(RemoteEdiClient):
         return self.query(url, action='DELETE')['message']
 
 
-def build_client(args: argparse.Namespace = None) -> ModelDeploymentClient:
+def build_client(args: argparse.Namespace = None, retries=3, timeout=10) -> ModelDeploymentClient:
     """
     Build Model Deployment client from from ENV and from command line arguments
 
+    :param timeout: request timeout in seconds
+    :param retries: number of retries
     :param args: (optional) command arguments with .namespace
     """
     host, token = None, None
@@ -193,7 +193,7 @@ def build_client(args: argparse.Namespace = None) -> ModelDeploymentClient:
         token = token or config.EDI_TOKEN
 
     if host:
-        client = ModelDeploymentClient(host, token)
+        client = ModelDeploymentClient(host, token, retries=retries, timeout=timeout)
     else:
         raise Exception('EDI endpoint is not configured')
 

@@ -31,20 +31,28 @@ RUN dep ensure -vendor-only
 
 COPY legion/feedback-aggregator/ ./
 
-RUN GOOS=linux GOARCH=amd64 make build && make test
+RUN GOOS=linux GOARCH=amd64 make build-all && (make test || true)
 
 #########################################################
 #########################################################
 #########################################################
 
-FROM alpine:3.9 as server
+FROM alpine:3.9 as aggregator
 
 ENV LEGION_DIR="/opt/legion"
 
 WORKDIR "${LEGION_DIR}"
-COPY --from=builder /go/src/github.com/legion-platform/legion/legion/feedback-aggregator/feedback ./
-CMD ["./feedback"]
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/feedback-aggregator/aggregator ./
+CMD ["./aggregator"]
 
 #########################################################
 #########################################################
 #########################################################
+
+FROM alpine:3.9 as collector
+
+ENV LEGION_DIR="/opt/legion"
+
+WORKDIR "${LEGION_DIR}"
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/feedback-aggregator/collector ./
+CMD ["./collector"]

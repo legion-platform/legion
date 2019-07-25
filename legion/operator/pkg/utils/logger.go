@@ -16,9 +16,12 @@
 
 package utils
 
-import logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+import (
+	"os"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+)
 
 // SetupLogger setups global logger
 func SetupLogger() {
-	logf.SetLogger(logf.ZapLogger(true))
+	logf.SetLogger(logf.ZapLoggerTo(os.Stdout, true))
 }

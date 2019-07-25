@@ -19,7 +19,6 @@ import {
   JupyterLabPlugin
 } from '@jupyterlab/application';
 import { ISplashScreen } from '@jupyterlab/apputils';
-import { IStateDB } from '@jupyterlab/coreutils';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 
@@ -63,7 +62,6 @@ const pluginRequirements = [
   IMainMenu,
   ILayoutRestorer,
   ISplashScreen,
-  IStateDB,
   IFileBrowserFactory
 ];
 
@@ -114,7 +112,7 @@ export class LegionCloudExtension extends BaseLegionExtension
    * @param app JupyterLab target JupyterLab
    * @param restorer ILayoutRestorer layout restorer
    */
-  constructor(app: JupyterLab, restorer: ILayoutRestorer, state: IStateDB) {
+  constructor(app: JupyterLab, restorer: ILayoutRestorer) {
     super();
 
     this._app = app;
@@ -123,7 +121,7 @@ export class LegionCloudExtension extends BaseLegionExtension
       this.constructTrainingLogWidget(name)
     );
 
-    this.apiCloudState = buildInitialCloudAPIState(state);
+    this.apiCloudState = buildInitialCloudAPIState();
     this.sideWidget = createCloudSidebarWidget(app, {
       manager: app.serviceManager,
       state: this.apiCloudState,
@@ -193,11 +191,10 @@ function activateCloudPlugin(
   mainMenu: IMainMenu,
   restorer: ILayoutRestorer,
   splash: ISplashScreen,
-  state: IStateDB,
   factory: IFileBrowserFactory
 ): ILegionExtension {
   // Build extension
-  let legionExtension = new LegionCloudExtension(app, restorer, state);
+  let legionExtension = new LegionCloudExtension(app, restorer);
 
   // Build options for commands
   const addCommandsOptions = {

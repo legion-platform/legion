@@ -36,9 +36,13 @@ const (
 	getAllModelDeploymentUrl         = "/model/deployment"
 	createModelDeploymentUrl         = "/model/deployment"
 	updateModelDeploymentUrl         = "/model/deployment"
-	scaleModelDeploymentUrl          = "/model/deployment/:name/scale"
 	deleteModelDeploymentUrl         = "/model/deployment/:name"
 	deleteModelDeploymentByLabelsUrl = "/model/deployment"
+	defaultGracePeriod               = 10
+)
+
+var (
+	defaultMDDeleteOption = metav1.DeletePropagationForeground
 )
 
 type ModelDeploymentController struct {
@@ -99,8 +103,6 @@ func (controller *ModelDeploymentController) getMD(c *gin.Context) {
 // @Tags ModelDeployment
 // @Accept  json
 // @Produce  json
-// @Param com.epam.legion.model.id query string false "model id label"
-// @Param com.epam.legion.model.version query string false "model version label"
 // @Success 200 {array} v1.MDResponse
 // @Failure 500 {object} routes.HTTPResult
 // @Router /api/v1/model/deployment [get]
@@ -204,46 +206,24 @@ func (controller *ModelDeploymentController) updateMD(c *gin.Context) {
 	routes.AbortWithSuccess(c, http.StatusOK, fmt.Sprintf("Model deployment %s was updated", md.Name))
 }
 
-// @Summary Scale a Model deployment
-// @Description Scale a Model deployment. Result is updated Model deployment.
-// @Param md body v1.MDReplicas true "Scale a Model deployment"
-// @Param name path string true "Name of Model Deployment"
-// @Tags ModelDeployment
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} routes.HTTPResult
-// @Failure 404 {object} routes.HTTPResult
-// @Failure 500 {object} routes.HTTPResult
-// @Router /api/v1/model/deployment/{name}/scale [put]
-func (controller *ModelDeploymentController) scaleMD(c *gin.Context) {
-	var mdReplicas MDReplicas
-
-	if err := c.ShouldBindJSON(&mdReplicas); err != nil {
-		routes.AbortWithError(c, 500, err.Error())
-		return
+func (controller *ModelDeploymentController) deleteModelDeployment(mdName string) error {
+	md := &v1alpha1.ModelDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mdName,
+			Namespace: controller.namespace,
+		},
 	}
 
-	mdName := c.Param("name")
-
-	var md v1alpha1.ModelDeployment
-	if err := controller.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: mdName, Namespace: controller.namespace},
-		&md,
+	if err := controller.k8sClient.Delete(
+		context.TODO(),
+		md,
+		client.GracePeriodSeconds(defaultGracePeriod),
+		client.PropagationPolicy(defaultMDDeleteOption),
 	); err != nil {
-		throwK8sError(c, err, fmt.Sprintf("Update md with name %s", mdName))
-
-		return
+		return err
 	}
 
-	md.Spec.Replicas = &mdReplicas.Replicas
-
-	if err := controller.k8sClient.Update(context.TODO(), &md); err != nil {
-		logMD.Error(err, fmt.Sprintf("Creation of the md: %+v", md))
-		routes.AbortWithError(c, 500, err.Error())
-		return
-	}
-
-	routes.AbortWithSuccess(c, http.StatusOK, fmt.Sprintf("Model deployment %s was updated", md.Name))
+	return nil
 }
 
 // @Summary Delete a Model deployment
@@ -260,17 +240,8 @@ func (controller *ModelDeploymentController) scaleMD(c *gin.Context) {
 func (controller *ModelDeploymentController) deleteMD(c *gin.Context) {
 	mdName := c.Param("name")
 
-	md := &v1alpha1.ModelDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mdName,
-			Namespace: controller.namespace,
-		},
-	}
-
-	if err := controller.k8sClient.Delete(context.TODO(),
-		md,
-	); err != nil {
-		throwK8sError(c, err, fmt.Sprintf("Dlete md with name %s", mdName))
+	if err := controller.deleteModelDeployment(mdName); err != nil {
+		throwK8sError(c, err, fmt.Sprintf("Delete md with name %s", mdName))
 
 		return
 	}
@@ -283,8 +254,6 @@ func (controller *ModelDeploymentController) deleteMD(c *gin.Context) {
 // @Tags ModelDeployment
 // @Accept  json
 // @Produce  json
-// @Param com.epam.legion.model.id query string false "model id label"
-// @Param com.epam.legion.model.version query string false "model version label"
 // @Success 200 {object} routes.HTTPResult
 // @Failure 500 {object} routes.HTTPResult
 // @Router /api/v1/model/deployment [delete]
@@ -325,7 +294,7 @@ func (controller *ModelDeploymentController) deleteMDByLabels(c *gin.Context) {
 	for _, md := range mdList.Items {
 		logMD.Info(fmt.Sprintf("Try to delete %s model deployment", md.Name))
 
-		if err := controller.k8sClient.Delete(context.TODO(), &md); err != nil {
+		if err := controller.deleteModelDeployment(md.Name); err != nil {
 			logMD.Error(err, "Model deployment deletion")
 			routes.AbortWithError(c, http.StatusOK, fmt.Sprintf("%s model deployment deletion is failed", md.Name))
 		} else {

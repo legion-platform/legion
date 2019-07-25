@@ -6,11 +6,12 @@ definitions:
         description: Success of error message
         type: string
     type: object
-  v1.MDReplicas:
+  v1.Jwks:
     properties:
-      replicas:
-        description: New number of replicas
-        type: integer
+      keys:
+        items:
+          type: '&{%!s(token.Pos=1395) string string}'
+        type: array
     type: object
   v1.MDRequest:
     properties:
@@ -37,6 +38,30 @@ definitions:
         $ref: '#/definitions/v1alpha1.ModelDeploymentStatus'
         description: Model Deployment specification. It is the same as ModelDeployment
           CRD specification
+        type: object
+    type: object
+  v1.MRRequest:
+    properties:
+      name:
+        description: Model route name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.ModelRouteSpec'
+        description: Model Route specification. It is the same as ModelRoute CRD specification
+        type: object
+    type: object
+  v1.MRResponse:
+    properties:
+      name:
+        description: Model route name
+        type: string
+      spec:
+        $ref: '#/definitions/v1alpha1.ModelRouteSpec'
+        description: Model Route specification. It is the same as ModelRoute CRD specification
+        type: object
+      status:
+        $ref: '#/definitions/v1alpha1.ModelRouteStatus'
+        description: Model Route specification. It is the same as ModelRoute CRD specification
         type: object
     type: object
   v1.MTRequest:
@@ -68,11 +93,8 @@ definitions:
       expiration_date:
         description: Explicitly set expiration date for token
         type: string
-      model_id:
-        description: Model id
-        type: string
-      model_version:
-        description: Model version
+      role_name:
+        description: Model Deployment name
         type: string
     type: object
   v1.TokenResponse:
@@ -101,17 +123,24 @@ definitions:
       livenessProbeInitialDelay:
         description: Initial delay for liveness probe of model pod
         type: integer
+      maxReplicas:
+        description: Maximum number of pods for model. By default the max replicas
+          parameter equals 1.
+        type: integer
+      minReplicas:
+        description: Minimum number of pods for model. By default the min replicas
+          parameter equals 0.
+        type: integer
       readinessProbeInitialDelay:
         description: Initial delay for readiness probe of model pod
-        type: integer
-      replicas:
-        description: Number of pods for model. By default the replicas parameter equals
-          1.
         type: integer
       resources:
         description: |-
           Resources for model deployment
           The same format like k8s uses for pod resources.
+        type: string
+      roleName:
+        description: Initial delay for readiness probe of model pod
         type: string
     type: object
   v1alpha1.ModelDeploymentStatus:
@@ -122,9 +151,12 @@ definitions:
       deployment:
         description: The model k8s deployment name
         type: string
-      message:
-        description: The message describes the state in more details.
+      lastRevisionName:
+        description: Last applied ready knative revision
         type: string
+      replicas:
+        description: Expected number of pods under current load
+        type: integer
       service:
         description: The model k8s service name
         type: string
@@ -134,10 +166,47 @@ definitions:
       state:
         description: |-
           The state of a model deployment.
-            "DeploymentFailed" - A model was not deployed. Because some parameters of the
-                                 custom resource are wrong. For example, there is not a model
-                                 image in a Docker registry.
-            "DeploymentCreated" - A model was deployed successfully.
+            "Processing" - A model was not deployed. Because some parameters of the
+                           custom resource are wrong. For example, there is not a model
+                           image in a Docker registry.
+            "Ready" - A model was deployed successfully.
+        type: string
+    type: object
+  v1alpha1.ModelDeploymentTarget:
+    properties:
+      name:
+        description: Model Deployment name
+        type: string
+      weight:
+        description: The proportion of traffic to be forwarded to the Model Deployment.
+        type: integer
+    type: object
+  v1alpha1.ModelRouteSpec:
+    properties:
+      mirror:
+        description: |-
+          Mirror HTTP traffic to a another Model deployment in addition to forwarding
+          the requests to the model deployments.
+        type: string
+      modelDeployments:
+        description: A http rule can forward traffic to Model Deployments.
+        items:
+          $ref: '#/definitions/v1alpha1.ModelDeploymentTarget'
+        type: array
+      urlPrefix:
+        description: |-
+          Url prefix for model deployment. For example: /custom/test
+          Prefix must start with slash
+          "/feedback" and "/model" are reserved for internal usage
+        type: string
+    type: object
+  v1alpha1.ModelRouteStatus:
+    properties:
+      edgeUrl:
+        description: Full url with prefix to a model deployment service
+        type: string
+      state:
+        description: State of Model Route
         type: string
     type: object
   v1alpha1.ModelTrainingSpec:
@@ -190,11 +259,13 @@ definitions:
         type: string
       exitCode:
         type: integer
-      id:
-        type: string
       message:
         type: string
       modelImage:
+        type: string
+      modelName:
+        type: string
+      modelVersion:
         type: string
       podName:
         type: string
@@ -202,8 +273,6 @@ definitions:
         type: string
       state:
         description: +kubebuilder:validation:Enum=scheduling,fetching-code,running,capturing,succeeded,failed,unknown
-        type: string
-      version:
         type: string
     type: object
   v1alpha1.VCSCredentialSpec:
@@ -247,15 +316,6 @@ paths:
       consumes:
       - application/json
       description: Delete list of Model deployments by labels
-      parameters:
-      - description: model id label
-        in: query
-        name: com.epam.legion.model.id
-        type: string
-      - description: model version label
-        in: query
-        name: com.epam.legion.model.version
-        type: string
       produces:
       - application/json
       responses:
@@ -276,15 +336,6 @@ paths:
       consumes:
       - application/json
       description: Get list of Model deployments
-      parameters:
-      - description: model id label
-        in: query
-        name: com.epam.legion.model.id
-        type: string
-      - description: model version label
-        in: query
-        name: com.epam.legion.model.version
-        type: string
       produces:
       - application/json
       responses:
@@ -426,20 +477,110 @@ paths:
       summary: Get a Model deployment
       tags:
       - ModelDeployment
-  /api/v1/model/deployment/{name}/scale:
+  /api/v1/model/jwks:
+    get:
+      description: Retrieve model jwks for model services
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Jwks'
+            type: object
+      summary: Retrieve model jwks
+      tags:
+      - JWT
+  /api/v1/model/route:
+    get:
+      consumes:
+      - application/json
+      description: Get list of Model routes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.MRResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get list of Model routes
+      tags:
+      - ModelRoute
+    post:
+      consumes:
+      - application/json
+      description: Create a Model route. Result is created Model route.
+      parameters:
+      - description: Create a Model route
+        in: body
+        name: mr
+        required: true
+        schema:
+          $ref: '#/definitions/v1.MRRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Create a Model route
+      tags:
+      - ModelRoute
     put:
       consumes:
       - application/json
-      description: Scale a Model deployment. Result is updated Model deployment.
+      description: Update a Model route. Result is updated Model route.
       parameters:
-      - description: Scale a Model deployment
+      - description: Update a Model route
         in: body
-        name: md
+        name: mr
         required: true
         schema:
-          $ref: '#/definitions/v1.MDReplicas'
+          $ref: '#/definitions/v1.MDRequest'
           type: object
-      - description: Name of Model Deployment
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Update a Model route
+      tags:
+      - ModelRoute
+  /api/v1/model/route/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Model route by name
+      parameters:
+      - description: Model route name
         in: path
         name: name
         required: true
@@ -462,9 +603,40 @@ paths:
           schema:
             $ref: '#/definitions/routes.HTTPResult'
             type: object
-      summary: Scale a Model deployment
+      summary: Delete a Model route
       tags:
-      - ModelDeployment
+      - ModelRoute
+    get:
+      consumes:
+      - application/json
+      description: Get a Model route by name
+      parameters:
+      - description: Model route name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.MRResponse'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/routes.HTTPResult'
+            type: object
+      summary: Get a Model route
+      tags:
+      - ModelRoute
   /api/v1/model/token:
     post:
       consumes:
@@ -493,21 +665,12 @@ paths:
             type: object
       summary: Create a model JWT token
       tags:
-      - Token
+      - JWT
   /api/v1/model/training:
     delete:
       consumes:
       - application/json
       description: Delete list of  Model Training by labels
-      parameters:
-      - description: model id label
-        in: query
-        name: com.epam.legion.model.id
-        type: string
-      - description: model version label
-        in: query
-        name: com.epam.legion.model.version
-        type: string
       produces:
       - application/json
       responses:
@@ -528,15 +691,6 @@ paths:
       consumes:
       - application/json
       description: Get list of Model Trainings
-      parameters:
-      - description: model id label
-        in: query
-        name: com.epam.legion.model.id
-        type: string
-      - description: model version label
-        in: query
-        name: com.epam.legion.model.version
-        type: string
       produces:
       - application/json
       responses:

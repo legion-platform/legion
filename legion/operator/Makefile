@@ -8,7 +8,11 @@ test: generate fmt vet manifests
 
 ## build-operator: Build operator executable binary
 build-operator: generate  fmt vet
-	go build -o operator github.com/legion-platform/legion/legion/operator/cmd/manager
+	go build -o operator github.com/legion-platform/legion/legion/operator/cmd/operator
+
+## build-webhook-server: Build webhook server executable binary
+build-webhook-server: generate  fmt vet
+	go build -o webhook-server github.com/legion-platform/legion/legion/operator/cmd/webhook
 
 ## build-edi: Build edi executable binary
 build-edi: fmt vet
@@ -19,7 +23,7 @@ build-model-builder: fmt vet
 	go build -o builder github.com/legion-platform/legion/legion/operator/cmd/builder
 
 ## build-all: Build all executable binyries
-build-all: build-edi build-model-builder build-operator
+build-all: build-edi build-model-builder build-operator build-webhook-server
 
 ## run-operator: Start operator
 run-operator:
@@ -52,10 +56,9 @@ manifests:  swag
 	sed -i '/^  name:.*$$/a \ \ labels:' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 	sed -i '/^  name:.*$$/a \ \ annotations:' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*v1alpha1*.yaml
 
-	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" . | nindent 4 }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*.yaml
+	sed -i '/^  labels:$$/a \ \ \ \ {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*.yaml
 	sed -i '/^  annotations:$$/a \ \ \ \ "helm.sh/hook": "crd-install"' ${LEGION_OPERATOR_GENERATED_ENTITIES}/*v1alpha1*.yaml
 
-	sed -i '/^  labels:$$/a \ \ \ \ component: "legion-operator"' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 	sed -i 's/manager-role/"{{ .Release.Name }}-operator"/g' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 	sed -i '1i{{- if .Values.rbac }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml
 	sed -i '$$a{{- end }}' ${LEGION_OPERATOR_GENERATED_ENTITIES}/operator-rbac-role.yaml

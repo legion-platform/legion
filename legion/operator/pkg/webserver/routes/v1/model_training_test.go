@@ -135,7 +135,7 @@ func TestGetAllMT(t *testing.T) {
 	}
 }
 
-func TestGetAllMTByModelID(t *testing.T) {
+func TestGetAllMTByModelName(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, c := createEnvironment()
 
@@ -145,7 +145,7 @@ func TestGetAllMTByModelID(t *testing.T) {
 	}
 
 	params := url.Values{}
-	params.Add(legion.DomainModelId, testModelId)
+	params.Add(legion.DomainModelName, testModelName)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/model/training?%s", params.Encode()), nil)
@@ -504,7 +504,7 @@ func TestDeleteAllMTByWrongModelVersion(t *testing.T) {
 	g.Expect(mtList.Items).To(HaveLen(2))
 }
 
-func TestDeleteAllMTByModelID(t *testing.T) {
+func TestDeleteAllMTByModelName(t *testing.T) {
 	g := NewGomegaWithT(t)
 	server, c := createEnvironment()
 
@@ -514,7 +514,7 @@ func TestDeleteAllMTByModelID(t *testing.T) {
 	}
 
 	params := url.Values{}
-	params.Add(legion.DomainModelId, testModelId)
+	params.Add(legion.DomainModelName, testModelName)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/model/training?%s", params.Encode()), nil)

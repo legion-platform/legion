@@ -2,7 +2,7 @@
     "apiVersion": "legion.legion-platform.org/v1alpha1",
     "kind": "VCSCredential",
     "metadata": {
-        "name": "test-vcs"
+        "name": "test-vcs-6-2"
     },
     "spec": {
         "credential": "a2VrCg==",

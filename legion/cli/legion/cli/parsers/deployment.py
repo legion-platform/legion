@@ -25,19 +25,20 @@ from texttable import Texttable
 
 from legion.cli.parsers import security, prepare_resources, add_resources_params
 from legion.sdk.clients import edi
-from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
-from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDeploymentClient, SUCCESS_STATE, \
+from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDeploymentClient, READY_STATE, \
     FAILED_STATE
 from legion.sdk.clients.edi import WrongHttpStatusCode, LocalEdiClient
-from legion.sdk.containers.headers import DOMAIN_MODEL_ID, DOMAIN_MODEL_VERSION
+from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
+from legion.sdk.containers.headers import DOMAIN_MODEL_NAME, DOMAIN_MODEL_VERSION
 
 DEFAULT_WAIT_TIMEOUT = 5
 
 DEFAULT_WIDTH = 120
-MD_HEADER = ["Name", "State", "Replicas", "Service URL"]
+MD_HEADER = ["Name", "State", "Min/Current/Max Replicas", "Service URL"]
 
 DEFAULT_WIDTH_LOCAL = 160
-MD_LOCAL_HEADER = ["Name", "Image", "Port", "Model ID", "Model Version"]
+DELETION_TIMEOUT = 60
+MD_LOCAL_HEADER = ["Name", "Image", "Port", "Model Name", "Model Version"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,10 +58,11 @@ def _convert_md_from_args(args: argparse.Namespace) -> ModelDeployment:
             name=args.name,
             image=args.image,
             resources=prepare_resources(args),
-            annotations=args.annotations,
-            replicas=args.replicas,
+            min_replicas=args.min_replicas,
+            max_replicas=args.max_replicas,
             liveness_probe_initial_delay=args.livenesstimeout,
-            readiness_probe_initial_delay=args.readinesstimeout
+            readiness_probe_initial_delay=args.readinesstimeout,
+            role_name=args.role_name,
         )
     else:
         raise ValueError(f'Provide name of a Model Deployment or path to a file')
@@ -74,8 +76,8 @@ def _prepare_labels(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
     :return: k8s labels
     """
     labels = {}
-    if args.model_id:
-        labels[DOMAIN_MODEL_ID] = args.model_id
+    if args.model_name:
+        labels[DOMAIN_MODEL_NAME] = args.model_name
     if args.model_version:
         labels[DOMAIN_MODEL_VERSION] = args.model_version
 
@@ -88,7 +90,7 @@ def get_local(args: argparse.Namespace):
     :param args: cli parameters
     """
     md_client = LocalEdiClient()
-    model_deployments = md_client.inspect(args.name, args.model_id, args.model_version)
+    model_deployments = md_client.inspect(args.name)
 
     table = Texttable(max_width=DEFAULT_WIDTH_LOCAL)
     table.set_cols_align("c" * len(MD_LOCAL_HEADER))
@@ -97,8 +99,8 @@ def get_local(args: argparse.Namespace):
         md.deployment_name,
         md.image,
         md.local_port,
-        md.id_and_version.id,
-        md.id_and_version.version
+        md.name_and_version.name,
+        md.name_and_version.version
     ] for md in model_deployments])
     print(table.draw() + "\n")
 
@@ -108,7 +110,7 @@ def get(args: argparse.Namespace):
     Get all Model Deployments or by name
     :param args: cli parameters
     """
-    if args.name and (args.model_id or args.model_version):
+    if args.name and (args.model_name or args.model_version):
         raise ValueError(f'You should specify model deployment name or labels')
 
     if args.local:
@@ -126,7 +128,7 @@ def get(args: argparse.Namespace):
     table.add_rows([MD_HEADER] + [[
         md.name,
         md.state,
-        f'{md.replicas}/{md.available_replicas}',
+        f'{md.min_replicas}/{md.available_replicas}/{md.max_replicas}',
         md.service_url
     ] for md in model_deployments])
     print(table.draw() + "\n")
@@ -170,24 +172,6 @@ def edit(args: argparse.Namespace):
     print(message)
 
 
-def scale(args: argparse.Namespace):
-    """
-    Change number of Model Deployments replicas
-    :param args: cli parameters
-    """
-    if args.local:
-        print('Local mode is not supported for edit action.')
-        return
-
-    md_client = build_client(args)
-
-    message = md_client.scale(args.name, args.replicas)
-
-    wait_operation_finish(args, args.name, md_client)
-
-    print(message)
-
-
 def delete(args: argparse.Namespace):
     """
     Delete Model Deployment by name
@@ -201,7 +185,7 @@ def delete(args: argparse.Namespace):
 
         return md_client.undeploy(args.name)
 
-    md_client = build_client(args)
+    md_client = build_client(args, timeout=DELETION_TIMEOUT)
 
     md_name = args.name
     if args.filename:
@@ -211,8 +195,12 @@ def delete(args: argparse.Namespace):
         md_name = resource.resource_name
 
     try:
-        message = md_client.delete(md_name) if md_name else md_client.delete_all(_prepare_labels(args))
-        print(message)
+        if md_name:
+            md_client.delete(md_name)
+        else:
+            md_client.delete_all(_prepare_labels(args))
+
+        wait_delete_operation_finish(args, md_name, md_client)
     except WrongHttpStatusCode as e:
         if e.status_code != 404 or not args.ignore_not_found:
             raise e
@@ -220,12 +208,12 @@ def delete(args: argparse.Namespace):
         print(f'Model deployment {md_name} was not found. Ignore')
 
 
-def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
+def wait_delete_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
     """
-    Wait deployment to finish according command line arguments
+    Wait delete operation
 
     :param md_name: Model Deployment name
-    :param args: command arguments with .model_id, .namespace
+    :param args: command arguments with .model_name, .namespace
     :param md_client: Model Deployment Client
 
     :return: None
@@ -243,8 +231,42 @@ def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: Mod
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            md = md_client.get(md_name)
-            if md.state == SUCCESS_STATE:
+            md_client.get(md_name)
+        except WrongHttpStatusCode as e:
+            if e.status_code == 404:
+                print(f'Model deployment {md_name} was deleted')
+                return
+            LOGGER.info('Callback have not confirmed completion of the operation')
+
+        print(f'Model deployment {md_name} is still being deleted...')
+        time.sleep(DEFAULT_WAIT_TIMEOUT)
+
+
+def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
+    """
+    Wait deployment to finish according command line arguments
+
+    :param md_name: Model Deployment name
+    :param args: command arguments with .model_name, .namespace
+    :param md_client: Model Deployment Client
+
+    :return: None
+    """
+    if args.no_wait:
+        return
+
+    start = time.time()
+    if args.timeout <= 0:
+        raise Exception('Invalid --timeout argument: should be positive integer')
+
+    while True:
+        elapsed = time.time() - start
+        if elapsed > args.timeout:
+            raise Exception('Time out: operation has not been confirmed')
+
+        try:
+            md: ModelDeployment = md_client.get(md_name)
+            if md.state == READY_STATE:
                 if md.replicas == md.available_replicas:
                     print(f'Model {md_name} was deployed. '
                           f'Deployment process took is {round(time.time() - start)} seconds')
@@ -265,6 +287,19 @@ def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: Mod
         time.sleep(DEFAULT_WAIT_TIMEOUT)
 
 
+def _deployment_params(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--port', default=0,
+                        type=int, help='port to listen on. Only for --local mode')
+    parser.add_argument('--min-replicas', default=0, type=int, help='min number of instances')
+    parser.add_argument('--max-replicas', default=1, type=int, help='max number of instances')
+    parser.add_argument('--livenesstimeout', default=2, type=int,
+                        help='model startup timeout for liveness probe')
+    parser.add_argument('--readinesstimeout', default=2, type=int,
+                        help='model startup timeout for readiness probe')
+    parser.add_argument('--image', type=str, help='docker image')
+    parser.add_argument('--role-name', '--role', type=str, help='role name')
+
+
 def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pylint: disable=R0915
     """
     Generate cli parsers
@@ -277,18 +312,9 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pyl
     md_create_parser = md_subparser.add_parser('create',
                                                description='deploys a model into a kubernetes cluster')
     md_create_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
-    md_create_parser.add_argument('--image',
-                                  type=str, help='docker image')
     md_create_parser.add_argument('--local', action='store_true',
                                   help='deploy model locally. Incompatible with other arguments')
-    md_create_parser.add_argument('--port', default=0,
-                                  type=int, help='port to listen on. Only for --local mode')
-    md_create_parser.add_argument('--replicas', default=1, type=int, help='count of instances')
-    md_create_parser.add_argument('--annotations', type=str, help='count of instances')
-    md_create_parser.add_argument('--livenesstimeout', default=2, type=int,
-                                  help='model startup timeout for liveness probe')
-    md_create_parser.add_argument('--readinesstimeout', default=2, type=int,
-                                  help='model startup timeout for readiness probe')
+    _deployment_params(md_create_parser)
     add_resources_params(md_create_parser)
     edi.add_arguments_for_wait_operation(md_create_parser)
     security.add_edi_arguments(md_create_parser)
@@ -298,14 +324,9 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pyl
     md_edit_parser = md_subparser.add_parser('edit',
                                              description='deploys a model into a kubernetes cluster')
     md_edit_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
-    md_edit_parser.add_argument('--image', type=str, help='docker image')
     md_edit_parser.add_argument('--local', action='store_true',
                                 help='edit locally deployed model. Incompatible with other arguments')
-    md_edit_parser.add_argument('--replicas', default=1, type=int, help='count of instances')
-    md_edit_parser.add_argument('--livenesstimeout', default=2, type=int,
-                                help='model startup timeout for liveness probe')
-    md_edit_parser.add_argument('--readinesstimeout', default=2, type=int,
-                                help='model startup timeout for readiness probe')
+    _deployment_params(md_edit_parser)
     add_resources_params(md_edit_parser)
     md_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
     security.add_edi_arguments(md_edit_parser)
@@ -316,28 +337,20 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pyl
     md_get_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
     md_get_parser.add_argument('--local', action='store_true',
                                help='get locally deployed models. Incompatible with other arguments')
-    md_get_parser.add_argument('--model-id', type=str, help='model ID')
+    md_get_parser.add_argument('--model-name', type=str, help='model name')
     md_get_parser.add_argument('--model-version', type=str, help='model version')
     security.add_edi_arguments(md_get_parser)
     md_get_parser.set_defaults(func=get)
-
-    md_scale_parser = md_subparser.add_parser('scale', description='change count of model pods')
-    md_scale_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
-    md_scale_parser.add_argument('--local', action='store_true',
-                                 help='scale locally deployed models. Incompatible with other arguments')
-    md_scale_parser.add_argument('--replicas', type=int, help='new count of replicas')
-    edi.add_arguments_for_wait_operation(md_scale_parser)
-    security.add_edi_arguments(md_scale_parser)
-    md_scale_parser.set_defaults(func=scale)
 
     md_delete_parser = md_subparser.add_parser('delete', description='undeploy model deployment')
     md_delete_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
     md_delete_parser.add_argument('--local', action='store_true',
                                   help='delete locally deployed models. Incompatible with other arguments')
-    md_delete_parser.add_argument('--model-id', type=str, help='model ID')
+    md_delete_parser.add_argument('--model-name', type=str, help='model name')
     md_delete_parser.add_argument('--model-version', type=str, help='model version')
     md_delete_parser.add_argument('--ignore-not-found', action='store_true',
                                   help='ignore if Model Deployment is not found')
     md_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
     security.add_edi_arguments(md_delete_parser)
+    edi.add_arguments_for_wait_operation(md_delete_parser)
     md_delete_parser.set_defaults(func=delete)

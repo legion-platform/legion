@@ -17,6 +17,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
@@ -30,13 +31,12 @@ var logToken = logf.Log.WithName("log-token")
 
 const (
 	createModelJwt = "/model/token"
+	getJwks        = "/model/jwks"
 )
 
 type TokenRequest struct {
-	// Model id
-	ModelID string `json:"model_id"`
-	// Model version
-	ModelVersion string `json:"model_version"`
+	// Model Deployment name
+	RoleName string `json:"role_name"`
 	// Explicitly set expiration date for token
 	ExpirationDate string `json:"expiration_date,omitempty"`
 }
@@ -45,9 +45,13 @@ type TokenResponse struct {
 	Token string `json:"token"`
 }
 
+type Jwks struct {
+	Keys []map[string]string `json:"keys"`
+}
+
 // @Summary Create a model JWT token
 // @Description Create a JWT token for access to the model service
-// @Tags Token
+// @Tags JWT
 // @Param token body v1.TokenRequest true "Create a model JWT token"
 // @Accept  json
 // @Produce  json
@@ -55,7 +59,7 @@ type TokenResponse struct {
 // @Failure 500 {object} routes.HTTPResult
 // @Router /api/v1/model/token [post]
 func generateToken(c *gin.Context) {
-	if viper.GetString(legion.JwtSecret) == "" {
+	if !viper.GetBool(legion.JwtEnabled) {
 		c.JSON(http.StatusCreated, TokenResponse{Token: ""})
 		return
 	}
@@ -68,14 +72,8 @@ func generateToken(c *gin.Context) {
 		return
 	}
 
-	if tokenRequest.ModelVersion == "" {
-		routes.AbortWithError(c, 500, "Requested field model_version is not set")
-		return
-	}
-
-	if tokenRequest.ModelID == "" {
-		routes.AbortWithError(c, 500, "Requested field model_id is not set")
-		return
+	if tokenRequest.RoleName == "" {
+		tokenRequest.RoleName = viper.GetString(legion.DefaultRoleName)
 	}
 
 	unixExpirationDate, err := utils.CalculateExpirationDate(tokenRequest.ExpirationDate)
@@ -85,7 +83,7 @@ func generateToken(c *gin.Context) {
 	}
 
 	token, err := utils.GenerateModelToken(
-		tokenRequest.ModelID, tokenRequest.ModelVersion, unixExpirationDate,
+		tokenRequest.RoleName, unixExpirationDate,
 	)
 	if err != nil {
 		logToken.Error(err, "Token generation")
@@ -93,4 +91,26 @@ func generateToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, TokenResponse{Token: token})
+}
+
+// @Summary Retrieve model jwks
+// @Description Retrieve model jwks for model services
+// @Tags JWT
+// @Produce  json
+// @Success 200 {object} v1.Jwks
+// @Router /api/v1/model/jwks [get]
+func jwks(c *gin.Context) {
+	var jwks Jwks
+
+	if !viper.GetBool(legion.JwtEnabled) {
+		c.JSON(http.StatusOK, jwks)
+		return
+	}
+
+	if err := json.Unmarshal([]byte(utils.Jwks()), &jwks); err != nil {
+		routes.AbortWithError(c, 500, "Can not generate jwks")
+		return
+	}
+
+	c.JSON(http.StatusOK, jwks)
 }
