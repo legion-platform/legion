@@ -19,25 +19,4 @@ spec:
   selector:
     matchLabels:
       {{- include "legion.helm-labels-for-search" (dict "component" "operator" "root" .) | nindent 6 }}
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: "{{ .Release.Name }}-webhook-server"
-  labels:
-    {{- include "legion.helm-labels" (dict "component" "webhook-server" "root" .) | nindent 4 }}
-    {{- range $key, $value := .Values.metrics.serviceMonitoringLabels }}
-    {{ $key }}: {{ $value | quote }}
-    {{- end }}
-spec:
-  endpoints:
-    - interval: 15s
-      path: /metrics
-      port: metrics
-  namespaceSelector:
-    matchNames:
-      - "{{ .Release.Namespace }}"
-  selector:
-    matchLabels:
-      {{- include "legion.helm-labels-for-search" (dict "component" "webhook-server" "root" .) | nindent 6 }}
 {{- end }}

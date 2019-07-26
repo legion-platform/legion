@@ -17,4 +17,8 @@
 export interface IConfigurationMainResponse {
   tokenProvided: boolean;
   defaultEDIEndpoint: string;
+  serviceCatalogUrl: string;
+  grafanaUrl: string;
+  metricUiUrl: string;
+  legionResourceExamples: Array<string>;
 }

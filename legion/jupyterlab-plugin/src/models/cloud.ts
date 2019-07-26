@@ -13,100 +13,36 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+import { ModelTraining } from '../legion/ModelTraining';
+import { ModelDeployment } from '../legion/ModelDeployment';
+import { Connection } from '../legion/Connection';
+import { ModelPackaging } from '../legion/ModelPackaging';
+import { PackagingIntegration } from '../legion/PackagingIntegration';
+import { ToolchainIntegration } from '../legion/ToolchainIntegration';
 
-export interface ICloudTrainingResponseSpec {
-  toolchain: string;
-  resources: string;
-  entrypoint: string;
-  args: Array<string>;
-  vcsName: string;
-  workDir: string;
-  reference: string;
-}
-
-export interface ICloudTrainingResponseStatus {
-  name: string;
-  version: string;
-  state: string;
-  modelImage: string;
-}
-
-export interface ICloudTrainingResponse {
-  name: string;
-  spec: ICloudTrainingResponseSpec;
-  status: ICloudTrainingResponseStatus;
-}
-
-export interface ICloudTrainingRemoveRequest {
-  name: string;
+export interface IRemoveRequest {
+  id: string;
 }
 
 export interface ICloudTrainingLogsRequest {
-  name: string;
+  id: string;
 }
 
-export interface ICloudTrainingLogsResponse {
+export interface ICloudLogsResponse {
   data: string;
   futureLogsExpected: boolean;
-}
-
-export interface ICloudDeploymentCreateRequest {
-  name: string;
-  image: string;
-  livenessProbeInitialDelay: number;
-  readinessProbeInitialDelay: number;
-}
-
-export interface ICloudDeploymentScaleRequest {
-  name: string;
-  newScale: number;
-}
-
-export interface ICloudDeploymentRemoveRequest {
-  name: string;
-}
-
-export interface ICloudDeploymentResponseSpec {
-  image: string;
-  resources: string;
-  roleName: string;
-  annotations: Array<string>;
-  livenessProbeInitialDelay: number;
-  readinessProbeInitialDelay: number;
-}
-
-export interface ICloudDeploymentResponseStatus {
-  state: string;
-  serviceURL: string;
-  availableReplicas: number;
-}
-
-export interface ICloudDeploymentResponse {
-  name: string;
-  spec: ICloudDeploymentResponseSpec;
-  status: ICloudDeploymentResponseStatus;
-}
-
-export interface IVCSResponseSpec {
-  type: string;
-  uri: string;
-  defaultReference: string;
-  credential: string;
-  publicKey: string;
-}
-
-export interface IVCSResponse {
-  name: string;
-  spec: IVCSResponseSpec;
 }
 
 /**
  * All data for cloud widget
  */
 export interface ICloudAllEntitiesResponse {
-  trainings: Array<ICloudTrainingResponse>;
-  deployments: Array<ICloudDeploymentResponse>;
-  vcss: Array<IVCSResponse>;
+  trainings: Array<ModelTraining>;
+  deployments: Array<ModelDeployment>;
+  connections: Array<Connection>;
+  modelPackagings: Array<ModelPackaging>;
+  toolchainIntegrations: Array<ToolchainIntegration>;
+  packagingIntegrations: Array<PackagingIntegration>;
 }
 
 export interface ICloudIssueTokenRequest {

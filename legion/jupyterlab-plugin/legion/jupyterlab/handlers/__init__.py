@@ -20,18 +20,24 @@ from notebook.utils import url_path_join
 
 from legion.jupyterlab.handlers.cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
-    CloudAllEntitiesHandler, CloudTokenIssueHandler
-from legion.jupyterlab.handlers.configuration import ConfigurationProviderHandler
+    CloudAllEntitiesHandler, CloudTokenIssueHandler, CloudConnectionHandler, CloudModelPackagingHandler, \
+    CloudPackagingLogsHandler, CloudUrlInfo
+from legion.jupyterlab.handlers.configuration import ConfigurationProviderHandler, TemplatesFilesHandler
 
 # List of all back-end handlers with prefixes
 ALL_HANDLERS = (
     # Cloud
     (CloudTrainingsHandler, ('cloud', 'trainings')),
+    (CloudConnectionHandler, ('cloud', 'connections')),
+    (CloudModelPackagingHandler, ('cloud', 'modelpackagings')),
     (CloudTrainingLogsHandler, ('cloud', 'trainings', '(.*)', 'logs')),
+    (CloudPackagingLogsHandler, ('cloud', 'packagings', '(.*)', 'logs')),
     (CloudDeploymentsHandler, ('cloud', 'deployments')),
     (CloudApplyFromFileHandler, ('cloud', 'apply')),
     (CloudTokenIssueHandler, ('cloud', 'security', 'token')),
     (CloudAllEntitiesHandler, ('cloud',)),
+    (CloudUrlInfo, ('cloud', 'info')),
+    (TemplatesFilesHandler, ('examples', '(.*)', 'content')),
     # Configuration
     (ConfigurationProviderHandler, ('common', 'configuration')),
 )

@@ -16,230 +16,193 @@
 """
 EDI commands for legion cli
 """
-import argparse
 import logging
 import time
 
-from texttable import Texttable
-
-from legion.cli.parsers import security
-from legion.sdk.clients import edi
+import click
+from click import pass_obj
+from legion.cli.utils.output import DEFAULT_OUTPUT_FORMAT, format_output
+from legion.sdk import config
 from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
-from legion.sdk.clients.route import build_client, ModelRoute, ModelRouteClient, READY_STATE, ModelDeploymentTarget
+from legion.sdk.clients.route import ModelRoute, ModelRouteClient, READY_STATE
 
 DEFAULT_WAIT_TIMEOUT = 5
-
-DEFAULT_WIDTH = 160
-MD_HEADER = ["Name", "State", "Edge URL", "Model Deployment Targets", "Mirror"]
-
 LOGGER = logging.getLogger(__name__)
 
-INSPECT_FORMAT_COLORIZED = 'colorized'
-INSPECT_FORMAT_TABULAR = 'column'
-VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
-
-def _convert_mr_from_args(args: argparse.Namespace) -> ModelRoute:
-    if args.filename:
-        resource = parse_resources_file_with_one_item(args.filename).resource
-        if not isinstance(resource, ModelRoute):
-            raise ValueError(f'ModelRoute expected, but {type(resource)} provided')
-        return resource
-    elif args.name:
-        return ModelRoute(
-            name=args.name,
-            url_prefix=args.url_prefix,
-            model_deployment_targets=args.model_deployment_target,
-            mirror=args.mirror,
-        )
-    else:
-        raise ValueError(f'Provide name of a Model Route or path to a file')
-
-
-def get(args: argparse.Namespace):
+@click.group()
+@click.option('--edi', help='EDI server host', default=config.EDI_URL)
+@click.option('--token', help='EDI server jwt token', default=config.EDI_TOKEN)
+@click.pass_context
+def route(ctx: click.core.Context, edi: str, token: str):
     """
-    Get all Model Routes or by name
-    :param args: cli parameters
+    Allow you to perform actions on routes
     """
-    mr_client = build_client(args)
-
-    model_routes = [mr_client.get(args.name)] if args.name else mr_client.get_all()
-    if not model_routes:
-        return
-
-    table = Texttable(max_width=DEFAULT_WIDTH)
-    table.set_cols_align("c" * len(MD_HEADER))
-    table.set_cols_valign("t" * len(MD_HEADER))
-    table.add_rows([MD_HEADER] + [[
-        mr.name,
-        mr.state,
-        mr.edge_url,
-        ','.join(map(lambda md: f'{md.name}={md.weight}', mr.model_deployment_targets)),
-        mr.mirror
-    ] for mr in model_routes])
-    print(table.draw() + "\n")
+    ctx.obj = ModelRouteClient(edi, token)
 
 
-def create(args: argparse.Namespace):
+@route.command()
+@click.option('--mr-id', '--id', help='ModelRoute ID')
+@click.option('--output-format', '-o', 'output_format', help='Output format',
+              default=DEFAULT_OUTPUT_FORMAT)
+@pass_obj
+def get(client: ModelRouteClient, mr_id: str, output_format: str):
     """
-    Create Model Route
-    :param args: cli parameters
+    Get routes.\n
+    The command without id argument retrieve all routes.\n
+    Get all routes in json format:\n
+        legionctl conn get --format json\n
+    Get model route with "git-repo" id:\n
+        legionctl conn get --id git-repo\n
+    Using jsonpath:\n
+        legionctl conn get -o 'jsonpath=[*].spec.reference'
+    \f
+    :param client: ModelRoute HTTP client
+    :param mr_id: ModelRoute ID
+    :param output_format: Output format
+    :return:
     """
-    mr_client = build_client(args)
+    conns = [client.get(mr_id)] if mr_id else client.get_all()
 
-    mr = _convert_mr_from_args(args)
-    message = mr_client.create(mr)
-
-    wait_operation_finish(args, mr.name, mr_client)
-
-    print(message)
+    format_output(conns, output_format)
 
 
-def edit(args: argparse.Namespace):
+@route.command()
+@click.option('--mr-id', '--id', help='ModelRoute ID')
+@click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with model route')
+@click.option('--wait/--no-wait', default=True,
+              help='no wait until scale will be finished')
+@click.option('--timeout', default=600, type=int,
+              help='timeout in seconds. for wait (if no-wait is off)')
+@pass_obj
+def create(client: ModelRouteClient, mr_id: str, file: str, wait: bool, timeout: int):
     """
-    Edit Model Routes by name
-    :param args: cli parameters
+    Create a model route.\n
+    You should specify a path to file with a model route. The file must contain only one model route.
+    For now, CLI supports yaml and JSON file formats.
+    If you want to create multiples routes than you should use "legionctl res apply" instead.
+    If you provide the model route id parameter than it will be overridden before sending to EDI server.\n
+    Usage example:\n
+        * legionctl conn create -f conn.yaml --id examples-git
+    \f
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until operation will be finished
+    :param client: ModelRoute HTTP client
+    :param mr_id: ModelRoute ID
+    :param file: Path to the file with only one model route
     """
-    mr_client = build_client(args)
+    conn = parse_resources_file_with_one_item(file).resource
+    if not isinstance(conn, ModelRoute):
+        raise ValueError(f'ModelRoute expected, but {type(conn)} provided')
 
-    mr = _convert_mr_from_args(args)
-    message = mr_client.edit(mr)
+    if mr_id:
+        conn.id = mr_id
 
-    wait_operation_finish(args, mr.name, mr_client)
+    click.echo(client.create(conn))
 
-    print(message)
+    wait_operation_finish(timeout, wait, mr_id, client)
 
 
-def delete(args: argparse.Namespace):
+@route.command()
+@click.option('--route-id', '--id', help='ModelRoute ID')
+@click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with model route')
+@pass_obj
+def edit(client: ModelRouteClient, mr_id: str, file: str):
     """
-    Delete Model Route by name
-    :param args: cli parameters
+    Update a model route.\n
+    You should specify a path to file with a model route. The file must contain only one model route.
+    For now, CLI supports yaml and JSON file formats.
+    If you want to update multiples routes than you should use "legionctl res apply" instead.
+    If you provide the model route id parameter than it will be overridden before sending to EDI server.\n
+    Usage example:\n
+        * legionctl conn update -f conn.yaml --id examples-git
+    \f
+    :param client: Model route HTTP client
+    :param mr_id: Model route ID
+    :param file: Path to the file with only one model route
     """
-    mr_client = build_client(args)
+    conn = parse_resources_file_with_one_item(file).resource
+    if not isinstance(conn, ModelRoute):
+        raise ValueError(f'ModelRoute expected, but {type(conn)} provided')
 
-    if not args.filename and not args.name:
-        raise ValueError(f'Provide name of a Model Route or path to a file')
+    if mr_id:
+        conn.id = mr_id
 
-    mr_name = args.name
-    if args.filename:
-        resource = parse_resources_file_with_one_item(args.filename)
-        if not isinstance(resource.resource, ModelRoute):
-            raise ValueError(f'ModelRoute expected, but {type(resource.resource)} provided')
-        mr_name = resource.resource_name
-
-    try:
-        message = mr_client.delete(mr_name) if mr_name else mr_client.delete_all()
-        print(message)
-    except WrongHttpStatusCode as e:
-        if e.status_code != 404 or not args.ignore_not_found:
-            raise e
-
-        print(f'Model route {mr_name} was not found. Ignore')
+    click.echo(client.edit(conn))
 
 
-def _parse_targets(var: str) -> ModelDeploymentTarget:
+@route.command()
+@click.option('--route-id', '--id', help='ModelRoute ID')
+@click.option('--file', '-f', type=click.Path(), help='Path to the file with model route')
+@pass_obj
+def delete(client: ModelRouteClient, mr_id: str, file: str):
     """
-    Parse cli `-p md_name=weight` parameter
-
-    :param var: target cli parameter
-    :return: Model deployment target
+    Delete a model route.\n
+    For this command, you must provide a model route ID or path to file with one model route.
+    The file must contain only one model route.
+    If you want to delete multiples routes than you should use "legionctl res delete" instead.
+    For now, CLI supports yaml and JSON file formats.
+    The command will be failed if you provide both arguments.\n
+    Usage example:\n
+        * legionctl conn delete --id examples-git\n
+        * legionctl conn delete -f conn.yaml
+    \f
+    :param client: ModelRoute HTTP client
+    :param mr_id: ModelRoute ID
+    :param file: Path to the file with only one model route
     """
-    if '=' not in var:
-        return ModelDeploymentTarget(name=var, weight=100)
+    if not mr_id and not file:
+        raise ValueError(f'You should provide a model route ID or file parameter, not both.')
 
-    md_name, weight = var.split('=')
-    md_name, weight = md_name.strip(), weight.strip()
+    if mr_id and file:
+        raise ValueError(f'You should provide a model route ID or file parameter, not both.')
 
-    if not md_name:
-        raise ValueError(f'Model deployment is empty: {var}')
+    if file:
+        conn = parse_resources_file_with_one_item(file).resource
+        if not isinstance(conn, ModelRoute):
+            raise ValueError(f'ModelRoute expected, but {type(conn)} provided')
 
-    if not weight:
-        raise ValueError(f'Weight is empty: {var}')
+        mr_id = conn.id
 
-    return ModelDeploymentTarget(name=md_name, weight=int(weight))
+    click.echo(client.delete(mr_id))
 
 
-def wait_operation_finish(args: argparse.Namespace, mr_name: str, mr_client: ModelRouteClient):
+def wait_operation_finish(timeout: int, wait: bool, mr_id: str, mr_client: ModelRouteClient):
     """
     Wait route to finish according command line arguments
 
-    :param mr_name: Model Route name
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until operation will be finished
+    :param mr_id: Model Route id
     :param args: command arguments
     :param mr_client: Model Route Client
 
     :return: None
     """
-    if args.no_wait:
+    if not wait:
         return
 
     start = time.time()
-    if args.timeout <= 0:
+    if timeout <= 0:
         raise Exception('Invalid --timeout argument: should be positive integer')
 
     while True:
         elapsed = time.time() - start
-        if elapsed > args.timeout:
+        if elapsed > timeout:
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            mr = mr_client.get(mr_name)
-            if mr.state == READY_STATE:
-                print(f'Model Route {mr_name} is ready')
+            mr = mr_client.get(mr_id)
+            if mr.status.state == READY_STATE:
+                print(f'Model Route {mr_id} is ready')
                 return
-            elif mr.state == "":
-                print(f"Can't determine the state of {mr.name}. Sleeping...")
+            elif mr.status.state == "":
+                print(f"Can't determine the state of {mr.id}. Sleeping...")
             else:
-                print(f'Current route state is {mr.state}. Sleeping...')
+                print(f'Current route state is {mr.status.state}. Sleeping...')
         except WrongHttpStatusCode:
             LOGGER.info('Callback have not confirmed completion of the operation')
 
         LOGGER.debug('Sleep before next request')
         time.sleep(DEFAULT_WAIT_TIMEOUT)
-
-
-def _common_mr_params(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument('name', nargs='?', type=str, help='Model route name')
-    parser.add_argument('--url-prefix', type=str, help='')
-    parser.add_argument('--model-deployment-target', '--target', '-t', action='append', type=_parse_targets,
-                        help='Format: Model_deployment_name=weight. For example: -t test-1=50 -t test-2=50')
-    parser.add_argument('--mirror', type=str, help='')
-
-
-def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pylint: disable=R0915
-    """
-    Generate cli parsers
-
-    :param main_subparser: parent cli parser
-    """
-    mr_subparser = main_subparser.add_parser('model-route', aliases=('mr', 'route'),
-                                             description='Model Route manipulations').add_subparsers()
-
-    mr_create_parser = mr_subparser.add_parser('create',
-                                               description='deploys a model into a kubernetes cluster')
-    _common_mr_params(mr_create_parser)
-    edi.add_arguments_for_wait_operation(mr_create_parser)
-    security.add_edi_arguments(mr_create_parser)
-    mr_create_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Route')
-    mr_create_parser.set_defaults(func=create)
-
-    mr_edit_parser = mr_subparser.add_parser('edit',
-                                             description='deploys a model into a kubernetes cluster')
-    _common_mr_params(mr_edit_parser)
-    mr_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Route')
-    security.add_edi_arguments(mr_edit_parser)
-    edi.add_arguments_for_wait_operation(mr_edit_parser)
-    mr_edit_parser.set_defaults(func=edit)
-
-    mr_get_parser = mr_subparser.add_parser('get', description='get information about currently deployed models')
-    mr_get_parser.add_argument('name', type=str, nargs='?', help='Model route name', default="")
-    security.add_edi_arguments(mr_get_parser)
-    mr_get_parser.set_defaults(func=get)
-
-    mr_delete_parser = mr_subparser.add_parser('delete', description='undeploy model route')
-    mr_delete_parser.add_argument('name', type=str, nargs='?', help='Model route name')
-    mr_delete_parser.add_argument('--ignore-not-found', action='store_true',
-                                  help='ignore if Model Route is not found')
-    mr_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Route')
-    security.add_edi_arguments(mr_delete_parser)
-    mr_delete_parser.set_defaults(func=delete)

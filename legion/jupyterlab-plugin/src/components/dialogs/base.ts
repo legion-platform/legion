@@ -162,8 +162,7 @@ export function showPromptDialog(
  */
 
 export function createDialogBody(): HTMLElement {
-  let body = document.createElement('div');
-  return body;
+  return document.createElement('div');
 }
 
 export function createDialogInput(
@@ -226,6 +225,7 @@ namespace Private {
     body.appendChild(createSelect(variants));
     return body;
   }
+
   export function buildChooseOrInputDialogBody(
     bodyText: string,
     secondText: string,

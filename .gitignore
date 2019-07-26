@@ -49,7 +49,6 @@ __pycache__/
 # Distribution / packaging
 .Python
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -161,3 +160,4 @@ report.html
 legion/operator/vendor/
 legion/operator/config/
 legion/feedback-aggregator/vendor/
+/.hiera_keys/

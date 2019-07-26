@@ -18,18 +18,23 @@ import { ServerConnection } from '@jupyterlab/services';
 import {
   httpRequest,
   IApiGroup,
-  legionApiRootURL,
-  ICloudCredentials
+  ICloudCredentials,
+  legionApiRootURL
 } from './base';
 import * as models from '../models/cloud';
+import { ModelTraining } from '../legion/ModelTraining';
+import { ModelDeployment } from '../legion/ModelDeployment';
 
 export namespace URLs {
   export const cloudTrainingsUrl = legionApiRootURL + '/cloud/trainings';
+  export const cloudConnectionsUrl = legionApiRootURL + '/cloud/connections';
+  export const cloudModelPackagingUrl =
+    legionApiRootURL + '/cloud/modelpackagings';
   export const cloudTrainingLogsUrl =
     legionApiRootURL + '/cloud/trainings/:trainingName:/logs';
+  export const cloudPackagingLogsUrl =
+    legionApiRootURL + '/cloud/packagings/:packagingName:/logs';
   export const cloudDeploymentsUrl = legionApiRootURL + '/cloud/deployments';
-  export const cloudDeploymentsScaleUrl =
-    legionApiRootURL + '/cloud/deployments/scale';
   export const cloudAllDataUrl = legionApiRootURL + '/cloud';
   export const cloudIssueModelTokenUrl =
     legionApiRootURL + '/cloud/security/token';
@@ -40,30 +45,38 @@ export interface ICloudApi {
   // Trainings
   getCloudTrainings: (
     credentials: ICloudCredentials
-  ) => Promise<Array<models.ICloudTrainingResponse>>;
+  ) => Promise<Array<ModelTraining>>;
   removeCloudTraining: (
-    request: models.ICloudTrainingRemoveRequest,
+    request: models.IRemoveRequest,
+    credentials: ICloudCredentials
+  ) => Promise<void>;
+  removeConnection: (
+    request: models.IRemoveRequest,
+    credentials: ICloudCredentials
+  ) => Promise<void>;
+  removeModelPackaging: (
+    request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ) => Promise<void>;
   getTrainingLogs: (
     request: models.ICloudTrainingLogsRequest,
     credentials: ICloudCredentials
-  ) => Promise<models.ICloudTrainingLogsResponse>;
+  ) => Promise<models.ICloudLogsResponse>;
+  getPackagingLogs: (
+    request: models.ICloudTrainingLogsRequest,
+    credentials: ICloudCredentials
+  ) => Promise<models.ICloudLogsResponse>;
 
   // Deployments
   getCloudDeployments: (
     credentials: ICloudCredentials
-  ) => Promise<Array<models.ICloudDeploymentResponse>>;
+  ) => Promise<Array<ModelDeployment>>;
   createCloudDeployment: (
-    request: models.ICloudDeploymentCreateRequest,
+    request: ModelDeployment,
     credentials: ICloudCredentials
-  ) => Promise<models.ICloudDeploymentResponse>;
-  scaleCloudDeployment: (
-    request: models.ICloudDeploymentScaleRequest,
-    credentials: ICloudCredentials
-  ) => Promise<void>;
+  ) => Promise<ModelDeployment>;
   removeCloudDeployment: (
-    request: models.ICloudDeploymentRemoveRequest,
+    request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ) => Promise<void>;
 
@@ -89,7 +102,7 @@ export class CloudApi implements IApiGroup, ICloudApi {
   // Trainings
   async getCloudTrainings(
     credentials: ICloudCredentials
-  ): Promise<Array<models.ICloudTrainingResponse>> {
+  ): Promise<Array<ModelTraining>> {
     try {
       let response = await httpRequest(
         URLs.cloudTrainingsUrl,
@@ -106,8 +119,9 @@ export class CloudApi implements IApiGroup, ICloudApi {
       throw new ServerConnection.NetworkError(err);
     }
   }
+
   async removeCloudTraining(
-    request: models.ICloudTrainingRemoveRequest,
+    request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ): Promise<void> {
     try {
@@ -126,14 +140,77 @@ export class CloudApi implements IApiGroup, ICloudApi {
       throw new ServerConnection.NetworkError(err);
     }
   }
+
+  async removeConnection(
+    request: models.IRemoveRequest,
+    credentials: ICloudCredentials
+  ): Promise<void> {
+    try {
+      let response = await httpRequest(
+        URLs.cloudConnectionsUrl,
+        'DELETE',
+        request,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return null;
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  async removeModelPackaging(
+    request: models.IRemoveRequest,
+    credentials: ICloudCredentials
+  ): Promise<void> {
+    try {
+      let response = await httpRequest(
+        URLs.cloudModelPackagingUrl,
+        'DELETE',
+        request,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return null;
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
   async getTrainingLogs(
     request: models.ICloudTrainingLogsRequest,
     credentials: ICloudCredentials
-  ): Promise<models.ICloudTrainingLogsResponse> {
+  ): Promise<models.ICloudLogsResponse> {
     try {
       const url = URLs.cloudTrainingLogsUrl.replace(
         ':trainingName:',
-        request.name
+        request.id
+      );
+      let response = await httpRequest(url, 'GET', undefined, credentials);
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  async getPackagingLogs(
+    request: models.ICloudTrainingLogsRequest,
+    credentials: ICloudCredentials
+  ): Promise<models.ICloudLogsResponse> {
+    try {
+      const url = URLs.cloudPackagingLogsUrl.replace(
+        ':packagingName:',
+        request.id
       );
       let response = await httpRequest(url, 'GET', undefined, credentials);
       if (response.status !== 200) {
@@ -149,7 +226,7 @@ export class CloudApi implements IApiGroup, ICloudApi {
   // Deployments
   async getCloudDeployments(
     credentials: ICloudCredentials
-  ): Promise<Array<models.ICloudDeploymentResponse>> {
+  ): Promise<Array<ModelDeployment>> {
     try {
       let response = await httpRequest(
         URLs.cloudDeploymentsUrl,
@@ -166,10 +243,11 @@ export class CloudApi implements IApiGroup, ICloudApi {
       throw new ServerConnection.NetworkError(err);
     }
   }
+
   async createCloudDeployment(
-    request: models.ICloudDeploymentCreateRequest,
+    request: ModelDeployment,
     credentials: ICloudCredentials
-  ): Promise<models.ICloudDeploymentResponse> {
+  ): Promise<ModelDeployment> {
     try {
       let response = await httpRequest(
         URLs.cloudDeploymentsUrl,
@@ -186,28 +264,9 @@ export class CloudApi implements IApiGroup, ICloudApi {
       throw new ServerConnection.NetworkError(err);
     }
   }
-  async scaleCloudDeployment(
-    request: models.ICloudDeploymentScaleRequest,
-    credentials: ICloudCredentials
-  ): Promise<void> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudDeploymentsScaleUrl,
-        'PUT',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
-    }
-  }
+
   async removeCloudDeployment(
-    request: models.ICloudDeploymentRemoveRequest,
+    request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ): Promise<void> {
     try {
@@ -247,6 +306,7 @@ export class CloudApi implements IApiGroup, ICloudApi {
       throw new ServerConnection.NetworkError(err);
     }
   }
+
   async issueCloudAccess(
     request: models.ICloudIssueTokenRequest,
     credentials: ICloudCredentials
@@ -267,6 +327,7 @@ export class CloudApi implements IApiGroup, ICloudApi {
       throw new ServerConnection.NetworkError(err);
     }
   }
+
   // General
   async applyFromFile(
     request: models.IApplyFromFileRequest,

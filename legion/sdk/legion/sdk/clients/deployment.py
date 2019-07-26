@@ -16,13 +16,13 @@
 """
 EDI client
 """
-import argparse
 import logging
 import typing
 from urllib import parse
 
-import legion.sdk.clients.edi
+from legion.sdk.clients.edi import RemoteEdiClient
 from legion.sdk.definitions import MODEL_DEPLOYMENT_URL
+from legion.sdk.models import ModelDeployment
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,79 +31,9 @@ PROCESSING_STATE = "Processing"
 FAILED_STATE = "Failed"
 
 
-class ModelDeployment(typing.NamedTuple):
-    name: str
-    image: str
-    role_name: str = ""
-    resources: typing.Mapping[str, typing.Any] = {}
-    annotations: typing.Mapping[str, str] = {}
-    min_replicas: int = 0
-    max_replicas: int = 1
-    liveness_probe_initial_delay: int = 3
-    readiness_probe_initial_delay: int = 3
-    state: str = ""
-    service_url: str = ""
-    available_replicas: int = 0
-    replicas: int = 0
-
-    @staticmethod
-    def from_json(md: typing.Dict[str, str]) -> 'ModelDeployment':
-        """
-        Convert raw dict from EDI to Model Deployment
-        :param md: raw dict
-        :return: a Model Deployment
-        """
-        md_spec = md.get('spec', {})
-        md_metadata = md.get('metadata', {})
-        md_status = md.get('status', {})
-
-        return ModelDeployment(
-            name=md.get('name', md_metadata.get('name', '')),
-            image=md_spec.get('image', ''),
-            resources=md_spec.get('resources', {}),
-            annotations=md_spec.get('annotations', {}),
-            role_name=md_spec.get('roleName', ''),
-            min_replicas=int(md_spec.get('minReplicas', 0)),
-            max_replicas=int(md_spec.get('maxReplicas', 1)),
-            liveness_probe_initial_delay=md_spec.get('livenessProbeInitialDelay'),
-            readiness_probe_initial_delay=md_spec.get('readinessProbeInitialDelay'),
-            state=md_status.get('state', ''),
-            service_url=md_status.get('serviceURL', ''),
-            available_replicas=int(md_status.get('availableReplicas', 0)),
-            replicas=int(md_status.get('replicas', 0)),
-        )
-
-    def to_json(self, with_status=False) -> typing.Dict[str, str]:
-        """
-        Convert a Model Deployment to raw json
-        :return: raw dict
-        """
-        result = {
-            'name': self.name,
-            'spec': {
-                'image': self.image,
-                'resources': self.resources,
-                'annotations': self.annotations,
-                'minReplicas': self.min_replicas,
-                'roleName': self.role_name,
-                'maxReplicas': self.max_replicas,
-                'livenessProbeInitialDelay': self.liveness_probe_initial_delay,
-                'readinessProbeInitialDelay': self.readiness_probe_initial_delay
-            }
-        }
-        if with_status:
-            result['status'] = {
-                'state': self.state,
-                'serviceURL': self.service_url,
-                'availableReplicas': self.available_replicas,
-                'replicas': self.replicas
-            }
-        return result
-
-
-class ModelDeploymentClient(legion.sdk.clients.edi.RemoteEdiClient):
+class ModelDeploymentClient(RemoteEdiClient):
     """
-    EDI client
+    HTTP model deployment client
     """
 
     def get(self, name: str) -> ModelDeployment:
@@ -113,7 +43,7 @@ class ModelDeploymentClient(legion.sdk.clients.edi.RemoteEdiClient):
         :param name: Model Deployment name
         :return: Model Deployment
         """
-        return ModelDeployment.from_json(self.query(f'{MODEL_DEPLOYMENT_URL}/{name}'))
+        return ModelDeployment.from_dict(self.query(f'{MODEL_DEPLOYMENT_URL}/{name}'))
 
     def get_all(self, labels: typing.Dict[str, str] = None) -> typing.List[ModelDeployment]:
         """
@@ -126,25 +56,29 @@ class ModelDeploymentClient(legion.sdk.clients.edi.RemoteEdiClient):
         else:
             url = MODEL_DEPLOYMENT_URL
 
-        return [ModelDeployment.from_json(md) for md in self.query(url)]
+        return [ModelDeployment.from_dict(md) for md in self.query(url)]
 
-    def create(self, md: ModelDeployment) -> str:
+    def create(self, md: ModelDeployment) -> ModelDeployment:
         """
         Create Model Deployment
 
         :param md: Model Deployment
         :return Message from EDI server
         """
-        return self.query(MODEL_DEPLOYMENT_URL, action='POST', payload=md.to_json())['message']
+        return ModelDeployment.from_dict(
+            self.query(MODEL_DEPLOYMENT_URL, action='POST', payload=md.to_dict())
+        )
 
-    def edit(self, md: ModelDeployment) -> str:
+    def edit(self, md: ModelDeployment) -> ModelDeployment:
         """
         Edit Model Deployment
 
         :param md: Model Deployment
         :return Message from EDI server
         """
-        return self.query(MODEL_DEPLOYMENT_URL, action='PUT', payload=md.to_json())['message']
+        return ModelDeployment.from_dict(
+            self.query(MODEL_DEPLOYMENT_URL, action='PUT', payload=md.to_dict())
+        )
 
     def delete(self, name: str) -> str:
         """
@@ -154,28 +88,3 @@ class ModelDeploymentClient(legion.sdk.clients.edi.RemoteEdiClient):
         :return Message from EDI server
         """
         return self.query(f'{MODEL_DEPLOYMENT_URL}/{name}', action='DELETE')['message']
-
-    def delete_all(self, labels: typing.Dict[str, str]) -> str:
-        """
-        Delete Model Deployments by labels
-
-        :param labels: labels of a Model Deployment
-        :return Message from EDI server
-        """
-        if labels:
-            url = f'{MODEL_DEPLOYMENT_URL}?{parse.urlencode(labels)}'
-        else:
-            url = MODEL_DEPLOYMENT_URL
-
-        return self.query(url, action='DELETE')['message']
-
-
-def build_client(args: argparse.Namespace = None, retries=3, timeout=10) -> ModelDeploymentClient:
-    """
-    Build Model Deployment client from from ENV and from command line arguments
-
-    :param timeout: request timeout in seconds
-    :param retries: number of retries
-    :param args: (optional) command arguments with .namespace
-    """
-    return legion.sdk.clients.edi.build_client(args, retries=retries, timeout=timeout, cls=ModelDeploymentClient)

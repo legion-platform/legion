@@ -24,6 +24,9 @@ from legion.sdk.clients.edi import EDIConnectionException, IncorrectAuthorizatio
 
 LEGION_X_JWT_TOKEN = 'X-Jwt'
 DEFAULT_EDI_ENDPOINT = 'DEFAULT_EDI_ENDPOINT'
+METRICS_UI_URL = 'METRICS_UI_URL'
+SERVICE_CATALOG_URL = 'SERVICE_CATALOG_URL'
+GRAFANA_URL = 'GRAFANA_URL'
 
 
 def decorate_handler_for_exception(function):

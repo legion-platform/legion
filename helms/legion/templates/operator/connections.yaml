@@ -1,0 +1,48 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-connections-resources"
+  labels:
+        {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 4 }}
+data:
+  resources.yaml: |
+{{- range $conn := .Values.connections }}
+    ---
+    kind: Connection
+    id: {{ $conn.id }}
+    spec:
+      {{ toYaml $conn.spec | nindent 6 }}
+{{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-connections-resources-uploader"
+  labels:
+    component: "connections-resources-uploader"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: resources
+          configMap:
+            name: "{{ .Release.Name }}-connections-resources"
+      containers:
+        - name: connections-resources-uploader
+          env:
+            - name: EDI_URL
+              value: http://{{ .Release.Name }}-edi.{{ .Release.Namespace }}.svc.cluster.local
+          image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%slegion-pipeline-agent:%s") }}"
+          volumeMounts:
+            - mountPath: /opt/legion-resources
+              name: resources
+          command:
+            - legionctl
+            - bulk
+            - apply
+            - /opt/legion-resources/resources.yaml

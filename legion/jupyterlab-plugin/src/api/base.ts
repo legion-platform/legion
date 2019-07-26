@@ -26,6 +26,7 @@ export interface ICloudCredentials {
  * @param url string target URL (relevant)
  * @param method request method
  * @param request request payload (as JSON body)
+ * @param credentials
  */
 export function httpRequest(
   url: string,

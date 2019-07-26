@@ -22,6 +22,7 @@ import (
 	v1alpha3_istio_api "github.com/aspenmesh/istio-client-go/pkg/apis/networking/v1alpha3"
 	gogotypes "github.com/gogo/protobuf/types"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	md_config "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/spf13/viper"
 	v1alpha3_istio "istio.io/api/networking/v1alpha3"
@@ -136,7 +137,7 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 					Request: &v1alpha3_istio.Headers_HeaderOperations{
 						Add: map[string]string{
 							knativeRevisionHeader:  modelDeployment.Status.LastRevisionName,
-							knativeNamespaceHeader: viper.GetString(legion.Namespace),
+							knativeNamespaceHeader: viper.GetString(md_config.Namespace),
 						},
 					},
 				},
@@ -270,7 +271,7 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 }
 
 func (r *ReconcileModelRoute) reconcileStatus(modelRouteCR *legionv1alpha1.ModelRoute, state legionv1alpha1.ModelRouteState) error {
-	modelRouteCR.Status.EdgeUrl = fmt.Sprintf("%s%s", viper.GetString(legion.EdgeHost), modelRouteCR.Spec.UrlPrefix)
+	modelRouteCR.Status.EdgeUrl = fmt.Sprintf("%s%s", viper.GetString(md_config.EdgeHost), modelRouteCR.Spec.UrlPrefix)
 	modelRouteCR.Status.State = state
 
 	if err := r.Update(context.TODO(), modelRouteCR); err != nil {

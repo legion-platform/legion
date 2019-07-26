@@ -16,89 +16,19 @@
 """
 EDI client
 """
-import argparse
 import logging
 import typing
 
-import legion.sdk.clients.edi
+from legion.sdk.clients.edi import RemoteEdiClient
 from legion.sdk.definitions import MODEL_TRAINING_URL
+from legion.sdk.models import ModelTraining
 
 LOGGER = logging.getLogger(__name__)
 TRAINING_SUCCESS_STATE = "succeeded"
 TRAINING_FAILED_STATE = "failed"
 
 
-# TODO: Currently we support only part of fields.
-# Add rest part after migration to golang
-class ModelTraining(typing.NamedTuple):
-    name: str
-    toolchain_type: str
-    entrypoint: str
-    args: typing.List[str] = []
-    resources: typing.Mapping[str, typing.Any] = {}
-    vcs_name: str = ""
-    work_dir: str = ""
-    reference: str = ""
-    model_name: str = ""
-    model_version: str = ""
-    state: str = ""
-    trained_image: str = ""
-
-    @staticmethod
-    def from_json(mt: typing.Dict[str, str]) -> 'ModelTraining':
-        """
-        Convert raw dict from EDI to Model Training
-        :param mt: raw dict
-        :return: a Model Training
-        """
-        mt_spec = mt.get('spec', {})
-        mt_metadata = mt.get('metadata', {})
-        mt_status = mt.get('status', {})
-
-        return ModelTraining(
-            name=mt.get('name', mt_metadata.get('name')),
-            toolchain_type=mt_spec.get('toolchain', ''),
-            resources=mt_spec.get('resources', {}),
-            entrypoint=mt_spec.get('entrypoint', ''),
-            args=mt_spec.get('args', []),
-            vcs_name=mt_spec.get('vcsName', ''),
-            work_dir=mt_spec.get('workDir', ''),
-            reference=mt_spec.get('reference', ''),
-            model_name=mt_status.get('modelName', ''),
-            model_version=mt_status.get('modelVersion', ''),
-            state=mt_status.get('state', ''),
-            trained_image=mt_status.get('modelImage', '')
-        )
-
-    def to_json(self, with_status=False) -> typing.Dict[str, str]:
-        """
-        Convert a Model Training to raw json
-        :param with_status: add status fields
-        :return: raw dict
-        """
-        result = {
-            'name': self.name,
-            'spec': {
-                'toolchain': self.toolchain_type,
-                'resources': self.resources,
-                'entrypoint': self.entrypoint,
-                'args': self.args,
-                'vcsName': self.vcs_name,
-                'workDir': self.work_dir,
-                'reference': self.reference
-            }
-        }
-        if with_status:
-            result['status'] = {
-                'modelName': self.model_name,
-                'modelVersion': self.model_version,
-                'state': self.state,
-                'modelImage': self.trained_image
-            }
-        return result
-
-
-class ModelTrainingClient(legion.sdk.clients.edi.RemoteEdiClient):
+class ModelTrainingClient(RemoteEdiClient):
     """
     EDI client
     """
@@ -108,10 +38,10 @@ class ModelTrainingClient(legion.sdk.clients.edi.RemoteEdiClient):
         Get Model Training from EDI server
 
         :param name: Model Training name
-        :type version: str
+        :type name: str
         :return: Model Training
         """
-        return ModelTraining.from_json(self.query(f'{MODEL_TRAINING_URL}/{name}'))
+        return ModelTraining.from_dict(self.query(f'{MODEL_TRAINING_URL}/{name}'))
 
     def get_all(self) -> typing.List[ModelTraining]:
         """
@@ -119,25 +49,29 @@ class ModelTrainingClient(legion.sdk.clients.edi.RemoteEdiClient):
 
         :return: all Model Trainings
         """
-        return [ModelTraining.from_json(mt) for mt in self.query(MODEL_TRAINING_URL)]
+        return [ModelTraining.from_dict(mt) for mt in self.query(MODEL_TRAINING_URL)]
 
-    def create(self, mt: ModelTraining) -> str:
+    def create(self, mt: ModelTraining) -> ModelTraining:
         """
         Create Model Training
 
         :param mt: Model Training
         :return Message from EDI server
         """
-        return self.query(MODEL_TRAINING_URL, action='POST', payload=mt.to_json())['message']
+        return ModelTraining.from_dict(
+            self.query(MODEL_TRAINING_URL, action='POST', payload=mt.to_dict())
+        )
 
-    def edit(self, mt: ModelTraining) -> str:
+    def edit(self, mt: ModelTraining) -> ModelTraining:
         """
         Edit Model Training
 
         :param mt: Model Training
         :return Message from EDI server
         """
-        return self.query(MODEL_TRAINING_URL, action='PUT', payload=mt.to_json())['message']
+        return ModelTraining.from_dict(
+            self.query(MODEL_TRAINING_URL, action='PUT', payload=mt.to_dict())
+        )
 
     def delete(self, name: str) -> str:
         """
@@ -157,14 +91,3 @@ class ModelTrainingClient(legion.sdk.clients.edi.RemoteEdiClient):
         :return Message from EDI server
         """
         return self.stream(f'{MODEL_TRAINING_URL}/{name}/log', 'GET', params={'follow': follow})
-
-
-def build_client(args: argparse.Namespace = None, retries=3, timeout=10) -> ModelTrainingClient:
-    """
-    Build ModelTrainingClient client from from ENV and from command line arguments
-
-    :param timeout: request timeout in seconds
-    :param retries: number of retries
-    :param args: (optional) command arguments with .namespace
-    """
-    return legion.sdk.clients.edi.build_client(args, retries=retries, timeout=timeout, cls=ModelTrainingClient)

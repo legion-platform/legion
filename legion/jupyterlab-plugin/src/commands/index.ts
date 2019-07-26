@@ -16,6 +16,7 @@
 import * as authorize from './authorize';
 import * as cloud from './cloud';
 import { IAddCloudCommandsOptions } from './base';
+
 export { CommandIDs, IAddCloudCommandsOptions } from './base';
 
 /**

@@ -56,75 +56,150 @@ spec:
               items:
                 type: string
               type: array
+            data:
+              description: Input data for a training
+              items:
+                properties:
+                  connName:
+                    description: Connection name for data
+                    type: string
+                  localPath:
+                    description: Local training path
+                    type: string
+                  remotePath:
+                    description: Overwrite remote data path in connection
+                    type: string
+                required:
+                - connName
+                - localPath
+                type: object
+              type: array
             entrypoint:
               description: Model training file. It can be python\bash script or jupiter
                 notebook
               type: string
-            env:
-              description: Custom environment variables that should be setted before
-                entrypoint invocation. In ENVname:value format
-              type: object
-            hyperparameters:
-              description: Model training hyperparameters in parameter:value format
+            envs:
+              description: Custom environment variables that should be set before
+                entrypoint invocation.
+              items:
+                properties:
+                  name:
+                    description: Name of an environment variable
+                    type: string
+                  value:
+                    description: Value of an environment variable
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
+            hyperParameters:
+              description: Model training hyperParameters in parameter:value format
               type: object
             image:
               description: Train image
               type: string
-            modelFile:
-              description: Model file
-              type: string
+            model:
+              description: Model Identity
+              properties:
+                artifactNameTemplate:
+                  description: Template of output artifact name
+                  type: string
+                name:
+                  description: Model name
+                  type: string
+                version:
+                  description: Model version
+                  type: string
+              required:
+              - name
+              - version
+              type: object
             reference:
               description: VCS Reference
               type: string
             resources:
               description: Resources for model container The same format like k8s
                 uses for pod resources.
+              properties:
+                limits:
+                  description: Limits describes the maximum amount of compute resources
+                    allowed.
+                  properties:
+                    cpu:
+                      description: Read more about CPU resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
+                      type: string
+                    gpu:
+                      description: Read more about GPU resource here https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
+                      type: string
+                    memory:
+                      description: Read more about memory resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
+                      type: string
+                  type: object
+                requests:
+                  description: Requests describes the minimum amount of compute resources
+                    required.
+                  properties:
+                    cpu:
+                      description: Read more about CPU resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
+                      type: string
+                    gpu:
+                      description: Read more about GPU resource here https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
+                      type: string
+                    memory:
+                      description: Read more about memory resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
+                      type: string
+                  type: object
               type: object
             toolchain:
-              description: Type of toolchain. Currently supports only python.
-              enum:
-              - python
-              - jupyter
+              description: IntegrationName of toolchain
               type: string
             vcsName:
-              description: Name of VCSCredential resource. Must exists
+              description: Name of Connection resource. Must exists
               type: string
             workDir:
               description: Directory with model scripts/files in a git repository
               type: string
           required:
+          - model
           - toolchain
           - entrypoint
           - vcsName
           type: object
         status:
           properties:
-            commitID:
-              type: string
+            artifacts:
+              description: List of training results
+              items:
+                properties:
+                  artifactName:
+                    description: Trained artifact name
+                    type: string
+                  commitID:
+                    description: VCS commit
+                    type: string
+                  runId:
+                    description: Mlflow run ID
+                    type: string
+                required:
+                - runId
+                - artifactName
+                - commitID
+                type: object
+              type: array
             exitCode:
+              description: Pod exit code
               format: int32
               type: integer
             message:
-              type: string
-            modelImage:
-              type: string
-            modelName:
-              type: string
-            modelVersion:
-              type: string
-            podName:
+              description: Pod last log
               type: string
             reason:
+              description: Pod reason
               type: string
             state:
-              enum:
-              - scheduling
-              - fetching-code
-              - running
-              - capturing
-              - succeeded
-              - failed
-              - unknown
+              description: Model Packaging State
               type: string
           type: object
   version: v1alpha1

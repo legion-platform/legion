@@ -22,7 +22,7 @@ import (
 
 type ModelDeploymentTarget struct {
 	// Model Deployment name
-	Name string `json:"name"`
+	Name string `json:"mdName"`
 	// The proportion of traffic to be forwarded to the Model Deployment.
 	Weight *int32 `json:"weight,omitempty"`
 }

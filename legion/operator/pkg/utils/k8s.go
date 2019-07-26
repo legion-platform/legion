@@ -18,8 +18,6 @@ package utils
 
 import (
 	"fmt"
-	"github.com/legion-platform/legion/legion/operator/pkg/legion"
-	"github.com/spf13/viper"
 	"io"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -96,7 +94,7 @@ func ExecToPodThroughAPI(command []string, containerName, podName, namespace str
 		return fmt.Errorf("error while creating Executor: %v", err)
 	}
 
-	log.Info(fmt.Sprintf("Try to execute the following command: '%+v' in the %s container of the %s pod",
+	logk8s.Info(fmt.Sprintf("Try to execute the following command: '%+v' in the %s container of the %s pod",
 		command, containerName, podName))
 
 	err = exec.Stream(remotecommand.StreamOptions{
@@ -105,7 +103,7 @@ func ExecToPodThroughAPI(command []string, containerName, podName, namespace str
 		Tty:    false,
 	})
 
-	log.Info("Training command finished")
+	logk8s.Info("Training command finished")
 
 	if err != nil {
 		return fmt.Errorf("error in Stream: %v", err)
@@ -119,10 +117,10 @@ type LogStream struct {
 	Data []byte
 }
 
-func StreamTrainingLogs(k8sConfig *rest.Config, trainingName string, follow bool) (io.ReadCloser, error) {
+func StreamLogs(namespace string, k8sConfig *rest.Config, trainingName string, containerName string, follow bool) (io.ReadCloser, error) {
 	clientset, _ := kubernetes.NewForConfig(k8sConfig)
-	request := clientset.CoreV1().Pods(viper.GetString(legion.Namespace)).
-		GetLogs(legion.GenerateBuildModelName(trainingName), &core_v1.PodLogOptions{Follow: follow, Container: "builder"})
+	request := clientset.CoreV1().Pods(namespace).
+		GetLogs(trainingName, &core_v1.PodLogOptions{Follow: follow, Container: containerName})
 
 	readCloser, err := request.Stream()
 	if err != nil {

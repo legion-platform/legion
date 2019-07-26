@@ -14,247 +14,263 @@
 #    limitations under the License.
 #
 """
-EDI commands for legion cli
+Training commands for legion cli
 """
-import argparse
 import logging
 import time
-
 from http.client import HTTPException
 
+import click
 from requests import RequestException
-from texttable import Texttable
 
-from legion.cli.parsers import security, prepare_resources, add_resources_params, print_training_logs
-from legion.sdk.clients import edi
+from legion.cli.utils.client import pass_obj
+from legion.cli.utils.logs import print_logs
+from legion.cli.utils.output import format_output, DEFAULT_OUTPUT_FORMAT
+from legion.sdk import config
 from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
-from legion.sdk.clients.training import build_client, ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
+from legion.sdk.clients.training import ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
     TRAINING_FAILED_STATE
 
-DEFAULT_WIDTH = 240
-DEFAULT_WAIT_TIMEOUT = 1
-MT_HEADER = ["Name", "State", "Toolchain Type", "Entrypoint", "Arguments", "VCS Credential", "Reference",
-             "Model Name", "Model Version", "Trained Docker image"]
-
+DEFAULT_WAIT_TIMEOUT = 3
 LOGGER = logging.getLogger(__name__)
 
-INSPECT_FORMAT_COLORIZED = 'colorized'
-INSPECT_FORMAT_TABULAR = 'column'
-VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
-
-def _convert_mt_from_args(args: argparse.Namespace) -> ModelTraining:
-    if args.filename:
-        resource = parse_resources_file_with_one_item(args.filename).resource
-        if not isinstance(resource, ModelTraining):
-            raise ValueError(f'ModelTraining expected, but {type(resource)} provided')
-        return resource
-    elif args.name:
-        return ModelTraining(
-            name=args.name,
-            toolchain_type=args.toolchain_type,
-            entrypoint=args.entrypoint,
-            resources=prepare_resources(args),
-            args=args.arg,
-            vcs_name=args.vcs_name,
-            reference=args.reference,
-            work_dir=args.workdir
-        )
-    else:
-        raise ValueError(f'Provide name of a Model Training or path to a file')
-
-
-def get(args: argparse.Namespace):
+@click.group()
+@click.option('--edi', help='EDI server host', default=config.EDI_URL)
+@click.option('--token', help='EDI server jwt token', default=config.EDI_TOKEN)
+@click.pass_context
+def training(ctx: click.core.Context, edi: str, token: str):
     """
-    Get all of Model Trainings or by name
-    :param args: cli parameters
+    Allow you to perform actions on trainings
     """
-    mt_client = build_client(args)
-
-    mt_credentials = [mt_client.get(args.name)] if args.name else mt_client.get_all()
-
-    table = Texttable(max_width=DEFAULT_WIDTH)
-    table.set_cols_align("c" * len(MT_HEADER))
-    table.set_cols_valign("t" * len(MT_HEADER))
-    table.add_rows([MT_HEADER] + [[
-        mt.name,
-        mt.state,
-        mt.toolchain_type,
-        mt.entrypoint,
-        mt.args,
-        mt.vcs_name,
-        mt.reference,
-        mt.model_name,
-        mt.model_version,
-        mt.trained_image
-    ] for mt in mt_credentials])
-    print(table.draw() + "\n")
+    ctx.obj = ModelTrainingClient(edi, token)
 
 
-def create(args: argparse.Namespace):
+@training.command()
+@click.option('--train-id', '--id', help='Model training ID')
+@click.option('--output-format', '-o', 'output_format', help='Output format',
+              default=DEFAULT_OUTPUT_FORMAT)
+@pass_obj
+def get(client: ModelTrainingClient, train_id: str, output_format: str):
     """
-    Create a Model Training
-    :param args: cli parameters
+    Get trainings.\n
+    The command without id argument retrieve all trainings.\n
+    Get all trainings in json format:\n
+        legionctl train get --format json\n
+    Get training with "git-repo" id:\n
+        legionctl train get --id git-repo\n
+    Using jsonpath:\n
+        legionctl train get -o 'jsonpath=[*].spec.reference'
+    \f
+    :param client: Model training HTTP client
+    :param train_id: Model training ID
+    :param output_format: Output format
+    :return:
     """
-    mt_client = build_client(args)
+    trains = [client.get(train_id)] if train_id else client.get_all()
 
-    mt = _convert_mt_from_args(args)
-    mt_client.create(mt)
-
-    wait_training_finish(args, mt.name, mt_client)
+    format_output(trains, output_format)
 
 
-def logs(args: argparse.Namespace):
+@training.command()
+@click.option('--train-id', '--id', help='Model training ID')
+@click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with training')
+@click.option('--wait/--no-wait', default=True,
+              help='no wait until scale will be finished')
+@click.option('--timeout', default=1200, type=int,
+              help='timeout in seconds. for wait (if no-wait is off)')
+@pass_obj
+def create(client: ModelTrainingClient, train_id: str, file: str, wait: bool, timeout: int):
     """
-    Stream training logs
-    :param args: cli parameters
+    Create a training.\n
+    You should specify a path to file with a training. The file must contain only one training.
+    For now, CLI supports yaml and JSON file formats.
+    If you want to create multiples trainings than you should use "legionctl res apply" instead.
+    If you provide the training id parameter than it will be overridden before sending to EDI server.\n
+    Usage example:\n
+        * legionctl train create -f train.yaml --id examples-git
+    \f
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until scale will be finished
+    :param client: Model training HTTP client
+    :param train_id: Model training ID
+    :param file: Path to the file with only one training
     """
-    mt_client = build_client(args)
+    train = parse_resources_file_with_one_item(file).resource
+    if not isinstance(train, ModelTraining):
+        raise ValueError(f'Model training expected, but {type(train)} provided')
 
-    for msg in mt_client.log(args.name, args.follow):
-        print_training_logs(msg)
+    if train_id:
+        train.id = train_id
+
+    train = client.create(train)
+    click.echo(f"Start training: {train}")
+
+    wait_training_finish(timeout, wait, train.id, client)
 
 
-def edit(args: argparse.Namespace):
+@training.command()
+@click.option('--train-id', '--id', help='Model training ID')
+@click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with training')
+@click.option('--wait/--no-wait', default=True,
+              help='no wait until scale will be finished')
+@click.option('--timeout', default=1200, type=int,
+              help='timeout in seconds. for wait (if no-wait is off)')
+@pass_obj
+def edit(client: ModelTrainingClient, train_id: str, file: str, wait: bool, timeout: int):
     """
-    Edit a Model Training by name
-    :param args: cli parameters
+    Rerun a training.\n
+    You should specify a path to file with a training. The file must contain only one training.
+    For now, CLI supports yaml and JSON file formats.
+    If you want to update multiples trainings than you should use "legionctl res apply" instead.
+    If you provide the training id parameter than it will be overridden before sending to EDI server.\n
+    Usage example:\n
+        * legionctl train update -f train.yaml --id examples-git
+    \f
+    :param client: Model training HTTP client
+    :param train_id: Model training ID
+    :param file: Path to the file with only one training
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until scale will be finished
     """
-    mt_client = build_client(args)
+    train = parse_resources_file_with_one_item(file).resource
+    if not isinstance(train, ModelTraining):
+        raise ValueError(f'Model training expected, but {type(train)} provided')
 
-    mt = _convert_mt_from_args(args)
-    message = mt_client.edit(mt)
+    if train_id:
+        train.id = train_id
 
-    wait_training_finish(args, mt.name, mt_client)
+    train = client.edit(train)
+    click.echo(f"Rerun training: {train}")
 
-    print(message)
+    wait_training_finish(timeout, wait, train.id, client)
 
 
-def delete(args: argparse.Namespace):
+@training.command()
+@click.option('--train-id', '--id', help='Model training ID')
+@click.option('--file', '-f', type=click.Path(), help='Path to the file with training')
+@click.option('--ignore-not-found/--not-ignore-not-found', default=False,
+              help='ignore if Model Training is not found')
+@pass_obj
+def delete(client: ModelTrainingClient, train_id: str, file: str, ignore_not_found: bool):
     """
-    Delete a Model Training by name
-    :param args: cli parameters
+    Delete a training.\n
+    For this command, you must provide a training ID or path to file with one training.
+    The file must contain only one training.
+    If you want to delete multiples trainings than you should use "legionctl res delete" instead.
+    For now, CLI supports yaml and JSON file formats.
+    The command will be failed if you provide both arguments.\n
+    Usage example:\n
+        * legionctl train delete --id examples-git\n
+        * legionctl train delete -f train.yaml
+    \f
+    :param client: Model training HTTP client
+    :param train_id: Model training ID
+    :param file: Path to the file with only one training
+    :param ignore_not_found: ignore if Model Training is not found
     """
-    mt_client = build_client(args)
+    if not train_id and not file:
+        raise ValueError(f'You should provide a training ID or file parameter, not both.')
 
-    if not args.name and not args.filename:
-        raise ValueError(f'Provide name of a Model Training or path to a file')
+    if train_id and file:
+        raise ValueError(f'You should provide a training ID or file parameter, not both.')
 
-    if args.filename:
-        resource = parse_resources_file_with_one_item(args.filename)
-        if not isinstance(resource.resource, ModelTraining):
-            raise ValueError(f'ModelTraining expected, but {type(resource.resource)} provided')
-        mt_name = resource.resource_name
-    else:
-        mt_name = args.name
+    if file:
+        train = parse_resources_file_with_one_item(file).resource
+        if not isinstance(train, ModelTraining):
+            raise ValueError(f'Model training expected, but {type(train)} provided')
+
+        train_id = train.id
 
     try:
-        message = mt_client.delete(mt_name)
-        print(message)
+        message = client.delete(train_id)
+        click.echo(message)
     except WrongHttpStatusCode as e:
-        if e.status_code != 404 or not args.ignore_not_found:
+        if e.status_code != 404 or not ignore_not_found:
             raise e
 
-        print(f'Model deployment {mt_name} was not found. Ignore')
+        click.echo(f'Model training {train_id} was not found. Ignore')
 
 
-def wait_training_finish(args: argparse.Namespace, mt_name: str, mt_client: ModelTrainingClient):
+@training.command()
+@click.option('--train-id', '--id', help='Model training ID')
+@click.option('--file', '-f', type=click.Path(), help='Path to the file with training')
+@click.option('--follow/--not-follow', default=True,
+              help='Follow logs stream')
+@pass_obj
+def logs(client: ModelTrainingClient, train_id: str, file: str, follow: bool):
+    """
+    Stream training logs.\n
+    For this command, you must provide a training ID or path to file with one training.
+    The file must contain only one training.
+    If you want to delete multiples trainings than you should use "legionctl res delete" instead.
+    For now, CLI supports yaml and JSON file formats.
+    The command will be failed if you provide both arguments.\n
+    Usage example:\n
+        * legionctl train delete --id examples-git\n
+        * legionctl train delete -f train.yaml
+    \f
+    :param follow: Follow logs stream
+    :param client: Model training HTTP client
+    :param train_id: Model training ID
+    :param file: Path to the file with only one training
+    """
+    if not train_id and not file:
+        raise ValueError(f'You should provide a training ID or file parameter, not both.')
+
+    if train_id and file:
+        raise ValueError(f'You should provide a training ID or file parameter, not both.')
+
+    if file:
+        train = parse_resources_file_with_one_item(file).resource
+        if not isinstance(train, ModelTraining):
+            raise ValueError(f'Model training expected, but {type(train)} provided')
+
+        train_id = train.id
+
+    for msg in client.log(train_id, follow):
+        print_logs(msg)
+
+
+def wait_training_finish(timeout: int, wait: bool, mt_id: str, mt_client: ModelTrainingClient):
     """
     Wait training to finish according command line arguments
 
-    :param mt_name: Model Training name
-    :param args: command arguments with .model_id, .namespace
+    :param wait:
+    :param timeout:
+    :param mt_id: Model Training name
     :param mt_client: Model Training Client
-
-    :return: None
     """
-    if args.no_wait:
+    if not wait:
         return
 
     start = time.time()
-    if args.timeout <= 0:
+    if timeout <= 0:
         raise Exception('Invalid --timeout argument: should be positive integer')
+
+    click.echo("Logs streaming...")
 
     while True:
         elapsed = time.time() - start
-        if elapsed > args.timeout:
+        if elapsed > timeout:
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            mt = mt_client.get(mt_name)
-            if mt.state == TRAINING_SUCCESS_STATE:
-                print(f'Model {mt_name} was trained. Training took {round(time.time() - start)} seconds')
+            mt = mt_client.get(mt_id)
+            if mt.status.state == TRAINING_SUCCESS_STATE:
+                click.echo(f'Model {mt_id} was trained. Training took {round(time.time() - start)} seconds')
                 return
-            elif mt.state == TRAINING_FAILED_STATE:
-                raise Exception(f'Model training {mt_name} was failed.')
-            elif mt.state == "":
-                print(f"Can't determine the state of {mt.name}. Sleeping...")
+            elif mt.status.state == TRAINING_FAILED_STATE:
+                raise Exception(f'Model training {mt_id} was failed.')
+            elif mt.status.state == "":
+                click.echo(f"Can't determine the state of {mt.id}. Sleeping...")
             else:
-                for msg in mt_client.log(mt.name, follow=True):
-                    print_training_logs(msg)
+                for msg in mt_client.log(mt.id, follow=True):
+                    print_logs(msg)
 
         except (WrongHttpStatusCode, HTTPException, RequestException) as e:
             LOGGER.info('Callback have not confirmed completion of the operation. Exception: %s', str(e))
 
         LOGGER.debug('Sleep before next request')
         time.sleep(DEFAULT_WAIT_TIMEOUT)
-
-
-def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
-    """
-    Generate cli parsers
-
-    :param main_subparser: parent cli parser
-    """
-    mt_subparser = main_subparser.add_parser('model-training', aliases=('mt', 'training'),
-                                             description='Model Training manipulations').add_subparsers()
-
-    mt_get_parser = mt_subparser.add_parser('get', description='Get all ModelTrainings or by name')
-    mt_get_parser.add_argument('name', type=str, nargs='?', help='Model Training name', default="")
-    security.add_edi_arguments(mt_get_parser)
-    mt_get_parser.set_defaults(func=get)
-
-    mt_create_parser = mt_subparser.add_parser('create', description='Create a ModelTraining')
-    mt_create_parser.add_argument('name', nargs='?', type=str, help='Model Training name')
-    mt_create_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python')
-    mt_create_parser.add_argument('--entrypoint', '-e', type=str, help='Model training file. It can be python\\bash'
-                                                                       ' script or jupiter notebook')
-    mt_create_parser.add_argument('--arg', '-a', action='append', help='Parameter for entrypoint script')
-    mt_create_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource')
-    mt_create_parser.add_argument('--workdir', type=str, help='Directory with model scripts/files in a git repository')
-    mt_create_parser.add_argument('--reference', type=str, help='Commit\\tag\\branch name')
-    mt_create_parser.add_argument('--filename', '-f', type=str, help='Filename to use to create the Model Training')
-    add_resources_params(mt_create_parser)
-    edi.add_arguments_for_wait_operation(mt_create_parser)
-    security.add_edi_arguments(mt_create_parser)
-    mt_create_parser.set_defaults(func=create)
-
-    mt_edit_parser = mt_subparser.add_parser('edit', description='Get all ModelTrainings')
-    mt_edit_parser.add_argument('name', nargs='?', type=str, help='Model Training name')
-    mt_edit_parser.add_argument('--toolchain-type', '--toolchain', type=str, help='Toolchain types: legion or python')
-    mt_edit_parser.add_argument('--entrypoint', '-e', type=str, help='Model training file. It can be python\\bash'
-                                                                     ' script or jupiter notebook')
-    mt_edit_parser.add_argument('--arg', '-a', action='append', help='Parameter for entrypoint script')
-    mt_edit_parser.add_argument('--vcs-name', '--vcs', type=str, help='Name of VCSCredential resource')
-    mt_edit_parser.add_argument('--workdir', type=str, help='Directory with model scripts/files in a git repository')
-    mt_edit_parser.add_argument('--reference', type=str, help='Commit\\tag\\branch name')
-    mt_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to edit the Model Training')
-    add_resources_params(mt_edit_parser)
-    security.add_edi_arguments(mt_edit_parser)
-    edi.add_arguments_for_wait_operation(mt_edit_parser)
-    mt_edit_parser.set_defaults(func=edit)
-
-    mt_delete_parser = mt_subparser.add_parser('delete', description='Get all ModelTrainings')
-    mt_delete_parser.add_argument('name', nargs='?', type=str, help='Model Training name', default="")
-    mt_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Training')
-    mt_delete_parser.add_argument('--ignore-not-found', action='store_true',
-                                  help='ignore if Model Deployment is not found')
-    security.add_edi_arguments(mt_delete_parser)
-    mt_delete_parser.set_defaults(func=delete)
-
-    mt_log_parser = mt_subparser.add_parser('logs', description='Stream training logs')
-    mt_log_parser.add_argument('name', type=str, help='Model Training name', default="")
-    mt_log_parser.add_argument('--follow', '-f', action='store_true', help='Follow logs stream')
-    security.add_edi_arguments(mt_log_parser)
-    mt_log_parser.set_defaults(func=logs)

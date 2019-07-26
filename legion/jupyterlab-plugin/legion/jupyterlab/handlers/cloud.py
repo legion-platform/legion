@@ -16,21 +16,24 @@
 """
 Declaration of cloud handlers
 """
-import typing
 import os
+import typing
 
 from tornado.web import HTTPError
-
-from legion.sdk.clients.edi import EDIConnectionException, RemoteEdiClient
-from legion.sdk.clients.edi_aggregated import parse_resources_file, apply, LegionCloudResourceUpdatePair
-from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
-    TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE
-from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
-from legion.sdk.clients.vcs import VcsClient, VCSCredential
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
 from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT, LEGION_X_JWT_TOKEN
+from legion.sdk.clients.connection import ConnectionClient
+from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
+from legion.sdk.clients.edi import EDIConnectionException, RemoteEdiClient
+from legion.sdk.clients.edi_aggregated import parse_resources_file, apply, LegionCloudResourceUpdatePair
+from legion.sdk.clients.packaging import ModelPackagingClient
+from legion.sdk.clients.packaging_integration import PackagingIntegrationClient
+from legion.sdk.clients.toolchain_integration import ToolchainIntegrationClient
+from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
+    TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE
+from legion.sdk.models import ModelPackaging
 
 LEGION_CLOUD_CREDENTIALS_EDI = 'X-Legion-Cloud-Endpoint'
 LEGION_CLOUD_CREDENTIALS_TOKEN = 'X-Legion-Cloud-Token'
@@ -41,39 +44,6 @@ class BaseCloudLegionHandler(BaseLegionHandler):
     """
     Base handler for cloud API
     """
-
-    @staticmethod
-    def transform_cloud_training(training: ModelTraining) -> dict:
-        """
-        Transform cloud training information object to dict
-
-        :type training: ModelTraining
-        :param training: cloud training information object
-        :return: dict
-        """
-        return training.to_json(True)
-
-    @staticmethod
-    def transform_cloud_deployment(deployment: ModelDeployment) -> dict:
-        """
-        Transform cloud deployment object to dict
-
-        :type deployment: ModelDeployment
-        :param deployment: deployment object
-        :return: dict
-        """
-        return deployment.to_json(True)
-
-    @staticmethod
-    def transform_vcs(vcs: VCSCredential) -> dict:
-        """
-        Transform VCS object to dict
-
-        :type vcs: VCSCredential
-        :param vcs: VCS object
-        :return: dict
-        """
-        return vcs.to_json()
 
     def build_cloud_client(self, target_client_class):
         """
@@ -105,9 +75,9 @@ class BaseCloudLegionHandler(BaseLegionHandler):
 
         :return: typing.List[dict] -- list of trainings
         """
-        client = self.build_cloud_client(ModelTrainingClient)
+        client: ModelTrainingClient = self.build_cloud_client(ModelTrainingClient)
         return [
-            self.transform_cloud_training(training)
+            training.to_dict()
             for training in client.get_all()
         ]
 
@@ -117,23 +87,99 @@ class BaseCloudLegionHandler(BaseLegionHandler):
 
         :return: typing.List[dict] -- list of deployments
         """
-        client = self.build_cloud_client(ModelDeploymentClient)
+        client: ModelDeploymentClient = self.build_cloud_client(ModelDeploymentClient)
         return [
-            self.transform_cloud_deployment(deployment)
+            deployment.to_dict()
             for deployment in client.get_all()
         ]
 
-    def get_vcs_instances(self) -> typing.List[dict]:
+    def get_conn_instances(self) -> typing.List[dict]:
         """
-        Get VCS instances
+        Get connections instances
 
-        :return: typing.List[dict] -- list of VCSs
+        :return: typing.List[dict] -- list of connections
         """
-        client = self.build_cloud_client(VcsClient)
+        client: ConnectionClient = self.build_cloud_client(ConnectionClient)
         return [
-            self.transform_vcs(vcs)
-            for vcs in client.get_all()
+            conn.to_dict()
+            for conn in client.get_all()
         ]
+
+    def get_model_packaging_instances(self) -> typing.List[dict]:
+        """
+        Get model packaging
+
+        :return: typing.List[dict] -- list of model packaging
+        """
+        client: ModelPackagingClient = self.build_cloud_client(ModelPackagingClient)
+        return [
+            mp.to_dict()
+            for mp in client.get_all()
+        ]
+
+    def get_packaging_integrations(self) -> typing.List[dict]:
+        """
+        Get packaging integrations
+
+        :return: typing.List[dict] -- list of packaging integrations
+        """
+        client: PackagingIntegrationClient = self.build_cloud_client(PackagingIntegrationClient)
+        return [
+            pi.to_dict()
+            for pi in client.get_all()
+        ]
+
+    def get_toolchain_integrations(self) -> typing.List[dict]:
+        """
+        Get toolchain integrations
+
+        :return: typing.List[dict] -- list of toolchain integrations
+        """
+        client: ToolchainIntegrationClient = self.build_cloud_client(ToolchainIntegrationClient)
+        return [
+            ti.to_dict()
+            for ti in client.get_all()
+        ]
+
+
+class CloudModelPackagingHandler(BaseCloudLegionHandler):
+    """
+    Control model packagings
+    """
+
+    @decorate_handler_for_exception
+    def delete(self):
+        """
+        Remove model packaging
+
+        :return: None
+        """
+        data = BasicIdRequest(**self.get_json_body())
+
+        try:
+            client = self.build_cloud_client(ModelPackagingClient)
+            client.delete(data.id)
+            self.finish_with_json()
+        except Exception as query_exception:
+            raise HTTPError(log_message='Can not remove cluster model packaging') from query_exception
+
+
+class CloudUrlInfo(BaseCloudLegionHandler):
+    """
+    Control model packagings
+    """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Remove model packaging
+
+        :return: None
+        """
+        self.finish_with_json({
+            'ediUrl': os.getenv('LEGION_EDI_URL', ''),
+            'metricUiUrl': os.getenv('LEGION_METRIC_UI_URL', ''),
+        })
 
 
 class CloudTrainingsHandler(BaseCloudLegionHandler):
@@ -148,11 +194,33 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = BasicNameRequest(**self.get_json_body())
+        data = BasicIdRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelTrainingClient)
-            client.delete(data.name)
+            client.delete(data.id)
+            self.finish_with_json()
+        except Exception as query_exception:
+            raise HTTPError(log_message='Can not remove cluster model training') from query_exception
+
+
+class CloudConnectionHandler(BaseCloudLegionHandler):
+    """
+    Control cloud connections
+    """
+
+    @decorate_handler_for_exception
+    def delete(self):
+        """
+        Remove cloud training
+
+        :return: None
+        """
+        data = BasicIdRequest(**self.get_json_body())
+
+        try:
+            client = self.build_cloud_client(ConnectionClient)
+            client.delete(data.id)
             self.finish_with_json()
         except Exception as query_exception:
             raise HTTPError(log_message='Can not remove cluster model training') from query_exception
@@ -176,8 +244,31 @@ class CloudTrainingLogsHandler(BaseCloudLegionHandler):
         training = client.get(training_name)  # type: ModelTraining
 
         self.finish_with_json({
-            'futureLogsExpected': training.state not in (TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE),
+            'futureLogsExpected': training.status.state not in (TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE),
             'data': '\n'.join(client.log(training_name))
+        })
+
+
+class CloudPackagingLogsHandler(BaseCloudLegionHandler):
+    """
+    Control cloud training logs
+    """
+
+    @decorate_handler_for_exception
+    def get(self, packaging_name):
+        """
+        Get training logs
+
+        :arg packaging_name: name of training
+        :type packaging_name: str
+        :return: None
+        """
+        client = self.build_cloud_client(ModelPackagingClient)
+        mp: ModelPackaging = client.get(packaging_name)
+
+        self.finish_with_json({
+            'futureLogsExpected': mp.status.state not in (TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE),
+            'data': '\n'.join(client.log(packaging_name))
         })
 
 
@@ -193,11 +284,11 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = DeploymentCreateRequest(**self.get_json_body())
+        md = ModelDeployment.from_dict(self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
-            client.create(data.convert_to_deployment())
+            client.create(md)
             self.finish_with_json()
         except Exception as query_exception:
             raise HTTPError(log_message='Can not create new cloud deployment') from query_exception
@@ -209,11 +300,11 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
 
         :return: None
         """
-        data = BasicNameRequest(**self.get_json_body())
+        data = BasicIdRequest(**self.get_json_body())
 
         try:
             client = self.build_cloud_client(ModelDeploymentClient)
-            client.delete(data.name)
+            client.delete(data.id)
         except Exception as query_exception:
             raise HTTPError(log_message='Can not remove cluster model deployment') from query_exception
 
@@ -256,7 +347,7 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
         :type resources:  typing.Tuple[LegionCloudResourceUpdatePair]
         :return: typing.List[str] -- response
         """
-        return [f'{type(resource.resource).__name__} {resource.resource_name}' for resource in resources]
+        return [f'{type(resource.resource).__name__} {resource.resource_id}' for resource in resources]
 
     @decorate_handler_for_exception
     def post(self):
@@ -303,5 +394,8 @@ class CloudAllEntitiesHandler(BaseCloudLegionHandler):
         self.finish_with_json({
             'trainings': self.get_cloud_trainings(),
             'deployments': self.get_cloud_deployments(),
-            'vcss': self.get_vcs_instances()
+            'connections': self.get_conn_instances(),
+            'modelPackagings': self.get_model_packaging_instances(),
+            'toolchainIntegrations': self.get_toolchain_integrations(),
+            'packagingIntegrations': self.get_packaging_integrations(),
         })

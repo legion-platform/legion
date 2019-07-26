@@ -19,15 +19,15 @@ import { JupyterLab } from '@jupyterlab/application';
 import { showErrorMessage } from '@jupyterlab/apputils';
 
 import { TitleBarView } from './partials/TitleBarView';
-import { ListingView } from './partials/ListingView';
-import { SmallButtonView, ButtonView } from './partials/ButtonView';
+import { ButtonView } from './partials/ButtonView';
 
 import * as style from '../componentsStyle/GeneralWidgetStyle';
-import * as dialog from '../components/dialogs/cloud';
 import { CommandIDs } from '../commands';
 import { IApiCloudState } from '../models';
 import { ICloudAllEntitiesResponse } from '../models/cloud';
 import { ClusterInfoView } from './partials/ClusterInfoView';
+import { ConfStage } from './partials/ConfStage';
+import { LifecycleStage } from './partials/LifecycleStage';
 
 /** Interface for GitPanel component state */
 export interface ICloudWidgetViewNodeState {
@@ -102,141 +102,24 @@ export class CloudWidgetView extends React.Component<
     return (
       <div className={style.widgetPane}>
         <TitleBarView
-          text={'Legion cluster mode'}
+          text={'Legion Services'}
           onRefresh={() =>
             this.props.app.commands.execute(CommandIDs.refreshCloud)
           }
           isRefreshing={this.state.isLoading}
         />
         <ClusterInfoView
-          clusterName={
-            this.props.dataState.credentials
-              ? this.props.dataState.credentials.cluster
-              : 'Internal Cluster'
+          ediUrl={this.props.dataState.configuration.defaultEDIEndpoint}
+          metricUiUrl={this.props.dataState.configuration.metricUiUrl}
+          serviceCatalogUrl={
+            this.props.dataState.configuration.serviceCatalogUrl
           }
+          grafanaUrl={this.props.dataState.configuration.grafanaUrl}
         />
-        <ListingView
-          title={'Cloud trainings'}
-          topButton={null}
-          columns={[
-            {
-              name: 'Training',
-              flex: {
-                flexGrow: 1,
-                flexBasis: 200
-              }
-            },
-            {
-              name: 'Status',
-              flex: {
-                flexGrow: 0,
-                flexBasis: 120
-              }
-            }
-          ]}
-          isLoading={this.state.isLoading}
-          items={this.state.cloudData.trainings.map(training => {
-            return {
-              items: [
-                {
-                  value: training.name
-                },
-                {
-                  value: training.status.state
-                }
-              ],
-              onClick: () =>
-                dialog
-                  .showCloudTrainInformationDialog(training)
-                  .then(({ button }) => {
-                    if (button.label === dialog.CREATE_DEPLOYMENT_LABEL) {
-                      this.props.app.commands.execute(
-                        CommandIDs.newCloudDeployment,
-                        {
-                          image: training.status.modelImage
-                        }
-                      );
-                    } else if (button.label === dialog.REMOVE_TRAINING_LABEL) {
-                      this.props.app.commands.execute(
-                        CommandIDs.removeCloudTraining,
-                        {
-                          name: training.name
-                        }
-                      );
-                    } else if (button.label === dialog.LOGS_LABEL) {
-                      this.props.app.commands.execute(
-                        CommandIDs.openTrainingLogs,
-                        {
-                          name: training.name
-                        }
-                      );
-                    }
-                  })
-            };
-          })}
-        />
-        <ListingView
-          title={'Cloud deployments'}
-          topButton={
-            <SmallButtonView
-              text={'New deployment'}
-              iconClass={'jp-AddIcon'}
-              onClick={() =>
-                this.props.app.commands.execute(CommandIDs.newCloudDeployment)
-              }
-            />
-          }
-          columns={[
-            {
-              name: 'Deployment',
-              flex: {
-                flexGrow: 3,
-                flexBasis: 70
-              }
-            },
-            {
-              name: 'Replicas',
-              flex: {
-                flexGrow: 0,
-                flexBasis: 70
-              }
-            },
-            {
-              name: 'Image',
-              flex: {
-                flexGrow: 5,
-                flexBasis: 70
-              }
-            }
-          ]}
-          isLoading={this.state.isLoading}
-          items={this.state.cloudData.deployments.map(deployment => {
-            return {
-              items: [
-                {
-                  value: deployment.name
-                },
-                {
-                  value: '' + deployment.status.availableReplicas
-                },
-                {
-                  value: deployment.spec.image
-                }
-              ],
-              onClick: () =>
-                dialog
-                  .showCloudDeploymentInformationDialog(deployment)
-                  .then(({ button }) => {
-                    if (button.label === dialog.REMOVE_DEPLOYMENT_LABEL) {
-                      this.props.app.commands.execute(
-                        CommandIDs.removeCloudDeployment,
-                        { name: deployment.name }
-                      );
-                    }
-                  })
-            };
-          })}
-        />
+
+        <LifecycleStage app={this.props.app} dataState={this.props.dataState} />
+
+        <ConfStage app={this.props.app} dataState={this.props.dataState} />
       </div>
     );
   }

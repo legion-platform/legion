@@ -26,6 +26,7 @@ export interface IButtonViewNodeProps {
   disabled?: boolean;
   cursor?: string;
 }
+
 export interface IButtonViewWithIconNodeProps extends IButtonViewNodeProps {
   iconClass: string;
 }

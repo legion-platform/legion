@@ -9,6 +9,7 @@
 !legion/operator/hack/**
 !legion/operator/Gopkg.toml
 !legion/operator/Gopkg.lock
+!legion/operator/.golangci.yml
 !legion/operator/Makefile
 !legion/operator/PROJECT
 !legion/feedback-aggregator/cmd/**
@@ -33,6 +34,7 @@
 !legion/services/**
 !legion/tests/**
 !legion/toolchains/**
+!legion/packager/**
 !scripts/**
 !docs/**
 !examples/**

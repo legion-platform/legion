@@ -17,14 +17,12 @@
 package main
 
 import (
-	"fmt"
-
 	istioschema "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis"
+	legion_config "github.com/legion-platform/legion/legion/operator/pkg/config"
 	"github.com/legion-platform/legion/legion/operator/pkg/controller"
-	"github.com/legion-platform/legion/legion/operator/pkg/legion"
-	"github.com/spf13/viper"
+	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -33,11 +31,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
+var log = logf.Log.WithName("operator")
+
+var mainCmd = &cobra.Command{
+	Use:   "operator",
+	Short: "Legion operator",
+	Run:   startOperator,
+}
+
+func init() {
+	legion_config.InitBasicParams(mainCmd)
+}
+
 func main() {
+	if err := mainCmd.Execute(); err != nil {
+		log.Error(err, "Shutdown operator")
+		os.Exit(1)
+	}
+}
+
+func startOperator(cmd *cobra.Command, args []string) {
 	logf.SetLogger(logf.ZapLogger(true))
 	log := logf.Log.WithName("entrypoint")
-
-	legion.SetUpOperatorConfig()
 
 	log.Info("setting up client for manager")
 	cfg, err := config.GetConfig()
@@ -50,9 +65,10 @@ func main() {
 	mgr, err := manager.New(
 		cfg,
 		manager.Options{
-			MetricsBindAddress: fmt.Sprintf(":%d", viper.GetInt(legion.PrometheusMetricsPort)),
+			//MetricsBindAddress: fmt.Sprintf(":%d", viper.GetInt(legion.PrometheusMetricsPort)),
 		},
 	)
+
 	if err != nil {
 		log.Error(err, "unable to set up overall controller manager")
 		os.Exit(1)

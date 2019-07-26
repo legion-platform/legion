@@ -18,7 +18,12 @@ import {
   JupyterLab,
   JupyterLabPlugin
 } from '@jupyterlab/application';
-import { ISplashScreen } from '@jupyterlab/apputils';
+import {
+  Dialog,
+  ISplashScreen,
+  showDialog,
+  showErrorMessage
+} from '@jupyterlab/apputils';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 
@@ -40,17 +45,22 @@ import { CloudTrainingLogsWidget } from './components/CloudTrainingLogsWidget';
 import { addCloudCommands, CommandIDs } from './commands';
 
 import { LegionApi } from './api';
-import { IApiCloudState, buildInitialCloudAPIState } from './models/apiState';
+import { buildInitialCloudAPIState, IApiCloudState } from './models/apiState';
 import { ILegionPluginMode } from './models/core';
+import { ILauncher } from '@jupyterlab/launcher';
+import { CloudPackagingLogsWidget } from './components/CloudPackingLogsWidget';
+import { OpenTemplateWidget } from './components/OpenTemplateWidget';
 
 export const PLUGIN_ID = 'jupyter.extensions.legion';
 export const PLUGIN_ID_CLOUD = PLUGIN_ID + ':cloud';
 export const EXTENSION_ID = 'jupyter.extensions.jupyter_legion';
 
+const OPEN_COMMAND = 'template:open';
 const FILE_MANAGER_LEGION_RESOURCE =
   '.jp-DirListing-item[title*="legion.yaml"]';
+const CONDA_FILES = '.jp-DirListing-item[title*="conda.yaml"]';
 const APPLY_LEGION_RESOURCES = 100;
-const REMOVE_LEGION_RESOURCES = 101;
+const CONDA_RESOURCES = 101;
 
 // tslint:disable-next-line: variable-name
 export const ILegionExtension = new Token<ILegionExtension>(EXTENSION_ID);
@@ -72,6 +82,7 @@ const cloudPlugin: JupyterLabPlugin<ILegionExtension> = {
   id: PLUGIN_ID_CLOUD,
   requires: pluginRequirements,
   provides: ILegionExtension,
+  optional: [ILauncher],
   activate: activateCloudPlugin,
   autoStart: true
 };
@@ -105,20 +116,40 @@ class BaseLegionExtension {
 export class LegionCloudExtension extends BaseLegionExtension
   implements ILegionExtension {
   private _trainingLogs: WidgetRegistry<Widget>;
+  private _packagingLogs: WidgetRegistry<Widget>;
   private _app: JupyterLab;
+
+  private _menu: IMainMenu;
+  private _browser: IFileBrowserFactory;
+  private _launcher: ILauncher | null;
 
   /**
    * Construct extension
    * @param app JupyterLab target JupyterLab
    * @param restorer ILayoutRestorer layout restorer
+   * @param menu
+   * @param browser
+   * @param launcher
    */
-  constructor(app: JupyterLab, restorer: ILayoutRestorer) {
+  constructor(
+    app: JupyterLab,
+    restorer: ILayoutRestorer,
+    menu: IMainMenu,
+    browser: IFileBrowserFactory,
+    launcher: ILauncher | null
+  ) {
     super();
 
     this._app = app;
+    this._menu = menu;
+    this._browser = browser;
+    this._launcher = launcher;
     this.api = new LegionApi();
     this._trainingLogs = new WidgetRegistry<Widget>(name =>
       this.constructTrainingLogWidget(name)
+    );
+    this._packagingLogs = new WidgetRegistry<Widget>(name =>
+      this.constructPackagingLogWidget(name)
     );
 
     this.apiCloudState = buildInitialCloudAPIState();
@@ -138,9 +169,11 @@ export class LegionCloudExtension extends BaseLegionExtension
 
     app.restored.then(() => {
       this.api.configuration
-        .getCloudTrainings()
+        .getCloudConfiguration()
         .then(config => {
           this.apiCloudState.onConfigurationLoaded(config);
+
+          this.setupExamples(config.legionResourceExamples);
         })
         .catch(err => {
           console.error('Error during configuration fetching', err);
@@ -148,12 +181,96 @@ export class LegionCloudExtension extends BaseLegionExtension
     });
   }
 
+  private setupExamples(examples: Array<string>): void {
+    this._app.commands.addCommand(OPEN_COMMAND, {
+      caption: 'Initialize a notebook from a template notebook',
+      execute: args => {
+        showDialog({
+          body: new OpenTemplateWidget(examples),
+          buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'GO' })],
+          focusNodeSelector: 'input',
+          title: 'Template'
+        }).then(result => {
+          if (result.button.label === 'CANCEL') {
+            return;
+          }
+          if (result.value) {
+            this.api.configuration
+              .getExampleContent(result.value)
+              .then((content: string) => {
+                const data = content;
+                const path = this._browser.defaultBrowser.model.path;
+
+                return new Promise(resolve => {
+                  this._app.commands
+                    .execute('docmanager:new-untitled', {
+                      path,
+                      type: 'file',
+                      ext: `.${result.value.toLowerCase()}.legion.yaml`
+                    })
+                    .then(model => {
+                      this._app.commands
+                        .execute('docmanager:open', {
+                          factory: 'default',
+                          path: model.path
+                        })
+                        .then(widget => {
+                          widget.context.ready.then(() => {
+                            widget.context.model.fromString(data);
+                            resolve(widget);
+                          });
+                        });
+                    });
+                });
+              });
+          }
+        });
+      },
+      iconClass: 'jp-TemplateIcon',
+      isEnabled: () => true,
+      label: 'Template'
+    });
+
+    // Add a launcher item if the launcher is available.
+    if (this._launcher) {
+      this._launcher.add({
+        args: { isLauncher: true, kernelName: 'template' },
+        category: 'Legion',
+        command: OPEN_COMMAND,
+        kernelIconUrl:
+          'https://raw.githubusercontent.com/legion-platform/legion/develop/docs/images/legion-logo-h.png',
+        rank: 1
+      });
+    }
+
+    if (this._menu) {
+      // Add new text file creation to the file menu.
+      this._menu.fileMenu.newMenu.addGroup([{ command: OPEN_COMMAND }], 40);
+    }
+  }
+
   get trainingLogs(): WidgetRegistry<Widget> {
     return this._trainingLogs;
   }
 
+  get packagingLogs(): WidgetRegistry<Widget> {
+    return this._packagingLogs;
+  }
+
   private constructTrainingLogWidget(name: string): Widget {
     return new CloudTrainingLogsWidget(
+      this._app,
+      this.api.cloud,
+      name,
+      this.apiCloudState,
+      {
+        defaultRenderHolder: 'legion-cloud-' + name
+      }
+    );
+  }
+
+  private constructPackagingLogWidget(name: string): Widget {
+    return new CloudPackagingLogsWidget(
       this._app,
       this.api.cloud,
       name,
@@ -173,15 +290,12 @@ function buildTopMenu(
   menu.title.label =
     mode === ILegionPluginMode.CLOUD ? 'Legion cloud' : 'UNKNOWN LEGION MODE';
 
-  const commandsToAdd =
-    mode === ILegionPluginMode.CLOUD
-      ? [
-          CommandIDs.refreshCloud,
-          CommandIDs.authorizeOnCluster,
-          CommandIDs.unAuthorizeOnCluster,
-          CommandIDs.issueNewCloudAccessToken
-        ]
-      : [];
+  let cloudCommand = [
+    CommandIDs.authorizeOnCluster,
+    CommandIDs.unAuthorizeOnCluster,
+    CommandIDs.issueNewCloudAccessToken
+  ];
+  const commandsToAdd = mode === ILegionPluginMode.CLOUD ? cloudCommand : [];
 
   commandsToAdd.forEach(command => {
     menu.addItem({ command });
@@ -198,10 +312,17 @@ function activateCloudPlugin(
   mainMenu: IMainMenu,
   restorer: ILayoutRestorer,
   splash: ISplashScreen,
-  factory: IFileBrowserFactory
+  factory: IFileBrowserFactory,
+  launcher: ILauncher | null
 ): ILegionExtension {
   // Build extension
-  let legionExtension = new LegionCloudExtension(app, restorer);
+  let legionExtension = new LegionCloudExtension(
+    app,
+    restorer,
+    mainMenu,
+    factory,
+    launcher
+  );
 
   // Build options for commands
   const addCommandsOptions = {
@@ -211,8 +332,27 @@ function activateCloudPlugin(
     api: legionExtension.api,
     splash,
     tracker: factory.tracker,
-    trainingLogs: legionExtension.trainingLogs
+    trainingLogs: legionExtension.trainingLogs,
+    packagingLogs: legionExtension.packagingLogs
   };
+
+  addCommandsOptions.state.signalLoadingStarted();
+
+  addCommandsOptions.api.configurationApi
+    .getCloudConfiguration()
+    .then(response => {
+      addCommandsOptions.state.updateConfiguration(response);
+      if (response.defaultEDIEndpoint.length !== 0) {
+        addCommandsOptions.state.setCredentials({
+          cluster: response.defaultEDIEndpoint,
+          authString: ''
+        });
+      }
+    })
+    .catch(err => {
+      addCommandsOptions.state.updateAllState();
+      showErrorMessage('Can not forcefully update data for cloud mode', err);
+    });
 
   // Register commands in JupyterLab
   addCloudCommands(addCommandsOptions);
@@ -224,9 +364,9 @@ function activateCloudPlugin(
   });
 
   app.contextMenu.addItem({
-    command: CommandIDs.removeCloudResources,
-    selector: FILE_MANAGER_LEGION_RESOURCE,
-    rank: REMOVE_LEGION_RESOURCES
+    command: CommandIDs.condaUpdateEnv,
+    selector: CONDA_FILES,
+    rank: CONDA_RESOURCES
   });
 
   // Create top menu for appropriate mode

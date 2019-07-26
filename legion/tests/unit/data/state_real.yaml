@@ -1,8 +1,0 @@
-namespace: "default"
-deployment: "aaa"
-graphite:
-  domain: "legion-graphite.default.svc.cluster.local"
-  port: 8125
-grafana:
-  domain: "legion-grafana.default.svc.cluster.local"
-  port: 80

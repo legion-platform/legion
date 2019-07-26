@@ -51,7 +51,7 @@ spec:
               description: A http rule can forward traffic to Model Deployments.
               items:
                 properties:
-                  name:
+                  mdName:
                     description: Model Deployment name
                     type: string
                   weight:
@@ -60,7 +60,7 @@ spec:
                     format: int32
                     type: integer
                 required:
-                - name
+                - mdName
                 type: object
               type: array
             urlPrefix:

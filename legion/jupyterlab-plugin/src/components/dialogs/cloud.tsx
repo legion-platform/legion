@@ -20,39 +20,177 @@ import { Widget } from '@phosphor/widgets';
 import * as style from '../../componentsStyle/dialogs';
 import * as model from '../../models/cloud';
 import * as base from './base';
+import { ModelTraining } from '../../legion/ModelTraining';
+import { ModelDeployment } from '../../legion/ModelDeployment';
+import { Connection } from '../../legion/Connection';
+import { ModelPackaging } from '../../legion/ModelPackaging';
+import { ToolchainIntegration } from '../../legion/ToolchainIntegration';
+import { PackagingIntegration } from '../../legion/PackagingIntegration';
 
 export const REMOVE_DEPLOYMENT_LABEL = 'Remove';
 export const REMOVE_TRAINING_LABEL = 'Remove';
-export const CREATE_DEPLOYMENT_LABEL = 'Deploy';
+export const REMOVE_CONNECTION_LABEL = 'Remove';
+export const REMOVE_MODEL_PACKING_LABEL = 'Remove';
 export const LOGS_LABEL = 'Logs';
 
+export function showConnectionInformationDialog(conn: Connection) {
+  return showDialog({
+    title: `Cloud training information`,
+    body: (
+      <div>
+        <h3 className={style.fieldLabelStyle}>ID</h3>
+        <p className={style.fieldTextStyle}>{conn.id}</p>
+        <h3 className={style.fieldLabelStyle}>Type</h3>
+        <p className={style.fieldTextStyle}>{conn.spec.type}</p>
+        <h3 className={style.fieldLabelStyle}>URI</h3>
+        <p className={style.fieldTextStyle}>{conn.spec.uri}</p>
+      </div>
+    ),
+    buttons: [
+      Dialog.warnButton({ label: REMOVE_CONNECTION_LABEL }),
+      Dialog.cancelButton({ label: 'Close window' })
+    ]
+  });
+}
+
+export function showModelPackagingDialog(mp: ModelPackaging) {
+  let result = [];
+  if (mp.status.results != null) {
+    for (let res of mp.status.results) {
+      result.push(
+        <li>
+          <p className={style.fieldTextStyle}>
+            {res.name}: {res.value}
+          </p>
+        </li>
+      );
+    }
+  }
+
+  let targets = [];
+  if (mp.spec.targets != null) {
+    for (let target of mp.spec.targets) {
+      targets.push(
+        <li>
+          <p className={style.fieldTextStyle}>
+            {target.name}: {target.connectionName}
+          </p>
+        </li>
+      );
+    }
+  }
+
+  return showDialog({
+    title: `Model Packaging information`,
+    body: (
+      <div>
+        <h3 className={style.fieldLabelStyle}>ID</h3>
+        <p className={style.fieldTextStyle}>{mp.id}</p>
+        <h3 className={style.fieldLabelStyle}>Artifact name</h3>
+        <p className={style.fieldTextStyle}>{mp.spec.artifactName}</p>
+        <h3 className={style.fieldLabelStyle}>Type</h3>
+        <p className={style.fieldTextStyle}>{mp.spec.integrationName}</p>
+        <h3 className={style.fieldLabelStyle}>Targets</h3>
+        <ul className={style.fieldTextStyle}>{targets}</ul>
+        <h3 className={style.fieldLabelStyle}>State</h3>
+        <p className={style.fieldTextStyle}>{mp.status.state}</p>
+
+        {result.length > 0 && (
+          <div>
+            <h3 className={style.fieldLabelStyle}>Results</h3>
+            <ul className={style.fieldTextStyle}>{result}</ul>
+          </div>
+        )}
+        {mp.status.message != null && mp.status.message !== '' && (
+          <div>
+            <h3 className={style.fieldLabelStyle}>Message state</h3>
+            <p className={style.fieldTextStyle}>{mp.status.message}</p>
+          </div>
+        )}
+      </div>
+    ),
+    buttons: [
+      Dialog.okButton({ label: LOGS_LABEL }),
+      Dialog.warnButton({ label: REMOVE_MODEL_PACKING_LABEL }),
+      Dialog.cancelButton({ label: 'Close window' })
+    ]
+  });
+}
+
+export function showPackagingIntegrationDialog(pi: PackagingIntegration) {
+  return showDialog({
+    title: `Packaging Integration information`,
+    body: (
+      <div>
+        <h3 className={style.fieldLabelStyle}>ID</h3>
+        <p className={style.fieldTextStyle}>{pi.id}</p>
+        <h3 className={style.fieldLabelStyle}>Image</h3>
+        <p className={style.fieldTextStyle}>{pi.spec['default_image']}</p>
+      </div>
+    ),
+    buttons: [Dialog.cancelButton({ label: 'Close window' })]
+  });
+}
+
+export function showToolchainIntegrationDialog(ti: ToolchainIntegration) {
+  console.log(ti);
+  return showDialog({
+    title: `Toolchain Integration information`,
+    body: (
+      <div>
+        <h3 className={style.fieldLabelStyle}>ID</h3>
+        <p className={style.fieldTextStyle}>{ti.id}</p>
+        <h3 className={style.fieldLabelStyle}>Image</h3>
+        <p className={style.fieldTextStyle}>{ti.spec['default_image']}</p>
+        <h3 className={style.fieldLabelStyle}>ID</h3>
+        <p className={style.fieldTextStyle}>{ti.id}</p>
+      </div>
+    ),
+    buttons: [Dialog.cancelButton({ label: 'Close window' })]
+  });
+}
+
 export function showCloudTrainInformationDialog(
-  training: model.ICloudTrainingResponse
+  training: ModelTraining,
+  metricUiUrl: string
 ) {
+  let result = [];
+  if (training.status.artifacts != null) {
+    for (let elem of training.status.artifacts) {
+      let url = `${metricUiUrl}#/experiments/0/runs/${elem.runId}`;
+      result.push(
+        <li>
+          <p className={style.fieldTextStyle}>
+            Artifact Name: {elem.artifactName}
+          </p>
+          <p className={style.fieldTextStyle}>Commit ID: {elem.commitID}</p>
+          <p className={style.fieldTextStyle}>
+            Run ID:{' '}
+            <a href={url} target="_blank">
+              {elem.runId}
+            </a>
+          </p>
+        </li>
+      );
+    }
+  }
   return showDialog({
     title: `Cloud training information`,
     body: (
       <div>
         <h3 className={style.fieldLabelStyle}>Name</h3>
-        <p className={style.fieldTextStyle}>{training.name}</p>
+        <p className={style.fieldTextStyle}>{training.id}</p>
         <h3 className={style.fieldLabelStyle}>State</h3>
         <p className={style.fieldTextStyle}>{training.status.state}</p>
-        {training.status.modelImage.length > 0 ? (
-          <React.Fragment>
-            <h3 className={style.fieldLabelStyle}>Image (toolchain)</h3>
-            <p className={style.fieldTextStyle}>
-              {training.status.modelImage} ({training.spec.toolchain})
-            </p>
-          </React.Fragment>
-        ) : (
-          <React.Fragment>
-            <h3 className={style.fieldLabelStyle}>Toolchain</h3>
-            <p className={style.fieldTextStyle}>{training.spec.toolchain}</p>
-          </React.Fragment>
-        )}
+
+        <React.Fragment>
+          <h3 className={style.fieldLabelStyle}>Toolchain</h3>
+          <p className={style.fieldTextStyle}>{training.spec.toolchain}</p>
+        </React.Fragment>
+
         <h3 className={style.fieldLabelStyle}>Model (name / version)</h3>
         <p className={style.fieldTextStyle}>
-          {training.status.name} / {training.status.version}
+          {training.spec.model.name} / {training.spec.model.version}
         </p>
 
         <h3 className={style.fieldLabelStyle}>VCS</h3>
@@ -62,13 +200,25 @@ export function showCloudTrainInformationDialog(
         <h3 className={style.fieldLabelStyle}>File (working directory)</h3>
         <p className={style.fieldTextStyle}>
           {training.spec.entrypoint}{' '}
-          {training.spec.workDir.length > 0 ? `(${training.spec.workDir})` : ''}
+          {training.spec.workDir != null ? `(${training.spec.workDir})` : ''}
         </p>
+        {result.length > 0 && (
+          <div>
+            <h3 className={style.fieldLabelStyle}>Results</h3>
+            <ul className={style.fieldTextStyle}>{result}</ul>
+          </div>
+        )}
+
+        {training.status.message != null && training.status.message !== '' && (
+          <div>
+            <h3 className={style.fieldLabelStyle}>Message state</h3>
+            <p className={style.fieldTextStyle}>{training.status.message}</p>
+          </div>
+        )}
       </div>
     ),
     buttons: [
       Dialog.okButton({ label: LOGS_LABEL }),
-      Dialog.createButton({ label: CREATE_DEPLOYMENT_LABEL }),
       Dialog.warnButton({ label: REMOVE_TRAINING_LABEL }),
       Dialog.cancelButton({ label: 'Close window' })
     ]
@@ -76,14 +226,14 @@ export function showCloudTrainInformationDialog(
 }
 
 export function showCloudDeploymentInformationDialog(
-  deploymentInformation: model.ICloudDeploymentResponse
+  deploymentInformation: ModelDeployment
 ) {
   return showDialog({
     title: `Cloud deployment information`,
     body: (
       <div>
         <h3 className={style.fieldLabelStyle}>Deployment name</h3>
-        <p className={style.fieldTextStyle}>{deploymentInformation.name}</p>
+        <p className={style.fieldTextStyle}>{deploymentInformation.id}</p>
         <h3 className={style.fieldLabelStyle}>Deployment role</h3>
         <p className={style.fieldTextStyle}>
           {deploymentInformation.spec.roleName}
@@ -117,8 +267,7 @@ export function showCloudDeploymentInformationDialog(
 
 export function showApplyResultsDialog(result: model.IApplyFromFileResponse) {
   return showDialog({
-    title:
-      result.errors.length === 0 ? 'Applied successful' : 'Applied with errors',
+    title: result.errors.length === 0 ? 'Successful' : 'Errors',
     body: (
       <div>
         {result.created.length > 0 ? (

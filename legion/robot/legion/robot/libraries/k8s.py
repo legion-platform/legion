@@ -25,13 +25,18 @@ import kubernetes.config.config_exception
 from kubernetes.client import V1DeleteOptions, V1Pod, V1ObjectMeta, V1PodSpec, V1Toleration, V1Container, \
     V1ResourceRequirements
 from kubernetes.client.rest import ApiException
-import urllib3
 from legion.robot.utils import wait_until
 
 FAT_POD_MEMORY = "4Gi"
 FAT_POD_CPU = "4"
 FAT_POD_IMAGE = 'alpine:3.9.3'
 FAT_POD_NAME = "fat-pod-name"
+
+
+def _build_client() -> kubernetes.client.ApiClient:
+    kubernetes.config.load_kube_config()
+
+    return kubernetes.client.ApiClient()
 
 
 class K8s:
@@ -58,50 +63,11 @@ class K8s:
                                       self._namespace, 'modeldeployments'
         self._default_vcs = 'legion'
 
-    def build_client(self):
-        """
-        Configure and returns kubernetes client
-
-        :return: :py:module:`kubernetes.client`
-        """
-        try:
-            kubernetes.config.load_incluster_config()
-        except kubernetes.config.config_exception.ConfigException:
-            # Try to analyze for verbose
-            try:
-                contexts, current_context = kubernetes.config.list_kube_config_contexts()
-                print('Current Kubernetes context: %r' % current_context)
-                print('Available contexts: %s' % ','.join([repr(context) for context in contexts]))
-            except Exception as context_analyze_exception:
-                print('Failed to analyze available Kubernetes contexts - %s' % str(context_analyze_exception))
-            # Try to pick-up
-            kubernetes.config.load_kube_config(context=self._context)
-            print('Context %r has been chosen' % self._context)
-
-        # Disable SSL warning for self-signed certificates
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-        return kubernetes.client.ApiClient()
-
-    def choose_cluster_context(self, context=None):
-        """
-        Choose K8S connection context
-
-        :param context: name of context
-        :type context: str
-        :return: None
-        """
-        self._context = context
-
-        self.build_client()
-
     def start_fat_pod(self, node_taint_key, node_taint_value):
         """
         Start fat pod
         """
-        client = self.build_client()
-
-        core_api = kubernetes.client.CoreV1Api(client)
+        core_api = kubernetes.client.CoreV1Api(_build_client())
 
         pod = V1Pod(
             api_version='v1',
@@ -144,14 +110,13 @@ class K8s:
         """
         Delete fat pod
         """
-        client = self.build_client()
-
-        core_api = kubernetes.client.CoreV1Api(client)
+        core_api = kubernetes.client.CoreV1Api(_build_client())
 
         try:
-            core_api.delete_namespaced_pod(FAT_POD_NAME, self._namespace,
-                                           V1DeleteOptions(propagation_policy='Foreground',
-                                                           grace_period_seconds=0))
+            core_api.delete_namespaced_pod(
+                name=FAT_POD_NAME, namespace=self._namespace,
+                body=V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=0)
+            )
         except ApiException as e:
             if e.status != 404:
                 raise e
@@ -160,9 +125,7 @@ class K8s:
         """
         Wait completion of fat pod
         """
-        client = self.build_client()
-
-        core_api = kubernetes.client.CoreV1Api(client)
+        core_api = kubernetes.client.CoreV1Api(_build_client())
 
         pod_completed_lambda = lambda: core_api.read_namespaced_pod(
             FAT_POD_NAME, self._namespace
@@ -176,7 +139,7 @@ class K8s:
         :param name: name of a model training resource
         :return: status
         """
-        core_api = kubernetes.client.CoreV1Api(kubernetes.client.ApiClient())
+        core_api = kubernetes.client.CoreV1Api(_build_client())
 
         return core_api.read_namespaced_pod_log(f'{name}-training-pod', self._namespace, container='builder')
 
@@ -186,7 +149,7 @@ class K8s:
         :param name: name of a model training resource
         :return: None
         """
-        core_api = kubernetes.client.CoreV1Api(kubernetes.client.ApiClient())
+        core_api = kubernetes.client.CoreV1Api(_build_client())
 
         pod = core_api.read_namespaced_pod(f'{name}-training-pod', self._namespace)
         for container in pod.status.container_statuses:
@@ -252,8 +215,7 @@ class K8s:
         :raises: Exception
         :return: None
         """
-        client = self.build_client()
-        apps_api = kubernetes.client.AppsV1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(_build_client())
 
         deployment = apps_api.read_namespaced_deployment(deployment_name, namespace)
 
@@ -269,8 +231,7 @@ class K8s:
         :type deployment_name: str
         :return: k8s deployment object
         """
-        client = self.build_client()
-        extension_api = kubernetes.client.ExtensionsV1beta1Api(client)
+        extension_api = kubernetes.client.ExtensionsV1beta1Api(_build_client())
 
         return extension_api.read_namespaced_deployment(deployment_name, self._namespace)
 
@@ -285,8 +246,7 @@ class K8s:
         :return: number of replicas for a specified deployment
         :rtype int
         """
-        client = self.build_client()
-        apps_api = kubernetes.client.AppsV1Api(client)
+        apps_api = kubernetes.client.AppsV1Api(_build_client())
         scale_data = apps_api.read_namespaced_deployment(deployment_name, namespace)
         print("Scale data for {} in {} ns is {}".format(deployment_name, namespace, scale_data))
         if scale_data is not None:
@@ -301,8 +261,7 @@ class K8s:
         :raises: Exception
         :return: None
         """
-        client = self.build_client()
-        core_api = kubernetes.client.CoreV1Api(client)
+        core_api = kubernetes.client.CoreV1Api(_build_client())
 
         timeout = int(timeout)
         sleep = int(sleep)

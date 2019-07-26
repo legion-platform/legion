@@ -17,18 +17,16 @@
 Cloud API requests and responses
 """
 import typing
+
 from pydantic import BaseModel
 
-from legion.sdk.clients.training import ModelTraining
-from legion.sdk.clients.deployment import ModelDeployment
 
-
-class BasicNameRequest(BaseModel):
+class BasicIdRequest(BaseModel):
     """
     Basic request that contains only name
     """
 
-    name: str
+    id: str
 
 
 class FileInformationRequest(BaseModel):
@@ -67,67 +65,6 @@ class FileInformationResponse(BaseModel):
             'remotes': self.remotes,
             'references': self.references,
         }
-
-
-class TrainingCreateRequest(BaseModel):
-    """
-    Request to create cloud training
-    """
-
-    name: str
-    entrypoint: str
-    image: str
-    vcsName: str
-    toolchain: str
-    args: typing.List[str] = []
-    reference: str = ''
-    resources: typing.Mapping[str, typing.Any] = {}
-    workDir: str = ''
-
-    def convert_to_training(self) -> ModelTraining:
-        """
-        Convert to ModelTraining object
-
-        :return: ModelTraining -- new object
-        """
-        return ModelTraining(
-            name=self.name,
-            toolchain_type=self.toolchain,
-            entrypoint=self.entrypoint,
-            args=self.args,
-            resources=self.resources,
-            vcs_name=self.vcsName,
-            work_dir=self.workDir,
-            reference=self.reference,
-        )
-
-
-class DeploymentCreateRequest(BaseModel):
-    """
-    Request to create cloud deployment
-    """
-
-    name: str
-    image: str
-    livenessProbeInitialDelay: int
-    readinessProbeInitialDelay: int
-    resources: typing.Mapping[str, typing.Any] = {}
-    annotations: typing.Mapping[str, str] = {}
-
-    def convert_to_deployment(self) -> ModelDeployment:
-        """
-        Convert to ModelDeployment object
-
-        :return: ModelDeployment -- new object
-        """
-        return ModelDeployment(
-            name=self.name,
-            image=self.image,
-            resources=self.resources,
-            annotations=self.annotations,
-            liveness_probe_initial_delay=self.livenessProbeInitialDelay,
-            readiness_probe_initial_delay=self.livenessProbeInitialDelay
-        )
 
 
 class IssueTokenRequest(BaseModel):

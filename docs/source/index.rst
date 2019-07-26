@@ -12,6 +12,7 @@ Welcome to legion's documentation!
    model_rest_api
    local_run
    legionctl
+   model_artifacts_format
 
 
 .. toctree::

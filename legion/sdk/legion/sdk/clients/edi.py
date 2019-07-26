@@ -16,25 +16,22 @@
 """
 EDI client
 """
-import argparse
-import random
 import json
 import logging
-from urllib.parse import urlparse, urlencode
-import typing
-import threading
+import random
 import string
 import sys
+import threading
+import typing
 
+from urllib.parse import urlparse, urlencode
 import requests
 import requests.exceptions
 
 import legion.sdk.config
-from legion.sdk.config import update_config_file
-from legion.sdk.containers import local_deploy
-from legion.sdk.containers.docker import build_docker_client
-from legion.sdk.definitions import EDI_VERSION, MODEL_TOKEN_TOKEN_URL
 from legion.sdk.clients.oauth_handler import start_oauth2_callback_handler, OAuthLoginResult, do_refresh_token
+from legion.sdk.config import update_config_file
+from legion.sdk.definitions import EDI_VERSION, MODEL_TOKEN_TOKEN_URL
 
 LOGGER = logging.getLogger(__name__)
 
@@ -100,25 +97,25 @@ def get_authorization_redirect(web_redirect: str, after_login: typing.Callable) 
 
 class RemoteEdiClient:
     """
-    EDI client
+    Base EDI client
     """
 
-    def __init__(self, base, token=None, retries=3, timeout=10, non_interactive=False):
+    def __init__(self,
+                 base_url: str = legion.sdk.config.EDI_URL,
+                 token: typing.Optional[str] = legion.sdk.config.EDI_TOKEN,
+                 retries: typing.Optional[int] = 3,
+                 timeout: typing.Optional[int] = 10,
+                 non_interactive: typing.Optional[bool] = True):
         """
         Build client
 
-        :param base: base url, for example: http://edi.example.com
-        :type base: str
-        :param token: (Optional) token for token based auth
-        :type token: str or None
-        :param retries: (Optional) command retries or less then 2 if disabled
-        :type retries: int
-        :param timeout: (Optional) timeout for connection in seconds. 0 for disabling
-        :type timeout: int
-        :param non_interactive: (Optional) disable any interaction
-        :type non_interactive: book
+        :param base_url: base url, for example: http://edi.example.com
+        :param token: token for token based auth
+        :param retries: command retries or less then 2 if disabled
+        :param timeout: timeout for connection in seconds. 0 for disabling
+        :param non_interactive: disable any interaction
         """
-        self._base = base
+        self._base_url = base_url
         self._token = token
         self._version = EDI_VERSION
         self._retries = retries
@@ -135,11 +132,10 @@ class RemoteEdiClient:
         Update config with new oauth credentials
 
         :param login_result: result of login
-        :type login_result: OAuthLoginResult
         :return: None
         """
         self._token = login_result.id_token
-        update_config_file(EDI_URL=self._base,
+        update_config_file(EDI_URL=self._base_url,
                            EDI_TOKEN=login_result.id_token,
                            EDI_REFRESH_TOKEN=login_result.refresh_token,
                            EDI_ACCESS_TOKEN=login_result.access_token,
@@ -150,13 +146,12 @@ class RemoteEdiClient:
         Handle action after login
 
         :param login_result: result of login
-        :type login_result: OAuthLoginResult
         :return: None
         """
         self._interactive_login_finished.set()
         self._update_config_with_new_oauth_config(login_result)
         LOGGER.info('You has been authorized on endpoint %s as %s / %s',
-                    self._base, login_result.user_name, login_result.user_email)
+                    self._base_url, login_result.user_name, login_result.user_email)
         sys.exit(0)
 
     @classmethod
@@ -165,10 +160,9 @@ class RemoteEdiClient:
         Construct EDI-based client from another EDI-based client
 
         :param other: EDI-based client to get connection options from
-        :type other: RemoteEdiClient
         :return: self -- new client
         """
-        return cls(other._base, other._token, other._retries, other._timeout)
+        return cls(other._base_url, other._token, other._retries, other._timeout)
 
     def _request(self,
                  url_template: str,
@@ -181,21 +175,15 @@ class RemoteEdiClient:
         Make HTTP request
 
         :param url_template: target URL
-        :type url_template: str
-        :param payload: (Optional) data to be placed in body of request
-        :type payload: dict[str, str] or None
+        :param payload: data to be placed in body of request
         :param action: request action, e.g. get / post / delete
-        :type action: str
-        :param stream: (Optional) use stream mode or not
-        :type stream: bool
-        :param timeout: (Optional) custom timeout in seconds (overrides default). 0 for disabling
-        :type timeout: typing.Optional[int]
-        :param limit_stack: (Optional) do not start refreshing token if it is possible
-        :type limit_stack: bool
+        :param stream: use stream mode or not
+        :param timeout: custom timeout in seconds (overrides default). 0 for disabling
+        :param limit_stack: do not start refreshing token if it is possible
         :return: :py:class:`requests.Response` -- response
         """
         sub_url = url_template.format(version=self._version)
-        target_url = self._base.strip('/') + sub_url
+        target_url = self._base_url.strip('/') + sub_url
         headers = {}
 
         # Add token if it is provided
@@ -232,7 +220,7 @@ class RemoteEdiClient:
                                             headers=headers,
                                             **request_kwargs)
             except requests.exceptions.ConnectionError as exception:
-                LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
+                LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base_url, exception))
                 raised_exception = exception
             else:
                 LOGGER.debug('Got response. Breaking')
@@ -240,7 +228,7 @@ class RemoteEdiClient:
 
             left_retries -= 1
         else:
-            raise EDIConnectionException('Can not reach {}'.format(self._base)) from raised_exception
+            raise EDIConnectionException('Can not reach {}'.format(self._base_url)) from raised_exception
 
         # We assume if there were redirects then credentials are out of date and we can refresh or build auth url
         if response.history:
@@ -320,14 +308,15 @@ class RemoteEdiClient:
         LOGGER.debug('Query has been completed, parsed and validated')
         return answer
 
-    def stream(self, url_template: str, action: str = 'GET', params: typing.Mapping[str, typing.Any] = None):
+    def stream(self, url_template: str, action: str = 'GET',
+               params: typing.Mapping[str, typing.Any] = None) -> typing.Dict[str, typing.Any]:
         """
         Perform query to EDI server
 
         :param url_template: url template from legion.const.api
         :param params: payload (will be converted to JSON) or None
         :param action: HTTP method (GET, POST, PUT, DELETE)
-        :return: dict[str, any] -- response content
+        :return: response content
         """
         response = self._request(url_template, action=action, stream=True, payload=params)
 
@@ -344,7 +333,7 @@ class RemoteEdiClient:
 
         :param md_role_name: model name
         :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
-        :return: str -- API Model token
+        :return: API Model token
         """
         payload = {'role_name': md_role_name}
 
@@ -365,120 +354,3 @@ class RemoteEdiClient:
             return self.query("/health")
         except ValueError:
             pass
-
-
-class LocalEdiClient:
-
-    def inspect(self, deployment_name=None, model=None, version=None):
-        """
-        Perform inspect query on EDI server
-
-        :param deployment_name: (Optional) name of deployment
-        :type deployment_name: str
-        :param model: (Optional) model name
-        :type model: str
-        :param version: (Optional) model version
-        :type version: str
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`]
-        """
-        client = build_docker_client()
-        return local_deploy.get_models(client, deployment_name, model, version)
-
-    def deploy(self, deployment_name, image, local_port=None):
-        """
-        Deploy API endpoint
-
-        :param deployment_name: name of deployment
-        :type deployment_name: str
-        :param image: Docker image for deploy (for kubernetes deployment and local pull)
-        :type image: str
-        :param local_port: (Optional) port to deploy model on (for local mode deploy)
-        :type local_port: int
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        client = build_docker_client()
-        return local_deploy.deploy_model(client, deployment_name, image, local_port=local_port)
-
-    def undeploy(self, deployment_name=None, model=None, version=None, ignore_not_found=False):
-        """
-        Undeploy API endpoint
-
-        :param deployment_name: (Optional) name of deployment
-        :type deployment_name: str
-        :param model: (Optional) model name
-        :type model: str
-        :param version: (Optional) model version
-        :type version: str
-        :param ignore_not_found: (Optional) ignore if cannot find models
-        :type ignore_not_found: bool
-        :return: list[:py:class:`legion.containers.k8s.ModelDeploymentDescription`] -- affected model deployments
-        """
-        client = build_docker_client()
-        return local_deploy.undeploy_model(client, deployment_name, model, version, ignore_not_found)
-
-    def get_builds(self):
-        """
-        Get available builds
-
-        :return: list[:py:class:`legion.containers.definitions.ModelBuildInformation`] -- registered model builds
-        """
-        client = build_docker_client()
-        return local_deploy.get_local_builds(client)
-
-    def __repr__(self):
-        """
-        Get string representation of object
-
-        :return: str -- string representation
-        """
-        return 'LocalEdiClient()'
-
-    __str__ = __repr__
-
-
-def add_arguments_for_wait_operation(parser):
-    """
-    Add arguments of wait operation in the parser
-
-    :param parser: add arguments to it
-    :type parser: argparse.ArgumentParser
-    :return: None
-    """
-    parser.add_argument('--no-wait',
-                        action='store_true', help='no wait until scale will be finished')
-    parser.add_argument('--timeout',
-                        default=600,
-                        type=int, help='timeout in s. for wait (if no-wait is off)')
-
-
-def build_client(args: argparse.Namespace = None, retries=3, timeout=10, cls=RemoteEdiClient):
-    """
-    Build Remote EDI client from from ENV and from command line arguments
-
-    :param args: (optional) command arguments with .namespace
-    :param retries: number of retries
-    :param timeout: request timeout in seconds
-    :param cls: target class
-    """
-    host, token, non_interactive = None, None, False
-
-    if args:
-        if args.edi:
-            host = args.edi
-
-        if args.token:
-            token = args.token
-
-        if args.non_interactive:
-            non_interactive = True
-
-    if not host or not token:
-        host = host or legion.sdk.config.EDI_URL
-        token = token or legion.sdk.config.EDI_TOKEN
-
-    if host:
-        client = cls(host, token, non_interactive=non_interactive, retries=retries, timeout=timeout)
-    else:
-        raise Exception('EDI endpoint is not configured')
-
-    return client

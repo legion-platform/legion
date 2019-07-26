@@ -122,41 +122,6 @@ security:
     # Type: string
     cookieName: _oauth2_proxy
 
-# Model API security
-modelApiSecurity:
-  # Should Model API security be closed by auth. or not
-  # Type: bool
-  enabled: false
-
-  # Type of auth. mechanism for Model API gateway
-  # Valid values are:
-  # - jwt
-  integration: jwt
-
-  # Detailed JWT configuration
-  jwt:
-    # Private key for JWT creation
-    # Type: string, base64 format
-    private_key: example
-
-    # Private key for JWT verification
-    # Type: string, base64 format
-    public_key: example
-
-    # Default token's TTL in minutes
-    # Type: integer
-    defaultTokenTTLInMinutes: 120
-
-    # Maximum value of TTL in minutes
-    # This value is used in EDI to validate requests for token generation
-    # Type: integer
-    maxTokenTTLInMinutes: 525600
-
-    # Default TTL end date
-    # Type: date sting, e.g. 2030-12-30T00:00:00
-    defaultTokenTTLEndDate: "2030-12-30T00:00:00"
-
-
 # Components metrics measurement
 # Measures components performance through prometheus protocol
 metrics:
@@ -173,29 +138,15 @@ metrics:
   # Type: string
   dashboardFolder: ""
 
-# StatsD configuration for metrics that requires StatsD format (e.g. model invocation & training metrics)
-modelMetrics:
-  # Is model performance metrics enabled or not
-  # Type: bool
-  enabled: false
-
-  # StatsD host
-  # Type: string
-  host: statsd-exporter.kube-monitoring.svc.cluster.local
-
-  # StatsD port
-  # Type: integer
-  port: 9125
-
-
-# Default VCS instances. Will be spawned on cluster start
+# Default connections. Will be spawned on cluster start
 # For more information, read the VCSCredential documentation. Example:
-# - name: "legion"
-#   type: "git"
-#   uri: "git@github.com:legion-platform/legion.git"
-#   defaultReference: "origin/develop"
-#   creds: ""
-vcs: []
+# - id: "legion"
+#   spec:
+#     type: "git"
+#     uri: "git@github.com:legion-platform/legion.git"
+#     reference: "origin/develop"
+#     keySecret: ""
+connections: []
 
 # Model storage is a Docker Registry
 # Credentials are required for gathering model information
@@ -230,15 +181,6 @@ modelStorage:
     # Credentials on Docker Registry
     # Type: string
     password: example
-
-
-# Configuration of model execution process
-modelExecution:
-  # Limitations of model deployment pods
-  # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-  limits:
-    cpu: 256m
-    mem: 256Mi
 
 # Feedback configuration
 feedback:
@@ -479,38 +421,6 @@ operator:
         cpu: "128m"
         memory: "128Mi"
 
-  # Builder's configuration
-  # It places in sidecar container for training pod
-  #  and it is in charge of communicating with host's Docker socket
-  #  for training container capturing.
-  builder:
-    # This variable can be uncommented to setup custom image name for operator (builder)
-    # Type: string
-    # image: custom-image:1.0
-
-# Webhook server configuration
-# Webhook server validates and modifies all Legion's CustomResources such as ModelTraining and etc.
-webhook:
-  # Server configuration
-  server:
-    # This variable can be uncommented to setup custom image name
-    # Type: string
-    # image: custom-image:1.0
-
-    # Count of replicas
-    # Type: integer
-    replicas: 1
-
-    # Resources for each instance
-    # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-    resources:
-      limits:
-        cpu: "256m"
-        memory: "256Mi"
-      requests:
-        cpu: "128m"
-        memory: "128Mi"
-
 # EDI server configuration
 # It provides HTTP API for model training & model deployment management
 #  also it creates JWT tokens for model invocation
@@ -519,7 +429,7 @@ edi:
   # Type: bool
   enabled: true
 
-  # This variable can be uncommented to setup custom image name for operator (server)
+  # This variable can be uncommented to setup custom image name for edi (server)
   # Type: string
   # image: custom-image:1.0
 
@@ -567,18 +477,29 @@ edi:
     # Type: string
     # domain: ~
 
-    # Is TLS enabled for this Ingress or not
-    # By default global variable is used (.ingress.tlsEnabled)
-    # To use specific value, replace ~ with target value
-    # Type: string
-    # tlsEnabled: false
+# Service catalog server configuration
+service_catalog:
+  # service catalog could be disabled
+  # Type: bool
+  enabled: true
 
-    # Global TLS secret name
-    # By default global variable is used (.ingress.tlsSecretName)
-    # To use specific value, replace ~ with target value
-    # Type: string
-    # tlsSecretName: ~
+  # This variable can be uncommented to setup custom image name for service catalog (server)
+  # Type: string
+  # image: custom-image:1.0
 
+  # Count of service catalog replicas
+  # Type: integer
+  replicas: 1
+
+  # Resources for each instance
+  # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
 
 # JupyterLab instance
 # It provides web IDE for edition of source codes
@@ -640,3 +561,90 @@ toolchains:
     # This variable can be uncommented to setup custom image name for python
     # Type: string
     # image: custom-image:1.0
+
+packagers:
+  rest:
+    # REST packager could be disabled
+    # Type: bool
+    enabled: true
+
+    # This variable can be uncommented to setup custom image name for REST packager
+    # Type: string
+    # image: custom-image:1.0
+
+# Legion services configuration
+config:
+  # Deployment configuration
+  deployment:
+    # Model deployment namespace
+    # Required value
+    # Type: string
+    namespace: legion-deployment
+    server:
+      # TODO: remove this hack later
+      template_folder: /opt/legion/templates
+    # Security settings for model deployments
+    security:
+      # Default role name for model deployments
+      # Required value
+      # Type: string
+      role_name: test
+      jwt:
+        # REST packager could be disabled
+        # Type: bool
+        enabled: false
+        # Private key for JWT creation
+        # Type: string, base64 format
+        private_key: example
+        # Private key for JWT verification
+        # Type: string, base64 format
+        public_key: example
+        # Default token's TTL in minutes
+        # Type: integer
+        ttl_minute: 120
+        # Maximum value of TTL in minutes
+        # This value is used in EDI to validate requests for token generation
+        # Type: integer
+        max_ttl_min: "${max_token_ttl_minutes}"
+        # Maximum value of TTL in minutes
+        # This value is used in EDI to validate requests for token generation
+        # Type: integer
+        exp_date_time: "2030-12-30T00:00:00"
+
+  # Training configuration
+  training:
+    # Training namespace
+    # Required value
+    # Type: string
+    namespace: legion-training
+    # Determine where training artifact will be saved
+    # Required value
+    # Type: string
+    output_connection: models-output
+    # Model trainer settings
+    model_trainer:
+      # Model training base image
+      # Required value
+      # Type: string
+      image: "k8s-model-trainer:latest"
+
+  # Packaging configuration
+  packaging:
+    # Packaging namespace
+    # Required value
+    # Type: string
+    namespace: legion-packaging
+    # Determine where training artifact will be saved
+    # Required value
+    # Type: string
+    output_connection: models-output
+    # Service account for packager pods
+    # Required value
+    # Type: string
+    service_account: legion-model-packager
+    # Model packager settings
+    model_packager:
+      # Model packager base image
+      # Required value
+      # Type: string
+      image: "k8s-model-packager:latest"

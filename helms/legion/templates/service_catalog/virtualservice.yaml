@@ -1,0 +1,26 @@
+{{ if .Values.service_catalog.enabled -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: "{{ .Release.Name }}-service-catalog"
+  namespace: "{{ .Values.config.deployment.namespace }}"
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - edge
+  http:
+    - match:
+      - uri:
+          prefix: "/swagger"
+      route:
+        - destination:
+            host: "{{ .Release.Name }}-service-catalog.{{ .Values.config.deployment.namespace }}.svc.cluster.local"
+            port:
+              number: 5000
+    - match:
+      - uri:
+          exact: "/"
+      redirect:
+        uri: /swagger/index.html
+{{- end }}

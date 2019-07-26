@@ -1,0 +1,257 @@
+{{ if .Values.service_catalog.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ .Release.Name }}-service-catalog"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "service-catalog" "root" .) | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods/log
+    verbs:
+      - get
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - connections
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - connections/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeldeployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeldeployments/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelpackagings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelpackagings/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - connecitons
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeltrainings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modeltrainings/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelpackagings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelpackagings/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - packagingintegrations
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - packagingintegrations/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - toolchainintegrations
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - toolchainintegrations/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "{{ .Release.Name }}-service-catalog"
+subjects:
+  - kind: ServiceAccount
+    namespace: "{{ .Values.config.deployment.namespace }}"
+    name: "{{ .Release.Name }}-service-catalog"
+roleRef:
+  kind: ClusterRole
+  name: "{{ .Release.Name }}-service-catalog"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-service-catalog"
+  namespace: "{{ .Values.config.deployment.namespace }}"
+{{- end }}
+
+
+

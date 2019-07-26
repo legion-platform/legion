@@ -29,7 +29,6 @@ class LoginDialog extends Widget {
    */
   constructor() {
     super({ node: Private.buildAuthorizeDialogBody() });
-    // this.addClass(FILE_DIALOG_CLASS);
   }
 
   getInputNodeValue(no: number): string {

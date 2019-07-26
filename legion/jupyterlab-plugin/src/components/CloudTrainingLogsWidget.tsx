@@ -22,8 +22,8 @@ import { BaseLegionWidget, IWidgetOptions } from './Widgets';
 
 import * as style from '../componentsStyle/GeneralWidgetStyle';
 import { ICloudApi } from '../api/cloud';
-import { ICloudTrainingLogsResponse } from '../models/cloud';
-import { IApiCloudState } from '../models/apiState';
+import { ICloudLogsResponse } from '../models/cloud';
+import { IApiCloudState } from '../models';
 import { LogView } from './LogView';
 
 const WIDGET_ID = 'legion:cloud-training:logs:';
@@ -31,7 +31,7 @@ const WIDGET_TITLE = 'Logs of :trainingName:';
 const WIDGET_UPDATE_TIME = 5000;
 
 export class CloudTrainingLogsWidget extends BaseLegionWidget {
-  private _data: ICloudTrainingLogsResponse;
+  private _data: ICloudLogsResponse;
   private _api: ICloudApi;
   private _timerId?: number;
   private _state: IApiCloudState;
@@ -83,11 +83,13 @@ export class CloudTrainingLogsWidget extends BaseLegionWidget {
    * Dispose of the resources used by the widget.
    */
   dispose(): void {
+    this._data.futureLogsExpected = true;
     this._clearTimeInterval();
     super.dispose();
   }
 
   close(): void {
+    this._data.futureLogsExpected = true;
     this._clearTimeInterval();
     super.close();
   }
@@ -124,7 +126,7 @@ export class CloudTrainingLogsWidget extends BaseLegionWidget {
     this._api
       .getTrainingLogs(
         {
-          name: this._trainingName
+          id: this._trainingName
         },
         this._state.credentials
       )
@@ -142,7 +144,7 @@ export class CloudTrainingLogsWidget extends BaseLegionWidget {
   private _startUpdating() {
     console.log('Update started');
     this._updating = true;
-    this.title.iconClass = style.cloudTrainingLogWidgetIcon;
+    this.title.iconClass = style.cloudLogWidgetIcon;
   }
 
   private _finishUpdating() {

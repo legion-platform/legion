@@ -1,0 +1,17 @@
+kind: Connection
+# Some unique value. For example:
+#  * wine-data
+#  * docker-conn
+#  * gcp-data
+id: <fill in>
+spec:
+  # If you wanna get access to a gcs bucket. You should specify gcs as a type
+  type: gcs
+  # Replace <bucket-name> with your bucket name
+  uri: <bucket-name>/<path>
+  # Specify region of your bucket
+  region: us-east1
+  # Specify a role of that can read access to your bucket
+  # role: rw-gke-legion-dev-data-store
+  # Or key secret
+  keySecret: <keys service account>

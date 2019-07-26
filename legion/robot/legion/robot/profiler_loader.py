@@ -53,8 +53,6 @@ def get_variables(profile=None):
                 'CLUSTER_NAME': data.get('cluster_name'),
                 'CLUSTER_CONTEXT': data.get('cluster_context'),
                 'FEEDBACK_BUCKET': data.get('legion_data_bucket'),
-                'GRAFANA_USER': data.get('grafana_admin'),
-                'GRAFANA_PASSWORD': data.get('grafana_pass'),
                 'CLOUD_TYPE': data.get('cloud_type'),
                 'STATIC_USER_EMAIL': data.get('dex_static_user_email'),
                 'STATIC_USER_PASS': data.get('dex_static_user_pass'),

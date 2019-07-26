@@ -37,8 +37,9 @@ class BaseLegionHandler(APIHandler):
         super().__init__(*args, **kwargs)
         self.state = None
         self.logger = None
+        self.templates = None
 
-    def initialize(self, state, logger, **kwargs):
+    def initialize(self, state, logger, templates, **kwargs):
         """
         Initialize base handler
 
@@ -49,6 +50,7 @@ class BaseLegionHandler(APIHandler):
         """
         self.state = state
         self.logger = logger
+        self.templates = templates
         self.logger.debug('%s initialized', self.__class__.__name__)
 
     def finish_with_json(self, data=None):

@@ -14,9 +14,6 @@
  *   limitations under the License.
  */
 
-// import * as React from 'react';
-// import * as ReactDOM from 'react-dom';
-
 import { Message } from '@phosphor/messaging';
 import { Widget } from '@phosphor/widgets';
 
@@ -58,6 +55,7 @@ export class Renderer implements IRenderer {
  */
 export class BaseLegionWidget extends Widget {
   component: any;
+
   /**
    * Construct a new running widget.
    */
@@ -149,6 +147,7 @@ export class BaseLegionWidget extends Widget {
    * This listener is attached to the document node.
    */
   private _evtChange(event: MouseEvent): void {}
+
   /**
    * Handle the `'click'` event for the widget.
    *

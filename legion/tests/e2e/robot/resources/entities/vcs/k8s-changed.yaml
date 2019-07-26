@@ -1,9 +1,0 @@
-apiVersion: legion.legion-platform.org/v1alpha1
-kind: VCSCredential
-metadata:
-  name: test-vcs-6-2
-spec:
-  credential: bG9sCg==
-  defaultReference: origin/develop
-  type: git
-  uri: git@github.com:legion-platform/legion.git

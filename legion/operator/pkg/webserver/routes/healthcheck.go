@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	healthCheckURL = "/health"
+	HealthCheckURL = "/health"
 )
 
 func healthCheck(c *gin.Context) {
@@ -30,5 +30,5 @@ func healthCheck(c *gin.Context) {
 }
 
 func SetUpHealthCheck(server *gin.Engine) {
-	server.GET(healthCheckURL, healthCheck)
+	server.GET(HealthCheckURL, healthCheck)
 }

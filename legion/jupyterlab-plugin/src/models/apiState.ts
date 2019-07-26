@@ -17,15 +17,25 @@ import { ISignal, Signal } from '@phosphor/signaling';
 
 import { ICloudCredentials } from '../api/base';
 import * as cloud from './cloud';
-import * as configurationModels from './configuration';
+import { ModelTraining } from '../legion/ModelTraining';
+import { ModelDeployment } from '../legion/ModelDeployment';
+import { Connection } from '../legion/Connection';
+import { ModelPackaging } from '../legion/ModelPackaging';
+import { ToolchainIntegration } from '../legion/ToolchainIntegration';
+import { PackagingIntegration } from '../legion/PackagingIntegration';
 
+import * as configurationModels from './configuration';
+import { IConfigurationMainResponse } from './configuration';
 export const PLUGIN_CREDENTIALS_STORE_CLUSTER = `legion.cluster:credentials-cluster`;
 export const PLUGIN_CREDENTIALS_STORE_TOKEN = `legion.cluster:credentials-token`;
 
 export interface IApiCloudState {
-  trainings: Array<cloud.ICloudTrainingResponse>;
-  deployments: Array<cloud.ICloudDeploymentResponse>;
-  vcss: Array<cloud.IVCSResponse>;
+  trainings: Array<ModelTraining>;
+  deployments: Array<ModelDeployment>;
+  connections: Array<Connection>;
+  modelPackagings: Array<ModelPackaging>;
+  toolchainIntegrations: Array<ToolchainIntegration>;
+  packagingIntegrations: Array<PackagingIntegration>;
 
   isLoading: boolean;
   signalLoadingStarted(): void;
@@ -33,6 +43,7 @@ export interface IApiCloudState {
   updateAllState(data?: cloud.ICloudAllEntitiesResponse): void;
 
   authorizationRequired: boolean;
+  updateConfiguration(data?: IConfigurationMainResponse): void;
   credentials: ICloudCredentials;
   setCredentials(
     credentials?: ICloudCredentials,
@@ -43,12 +54,17 @@ export interface IApiCloudState {
   onConfigurationLoaded(
     config: configurationModels.IConfigurationMainResponse
   ): void;
+
+  tryToLoadCredentialsFromSettings(): void;
 }
 
 class APICloudStateImplementation implements IApiCloudState {
-  private _trainings: Array<cloud.ICloudTrainingResponse>;
-  private _deployments: Array<cloud.ICloudDeploymentResponse>;
-  private _vcss: Array<cloud.IVCSResponse>;
+  private _trainings: Array<ModelTraining>;
+  private _deployments: Array<ModelDeployment>;
+  private _connections: Array<Connection>;
+  private _modelpackagings: Array<ModelPackaging>;
+  private _toolchainIntegrations: Array<ToolchainIntegration>;
+  private _packagingIntegrations: Array<PackagingIntegration>;
 
   private _isLoading: boolean;
   private _dataChanged = new Signal<this, void>(this);
@@ -60,21 +76,36 @@ class APICloudStateImplementation implements IApiCloudState {
     this._isLoading = false;
     this._trainings = [];
     this._deployments = [];
-    this._vcss = [];
+    this._connections = [];
+    this._modelpackagings = [];
+    this._toolchainIntegrations = [];
+    this._packagingIntegrations = [];
     this._credentials = null;
     this._configuration = null;
   }
 
-  get trainings(): Array<cloud.ICloudTrainingResponse> {
+  get trainings(): Array<ModelTraining> {
     return this._trainings;
   }
 
-  get deployments(): Array<cloud.ICloudDeploymentResponse> {
+  get deployments(): Array<ModelDeployment> {
     return this._deployments;
   }
 
-  get vcss(): Array<cloud.IVCSResponse> {
-    return this._vcss;
+  get connections(): Array<Connection> {
+    return this._connections;
+  }
+
+  get modelPackagings(): Array<ModelPackaging> {
+    return this._modelpackagings;
+  }
+
+  get toolchainIntegrations(): Array<ToolchainIntegration> {
+    return this._toolchainIntegrations;
+  }
+
+  get packagingIntegrations(): Array<PackagingIntegration> {
+    return this._packagingIntegrations;
   }
 
   get isLoading(): boolean {
@@ -94,7 +125,18 @@ class APICloudStateImplementation implements IApiCloudState {
     if (data) {
       this._trainings = data.trainings;
       this._deployments = data.deployments;
-      this._vcss = data.vcss;
+      this._connections = data.connections;
+      this._modelpackagings = data.modelPackagings;
+      this._toolchainIntegrations = data.toolchainIntegrations;
+      this._packagingIntegrations = data.packagingIntegrations;
+    }
+    this._isLoading = false;
+    this._dataChanged.emit(null);
+  }
+
+  updateConfiguration(data?: IConfigurationMainResponse): void {
+    if (data) {
+      this._configuration = data;
     }
     this._isLoading = false;
     this._dataChanged.emit(null);
