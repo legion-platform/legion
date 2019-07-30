@@ -573,6 +573,62 @@ edi:
     # Type: string
     # tlsSecretName: ~
 
+
+# JupyterLab instance
+# It provides web IDE for edition of source codes
+jupyterlab:
+  # JupyterLab could be disabled
+  # Type: bool
+  enabled: true
+
+  # This variable can be uncommented to setup custom image name for JupyterLab instance
+  # Type: string
+  # image: custom-image:1.0
+
+  # Port on which JupyterLab listens income traffic
+  # Type: integer
+  port: 80
+
+  # Resources for each instance
+  # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "100m"
+      memory: "512Mi"
+
+  # Configuration of ingress object
+  ingress:
+    # Custom enabling/disabling of Ingress resource for JupyterLab
+    # To use specific value, uncomment and replace ~ with target value
+    # Type: bool
+    # enabled: ~
+
+    # Annotations for ingress
+    # Will be added to global annotations (.ingress.annotations)
+    # Type: string->string map
+    annotations: {}
+
+    # Custom domain name
+    # By default domain name "jupyterlab.<..ingress.globalDomain>" is used
+    # To use specific value, replace ~ with target value
+    # Type: string
+    # domain: ~
+
+    # Is TLS enabled for this Ingress or not
+    # By default global variable is used (.ingress.tlsEnabled)
+    # To use specific value, replace ~ with target value
+    # Type: string
+    # tlsEnabled: false
+
+    # Global TLS secret name
+    # By default global variable is used (.ingress.tlsSecretName)
+    # To use specific value, replace ~ with target value
+    # Type: string
+    # tlsSecretName: ~
+
 toolchains:
   python:
     # This variable can be uncommented to setup custom image name for python
