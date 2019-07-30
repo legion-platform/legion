@@ -24,6 +24,8 @@ spec:
         env:
         - name: JUPYTER_PORT
           value: {{ .Values.jupyterlab.port | quote }}
+        - name: JUPYTER_DISABLE_TOKEN
+          value: "yes"
         ports:
         - containerPort: {{ .Values.jupyterlab.port }}
           name: input
