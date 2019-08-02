@@ -83,6 +83,7 @@ def get_variables(arg: typing.Optional[str] = None, profile: typing.Optional[str
         'PROMETHEUS_URL': os.getenv('PROMETHEUS_URL', f'https://prometheus.{host_base_domain}'),
         'ALERTMANAGER_URL': os.getenv('ALERTMANAGER_URL', f'https://alertmanager.{host_base_domain}'),
         'DASHBOARD_URL': os.getenv('DASHBOARD_URL', f'https://dashboard.{host_base_domain}'),
+        'JUPYTERLAB_URL': os.getenv('JUPITERLAB_URL', f'https://jupyterlab.{host_base_domain}'),
     }
 
     if 'dex' in data and data['dex']['enabled'] and 'staticPasswords' in data['dex']['config'] and \

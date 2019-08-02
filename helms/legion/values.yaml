@@ -593,11 +593,11 @@ jupyterlab:
   # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
   resources:
     requests:
-      cpu: "50m"
-      memory: "128Mi"
-    limits:
-      cpu: "100m"
+      cpu: "500m"
       memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1024Mi"
 
   # Configuration of ingress object
   ingress:
