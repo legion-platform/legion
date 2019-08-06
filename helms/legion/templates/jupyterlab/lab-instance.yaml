@@ -1,0 +1,89 @@
+{{ if .Values.jupyterlab.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-jupyterlab"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "jupyterlab" "root" .) | nindent 4 }}
+spec:
+  # JupyterLab is limited to 1 replica
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "legion.helm-labels-for-search" (dict "component" "jupyterlab" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "legion.helm-labels" (dict "component" "jupyterlab" "root" .) | nindent 8 }}
+    spec:
+      containers:
+      - name: jupyterlab
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.jupyterlab "tpl" "%spython-toolchain:%s") }}"
+        resources:
+          {{- toYaml .Values.jupyterlab.resources | nindent 10 }}
+        env:
+        - name: JUPYTER_PORT
+          value: {{ .Values.jupyterlab.port | quote }}
+        - name: JUPYTER_DISABLE_TOKEN
+          value: "yes"
+        ports:
+        - containerPort: {{ .Values.jupyterlab.port }}
+          name: input
+          protocol: TCP
+        - containerPort: {{ .Values.jupyterlab.port }}
+          name: input-udp
+          protocol: UDP
+        command: ["jupyter", "lab"]
+        livenessProbe:
+          httpGet:
+              path: /
+              port: {{ .Values.jupyterlab.port }}
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 6
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-jupyterlab"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "jupyterlab" "root" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "legion.helm-labels-for-search" (dict "component" "jupyterlab" "root" .) | nindent 4 }}
+  ports:
+  - name: input
+    port: {{ .Values.jupyterlab.port }}
+    targetPort: {{ .Values.jupyterlab.port }}
+    protocol: TCP
+  - name: input-udp
+    port: {{ .Values.jupyterlab.port }}
+    targetPort: {{ .Values.jupyterlab.port }}
+    protocol: UDP
+{{- if (ternary $.Values.jupyterlab.ingress.enabled $.Values.ingress.enabled (hasKey $.Values.jupyterlab.ingress "enabled")) }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+  {{- include "legion.ingress-aggregated-annotations" (dict "local" .Values.jupyterlab.ingress "root" .) | nindent 4 }}
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "jupyterlab" "root" .) | nindent 4 }}
+  name: "{{ .Release.Name }}-jupyterlab"
+spec:
+  rules:
+    - host: {{ include "legion.ingress-domain-name" (dict "local" .Values.jupyterlab.ingress "root" . "tpl" "jupyterlab.%s") }}
+      http:
+        paths:
+          - backend:
+              serviceName: "{{ .Release.Name }}-jupyterlab"
+              servicePort: {{ .Values.jupyterlab.port }}
+  {{- if (ternary $.Values.jupyterlab.ingress.tlsEnabled $.Values.ingress.tlsEnabled (hasKey $.Values.jupyterlab.ingress "tlsEnabled")) }}
+  tls:
+  - hosts:
+    - {{ include "legion.ingress-domain-name" (dict "local" .Values.jupyterlab.ingress "root" . "tpl" "jupyterlab.%s") | quote }}
+    secretName: {{ include "legion.ingress-tls-secret-name" (dict "local" .Values.jupyterlab.ingress "root" . ) | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

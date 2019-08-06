@@ -73,3 +73,9 @@ c.NotebookApp.port = PORT
 
 ## The number of additional ports to try if the specified port is not available.
 c.NotebookApp.port_retries = 0
+
+JUPYTER_DISABLE_TOKEN = os.getenv('JUPYTER_DISABLE_TOKEN')
+
+if JUPYTER_DISABLE_TOKEN and JUPYTER_DISABLE_TOKEN.lower() in ('yes', '1', 'true'):
+    print('Disabling token, due to JUPYTER_DISABLE_TOKEN env. variable')
+    c.NotebookApp.token = ''

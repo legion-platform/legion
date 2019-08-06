@@ -31,6 +31,7 @@ Service url stay the same after log in
     service_url=${GRAFANA_URL}/?orgId=1&x=2
     service_url=${PROMETHEUS_URL}/graph?x=2&y=3
     service_url=${ALERTMANAGER_URL}/?orgId=1&x=2
+    service_url=${JUPYTERLAB_URL}/lab
 
 
 Invalid credentials raise Auth error
@@ -41,3 +42,4 @@ Invalid credentials raise Auth error
     service_url=${GRAFANA_URL}/?orgId=1&x=2
     service_url=${PROMETHEUS_URL}/graph?x=2&y=3
     service_url=${ALERTMANAGER_URL}/?orgId=1&x=2
+    service_url=${JUPYTERLAB_URL}/lab
