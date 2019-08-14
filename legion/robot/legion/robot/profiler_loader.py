@@ -68,12 +68,12 @@ def get_variables(profile=None):
             }
         except Exception as err:
             raise Exception("Can\'t get variable from cluster profile: {}".format(err))
-        
+
         try:
             init_session_id(variables['STATIC_USER_EMAIL'], variables['STATIC_USER_PASS'], host_base_domain)
             variables['DEX_TOKEN'] = dex_client.get_token()
             variables['DEX_COOKIES'] = dex_client.get_session_cookies()
         except Exception as err:
             raise Exception("Can\'t get dex authentication data: {}".format(err))
- 
+
     return variables
