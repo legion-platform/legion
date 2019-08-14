@@ -2,11 +2,11 @@
 Documentation       Check clusterwide and enclave resources
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
-Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             Collections
 Library             legion.robot.libraries.k8s.K8s  ${LEGION_NAMESPACE}
 Library             legion.robot.libraries.utils.Utils
-Suite Setup        Choose cluster context            ${CLUSTER_NAME}
+Suite Setup        Choose cluster context            ${CLUSTER_CONTEXT}
 
 *** Test Cases ***
 Checking if all enclave domains have been registered

@@ -11,11 +11,11 @@ Documentation       Legion's EDI operational check
 Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
-Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             legion.robot.libraries.k8s.K8s  ${LEGION_NAMESPACE}
 Library             legion.robot.libraries.utils.Utils
 Library             Collections
-Suite Setup         Run Keywords  Choose cluster context  ${CLUSTER_NAME}  AND
+Suite Setup         Run Keywords  Choose cluster context  ${CLUSTER_CONTEXT}  AND
 ...                               Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                               Login to the edi and edge  AND
 ...                               Build model  ${TEST_MT_NAME}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  AND

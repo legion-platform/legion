@@ -19,7 +19,6 @@ Variables loader from json Cluster Profile
 
 import os
 import json
-import sys
 from legion.robot.libraries import dex_client
 from legion.robot.libraries.dex_client import init_session_id
 
@@ -35,7 +34,7 @@ def get_variables(profile=None):
     """
 
     # load Cluster Profile
-    profile = profile or sys.argv[1] or os.getenv(CLUSTER_PROFILE)
+    profile = profile or os.getenv(CLUSTER_PROFILE)
 
     if not profile:
         raise Exception('Can\'t get profile at path {}'.format(profile))
@@ -44,21 +43,21 @@ def get_variables(profile=None):
 
     with open(profile, 'r') as json_file:
         data = json.load(json_file)
-
         variables = {}
 
         try:
-            host_base_domain = data.get('base_domain')
+            host_base_domain = "{}.{}".format(data.get('cluster_name'), data.get('root_domain'))
             variables = {
                 'HOST_BASE_DOMAIN': host_base_domain,
                 'CLUSTER_NAME': data.get('cluster_name'),
+                'CLUSTER_CONTEXT': data.get('cluster_context'),
                 'FEEDBACK_BUCKET': data.get('legion_data_bucket'),
                 'GRAFANA_USER': data.get('grafana_admin'),
                 'GRAFANA_PASSWORD': data.get('grafana_pass'),
                 'CLOUD_TYPE': data.get('cloud_type'),
                 'STATIC_USER_EMAIL': data.get('dex_static_user_email'),
                 'STATIC_USER_PASS': data.get('dex_static_user_pass'),
-                'EDGE_URL': os.getenv('EDGE_URL', 'https://edge.{host_base_domain}'),
+                'EDGE_URL': os.getenv('EDGE_URL', f'https://edge.{host_base_domain}'),
                 'EDI_URL': os.getenv('EDI_URL', f'https://edi.{host_base_domain}'),
                 'GRAFANA_URL': os.getenv('GRAFANA_URL', f'https://grafana.{host_base_domain}'),
                 'PROMETHEUS_URL': os.getenv('PROMETHEUS_URL', f'https://prometheus.{host_base_domain}'),
@@ -66,6 +65,7 @@ def get_variables(profile=None):
                 'DASHBOARD_URL': os.getenv('DASHBOARD_URL', f'https://dashboard.{host_base_domain}'),
                 'JUPYTERLAB_URL': os.getenv('JUPITERLAB_URL', f'https://jupyterlab.{host_base_domain}'),
             }
+            print(variables)
         except Exception as err:
             raise Exception("Can\'t get variable from cluster profile: {}".format(err))
 

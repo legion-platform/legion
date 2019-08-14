@@ -9,13 +9,13 @@ ${TEST_MODEL_VERSION}  1
 Documentation       Feedback loop (fluentd) check
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
-Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             Collections
 Library             legion.robot.libraries.feedback.Feedback  ${CLOUD_TYPE}  ${FEEDBACK_BUCKET}
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords
-...                 Choose cluster context  ${CLUSTER_NAME}   AND
+...                 Choose cluster context  ${CLUSTER_CONTEXT}   AND
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
 ...                 Build model  ${TEST_MT_NAME}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  AND
