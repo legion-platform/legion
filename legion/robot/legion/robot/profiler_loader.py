@@ -65,7 +65,6 @@ def get_variables(profile=None):
                 'DASHBOARD_URL': os.getenv('DASHBOARD_URL', f'https://dashboard.{host_base_domain}'),
                 'JUPYTERLAB_URL': os.getenv('JUPITERLAB_URL', f'https://jupyterlab.{host_base_domain}'),
             }
-            print(variables)
         except Exception as err:
             raise Exception("Can\'t get variable from cluster profile: {}".format(err))
 
@@ -75,5 +74,6 @@ def get_variables(profile=None):
             variables['DEX_COOKIES'] = dex_client.get_session_cookies()
         except Exception as err:
             raise Exception("Can\'t get dex authentication data: {}".format(err))
+        print(variables)
 
     return variables
