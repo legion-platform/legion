@@ -74,6 +74,5 @@ def get_variables(profile=None):
             variables['DEX_COOKIES'] = dex_client.get_session_cookies()
         except Exception as err:
             raise Exception("Can\'t get dex authentication data: {}".format(err))
-        print(variables)
 
     return variables
