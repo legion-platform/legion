@@ -13,11 +13,11 @@ Documentation       Legion's EDI operational check for bulk operations (with mul
 Test Timeout        6 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
-Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             legion.robot.libraries.utils.Utils
 Library             Collections
 Default Tags        edi  cli  enclave  apps  mt  md  vcs  bulk
-Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_NAME}  AND
+Suite Setup         Run keywords  Choose cluster context  ${CLUSTER_CONTEXT}  AND
 ...                               Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                               Login to the edi and edge  AND
 ...                               Cleanup resources

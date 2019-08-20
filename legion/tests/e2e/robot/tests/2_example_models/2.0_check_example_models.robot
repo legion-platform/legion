@@ -3,7 +3,7 @@ ${LOCAL_CONFIG}         legion/config_2_0
 
 *** Settings ***
 Documentation       Legion stack operational check
-Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Resource            ../../resources/keywords.robot
 Library             legion.robot.libraries.prometheus.Prometheus  ${PROMETHEUS_URL}
 Library             Collections
@@ -12,7 +12,7 @@ Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
 Library             legion.robot.libraries.edi.EDI  ${EDI_URL}  ${DEX_TOKEN}
 Suite Setup         Run Keywords
-...                 Choose cluster context  ${CLUSTER_NAME}  AND
+...                 Choose cluster context  ${CLUSTER_CONTEXT}  AND
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
 ...                 Delete the examples models

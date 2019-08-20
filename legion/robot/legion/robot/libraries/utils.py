@@ -289,32 +289,6 @@ class Utils:
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod
-    def get_static_user_data():
-        """
-        Get static user email and password form secrets
-
-        :return: user email and password
-        :rtype: dict
-        """
-        import os
-
-        import yaml
-        from legion.robot.profiler_loader import CREDENTIAL_SECRETS_ENVIRONMENT_KEY
-        secrets = os.getenv(CREDENTIAL_SECRETS_ENVIRONMENT_KEY)
-        if not secrets:
-            raise Exception(
-                'Cannot get secrets - {} env variable is not set'.format(CREDENTIAL_SECRETS_ENVIRONMENT_KEY))
-
-        if not os.path.exists(secrets):
-            raise Exception('Cannot get secrets - file not found {}'.format(secrets))
-
-        with open(secrets, 'r') as stream:
-            data = yaml.safe_load(stream)
-
-        static_user = data['dex']['config']['staticPasswords'][0]
-        return {"login": static_user['email'], "password": static_user['password']}
-
-    @staticmethod
     def parse_json_string(string):
         """
         Parse JSON string

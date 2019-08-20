@@ -1,12 +1,12 @@
 *** Settings ***
 Documentation       Check if all core components are secured
 Resource            ../../resources/keywords.robot
-Variables           ../../load_variables_from_profiles.py    ${PATH_TO_PROFILES_DIR}
+Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             Collections
 Library             legion.robot.libraries.k8s.K8s  ${LEGION_NAMESPACE}
 Library             legion.robot.libraries.utils.Utils
 Force Tags          core  security  auth
-Test Setup          Choose cluster context            ${CLUSTER_NAME}
+Test Setup          Choose cluster context            ${CLUSTER_CONTEXT}
 
 *** Keywords ***
 
