@@ -422,6 +422,15 @@ EDI_URL = ConfigVariableDeclaration('EDI_URL', None, str,
 EDI_TOKEN = ConfigVariableDeclaration('EDI_TOKEN', None, str,
                                       'Token for EDI server authorisation',
                                       True)
+EDI_REFRESH_TOKEN = ConfigVariableDeclaration('EDI_REFRESH_TOKEN', None, str,
+                                              'Refresh token',
+                                              True)
+EDI_ACCESS_TOKEN = ConfigVariableDeclaration('EDI_ACCESS_TOKEN', None, str,
+                                             'Access token',
+                                             True)
+EDI_ISSUING_URL = ConfigVariableDeclaration('EDI_ISSUING_URL', None, str,
+                                            'URL for refreshing and issuing tokens',
+                                            True)
 
 LOCAL_DEFAULT_RESOURCE_PREFIX = ConfigVariableDeclaration('LOCAL_DEFAULT_RESOURCE_PREFIX', None, str,
                                                           'Prefix for building local model binary storage path',
@@ -512,3 +521,31 @@ MODEL_K8S_MEMORY = ConfigVariableDeclaration('MODEL_K8S_MEMORY', '256Mi', str, '
 MODEL_K8S_CPU = ConfigVariableDeclaration('MODEL_K8S_CPU', '256m', str, 'Default k8s cpu for a model', True)
 REDUCE_MODEL_REQUESTS_BY = ConfigVariableDeclaration('REDUCE_MODEL_REQUESTS_BY', 33, int,
                                                      'Reduce k8s resource for model by specific percent', True)
+
+# Auth
+LEGIONCTL_OAUTH_CLIENT_ID = ConfigVariableDeclaration('LEGIONCTL_OAUTH_CLIENT_ID', 'legion-cli', str,
+                                                      'Set OAuth2 Client id',
+                                                      True)
+
+LEGIONCTL_OAUTH_SCOPE = ConfigVariableDeclaration('LEGIONCTL_OAUTH_SCOPE',
+                                                  'openid profile email offline_access groups', str,
+                                                  'Set OAuth2 scope',
+                                                  True)
+
+LEGIONCTL_OAUTH_LOOPBACK_HOST = ConfigVariableDeclaration('LEGIONCTL_OAUTH_LOOPBACK_HOST',
+                                                          '127.0.0.1', str,
+                                                          'Target redirect for OAuth2 interactive authorization',
+                                                          True)
+
+LEGIONCTL_OAUTH_LOOPBACK_URL = ConfigVariableDeclaration('LEGIONCTL_OAUTH_LOOPBACK_URL',
+                                                          '/oauth/callback', str,
+                                                          'Target redirect url for OAuth2 interactive authorization',
+                                                          True)
+
+LEGIONCTL_OAUTH_TOKEN_ISSUING_URL = ConfigVariableDeclaration('LEGIONCTL_OAUTH_TOKEN_ISSUING_URL',
+                                                              '', str,
+                                                              'OAuth2 token issuing URL',
+                                                              True)
+
+LEGIONCTL_NONINTERACTIVE = ConfigVariableDeclaration('LEGIONCTL_NONINTERACTIVE', False,
+                                                     bool, 'Disable any interaction (e.g. authorization)', True)

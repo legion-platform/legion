@@ -17,18 +17,24 @@
 EDI client
 """
 import argparse
+import random
 import json
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 import typing
+import threading
+import string
+import sys
 
 import requests
 import requests.exceptions
 
-from legion.sdk import config
+import legion.sdk.config
+from legion.sdk.config import update_config_file
 from legion.sdk.containers import local_deploy
 from legion.sdk.containers.docker import build_docker_client
 from legion.sdk.definitions import EDI_VERSION, MODEL_TOKEN_TOKEN_URL
+from legion.sdk.clients.oauth_handler import start_oauth2_callback_handler, OAuthLoginResult, do_refresh_token
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,29 +74,90 @@ class IncorrectAuthorizationToken(EDIConnectionException):
     pass
 
 
+def get_authorization_redirect(web_redirect: str, after_login: typing.Callable) -> str:
+    """
+    Try to detect, parse and build OAuth2 redirect
+
+    :param web_redirect: returned redirect
+    :param after_login: function that have to be called after successful login
+    :return: str -- new redirect
+    """
+    loc = urlparse(web_redirect)
+
+    state = ''.join(random.choice(string.ascii_letters) for _ in range(10))
+    local_check_address = start_oauth2_callback_handler(after_login, state, web_redirect)
+
+    get_parameters = {
+        'client_id': legion.sdk.config.LEGIONCTL_OAUTH_CLIENT_ID,
+        'response_type': 'code',
+        'state': state,
+        'redirect_uri': local_check_address,
+        'scope': legion.sdk.config.LEGIONCTL_OAUTH_SCOPE
+    }
+    web_redirect = f'{loc.scheme}://{loc.netloc}{loc.path}?{urlencode(get_parameters)}'
+    return web_redirect
+
+
 class RemoteEdiClient:
     """
     EDI client
     """
 
-    def __init__(self, base, token=None, retries=3, timeout=10):
+    def __init__(self, base, token=None, retries=3, timeout=10, non_interactive=False):
         """
         Build client
 
-        :param base: base url, for example: http://edi.parallels
+        :param base: base url, for example: http://edi.example.com
         :type base: str
-        :param token: token for token based auth
+        :param token: (Optional) token for token based auth
         :type token: str or None
-        :param retries: command retries or less then 2 if disabled
+        :param retries: (Optional) command retries or less then 2 if disabled
         :type retries: int
-        :param timeout: timeout for connection in seconds. 0 for disabling
+        :param timeout: (Optional) timeout for connection in seconds. 0 for disabling
         :type timeout: int
+        :param non_interactive: (Optional) disable any interaction
+        :type non_interactive: book
         """
         self._base = base
         self._token = token
         self._version = EDI_VERSION
         self._retries = retries
         self._timeout = timeout
+        self._non_interactive = non_interactive
+        self._interactive_login_finished = threading.Event()
+
+        # Force if set
+        if legion.sdk.config.LEGIONCTL_NONINTERACTIVE:
+            self._non_interactive = True
+
+    def _update_config_with_new_oauth_config(self, login_result: OAuthLoginResult):
+        """
+        Update config with new oauth credentials
+
+        :param login_result: result of login
+        :type login_result: OAuthLoginResult
+        :return: None
+        """
+        self._token = login_result.id_token
+        update_config_file(EDI_URL=self._base,
+                           EDI_TOKEN=login_result.id_token,
+                           EDI_REFRESH_TOKEN=login_result.refresh_token,
+                           EDI_ACCESS_TOKEN=login_result.access_token,
+                           EDI_ISSUING_URL=login_result.issuing_url)
+
+    def after_login(self, login_result: OAuthLoginResult):
+        """
+        Handle action after login
+
+        :param login_result: result of login
+        :type login_result: OAuthLoginResult
+        :return: None
+        """
+        self._interactive_login_finished.set()
+        self._update_config_with_new_oauth_config(login_result)
+        LOGGER.info('You has been authorized on endpoint %s as %s / %s',
+                    self._base, login_result.user_name, login_result.user_email)
+        sys.exit(0)
 
     @classmethod
     def construct_from_other(cls, other):
@@ -103,27 +170,37 @@ class RemoteEdiClient:
         """
         return cls(other._base, other._token, other._retries, other._timeout)
 
-    def _request(self, url_template: str, payload: typing.Mapping[typing.Any, typing.Any] = None, action: str = 'GET',
-                 stream: bool = False, timeout: typing.Optional[int] = None):
+    def _request(self,
+                 url_template: str,
+                 payload: typing.Mapping[typing.Any, typing.Any] = None,
+                 action: str = 'GET',
+                 stream: bool = False,
+                 timeout: typing.Optional[int] = None,
+                 limit_stack: bool = False):
         """
         Make HTTP request
+
+        :param url_template: target URL
+        :type url_template: str
+        :param payload: (Optional) data to be placed in body of request
+        :type payload: dict[str, str] or None
         :param action: request action, e.g. get / post / delete
         :type action: str
-        :param url: target URL
-        :type url: str
-        :param data: (Optional) data to be placed in body of request
-        :type data: dict[str, str] or None
-        :param headers: (Optional) additional HTTP headers
-        :type headers: dict[str, str] or None
-        :param cookies: (Optional) HTTP cookies
-        :type cookies: dict[str, str] or None
+        :param stream: (Optional) use stream mode or not
+        :type stream: bool
         :param timeout: (Optional) custom timeout in seconds (overrides default). 0 for disabling
         :type timeout: typing.Optional[int]
+        :param limit_stack: (Optional) do not start refreshing token if it is possible
+        :type limit_stack: bool
         :return: :py:class:`requests.Response` -- response
         """
         sub_url = url_template.format(version=self._version)
         target_url = self._base.strip('/') + sub_url
-        cookies = {'_oauth2_proxy': self._token} if self._token else {}
+        headers = {}
+
+        # Add token if it is provided
+        if self._token:
+            headers['Authorization'] = f'Bearer {self._token}'
 
         left_retries = self._retries if self._retries > 0 else 1
 
@@ -145,10 +222,11 @@ class RemoteEdiClient:
                 request_kwargs = {'params' if action.lower() == 'get' else 'json': payload}
 
                 if stream:
-                    request_kwargs['headers'] = {'Content-type': 'text/event-stream'}
+                    headers['Content-type'] = 'text/event-stream'
 
-                response = requests.request(action.lower(), target_url, cookies=cookies, stream=stream,
+                response = requests.request(action.lower(), target_url, stream=stream,
                                             timeout=connection_timeout,
+                                            headers=headers,
                                             **request_kwargs)
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base, exception))
@@ -161,15 +239,57 @@ class RemoteEdiClient:
         else:
             raise EDIConnectionException('Can not reach {}'.format(self._base)) from raised_exception
 
-        # We assume if there were redirects then credentials are out of date
+        # We assume if there were redirects then credentials are out of date and we can refresh or build auth url
         if response.history:
-            LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
+            # If it is a error after refreshed token - fail
+            if limit_stack:
+                raise IncorrectAuthorizationToken(
+                    'Credentials are not correct even after refreshing. \n'
+                    'Please login again'
+                ) from raised_exception
 
-            parse_result = urlparse(target_url)
-            raise IncorrectAuthorizationToken(
-                'Credentials are not correct. You should open {}://{} url in a browser to get fresh token'.format(
-                    parse_result.scheme, parse_result.netloc
-                )) from raised_exception
+            LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
+            LOGGER.debug('Redirect has been detected. Trying to refresh a token')
+
+            if legion.sdk.config.EDI_REFRESH_TOKEN and legion.sdk.config.EDI_ISSUING_URL:
+                LOGGER.debug('Refresh token for %s has been found, trying to use it', legion.sdk.config.EDI_ISSUING_URL)
+                login_result = do_refresh_token(legion.sdk.config.EDI_REFRESH_TOKEN, legion.sdk.config.EDI_ISSUING_URL)
+                if not login_result:
+                    raise IncorrectAuthorizationToken(
+                        'Refresh token in not correct. \n'
+                        'Please login again'
+                    ) from raised_exception
+                else:
+                    self._update_config_with_new_oauth_config(login_result)
+                    return self._request(
+                        url_template,
+                        payload=payload,
+                        action=action,
+                        stream=stream,
+                        timeout=timeout,
+                        limit_stack=True
+                    )
+            else:
+                if self._non_interactive:
+                    raise IncorrectAuthorizationToken(
+                        'Credentials are not correct. \n'
+                        'Please provide correct temporary token or disable non interactive mode'
+                    ) from raised_exception
+                else:
+                    # Start interactive flow
+                    self._interactive_login_finished.clear()
+                    target_url = get_authorization_redirect(response.url, self.after_login)
+                    LOGGER.error('Credentials are not correct. \nPlease open %s', target_url)
+
+                    self._interactive_login_finished.wait()
+                    return self._request(
+                        url_template,
+                        payload=payload,
+                        action=action,
+                        stream=stream,
+                        timeout=timeout,
+                        limit_stack=True
+                    )
 
         return response
 
@@ -328,13 +448,16 @@ def add_arguments_for_wait_operation(parser):
                         type=int, help='timeout in s. for wait (if no-wait is off)')
 
 
-def build_client(args: argparse.Namespace = None) -> RemoteEdiClient:
+def build_client(args: argparse.Namespace = None, retries=3, timeout=10, cls=RemoteEdiClient):
     """
     Build Remote EDI client from from ENV and from command line arguments
 
     :param args: (optional) command arguments with .namespace
+    :param retries: number of retries
+    :param timeout: request timeout in seconds
+    :param cls: target class
     """
-    host, token = None, None
+    host, token, non_interactive = None, None, False
 
     if args:
         if args.edi:
@@ -343,12 +466,15 @@ def build_client(args: argparse.Namespace = None) -> RemoteEdiClient:
         if args.token:
             token = args.token
 
+        if args.non_interactive:
+            non_interactive = True
+
     if not host or not token:
-        host = host or config.EDI_URL
-        token = token or config.EDI_TOKEN
+        host = host or legion.sdk.config.EDI_URL
+        token = token or legion.sdk.config.EDI_TOKEN
 
     if host:
-        client = RemoteEdiClient(host, token)
+        client = cls(host, token, non_interactive=non_interactive, retries=retries, timeout=timeout)
     else:
         raise Exception('EDI endpoint is not configured')
 

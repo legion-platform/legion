@@ -18,7 +18,7 @@ Robot test library - grafana
 """
 
 from legion.robot.grafana import GrafanaClient
-from legion.robot.libraries.dex_client import get_session_cookies
+from legion.robot.libraries.auth_client import get_authorization_headers
 
 
 class Grafana:
@@ -53,7 +53,7 @@ class Grafana:
         self._user = user
         self._password = password
         self._client = GrafanaClient(self._url, self._user, self._password)
-        self._client.set_cookies(get_session_cookies())
+        self._client.set_additional_headers(get_authorization_headers())
 
     def dashboard_should_exists(self, model_name):
         """

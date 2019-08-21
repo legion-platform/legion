@@ -21,8 +21,7 @@ import logging
 import typing
 from urllib import parse
 
-from legion.sdk import config
-from legion.sdk.clients.edi import RemoteEdiClient
+import legion.sdk.clients.edi
 from legion.sdk.definitions import MODEL_DEPLOYMENT_URL
 
 LOGGER = logging.getLogger(__name__)
@@ -102,7 +101,7 @@ class ModelDeployment(typing.NamedTuple):
         return result
 
 
-class ModelDeploymentClient(RemoteEdiClient):
+class ModelDeploymentClient(legion.sdk.clients.edi.RemoteEdiClient):
     """
     EDI client
     """
@@ -179,22 +178,4 @@ def build_client(args: argparse.Namespace = None, retries=3, timeout=10) -> Mode
     :param retries: number of retries
     :param args: (optional) command arguments with .namespace
     """
-    host, token = None, None
-
-    if args:
-        if args.edi:
-            host = args.edi
-
-        if args.token:
-            token = args.token
-
-    if not host or not token:
-        host = host or config.EDI_URL
-        token = token or config.EDI_TOKEN
-
-    if host:
-        client = ModelDeploymentClient(host, token, retries=retries, timeout=timeout)
-    else:
-        raise Exception('EDI endpoint is not configured')
-
-    return client
+    return legion.sdk.clients.edi.build_client(args, retries=retries, timeout=timeout, cls=ModelDeploymentClient)

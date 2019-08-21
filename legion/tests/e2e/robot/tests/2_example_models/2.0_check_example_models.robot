@@ -10,7 +10,7 @@ Library             Collections
 Library             legion.robot.libraries.k8s.K8s  ${LEGION_NAMESPACE}
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
-Library             legion.robot.libraries.edi.EDI  ${EDI_URL}  ${DEX_TOKEN}
+Library             legion.robot.libraries.edi.EDI  ${EDI_URL}  ${AUTH_TOKEN}
 Suite Setup         Run Keywords
 ...                 Choose cluster context  ${CLUSTER_CONTEXT}  AND
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND

@@ -41,7 +41,7 @@ class GrafanaClient:
         self._base = base.strip('/')
         self._user = user
         self._password = password
-        self._cookies = None
+        self._additional_headers = None
 
     def _query(self, url, payload=None, action='GET'):
         """
@@ -61,12 +61,15 @@ class GrafanaClient:
             'Content-Type': 'application/json'
         }
 
+        if self._additional_headers:
+            headers.update(self._additional_headers)
+
         auth = None
         if self._user and self._password:
             auth = (self._user, self._password)
 
         response = requests.request(action.lower(), full_url, json=payload,
-                                    headers=headers, auth=auth, cookies=self._cookies)
+                                    headers=headers, auth=auth)
 
         if response.status_code in (401, 403):
             raise Exception('Auth failed')
@@ -78,15 +81,15 @@ class GrafanaClient:
 
         return answer
 
-    def set_cookies(self, cookies):
+    def set_additional_headers(self, additional_headers):
         """
-        Set cookies
+        Set authorization headers
 
-        :param cookies: cookies
-        :type cookies: dict[str, str]
+        :param additional_headers: additional headers
+        :type additional_headers: dict[str, str]
         :return: None
         """
-        self._cookies = cookies
+        self._additional_headers = additional_headers
 
     def delete_dashboard(self, dashboard_uri):
         """

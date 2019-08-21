@@ -20,8 +20,7 @@ import argparse
 import logging
 import typing
 
-from legion.sdk import config
-from legion.sdk.clients.edi import RemoteEdiClient
+import legion.sdk.clients.edi
 from legion.sdk.definitions import MODEL_ROUTE_URL
 
 LOGGER = logging.getLogger(__name__)
@@ -92,7 +91,7 @@ class ModelRoute(typing.NamedTuple):
         return result
 
 
-class ModelRouteClient(RemoteEdiClient):
+class ModelRouteClient(legion.sdk.clients.edi.RemoteEdiClient):
     """
     EDI client
     """
@@ -152,28 +151,12 @@ class ModelRouteClient(RemoteEdiClient):
         return self.query(MODEL_ROUTE_URL, action='DELETE')['message']
 
 
-def build_client(args: argparse.Namespace = None) -> ModelRouteClient:
+def build_client(args: argparse.Namespace = None, retries=3, timeout=10) -> ModelRouteClient:
     """
-    Build Model Route client from from ENV and from command line arguments
+    Build ModelRouteClient client from from ENV and from command line arguments
 
+    :param timeout: request timeout in seconds
+    :param retries: number of retries
     :param args: (optional) command arguments with .namespace
     """
-    host, token = None, None
-
-    if args:
-        if args.edi:
-            host = args.edi
-
-        if args.token:
-            token = args.token
-
-    if not host or not token:
-        host = host or config.EDI_URL
-        token = token or config.EDI_TOKEN
-
-    if host:
-        client = ModelRouteClient(host, token)
-    else:
-        raise Exception('EDI endpoint is not configured')
-
-    return client
+    return legion.sdk.clients.edi.build_client(args, retries=retries, timeout=timeout, cls=ModelRouteClient)

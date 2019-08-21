@@ -29,7 +29,7 @@ Suite Teardown      Run keywords  Delete model training  ${TEST_MT_NAME}  AND
 Refresh security tokens
     [Documentation]  Refresh edi and model tokens. Return model jwt token
 
-    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
              Should be equal  ${res.rc}  ${0}
     ${res}=  Shell  legionctl generate-token --md ${TEST_MD_NAME} --role ${TEST_MD_NAME}
              Should be equal  ${res.rc}  ${0}
@@ -103,7 +103,7 @@ Missed the host parameter
     [Documentation]  The inspect command must fail if it does not contain an edi host
     [Teardown]  Login to the edi and edge
     [Setup]     Remove File  ${LOCAL_CONFIG}
-    ${res}=  Shell  legionctl --verbose md get --token "${DEX_TOKEN}"
+    ${res}=  Shell  legionctl --verbose md get --token "${AUTH_TOKEN}"
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  EDI endpoint is not configured
 
@@ -128,7 +128,7 @@ Login. Basic usage
     [Documentation]  Check the login command and inspect command
     [Teardown]  Login to the edi and edge
     [Setup]     Remove File  ${LOCAL_CONFIG}
-    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
              Should be equal  ${res.rc}  ${0}
 
     ${res}=  Shell  legionctl --verbose md get
@@ -144,7 +144,7 @@ Login. Override login values
     [Documentation]  Command line parameters must be overrided by config parameters
     [Teardown]  Login to the edi and edge
     [Setup]     Remove File  ${LOCAL_CONFIG}
-    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
              Should be equal  ${res.rc}  ${0}
 
     ${res}=  Shell  legionctl --verbose md get --edi ${EDI_URL} --token wrong-token
@@ -181,7 +181,7 @@ Invoke. Empty jwt
     [Teardown]  Login to the edi and edge
     # Ensure that next command will not use the config file
     Remove File  ${LOCAL_CONFIG}
-    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
 
     ${res}=  Shell  legionctl --verbose model invoke --md ${TEST_MD_NAME} -p a=1 -p b=2 --host ${EDGE_URL}
              Should not be equal  ${res.rc}  ${0}
@@ -192,7 +192,7 @@ Invoke. Empty model service url
     [Documentation]  Fails if model service url is empty
     [Teardown]  Login to the edi and edge
     [Setup]     Remove File  ${LOCAL_CONFIG}
-    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
 
     ${res}=  Shell  legionctl --verbose model invoke --host ${EDGE_URL} --url-prefix /model/${TEST_MD_NAME} -p a=1 -p b=2 --jwt "some_token"
              Should not be equal  ${res.rc}      ${0}
@@ -201,7 +201,7 @@ Invoke. Empty model service url
 
 Invoke. Wrong jwt
     [Documentation]  Fails if jwt is wrong
-    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
 
     ${res}=  Shell  legionctl --verbose model invoke --md ${TEST_MD_NAME} -p a=1 -p b=2 --host ${EDGE_URL} --jwt wrong
              Should not be equal  ${res.rc}  ${0}
@@ -212,7 +212,7 @@ Invoke. Pass parameters explicitly
     ${JWT}=  Refresh security tokens
     # Ensure that next command will not use the config file
     Remove File  ${LOCAL_CONFIG}
-    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${DEX_TOKEN}"
+    StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
 
     ${res}=  Shell  legionctl --verbose model invoke --md ${TEST_MD_NAME} -p a=1 -p b=2 --host ${EDGE_URL} --jwt "${JWT}"
              Should be equal  ${res.rc}  ${0}

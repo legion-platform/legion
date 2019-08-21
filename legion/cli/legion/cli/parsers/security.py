@@ -38,8 +38,12 @@ def add_edi_arguments(parser, required=False):
     """
     parser.add_argument('--edi',
                         type=str, help='EDI server host', required=required)
+    parser.add_argument('--non-interactive',
+                        action='store_true',
+                        help='Disable interactive mode')
     parser.add_argument('--token',
-                        type=str, help='EDI server token', required=required)
+                        type=str, help='EDI server token (JWT).'
+                                       ' If is not provided - oauth2 pipeline will be performed')
 
 
 def _check_credentials(args):
@@ -48,23 +52,30 @@ def _check_credentials(args):
 
     :param args: command arguments with .namespace
     :type args: :py:class:`argparse.Namespace`
-    :return None
+    :return bool -- was it successful or not
     """
-    # url and token must presents in args
-    edi_clint = edi.build_client(args)
+    # url must be present in args
+    # token is optional (for non-interactive login)
+    try:
+        edi_clint = edi.build_client(args)
 
-    edi_clint.info()
+        edi_clint.info()
+    except edi.IncorrectAuthorizationToken as wrong_token:
+        LOG.error('Wrong authorization token\n%s', wrong_token)
+        return False
+
+    return True
 
 
-def _save_credentials(edi_url, token):
+def _save_temporary_token(edi_url, token):
     """
-    Save credentials to the config file.
+    Save temporary token to the config file.
     If file or dir doesn't exist then it will be created.
     While we store only security parameters, func can override existed parameters
 
     :param edi_url: edi url
     :type edi_url: str
-    :param token: dex token
+    :param token: JWT
     :type token: str
     :return None
     """
@@ -79,10 +90,13 @@ def login(args):
     :type args: argparse.Namespace
     :return: None
     """
-    _check_credentials(args)
-    _save_credentials(args.edi, args.token)
+    if _check_credentials(args):
+        if args.token:
+            _save_temporary_token(args.edi, args.token)
 
-    LOG.info('Success! Credentials were saved.')
+            LOG.info('Success! Temporary token has been saved.')
+        else:
+            LOG.info('You has been authorized before.')
 
 
 def generate_token(args):

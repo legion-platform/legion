@@ -23,8 +23,7 @@ import time
 import json
 import requests
 
-from legion.robot.libraries.dex_client import auth_on_dex
-from legion.robot.utils import wait_until
+from legion.robot.libraries.auth_client import get_authorization_headers
 
 
 class Utils:
@@ -33,21 +32,26 @@ class Utils:
     """
 
     @staticmethod
-    def request_with_dex(service_url, cluster_host, login, password):
+    def request_as_authorized_user(service_url):
         """
-        Request resource using dex
+        Request resource as authorized user
 
-        :param service_url: template of url
+        :param service_url: target URL
         :type service_url: str
-        :param cluster_host: base host of a cluster
-        :type cluster_host: str
-        :param login: dex static user
-        :type login: str
-        :param password: password of a dex static user
-        :type password: str
         :return: final response - Response
         """
-        return auth_on_dex(service_url, cluster_host, login, password)
+        return requests.get(service_url, headers=get_authorization_headers())
+
+    @staticmethod
+    def request_as_unauthorized_user(service_url):
+        """
+        Request resource as authorized user
+
+        :param service_url: target URL
+        :type service_url: str
+        :return: final response - Response
+        """
+        return requests.get(service_url)
 
     @staticmethod
     def check_domain_exists(domain):
@@ -157,6 +161,7 @@ class Utils:
 
         return founded[0]
 
+
     @staticmethod
     def check_valid_http_response(url, token=None):
         """
@@ -194,9 +199,9 @@ class Utils:
             raise Exception('Unexpected case happen!')
 
     @staticmethod
-    def execute_post_request(url, data=None, json_data=None, cookies=None):
+    def execute_post_request_as_authorized_user(url, data=None, json_data=None):
         """
-        Execute post request
+        Execute post request as authorized user
 
         :param url: url for request
         :type url: str
@@ -204,11 +209,9 @@ class Utils:
         :type data: dict
         :param json_data: json data to send in request
         :type json_data: dict
-        :param cookies: cookies to send in request
-        :type cookies: dict
         :return:  str -- response text
         """
-        response = requests.post(url, json=json_data, data=data, cookies=cookies)
+        response = requests.post(url, json=json_data, data=data, headers=get_authorization_headers())
 
         return {"text": response.text, "code": response.status_code}
 
@@ -216,7 +219,6 @@ class Utils:
     def get_component_auth_page(url, token=None):
         """
         Get component main auth page
-
         :param url: component url
         :type url: str
         :param token: token for the authorization
@@ -230,62 +232,6 @@ class Utils:
         else:
             response = requests.get(url, timeout=10)
 
-        return {"response_code": response.status_code, "response_text": response.text}
-
-    @staticmethod
-    def ensure_component_auth_page_requires_authorization(url, token=None, iteration_duration=1, iterations=5):
-        """
-        Ensure component main auth page requires authorization
-
-        :param url: component url
-        :type url: str
-        :param token: token for the authorization
-        :type token: str
-        :param iteration_duration: duration between checks in seconds
-        :type iteration_duration: int
-        :param iterations: maximum count of iterations
-        :type iterations: int
-        """
-        def is_page_unavailable():
-            res = Utils.get_component_auth_page(url, token=token)
-            if res['response_code'] == 401 and 'Authorization Required' in res['response_text']:
-                return True
-            return False
-
-        if not wait_until(is_page_unavailable, iteration_duration=iteration_duration, iterations=iterations):
-            raise Exception('Auth page is available')
-
-    @staticmethod
-    def post_credentials_to_auth(component_url, cluster_host, creds):
-        """
-        Get session id and send post request with credentials to authorize
-
-        :param str component_url: legion core component url
-        :param str cluster_host: cluster host name
-        :param dict creds: dict with login and password
-        :return: response_code and response_text after auth try
-        :rtype: dict
-        """
-        from legion.robot.libraries.dex_client import REQUEST_ID_REGEXP, AUTHENTICATION_PATH
-        import re
-
-        session = requests.Session()
-        response = session.get("{}.{}".format(component_url, cluster_host))
-
-        if response.status_code != 200:
-            raise IOError('Authentication endpoint is unavailable, got {} http code'
-                          .format(response.status_code))
-        match = re.search(REQUEST_ID_REGEXP, response.text)
-
-        if match:
-            request_id = match.group(1)
-        else:
-            raise ValueError('Request ID was not found on page')
-
-        if creds["login"] == "admin":
-            response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
-        else:
-            response = session.post(AUTHENTICATION_PATH.format(cluster_host, request_id), creds)
         return {"response_code": response.status_code, "response_text": response.text}
 
     @staticmethod

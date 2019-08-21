@@ -19,7 +19,7 @@ Robot test library - prometheus
 import time
 
 import requests
-from legion.robot.libraries.dex_client import get_session_cookies
+from legion.robot.libraries.auth_client import get_authorization_headers
 from legion.robot.utils import wait_until
 
 
@@ -56,10 +56,13 @@ class Prometheus:
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
+        if get_authorization_headers():
+            headers.update(get_authorization_headers())
+
         query = f'legion_model_metrics{{model_name="{model_name}"}}'
 
         params = {'query': query, 'start': time.time() - 10000, 'end': time.time() + 10000, 'step': 14}
-        response = requests.post(url, params=params, headers=headers, cookies=get_session_cookies())
+        response = requests.post(url, params=params, headers=headers)
         response.raise_for_status()
 
         print(f'Loading {query} metrics. Data: {response.text}')

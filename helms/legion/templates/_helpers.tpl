@@ -62,6 +62,14 @@ Arguments:
 {{- if eq .Values.security.integration "oauth2_proxy" -}}
 nginx.ingress.kubernetes.io/configuration-snippet: |
     set_escape_uri $escaped_request_uri $request_uri;
+    auth_request_set $user   $upstream_http_x_auth_request_user;
+    auth_request_set $email  $upstream_http_x_auth_request_email;
+    auth_request_set $jwt    $upstream_http_x_auth_request_access_token;
+
+    proxy_set_header X-User            $user;
+    proxy_set_header X-Email           $email;
+    proxy_set_header X-JWT             $jwt;
+    proxy_set_header Authorization     "Bearer $jwt";
 {{- if hasKey .Values.security.oauth2_proxy "public_url" }}
 nginx.ingress.kubernetes.io/auth-signin: {{ .Values.security.oauth2_proxy.public_url }}
 {{- else }}

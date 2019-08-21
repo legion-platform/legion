@@ -19,10 +19,11 @@ Variables loader from json Cluster Profile
 
 import os
 import json
-from legion.robot.libraries import dex_client
-from legion.robot.libraries.dex_client import init_session_id
+
+from legion.robot.libraries import auth_client
 
 CLUSTER_PROFILE = 'CLUSTER_PROFILE'
+
 
 def get_variables(profile=None):
     """
@@ -69,9 +70,17 @@ def get_variables(profile=None):
             raise Exception("Can\'t get variable from cluster profile: {}".format(err))
 
         try:
-            init_session_id(variables['STATIC_USER_EMAIL'], variables['STATIC_USER_PASS'], host_base_domain)
-            variables['DEX_TOKEN'] = dex_client.get_token()
-            variables['DEX_COOKIES'] = dex_client.get_session_cookies()
+            if data.get('test_user_email') and data.get('test_user_password'):
+                variables['AUTH_TOKEN'] = auth_client.init_token(
+                    data['test_user_email'],
+                    data['test_user_password'],
+                    data['test_oauth_auth_url'],
+                    data['test_oauth_client_id'],
+                    data['test_oauth_client_secret'],
+                    data['test_oauth_scope']
+                )
+            else:
+                variables['AUTH_TOKEN'] = ''
         except Exception as err:
             raise Exception("Can\'t get dex authentication data: {}".format(err))
 

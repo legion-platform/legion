@@ -65,7 +65,7 @@ Get token from EDI with valid parameters
     [Setup]   NONE
     [Tags]  edi_token
     &{data} =    Create Dictionary    role_name=${TEST_ROLE_NAME}
-    &{resp} =    Execute post request    ${EDI_URL}/api/v1/model/token    json_data=${data}  cookies=${DEX_COOKIES}
+    &{resp} =    Execute post request as authorized user    ${EDI_URL}/api/v1/model/token    json_data=${data}
     Log          ${resp}
     Should not be empty   ${resp}
     Should be equal    ${resp["code"]}    ${201}
@@ -82,7 +82,7 @@ Get token from EDI with expiration date set
     Log           ${expiration_date}
     &{data} =     Create Dictionary    role_name=${TEST_ROLE_NAME}    expiration_date=${expiration_date}
     Log           ${data}
-    &{resp} =     Execute post request    ${EDI_URL}/api/v1/model/token    json_data=${data}  cookies=${DEX_COOKIES}
+    &{resp} =     Execute post request as authorized user    ${EDI_URL}/api/v1/model/token    json_data=${data}
     Log           ${resp}
     Should not be empty    ${resp}
     Should be equal    ${resp["code"]}    ${201}
@@ -99,7 +99,7 @@ Get token from EDI with too long expiration date set
     Log           ${expiration_date_str}
     &{data} =     Create Dictionary    role_name=${TEST_ROLE_NAME}    expiration_date=${expiration_date_str}
     Log           ${data}
-    &{resp} =     Execute post request    ${EDI_URL}/api/v1/model/token    json_data=${data}  cookies=${DEX_COOKIES}
+    &{resp} =     Execute post request as authorized user    ${EDI_URL}/api/v1/model/token    json_data=${data}
     Log           ${resp}
     Should not be empty    ${resp}
     Should be equal    ${resp["code"]}    ${201}
@@ -112,7 +112,7 @@ Get token from EDI without role_name parameter
     [Setup]   NONE
     [Tags]  edi_token
     &{data} =    Create Dictionary
-    &{resp} =    Execute post request    ${EDI_URL}/api/v1/model/token    json_data=${data}  cookies=${DEX_COOKIES}
+    &{resp} =    Execute post request as authorized user    ${EDI_URL}/api/v1/model/token    json_data=${data}
     Log          ${resp}
     Should not be empty   ${resp}
     Should be equal as integers    ${resp["code"]}    ${201}
