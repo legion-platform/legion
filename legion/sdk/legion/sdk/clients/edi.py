@@ -201,6 +201,9 @@ class RemoteEdiClient:
         # Add token if it is provided
         if self._token:
             headers['Authorization'] = f'Bearer {self._token}'
+            credentials_error_status = 'Credentials are not correct'
+        else:
+            credentials_error_status = 'Credentials are missed'
 
         left_retries = self._retries if self._retries > 0 else 1
 
@@ -244,8 +247,8 @@ class RemoteEdiClient:
             # If it is a error after refreshed token - fail
             if limit_stack:
                 raise IncorrectAuthorizationToken(
-                    'Credentials are not correct even after refreshing. \n'
-                    'Please login again'
+                    f'{credentials_error_status} even after refreshing. \n'
+                    'Please try to log in again'
                 ) from raised_exception
 
             LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
@@ -272,14 +275,14 @@ class RemoteEdiClient:
             else:
                 if self._non_interactive:
                     raise IncorrectAuthorizationToken(
-                        'Credentials are not correct. \n'
+                        f'{credentials_error_status}. \n'
                         'Please provide correct temporary token or disable non interactive mode'
                     ) from raised_exception
                 else:
                     # Start interactive flow
                     self._interactive_login_finished.clear()
                     target_url = get_authorization_redirect(response.url, self.after_login)
-                    LOGGER.error('Credentials are not correct. \nPlease open %s', target_url)
+                    LOGGER.error('%s. \nPlease open %s', credentials_error_status, target_url)
 
                     self._interactive_login_finished.wait()
                     return self._request(
