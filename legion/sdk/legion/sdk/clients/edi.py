@@ -130,7 +130,7 @@ class RemoteEdiClient:
         if legion.sdk.config.LEGIONCTL_NONINTERACTIVE:
             self._non_interactive = True
 
-    def _update_config_with_new_oauth_config(self, login_result: OAuthLoginResult):
+    def _update_config_with_new_oauth_config(self, login_result: OAuthLoginResult) -> None:
         """
         Update config with new oauth credentials
 
@@ -145,7 +145,7 @@ class RemoteEdiClient:
                            EDI_ACCESS_TOKEN=login_result.access_token,
                            EDI_ISSUING_URL=login_result.issuing_url)
 
-    def after_login(self, login_result: OAuthLoginResult):
+    def after_login(self, login_result: OAuthLoginResult) -> None:
         """
         Handle action after login
 

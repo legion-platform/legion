@@ -30,27 +30,10 @@ from legion.sdk.clients.vcs import VcsClient, VCSCredential
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception
 
 LEGION_CLOUD_CREDENTIALS_EDI = 'X-Legion-Cloud-Endpoint'
 LEGION_CLOUD_CREDENTIALS_TOKEN = 'X-Legion-Cloud-Token'
-
-
-def _decorate_handler_for_exception(function):
-    """
-    Wrap API handler to properly handle EDI client exceptions
-
-    :param function: function to wrap
-    :return: wrapped function
-    """
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        try:
-            return function(*args, **kwargs)
-        except IncorrectAuthorizationToken as base_exception:
-            raise HTTPError(log_message=str(base_exception), status_code=403) from base_exception
-        except EDIConnectionException as base_exception:
-            raise HTTPError(log_message=str(base_exception)) from base_exception
-    return wrapper
 
 
 # pylint: disable=W0223
@@ -150,7 +133,7 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
     Control cloud trainings
     """
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def delete(self):
         """
         Remove cloud training
@@ -172,7 +155,7 @@ class CloudTrainingLogsHandler(BaseCloudLegionHandler):
     Control cloud training logs
     """
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def get(self, training_name):
         """
         Get training logs
@@ -195,7 +178,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
     Control cloud deployments
     """
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def post(self):
         """
         Create new cloud deployment
@@ -211,7 +194,7 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
         except Exception as query_exception:
             raise HTTPError(log_message='Can not create new cloud deployment') from query_exception
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def delete(self):
         """
         Remove local deployment
@@ -234,7 +217,7 @@ class CloudTokenIssueHandler(BaseCloudLegionHandler):
     Control issuing new tokens
     """
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def post(self):
         """
         Issue new token for model API
@@ -267,7 +250,7 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
         """
         return [f'{type(resource.resource).__name__} {resource.resource_name}' for resource in resources]
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def post(self):
         """
         Apply entities from JSON/YAML file
@@ -302,7 +285,7 @@ class CloudAllEntitiesHandler(BaseCloudLegionHandler):
     Return all information for cloud mode
     """
 
-    @_decorate_handler_for_exception
+    @decorate_handler_for_exception
     def get(self):
         """
         Get all information related to cloud state

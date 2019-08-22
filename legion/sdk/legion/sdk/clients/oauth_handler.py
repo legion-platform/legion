@@ -47,7 +47,7 @@ class OAuthLoginResult(typing.NamedTuple):
     user_name: str
 
 
-def find_free_port(bind_addr='0.0.0.0'):
+def find_free_port(bind_addr: str = '0.0.0.0') -> int:
     """
     Find next available port on local machine
 
@@ -64,7 +64,7 @@ def find_free_port(bind_addr='0.0.0.0'):
         return port
 
 
-def _try_to_extract_issuing_url_from_well_known_metadata(well_known_address):
+def _try_to_extract_issuing_url_from_well_known_metadata(well_known_address: str) -> typing.Optional[str]:
     """
     Try to extract token issuing url from well-known location
 
@@ -91,7 +91,7 @@ def _try_to_extract_issuing_url_from_well_known_metadata(well_known_address):
     return token_endpoint
 
 
-def get_oauth_token_issuer_url(redirect_url):
+def get_oauth_token_issuer_url(redirect_url: str) -> typing.Optional[str]:
     """
     Get OAuth2 token issuing URL
 
@@ -117,7 +117,7 @@ def get_oauth_token_issuer_url(redirect_url):
     return None
 
 
-def _ask_token_endpoint(url, payload):
+def _ask_token_endpoint(url: str, payload: typing.Any) -> typing.Optional[OAuthLoginResult]:
     """
     Query token endpoint to refresh / issue new token
 
@@ -158,7 +158,7 @@ def _ask_token_endpoint(url, payload):
     return result
 
 
-def do_refresh_token(refresh_token, issue_token_url):
+def do_refresh_token(refresh_token: str, issue_token_url: str) -> typing.Optional[OAuthLoginResult]:
     """
     Refresh token using previously saved refresh_token
 
@@ -176,7 +176,7 @@ def do_refresh_token(refresh_token, issue_token_url):
     return _ask_token_endpoint(issue_token_url, payload)
 
 
-def get_id_token(code, issue_token_url, redirect_uri):
+def get_id_token(code: str, issue_token_url: str, redirect_uri: str) -> typing.Optional[OAuthLoginResult]:
     """
     Get ID token and validate received data
 
@@ -218,7 +218,7 @@ class OAuth2Handler(BaseHTTPRequestHandler):
         self.redirect_url = redirect_url
         BaseHTTPRequestHandler.__init__(self, *args)
 
-    def raise_error(self, message):
+    def raise_error(self, message: str):
         """
         Raise error if it is a problem
 
@@ -274,7 +274,8 @@ class OAuth2Handler(BaseHTTPRequestHandler):
             self.end_headers()
 
 
-def handler_builder(on_token_received, state, target_url, redirect_url):
+def handler_builder(on_token_received: typing.Callable[[OAuthLoginResult], None],
+                    state: str, target_url: str, redirect_url: str) -> typing.Callable:
     """
     Create handler builder for OAuth2 callback built-in server
 
@@ -284,7 +285,7 @@ def handler_builder(on_token_received, state, target_url, redirect_url):
     :param redirect_url:  redirect URL to continue authorization
     :return: callable - handler builder function
     """
-    def init(*args, **kwargs):
+    def init(*args, **kwargs) -> object:
         """
         Builder (builds OAuth2Handler instance)
 
@@ -301,7 +302,8 @@ def handler_builder(on_token_received, state, target_url, redirect_url):
     return init
 
 
-def start_oauth2_callback_handler(on_token_received, state, target_url):
+def start_oauth2_callback_handler(on_token_received: typing.Callable[[OAuthLoginResult], None],
+                                  state: str, target_url: str) -> str:
     """
     Start OAuth2 callback handler
 
