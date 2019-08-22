@@ -22,6 +22,9 @@ from tornado.web import HTTPError
 
 from legion.sdk.clients.edi import EDIConnectionException, IncorrectAuthorizationToken
 
+LEGION_X_JWT_TOKEN = 'X-Jwt'
+DEFAULT_EDI_ENDPOINT = 'DEFAULT_EDI_ENDPOINT'
+
 
 def decorate_handler_for_exception(function):
     """

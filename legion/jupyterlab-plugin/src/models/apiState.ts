@@ -40,7 +40,9 @@ export interface IApiCloudState {
   ): void;
 
   configuration: configurationModels.IConfigurationMainResponse;
-  onConfigurationLoaded(config: configurationModels.IConfigurationMainResponse): void;
+  onConfigurationLoaded(
+    config: configurationModels.IConfigurationMainResponse
+  ): void;
 }
 
 class APICloudStateImplementation implements IApiCloudState {
@@ -153,16 +155,18 @@ class APICloudStateImplementation implements IApiCloudState {
     return this._configuration;
   }
 
-  onConfigurationLoaded(config: configurationModels.IConfigurationMainResponse): void {
+  onConfigurationLoaded(
+    config: configurationModels.IConfigurationMainResponse
+  ): void {
     this._configuration = config;
 
-    if (!config.tokenProvided){
+    if (!config.tokenProvided) {
       this.tryToLoadCredentialsFromSettings();
     }
   }
 
   get authorizationRequired(): boolean {
-    return !this._configuration.tokenProvided && this._credentials == null;
+    return (this._configuration == null || !this._configuration.tokenProvided) && this._credentials == null;
   }
 }
 

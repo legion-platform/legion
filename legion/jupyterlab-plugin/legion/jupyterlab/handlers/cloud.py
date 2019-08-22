@@ -18,6 +18,7 @@ Declaration of cloud handlers
 """
 import functools
 import typing
+import os
 
 from tornado.web import HTTPError
 
@@ -30,7 +31,7 @@ from legion.sdk.clients.vcs import VcsClient, VCSCredential
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
-from legion.jupyterlab.handlers.helper import decorate_handler_for_exception
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT, LEGION_X_JWT_TOKEN
 
 LEGION_CLOUD_CREDENTIALS_EDI = 'X-Legion-Cloud-Endpoint'
 LEGION_CLOUD_CREDENTIALS_TOKEN = 'X-Legion-Cloud-Token'
@@ -83,8 +84,16 @@ class BaseCloudLegionHandler(BaseLegionHandler):
         :type target_client_class: type
         :return: [target_client_class] -- instance of target_client_class class
         """
+        default_edi_url = os.getenv(DEFAULT_EDI_ENDPOINT, '')
+        jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
+
         edi_url = self.request.headers.get(LEGION_CLOUD_CREDENTIALS_EDI, '')
+        if not edi_url:
+            edi_url = default_edi_url
+        
         edi_token = self.request.headers.get(LEGION_CLOUD_CREDENTIALS_TOKEN, '')
+        if jwt_header:
+            edi_token = jwt_header
 
         if not edi_url:
             raise HTTPError(log_message='Credentials are corrupted')

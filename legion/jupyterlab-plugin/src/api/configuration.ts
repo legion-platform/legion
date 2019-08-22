@@ -15,11 +15,7 @@
  */
 import { ServerConnection } from '@jupyterlab/services';
 
-import {
-  httpRequest,
-  IApiGroup,
-  legionApiRootURL
-} from './base';
+import { httpRequest, IApiGroup, legionApiRootURL } from './base';
 import * as models from '../models/configuration';
 
 export namespace URLs {

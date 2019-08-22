@@ -16,4 +16,5 @@
 
 export interface IConfigurationMainResponse {
   tokenProvided: boolean;
+  defaultEDIEndpoint: string;
 }

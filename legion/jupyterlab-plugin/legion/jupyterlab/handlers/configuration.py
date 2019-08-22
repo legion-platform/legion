@@ -16,10 +16,11 @@
 """
 Configuration handler
 """
-from legion.jupyterlab.handlers.base import BaseLegionHandler
-from legion.jupyterlab.handlers.helper import decorate_handler_for_exception
+import os
 
-LEGION_X_JWT_TOKEN = 'X-Jwt'
+from legion.jupyterlab.handlers.base import BaseLegionHandler
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, LEGION_X_JWT_TOKEN, DEFAULT_EDI_ENDPOINT
+
 
 
 # pylint: disable=W0223
@@ -37,5 +38,6 @@ class ConfigurationProviderHandler(BaseLegionHandler):
         """
         jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
         self.finish_with_json({
-            'tokenProvided': jwt_header != ''
+            'tokenProvided': jwt_header != '',
+            'defaultEDIEndpoint': os.getenv(DEFAULT_EDI_ENDPOINT, '')
         })
