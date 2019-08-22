@@ -20,6 +20,8 @@ cover/
 
 legion-activate.sh
 legion/legion/data/Pipfile.lock
+docs/out/
+.doctrees/
 
 test.model
 .noseids
@@ -101,6 +103,7 @@ instance/
 
 # Sphinx documentation
 docs/build/
+docs/source/_build
 
 # PyBuilder
 target/
