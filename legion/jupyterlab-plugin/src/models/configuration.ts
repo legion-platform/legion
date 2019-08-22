@@ -13,28 +13,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-import { CloudApi, ICloudApi } from './cloud';
-import { ConfigurationApi, IConfigurationApi } from './configuration';
 
-export interface ILegionApi {
-  cloud: ICloudApi;
-  configuration: IConfigurationApi;
-}
-
-export class LegionApi implements ILegionApi {
-  cloudApi: ICloudApi;
-  configurationApi: IConfigurationApi;
-
-  constructor() {
-    this.cloudApi = new CloudApi();
-    this.configurationApi = new ConfigurationApi();
-  }
-
-  get cloud(): ICloudApi {
-    return this.cloudApi;
-  }
-
-  get configuration(): IConfigurationApi {
-    return this.configurationApi;
-  }
+export interface IConfigurationMainResponse {
+  tokenProvided: boolean;
 }

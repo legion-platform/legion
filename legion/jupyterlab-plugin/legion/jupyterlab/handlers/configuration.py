@@ -37,5 +37,5 @@ class ConfigurationProviderHandler(BaseLegionHandler):
         """
         jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
         self.finish_with_json({
-            'token_provided': jwt_header != ''
+            'tokenProvided': jwt_header != ''
         })

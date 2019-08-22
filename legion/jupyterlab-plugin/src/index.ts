@@ -137,7 +137,11 @@ export class LegionCloudExtension extends BaseLegionExtension
     app.shell.addToLeftArea(this.sideWidget, { rank: 210 });
 
     app.restored.then(() => {
-      this.apiCloudState.tryToLoadCredentialsFromSettings();
+      this.api.configuration.getCloudTrainings().then(config => {
+        this.apiCloudState.onConfigurationLoaded(config);
+      }).catch(err => {
+        console.error('Error during configuration fetching', err);
+      });      
     });
   }
 

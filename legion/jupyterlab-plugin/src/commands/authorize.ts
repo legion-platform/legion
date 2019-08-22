@@ -29,7 +29,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
     caption: 'Reset currently used cluster context',
     execute: () => {
       try {
-        if (!options.state.credentials) {
+        if (options.state.authorizationRequired) {
           showErrorMessage(
             'Can not reset cluster authorization',
             'You are not authorized on any cluster'
@@ -54,7 +54,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
     caption: 'Authorize on Legion cluster',
     execute: () => {
       try {
-        if (!!options.state.credentials) {
+        if (!options.state.authorizationRequired) {
           showErrorMessage(
             'Can not authorize on a cluster',
             'You are already authorized'
