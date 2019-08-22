@@ -166,7 +166,10 @@ class APICloudStateImplementation implements IApiCloudState {
   }
 
   get authorizationRequired(): boolean {
-    return (this._configuration == null || !this._configuration.tokenProvided) && this._credentials == null;
+    return (
+      (this._configuration == null || !this._configuration.tokenProvided) &&
+      this._credentials == null
+    );
   }
 }
 
