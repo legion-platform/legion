@@ -205,12 +205,12 @@ class OAuth2Handler(BaseHTTPRequestHandler):
         """
         Initialize loopback server
 
-        :param args:
-        :param on_token_received:
-        :param state:
-        :param target_url:
-        :param redirect_url:
-        :param kwargs:
+        :param args: system args
+        :param on_token_received: callback that should be called on final auth. stage (when all tokens are received)
+        :param state: randomly generated token for OAuth2 pipeline
+        :param target_url: captured redirect to IP's URL
+        :param redirect_url:  redirect URL to continue authorization
+        :param kwargs: system args
         """
         self.on_token_received = on_token_received
         self.state = state
@@ -275,6 +275,15 @@ class OAuth2Handler(BaseHTTPRequestHandler):
 
 
 def handler_builder(on_token_received, state, target_url, redirect_url):
+    """
+    Create handler builder for OAuth2 callback built-in server
+
+    :param on_token_received: callback that should be called on final auth. stage (when all tokens are received)
+    :param state: randomly generated token for OAuth2 pipeline
+    :param target_url: captured redirect to IP's URL
+    :param redirect_url:  redirect URL to continue authorization
+    :return: callable - handler builder function
+    """
     def init(*args, **kwargs):
         OAuth2Handler(*args,
                       on_token_received=on_token_received,
@@ -286,6 +295,14 @@ def handler_builder(on_token_received, state, target_url, redirect_url):
 
 
 def start_oauth2_callback_handler(on_token_received, state, target_url):
+    """
+    Start OAuth2 callback handler
+
+    :param on_token_received: callback that should be called on final auth. stage (when all tokens are received)
+    :param state: randomly generated token for OAuth2 pipeline
+    :param target_url: captured redirect to IP's URL
+    :return: str -- redirect URL to continue authorization
+    """
     host = config.LEGIONCTL_OAUTH_LOOPBACK_HOST
     port = find_free_port(host)
     redirect_url = f'http://{config.LEGIONCTL_OAUTH_LOOPBACK_HOST}:{port}{config.LEGIONCTL_OAUTH_LOOPBACK_URL}'
