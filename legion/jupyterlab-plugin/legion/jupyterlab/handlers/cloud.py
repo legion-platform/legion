@@ -16,13 +16,12 @@
 """
 Declaration of cloud handlers
 """
-import functools
 import typing
 import os
 
 from tornado.web import HTTPError
 
-from legion.sdk.clients.edi import EDIConnectionException, IncorrectAuthorizationToken, RemoteEdiClient
+from legion.sdk.clients.edi import EDIConnectionException, RemoteEdiClient
 from legion.sdk.clients.edi_aggregated import parse_resources_file, apply, LegionCloudResourceUpdatePair
 from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
     TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE
@@ -90,7 +89,7 @@ class BaseCloudLegionHandler(BaseLegionHandler):
         edi_url = self.request.headers.get(LEGION_CLOUD_CREDENTIALS_EDI, '')
         if not edi_url:
             edi_url = default_edi_url
-        
+
         edi_token = self.request.headers.get(LEGION_CLOUD_CREDENTIALS_TOKEN, '')
         if jwt_header:
             edi_token = jwt_header
