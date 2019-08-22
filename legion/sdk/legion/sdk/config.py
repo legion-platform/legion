@@ -139,7 +139,7 @@ def update_config_file(section=_DEFAULT_INI_SECTION, **new_values):
     :param section: (Optional) name of section to update
     :type section: str
     :param new_values: new values
-    :type new_values: dict[str, str]
+    :type new_values: dict[str, typing.Optional[str]]
     :return: None
     """
     global _INI_FILE_TRIED_TO_BE_LOADED
@@ -157,7 +157,11 @@ def update_config_file(section=_DEFAULT_INI_SECTION, **new_values):
         content.add_section(section)
 
     for key, value in new_values.items():
-        content.set(section, key, value)
+        if value:
+            content.set(section, key, value)
+        else:
+            if section in content and key in content[section]:
+                del content[section][key]
 
     with config_path.open('w') as config_file:
         content.write(config_file)

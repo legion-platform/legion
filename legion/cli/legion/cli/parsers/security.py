@@ -99,6 +99,22 @@ def login(args):
             LOG.info('You has been authorized before.')
 
 
+def logout(_):
+    """
+    Remove current credentials
+
+    :param _: command arguments
+    :type _: argparse.Namespace
+    :return: None
+    """
+    update_config_file(EDI_URL=None,
+                       EDI_TOKEN=None,
+                       EDI_REFRESH_TOKEN=None,
+                       EDI_ACCESS_TOKEN=None,
+                       EDI_ISSUING_URL=None)
+    LOG.info('All authorization credentials have been removed')
+
+
 def generate_token(args):
     """
     Generate JWT for specified model
@@ -126,9 +142,12 @@ def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:
 
     :param main_subparser: parent cli parser
     """
-    login_parser = main_subparser.add_parser('login', description='Save edi credentials to the config')
+    login_parser = main_subparser.add_parser('login', description='Authorize on EDI endpoint')
     add_edi_arguments(login_parser, required=True)
     login_parser.set_defaults(func=login)
+
+    logout_parser = main_subparser.add_parser('logout', description='Remove all authorization data')
+    logout_parser.set_defaults(func=logout)
 
     generate_token_parser = main_subparser.add_parser('generate-token', description='generate JWT token for model')
     generate_token_parser.add_argument('--model-deployment-name', '--md-name', '--md', type=str, help='Model Name',
