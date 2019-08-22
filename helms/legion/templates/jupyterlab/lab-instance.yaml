@@ -27,7 +27,7 @@ spec:
         - name: JUPYTER_DISABLE_TOKEN
           value: "yes"
         - name: DEFAULT_EDI_ENDPOINT
-          value: "http://{{ .Release.Name }}-edi:5000"
+          value: "http://{{ .Release.Name }}-edi:{{ .Values.edi.port }}"
         ports:
         - containerPort: {{ .Values.jupyterlab.port }}
           name: input
