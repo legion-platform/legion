@@ -14,7 +14,7 @@
 #    limitations under the License.
 #
 """
-oauth2 handler
+OAuth2 handler
 """
 import base64
 import socket
@@ -285,6 +285,13 @@ def handler_builder(on_token_received, state, target_url, redirect_url):
     :return: callable - handler builder function
     """
     def init(*args, **kwargs):
+        """
+        Builder (builds OAuth2Handler instance)
+
+        :param args: system args
+        :param kwargs: system args
+        :return: object -- handler
+        """
         OAuth2Handler(*args,
                       on_token_received=on_token_received,
                       state=state,
