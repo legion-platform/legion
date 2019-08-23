@@ -60,7 +60,6 @@ Arguments:
 {{- define "legion.ingress-auth-annotations" -}}
 {{- if .Values.security.enabled }}
 {{- if eq .Values.security.integration "oauth2_proxy" -}}
-nginx.ingress.kubernetes.io/auth-response-headers: Authorization
 nginx.ingress.kubernetes.io/configuration-snippet: |
     # This is used for redirection user to oauth2 address
     set_escape_uri $escaped_request_uri $request_uri;
