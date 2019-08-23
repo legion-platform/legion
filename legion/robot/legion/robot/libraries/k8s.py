@@ -67,9 +67,14 @@ class K8s:
         try:
             kubernetes.config.load_incluster_config()
         except kubernetes.config.config_exception.ConfigException:
-            contexts, current_context = kubernetes.config.list_kube_config_contexts()
-            print('Current Kubernetes context: %r' % current_context)
-            print('Available contexts: %s' % ','.join([repr(context) for context in contexts]))
+            # Try to analyze for verbose
+            try:
+                contexts, current_context = kubernetes.config.list_kube_config_contexts()
+                print('Current Kubernetes context: %r' % current_context)
+                print('Available contexts: %s' % ','.join([repr(context) for context in contexts]))
+            except Exception as context_analyze_exception:
+                print('Failed to analyze available Kubernetes contexts - %s' % str(context_analyze_exception))
+            # Try to pick-up
             kubernetes.config.load_kube_config(context=self._context)
             print('Context %r has been chosen' % self._context)
 

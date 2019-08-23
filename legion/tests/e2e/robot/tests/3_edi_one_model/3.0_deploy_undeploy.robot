@@ -15,7 +15,7 @@ Library             legion.robot.libraries.k8s.K8s  ${LEGION_NAMESPACE}
 Library             legion.robot.libraries.utils.Utils
 Library             Collections
 Library             legion.robot.libraries.edi.EDI  ${EDI_URL}  ${AUTH_TOKEN}
-Suite Setup         Run Keywords  Choose cluster context  ${CLUSTER_NAME}  AND
+Suite Setup         Run Keywords  Choose cluster context  ${CLUSTER_CONTEXT}  AND
 ...                               Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                               Login to the edi and edge  AND
 ...                               Build model  ${TEST_MT_NAME}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  AND
