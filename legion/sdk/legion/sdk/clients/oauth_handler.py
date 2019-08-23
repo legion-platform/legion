@@ -218,7 +218,23 @@ class OAuth2Handler(BaseHTTPRequestHandler):
         self.redirect_url = redirect_url
         BaseHTTPRequestHandler.__init__(self, *args)
 
-    def raise_error(self, message: str):
+    def log_message(self, fmt: str, *args: typing.Tuple[typing.Any, ...]) -> None:
+        """
+        Log an arbitrary message.
+
+        The first argument, FMT, is a format string for the
+        message to be logged.  If the format string contains
+        any % escapes requiring parameters, they should be
+        specified as subsequent arguments (it's just like
+        printf!).
+
+        :param fmt: format
+        :param args: arguments for format
+        :return: None
+        """
+        LOGGER.debug('%s - %s', self.address_string(), fmt % args)
+
+    def raise_error(self, message: str) -> None:
         """
         Raise error if it is a problem
 
@@ -231,7 +247,7 @@ class OAuth2Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(message.encode('utf-8'))
 
-    def do_GET(self):
+    def do_GET(self) -> None:
         """
         Handle GET action
 

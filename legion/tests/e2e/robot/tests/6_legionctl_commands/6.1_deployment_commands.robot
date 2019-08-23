@@ -122,7 +122,7 @@ Without token
     ${res}=  Shell  legionctl --verbose md get --edi ${EDI_URL}
 
              Should not be equal  ${res.rc}  ${0}
-             Should contain       ${res.stderr}  Credentials are not correct
+             Should contain       ${res.stderr}  Credentials are missed
 
 Login. Basic usage
     [Documentation]  Check the login command and inspect command

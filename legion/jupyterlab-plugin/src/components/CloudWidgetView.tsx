@@ -109,7 +109,11 @@ export class CloudWidgetView extends React.Component<
           isRefreshing={this.state.isLoading}
         />
         <ClusterInfoView
-          clusterName={this.props.dataState.credentials.cluster}
+          clusterName={
+            this.props.dataState.credentials
+              ? this.props.dataState.credentials.cluster
+              : 'Internal Cluster'
+          }
         />
         <ListingView
           title={'Cloud trainings'}

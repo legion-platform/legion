@@ -36,7 +36,11 @@ export function addCommands(options: IAddCloudCommandsOptions) {
           );
         } else {
           dialogs
-            .showLogoutDialog(options.state.credentials.cluster)
+            .showLogoutDialog(
+              options.state.credentials
+                ? options.state.credentials.cluster
+                : 'Internal cluster'
+            )
             .then(({ button }) => {
               if (button.accept) {
                 options.state.setCredentials();
