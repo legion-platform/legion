@@ -218,7 +218,7 @@ class OAuth2Handler(BaseHTTPRequestHandler):
         self.redirect_url = redirect_url
         BaseHTTPRequestHandler.__init__(self, *args)
 
-    def log_message(self, format: str, *args: typing.Tuple[typing.Any, ...]) -> None:
+    def log_message(self, format: str, *args: typing.Tuple[typing.Any, ...]) -> None:  # pylint: disable=W0622
         """
         Log an arbitrary message.
 
