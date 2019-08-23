@@ -69,7 +69,7 @@ class K8s:
         except kubernetes.config.config_exception.ConfigException:
             contexts, current_context = kubernetes.config.list_kube_config_contexts()
             print('Current Kubernetes context: %r' % current_context)
-            print('Available contexts: %s' % ','.join(contexts))
+            print('Available contexts: %s' % ','.join([repr(context) for context in contexts]))
             kubernetes.config.load_kube_config(context=self._context)
             print('Context %r has been chosen' % self._context)
 
