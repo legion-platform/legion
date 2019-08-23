@@ -218,21 +218,21 @@ class OAuth2Handler(BaseHTTPRequestHandler):
         self.redirect_url = redirect_url
         BaseHTTPRequestHandler.__init__(self, *args)
 
-    def log_message(self, fmt: str, *args: typing.Tuple[typing.Any, ...]) -> None:
+    def log_message(self, format: str, *args: typing.Tuple[typing.Any, ...]) -> None:
         """
         Log an arbitrary message.
 
-        The first argument, FMT, is a format string for the
+        The first argument, FORMAT, is a format string for the
         message to be logged.  If the format string contains
         any % escapes requiring parameters, they should be
         specified as subsequent arguments (it's just like
         printf!).
 
-        :param fmt: format
+        :param format: format
         :param args: arguments for format
         :return: None
         """
-        LOGGER.debug('%s - %s', self.address_string(), fmt % args)
+        LOGGER.debug('%s - %s', self.address_string(), format % args)
 
     def raise_error(self, message: str) -> None:
         """
