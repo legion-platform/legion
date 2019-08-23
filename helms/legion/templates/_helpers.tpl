@@ -61,7 +61,7 @@ Arguments:
 {{- if .Values.security.enabled }}
 {{- if eq .Values.security.integration "oauth2_proxy" -}}
 nginx.ingress.kubernetes.io/configuration-snippet: |
-    # This is used for redirectioning user to oauth2 address
+    # This is used for redirection user to oauth2 address
     set_escape_uri $escaped_request_uri $request_uri;
 
     # These collect headers from oauth2
@@ -72,7 +72,7 @@ nginx.ingress.kubernetes.io/configuration-snippet: |
     # This is a fix for really big sized Cookies (that we have with JWTs inside).
     auth_request_set ${{ .Values.security.oauth2_proxy.cookieName }}_1 $upstream_cookie_{{ .Values.security.oauth2_proxy.cookieName }}_1;
 
-    # These are a heades for upstreams to get information about current user
+    # These are a headers for upstreams to get information about current user
     proxy_set_header X-User            $user;
     proxy_set_header X-Email           $email;
     proxy_set_header X-JWT             $jwt;
