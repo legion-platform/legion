@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	authCookieName = "_oauth2_proxy"
+	authHeaderName = "X-Jwt"
 )
 
 var (
@@ -38,11 +38,8 @@ func SetUpIndexPage(server *gin.Engine) {
 	server.LoadHTMLGlob(fmt.Sprintf("%s/*", viper.GetString(legion.TemplateFolder)))
 
 	server.GET("/", func(c *gin.Context) {
-		token, err := c.Cookie(authCookieName)
-		if err != nil {
-			token = ""
-		}
-
+		token := c.GetHeader(authHeaderName)
+		
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"token": token,
 		})

@@ -17,6 +17,7 @@ import { ISignal, Signal } from '@phosphor/signaling';
 
 import { ICloudCredentials } from '../api/base';
 import * as cloud from './cloud';
+import * as configurationModels from './configuration';
 
 export const PLUGIN_CREDENTIALS_STORE_CLUSTER = `legion.cluster:credentials-cluster`;
 export const PLUGIN_CREDENTIALS_STORE_TOKEN = `legion.cluster:credentials-token`;
@@ -31,12 +32,17 @@ export interface IApiCloudState {
   onDataChanged: ISignal<this, void>;
   updateAllState(data?: cloud.ICloudAllEntitiesResponse): void;
 
+  authorizationRequired: boolean;
   credentials: ICloudCredentials;
   setCredentials(
     credentials?: ICloudCredentials,
     skipPersisting?: boolean
   ): void;
-  tryToLoadCredentialsFromSettings(): void;
+
+  configuration: configurationModels.IConfigurationMainResponse;
+  onConfigurationLoaded(
+    config: configurationModels.IConfigurationMainResponse
+  ): void;
 }
 
 class APICloudStateImplementation implements IApiCloudState {
@@ -48,6 +54,7 @@ class APICloudStateImplementation implements IApiCloudState {
   private _dataChanged = new Signal<this, void>(this);
 
   private _credentials?: ICloudCredentials;
+  private _configuration?: configurationModels.IConfigurationMainResponse;
 
   constructor() {
     this._isLoading = false;
@@ -55,6 +62,7 @@ class APICloudStateImplementation implements IApiCloudState {
     this._deployments = [];
     this._vcss = [];
     this._credentials = null;
+    this._configuration = null;
   }
 
   get trainings(): Array<cloud.ICloudTrainingResponse> {
@@ -141,6 +149,27 @@ class APICloudStateImplementation implements IApiCloudState {
     } else {
       console.error('Can not load credentials from store');
     }
+  }
+
+  get configuration(): configurationModels.IConfigurationMainResponse {
+    return this._configuration;
+  }
+
+  onConfigurationLoaded(
+    config: configurationModels.IConfigurationMainResponse
+  ): void {
+    this._configuration = config;
+
+    if (!config.tokenProvided) {
+      this.tryToLoadCredentialsFromSettings();
+    }
+  }
+
+  get authorizationRequired(): boolean {
+    return (
+      (this._configuration == null || !this._configuration.tokenProvided) &&
+      this._credentials == null
+    );
   }
 }
 

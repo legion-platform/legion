@@ -41,9 +41,7 @@ export class ClusterInfoView extends React.Component<
 
         <p className={style.infoPairLine}>
           <span className={style.infoPairTitle}>Cluster:</span>
-          <a href={this.props.clusterName} target="_blank">
-            {this.props.clusterName}
-          </a>
+          <span>{this.props.clusterName}</span>
         </p>
       </div>
     );

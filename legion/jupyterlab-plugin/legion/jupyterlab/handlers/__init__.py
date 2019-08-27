@@ -21,6 +21,7 @@ from notebook.utils import url_path_join
 from legion.jupyterlab.handlers.cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
     CloudAllEntitiesHandler, CloudTokenIssueHandler
+from legion.jupyterlab.handlers.configuration import ConfigurationProviderHandler
 
 # List of all back-end handlers with prefixes
 ALL_HANDLERS = (
@@ -31,6 +32,8 @@ ALL_HANDLERS = (
     (CloudApplyFromFileHandler, ('cloud', 'apply')),
     (CloudTokenIssueHandler, ('cloud', 'security', 'token')),
     (CloudAllEntitiesHandler, ('cloud',)),
+    # Configuration
+    (ConfigurationProviderHandler, ('common', 'configuration')),
 )
 
 

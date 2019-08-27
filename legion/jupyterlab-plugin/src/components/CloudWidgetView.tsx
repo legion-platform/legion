@@ -33,7 +33,7 @@ import { ClusterInfoView } from './partials/ClusterInfoView';
 export interface ICloudWidgetViewNodeState {
   cloudData: ICloudAllEntitiesResponse;
   isLoading: boolean;
-  credentialsIsNotEmpty: boolean;
+  authorizationRequired: boolean;
 }
 
 /** Interface for GitPanel component props */
@@ -52,7 +52,7 @@ export class CloudWidgetView extends React.Component<
     this.state = {
       cloudData: props.dataState,
       isLoading: props.dataState.isLoading,
-      credentialsIsNotEmpty: props.dataState.credentials != null
+      authorizationRequired: props.dataState.authorizationRequired
     };
   }
 
@@ -64,7 +64,7 @@ export class CloudWidgetView extends React.Component<
       this.setState({
         cloudData: this.props.dataState,
         isLoading: this.props.dataState.isLoading,
-        credentialsIsNotEmpty: this.props.dataState.credentials != null
+        authorizationRequired: this.props.dataState.authorizationRequired
       });
     } catch (err) {
       showErrorMessage('Can not update cloud widget', err);
@@ -72,7 +72,7 @@ export class CloudWidgetView extends React.Component<
   };
 
   onActivate() {
-    if (this.props.dataState.credentials) {
+    if (!this.props.dataState.authorizationRequired) {
       this.props.app.commands.execute(CommandIDs.refreshCloud);
     }
   }
@@ -109,7 +109,11 @@ export class CloudWidgetView extends React.Component<
           isRefreshing={this.state.isLoading}
         />
         <ClusterInfoView
-          clusterName={this.props.dataState.credentials.cluster}
+          clusterName={
+            this.props.dataState.credentials
+              ? this.props.dataState.credentials.cluster
+              : 'Internal Cluster'
+          }
         />
         <ListingView
           title={'Cloud trainings'}
@@ -238,10 +242,10 @@ export class CloudWidgetView extends React.Component<
   }
 
   render() {
-    if (this.state.credentialsIsNotEmpty) {
-      return this.renderDataView();
-    } else {
+    if (this.state.authorizationRequired) {
       return this.renderAuthView();
+    } else {
+      return this.renderDataView();
     }
   }
 }

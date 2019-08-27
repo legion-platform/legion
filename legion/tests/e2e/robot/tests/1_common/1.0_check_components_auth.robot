@@ -10,22 +10,24 @@ Test Setup          Choose cluster context            ${CLUSTER_CONTEXT}
 
 *** Keywords ***
 
-Url stay the same after dex log in
+Url stay the same after log in
     [Arguments]  ${service_url}
-    ${resp}=  Wait Until Keyword Succeeds  2m  5 sec  Wait Until Keyword Succeeds  2m  5 sec  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  ${STATIC_USER_EMAIL}  ${STATIC_USER_PASS}
+    ${resp}=  Wait Until Keyword Succeeds  2m  5 sec  Wait Until Keyword Succeeds  2m  5 sec  Request as authorized user  ${service_url}
     should be equal  ${service_url}  ${resp.url}
 
-Dex should raise auth error
+Authorization should raise auth error if user is not authorized
     [Arguments]  ${service_url}
-    ${resp}=  Wait Until Keyword Succeeds  2m  5 sec  Request with dex  ${service_url}  ${HOST_BASE_DOMAIN}  admin  admin
+    ${resp}=  Wait Until Keyword Succeeds  2m  5 sec  Request as unauthorized user  ${service_url}
     Log              Response for ${service_url} is ${resp}
-    Should contain   ${resp.text}    Invalid Email Address and password
+    Should contain   ${resp.text}    Log in to
+    Should contain   ${resp.text}    Username or email
+    Should contain   ${resp.text}    Password
 
 *** Test Cases ***
 Service url stay the same after log in
     [Tags]  apps
     [Documentation]  Service url stay the same after log in
-    [Template]    Url stay the same after dex log in
+    [Template]    Url stay the same after log in
     service_url=${DASHBOARD_URL}/?a=1
     service_url=${EDI_URL}/swagger/index.html
     service_url=${GRAFANA_URL}/?orgId=1&x=2
@@ -36,8 +38,8 @@ Service url stay the same after log in
 
 Invalid credentials raise Auth error
     [Tags]  apps  e2t
-    [Documentation]  Invalid credentials raise Auth error on dex
-    [Template]    Dex should raise auth error
+    [Documentation]  Invalid credentials raise Auth error
+    [Template]    Authorization should raise auth error if user is not authorized
     service_url=${EDI_URL}/swagger/index.html
     service_url=${GRAFANA_URL}/?orgId=1&x=2
     service_url=${PROMETHEUS_URL}/graph?x=2&y=3

@@ -61,7 +61,29 @@ Arguments:
 {{- if .Values.security.enabled }}
 {{- if eq .Values.security.integration "oauth2_proxy" -}}
 nginx.ingress.kubernetes.io/configuration-snippet: |
+    # This is used for redirection user to oauth2 address
     set_escape_uri $escaped_request_uri $request_uri;
+
+    # These collect headers from oauth2
+    auth_request_set $user   $upstream_http_x_auth_request_user;
+    auth_request_set $email  $upstream_http_x_auth_request_email;
+    auth_request_set $jwt    $upstream_http_x_auth_request_access_token;
+
+    # This is a fix for really big sized Cookies (that we have with JWTs inside).
+    auth_request_set ${{ .Values.security.oauth2_proxy.cookieName }}_1 $upstream_cookie_{{ .Values.security.oauth2_proxy.cookieName }}_1;
+
+    # These are a headers for upstreams to get information about current user
+    proxy_set_header X-User            $user;
+    proxy_set_header X-Email           $email;
+    proxy_set_header X-JWT             $jwt;
+    proxy_set_header Authorization     "Bearer $jwt";
+
+    # This is a fix for really big sized Cookies (that we have with JWTs inside).
+    access_by_lua_block {
+        if ngx.var.{{ .Values.security.oauth2_proxy.cookieName }}_1 ~= "" then
+            ngx.header["Set-Cookie"] = "{{ .Values.security.oauth2_proxy.cookieName }}_1=" .. ngx.var.{{ .Values.security.oauth2_proxy.cookieName }}_1 .. ngx.var.auth_cookie:match("(; .*)")
+        end
+    }
 {{- if hasKey .Values.security.oauth2_proxy "public_url" }}
 nginx.ingress.kubernetes.io/auth-signin: {{ .Values.security.oauth2_proxy.public_url }}
 {{- else }}

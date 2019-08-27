@@ -33,7 +33,9 @@ class EDI:
         """
         Init client
         """
-        self._training_client = training.build_client(argparse.Namespace(edi=edi_url, token=edi_token))
+        self._training_client = training.build_client(argparse.Namespace(edi=edi_url,
+                                                                         token=edi_token,
+                                                                         non_interactive=True))
 
     def prepare_stub_args(self, args):
         """
