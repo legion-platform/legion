@@ -93,7 +93,7 @@ pipeline {
                 script {
                     print (env.param_stable_release)
                     if (env.param_stable_release.toBoolean() && env.param_push_git_tag.toBoolean()){
-                        legion.setGitReleaseTag()
+                        legion.setGitReleaseTag("${env.param_git_deploy_key}")
                     }
                     else {
                         print("Skipping release git tag push")
