@@ -1,0 +1,12 @@
+kind: Connection
+# Some unique value
+id: <fill in>
+spec:
+  # If you wanna get access to a git repository. You should specify gcs as a type
+  type: git
+  # A git url. Currently supported only the ssh option
+  uri: git@github.com:legion-platform/legion-examples.git
+  # Ssh private key which converted in base64 format. For example: base64 -w 0 ~/.ssh/id_rsa
+  keySecret: <encoded base64>
+  # A git branch, commit or tag
+  reference: origin/develop

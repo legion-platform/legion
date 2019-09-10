@@ -1,0 +1,17 @@
+---
+kind: Connection
+id: bulk-test-conn-1
+spec:
+  keySecret: a2VrCg==
+  reference: origin/develop
+  type: git
+  uri: git@github.com:legion-platform/legion.git
+---
+kind: WrongKind
+id: bulk-test-conn-2
+spec:
+  keySecret: a2VrCg==
+  reference: origin/develop
+  type: git
+  uri: git@github.com:legion-platform/legion.git
+

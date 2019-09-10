@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ .Release.Name }}-operator"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
+spec:
+  serviceName: "legion-operator"
+  replicas: {{ .Values.operator.server.replicas }}
+  selector:
+    matchLabels:
+      {{- include "legion.helm-labels-for-search" (dict "component" "operator" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 8 }}
+    spec:
+      {{- if .Values.rbac }}
+      serviceAccountName: "{{ .Release.Name }}-operator"
+      {{- end }}
+      volumes:
+        - name: config
+          secret:
+            secretName: "{{ .Release.Name }}-operator-config"
+      containers:
+      - image: "{{ include "legion.image-name" (dict "root" . "service" .Values.operator.server "tpl" "%sk8s-operator:%s") }}"
+        imagePullPolicy: Always
+        name: operator
+        resources:
+          {{- toYaml .Values.operator.server.resources | nindent 10 }}
+        command:
+          - ./operator
+        args:
+          - --config
+          - /etc/legion/config.yaml
+        volumeMounts:
+          - name: config
+            mountPath: "/etc/legion"
+            readOnly: true
+        ports:
+        - containerPort: 7777
+          name: metrics
+          protocol: TCP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "{{ .Release.Name }}-operator-config"
+  labels:
+    {{ include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
+data:
+  "config.yaml": |
+    {{ toYaml .Values.config | b64enc }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-operator"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "legion.helm-labels-for-search" (dict "component" "operator" "root" .) | nindent 4 }}
+  ports:
+  - name: metrics
+    targetPort: 7777
+    port: 7777
+    protocol: TCP

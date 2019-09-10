@@ -16,89 +16,48 @@
 """
 CLI entrypoint
 """
-import argparse
-import logging
-import sys
 
-from legion.cli import version
-from legion.cli.parsers import security, config, local, model, vcs, training, deployment, cloud, route
-from legion.sdk import config as legion_config
+import click
+from legion.cli.parsers.config import config_group
+from legion.cli.parsers.connection import connection
+from legion.cli.parsers.deployment import deployment
+from legion.cli.parsers.model import model
+from legion.cli.parsers.packaging import packaging
+from legion.cli.parsers.packaging_integration import packaging_integration
+from legion.cli.parsers.bulk import bulk
+from legion.cli.parsers.route import route
+from legion.cli.parsers.sandbox import sandbox
+from legion.cli.parsers.security import login, logout
+from legion.cli.parsers.template import template
+from legion.cli.parsers.toolchain_integration import toolchain_integration
+from legion.cli.parsers.training import training
+from legion.cli.utils.abbr import AbbreviationGroup
+from legion.cli.utils.logger import configure_logging
 
 
-def configure_logging(args):
+@click.group(cls=AbbreviationGroup)
+@click.option('--verbose/--no-verbose', default=False)
+def main(verbose=False):
     """
-    Set appropriate log level
-
-    :param args: command arguments
-    :type args: :py:class:`argparse.Namespace`
-    :return: None
+    Legion CLI
     """
-    if args.verbose or legion_config.DEBUG:
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.ERROR
-
-    logging.basicConfig(level=log_level,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        stream=sys.stderr)
+    configure_logging(verbose)
 
 
-def build_parser():  # pylint: disable=R0915
-    """
-    Build parser for CLI
-
-    :return: (:py:class:`argparse.ArgumentParser`, py:class:`argparse._SubParsersAction`)  -- CLI parser for LegionCTL
-    """
-    parser = argparse.ArgumentParser(description='legion Command-Line Interface')
-    parser.add_argument('--verbose',
-                        help='verbose log output',
-                        action='store_true')
-    parser.add_argument('--version',
-                        help='get package version',
-                        action='store_true')
-    subparsers = parser.add_subparsers()
-
-    security.generate_parsers(subparsers)
-    config.generate_parsers(subparsers)
-    local.generate_parsers(subparsers)
-    model.generate_parsers(subparsers)
-    vcs.generate_parsers(subparsers)
-    training.generate_parsers(subparsers)
-    deployment.generate_parsers(subparsers)
-    route.generate_parsers(subparsers)
-    cloud.generate_parsers(subparsers)
-
-    return parser, subparsers
-
-
-def main():
-    """
-    CLI entrypoint method
-    :return:
-    """
-    parser, _ = build_parser()
-    args = parser.parse_args(sys.argv[1:])
-
-    v = vars(args)
-
-    configure_logging(args)
-    root_logger = logging.getLogger()
-
-    root_logger.debug('CLI parameters: %s', args)
-
-    try:
-        if args.version:
-            print(version.__version__)
-        else:
-            if 'func' in v:
-                args.func(args)
-            else:
-                parser.print_help()
-                sys.exit(1)
-    except Exception as exception:
-        root_logger.exception(exception)
-        sys.exit(2)
-
+main.add_command(config_group)
+main.add_command(connection)
+main.add_command(deployment)
+main.add_command(model)
+main.add_command(packaging)
+main.add_command(packaging_integration)
+main.add_command(bulk)
+main.add_command(route)
+main.add_command(sandbox)
+main.add_command(template)
+main.add_command(toolchain_integration)
+main.add_command(training)
+main.add_command(login)
+main.add_command(logout)
 
 if __name__ == '__main__':
     main()

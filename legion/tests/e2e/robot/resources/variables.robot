@@ -1,5 +1,4 @@
 *** Variables ***
-@{LEGION_SUBDOMAINS}                  edi  edge
 ${LEGION_NAMESPACE}                   legion
 @{TEST_MODELS}                        Digit-Recognition  Test-Summation  Sklearn-Income
 ${MODEL_WITH_PROPS}                   Test-Summation
@@ -13,7 +12,6 @@ ${FEEDBACK_LOCATION_MODELS_META_LOG}  model_log/request_response
 ${FEEDBACK_LOCATION_MODELS_RESP_LOG}  model_log/response_body
 ${FEEDBACK_LOCATION_MODELS_FEEDBACK}  model_log/feedback
 ${FEEDBACK_PARTITIONING_PATTERN}      year=%Y/month=%m/day=%d/%Y%m%d%H
-${GRAFANA_MAIN_DASHBOARD_UID}         f000cf13-581b-459c-b35e-f5d89fded48f
 ${TEST_VCS}                           legion
 ${LEGION_ENTITIES_DIR}                ${CURDIR}/entities
 ${NODE_TAINT_KEY}                     dedicated

@@ -1,0 +1,7 @@
+kind: Connection
+id: main-test-conn
+spec:
+  keySecret: bG9sCg==
+  reference: origin/feat
+  type: git
+  uri: git@github.com:legion-platform/legion.git

@@ -15,6 +15,50 @@ rules:
   - apiGroups:
       - legion.legion-platform.org
     resources:
+      - connections
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - connections/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
       - modeldeployments
     verbs:
       - get
@@ -30,8 +74,12 @@ rules:
       - modeldeployments/status
     verbs:
       - get
+      - list
+      - watch
+      - create
       - update
       - patch
+      - delete
   - apiGroups:
       - ""
     resources:
@@ -39,6 +87,64 @@ rules:
     verbs:
       - create
       - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelpackagings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelpackagings/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - connecitons
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - modelroutes/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - legion.legion-platform.org
     resources:
@@ -62,7 +168,7 @@ rules:
   - apiGroups:
       - legion.legion-platform.org
     resources:
-      - vcscredentials
+      - modelpackagings
     verbs:
       - get
       - list
@@ -74,7 +180,15 @@ rules:
   - apiGroups:
       - legion.legion-platform.org
     resources:
-      - vcscredentials
+      - modelpackagings/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - legion.legion-platform.org
+    resources:
+      - packagingintegrations
     verbs:
       - get
       - list
@@ -86,7 +200,7 @@ rules:
   - apiGroups:
       - legion.legion-platform.org
     resources:
-      - vcscredentials/status
+      - packagingintegrations/status
     verbs:
       - get
       - update
@@ -94,7 +208,7 @@ rules:
   - apiGroups:
       - legion.legion-platform.org
     resources:
-      - modelroutes
+      - toolchainintegrations
     verbs:
       - get
       - list
@@ -106,22 +220,17 @@ rules:
   - apiGroups:
       - legion.legion-platform.org
     resources:
-      - modelroutes
+      - toolchainintegrations/status
     verbs:
       - get
-      - list
-      - watch
-      - create
       - update
       - patch
-      - delete
   - apiGroups:
-      - legion.legion-platform.org
+      - ""
     resources:
-      - modelroutes/status
+      - events
     verbs:
-      - get
-      - update
+      - create
       - patch
 ---
 kind: ClusterRoleBinding

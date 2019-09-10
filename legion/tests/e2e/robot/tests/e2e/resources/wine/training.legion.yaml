@@ -1,0 +1,20 @@
+kind: ModelTraining
+id: test-e2e-wine
+spec:
+  model:
+    name: test-e2e-wine
+    version: 1.0
+  toolchain: mlflow
+  entrypoint: main
+  workDir: mlflow/sklearn/wine
+  hyperParameters:
+    alpha: "1.0"
+  resources:
+    limits:
+      cpu: 2024m
+      memory: 2024Mi
+    requests:
+      cpu: 1024m
+      memory: 1024Mi
+  vcsName: legion-examples
+  

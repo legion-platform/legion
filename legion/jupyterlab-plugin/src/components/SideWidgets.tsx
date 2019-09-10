@@ -43,6 +43,7 @@ export interface ILegionSideWidgetOptions
 
 export class LegionSideWidget extends BaseLegionWidget {
   component: any;
+
   /**
    * Construct a new running widget.
    */

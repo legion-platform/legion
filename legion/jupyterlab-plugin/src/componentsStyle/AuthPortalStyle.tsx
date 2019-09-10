@@ -13,10 +13,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-import { style } from 'typestyle';
+import {style} from 'typestyle';
 
 export const branchStyle = style({
-    zIndex: 1,
-    textAlign: 'center',
-    overflowY: 'auto'
+  zIndex: 1,
+  textAlign: 'center',
+  overflowY: 'auto'
 });

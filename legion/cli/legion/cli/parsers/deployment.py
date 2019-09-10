@@ -16,20 +16,18 @@
 """
 EDI commands for legion cli
 """
-import argparse
 import logging
 import time
-import typing
 
-from texttable import Texttable
-
-from legion.cli.parsers import security, prepare_resources, add_resources_params
-from legion.sdk.clients import edi
-from legion.sdk.clients.deployment import build_client, ModelDeployment, ModelDeploymentClient, READY_STATE, \
+import click
+from legion.cli.utils.client import pass_obj
+from legion.cli.utils.output import DEFAULT_OUTPUT_FORMAT, format_output
+from legion.sdk import config
+from legion.sdk.clients.deployment import ModelDeployment, ModelDeploymentClient, READY_STATE, \
     FAILED_STATE
-from legion.sdk.clients.edi import WrongHttpStatusCode, LocalEdiClient
+from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
-from legion.sdk.containers.headers import DOMAIN_MODEL_NAME, DOMAIN_MODEL_VERSION
+from legion.sdk.config import update_config_file, MODEL_JWT_TOKEN_SECTION
 
 DEFAULT_WAIT_TIMEOUT = 5
 
@@ -42,315 +40,284 @@ MD_LOCAL_HEADER = ["Name", "Image", "Port", "Model Name", "Model Version"]
 
 LOGGER = logging.getLogger(__name__)
 
-INSPECT_FORMAT_COLORIZED = 'colorized'
-INSPECT_FORMAT_TABULAR = 'column'
-VALID_INSPECT_FORMATS = INSPECT_FORMAT_COLORIZED, INSPECT_FORMAT_TABULAR
 
-
-def _convert_md_from_args(args: argparse.Namespace) -> ModelDeployment:
-    if args.filename:
-        resource = parse_resources_file_with_one_item(args.filename).resource
-        if not isinstance(resource, ModelDeployment):
-            raise ValueError(f'ModelDeployment expected, but {type(resource)} provided')
-        return resource
-    elif args.name:
-        return ModelDeployment(
-            name=args.name,
-            image=args.image,
-            resources=prepare_resources(args),
-            min_replicas=args.min_replicas,
-            max_replicas=args.max_replicas,
-            liveness_probe_initial_delay=args.livenesstimeout,
-            readiness_probe_initial_delay=args.readinesstimeout,
-            role_name=args.role_name,
-        )
-    else:
-        raise ValueError(f'Provide name of a Model Deployment or path to a file')
-
-
-def _prepare_labels(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
+@click.group()
+@click.option('--edi', help='EDI server host', default=config.EDI_URL)
+@click.option('--token', help='EDI server jwt token', default=config.EDI_TOKEN)
+@click.pass_context
+def deployment(ctx: click.core.Context, edi: str, token: str):
     """
-    Convert cli parameters to k8s labels
-
-    :param args: cli parameters
-    :return: k8s labels
+    Allow you to perform actions on deployments
     """
-    labels = {}
-    if args.model_name:
-        labels[DOMAIN_MODEL_NAME] = args.model_name
-    if args.model_version:
-        labels[DOMAIN_MODEL_VERSION] = args.model_version
-
-    return labels
+    ctx.obj = ModelDeploymentClient(edi, token)
 
 
-def get_local(args: argparse.Namespace):
+@deployment.command()
+@click.option('--md-id', '--id', help='Model deployment ID')
+@click.option('--output-format', '-o', 'output_format', help='Output format',
+              default=DEFAULT_OUTPUT_FORMAT)
+@pass_obj
+def get(client: ModelDeploymentClient, md_id: str, output_format: str):
     """
-    Get all Model Deployments or by name
-    :param args: cli parameters
+    Get deployments.\n
+    The command without id argument retrieve all deployments.\n
+    Get all deployments in json format:\n
+        legionctl dep get --format json\n
+    Get deployment with "git-repo" id:\n
+        legionctl dep get --id model-wine\n
+    Using jsonpath:\n
+        legionctl dep get -o 'jsonpath=[*].spec.reference'
+    \f
+    :param client: Model deployment HTTP client
+    :param md_id: Model deployment ID
+    :param output_format: Output format
+    :return:
     """
-    md_client = LocalEdiClient()
-    model_deployments = md_client.inspect(args.name)
+    mds = [client.get(md_id)] if md_id else client.get_all()
 
-    table = Texttable(max_width=DEFAULT_WIDTH_LOCAL)
-    table.set_cols_align("c" * len(MD_LOCAL_HEADER))
-    table.set_cols_valign("t" * len(MD_LOCAL_HEADER))
-    table.add_rows([MD_LOCAL_HEADER] + [[
-        md.deployment_name,
-        md.image,
-        md.local_port,
-        md.name_and_version.name,
-        md.name_and_version.version
-    ] for md in model_deployments])
-    print(table.draw() + "\n")
+    format_output(mds, output_format)
 
 
-def get(args: argparse.Namespace):
+@deployment.command()
+@click.option('--md-id', '--id', help='Model deployment ID')
+@click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with deployment')
+@click.option('--wait/--no-wait', default=True,
+              help='no wait until scale will be finished')
+@click.option('--timeout', default=600, type=int,
+              help='timeout in seconds. for wait (if no-wait is off)')
+@click.option('--image', type=str, help='Override Docker image from file')
+@pass_obj
+def create(client: ModelDeploymentClient, md_id: str, file: str, wait: bool, timeout: int, image: str):
     """
-    Get all Model Deployments or by name
-    :param args: cli parameters
+    Create a deployment.\n
+    You should specify a path to file with a deployment. The file must contain only one deployment.
+    For now, CLI supports yaml and JSON file formats.
+    If you want to create multiples deployments than you should use "legionctl res apply" instead.
+    If you provide the deployment id parameter than it will be overridden before sending to EDI server.\n
+    Usage example:\n
+        * legionctl dep create -f dep.yaml --id examples-git
+    \f
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until deployment will be finished
+    :param client: Model deployment HTTP client
+    :param md_id: Model deployment ID
+    :param file: Path to the file with only one deployment
+    :param image: Override Docker image from file
     """
-    if args.name and (args.model_name or args.model_version):
-        raise ValueError(f'You should specify model deployment name or labels')
+    md = parse_resources_file_with_one_item(file).resource
+    if not isinstance(md, ModelDeployment):
+        raise ValueError(f'Model deployment expected, but {type(md)} provided')
 
-    if args.local:
-        return get_local(args)
+    if md_id:
+        md.id = md_id
 
-    md_client = build_client(args)
+    if image:
+        md.spec.image = image
 
-    model_deployments = [md_client.get(args.name)] if args.name else md_client.get_all(_prepare_labels(args))
-    if not model_deployments:
-        return
+    click.echo(client.create(md))
 
-    table = Texttable(max_width=DEFAULT_WIDTH)
-    table.set_cols_align("c" * len(MD_HEADER))
-    table.set_cols_valign("t" * len(MD_HEADER))
-    table.add_rows([MD_HEADER] + [[
-        md.name,
-        md.state,
-        f'{md.min_replicas}/{md.available_replicas}/{md.max_replicas}',
-        md.service_url
-    ] for md in model_deployments])
-    print(table.draw() + "\n")
+    wait_deployment_finish(timeout, wait, md.id, client)
 
 
-def create(args: argparse.Namespace):
+@deployment.command()
+@click.option('--md-id', '--id', help='Model deployment ID')
+@click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with deployment')
+@click.option('--wait/--no-wait', default=True,
+              help='no wait until scale will be finished')
+@click.option('--timeout', default=600, type=int,
+              help='timeout in seconds. for wait (if no-wait is off)')
+@click.option('--image', type=str, help='Override Docker image from file')
+@pass_obj
+def edit(client: ModelDeploymentClient, md_id: str, file: str, wait: bool, timeout: int, image: str):
     """
-    Create Model Deployment
-    :param args: cli parameters
+    Update a deployment.\n
+    You should specify a path to file with a deployment. The file must contain only one deployment.
+    For now, CLI supports yaml and JSON file formats.
+    If you want to update multiples deployments than you should use "legionctl res apply" instead.
+    If you provide the deployment id parameter than it will be overridden before sending to EDI server.\n
+    Usage example:\n
+        * legionctl dep update -f dep.yaml --id examples-git
+    \f
+    :param client: Model deployment HTTP client
+    :param md_id: Model deployment ID
+    :param file: Path to the file with only one deployment
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until edit will be finished
+    :param image: Override Docker image from file
     """
-    if args.local:
-        md_client = LocalEdiClient()
-        return md_client.deploy(args.name, args.image, args.port)
+    md = parse_resources_file_with_one_item(file).resource
+    if not isinstance(md, ModelDeployment):
+        raise ValueError(f'Model deployment expected, but {type(md)} provided')
 
-    md_client = build_client(args)
+    if md_id:
+        md.id = md_id
 
-    md = _convert_md_from_args(args)
-    message = md_client.create(md)
+    if image:
+        md.spec.image = image
 
-    wait_operation_finish(args, md.name, md_client)
+    click.echo(client.edit(md))
 
-    print(message)
+    wait_deployment_finish(timeout, wait, md.id, client)
 
 
-def edit(args: argparse.Namespace):
+@deployment.command()
+@click.option('--md-id', '--id', help='Model deployment ID')
+@click.option('--file', '-f', type=click.Path(), help='Path to the file with deployment')
+@click.option('--wait/--no-wait', default=True,
+              help='no wait until scale will be finished')
+@click.option('--timeout', default=600, type=int,
+              help='timeout in seconds. for wait (if no-wait is off)')
+@click.option('--ignore-not-found/--not-ignore-not-found', default=False,
+              help='ignore if Model Deployment is not found')
+@pass_obj
+def delete(client: ModelDeploymentClient, md_id: str, file: str, ignore_not_found: bool,
+           wait: bool, timeout: int):
     """
-    Edit Model Deployments by name
-    :param args: cli parameters
+    Delete a deployment.\n
+    For this command, you must provide a deployment ID or path to file with one deployment.
+    The file must contain only one deployment.
+    If you want to delete multiples deployments than you should use "legionctl res delete" instead.
+    For now, CLI supports yaml and JSON file formats.
+    The command will be failed if you provide both arguments.\n
+    Usage example:\n
+        * legionctl dep delete --id examples-git\n
+        * legionctl dep delete -f dep.yaml
+    \f
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until deletion will be finished
+    :param client: Model deployment HTTP client
+    :param md_id: Model deployment ID
+    :param file: Path to the file with only one deployment
+    :param ignore_not_found: ignore if Model Deployment is not found
     """
-    if args.local:
-        print('Local mode is not supported for edit action.')
-        return
+    if not md_id and not file:
+        raise ValueError(f'You should provide a deployment ID or file parameter, not both.')
 
-    md_client = build_client(args)
+    if md_id and file:
+        raise ValueError(f'You should provide a deployment ID or file parameter, not both.')
 
-    md = _convert_md_from_args(args)
-    message = md_client.edit(md)
+    if file:
+        md = parse_resources_file_with_one_item(file).resource
+        if not isinstance(md, ModelDeployment):
+            raise ValueError(f'Model deployment expected, but {type(md)} provided')
 
-    wait_operation_finish(args, md.name, md_client)
-
-    print(message)
-
-
-def delete(args: argparse.Namespace):
-    """
-    Delete Model Deployment by name
-    :param args: cli parameters
-    """
-    if args.local:
-        md_client = LocalEdiClient()
-        if not args.name:
-            print('Please specify name of deployment')
-            return
-
-        return md_client.undeploy(args.name)
-
-    md_client = build_client(args, timeout=DELETION_TIMEOUT)
-
-    md_name = args.name
-    if args.filename:
-        resource = parse_resources_file_with_one_item(args.filename)
-        if not isinstance(resource.resource, ModelDeployment):
-            raise ValueError(f'ModelDeployment expected, but {type(resource.resource)} provided')
-        md_name = resource.resource_name
+        md_id = md.id
 
     try:
-        if md_name:
-            md_client.delete(md_name)
-        else:
-            md_client.delete_all(_prepare_labels(args))
+        message = client.delete(md_id)
 
-        wait_delete_operation_finish(args, md_name, md_client)
+        wait_delete_operation_finish(timeout, wait, md_id, client)
+        click.echo(message)
     except WrongHttpStatusCode as e:
-        if e.status_code != 404 or not args.ignore_not_found:
+        if e.status_code != 404 or not ignore_not_found:
             raise e
 
-        print(f'Model deployment {md_name} was not found. Ignore')
+        click.echo(f'Model deployment {md_id} was not found. Ignore')
 
 
-def wait_delete_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
+@deployment.command()
+@click.option('--md-id', '--id', type=str, help='Model Name', required=True)
+@click.option('--model-role-name', '--md-role', '--role', type=str, help='Model role name')
+@click.option('--expiration-date', type=str, help='Token expiration date in utc: %%Y-%%m-%%dT%%H:%%M:%%S')
+@pass_obj
+def generate_token(client: ModelDeploymentClient, md_id, model_role_name, expiration_date):
+    """
+    Generate JWT for specified model
+
+    :param expiration_date:
+    :param model_role_name:
+    :param client:
+    :param md_id:
+    :return: str -- token
+    """
+    token = client.get_token(model_role_name, expiration_date)
+
+    if token:
+        if md_id:
+            update_config_file(section=MODEL_JWT_TOKEN_SECTION,
+                               **{md_id: token})
+
+        print(token)
+    else:
+        print('JWT mechanism is disabled')
+
+
+def wait_delete_operation_finish(timeout: int, wait: bool, md_id: str, md_client: ModelDeploymentClient):
     """
     Wait delete operation
 
-    :param md_name: Model Deployment name
-    :param args: command arguments with .model_name, .namespace
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until deletion will be finished
+    :param md_id: Model Deployment name
     :param md_client: Model Deployment Client
 
     :return: None
     """
-    if args.no_wait:
+    if not wait:
         return
 
     start = time.time()
-    if args.timeout <= 0:
+    if timeout <= 0:
         raise Exception('Invalid --timeout argument: should be positive integer')
 
     while True:
         elapsed = time.time() - start
-        if elapsed > args.timeout:
+        if elapsed > timeout:
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            md_client.get(md_name)
+            md_client.get(md_id)
         except WrongHttpStatusCode as e:
             if e.status_code == 404:
-                print(f'Model deployment {md_name} was deleted')
+                print(f'Model deployment {md_id} was deleted')
                 return
             LOGGER.info('Callback have not confirmed completion of the operation')
 
-        print(f'Model deployment {md_name} is still being deleted...')
+        print(f'Model deployment {md_id} is still being deleted...')
         time.sleep(DEFAULT_WAIT_TIMEOUT)
 
 
-def wait_operation_finish(args: argparse.Namespace, md_name: str, md_client: ModelDeploymentClient):
+def wait_deployment_finish(timeout: int, wait: bool, md_id: str, md_client: ModelDeploymentClient):
     """
     Wait deployment to finish according command line arguments
 
-    :param md_name: Model Deployment name
-    :param args: command arguments with .model_name, .namespace
+    :param timeout: timeout in seconds. for wait (if no-wait is off)
+    :param wait: no wait until deletion will be finished
+    :param md_id: Model Deployment name
     :param md_client: Model Deployment Client
 
     :return: None
     """
-    if args.no_wait:
+    if not wait:
         return
 
     start = time.time()
-    if args.timeout <= 0:
+    if timeout <= 0:
         raise Exception('Invalid --timeout argument: should be positive integer')
 
     while True:
         elapsed = time.time() - start
-        if elapsed > args.timeout:
+        if elapsed > timeout:
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            md: ModelDeployment = md_client.get(md_name)
-            if md.state == READY_STATE:
-                if md.replicas == md.available_replicas:
-                    print(f'Model {md_name} was deployed. '
+            md: ModelDeployment = md_client.get(md_id)
+            if md.status.state == READY_STATE:
+                if md.spec.min_replicas <= md.status.available_replicas:
+                    print(f'Model {md_id} was deployed. '
                           f'Deployment process took is {round(time.time() - start)} seconds')
                     return
                 else:
-                    print(f'Model {md_name} was deployed. '
-                          f'Number of available pods is {md.available_replicas}/{md.replicas}')
-            elif md.state == FAILED_STATE:
-                raise Exception(f'Model deployment {md_name} was failed')
-            elif md.state == "":
-                print(f"Can't determine the state of {md.name}. Sleeping...")
+                    print(f'Model {md_id} was deployed. '
+                          f'Number of available pods is {md.status.available_replicas}/{md.spec.min_replicas}')
+            elif md.status.state == FAILED_STATE:
+                raise Exception(f'Model deployment {md_id} was failed')
+            elif md.status.state == "":
+                print(f"Can't determine the state of {md.id}. Sleeping...")
             else:
-                print(f'Current deployment state is {md.state}. Sleeping...')
+                print(f'Current deployment state is {md.status.state}. Sleeping...')
         except WrongHttpStatusCode:
             LOGGER.info('Callback have not confirmed completion of the operation')
 
         LOGGER.debug('Sleep before next request')
         time.sleep(DEFAULT_WAIT_TIMEOUT)
-
-
-def _deployment_params(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument('--port', default=0,
-                        type=int, help='port to listen on. Only for --local mode')
-    parser.add_argument('--min-replicas', default=0, type=int, help='min number of instances')
-    parser.add_argument('--max-replicas', default=1, type=int, help='max number of instances')
-    parser.add_argument('--livenesstimeout', default=2, type=int,
-                        help='model startup timeout for liveness probe')
-    parser.add_argument('--readinesstimeout', default=2, type=int,
-                        help='model startup timeout for readiness probe')
-    parser.add_argument('--image', type=str, help='docker image')
-    parser.add_argument('--role-name', '--role', type=str, help='role name')
-
-
-def generate_parsers(main_subparser: argparse._SubParsersAction) -> None:  # pylint: disable=R0915
-    """
-    Generate cli parsers
-
-    :param main_subparser: parent cli parser
-    """
-    md_subparser = main_subparser.add_parser('model-deployment', aliases=('md', 'deployment'),
-                                             description='Model Deployment manipulations').add_subparsers()
-
-    md_create_parser = md_subparser.add_parser('create',
-                                               description='deploys a model into a kubernetes cluster')
-    md_create_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
-    md_create_parser.add_argument('--local', action='store_true',
-                                  help='deploy model locally. Incompatible with other arguments')
-    _deployment_params(md_create_parser)
-    add_resources_params(md_create_parser)
-    edi.add_arguments_for_wait_operation(md_create_parser)
-    security.add_edi_arguments(md_create_parser)
-    md_create_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
-    md_create_parser.set_defaults(func=create)
-
-    md_edit_parser = md_subparser.add_parser('edit',
-                                             description='deploys a model into a kubernetes cluster')
-    md_edit_parser.add_argument('name', nargs='?', type=str, help='VCS Credential name', default="")
-    md_edit_parser.add_argument('--local', action='store_true',
-                                help='edit locally deployed model. Incompatible with other arguments')
-    _deployment_params(md_edit_parser)
-    add_resources_params(md_edit_parser)
-    md_edit_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
-    security.add_edi_arguments(md_edit_parser)
-    edi.add_arguments_for_wait_operation(md_edit_parser)
-    md_edit_parser.set_defaults(func=edit)
-
-    md_get_parser = md_subparser.add_parser('get', description='get information about currently deployed models')
-    md_get_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
-    md_get_parser.add_argument('--local', action='store_true',
-                               help='get locally deployed models. Incompatible with other arguments')
-    md_get_parser.add_argument('--model-name', type=str, help='model name')
-    md_get_parser.add_argument('--model-version', type=str, help='model version')
-    security.add_edi_arguments(md_get_parser)
-    md_get_parser.set_defaults(func=get)
-
-    md_delete_parser = md_subparser.add_parser('delete', description='undeploy model deployment')
-    md_delete_parser.add_argument('name', type=str, nargs='?', help='VCS Credential name', default="")
-    md_delete_parser.add_argument('--local', action='store_true',
-                                  help='delete locally deployed models. Incompatible with other arguments')
-    md_delete_parser.add_argument('--model-name', type=str, help='model name')
-    md_delete_parser.add_argument('--model-version', type=str, help='model version')
-    md_delete_parser.add_argument('--ignore-not-found', action='store_true',
-                                  help='ignore if Model Deployment is not found')
-    md_delete_parser.add_argument('--filename', '-f', type=str, help='Filename to use to delete the Model Deployment')
-    security.add_edi_arguments(md_delete_parser)
-    edi.add_arguments_for_wait_operation(md_delete_parser)
-    md_delete_parser.set_defaults(func=delete)

@@ -18,6 +18,7 @@ package modeldeployment
 
 import (
 	"context"
+	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	"github.com/spf13/viper"
 	appsv1 "k8s.io/api/apps/v1"
 	"strconv"
@@ -26,6 +27,7 @@ import (
 	"fmt"
 	networkingv1alpha3 "github.com/aspenmesh/istio-client-go/pkg/apis/networking/v1alpha3"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	md_config "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	networkingv1alpha3_istio "istio.io/api/networking/v1alpha3"
 
 	prototypes "github.com/gogo/protobuf/types"
@@ -211,6 +213,11 @@ func (r *ReconcileModelDeployment) ReconcileModelRoute(modelDeploymentCR *legion
 }
 
 func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	container, err := r.createModelContainer(modelDeploymentCR)
+	if err != nil {
+		return err
+	}
+
 	knativeConfiguration := &knservingv1alpha1.Configuration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      knativeConfigurationName(modelDeploymentCR),
@@ -234,8 +241,9 @@ func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeployment
 					RevisionSpec: v1beta1.RevisionSpec{
 						TimeoutSeconds: &defaultTerminationPeriod,
 						PodSpec: v1beta1.PodSpec{
+							ServiceAccountName: "regsecret",
 							Containers: []corev1.Container{
-								r.createModelContainer(modelDeploymentCR),
+								*container,
 							},
 						},
 					},
@@ -254,7 +262,7 @@ func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeployment
 	}
 
 	found := &knservingv1alpha1.Configuration{}
-	err := r.Get(context.TODO(), types.NamespacedName{
+	err = r.Get(context.TODO(), types.NamespacedName{
 		Name: knativeConfiguration.Name, Namespace: knativeConfiguration.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
@@ -284,14 +292,19 @@ func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeployment
 	return nil
 }
 
-func (r *ReconcileModelDeployment) createModelContainer(modelDeploymentCR *legionv1alpha1.ModelDeployment) corev1.Container {
+func (r *ReconcileModelDeployment) createModelContainer(modelDeploymentCR *legionv1alpha1.ModelDeployment) (*corev1.Container, error) {
 	httpGetAction := &corev1.HTTPGetAction{
 		Path: "/healthcheck",
 	}
 
-	return corev1.Container{
+	depResources, err := kubernetes.ConvertLegionResourcesToK8s(modelDeploymentCR.Spec.Resources)
+	if err != nil {
+		return nil, err
+	}
+
+	return &corev1.Container{
 		Image:     modelDeploymentCR.Spec.Image,
-		Resources: *modelDeploymentCR.Spec.Resources,
+		Resources: depResources,
 		Ports: []corev1.ContainerPort{
 			{
 				Name:          defaultPortName,
@@ -317,7 +330,7 @@ func (r *ReconcileModelDeployment) createModelContainer(modelDeploymentCR *legio
 			PeriodSeconds:       defaultReadinessPeriod,
 			TimeoutSeconds:      defaultReadinessTimeout,
 		},
-	}
+	}, nil
 }
 
 func generateAuthProvider(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Value_StructValue {
@@ -352,12 +365,12 @@ func generateAuthProvider(modelDeploymentCR *legionv1alpha1.ModelDeployment) *pr
 											Fields: map[string]*prototypes.Value{
 												"uri": {
 													Kind: &prototypes.Value_StringValue{
-														StringValue: viper.GetString(legion.JwksUrl),
+														StringValue: viper.GetString(md_config.SecurityJwksUrl),
 													},
 												},
 												"cluster": {
 													Kind: &prototypes.Value_StringValue{
-														StringValue: viper.GetString(legion.JwksCluster),
+														StringValue: viper.GetString(md_config.SecurityJwksCluster),
 													},
 												},
 											},
@@ -383,7 +396,7 @@ func generateAuthRule(modelDeploymentCR *legionv1alpha1.ModelDeployment) *protot
 							Fields: map[string]*prototypes.Value{
 								"prefix": {
 									Kind: &prototypes.Value_StringValue{
-										StringValue: "/api",
+										StringValue: "/api/model/invoke",
 									},
 								},
 							},
@@ -435,7 +448,6 @@ func generateAuthRule(modelDeploymentCR *legionv1alpha1.ModelDeployment) *protot
 }
 
 func generateAuthFilterConfig(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Struct {
-	// TODO: rewrite lol
 	return &prototypes.Struct{
 		Fields: map[string]*prototypes.Value{
 			"providers": {
@@ -602,7 +614,7 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 
 	log.Info("Start reconciling of model deployment", "Name", modelDeploymentCR.Name)
 
-	if viper.GetBool(legion.JwtEnabled) {
+	if viper.GetBool(md_config.SecurityJwtEnabled) {
 		log.Info("Reconcile Auth Filter", "Model Deployment name", modelDeploymentCR.Name)
 
 		if err := r.reconcileEnvoyAuthFilter(modelDeploymentCR); err != nil {
@@ -640,7 +652,7 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 	modelDeployment := &appsv1.Deployment{}
 	modelDeploymentKey := types.NamespacedName{
 		Name:      knativeDeploymentName(latestReadyRevision),
-		Namespace: viper.GetString(legion.Namespace),
+		Namespace: viper.GetString(md_config.Namespace),
 	}
 
 	if err := r.Client.Get(context.TODO(), modelDeploymentKey, modelDeployment); errors.IsNotFound(err) {

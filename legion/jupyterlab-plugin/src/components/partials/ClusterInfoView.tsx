@@ -23,7 +23,10 @@ export interface IClusterInfoViewNodeState {}
 
 /** Interface for ClusterInfoView component props */
 export interface IClusterInfoViewNodeProps {
-  clusterName: string;
+  ediUrl: string;
+  metricUiUrl: string;
+  serviceCatalogUrl: string;
+  grafanaUrl: string;
 }
 
 export class ClusterInfoView extends React.Component<
@@ -37,12 +40,46 @@ export class ClusterInfoView extends React.Component<
   render() {
     return (
       <div className={style.infoHolder}>
-        <p className={style.infoTitle}>Cluster information</p>
+        <ul>
+          <li className={style.infoPairLine}>
+            <a
+              className={style.infoPairTitle}
+              href={this.props.ediUrl}
+              target="_blank"
+            >
+              EDI service
+            </a>
+          </li>
 
-        <p className={style.infoPairLine}>
-          <span className={style.infoPairTitle}>Cluster:</span>
-          <span>{this.props.clusterName}</span>
-        </p>
+          <li className={style.infoPairLine}>
+            <a
+              className={style.infoPairTitle}
+              href={this.props.metricUiUrl}
+              target="_blank"
+            >
+              Metric UI
+            </a>
+          </li>
+
+          <li className={style.infoPairLine}>
+            <a
+              className={style.infoPairTitle}
+              href={this.props.serviceCatalogUrl}
+              target="_blank"
+            >
+              Service catalog
+            </a>
+          </li>
+          <li className={style.infoPairLine}>
+            <a
+              className={style.infoPairTitle}
+              href={this.props.grafanaUrl}
+              target="_blank"
+            >
+              Grafana
+            </a>
+          </li>
+        </ul>
       </div>
     );
   }

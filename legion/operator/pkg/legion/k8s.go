@@ -27,16 +27,11 @@ import (
 )
 
 const (
-	podNameTemplate           = "%s-training-pod"
 	LastAppliedHashAnnotation = "operator.legion.org/last-applied-hash"
 )
 
-func GenerateVcsSecretName(vcsName string) string {
+func GenerateConnectionSecretName(vcsName string) string {
 	return fmt.Sprintf("%s-vcs", vcsName)
-}
-
-func GenerateBuildModelName(mtCRName string) string {
-	return fmt.Sprintf(podNameTemplate, mtCRName)
 }
 
 // Compute hash and store it in the annotations
@@ -86,7 +81,3 @@ func StoreHashKnative(obj *knservingv1alpha1.Configuration) error {
 func ObjsEqualByHash(firstObj, secondObj metav1.Object) bool {
 	return firstObj.GetAnnotations()[LastAppliedHashAnnotation] == secondObj.GetAnnotations()[LastAppliedHashAnnotation]
 }
-
-//func ObjectsModelDeploymentTemplateName(mdName string) {
-//	return fmt.Sprintf("md-")
-//}

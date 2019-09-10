@@ -1,0 +1,38 @@
+kind: ModelTraining
+# Some unique value
+id: <fill in>
+spec:
+  model:
+    # Human-readable model name
+    name: <model-name>
+    # Human-readable model version
+    version: <1.0>
+    # Optionally, you can specify template for output artifact
+  # You can find list of all available toolchains on the left sidebar
+  toolchain: mlflow
+  # Every mlflow MLProject file contains the list of entrypoint. You should choose one
+  entrypoint: main
+  # Working dir with your module
+  workDir: work/dir
+  # Optionally
+  data:
+    # You can specify connection name
+    connName: wine
+    # Local path with file or dir
+    localPath: mlflow/wine-quality/wine-quality.csv
+  # You can specify the map of hyperparameters
+  # For example
+  # hyperparameters:
+  #   key: value
+  #   var2: test
+  # Resources
+  # For example:
+  # resources:
+  #   limits:
+  #     cpu: 1024m
+  #     memory: 1024Mi
+  #   requests:
+  #     cpu: 1024m
+  #     memory: 1024Mi
+  # You can find list of all available connections on the left sidebar. You should specify one with git type
+  vcsName: <git-connection>

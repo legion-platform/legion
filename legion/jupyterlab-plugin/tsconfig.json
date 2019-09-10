@@ -4,7 +4,7 @@
     "declaration": true,
     "noImplicitAny": false,
     "noEmitOnError": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es2015",

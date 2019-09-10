@@ -20,9 +20,8 @@ import (
 	"context"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,14 +51,17 @@ var (
 			Namespace: mdNamespace,
 		},
 	}
-	mdResources = &corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("256m"),
-			"memory": resource.MustParse("256Mi"),
+	reqMem      = "111Mi"
+	reqCpu      = "111m"
+	limMem      = "222Mi"
+	mdResources = &legionv1alpha1.ResourceRequirements{
+		Limits: &legionv1alpha1.ResourceList{
+			Cpu:    nil,
+			Memory: &limMem,
 		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("128m"),
-			"memory": resource.MustParse("128Mi"),
+		Requests: &legionv1alpha1.ResourceList{
+			Cpu:    &reqCpu,
+			Memory: &reqMem,
 		},
 	}
 )
@@ -120,7 +122,11 @@ func TestReconcile(t *testing.T) {
 	g.Expect(*podSpec.TimeoutSeconds).To(Equal(defaultTerminationPeriod))
 
 	containerSpec := podSpec.Containers[0]
-	g.Expect(containerSpec.Resources).To(Equal(*mdResources))
+
+	mdResources, err := kubernetes.ConvertLegionResourcesToK8s(md.Spec.Resources)
+	g.Expect(err).ShouldNot(HaveOccurred())
+	g.Expect(containerSpec.Resources).To(Equal(mdResources))
+
 	g.Expect(containerSpec.Image).To(Equal(image))
 	g.Expect(containerSpec.Ports).To(HaveLen(1))
 	g.Expect(containerSpec.Ports).To(HaveLen(1))

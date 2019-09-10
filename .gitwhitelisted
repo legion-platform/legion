@@ -20,6 +20,7 @@
 ([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*(~|example|\\s?str,|\\s\\|\\-|$)
 #Allow ansible substitution like password: {{ .... }}
 ([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*(\"|\')?\\{\\{\\s.+\\s\\}\\}(\"|\')?
+([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*typing\.
 # Allow localhost IPv4 address
 127.0.0.1
 # Allow demo netmask
@@ -44,3 +45,7 @@ username : unicode
 .*Secret: .*
 legion/operator/hack/tests/keys/private_key.pem:.*
 .*token \:\=.*
+legion/sdk/legion/sdk/models/.*:.*
+token: str
+legion/operator/pkg/webserver/routes/v1/connection/connection_test.go:.*
+legion/operator/pkg/webserver/routes/v1/connection/connection_validation_test.go:.*

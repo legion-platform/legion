@@ -16,18 +16,21 @@
 """
 Aggregated EDI client (can apply multiple resources)
 """
+import json
 import logging
 import os
 import typing
-import json
 
 import yaml
-
-from legion.sdk.clients.edi import RemoteEdiClient, WrongHttpStatusCode
-from legion.sdk.clients.route import ModelRoute
-from legion.sdk.clients.training import ModelTrainingClient, ModelTraining
+from legion.sdk.clients.connection import ConnectionClient
 from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
-from legion.sdk.clients.vcs import VcsClient, VCSCredential
+from legion.sdk.clients.edi import RemoteEdiClient, WrongHttpStatusCode
+from legion.sdk.clients.packaging import ModelPackagingClient
+from legion.sdk.clients.packaging_integration import PackagingIntegrationClient
+from legion.sdk.clients.route import ModelRoute, ModelRouteClient
+from legion.sdk.clients.toolchain_integration import ToolchainIntegrationClient
+from legion.sdk.clients.training import ModelTrainingClient, ModelTraining
+from legion.sdk.models import Connection, ToolchainIntegration, ModelPackaging, PackagingIntegration
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +48,7 @@ class LegionCloudResourceUpdatePair(typing.NamedTuple):
     Information about resources to update
     """
 
-    resource_name: str
+    resource_id: str
     resource: object
 
 
@@ -68,6 +71,7 @@ class ApplyResult(typing.NamedTuple):
     errors: typing.Tuple[Exception] = tuple()
 
 
+# pylint: disable=R0911
 def build_client(resource: LegionCloudResourceUpdatePair, edi_client: RemoteEdiClient) -> typing.Optional[object]:
     """
     Build client for particular resource (e.g. it builds ModelTrainingClient for ModelTraining resource)
@@ -82,8 +86,16 @@ def build_client(resource: LegionCloudResourceUpdatePair, edi_client: RemoteEdiC
         return ModelTrainingClient.construct_from_other(edi_client)
     elif isinstance(resource.resource, ModelDeployment):
         return ModelDeploymentClient.construct_from_other(edi_client)
-    elif isinstance(resource.resource, VCSCredential):
-        return VcsClient.construct_from_other(edi_client)
+    elif isinstance(resource.resource, Connection):
+        return ConnectionClient.construct_from_other(edi_client)
+    elif isinstance(resource.resource, ToolchainIntegration):
+        return ToolchainIntegrationClient.construct_from_other(edi_client)
+    elif isinstance(resource.resource, ModelRoute):
+        return ModelRouteClient.construct_from_other(edi_client)
+    elif isinstance(resource.resource, ModelPackaging):
+        return ModelPackagingClient.construct_from_other(edi_client)
+    elif isinstance(resource.resource, PackagingIntegration):
+        return PackagingIntegrationClient.construct_from_other(edi_client)
     else:
         raise InvalidResourceType('{!r} is invalid resource '.format(resource.resource))
 
@@ -97,23 +109,29 @@ def build_resource(declaration: dict) -> LegionCloudResourceUpdatePair:
     :return: object -- built resource
     """
     resource_type = declaration.get('kind')
+    if resource_type is None:
+        raise Exception('Kind of object {!r} must be not null'.format(declaration))
+
     if not isinstance(resource_type, str):
         raise Exception('Kind of object {!r} should be string'.format(declaration))
 
     target_classes = {
         'ModelTraining': ModelTraining,
+        'ToolchainIntegration': ToolchainIntegration,
         'ModelDeployment': ModelDeployment,
-        'VCSCredential': VCSCredential,
-        'ModelRoute': ModelRoute
+        'ModelRoute': ModelRoute,
+        'Connection': Connection,
+        'ModelPackaging': ModelPackaging,
+        'PackagingIntegration': PackagingIntegration,
     }
 
     if resource_type not in target_classes:
         raise Exception('Unknown kind of object: {!r}'.format(resource_type))
 
-    resource = target_classes[resource_type].from_json(declaration)
+    resource = target_classes[resource_type].from_dict(declaration)
 
     return LegionCloudResourceUpdatePair(
-        resource_name=resource.name,
+        resource_id=resource.id,
         resource=resource
     )
 
@@ -197,7 +215,7 @@ def apply(updates: LegionCloudResourcesUpdateList, edi_client: RemoteEdiClient, 
 
     # Operate over all resources
     for idx, change in enumerate(updates.changes):
-        resource_str_identifier = f'#{idx+1}. {change.resource_name}' if change.resource_name else f'#{idx+1}'
+        resource_str_identifier = f'#{idx + 1}. {change.resource_id}' if change.resource_id else f'#{idx + 1}'
 
         LOGGER.debug('Processing resource %r', resource_str_identifier)
         # Build and check client
@@ -205,10 +223,11 @@ def apply(updates: LegionCloudResourcesUpdateList, edi_client: RemoteEdiClient, 
             client = build_client(change, edi_client)
         except Exception as general_exception:
             errors.append(Exception(f'Can not get build client for {resource_str_identifier}: {general_exception}'))
+            continue
 
         # Check is resource exist or not
         try:
-            client.get(change.resource_name)
+            client.get(change.resource_id)
             resource_exist = True
         except WrongHttpStatusCode as http_exception:
             if http_exception.status_code == 404:
@@ -227,19 +246,19 @@ def apply(updates: LegionCloudResourcesUpdateList, edi_client: RemoteEdiClient, 
             # If not removal (creation / update)
             if not is_removal:
                 if resource_exist:
-                    LOGGER.info('Editing of #%d %s (name: %s)', idx+1, change.resource, change.resource_name)
+                    LOGGER.info('Editing of #%d %s (name: %s)', idx + 1, change.resource, change.resource_id)
                     client.edit(change.resource)
                     changed.append(change)
                 else:
-                    LOGGER.info('Creating of #%d %s (name: %s)', idx+1, change.resource, change.resource_name)
+                    LOGGER.info('Creating of #%d %s (name: %s)', idx + 1, change.resource, change.resource_id)
                     client.create(change.resource)
                     created.append(change)
             # If removal
             else:
                 # Only if resource exists on a cluster
                 if resource_exist:
-                    LOGGER.info('Removing of #%d %s (name: %s)', idx+1, change.resource, change.resource_name)
-                    client.delete(change.resource_name)
+                    LOGGER.info('Removing of #%d %s (name: %s)', idx + 1, change.resource, change.resource_id)
+                    client.delete(change.resource_id)
                     removed.append(change)
         except Exception as general_exception:
             errors.append(Exception(f'Can not update resource {resource_str_identifier}: {general_exception}'))

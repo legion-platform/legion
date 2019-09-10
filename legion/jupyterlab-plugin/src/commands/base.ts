@@ -37,13 +37,17 @@ export namespace CommandIDs {
   export const authorizeOnCluster = 'legion:cloud-start-auth';
 
   // Cloud
+  export const removeConnection = 'legion:connection-remove';
+  export const removeModelPackaging = 'legion:modelpackaging-remove';
   export const removeCloudTraining = 'legion:cloud-training-remove';
   export const newCloudDeployment = 'legion:cloud-deployment-new';
   export const removeCloudDeployment = 'legion:cloud-deployment-remove';
   export const issueNewCloudAccessToken = 'legion:cloud-issue-new-token';
   export const openTrainingLogs = 'legion:cloud-training-logs';
+  export const openPackagingLogs = 'legion:cloud-packaging-logs';
   export const applyCloudResources = 'legion:resources:apply';
   export const removeCloudResources = 'legion:resources:remove';
+  export const condaUpdateEnv = 'legion:resources:conda_env';
 
   // Settings
   export const refreshCloud = 'legion:refresh-cloud-mode';
@@ -74,4 +78,5 @@ export interface IAddCommandsOptions {
 export interface IAddCloudCommandsOptions extends IAddCommandsOptions {
   state: IApiCloudState;
   trainingLogs: WidgetRegistry<Widget>;
+  packagingLogs: WidgetRegistry<Widget>;
 }

@@ -19,7 +19,7 @@ package routes
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/spf13/viper"
 	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -35,11 +35,11 @@ var (
 
 func SetUpIndexPage(server *gin.Engine) {
 	// TODO: replace with https://github.com/jessevdk/go-assets
-	server.LoadHTMLGlob(fmt.Sprintf("%s/*", viper.GetString(legion.TemplateFolder)))
+	server.LoadHTMLGlob(fmt.Sprintf("%s/*", viper.GetString(config_deployment.ServerTemplateFolder)))
 
 	server.GET("/", func(c *gin.Context) {
 		token := c.GetHeader(authHeaderName)
-		
+
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"token": token,
 		})

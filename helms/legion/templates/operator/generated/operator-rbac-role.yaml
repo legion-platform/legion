@@ -8,6 +8,38 @@ metadata:
     {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
 rules:
 - apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - connections
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - connections/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -183,6 +215,78 @@ rules:
   - create
   - patch
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - modelpackagings
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - modelpackagings/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - connecitons
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
   - legion.legion-platform.org
   resources:
   - modelroutes
@@ -279,10 +383,63 @@ rules:
 - apiGroups:
   - legion.legion-platform.org
   resources:
-  - vcscredentials
+  - modelpackagings
   verbs:
   - get
   - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - modelpackagings/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - packagingintegrations
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - packagingintegrations/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - toolchainintegrations
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - toolchainintegrations/status
+  verbs:
+  - get
+  - update
+  - patch
 - apiGroups:
   - ""
   resources:
@@ -290,73 +447,4 @@ rules:
   verbs:
   - create
   - patch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - vcscredentials
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - vcscredentials/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
 {{- end }}

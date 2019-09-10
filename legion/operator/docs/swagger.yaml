@@ -1,118 +1,347 @@
 basePath: '{{.BasePath}}'
 definitions:
-  routes.HTTPResult:
+  Connection:
     properties:
-      message:
-        description: Success of error message
-        type: string
-    type: object
-  v1.Jwks:
-    properties:
-      keys:
-        items:
-          type: '&{%!s(token.Pos=1395) string string}'
-        type: array
-    type: object
-  v1.MDRequest:
-    properties:
-      name:
-        description: Model deployment name
+      id:
+        description: Connection id
         type: string
       spec:
-        $ref: '#/definitions/v1alpha1.ModelDeploymentSpec'
-        description: Model Deployment specification. It is the same as ModelDeployment
-          CRD specification
-        type: object
-    type: object
-  v1.MDResponse:
-    properties:
-      name:
-        description: Model deployment name
-        type: string
-      spec:
-        $ref: '#/definitions/v1alpha1.ModelDeploymentSpec'
-        description: Model Deployment specification. It is the same as ModelDeployment
-          CRD specification
+        $ref: '#/definitions/ConnectionSpec'
+        description: Connection specification
         type: object
       status:
-        $ref: '#/definitions/v1alpha1.ModelDeploymentStatus'
-        description: Model Deployment specification. It is the same as ModelDeployment
-          CRD specification
+        $ref: '#/definitions/ConnectionStatus'
+        description: Connection status
         type: object
     type: object
-  v1.MRRequest:
+  ModelDeployment:
     properties:
-      name:
-        description: Model route name
+      id:
+        description: Model deployment id
         type: string
       spec:
-        $ref: '#/definitions/v1alpha1.ModelRouteSpec'
-        description: Model Route specification. It is the same as ModelRoute CRD specification
-        type: object
-    type: object
-  v1.MRResponse:
-    properties:
-      name:
-        description: Model route name
-        type: string
-      spec:
-        $ref: '#/definitions/v1alpha1.ModelRouteSpec'
-        description: Model Route specification. It is the same as ModelRoute CRD specification
+        $ref: '#/definitions/ModelDeploymentSpec'
+        description: Model deployment specification
         type: object
       status:
-        $ref: '#/definitions/v1alpha1.ModelRouteStatus'
-        description: Model Route specification. It is the same as ModelRoute CRD specification
+        $ref: '#/definitions/ModelDeploymentStatus'
+        description: Model deployment status
         type: object
     type: object
-  v1.MTRequest:
+  ModelRoute:
     properties:
-      name:
-        description: MT name
+      id:
+        description: Model route id
         type: string
       spec:
-        $ref: '#/definitions/v1alpha1.ModelTrainingSpec'
-        description: MT specification. It is the same as ModelTraining CRD specification
-        type: object
-    type: object
-  v1.MTResponse:
-    properties:
-      name:
-        description: MT name
-        type: string
-      spec:
-        $ref: '#/definitions/v1alpha1.ModelTrainingSpec'
-        description: MT specification. It is the same as ModelTraining CRD specification
+        $ref: '#/definitions/ModelRouteSpec'
+        description: Model route specification
         type: object
       status:
-        $ref: '#/definitions/v1alpha1.ModelTrainingStatus'
-        description: MT status. It is the same as ModelTraining CRD status
+        $ref: '#/definitions/ModelRouteStatus'
+        description: Model route status
         type: object
     type: object
-  v1.TokenRequest:
+  TokenRequest:
     properties:
       expiration_date:
         description: Explicitly set expiration date for token
         type: string
       role_name:
-        description: Model Deployment name
+        description: Role name
         type: string
     type: object
-  v1.TokenResponse:
+  TokenResponse:
     properties:
       token:
         type: string
     type: object
-  v1.VCSEntity:
+  JsonSchema:
     properties:
-      name:
-        description: VCS name
+      properties:
+        description: Properties configuration
+        items:
+          $ref: '#/definitions/Property'
+        type: array
+      required:
+        description: List of required properties
+        items:
+          type: string
+        type: array
+    type: object
+  K8sPackager:
+    properties:
+      modelHolder:
+        $ref: '#/definitions/Connection'
+        description: Connection where a trained model artifact is stored
+        type: object
+      modelPackaging:
+        $ref: '#/definitions/ModelPackaging'
+        description: Model Packaging
+        type: object
+      packagingIntegration:
+        $ref: '#/definitions/PackagingIntegration'
+        description: Packaging integration
+        type: object
+      targets:
+        description: List of targets with appropriate connections
+        items:
+          $ref: '#/definitions/PackagerTarget'
+        type: array
+      trainingZipName:
+        description: Name of trained model artifact name
+        type: string
+    type: object
+  ModelPackaging:
+    properties:
+      id:
+        description: Model packaging id
         type: string
       spec:
-        $ref: '#/definitions/v1alpha1.VCSCredentialSpec'
-        description: VCS specification. It is the same as VCSCredential CRD specification
+        $ref: '#/definitions/ModelPackagingSpec'
+        description: Model packaging specification
+        type: object
+      status:
+        $ref: '#/definitions/ModelPackagingStatus'
+        description: Model packaging status
         type: object
     type: object
-  v1alpha1.ModelDeploymentSpec:
+  ModelPackagingSpec:
+    properties:
+      arguments:
+        description: List of arguments. This parameter depends on the specific packaging
+          integration
+        type: object
+      artifactName:
+        description: Training output artifact name
+        type: string
+      image:
+        description: Image name. Packaging integration image will be used if this
+          parameters is missed
+        type: string
+      integrationName:
+        description: Packaging integration ID
+        type: string
+      targets:
+        description: List of targets. This parameter depends on the specific packaging
+          integration
+        items:
+          $ref: '#/definitions/Target'
+        type: array
+    type: object
+  PackagerTarget:
+    properties:
+      connection:
+        $ref: '#/definitions/Connection'
+        description: A Connection for this target
+        type: object
+      name:
+        description: Target name
+        type: string
+    type: object
+  PackagingIntegration:
+    properties:
+      id:
+        description: Packaging integration id
+        type: string
+      spec:
+        $ref: '#/definitions/PackagingIntegrationSpec'
+        description: Packaging integration specification
+        type: object
+      status:
+        $ref: '#/definitions/PackagingIntegrationStatus'
+        description: Packaging integration status
+        type: object
+    type: object
+  PackagingIntegrationSpec:
+    properties:
+      defaultImage:
+        description: Default packaging Docker image
+        type: string
+      entrypoint:
+        description: Path to binary which starts a packaging process
+        type: string
+      privileged:
+        description: Enable docker privileged flag
+        type: boolean
+      schema:
+        $ref: '#/definitions/Schema'
+        description: Schema which describes targets and arguments for specific packaging
+          integration
+        type: object
+    type: object
+  Parameter:
+    properties:
+      name:
+        description: Parameter name
+        type: string
+      value:
+        description: Parameter value
+        type: object
+    type: object
+  Property:
+    properties:
+      name:
+        description: Property name
+        type: string
+      parameters:
+        description: List of property parameters
+        items:
+          $ref: '#/definitions/Parameter'
+        type: array
+    type: object
+  Schema:
+    properties:
+      arguments:
+        $ref: '#/definitions/JsonSchema'
+        description: Arguments schema
+        type: object
+      targets:
+        description: Targets schema
+        items:
+          $ref: '#/definitions/TargetSchema'
+        type: array
+    type: object
+  HTTPResult:
+    properties:
+      message:
+        description: Success of error message
+        type: string
+    type: object
+  InputDataBindingDir:
+    properties:
+      dataBinding:
+        $ref: '#/definitions/ConnectionSpec'
+        description: Connection specific for data
+        type: object
+      localPath:
+        description: Local path
+        type: string
+      remotePath:
+        description: Remote path
+        type: string
+    type: object
+  K8sTrainer:
+    properties:
+      inputData:
+        description: Connection for training data
+        items:
+          $ref: '#/definitions/InputDataBindingDir'
+        type: array
+      modelTraining:
+        $ref: '#/definitions/ModelTraining'
+        description: Model training
+        type: object
+      outputConn:
+        $ref: '#/definitions/Connection'
+        description: Connection for trained model artifact
+        type: object
+      toolchainIntegration:
+        $ref: '#/definitions/ToolchainIntegration'
+        description: Toolchain integration
+        type: object
+      vcs:
+        $ref: '#/definitions/Connection'
+        description: Connection for source code
+        type: object
+    type: object
+  ModelTraining:
+    properties:
+      id:
+        description: Model training ID
+        type: string
+      spec:
+        $ref: '#/definitions/ModelTrainingSpec'
+        description: Model training specification
+        type: object
+      status:
+        $ref: '#/definitions/ModelTrainingStatus'
+        description: Model training status
+        type: object
+    type: object
+  ToolchainIntegration:
+    properties:
+      id:
+        description: Toolchain integration id
+        type: string
+      spec:
+        $ref: '#/definitions/ToolchainIntegrationSpec'
+        description: Toolchain integration specification
+        type: object
+      status:
+        $ref: '#/definitions/ToolchainIntegrationStatus'
+        description: Toolchain integration status
+        type: object
+    type: object
+  ConnectionSpec:
+    properties:
+      keyID:
+        description: Key ID
+        type: string
+      keySecret:
+        description: Ssh or service account secret
+        type: string
+      password:
+        description: Password
+        type: string
+      publicKey:
+        description: Ssh public key
+        type: string
+      reference:
+        description: VCS reference
+        type: string
+      region:
+        description: AWS region or GCP project
+        type: string
+      role:
+        description: Service account role
+        type: string
+      type:
+        description: |-
+          Required value. Available values:
+            * s3
+            * gcs
+            * git
+            * docker
+        type: string
+      uri:
+        description: URI. It is required value
+        type: string
+      username:
+        description: Username
+        type: string
+    type: object
+  ConnectionStatus:
+    properties:
+      secretName:
+        description: Kubernetes secret name
+        type: string
+      serviceAccount:
+        description: Kubernetes service account
+        type: string
+    type: object
+  DataBindingDir:
+    properties:
+      connName:
+        description: Connection name for data
+        type: string
+      localPath:
+        description: Local training path
+        type: string
+      remotePath:
+        description: Overwrite remote data path in connection
+        type: string
+    type: object
+  EnvironmentVariable:
+    properties:
+      name:
+        description: Name of an environment variable
+        type: string
+      value:
+        description: Value of an environment variable
+        type: string
+    type: object
+  ModelDeploymentSpec:
     properties:
       annotations:
         description: Annotations for model pods.
@@ -135,15 +364,16 @@ definitions:
         description: Initial delay for readiness probe of model pod
         type: integer
       resources:
+        $ref: '#/definitions/ResourceRequirements'
         description: |-
           Resources for model deployment
           The same format like k8s uses for pod resources.
-        type: string
+        type: object
       roleName:
         description: Initial delay for readiness probe of model pod
         type: string
     type: object
-  v1alpha1.ModelDeploymentStatus:
+  ModelDeploymentStatus:
     properties:
       availableReplicas:
         description: Number of available pods
@@ -165,23 +395,65 @@ definitions:
         type: string
       state:
         description: |-
-          The state of a model deployment.
+          The state of a model 
             "Processing" - A model was not deployed. Because some parameters of the
                            custom resource are wrong. For example, there is not a model
                            image in a Docker registry.
             "Ready" - A model was deployed successfully.
         type: string
     type: object
-  v1alpha1.ModelDeploymentTarget:
+  ModelDeploymentTarget:
     properties:
-      name:
+      mdName:
         description: Model Deployment name
         type: string
       weight:
         description: The proportion of traffic to be forwarded to the Model Deployment.
         type: integer
     type: object
-  v1alpha1.ModelRouteSpec:
+  ModelIdentity:
+    properties:
+      artifactNameTemplate:
+        description: Template of output artifact name
+        type: string
+      name:
+        description: Model name
+        type: string
+      version:
+        description: Model version
+        type: string
+    type: object
+  ModelPackagingResult:
+    properties:
+      name:
+        description: Name of a result. It can be docker image, path to s3 artifact
+          and so on
+        type: string
+      value:
+        description: Specific value
+        type: string
+    type: object
+  ModelPackagingStatus:
+    properties:
+      exitCode:
+        description: Pod exit code
+        type: integer
+      message:
+        description: Pod last log
+        type: string
+      reason:
+        description: Pod reason
+        type: string
+      results:
+        description: List of packaing results
+        items:
+          $ref: '#/definitions/ModelPackagingResult'
+        type: array
+      state:
+        description: Model Packaging State
+        type: string
+    type: object
+  ModelRouteSpec:
     properties:
       mirror:
         description: |-
@@ -191,16 +463,16 @@ definitions:
       modelDeployments:
         description: A http rule can forward traffic to Model Deployments.
         items:
-          $ref: '#/definitions/v1alpha1.ModelDeploymentTarget'
+          $ref: '#/definitions/ModelDeploymentTarget'
         type: array
       urlPrefix:
         description: |-
-          Url prefix for model deployment. For example: /custom/test
+          Url prefix for model  For example: /custom/test
           Prefix must start with slash
           "/feedback" and "/model" are reserved for internal usage
         type: string
     type: object
-  v1alpha1.ModelRouteStatus:
+  ModelRouteStatus:
     properties:
       edgeUrl:
         description: Full url with prefix to a model deployment service
@@ -209,95 +481,143 @@ definitions:
         description: State of Model Route
         type: string
     type: object
-  v1alpha1.ModelTrainingSpec:
+  ModelTrainingSpec:
     properties:
       args:
         items:
           type: string
         type: array
+      data:
+        description: Input data for a training
+        items:
+          $ref: '#/definitions/DataBindingDir'
+        type: array
       entrypoint:
         description: Model training file. It can be python\bash script or jupiter
           notebook
         type: string
-      env:
-        description: |-
-          Custom environment variables that should be setted before entrypoint invocation.
-          In ENVname:value format
-        type: object
-      hyperparameters:
-        description: Model training hyperparameters in parameter:value format
+      envs:
+        description: Custom environment variables that should be set before entrypoint
+          invocation.
+        items:
+          $ref: '#/definitions/EnvironmentVariable'
+        type: array
+      hyperParameters:
+        description: Model training hyperParameters in parameter:value format
         type: object
       image:
         description: Train image
         type: string
-      modelFile:
-        description: Model file
-        type: string
+      model:
+        $ref: '#/definitions/ModelIdentity'
+        description: Model Identity
+        type: object
       reference:
         description: VCS Reference
         type: string
       resources:
+        $ref: '#/definitions/ResourceRequirements'
         description: |-
           Resources for model container
           The same format like k8s uses for pod resources.
-        type: string
+        type: object
       toolchain:
-        description: |-
-          Type of toolchain. Currently supports only python.
-          +kubebuilder:validation:Enum=python,jupyter
+        description: IntegrationName of toolchain
         type: string
       vcsName:
-        description: Name of VCSCredential resource. Must exists
+        description: Name of Connection resource. Must exists
         type: string
       workDir:
         description: Directory with model scripts/files in a git repository
         type: string
     type: object
-  v1alpha1.ModelTrainingStatus:
+  ModelTrainingStatus:
     properties:
-      commitID:
-        type: string
+      artifacts:
+        description: List of training results
+        items:
+          $ref: '#/definitions/TrainingResult'
+        type: array
       exitCode:
+        description: Pod exit code
         type: integer
       message:
-        type: string
-      modelImage:
-        type: string
-      modelName:
-        type: string
-      modelVersion:
-        type: string
-      podName:
+        description: Pod last log
         type: string
       reason:
+        description: Pod reason
         type: string
       state:
-        description: +kubebuilder:validation:Enum=scheduling,fetching-code,running,capturing,succeeded,failed,unknown
+        description: Model Packaging State
         type: string
     type: object
-  v1alpha1.VCSCredentialSpec:
+  PackagingIntegrationStatus:
+    type: object
+  ResourceList:
     properties:
-      credential:
-        description: Creds for VCS. Is not required. In case of GIT should be base64-encoded
-          private key.
+      cpu:
+        description: Read more about CPU resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
         type: string
-      defaultReference:
-        description: Default reference in VCS, e.g. branch, commit, tag and etc.
+      gpu:
+        description: Read more about GPU resource here https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
         type: string
-      publicKey:
-        description: Public keys in base64 format for ssh know hosts. You can gather
-          it using "ssh-keyscan"
+      memory:
+        description: Read more about memory resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
         type: string
-      type:
-        description: |-
-          Type of VCS. Currently supports only git.
-          +kubebuilder:validation:Enum=git
+    type: object
+  ResourceRequirements:
+    properties:
+      limits:
+        $ref: '#/definitions/ResourceList'
+        description: Limits describes the maximum amount of compute resources allowed.
+        type: object
+      requests:
+        $ref: '#/definitions/ResourceList'
+        description: Requests describes the minimum amount of compute resources required.
+        type: object
+    type: object
+  Target:
+    properties:
+      connectionName:
         type: string
-      uri:
-        description: |-
-          VCS uri.
-          For Git valid formats are:
-          * git@github.com:legion-platform/legion.git
+      name:
+        type: string
+    type: object
+  TargetSchema:
+    properties:
+      connectionTypes:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      required:
+        type: boolean
+    type: object
+  ToolchainIntegrationSpec:
+    properties:
+      additionalEnvironments:
+        description: Additional environments for a training process
+        type: object
+      defaultImage:
+        description: Default training Docker image
+        type: string
+      entrypoint:
+        description: Path to binary which starts a training process
+        type: string
+    type: object
+  ToolchainIntegrationStatus:
+    type: object
+  TrainingResult:
+    properties:
+      artifactName:
+        description: Trained artifact name
+        type: string
+      commitID:
+        description: VCS commit
+        type: string
+      runId:
+        description: Mlflow run ID
         type: string
     type: object
 host: '{{.Host}}'
@@ -311,31 +631,24 @@ info:
   title: EDI API
   version: "1.0"
 paths:
-  /api/v1/model/deployment:
-    delete:
-      consumes:
-      - application/json
-      description: Delete list of Model deployments by labels
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Delete list of Model deployments by labels
-      tags:
-      - ModelDeployment
+  /api/v1/connection:
     get:
       consumes:
       - application/json
-      description: Get list of Model deployments
+      description: Get list of Connections
+      parameters:
+      - description: Toolchain
+        in: path
+        name: type
+        type: string
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -343,27 +656,27 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.MDResponse'
+              $ref: '#/definitions/Connection'
             type: array
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-      summary: Get list of Model deployments
+      summary: Get list of Connections
       tags:
-      - ModelDeployment
+      - Connection
     post:
       consumes:
       - application/json
-      description: Create a Model deployment. Result is created Model deployment.
+      description: Create a Connection. Results is created Connection.
       parameters:
-      - description: Create a Model deployment
+      - description: Create a Connection
         in: body
-        name: md
+        name: connection
         required: true
         schema:
-          $ref: '#/definitions/v1.MDRequest'
+          $ref: '#/definitions/Connection'
           type: object
       produces:
       - application/json
@@ -371,27 +684,27 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/Connection'
             type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-      summary: Create a Model deployment
+      summary: Create a Connection
       tags:
-      - ModelDeployment
+      - Connection
     put:
       consumes:
       - application/json
-      description: Update a Model deployment. Result is updated Model deployment.
+      description: Update a Connection. Results is updated Connection.
       parameters:
-      - description: Update a Model deployment
+      - description: Update a Connection
         in: body
-        name: md
+        name: connection
         required: true
         schema:
-          $ref: '#/definitions/v1.MDRequest'
+          $ref: '#/definitions/Connection'
           type: object
       produces:
       - application/json
@@ -399,30 +712,30 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Update a Model deployment
+      summary: Update a Connection
       tags:
-      - ModelDeployment
-  /api/v1/model/deployment/{name}:
+      - Connection
+  /api/v1/connection/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a Model deployment by name
+      description: Delete a Connection by id
       parameters:
-      - description: Model deployment name
+      - description: Connection id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -431,29 +744,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Delete a Model deployment
+      summary: Delete a Connection
       tags:
-      - ModelDeployment
+      - Connection
     get:
       consumes:
       - application/json
-      description: Get a Model deployment by name
+      description: Get a Connection by id
       parameters:
-      - description: Model deployment name
+      - description: Connection id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -462,21 +775,176 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.MDResponse'
+            $ref: '#/definitions/Connection'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
+      summary: Get a Connection
+      tags:
+      - Connection
+  /api/v1/model/deployment:
+    get:
+      consumes:
+      - application/json
+      description: Get list of Model deployments
+      parameters:
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            items:
+              $ref: '#/definitions/ModelDeployment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Get list of Model deployments
+      tags:
+      - Deployment
+    post:
+      consumes:
+      - application/json
+      description: Create a Model  Results is created Model
+      parameters:
+      - description: Create a Model deployment
+        in: body
+        name: md
+        required: true
+        schema:
+          $ref: '#/definitions/ModelDeployment'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ModelDeployment'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Create a Model deployment
+      tags:
+      - Deployment
+    put:
+      consumes:
+      - application/json
+      description: Update a Model  Results is updated Model
+      parameters:
+      - description: Update a Model deployment
+        in: body
+        name: md
+        required: true
+        schema:
+          $ref: '#/definitions/ModelDeployment'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ModelDeployment'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Update a Model deployment
+      tags:
+      - Deployment
+  /api/v1/model/deployment/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Model deployment by id
+      parameters:
+      - description: Model deployment id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Delete a Model deployment
+      tags:
+      - Deployment
+    get:
+      consumes:
+      - application/json
+      description: Get a Model deployment by id
+      parameters:
+      - description: Model deployment id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ModelDeployment'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Get a Model deployment
       tags:
-      - ModelDeployment
+      - Deployment
   /api/v1/model/jwks:
     get:
       description: Retrieve model jwks for model services
@@ -486,16 +954,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Jwks'
+            $ref: '#/definitions/TokenResponse'
             type: object
       summary: Retrieve model jwks
       tags:
       - JWT
-  /api/v1/model/route:
+  /api/v1/model/packaging:
     get:
       consumes:
       - application/json
-      description: Get list of Model routes
+      description: Get list of Model Packagings
+      parameters:
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -503,27 +980,27 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.MRResponse'
+              $ref: '#/definitions/ModelPackaging'
             type: array
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-      summary: Get list of Model routes
+      summary: Get list of Model Packagings
       tags:
-      - ModelRoute
+      - Packaging
     post:
       consumes:
       - application/json
-      description: Create a Model route. Result is created Model route.
+      description: Create a Model Packaging. Results is created Model Packaging.
       parameters:
-      - description: Create a Model route
+      - description: Create a Model Packaging
         in: body
-        name: mr
+        name: MP
         required: true
         schema:
-          $ref: '#/definitions/v1.MRRequest'
+          $ref: '#/definitions/ModelPackaging'
           type: object
       produces:
       - application/json
@@ -531,27 +1008,27 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/ModelPackaging'
             type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-      summary: Create a Model route
+      summary: Create a Model Packaging
       tags:
-      - ModelRoute
+      - Packaging
     put:
       consumes:
       - application/json
-      description: Update a Model route. Result is updated Model route.
+      description: Update a Model Packaging. Results is updated Model Packaging.
       parameters:
-      - description: Update a Model route
+      - description: Update a Model Packaging
         in: body
-        name: mr
+        name: MP
         required: true
         schema:
-          $ref: '#/definitions/v1.MDRequest'
+          $ref: '#/definitions/ModelPackaging'
           type: object
       produces:
       - application/json
@@ -559,30 +1036,30 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/ModelPackaging'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Update a Model route
+      summary: Update a Model Packaging
       tags:
-      - ModelRoute
-  /api/v1/model/route/{name}:
+      - Packaging
+  /api/v1/model/packaging/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a Model route by name
+      description: Delete a Model Packaging by id
       parameters:
-      - description: Model route name
+      - description: Model Packaging id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -591,29 +1068,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Delete a Model route
+      summary: Delete a Model Packaging
       tags:
-      - ModelRoute
+      - Packaging
     get:
       consumes:
       - application/json
-      description: Get a Model route by name
+      description: Get a Model Packaging by id
       parameters:
-      - description: Model route name
+      - description: Model Packaging id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -622,21 +1099,205 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.MRResponse'
+            $ref: '#/definitions/ModelPackaging'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
+      summary: Get a Model Packaging
+      tags:
+      - Packaging
+  /api/v1/model/packaging/{id}/log:
+    get:
+      consumes:
+      - text/plain
+      description: Stream logs from model packaging pod
+      parameters:
+      - description: follow logs
+        in: query
+        name: follow
+        type: boolean
+      - description: Model Packaging id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Stream logs from model packaging pod
+      tags:
+      - Packaging
+  /api/v1/model/route:
+    get:
+      consumes:
+      - application/json
+      description: Get list of Model routes
+      parameters:
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ModelRoute'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Get list of Model routes
+      tags:
+      - Route
+    post:
+      consumes:
+      - application/json
+      description: Create a Model route. Results is created Model route.
+      parameters:
+      - description: Create a Model route
+        in: body
+        name: mr
+        required: true
+        schema:
+          $ref: '#/definitions/ModelRoute'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ModelRoute'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Create a Model route
+      tags:
+      - Route
+    put:
+      consumes:
+      - application/json
+      description: Update a Model route. Results is updated Model route.
+      parameters:
+      - description: Update a Model route
+        in: body
+        name: mr
+        required: true
+        schema:
+          $ref: '#/definitions/ModelRoute'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ModelRoute'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Update a Model route
+      tags:
+      - Route
+  /api/v1/model/route/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Model route by id
+      parameters:
+      - description: Model route id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Delete a Model route
+      tags:
+      - Route
+    get:
+      consumes:
+      - application/json
+      description: Get a Model route by id
+      parameters:
+      - description: Model route id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ModelRoute'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Get a Model route
       tags:
-      - ModelRoute
+      - Route
   /api/v1/model/token:
     post:
       consumes:
@@ -648,7 +1309,7 @@ paths:
         name: token
         required: true
         schema:
-          $ref: '#/definitions/v1.TokenRequest'
+          $ref: '#/definitions/TokenRequest'
           type: object
       produces:
       - application/json
@@ -656,41 +1317,42 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1.TokenResponse'
+            $ref: '#/definitions/TokenResponse'
             type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Create a model JWT token
       tags:
       - JWT
   /api/v1/model/training:
-    delete:
-      consumes:
-      - application/json
-      description: Delete list of  Model Training by labels
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Delete list of Model Trainings by labels
-      tags:
-      - ModelTraining
     get:
       consumes:
       - application/json
       description: Get list of Model Trainings
+      parameters:
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
+      - description: Model name
+        in: path
+        name: model_name
+        type: integer
+      - description: Model version
+        in: path
+        name: model_version
+        type: integer
+      - description: Toolchain name
+        in: path
+        name: toolchain
+        type: integer
       produces:
       - application/json
       responses:
@@ -698,27 +1360,27 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.MTResponse'
+              $ref: '#/definitions/ModelTraining'
             type: array
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Get list of Model Trainings
       tags:
-      - ModelTraining
+      - Training
     post:
       consumes:
       - application/json
-      description: Create a Model Training. Result is created Model Training.
+      description: Create a Model Training. Results is created Model Training.
       parameters:
       - description: Create a Model Training
         in: body
         name: mt
         required: true
         schema:
-          $ref: '#/definitions/v1.MTRequest'
+          $ref: '#/definitions/ModelTraining'
           type: object
       produces:
       - application/json
@@ -726,58 +1388,58 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1.MTResponse'
+            $ref: '#/definitions/ModelTraining'
             type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Create a Model Training
       tags:
-      - ModelTraining
+      - Training
     put:
       consumes:
       - application/json
-      description: Update a Model Training. Result is updated Model Training.
+      description: Update a Model Training. Results is updated Model Training.
       parameters:
       - description: Update a Model Training
         in: body
         name: mt
         required: true
         schema:
-          $ref: '#/definitions/v1.MTRequest'
+          $ref: '#/definitions/ModelTraining'
           type: object
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/ModelTraining'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Update a Model Training
       tags:
-      - ModelTraining
-  /api/v1/model/training/{name}:
+      - Training
+  /api/v1/model/training/{id}:
     delete:
       consumes:
       - application/json
-      description: Get a Model Training by name
+      description: Get a Model Training by id
       parameters:
-      - description: Model Training name
+      - description: Model Training id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -786,29 +1448,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Get a Model Training
       tags:
-      - ModelTraining
+      - Training
     get:
       consumes:
       - application/json
-      description: Get a Model Training by name
+      description: Get a Model Training by id
       parameters:
-      - description: Model Training name
+      - description: Model Training id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -817,22 +1479,22 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.MTResponse'
+            $ref: '#/definitions/ModelTraining'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
       summary: Get a Model Training
       tags:
-      - ModelTraining
-  /api/v1/model/training/{name}/log:
+      - Training
+  /api/v1/model/training/{id}/log:
     get:
       consumes:
       - text/plain
@@ -842,9 +1504,9 @@ paths:
         in: query
         name: follow
         type: boolean
-      - description: Model Training name
+      - description: Model Training id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -854,18 +1516,27 @@ paths:
           description: OK
           schema:
             type: string
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
             type: string
       summary: Stream logs from model training pod
       tags:
-      - ModelTraining
-  /api/v1/vcs:
+      - Training
+  /api/v1/packaging/integration:
     get:
       consumes:
       - application/json
-      description: Get list of VCS Credentials
+      description: Get list of PackagingIntegrations
+      parameters:
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -873,27 +1544,27 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.VCSEntity'
+              $ref: '#/definitions/PackagingIntegration'
             type: array
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-      summary: Get list of VCS Credentials
+      summary: Get list of PackagingIntegrations
       tags:
-      - VCSCredential
+      - Packager
     post:
       consumes:
       - application/json
-      description: Create a VCS Credential. Result is created VCS Credential.
+      description: Create a PackagingIntegration. Results is created PackagingIntegration.
       parameters:
-      - description: Create a VCS Credential
+      - description: Create a PackagingIntegration
         in: body
-        name: vcs
+        name: ti
         required: true
         schema:
-          $ref: '#/definitions/v1.VCSEntity'
+          $ref: '#/definitions/PackagingIntegration'
           type: object
       produces:
       - application/json
@@ -901,27 +1572,154 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1.VCSEntity'
+            $ref: '#/definitions/PackagingIntegration'
             type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-      summary: Create a VCS Credential
+      summary: Create a PackagingIntegration
       tags:
-      - VCSCredential
+      - Packager
     put:
       consumes:
       - application/json
-      description: Update a VCS Credential. Result is updated VCS Credential.
+      description: Update a PackagingIntegration. Results is updated PackagingIntegration.
       parameters:
-      - description: Update a VCS Credential
+      - description: Update a PackagingIntegration
         in: body
-        name: vcs
+        name: pi
         required: true
         schema:
-          $ref: '#/definitions/v1.VCSEntity'
+          $ref: '#/definitions/PackagingIntegration'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PackagingIntegration'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Update a PackagingIntegration
+      tags:
+      - Packager
+  /api/v1/packaging/integration/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a PackagingIntegration by id
+      parameters:
+      - description: PackagingIntegration id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Delete a PackagingIntegration
+      tags:
+      - Packager
+    get:
+      consumes:
+      - application/json
+      description: Get a PackagingIntegration by id
+      parameters:
+      - description: PackagingIntegration id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PackagingIntegration'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Get a PackagingIntegration
+      tags:
+      - Packager
+  /api/v1/toolchain/integration:
+    get:
+      consumes:
+      - application/json
+      description: Get list of ToolchainIntegrations
+      parameters:
+      - description: Number of entities in a response
+        in: path
+        name: size
+        type: integer
+      - description: Number of a page
+        in: path
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ToolchainIntegration'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Get list of ToolchainIntegrations
+      tags:
+      - Toolchain
+    post:
+      consumes:
+      - application/json
+      description: Create a ToolchainIntegration. Results is created ToolchainIntegration.
+      parameters:
+      - description: Create a ToolchainIntegration
+        in: body
+        name: ti
+        required: true
+        schema:
+          $ref: '#/definitions/ToolchainIntegration'
           type: object
       produces:
       - application/json
@@ -929,30 +1727,58 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/ToolchainIntegration'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Create a ToolchainIntegration
+      tags:
+      - Toolchain
+    put:
+      consumes:
+      - application/json
+      description: Update a ToolchainIntegration. Results is updated ToolchainIntegration.
+      parameters:
+      - description: Update a ToolchainIntegration
+        in: body
+        name: ti
+        required: true
+        schema:
+          $ref: '#/definitions/ToolchainIntegration'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ToolchainIntegration'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Update a VCS Credential
+      summary: Update a ToolchainIntegration
       tags:
-      - VCSCredential
-  /api/v1/vcs/{name}:
+      - Toolchain
+  /api/v1/toolchain/integration/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a VCS Credential by name
+      description: Delete a ToolchainIntegration by id
       parameters:
-      - description: VCS Credential name
+      - description: ToolchainIntegration id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -961,29 +1787,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Delete a VCS Credential
+      summary: Delete a ToolchainIntegration
       tags:
-      - VCSCredential
+      - Toolchain
     get:
       consumes:
       - application/json
-      description: Get a VCS Credential by name
+      description: Get a ToolchainIntegration by id
       parameters:
-      - description: VCS Credential name
+      - description: ToolchainIntegration id
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -992,19 +1818,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.VCSEntity'
+            $ref: '#/definitions/ToolchainIntegration'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
             type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/routes.HTTPResult'
+            $ref: '#/definitions/HTTPResult'
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/routes.HTTPResult'
-            type: object
-      summary: Get a VCS Credential
+      summary: Get a ToolchainIntegration
       tags:
-      - VCSCredential
+      - Toolchain
 swagger: "2.0"

@@ -19,15 +19,15 @@ package utils
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	gojwt "github.com/dgrijalva/jwt-go"
-	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sync"
 	"time"
@@ -50,20 +50,19 @@ var (
 
 func Jwks() string {
 	initJwks.Do(func() {
-		if !viper.GetBool(legion.JwtEnabled) {
-			log.Info("Jwt integration is disabled")
+		if !viper.GetBool(config_deployment.SecurityJwtEnabled) {
+			logJwt.Info("Jwt integration is disabled")
 			return
 		}
 
-		log.Info("Jwt integration is enabled")
+		logJwt.Info("Jwt integration is enabled")
 
-		bytes, err := ioutil.ReadFile(viper.GetString(legion.ModelJwtPublicKey))
+		publicKey, err := base64.StdEncoding.DecodeString(viper.GetString(config_deployment.SecurityJwtPublicKey))
 		if err != nil {
-			logJwt.Error(err, "Read file")
+			logJwt.Error(err, "base64 decoding")
 			panic(err)
 		}
-
-		block, _ := pem.Decode(bytes)
+		block, _ := pem.Decode(publicKey)
 		parseResult, _ := x509.ParsePKIXPublicKey(block.Bytes)
 
 		key, err := jwk.New(parseResult)
@@ -92,20 +91,20 @@ func Jwks() string {
 
 func SignKey() *rsa.PrivateKey {
 	initSignKey.Do(func() {
-		if !viper.GetBool(legion.JwtEnabled) {
-			log.Info("Jwt integration is disabled")
+		if !viper.GetBool(config_deployment.SecurityJwtEnabled) {
+			logJwt.Info("Jwt integration is disabled")
 			return
 		}
 
-		log.Info("Jwt integration is enabled")
+		logJwt.Info("Jwt integration is enabled")
 
-		signBytes, err := ioutil.ReadFile(viper.GetString(legion.ModelJwtPrivateKey))
+		privateKey, err := base64.StdEncoding.DecodeString(viper.GetString(config_deployment.SecurityJwtPrivateKey))
 		if err != nil {
-			logJwt.Error(err, "Read file")
+			logJwt.Error(err, "base64 decoding")
 			panic(err)
 		}
 
-		signKey, err = gojwt.ParseRSAPrivateKeyFromPEM(signBytes)
+		signKey, err = gojwt.ParseRSAPrivateKeyFromPEM(privateKey)
 		if err != nil {
 			logJwt.Error(err, "Parse key")
 			panic(err)
@@ -117,18 +116,18 @@ func SignKey() *rsa.PrivateKey {
 
 func CalculateExpirationDate(expirationDateStr string) (unixExpirationDate int64, err error) {
 	if expirationDateStr == "" {
-		expirationDateStr = viper.GetString(viper.GetString(legion.JwtExpDatetime))
+		expirationDateStr = viper.GetString(viper.GetString(config_deployment.SecurityJwtExpDatetime))
 	}
 
 	var expirationDate time.Time
 	if expirationDateStr != "" {
-		expirationDate, err := time.Parse(expirationDateLayout, expirationDateStr)
+		expirationDate, err = time.Parse(expirationDateLayout, expirationDateStr)
 
 		if err != nil {
 			return 0, err
 		}
 
-		maxExpirationDate := time.Now().Add(viper.GetDuration(legion.JwtMaxTtlMinutes) * time.Minute)
+		maxExpirationDate := time.Now().Add(viper.GetDuration(config_deployment.SecurityJwtMaxTtlMinutes) * time.Minute)
 
 		if expirationDate.After(maxExpirationDate) {
 			expirationDate = maxExpirationDate
@@ -137,7 +136,7 @@ func CalculateExpirationDate(expirationDateStr string) (unixExpirationDate int64
 		return expirationDate.Unix(), nil
 	}
 
-	expirationDate = time.Now().Add(viper.GetDuration(legion.JwtTtlMinutes) * time.Minute)
+	expirationDate = time.Now().Add(viper.GetDuration(config_deployment.SecurityJwtTtlMinutes) * time.Minute)
 
 	return expirationDate.Unix(), err
 }

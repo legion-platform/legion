@@ -19,11 +19,14 @@ Configuration handler
 import os
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
-from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, LEGION_X_JWT_TOKEN, DEFAULT_EDI_ENDPOINT
-
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, LEGION_X_JWT_TOKEN, \
+    DEFAULT_EDI_ENDPOINT, METRICS_UI_URL, SERVICE_CATALOG_URL, GRAFANA_URL
+from legion.sdk.clients.templates import get_legion_template_names, get_legion_template_content
 
 
 # pylint: disable=W0223
+
+
 class ConfigurationProviderHandler(BaseLegionHandler):
     """
     Return configuration for current backend configuration
@@ -39,5 +42,18 @@ class ConfigurationProviderHandler(BaseLegionHandler):
         jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
         self.finish_with_json({
             'tokenProvided': jwt_header != '',
-            'defaultEDIEndpoint': os.getenv(DEFAULT_EDI_ENDPOINT, '')
+            'defaultEDIEndpoint': os.getenv(DEFAULT_EDI_ENDPOINT, ''),
+            'metricUiUrl': os.getenv(METRICS_UI_URL, ''),
+            'serviceCatalogUrl': os.getenv(SERVICE_CATALOG_URL, ''),
+            'grafanaUrl': os.getenv(GRAFANA_URL, ''),
+            'legionResourceExamples': sorted(get_legion_template_names()),
         })
+
+
+class TemplatesFilesHandler(BaseLegionHandler):
+
+    def get(self, template_name):
+        if template_name:
+            self.finish(get_legion_template_content(template_name))
+        else:
+            self.set_status(404)

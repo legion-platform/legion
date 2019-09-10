@@ -368,9 +368,6 @@ NODE_NAME = ConfigVariableDeclaration('NODE_NAME', None, str,
                                       'Name of node [Jenkins]. It is used in model saving (during training)',
                                       False)
 
-MODEL_DOCKER_BUILDER_URL = ConfigVariableDeclaration('MODEL_DOCKER_BUILDER_URL', 'http://127.0.0.1:8080', str,
-                                                     'URL of the docker builder sidecar', False)
-
 # Model invocation testing
 MODEL_SERVER_URL = ConfigVariableDeclaration('MODEL_SERVER_URL', '', str, 'Default url of model server', True)
 
@@ -420,7 +417,7 @@ LEGION_API_PORT = ConfigVariableDeclaration('LEGION_API_PORT', 5001, int,
                                             False)
 
 # EDI endpoint
-EDI_URL = ConfigVariableDeclaration('EDI_URL', None, str,
+EDI_URL = ConfigVariableDeclaration('EDI_URL', 'http://localhost:5000', str,
                                     'URL of EDI server',
                                     True)
 EDI_TOKEN = ConfigVariableDeclaration('EDI_TOKEN', None, str,
@@ -444,16 +441,6 @@ LOCAL_DEFAULT_RESOURCE_PREFIX = ConfigVariableDeclaration('LOCAL_DEFAULT_RESOURC
 MODEL_IMAGES_REGISTRY_HOST = ConfigVariableDeclaration('MODEL_IMAGES_REGISTRY_HOST', None, str,
                                                        'Default registry for EDI server',
                                                        False)
-
-# Configuration about storing built docker images
-DOCKER_REGISTRY = ConfigVariableDeclaration('DOCKER_REGISTRY', None, str,
-                                            'Name of default nexus registry for saving built models', True)
-DOCKER_REGISTRY_USER = ConfigVariableDeclaration('DOCKER_REGISTRY_USER', None, str,
-                                                 'Docker API user (for saving built model images)', True)
-DOCKER_REGISTRY_PASSWORD = ConfigVariableDeclaration('DOCKER_REGISTRY_PASSWORD', None, str,
-                                                     'Docker API password (for saving built model images)', True)
-DOCKER_REGISTRY_PROTOCOL = ConfigVariableDeclaration('DOCKER_REGISTRY_PROTOCOL', 'https', str,
-                                                     'Docker registry protocol: https/http', True)
 
 # EDI server configuration
 CLUSTER_CONFIG_PATH = ConfigVariableDeclaration('CLUSTER_CONFIG_PATH', None, str,
@@ -497,7 +484,7 @@ K8S_API_RETRY_DELAY_SEC = ConfigVariableDeclaration('K8S_API_RETRY_DELAY_SEC', 3
 
 # Sandbox mode
 SANDBOX_PYTHON_TOOLCHAIN_IMAGE = ConfigVariableDeclaration('SANDBOX_PYTHON_TOOLCHAIN_IMAGE',
-                                                           'legion/python-toolchain:latest',
+                                                           'legion/jupyterlab:latest',
                                                            str, 'Default image for sandbox mode using python toolchain',
                                                            True)
 

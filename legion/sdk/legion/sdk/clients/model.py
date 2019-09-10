@@ -17,8 +17,6 @@
 Model HTTP API client and utils
 """
 import json
-
-import argparse
 import logging
 
 import requests
@@ -27,7 +25,7 @@ from requests.utils import to_key_val_list
 from urllib3.exceptions import HTTPError
 
 from legion.sdk import config
-from legion.sdk.clients import route
+from legion.sdk.clients.route import ModelRouteClient
 from legion.sdk.utils import ensure_function_succeed
 
 LOGGER = logging.getLogger(__name__)
@@ -55,7 +53,7 @@ def encode_http_params(data):
 
 
 def calculate_url(host: str, url: str = None, model_route: str = None, model_deployment: str = None,
-                  url_prefix: str = None, local: bool = False):
+                  url_prefix: str = None):
     """
     Calculate url for model
 
@@ -64,7 +62,6 @@ def calculate_url(host: str, url: str = None, model_route: str = None, model_dep
     :param model_route: model route name
     :param model_deployment: model deployment name
     :param url_prefix: model prefix
-    :param local: invoke local model deployment
     :return: model url
     """
     if url:
@@ -76,11 +73,11 @@ def calculate_url(host: str, url: str = None, model_route: str = None, model_dep
 
     model_route = model_route or model_deployment
     if model_route:
-        mr_client = route.build_client()
+        mr_client = ModelRouteClient()
         model_route = mr_client.get(model_route)
 
         LOGGER.debug('Found model route: %s', model_route)
-        return model_route.edge_url
+        return model_route.status.edge_url
 
     raise NotImplementedError("Cannot create a model url")
 
@@ -132,18 +129,6 @@ class ModelClient:
         """
         return '{host}/api/model'.format(host=self._url)
 
-    def build_invoke_url(self, endpoint=None):
-        """
-        Build API invoke URL
-
-        :param endpoint: (Optional) target endpoint
-        :type endpoint: str
-        :return: str -- invoke url
-        """
-        if endpoint:
-            return '{}/invoke/{}'.format(self.api_url, endpoint)
-        return '{}/invoke'.format(self.api_url)
-
     def build_batch_url(self, endpoint=None):
         """
         Build API batch invoke URL
@@ -190,27 +175,6 @@ class ModelClient:
                             .format(response.status_code, data, url))
 
         return data
-
-    @staticmethod
-    def _prepare_invoke_request(**parameters):
-        """
-        Build POST and FILE fields for request due their type
-
-        :param parameters: dict -- invoke parameters
-        :return: tuple[list, dict] -- POST list and FILE dictionary in tuple
-        """
-        post_fields_dict = {k: v for (k, v) in parameters.items() if not isinstance(v, bytes)}
-        post_files = {k: v for (k, v) in parameters.items() if isinstance(v, bytes)}
-
-        post_fields_list = []
-        for (k, v) in post_fields_dict.items():
-            if isinstance(v, (tuple, list)):
-                for item in v:
-                    post_fields_list.append((k + '[]', str(item)))
-            else:
-                post_fields_list.append((k, str(v)))
-
-        return post_fields_list, post_files
 
     @property
     def _additional_kwargs(self):
@@ -263,44 +227,15 @@ class ModelClient:
             raise self._http_exception('HTTP request failed')
         return self._parse_response(response)
 
-    def batch(self, invoke_parameters, endpoint=None):
-        """
-        Send batch invoke request
-
-        :param invoke_parameters: list of dictionaries
-        :type invoke_parameters: list[dict]
-        :param endpoint: name of endpoint
-        :type endpoint: str
-        :return: dict -- parsed model response
-        """
-        request_lines = []
-        for parameters in invoke_parameters:
-            data, files = self._prepare_invoke_request(**parameters)
-            if files:
-                raise Exception('Files object not allowed for batch invocation')
-
-            request_lines.append(encode_http_params(data))
-
-        if not request_lines:
-            return []
-
-        content = '\n'.join(request_lines)
-        url = self.build_batch_url(endpoint)
-        return self._request('post', url, data=content, **self._additional_kwargs)
-
-    def invoke(self, endpoint=None, **parameters):
+    def invoke(self, **parameters):
         """
         Invoke model with parameters
 
         :param parameters: parameters for model
         :type parameters: dict[str, object] -- dictionary with parameters
-        :param endpoint: name of endpoint
-        :type endpoint: str
         :return: dict -- parsed model response
         """
-        data, files = self._prepare_invoke_request(**parameters)
-        url = self.build_invoke_url(endpoint)
-        return self._request('post', url, data=data, files=files, **self._additional_kwargs)
+        return self._request('post', f'{self.api_url}/invoke', **self._additional_kwargs, json=parameters)
 
     def info(self):
         """
@@ -309,26 +244,3 @@ class ModelClient:
         :return: dict -- parsed model info
         """
         return self._request('get', self.info_url, **self._additional_kwargs)
-
-
-def build_client(args: argparse.Namespace = None) -> ModelClient:
-    """
-    Build EDGE client from from ENV and from command line arguments
-
-    :param args: (optional) command arguments with .namespace
-    :return: EDGE client
-    """
-    host, token = None, None
-
-    if args.host:
-        host = args.host
-
-    if args.jwt:
-        token = args.jwt
-
-    host = host or config.MODEL_HOST
-    token = token or config.get_config_file_variable(args.model_route or args.model_deployment,
-                                                     section=config.MODEL_JWT_TOKEN_SECTION)
-
-    return ModelClient(calculate_url(host, args.url, args.model_route, args.model_deployment, args.url_prefix,
-                                     args.local), token)

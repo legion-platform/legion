@@ -45,7 +45,8 @@ def load_jupyter_server_extension(nb_server_app):
 
     init_args = {
         'logger': logger,
-        'state': state
+        'state': state,
+        'templates': None
     }
 
     register_all_handlers(logger, web_app, host_pattern, init_args, root_api)

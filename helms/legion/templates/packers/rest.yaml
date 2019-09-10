@@ -1,0 +1,126 @@
+{{- if .Values.packagers.rest.enabled -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ .Release.Name }}-packager-resources"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "fluentd" "root" .) | nindent 4 }}
+data:
+  resources.yaml: |
+    kind: PackagingIntegration
+    id: docker-rest
+    spec:
+      entrypoint: "/usr/local/bin/legion-pack-to-rest"
+      defaultImage: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%spackager-rest:%s") }}"
+      privileged: true
+      schema:
+        targets:
+          - name: docker-push
+            connectionTypes: ["docker"]
+            required: true
+          - name: docker-pull
+            connectionTypes: ["docker"]
+            required: false
+          - name: archive-storage
+            connectionTypes: ["s3", "gcs"]
+            required: false
+        arguments:
+          properties:
+            - name: dockerfileAddCondaInstallation
+              parameters:
+                - name: description
+                  value: Add conda installation code to Dockerfile
+                - name: type
+                  value: boolean
+                - name: default
+                  value: true
+            - name: dockerfileBaseImage
+              parameters:
+                - name: description
+                  value: Base image for Dockerfile.
+                - name: type
+                  value: string
+                - name: default
+                  value: 'python:3.6'
+            - name: dockerfileCondaEnvsLocation
+              parameters:
+                - name: description
+                  value: Conda env location in Dockerfile.
+                - name: type
+                  value: string
+                - name: default
+                  value: /opt/conda/envs/
+            - name: host
+              parameters:
+                - name: description
+                  value: Host to bind.
+                - name: type
+                  value: string
+                - name: default
+                  value: 0.0.0.0
+            - name: port
+              parameters:
+                - name: description
+                  value: Port to bind.
+                - name: type
+                  value: integer
+                - name: default
+                  value: 5000
+            - name: timeout
+              parameters:
+                - name: description
+                  value: Serving timeout in seconds.
+                - name: type
+                  value: integer
+                - name: default
+                  value: 60
+            - name: workers
+              parameters:
+                - name: description
+                  value: Count of serving workers.
+                - name: type
+                  value: integer
+                - name: default
+                  value: 1
+            - name: threads
+              parameters:
+                - name: description
+                  value: Count of serving threads.
+                - name: type
+                  value: integer
+                - name: default
+                  value: 4
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-packager-resources-uploader"
+  labels:
+    component: "packager-resources-uploader"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: resources
+          configMap:
+            name: "{{ .Release.Name }}-packager-resources"
+      containers:
+        - name: packager-resources-uploader
+          env:
+            - name: EDI_URL
+              value: http://{{ .Release.Name }}-edi.{{ .Release.Namespace }}.svc.cluster.local
+          image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%slegion-pipeline-agent:%s") }}"
+          volumeMounts:
+            - mountPath: /opt/legion-resources
+              name: resources
+          command:
+            - legionctl
+            - bulk
+            - apply
+            - /opt/legion-resources/resources.yaml
+{{- end }}

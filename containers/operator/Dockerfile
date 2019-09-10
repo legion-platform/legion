@@ -14,12 +14,20 @@
 #    limitations under the License.
 #
 
-FROM golang:1.11.6-alpine3.9 as builder
+FROM ubuntu:18.04 as builder
 
 ENV OPERATOR_DIR="/go/src/github.com/legion-platform/legion/legion/operator"
+ENV GOPATH="/go"
+ENV PATH "$PATH:/go/bin:/usr/lib/go-1.11/bin"
 WORKDIR "${OPERATOR_DIR}"
 
-RUN apk add -u ca-certificates git gcc musl-dev make && \
+RUN apt-get update -qq && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:gophers/archive && \
+    apt-get update -qq && \
+    apt-get install -y git gcc make golang-1.11-go wget && \
+    wget https://github.com/golangci/golangci-lint/releases/download/v1.17.1/golangci-lint-1.17.1-linux-amd64.tar.gz -O /tmp/golangci-lint.tar.gz && \
+    tar -zxvf /tmp/golangci-lint.tar.gz -C /usr/local/ && mv /usr/local/golangci-lint*/golangci-lint /usr/bin/golangci-lint && \
     wget https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
     chmod +x /usr/local/bin/dep && \
     wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
@@ -35,17 +43,17 @@ RUN dep ensure -vendor-only
 
 COPY legion/operator/ ./
 
-RUN GOOS=linux GOARCH=amd64 make build-all && (make test || true)
+RUN GOOS=linux GOARCH=amd64 make build-all && (make test ; make LINTER_ADDITIONAL_ARGS='--out-format checkstyle > linter-output.xml' lint || true)
 
 #########################################################
 #########################################################
 #########################################################
 
-FROM alpine:3.9 as operator
+FROM ubuntu:18.04 as operator
 
 ENV LEGION_DIR="/opt/legion"
-
-RUN apk add -u openssh-client ca-certificates
+RUN  apt-get -yq update && \
+     apt-get -yqq install openssh-client
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/operator "${LEGION_DIR}/"
 WORKDIR "${LEGION_DIR}"
@@ -55,25 +63,11 @@ CMD ["./operator"]
 #########################################################
 #########################################################
 
-FROM alpine:3.9 as webhook-server
-
-ENV LEGION_DIR="/opt/legion"
-
-COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/webhook-server "${LEGION_DIR}/"
-WORKDIR "${LEGION_DIR}"
-CMD ["./webhook-server"]
-
-#########################################################
-#########################################################
-#########################################################
-
-FROM alpine:3.9 as edi
+FROM ubuntu:18.04 as edi
 
 ENV LEGION_DIR="/opt/legion" \
     TEMPLATE_FOLDER="/opt/legion/templates" \
     GIN_MODE="release"
-
-RUN apk add -u ca-certificates
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/edi "${LEGION_DIR}/"
 COPY legion/operator/templates "${TEMPLATE_FOLDER}/"
@@ -85,28 +79,72 @@ CMD ["./edi"]
 #########################################################
 #########################################################
 
-FROM python:3.6.8-alpine3.9 as model-builder
+FROM ubuntu:18.04 as service-catalog
 
 ENV LEGION_DIR="/opt/legion" \
-    LC_ALL="C.UTF-8" \
-    LANG="C.UTF-8" \
-    LANGUAGE="C.UTF-8"
+    TEMPLATE_FOLDER="/opt/legion/templates" \
+    GIN_MODE="release"
 
-RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 && \
-    apk add -u openssh-client ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates
 
-COPY legion/sdk/Pipfile legion/sdk/Pipfile.lock "${LEGION_DIR}/sdk/"
-RUN  cd "${LEGION_DIR}/sdk" && pipenv install --system --three
-COPY legion/cli/Pipfile legion/cli/Pipfile.lock "${LEGION_DIR}/cli/"
-RUN  cd "${LEGION_DIR}/cli" && pipenv install --system --three
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/service-catalog "${LEGION_DIR}/"
+COPY legion/operator/templates "${TEMPLATE_FOLDER}/"
 
-COPY legion/sdk "${LEGION_DIR}/sdk"
-COPY legion/cli "${LEGION_DIR}/cli"
-
-RUN pip install --no-deps -e "${LEGION_DIR}/sdk" && \
-    pip install --no-deps -e "${LEGION_DIR}/cli"
-
-COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/builder "${LEGION_DIR}/"
 WORKDIR "${LEGION_DIR}"
+CMD ["./edi"]
 
-CMD ["./builder"]
+#########################################################
+#########################################################
+#########################################################
+
+FROM ubuntu:18.04 as model-trainer
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV LANG C.UTF-8
+ENV LANGUAGE C:en
+ENV LC_ALL C.UTF-8
+
+ENV WORK_DIR="/opt/legion"
+WORKDIR "${WORK_DIR}/"
+
+RUN apt-get update -qq && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:projectatomic/ppa && \
+    apt-get update -qq && \
+    apt-get -qq -y install runc buildah iptables libdevmapper-event1.02.1 uidmap
+
+COPY containers/operator/registries.conf \
+     containers/operator/storage.conf \
+     /etc/containers/
+
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/trainer "${WORK_DIR}/"
+
+CMD ["./trainer"]
+
+#########################################################
+#########################################################
+#########################################################
+
+FROM ubuntu:18.04 as model-packager
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV LANG C.UTF-8
+ENV LANGUAGE C:en
+ENV LC_ALL C.UTF-8
+
+ENV WORK_DIR="/opt/legion"
+WORKDIR "${WORK_DIR}/"
+
+RUN apt-get update -qq && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:projectatomic/ppa && \
+    apt-get update -qq && \
+    apt-get -qq -y install runc buildah iptables libdevmapper-event1.02.1 uidmap
+
+COPY containers/operator/registries.conf \
+     containers/operator/storage.conf \
+     /etc/containers/
+
+COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/packager "${WORK_DIR}/"
+
+CMD ["./packager"]

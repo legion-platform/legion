@@ -126,11 +126,19 @@ pipeline {
         }
         stage("Build Docker images & Run Tests") {
             parallel {
-                stage("Build toolchains Docker image"){
+                stage("Build Jupyterlab Docker image"){
                     steps {
                         script {
-                            legion.buildLegionImage('python-toolchain', '.', 'containers/toolchains/python/Dockerfile')
-                            legion.uploadDockerImage('python-toolchain')
+                            legion.buildLegionImage('jupyterlab', '.', 'containers/jupyterlab/Dockerfile')
+                            legion.uploadDockerImage('jupyterlab')
+                        }
+                    }
+                }
+                stage("Build REST packager Docker image"){
+                    steps {
+                        script {
+                            legion.buildLegionImage('packager-rest', '.', 'containers/ai-packagers/rest/Dockerfile')
+                            legion.uploadDockerImage('packager-rest')
                         }
                     }
                 }
@@ -149,25 +157,37 @@ pipeline {
                         }
                     }
                 }
-                stage("Build model builder and operator images") {
+                stage("Build model trainer and operator images") {
                     steps {
                         script {
                             legion.buildLegionImage('operator-dependencies', ".", "containers/operator/Dockerfile", "--target builder")
-                            legion.buildLegionImage('k8s-model-builder', ".", "containers/operator/Dockerfile", "--target model-builder --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-model-trainer', ".", "containers/operator/Dockerfile", "--target model-trainer --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-model-packager', ".", "containers/operator/Dockerfile", "--target model-packager --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('service-catalog', ".", "containers/operator/Dockerfile", "--target service-catalog --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi --cache-from legion/operator-dependencies:${Globals.buildVersion}")
-                            legion.buildLegionImage('webhook-server', ".", "containers/operator/Dockerfile", "--target webhook-server --cache-from legion/operator-dependencies:${Globals.buildVersion}")
 
                             docker.image("legion/operator-dependencies:${Globals.buildVersion}").inside() {
                                 sh """
                                     gocover-cobertura < "\${OPERATOR_DIR}/operator-cover.out" > ./operator-cover.xml
-                                    cp "\${OPERATOR_DIR}/operator-report.xml" ./
+                                    cp "\${OPERATOR_DIR}/operator-report.xml" "\${OPERATOR_DIR}/linter-output.xml" ./
                                 """
 
                                 junit 'operator-report.xml'
                                 stash name: "operator-cover", includes: "operator-cover.xml"
 
                                 sh 'rm -rf operator-report.xml operator-cover.xml'
+
+                                archiveArtifacts 'linter-output.xml'
+//                                 step([
+//                                         $class                     : 'WarningsPublisher',
+//                                         parserConfigurations       : [[
+//                                                                               parserName: 'checkstyle',
+//                                                                               pattern   : 'linter-output.xml'
+//                                                                       ]],
+//                                         unstableTotalAll           : '0',
+//                                         usePreviousBuildAsReference: true
+//                                 ])
                             }
                         }
                     }
@@ -218,10 +238,8 @@ pipeline {
                         script {
                             docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-v /var/run/docker.sock:/var/run/docker.sock -u root --net host") {
                                 sh """
-                                    CURRENT_DIR="\$(pwd)"
                                     cd /opt/legion
-                                    make SANDBOX_PYTHON_TOOLCHAIN_IMAGE="legion/python-toolchain:${Globals.buildVersion}" \
-                                         TEMP_DIRECTORY="\${CURRENT_DIR}" unittests || true
+                                    make unittests || true
                                 """
                                 sh 'cp -r /opt/legion/target/legion-cover.xml /opt/legion/target/nosetests.xml /opt/legion/target/cover ./'
                                 junit 'nosetests.xml'
@@ -280,7 +298,6 @@ pipeline {
 
                             cobertura coberturaReportFile: '*-cover.xml'
                         }
-
                     }
                 }
                 stage("Upload Legion package") {
@@ -308,7 +325,7 @@ pipeline {
                                 cat /tmp/.pypirc
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/sdk/dist/legion-*'
                                 twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/cli/dist/legion-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/toolchains/python/dist/legion-*'
+                                # twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/packager/rest/dist/legion-*'
                                 """
 
                                 if (env.param_stable_release.toBoolean()) {
@@ -356,14 +373,28 @@ pipeline {
                         }
                     }
                 }
-                stage("Upload operator image") {
+                stage("Upload model trainer image") {
                     steps {
                         script {
-                            legion.uploadDockerImage('k8s-model-builder')
+                            legion.uploadDockerImage('k8s-model-trainer')
                         }
                     }
                 }
-                stage("Upload model builder image") {
+                stage("Upload model packager image") {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('k8s-model-packager')
+                        }
+                    }
+                }
+                stage("Upload model service catalog image") {
+                    steps {
+                        script {
+                            legion.uploadDockerImage('service-catalog')
+                        }
+                    }
+                }
+                stage("Upload operator image") {
                     steps {
                         script {
                             legion.uploadDockerImage('k8s-operator')
@@ -391,6 +422,20 @@ pipeline {
                         }
                     }
                 }
+                stage("Upload REST packager Docker image"){
+                    steps {
+                        script {
+                            legion.uploadDockerImage('packager-rest')
+                        }
+                    }
+                }
+                stage("Upload jupyterlab Docker image"){
+                    steps {
+                        script {
+                            legion.uploadDockerImage('jupyterlab')
+                        }
+                    }
+                }
                 stage('Upload Fluentd Docker image') {
                     steps {
                         script {
@@ -402,13 +447,6 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('operator-dependencies')
-                        }
-                    }
-                }
-                stage('Upload Webhook server') {
-                    steps {
-                        script {
-                            legion.uploadDockerImage('webhook-server')
                         }
                     }
                 }

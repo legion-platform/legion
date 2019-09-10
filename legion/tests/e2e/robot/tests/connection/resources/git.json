@@ -1,0 +1,10 @@
+{
+  "kind": "Connection",
+  "id": "main-test-conn",
+  "spec": {
+    "keySecret": "a2VrCg==",
+    "reference": "origin/develop",
+    "type": "git",
+    "uri": "git@github.com:legion-platform/legion.git"
+  }
+}

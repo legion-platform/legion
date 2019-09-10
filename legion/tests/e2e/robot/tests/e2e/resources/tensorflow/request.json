@@ -1,0 +1,49 @@
+{
+  "columns": [
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features",
+    "features"
+  ],
+  "data": [
+    [
+      18.0846,
+      0.0,
+      18.1,
+      0.0,
+      0.679,
+      6.434,
+      100.0,
+      1.8347,
+      24.0,
+      666.0,
+      20.2,
+      27.25,
+      29.05
+    ],
+    [
+      2.924,
+      0.0,
+      19.58,
+      0.0,
+      0.605,
+      6.101,
+      93.0,
+      2.2834,
+      5.0,
+      403.0,
+      14.7,
+      240.16,
+      9.81
+    ]
+  ]
+}

@@ -20,15 +20,16 @@ import * as models from '../models/configuration';
 
 export namespace URLs {
   export const configurationUrl = legionApiRootURL + '/common/configuration';
+  export const exampleContentUrl = legionApiRootURL + '/examples/:name/content';
 }
 
 export interface IConfigurationApi {
-  getCloudTrainings: () => Promise<models.IConfigurationMainResponse>;
+  getCloudConfiguration: () => Promise<models.IConfigurationMainResponse>;
+  getExampleContent: (name: string) => Promise<string>;
 }
 
 export class ConfigurationApi implements IApiGroup, IConfigurationApi {
-  // Trainings
-  async getCloudTrainings(): Promise<models.IConfigurationMainResponse> {
+  async getCloudConfiguration(): Promise<models.IConfigurationMainResponse> {
     try {
       let response = await httpRequest(
         URLs.configurationUrl,
@@ -41,6 +42,24 @@ export class ConfigurationApi implements IApiGroup, IConfigurationApi {
         throw new ServerConnection.ResponseError(response, data.message);
       }
       return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  async getExampleContent(name: string): Promise<string> {
+    try {
+      let response = await httpRequest(
+        URLs.exampleContentUrl.replace(':name', name),
+        'GET',
+        null,
+        null
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.text();
     } catch (err) {
       throw new ServerConnection.NetworkError(err);
     }

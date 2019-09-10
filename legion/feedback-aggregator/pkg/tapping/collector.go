@@ -85,7 +85,7 @@ func parseUrlencodedParams(params url.Values) map[string]interface{} {
 	return args
 }
 
-func convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.ResponseBody) {
+func convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.ResponseBody, error) {
 	responseBody := &feedback.ResponseBody{}
 	requestResponse := &feedback.RequestResponse{}
 
@@ -150,31 +150,21 @@ func convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.R
 
 	responseBytes, err := base64.StdEncoding.DecodeString(message.HttpBufferedTrace.Response.Body.AsBytes)
 	if err != nil {
-		// Impossible situation
-		panic(err)
+		log.Error(err, "Encoding response body")
+
+		return nil, nil, err
 	}
 	responseBody.ResponseContent = string(responseBytes)
 
-	if requestResponse.RequestHttpMethod == http.MethodGet {
-		uri, err := url.ParseRequestURI(requestResponse.RequestUri)
-		if err == nil {
-			requestResponse.RequestGetArgs = parseUrlencodedParams(uri.Query())
-		}
-	} else {
-		if header, ok := requestResponse.RequestHttpHeaders[contentTypeHeader]; ok && header == urlEncodedHeader {
-			requestBytes, err := base64.StdEncoding.DecodeString(message.HttpBufferedTrace.Request.Body.AsBytes)
-			if err != nil {
-				// Impossible situation
-				panic(err)
-			}
-			params, err := url.ParseQuery(string(requestBytes))
-			if err == nil {
-				requestResponse.RequestPostArgs = parseUrlencodedParams(params)
-			}
-		}
-	}
+	requestBytes, err := base64.StdEncoding.DecodeString(message.HttpBufferedTrace.Request.Body.AsBytes)
+	if err != nil {
+		log.Error(err, "Encode request body")
 
-	return requestResponse, responseBody
+		return nil, nil, err
+	}
+	requestResponse.RequestContent = string(requestBytes)
+
+	return requestResponse, responseBody, nil
 }
 
 func (rc *RequestCollector) TraceRequests() error {
@@ -219,7 +209,10 @@ func (rc *RequestCollector) tapTraffic() error {
 			return err
 		}
 
-		requestResponse, responseBody := convertToFeedback(&message)
+		requestResponse, responseBody, err := convertToFeedback(&message)
+		if err != nil {
+			return err
+		}
 
 		err = rc.logger.Post(viper.GetString(feedback.CfgRequestResponseTag), *requestResponse)
 		if err != nil {

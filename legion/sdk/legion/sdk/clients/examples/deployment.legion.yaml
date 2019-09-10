@@ -1,0 +1,22 @@
+kind: ModelDeployment
+# Some unique value
+id: <fill in>
+spec:
+  # Model image is required value. Change it
+  image: <model/image:tag>
+
+  # Resources
+  # For example:
+  # resources:
+  #   limits:
+  #     cpu: 1024m
+  #     memory: 1024Mi
+  #   requests:
+  #     cpu: 1024m
+  #     memory: 1024Mi
+
+  # Minimum number of replicas
+  minReplicas: 1
+
+  # Maximum number of replicas
+  # maxReplicas: 1

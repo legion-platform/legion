@@ -1,0 +1,20 @@
+---
+id: wine
+kind: ModelTraining
+spec:
+  entrypoint: main
+  image: image/test
+  model:
+    name: test
+    version: '1.0'
+  toolchain: mlflow
+  vcsName: bulk-test-conn-1
+  workDir: test/dir
+---
+kind: Connection
+id: bulk-test-conn-1
+spec:
+  keySecret: a2VrCg==
+  reference: origin/develop
+  type: git
+  uri: git@github.com:legion-platform/legion.git

@@ -1,0 +1,68 @@
+[
+  {
+    "kind": "Connection",
+    "id": "bulk-test-conn-1",
+    "spec": {
+      "keySecret": "a2VrCg==",
+      "reference": "origin/develop",
+      "type": "git",
+      "uri": "git@github.com:legion-platform/legion.git"
+    }
+  },
+  {
+    "kind": "Connection",
+    "id": "bulk-test-conn-2",
+    "spec": {
+      "keySecret": "a2VrCg==",
+      "reference": "origin/develop",
+      "type": "git",
+      "uri": "git@github.com:legion-platform/legion.git"
+    }
+  },
+  {
+    "id": "bulk-test-ti-1",
+    "kind": "ToolchainIntegration",
+    "spec": {
+      "additionalEnvironments": {
+        "TEST": "test"
+      },
+      "defaultImage": "image:123",
+      "entrypoint": "/binaty"
+    }
+  },
+  {
+    "id": "bulk-test-pi-1",
+    "kind": "PackagingIntegration",
+    "spec": {
+      "defaultImage": "image",
+      "entrypoint": "/binary",
+      "schema": {
+        "targets": [
+          {
+            "connectionTypes": [
+              "docker"
+            ],
+            "name": "docker-push",
+            "required": true
+          },
+          {
+            "connectionTypes": [
+              "docker"
+            ],
+            "name": "docker-pull",
+            "required": false
+          },
+          {
+            "connectionTypes": [
+              "s3",
+              "gcs"
+            ],
+            "name": "archive-storage",
+            "required": false
+          }
+        ]
+      }
+    }
+  }
+]
+

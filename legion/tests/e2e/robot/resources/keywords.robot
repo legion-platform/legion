@@ -8,9 +8,7 @@ Library             Collections
 Library             DateTime
 Library             legion.robot.libraries.k8s.K8s  ${LEGION_NAMESPACE}
 Library             legion.robot.libraries.utils.Utils
-Library             legion.robot.libraries.grafana.Grafana
 Library             legion.robot.libraries.process.Process
-Library             legion.robot.libraries.edi.EDI  ${EDI_URL}  ${AUTH_TOKEN}
 
 *** Keywords ***
 Shell
@@ -31,9 +29,6 @@ FailedShell
     ${res}=   Shell  ${command}
               Should Not Be Equal  ${res.rc}  ${0}
     [Return]  ${res}
-
-Connect to main Grafana
-    Connect to Grafana    ${GRAFANA_URL}  ${GRAFANA_USER}  ${GRAFANA_PASSWORD}
 
 Build model
     [Arguments]  ${mt_name}  ${model_name}  ${model_version}  ${model_image_key_name}=\${TEST_MODEL_IMAGE}  ${entrypoint}=simple.py  ${kwargs}=&{EMPTY}
@@ -133,7 +128,7 @@ Secured component domain should be accessible by valid credentials
     Should not contain   ${auth_page}    Invalid Email Address and password
 
 Login to the edi and edge
-    ${res}=  Shell  legionctl --verbose login --non-interactive --edi ${EDI_URL} --token "${AUTH_TOKEN}"
+    ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
     Should be equal  ${res.rc}  ${0}
     ${res}=  Shell  legionctl config set MODEL_HOST ${EDGE_URL}
     Should be equal  ${res.rc}  ${0}

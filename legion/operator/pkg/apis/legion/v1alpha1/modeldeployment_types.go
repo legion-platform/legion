@@ -17,7 +17,6 @@
 package v1alpha1
 
 import (
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,7 +26,7 @@ type ModelDeploymentSpec struct {
 	Image string `json:"image"`
 	// Resources for model deployment
 	// The same format like k8s uses for pod resources.
-	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *ResourceRequirements `json:"resources,omitempty"`
 	// Annotations for model pods.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Minimum number of pods for model. By default the min replicas parameter equals 0.

@@ -97,7 +97,7 @@ export const cloudTrainingLogWidgetText = style({
   lineHeight: 'var(--jp-private-completer-item-height)'
 });
 
-export const cloudTrainingLogWidgetIcon = style({
+export const cloudLogWidgetIcon = style({
   backgroundImage: 'var(--jp-icon-refresh)',
   '-webkit-animation': 'legion-loading-rotate-center 1s linear infinite both',
   animation: 'legion-loading-rotate-center 1s linear infinite both',

@@ -1,4 +1,7 @@
 LEGION_OPERATOR_GENERATED_ENTITIES = ../../helms/legion/templates/operator/generated
+LINTER_ADDITIONAL_ARGS =
+KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s
+.EXPORT_ALL_VARIABLES:
 
 all: help
 
@@ -10,20 +13,24 @@ test: generate fmt vet manifests
 build-operator: generate  fmt vet
 	go build -o operator github.com/legion-platform/legion/legion/operator/cmd/operator
 
-## build-webhook-server: Build webhook server executable binary
-build-webhook-server: generate  fmt vet
-	go build -o webhook-server github.com/legion-platform/legion/legion/operator/cmd/webhook
-
 ## build-edi: Build edi executable binary
 build-edi: fmt vet
 	go build -o edi github.com/legion-platform/legion/legion/operator/cmd/edi
 
-## build-model-builder: Build model builder executable binary
-build-model-builder: fmt vet
-	go build -o builder github.com/legion-platform/legion/legion/operator/cmd/builder
+## build-model-trainer: Build model trainer executable binary
+build-model-trainer: fmt vet
+	go build -o trainer github.com/legion-platform/legion/legion/operator/cmd/trainer
+
+## build-model-packager: Build model packager executable binary
+build-model-packager: fmt vet
+	go build -o packager github.com/legion-platform/legion/legion/operator/cmd/packager
+
+## build-model-packager: Build model packager executable binary
+build-service-catalog: fmt vet
+	go build -o service-catalog github.com/legion-platform/legion/legion/operator/cmd/service_catalog
 
 ## build-all: Build all executable binyries
-build-all: build-edi build-model-builder build-operator build-webhook-server
+build-all: build-edi build-model-trainer build-model-packager build-operator build-service-catalog
 
 ## run-operator: Start operator
 run-operator:
@@ -76,6 +83,23 @@ swag:
 	swag init -g pkg/webserver/server.go
 	# Remove the line with generated timestamp
 	sed -i '3d' docs/docs.go
+	sed -i 's/connection\.//g' docs/*
+	sed -i 's/routes\.//g' docs/*
+	sed -i 's/deployment\.//g' docs/*
+	sed -i 's/training\.//g' docs/*
+	sed -i 's/packaging\.//g' docs/*
+	sed -i 's/v1alpha1\.//g' docs/*
+
+## apply-crds: Apply all legion crds
+apply-crds:
+	kubectl apply -f config/crds/
+
+## delete-crds: Delete all legion crds
+delete-crds:
+	kubectl delete -f config/crds/
+
+## recreate-crds: Recreate all legion crds
+recreate-crds: delete-crds apply-crds
 
 ## generate: Generate golang codes
 generate:
@@ -83,6 +107,13 @@ ifndef GOPATH
 	$(error GOPATH not defined, please define GOPATH. Run "go help gopath" to learn more about GOPATH)
 endif
 	go generate ./pkg/... ./cmd/...
+
+## generate-all: Execute all code generators
+generate-all: generate manifests swag
+
+## lint: Start golangci-lint linter
+lint:
+	golangci-lint run ${LINTER_ADDITIONAL_ARGS}
 
 ## help: Show the help message
 help: Makefile

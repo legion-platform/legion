@@ -18,16 +18,24 @@ spec:
     spec:
       containers:
       - name: jupyterlab
-        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.jupyterlab "tpl" "%spython-toolchain:%s") }}"
+        image: "{{ include "legion.image-name" (dict "root" . "service" .Values.jupyterlab "tpl" "%sjupyterlab:%s") }}"
         resources:
           {{- toYaml .Values.jupyterlab.resources | nindent 10 }}
         env:
+        - name: METRICS_UI_URL
+          value: https://{{ include "legion.ingress-domain-name" (dict "local" .Values.edi.ingress "root" . "tpl" "mlflow.%s") }}
         - name: JUPYTER_PORT
           value: {{ .Values.jupyterlab.port | quote }}
         - name: JUPYTER_DISABLE_TOKEN
           value: "yes"
         - name: DEFAULT_EDI_ENDPOINT
-          value: "http://{{ .Release.Name }}-edi:{{ .Values.edi.port }}"
+          value: https://{{ include "legion.ingress-domain-name" (dict "local" .Values.edi.ingress "root" . "tpl" "edi.%s") }}
+        - name: SERVICE_CATALOG_URL
+          value: https://{{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "edge.%s") }}
+        - name: MLFLOW_TRACKING_URI
+          value: http://mlflow.{{ .Release.Namespace }}.svc.cluster.local
+        - name: GRAFANA_URL
+          value: https://{{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "grafana.%s") }}
         ports:
         - containerPort: {{ .Values.jupyterlab.port }}
           name: input

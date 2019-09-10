@@ -1,0 +1,15 @@
+kind: ModelPackaging
+# Some unique value
+id: <fill in>
+spec:
+  # You can find list of all available packaging intergrations on the left sidebar
+  type: docker-rest
+  # Connection training ID
+  trainingID: <training-id>
+  # or full artifact name
+  # artifactName: <artifact-name>
+  # List of targets. Depends of a Model Packaging type
+  targets:
+    # Name of connections
+    connection: <connection name>
+    purpose: docker-push

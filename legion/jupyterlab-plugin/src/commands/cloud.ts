@@ -19,13 +19,133 @@ import { CommandIDs, IAddCloudCommandsOptions } from './base';
 import * as dialogs from '../components/dialogs';
 import * as cloudDialogs from '../components/dialogs/cloud';
 
-export interface ICloudScaleParameters {}
-
 /**
  * Add the commands for the legion extension.
  */
 export function addCommands(options: IAddCloudCommandsOptions) {
   let { commands } = options.app;
+
+  commands.addCommand(CommandIDs.removeConnection, {
+    label: 'Remove connection',
+    caption: 'Remove cloud connection',
+    execute: args => {
+      try {
+        const name = args['name'] as string;
+        if (name) {
+          showDialog({
+            title: `Removing connection`,
+            body: `Do you want to remove connection ${name}?`,
+            buttons: [
+              Dialog.cancelButton(),
+              Dialog.okButton({ label: 'Remove', displayType: 'warn' })
+            ]
+          }).then(({ button }) => {
+            if (button.accept) {
+              let splashScreen = options.splash.show();
+              options.api.cloud
+                .removeConnection(
+                  {
+                    id: name
+                  },
+                  options.state.credentials
+                )
+                .then(() => {
+                  splashScreen.dispose();
+                  commands.execute(CommandIDs.refreshCloud, {});
+                })
+                .catch(err => {
+                  splashScreen.dispose();
+                  showErrorMessage('Can not remove connection', err);
+                  commands.execute(CommandIDs.refreshCloud, {});
+                });
+            }
+          });
+        } else {
+          dialogs
+            .showChooseDialog(
+              'Choose connection',
+              'Please choose one connection from list',
+              options.state.connections.map(conn => {
+                return {
+                  value: conn.id,
+                  text: conn.id
+                };
+              }),
+              'Remove connection',
+              true
+            )
+            .then(({ value }) =>
+              commands.execute(CommandIDs.removeConnection, {
+                name: value.value
+              })
+            );
+        }
+      } catch (err) {
+        showErrorMessage('Can not remove connection', err);
+      }
+    }
+  });
+
+  commands.addCommand(CommandIDs.removeModelPackaging, {
+    label: 'Model Packaging ',
+    caption: 'Remove model packaging',
+    execute: args => {
+      try {
+        const name = args['name'] as string;
+        if (name) {
+          showDialog({
+            title: `Removing model packaging`,
+            body: `Do you want to remove model packaging ${name}?`,
+            buttons: [
+              Dialog.cancelButton(),
+              Dialog.okButton({ label: 'Remove', displayType: 'warn' })
+            ]
+          }).then(({ button }) => {
+            if (button.accept) {
+              let splashScreen = options.splash.show();
+              options.api.cloud
+                .removeModelPackaging(
+                  {
+                    id: name
+                  },
+                  options.state.credentials
+                )
+                .then(() => {
+                  splashScreen.dispose();
+                  commands.execute(CommandIDs.refreshCloud, {});
+                })
+                .catch(err => {
+                  splashScreen.dispose();
+                  showErrorMessage('Can not remove model packagings', err);
+                  commands.execute(CommandIDs.refreshCloud, {});
+                });
+            }
+          });
+        } else {
+          dialogs
+            .showChooseDialog(
+              'Choose model packaging',
+              'Please choose one model packaging from list',
+              options.state.modelPackagings.map(mp => {
+                return {
+                  value: mp.id,
+                  text: mp.id
+                };
+              }),
+              'Remove model packaging',
+              true
+            )
+            .then(({ value }) =>
+              commands.execute(CommandIDs.removeModelPackaging, {
+                name: value.value
+              })
+            );
+        }
+      } catch (err) {
+        showErrorMessage('Can not remove model packaging', err);
+      }
+    }
+  });
 
   commands.addCommand(CommandIDs.removeCloudTraining, {
     label: 'Remove cloud training',
@@ -47,7 +167,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               options.api.cloud
                 .removeCloudTraining(
                   {
-                    name: name
+                    id: name
                   },
                   options.state.credentials
                 )
@@ -57,7 +177,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
                 })
                 .catch(err => {
                   splashScreen.dispose();
-                  showErrorMessage('Can not remove cloud deployment', err);
+                  showErrorMessage('Can not remove cloud training', err);
                   commands.execute(CommandIDs.refreshCloud, {});
                 });
             }
@@ -69,11 +189,11 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               'Please choose one training from list',
               options.state.trainings.map(training => {
                 return {
-                  value: training.name,
-                  text: training.name
+                  value: training.id,
+                  text: training.id
                 };
               }),
-              'Remove deployment',
+              'Remove training',
               true
             )
             .then(({ value }) =>
@@ -103,10 +223,12 @@ export function addCommands(options: IAddCloudCommandsOptions) {
                 options.api.cloud
                   .createCloudDeployment(
                     {
-                      name: value.name,
-                      image,
-                      livenessProbeInitialDelay: 5,
-                      readinessProbeInitialDelay: 3
+                      id: value.name,
+                      spec: {
+                        image: image,
+                        livenessProbeInitialDelay: 5,
+                        readinessProbeInitialDelay: 3
+                      }
                     },
                     options.state.credentials
                   )
@@ -126,14 +248,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               'Choose image to deploy',
               'Please choose finished training',
               'or type image name manually',
-              options.state.trainings
-                .filter(training => training.status.modelImage.length > 0)
-                .map(training => {
-                  return {
-                    value: training.status.modelImage,
-                    text: training.name
-                  };
-                }),
+              [],
               'Deploy image',
               false
             )
@@ -170,7 +285,7 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               options.api.cloud
                 .removeCloudDeployment(
                   {
-                    name: name
+                    id: name
                   },
                   options.state.credentials
                 )
@@ -192,8 +307,8 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               'Please choose one deployment from list',
               options.state.deployments.map(deployment => {
                 return {
-                  value: deployment.name,
-                  text: deployment.name
+                  value: deployment.id,
+                  text: deployment.id
                 };
               }),
               'Remove deployment',
@@ -229,10 +344,15 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               options.state.credentials
             )
             .then(response => {
+              let dialogContent = response.token;
+              if (dialogContent == null || dialogContent.length === 0) {
+                dialogContent = 'JWT mechanism is disabled';
+              }
+
               splashScreen.dispose();
               showDialog({
                 title: `Generated token`,
-                body: response.token,
+                body: dialogContent,
                 buttons: [Dialog.okButton({ label: 'OK' })]
               });
             })
@@ -304,8 +424,8 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               'Please choose one deployment from list',
               options.state.trainings.map(trainings => {
                 return {
-                  value: trainings.name,
-                  text: trainings.name
+                  value: trainings.id,
+                  text: trainings.id
                 };
               }),
               'Open logs of training',
@@ -325,8 +445,26 @@ export function addCommands(options: IAddCloudCommandsOptions) {
     }
   });
 
+  commands.addCommand(CommandIDs.openPackagingLogs, {
+    label: 'Open cloud training logs',
+    execute: args => {
+      try {
+        const name = args['name'] as string;
+        if (name) {
+          const widget = options.packagingLogs.getOrConstruct(name);
+          if (!widget.isAttached) {
+            options.app.shell.addToMainArea(widget);
+          }
+          options.app.shell.activateById(widget.id);
+        }
+      } catch (err) {
+        showErrorMessage('Can not remove cloud deployment', err);
+      }
+    }
+  });
+
   commands.addCommand(CommandIDs.applyCloudResources, {
-    label: 'Apply Legion resources',
+    label: 'Submit',
     iconClass: 'jp-AddIcon',
     execute: () => {
       const widget = options.tracker.currentWidget;
@@ -370,6 +508,22 @@ export function addCommands(options: IAddCloudCommandsOptions) {
           splashScreen.dispose();
           showErrorMessage('Can not remove from file ' + path, err);
         });
+    }
+  });
+
+  commands.addCommand(CommandIDs.condaUpdateEnv, {
+    label: 'Update conda env',
+    iconClass: 'jp-CloseIcon',
+    execute: () => {
+      const widget = options.tracker.currentWidget;
+      if (!widget) {
+        return;
+      }
+      const path = encodeURI(widget.selectedItems().next().path);
+      console.log(path);
+      commands.execute('terminal:create-new', {
+        initialCommand: `conda-update mlflow ${path}`
+      });
     }
   });
 }

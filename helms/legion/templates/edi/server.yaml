@@ -21,47 +21,23 @@ spec:
       serviceAccountName: "{{ .Release.Name }}-edi"
       {{- end}}
       volumes:
-        - name: keys
+        - name: config
           secret:
-            secretName: "{{ .Release.Name }}-edi-keys"
+            secretName: "{{ .Release.Name }}-edi-config"
       containers:
       - name: edi
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%sk8s-edi:%s") }}"
         resources:
           {{- toYaml .Values.edi.resources | nindent 10 }}
-        env:
-        - name: NAMESPACE
-          value: "{{ .Release.Namespace }}"
-        - name: LEGION_API_ADDR
-          value: "0.0.0.0"
-        - name: LEGION_API_PORT
-          value: "5000"
-        - name: K8S_API_RETRY_NUMBER_MAX_LIMIT
-          value: "{{ .Values.edi.k8sApiRetryNumberMaxLimit }}"
-        - name: K8S_API_RETRY_DELAY_SEC
-          value: "{{ .Values.edi.k8sApiRetryDelaySec }}"
-        - name: MODEL_K8S_MEMORY
-          value: "{{ .Values.modelExecution.limits.mem }}"
-        - name: MODEL_K8S_CPU
-          value: "{{ .Values.modelExecution.limits.cpu }}"
-        {{- if and .Values.modelApiSecurity.enabled (eq .Values.modelApiSecurity.integration "jwt") }}
-        - name: JWT_TTL_MINUTES
-          value: "{{ .Values.modelApiSecurity.jwt.defaultTokenTTLInMinutes }}"
-        - name: JWT_MAX_TTL_MINUTES
-          value: "{{ .Values.modelApiSecurity.jwt.maxTokenTTLInMinutes }}"
-        - name: JWT_ENABLED
-          value: {{ .Values.modelApiSecurity.enabled | quote }}
-        - name: JWT_EXP_DATETIME
-          value: "{{ .Values.modelApiSecurity.jwt.defaultTokenTTLEndDate }}"
-        - name: MODEL_JWT_PUBLIC_KEY
-          value: "/etc/legion/public.pem"
-        - name: MODEL_JWT_PRIVATE_KEY
-          value: "/etc/legion/private.pem"
-        {{- end }}
         volumeMounts:
-          - name: keys
+          - name: config
             mountPath: "/etc/legion"
             readOnly: true
+        command:
+          - ./edi
+        args:
+          - --config
+          - /etc/legion/config.yaml
         ports:
           - containerPort: 5000
             name: api
@@ -90,3 +66,13 @@ spec:
     port: {{ .Values.edi.port }}
     protocol: TCP
 {{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "{{ .Release.Name }}-edi-config"
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 4 }}
+data:
+  "config.yaml": |
+    {{ toYaml .Values.config | b64enc }}
