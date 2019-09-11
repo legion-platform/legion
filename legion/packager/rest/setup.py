@@ -13,34 +13,13 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import json
 import os
 import re
-import typing
 
-from setuptools import setup, find_namespace_packages
+from setuptools import find_namespace_packages, setup
 
-PIPFILE_DEP_SECTION = 'default'
 PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'Pipfile.lock')
 VERSION_FILE = os.path.join(PACKAGE_ROOT_PATH, 'legion/packager/rest', 'version.py')
-
-
-def extract_requirements() -> typing.List[str]:
-    """
-    Extracts requirements from a pip formatted requirements file.
-
-    :return: package names as strings
-    """
-
-    with open(PIP_FILE_LOCK_PATH, 'r') as pip_file_lock_stream:
-        pip_file_lock_data = json.load(pip_file_lock_stream)
-        pip_file_section_data = pip_file_lock_data.get(PIPFILE_DEP_SECTION, {})
-        return [
-            key + value['version']
-            for (key, value)
-            in pip_file_section_data.items()
-        ]
 
 
 def extract_version() -> str:
@@ -59,6 +38,9 @@ def extract_version() -> str:
             raise RuntimeError("Unable to find version string in %s." % (file_content,))
 
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setup(
     name='legion-packager-rest',
     version=extract_version(),
@@ -73,5 +55,5 @@ setup(
             'legion-pack-to-rest=legion.packager.rest:work_resource_file'
         ],
     },
-    install_requires=extract_requirements()
+    install_requires=requirements,
 )

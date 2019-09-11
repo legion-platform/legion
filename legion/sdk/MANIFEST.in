@@ -1,2 +1,3 @@
 include Pipfile*
+include requirements.txt
 graft legion/sdk/templates

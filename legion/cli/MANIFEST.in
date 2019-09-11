@@ -1,1 +1,2 @@
 include Pipfile*
+include requirements.txt

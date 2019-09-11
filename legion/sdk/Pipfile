@@ -4,10 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "==2.22.0"
-urllib3 = "==1.24.3"
-Jinja2 = "==2.10.1"
-PyYAML = "==5.1.2"
+requests = ">=2.22.0"
+urllib3 = ">=1.24.3"
+Jinja2 = ">=2.7.3"
+PyYAML = ">=3.1.2"
 
 [requires]
 python_version = "3.6"

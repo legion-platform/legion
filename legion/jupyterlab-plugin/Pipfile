@@ -6,8 +6,8 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-notebook = "==5.7.8"
-pydantic = "==0.29"
+notebook = ">=5.7.8"
+pydantic = ">=0.29"
 jupyterlab = "==0.35.6"
 
 [requires]
