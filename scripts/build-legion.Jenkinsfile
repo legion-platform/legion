@@ -228,7 +228,8 @@ pipeline {
                 stage('Build docs') {
                     steps {
                         script {
-                            docker.image("legion/docs-builder:${Globals.buildVersion}") {
+                            
+                            docker.image("legion/docs-builder:${Globals.buildVersion}").inside() {
                                 sh """
                                 cd docs
                                 /generate.sh
