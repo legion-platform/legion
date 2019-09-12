@@ -228,18 +228,18 @@ pipeline {
                 stage('Build docs') {
                     steps {
                         script {
-                            
+
                             docker.image("legion/docs-builder:${Globals.buildVersion}").inside() {
                                 sh """
                                 cd docs
                                 /generate.sh
-                                ln -s out/pdf
+                                ls -lah out/pdf
                                 cp out/pdf/legion-docs.pdf ${WORKSPACE}/legion-docs.pdf
                                 """
+                                archiveArtifacts artifacts: "legion-docs.pdf"
                             }
 
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
-                                archiveArtifacts artifacts: "legion-docs.pdf"
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {                                
                                 sh "rm ${WORKSPACE}/legion-docs.pdf"
                             }
                         }
