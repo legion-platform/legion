@@ -59,6 +59,8 @@ pipeline {
             updateVersionScript = "scripts/update_version_id"
             sharedLibPath = "pipelines/legionPipeline.groovy"
             pathToCharts= "${WORKSPACE}/helms"
+            gcpCredential = "${params.GCPCredential}"
+            documentationLocation = "${params.DocumentationGCS}"
     }
 
     stages {
@@ -239,8 +241,11 @@ pipeline {
                                 archiveArtifacts artifacts: "legion-docs.pdf"
                             }
 
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {                                
-                                sh "rm ${WORKSPACE}/legion-docs.pdf"
+                            withCredentials([
+                            file(credentialsId: "${env.gcpCredential}", variable: 'gcpCredential')]) {
+                                docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root -e GOOGLE_CREDENTIALS=${gcpCredential}") {                                
+                                    sh "gsutil cp ${WORKSPACE}/legion-docs.pdf ${env.documentationLocation}/${Globals.buildVersion}.pdf"
+                                }
                             }
                         }
                     }
