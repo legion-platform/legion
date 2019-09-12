@@ -150,6 +150,14 @@ pipeline {
                         }
                     }
                 }
+                stage('Build documentation builder') {
+                    steps {
+                        script {
+                            legion.buildLegionImage('docs-builder', '.', 'containers/docs-builder/Dockerfile')
+                            legion.uploadDockerImage('docs-builder')
+                        }
+                    }
+                }
                 stage("Build Fluentd Docker image") {
                     steps {
                         script {
@@ -220,15 +228,18 @@ pipeline {
                 stage('Build docs') {
                     steps {
                         script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
+                            docker.image("legion/docs-builder:${Globals.buildVersion}") {
                                 sh """
-                                cd /opt/legion
-                                make LEGION_VERSION=${Globals.buildVersion} build-docs
-                                cp /opt/legion/legion_docs_${Globals.buildVersion}.tar.gz ${WORKSPACE}
+                                cd docs
+                                /generate.sh
+                                ln -s out/pdf
+                                cp out/pdf/legion-docs.pdf ${WORKSPACE}/legion-docs.pdf
                                 """
+                            }
 
-                                archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
-                                sh "rm ${WORKSPACE}/legion_docs_${Globals.buildVersion}.tar.gz"
+                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
+                                archiveArtifacts artifacts: "legion-docs.pdf"
+                                sh "rm ${WORKSPACE}/legion-docs.pdf"
                             }
                         }
                     }
