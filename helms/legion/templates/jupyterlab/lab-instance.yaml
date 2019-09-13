@@ -36,6 +36,8 @@ spec:
           value: http://mlflow.{{ .Release.Namespace }}.svc.cluster.local
         - name: GRAFANA_URL
           value: https://{{ include "legion.ingress-domain-name" (dict "local" .Values.edge.ingress "root" . "tpl" "grafana.%s") }}
+        - name: DEFAULT_MODEL_ROLE
+          value: {{ .Values.config.deployment.security.role_name }}
         ports:
         - containerPort: {{ .Values.jupyterlab.port }}
           name: input

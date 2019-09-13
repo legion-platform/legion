@@ -14,6 +14,11 @@ import * as models from './models';
 
 export interface ConnectionSpec {
     /**
+     * Custom description
+     */
+    description?: string;
+
+    /**
      * Key ID
      */
     keyID?: string;
@@ -62,5 +67,10 @@ export interface ConnectionSpec {
      * Username
      */
     username?: string;
+
+    /**
+     * Custom web UI link
+     */
+    webUILink?: string;
 
 }

@@ -26,7 +26,8 @@ export const listingMetaHeader = style({
   flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: 'var(--jp-toolbar-header-margin)'
+  padding: 'var(--jp-toolbar-header-margin)',
+  paddingLeft: '16px'
 });
 
 export const listingTitle = style({

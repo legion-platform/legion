@@ -129,8 +129,8 @@ pipeline {
                 stage("Build Jupyterlab Docker image"){
                     steps {
                         script {
-                            legion.buildLegionImage('jupyterlab', '.', 'containers/jupyterlab/Dockerfile')
-                            legion.uploadDockerImage('jupyterlab')
+                            legion.buildLegionImage('jupyterlab-dependencies', ".", "containers/jupyterlab/Dockerfile", "--target plugin-frontend-rebuilder")
+                            legion.buildLegionImage('jupyterlab', '.', 'containers/jupyterlab/Dockerfile', "--cache-from legion/jupyterlab-dependencies:${Globals.buildVersion}")
                         }
                     }
                 }
@@ -138,7 +138,6 @@ pipeline {
                     steps {
                         script {
                             legion.buildLegionImage('packager-rest', '.', 'containers/ai-packagers/rest/Dockerfile')
-                            legion.uploadDockerImage('packager-rest')
                         }
                     }
                 }
@@ -433,6 +432,13 @@ pipeline {
                     steps {
                         script {
                             legion.uploadDockerImage('jupyterlab')
+                        }
+                    }
+                }
+                stage("Upload jupyterlab-dependencies Docker image"){
+                    steps {
+                        script {
+                            legion.uploadDockerImage('jupyterlab-dependencies')
                         }
                     }
                 }

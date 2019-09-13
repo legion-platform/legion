@@ -22,6 +22,7 @@ import { Widget } from '@phosphor/widgets';
 import { IApiCloudState } from '../models';
 import { ILegionApi } from '../api';
 import { WidgetRegistry } from '../components/Widgets';
+import { IConfigurationMainResponse } from '../models/configuration';
 
 /**
  * CommandIDs contains IDs of all Legion commands.
@@ -76,6 +77,7 @@ export interface IAddCommandsOptions {
 }
 
 export interface IAddCloudCommandsOptions extends IAddCommandsOptions {
+  config: IConfigurationMainResponse;
   state: IApiCloudState;
   trainingLogs: WidgetRegistry<Widget>;
   packagingLogs: WidgetRegistry<Widget>;

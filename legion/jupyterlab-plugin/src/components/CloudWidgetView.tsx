@@ -25,7 +25,7 @@ import * as style from '../componentsStyle/GeneralWidgetStyle';
 import { CommandIDs } from '../commands';
 import { IApiCloudState } from '../models';
 import { ICloudAllEntitiesResponse } from '../models/cloud';
-import { ClusterInfoView } from './partials/ClusterInfoView';
+import { ClusterInfoStage } from './partials/ClusterInfoStage';
 import { ConfStage } from './partials/ConfStage';
 import { LifecycleStage } from './partials/LifecycleStage';
 
@@ -102,13 +102,14 @@ export class CloudWidgetView extends React.Component<
     return (
       <div className={style.widgetPane}>
         <TitleBarView
-          text={'Legion Services'}
+          text={'Legion'}
           onRefresh={() =>
             this.props.app.commands.execute(CommandIDs.refreshCloud)
           }
           isRefreshing={this.state.isLoading}
         />
-        <ClusterInfoView
+
+        <ClusterInfoStage
           ediUrl={this.props.dataState.configuration.defaultEDIEndpoint}
           metricUiUrl={this.props.dataState.configuration.metricUiUrl}
           serviceCatalogUrl={

@@ -20,5 +20,6 @@ export interface IConfigurationMainResponse {
   serviceCatalogUrl: string;
   grafanaUrl: string;
   metricUiUrl: string;
+  defaultModelRole: string;
   legionResourceExamples: Array<string>;
 }

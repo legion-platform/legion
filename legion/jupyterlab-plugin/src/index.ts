@@ -46,7 +46,6 @@ import { addCloudCommands, CommandIDs } from './commands';
 
 import { LegionApi } from './api';
 import { buildInitialCloudAPIState, IApiCloudState } from './models/apiState';
-import { ILegionPluginMode } from './models/core';
 import { ILauncher } from '@jupyterlab/launcher';
 import { CloudPackagingLogsWidget } from './components/CloudPackingLogsWidget';
 import { OpenTemplateWidget } from './components/OpenTemplateWidget';
@@ -284,20 +283,12 @@ export class LegionCloudExtension extends BaseLegionExtension
 
 function buildTopMenu(
   commands: CommandRegistry,
-  mode: ILegionPluginMode
+  listOfCommands: string[]
 ): Menu {
   let menu = new Menu({ commands });
-  menu.title.label =
-    mode === ILegionPluginMode.CLOUD ? 'Legion cloud' : 'UNKNOWN LEGION MODE';
+  menu.title.label = 'Legion cloud';
 
-  let cloudCommand = [
-    CommandIDs.authorizeOnCluster,
-    CommandIDs.unAuthorizeOnCluster,
-    CommandIDs.issueNewCloudAccessToken
-  ];
-  const commandsToAdd = mode === ILegionPluginMode.CLOUD ? cloudCommand : [];
-
-  commandsToAdd.forEach(command => {
+  listOfCommands.forEach(command => {
     menu.addItem({ command });
   });
 
@@ -324,38 +315,49 @@ function activateCloudPlugin(
     launcher
   );
 
-  // Build options for commands
-  const addCommandsOptions = {
-    app,
-    services: app.serviceManager,
-    state: legionExtension.apiCloudState,
-    api: legionExtension.api,
-    splash,
-    tracker: factory.tracker,
-    trainingLogs: legionExtension.trainingLogs,
-    packagingLogs: legionExtension.packagingLogs
-  };
+  legionExtension.apiCloudState.signalLoadingStarted();
 
-  addCommandsOptions.state.signalLoadingStarted();
-
-  addCommandsOptions.api.configurationApi
+  legionExtension.api.configurationApi
     .getCloudConfiguration()
     .then(response => {
-      addCommandsOptions.state.updateConfiguration(response);
+      legionExtension.apiCloudState.updateConfiguration(response);
+
+      // Register commands in JupyterLab
+      addCloudCommands({
+        app,
+        config: response,
+        services: app.serviceManager,
+        state: legionExtension.apiCloudState,
+        api: legionExtension.api,
+        splash,
+        tracker: factory.tracker,
+        trainingLogs: legionExtension.trainingLogs,
+        packagingLogs: legionExtension.packagingLogs
+      });
+
       if (response.defaultEDIEndpoint.length !== 0) {
-        addCommandsOptions.state.setCredentials({
+        legionExtension.apiCloudState.setCredentials({
           cluster: response.defaultEDIEndpoint,
           authString: ''
         });
+
+        mainMenu.addMenu(
+          buildTopMenu(app.commands, [CommandIDs.issueNewCloudAccessToken])
+        );
+      } else {
+        mainMenu.addMenu(
+          buildTopMenu(app.commands, [
+            CommandIDs.authorizeOnCluster,
+            CommandIDs.unAuthorizeOnCluster,
+            CommandIDs.issueNewCloudAccessToken
+          ])
+        );
       }
     })
     .catch(err => {
-      addCommandsOptions.state.updateAllState();
+      legionExtension.apiCloudState.updateAllState();
       showErrorMessage('Can not forcefully update data for cloud mode', err);
     });
-
-  // Register commands in JupyterLab
-  addCloudCommands(addCommandsOptions);
 
   app.contextMenu.addItem({
     command: CommandIDs.applyCloudResources,
@@ -369,9 +371,5 @@ function activateCloudPlugin(
     rank: CONDA_RESOURCES
   });
 
-  // Create top menu for appropriate mode
-  mainMenu.addMenu(buildTopMenu(app.commands, ILegionPluginMode.CLOUD), {
-    rank: 60
-  });
   return legionExtension;
 }

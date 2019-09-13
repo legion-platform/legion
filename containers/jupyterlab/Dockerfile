@@ -17,30 +17,15 @@
 ARG JUPYTERLAB_VERSION=0.35.6
 
 # Image for building ready-to-distribute plugin frontend
-FROM node:10.15.3-stretch AS plugin-frontend-builder
-ENV WORK_DIR="/opt/legion-plugin"
-WORKDIR "${WORK_DIR}/"
-
-COPY legion/jupyterlab-plugin/package.json \
-     legion/jupyterlab-plugin/yarn.lock \
-       "${WORK_DIR}/"
-
-RUN yarn install --non-interactive --ignore-scripts
-
-COPY legion/jupyterlab-plugin/ \
-       "${WORK_DIR}/"
-RUN yarn build
-RUN yarn lint
-RUN npm pack .
-
-# Image for getting jupyterlab sources for linking
 FROM python:3.6.8-stretch AS plugin-frontend-rebuilder
 ARG JUPYTERLAB_VERSION
 
+ENV WORK_DIR="/opt/legion-plugin"
+WORKDIR "${WORK_DIR}/"
+
 RUN \
   apt-get update && \
-  apt-get install -yqq apt-transport-https
-RUN \
+  apt-get install -yqq apt-transport-https && \
   echo "deb https://deb.nodesource.com/node_10.x stretch main" > /etc/apt/sources.list.d/nodesource.list && \
   wget -qO- https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
   echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
@@ -51,16 +36,26 @@ RUN \
   npm i -g npm@^6 && \
   rm -rf /var/lib/apt/lists/*
 
+COPY legion/jupyterlab-plugin/package.json \
+     legion/jupyterlab-plugin/yarn.lock \
+     "${WORK_DIR}/"
+
+RUN yarn install --non-interactive --ignore-scripts
+
+COPY legion/jupyterlab-plugin/ \
+     "${WORK_DIR}/"
+
+RUN yarn build && yarn lint && npm pack .
+
 # Install jupyterlab
 RUN pip3 install --disable-pip-version-check jupyterlab==$JUPYTERLAB_VERSION
 
 # Run installation w/o any code to warm up nodejs cache
-RUN jupyter lab build
+RUN jupyter lab build && mv /opt/legion-plugin/jupyter_legion-*.tgz jupyter_legion.tgz
 
-# Copy and install (w/o rebuild) Legion's plugin and git plugin (optional for jupyterlab)
-COPY --from=plugin-frontend-builder /opt/legion-plugin/jupyter_legion-*.tgz jupyter_legion.tgz
 RUN jupyter labextension install --no-build jupyter_legion.tgz && \
     jupyter labextension install @jupyterlab/git jupyterlab_conda jupyterlab_toastify jupyterlab-jupytext@0.19
+
 # We have to remove folder with node_modules and other build-related staff that is not required for running
 RUN rm -rf /usr/local/share/jupyter/lab/staging
 
