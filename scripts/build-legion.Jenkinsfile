@@ -235,16 +235,19 @@ pipeline {
                                 sh """
                                 cd docs
                                 /generate.sh
-                                ls -lah out/pdf
                                 cp out/pdf/legion-docs.pdf ${WORKSPACE}/legion-docs.pdf
+                                rm out/pdf/legion-docs.pdf
+                                zip -r ${WORKSPACE}/${Globals.buildVersion}.zip out/*
                                 """
                                 archiveArtifacts artifacts: "legion-docs.pdf"
+                                archiveArtifacts artifacts: "${Globals.buildVersion}.zip"
                             }
 
                             withCredentials([
                             file(credentialsId: "${env.gcpCredential}", variable: 'gcpCredential')]) {
                                 docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root -e GOOGLE_CREDENTIALS=${gcpCredential}") {                                
-                                    sh "gsutil cp ${WORKSPACE}/legion-docs.pdf ${env.documentationLocation}/${Globals.buildVersion}.pdf"
+                                    sh "gsutil cp ${WORKSPACE}/legion-docs.pdf ${env.documentationLocation}/${Globals.buildVersion}.pdf"                            
+                                    sh "gsutil cp ${WORKSPACE}/${Globals.buildVersion}.zip ${env.documentationLocation}/${Globals.buildVersion}.zip"
                                 }
                             }
                         }

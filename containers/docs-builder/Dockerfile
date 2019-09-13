@@ -9,7 +9,7 @@ RUN apk --update --no-cache add \
     make \
     ttf-dejavu \
     graphviz \
-    build-base python3-dev jpeg-dev zlib-dev \
+    build-base python3-dev jpeg-dev zlib-dev zip \
     && apk upgrade
 
 COPY containers/docs-builder/requirements.txt \
