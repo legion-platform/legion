@@ -34,6 +34,11 @@ export interface ModelPackagingSpec {
     integrationName?: string;
 
     /**
+     * Resources for packager container The same format like k8s uses for pod resources.
+     */
+    resources?: models.ResourceRequirements;
+
+    /**
      * List of targets. This parameter depends on the specific packaging integration
      */
     targets?: Array<models.Target>;

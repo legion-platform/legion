@@ -223,17 +223,17 @@ class K8s:
             raise Exception("Deployment '%s' is not ready: %d/%d replicas are running"
                             % (deployment_name, deployment.status.ready_replicas, deployment.status.replicas))
 
-    def get_model_deployment(self, deployment_name):
+    def get_model_deployment(self, deployment_name, namespace):
         """
         Get dict of deployment by model name and version
 
+        :param namespace: k8s namespace
         :param deployment_name: k8s deployment name
-        :type deployment_name: str
         :return: k8s deployment object
         """
         extension_api = kubernetes.client.ExtensionsV1beta1Api(_build_client())
-
-        return extension_api.read_namespaced_deployment(deployment_name, self._namespace)
+        print(namespace, self._namespace, deployment_name)
+        return extension_api.read_namespaced_deployment(deployment_name, namespace or self._namespace)
 
     def get_deployment_replicas(self, deployment_name, namespace='default'):
         """

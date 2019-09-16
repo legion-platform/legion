@@ -1966,6 +1966,11 @@ var doc = `{
                     "description": "Packaging integration ID",
                     "type": "string"
                 },
+                "resources": {
+                    "description": "Resources for packager container\nThe same format like k8s uses for pod resources.",
+                    "type": "object",
+                    "$ref": "#/definitions/ResourceRequirements"
+                },
                 "targets": {
                     "description": "List of targets. This parameter depends on the specific packaging integration",
                     "type": "array",

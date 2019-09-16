@@ -149,7 +149,7 @@ User must specify filename or mt name
     command=delete
 
 Retraining of failed model and checking of training logs
-    [Documentation]  Retrin failed model
+    [Documentation]  Retrain failed model
     [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
     ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
              Should not be equal  ${res.rc}  ${0}
@@ -168,7 +168,7 @@ Retraining of failed model and checking of training logs
              should not contain  ${res.stdout}   training is failed
 
 Force model retraining
-    [Documentation]  Force retrin failed model
+    [Documentation]  Force retrain failed model
     [Teardown]  Shell  legionctl --verbose mt delete ${TRAINING_NAME}
     ${res}=  Shell  legionctl --verbose mt create ${TRAINING_NAME} --no-wait --timeout ${TRAINING_TIMEOUT} --workdir ${TRAINING_WORKDIR} --toolchain ${TRAINING_TOOLCHAIN} --vcs ${TRAINING_VCS} -e '${TRAINING_ENTRYPOINT}' -a 'echo training is failed ; exit 1'
              Should be equal  ${res.rc}  ${0}

@@ -21,6 +21,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
+	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	"github.com/spf13/viper"
 	"go.uber.org/multierr"
 )
@@ -95,6 +96,9 @@ func ValidatesMDAndSetDefaults(md *deployment.ModelDeployment) (err error) {
 		logMD.Info("Deployment resources parameter is nil. Set the default value",
 			"name", md.Id, "resources", MdDefaultResources)
 		md.Spec.Resources = MdDefaultResources
+	} else {
+		_, resValidationErr := kubernetes.ConvertLegionResourcesToK8s(md.Spec.Resources)
+		err = multierr.Append(err, resValidationErr)
 	}
 
 	if md.Spec.ReadinessProbeInitialDelay == nil {

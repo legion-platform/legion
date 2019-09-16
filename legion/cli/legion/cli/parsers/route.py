@@ -43,7 +43,7 @@ def route(ctx: click.core.Context, edi: str, token: str):
 
 
 @route.command()
-@click.option('--mr-id', '--id', help='ModelRoute ID')
+@click.option('--mr-id', '--id', 'mr_id', help='ModelRoute ID')
 @click.option('--output-format', '-o', 'output_format', help='Output format',
               default=DEFAULT_OUTPUT_FORMAT)
 @pass_obj
@@ -69,7 +69,7 @@ def get(client: ModelRouteClient, mr_id: str, output_format: str):
 
 
 @route.command()
-@click.option('--mr-id', '--id', help='ModelRoute ID')
+@click.option('--mr-id', '--id', 'mr_id', help='ModelRoute ID')
 @click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with model route')
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
@@ -105,7 +105,7 @@ def create(client: ModelRouteClient, mr_id: str, file: str, wait: bool, timeout:
 
 
 @route.command()
-@click.option('--route-id', '--id', help='ModelRoute ID')
+@click.option('--route-id', '--id', 'mr_id', help='ModelRoute ID')
 @click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with model route')
 @pass_obj
 def edit(client: ModelRouteClient, mr_id: str, file: str):
@@ -133,10 +133,12 @@ def edit(client: ModelRouteClient, mr_id: str, file: str):
 
 
 @route.command()
-@click.option('--route-id', '--id', help='ModelRoute ID')
+@click.option('--route-id', '--id', 'mr_id', help='ModelRoute ID')
 @click.option('--file', '-f', type=click.Path(), help='Path to the file with model route')
+@click.option('--ignore-not-found/--not-ignore-not-found', default=False,
+              help='ignore if Model Deployment is not found')
 @pass_obj
-def delete(client: ModelRouteClient, mr_id: str, file: str):
+def delete(client: ModelRouteClient, mr_id: str, file: str, ignore_not_found: bool):
     """
     Delete a model route.\n
     For this command, you must provide a model route ID or path to file with one model route.
@@ -151,6 +153,7 @@ def delete(client: ModelRouteClient, mr_id: str, file: str):
     :param client: ModelRoute HTTP client
     :param mr_id: ModelRoute ID
     :param file: Path to the file with only one model route
+    :param ignore_not_found: ignore if Model Deployment is not found
     """
     if not mr_id and not file:
         raise ValueError(f'You should provide a model route ID or file parameter, not both.')
@@ -165,7 +168,13 @@ def delete(client: ModelRouteClient, mr_id: str, file: str):
 
         mr_id = conn.id
 
-    click.echo(client.delete(mr_id))
+    try:
+        click.echo(client.delete(mr_id))
+    except WrongHttpStatusCode as e:
+        if e.status_code != 404 or not ignore_not_found:
+            raise e
+
+        click.echo(f'Model route {mr_id} was not found. Ignore')
 
 
 def wait_operation_finish(timeout: int, wait: bool, mr_id: str, mr_client: ModelRouteClient):
@@ -175,7 +184,6 @@ def wait_operation_finish(timeout: int, wait: bool, mr_id: str, mr_client: Model
     :param timeout: timeout in seconds. for wait (if no-wait is off)
     :param wait: no wait until operation will be finished
     :param mr_id: Model Route id
-    :param args: command arguments
     :param mr_client: Model Route Client
 
     :return: None

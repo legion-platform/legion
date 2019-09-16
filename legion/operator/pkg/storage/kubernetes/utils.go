@@ -17,7 +17,9 @@
 package kubernetes
 
 import (
+	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
@@ -92,27 +94,30 @@ func ConvertLegionResourcesToK8s(requirements *v1alpha1.ResourceRequirements) (d
 			depResources.Limits = corev1.ResourceList{}
 
 			if reqLimits.Memory != nil {
-				depResources.Limits[corev1.ResourceMemory], err = resource.ParseQuantity(*reqLimits.Memory)
+				var validationErr error
+				depResources.Limits[corev1.ResourceMemory], validationErr = resource.ParseQuantity(*reqLimits.Memory)
 
-				if err != nil {
-					return
+				if validationErr != nil {
+					err = multierr.Append(err, fmt.Errorf("validation of memory request is failed: %s", validationErr.Error()))
 				}
 			}
 
 			if reqLimits.Cpu != nil {
-				depResources.Limits[corev1.ResourceCPU], err = resource.ParseQuantity(*reqLimits.Cpu)
+				var validationErr error
+				depResources.Limits[corev1.ResourceCPU], validationErr = resource.ParseQuantity(*reqLimits.Cpu)
 
-				if err != nil {
-					return
+				if validationErr != nil {
+					err = multierr.Append(err, fmt.Errorf("validation of cpu request is failed: %s", validationErr.Error()))
 				}
 			}
 
 			if reqLimits.Gpu != nil {
 				// TODO: remove hardcode
-				depResources.Limits["nvidia.com/gpu"], err = resource.ParseQuantity(*reqLimits.Gpu)
+				var validationErr error
+				depResources.Limits["nvidia.com/gpu"], validationErr = resource.ParseQuantity(*reqLimits.Gpu)
 
-				if err != nil {
-					return
+				if validationErr != nil {
+					err = multierr.Append(err, fmt.Errorf("validation of gpu request is failed: %s", validationErr.Error()))
 				}
 			}
 		}
@@ -122,27 +127,30 @@ func ConvertLegionResourcesToK8s(requirements *v1alpha1.ResourceRequirements) (d
 			depResources.Requests = corev1.ResourceList{}
 
 			if reqRequests.Memory != nil {
-				depResources.Requests[corev1.ResourceMemory], err = resource.ParseQuantity(*reqRequests.Memory)
+				var validationErr error
+				depResources.Requests[corev1.ResourceMemory], validationErr = resource.ParseQuantity(*reqRequests.Memory)
 
-				if err != nil {
-					return
+				if validationErr != nil {
+					err = multierr.Append(err, fmt.Errorf("validation of memory limit is failed: %s", validationErr.Error()))
 				}
 			}
 
 			if reqRequests.Cpu != nil {
-				depResources.Requests[corev1.ResourceCPU], err = resource.ParseQuantity(*reqRequests.Cpu)
+				var validationErr error
+				depResources.Requests[corev1.ResourceCPU], validationErr = resource.ParseQuantity(*reqRequests.Cpu)
 
-				if err != nil {
-					return
+				if validationErr != nil {
+					err = multierr.Append(err, fmt.Errorf("validation of cpu limit is failed: %s", validationErr.Error()))
 				}
 			}
 
 			if reqRequests.Gpu != nil {
 				// TODO: remove hardcode
-				depResources.Limits["nvidia.com/gpu"], err = resource.ParseQuantity(*reqRequests.Gpu)
+				var validationErr error
+				depResources.Limits["nvidia.com/gpu"], validationErr = resource.ParseQuantity(*reqRequests.Gpu)
 
-				if err != nil {
-					return
+				if validationErr != nil {
+					err = multierr.Append(err, fmt.Errorf("validation of gpu limit is failed: %s", validationErr.Error()))
 				}
 			}
 		}

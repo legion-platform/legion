@@ -1,0 +1,6 @@
+id: simple-model-multiver-1
+kind: ModelDeployment
+spec:
+  image: "<fill-in>"
+  minReplicas: 1
+  roleName: simple-model-multiver-1

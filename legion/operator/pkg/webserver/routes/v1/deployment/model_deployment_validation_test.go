@@ -164,3 +164,34 @@ func (s *ModelDeploymentValidationSuite) TestValidateLivenessProbe() {
 	s.g.Expect(err).To(HaveOccurred())
 	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.LivenessProbeErrorMessage))
 }
+
+func (s *ModelDeploymentValidationSuite) TestMdResourcesValidation() {
+	wrongResourceValue := "wrong res"
+	md := &deployment.ModelDeployment{
+		Spec: v1alpha1.ModelDeploymentSpec{
+			Resources: &v1alpha1.ResourceRequirements{
+				Limits: &v1alpha1.ResourceList{
+					Memory: &wrongResourceValue,
+					Gpu:    &wrongResourceValue,
+					Cpu:    &wrongResourceValue,
+				},
+				Requests: &v1alpha1.ResourceList{
+					Memory: &wrongResourceValue,
+					Gpu:    &wrongResourceValue,
+					Cpu:    &wrongResourceValue,
+				},
+			},
+		},
+	}
+
+	err := md_routes.ValidatesMDAndSetDefaults(md)
+	s.g.Expect(err).Should(HaveOccurred())
+
+	errorMessage := err.Error()
+	s.g.Expect(errorMessage).Should(ContainSubstring("validation of memory request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring("validation of cpu request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring("validation of gpu request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring("validation of memory limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring("validation of cpu limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring("validation of gpu limit is failed: quantities must match the regular expression"))
+}

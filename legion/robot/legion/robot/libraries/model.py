@@ -87,23 +87,22 @@ class Model:
 
         response = requests.post(
             url,
-            data=payload,
+            json=payload,
             headers=headers
         )
 
-        if response.status_code != 200:
-            raise Exception('Returned wrong status code: {}'.format(response.status_code))
+        if not response.ok:
+            raise Exception(f'Returned wrong status code: {response.status_code}, body: {response.text}')
 
         return response.json()
 
-    def invoke_model_api(self, md_name, edge, token, endpoint, request_id=None, **payload):
+    def invoke_model_api(self, md_name, edge, token, request_id=None, **payload):
         """
         Invoke model through API
 
         :param md_name: model deployment name
         :param edge: edge url
         :param token: model API JWT token
-        :param endpoint: name of endpoint
         :param request_id: (Optional) request ID
         :param payload: payload dict
         :return: dict -- response
@@ -112,18 +111,24 @@ class Model:
         if request_id:
             headers[legion_headers.MODEL_REQUEST_ID] = request_id
 
-        url = f'{edge}/model/{md_name}/api/model/invoke/{endpoint}'
+        url = f'{edge}/model/{md_name}/api/model/invoke'
 
         print('Requesting {} with data = {} in POST mode'.format(url, payload))
 
+        payload = {
+            'data': [list(payload.values())],
+            'columns': list(payload.keys()),
+        }
+
         response = requests.post(
             url,
-            data=payload,
+            json=payload,
             headers=headers
         )
 
-        if response.status_code != 200:
-            raise Exception('Returned wrong status code: {}'.format(response.status_code))
+        if not response.ok:
+            raise Exception(f'Returned wrong status code: {response.status_code}, body: {response.text},'
+                            f' payload: {payload}')
 
         self._last_response_id = response.headers.get(legion_headers.MODEL_REQUEST_ID)
         self._last_response = response.json()

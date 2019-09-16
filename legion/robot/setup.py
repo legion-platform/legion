@@ -51,4 +51,9 @@ setup(
     author_email='alexey@kharlamov.biz, kirill@makhonin.biz',
     license='Apache v2',
     install_requires=requirements,
+    entry_points={
+        'console_scripts': [
+            'legion-authenticate-test-user=legion.robot.authenticator:main'
+        ],
+    },
 )

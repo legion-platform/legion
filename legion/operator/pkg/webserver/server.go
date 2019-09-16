@@ -23,9 +23,9 @@ import (
 	v1Routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1"
 )
 
-// @title EDI API
+// @title API's Gateway
 // @version 1.0
-// @description This is a EDI server.
+// @description This is a API's Gateway server.
 // @termsOfService http://swagger.io/terms/
 
 // @license.name Apache 2.0

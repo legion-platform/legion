@@ -1,9 +1,9 @@
 *** Variables ***
-${LOCAL_CONFIG}        legion/config_5_1
-${TEST_MT_NAME}        stub-model-5-1
-${TEST_MD_NAME}        stub-model-5-1
-${TEST_MODEL_NAME}     5
-${TEST_MODEL_VERSION}  1
+${RES_DIR}             ${CURDIR}/resources
+${LOCAL_CONFIG}        legion/config_deployment_feedback
+${MD_FEEDBACK_MODEL}   feedback-model
+${TEST_MODEL_NAME}     feedback
+${TEST_MODEL_VERSION}  5.5
 
 *** Settings ***
 Documentation       Feedback loop (fluentd) check
@@ -15,25 +15,27 @@ Library             legion.robot.libraries.feedback.Feedback  ${CLOUD_TYPE}  ${F
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords
-...                 Choose cluster context  ${CLUSTER_CONTEXT}   AND
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
-...                 Build model  ${TEST_MT_NAME}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  AND
-...                 Get token from EDI  ${TEST_MD_NAME}  ${TEST_MD_NAME}  AND
-...                 Run EDI deploy and check model started  ${TEST_MD_NAME}  ${TEST_MODEL_IMAGE}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  ${TEST_MD_NAME}
-Suite Teardown      Run Keywords
-...                 Delete model training  ${TEST_MT_NAME}  AND
-...                 Run EDI undeploy model and check    ${TEST_MD_NAME}
-Force Tags          deployment  edi  cli  disable  feedback
+...                 Get token from EDI  ${MD_FEEDBACK_MODEL}  AND
+...                 Cleanup resources  AND
+...                 Run EDI deploy from model packaging  ${MP_FEEDBACK_MODEL}  ${MD_FEEDBACK_MODEL}  ${RES_DIR}/simple-model.deployment.legion.yaml  AND
+...                 Check model started  ${MD_FEEDBACK_MODEL}
+Suite Teardown      Run keywords  Cleanup resources  AND
+...                 Remove File  ${LOCAL_CONFIG}
+Force Tags          deployment  edi  cli  feedback
 
 *** Variables ***
 ${REQUEST_ID_CHECK_RETRIES}         30
 
 *** Keywords ***
+Cleanup resources
+    StrictShell  legionctl --verbose dep delete --id ${MD_FEEDBACK_MODEL} --ignore-not-found
+
 Invoke deployed model
     [Documentation]  call model invoke endpoint
-    [Arguments]           ${md_name}  ${request_id}=None  ${endpoint}=default  &{arguments}
-    ${resp}=              Invoke model API  ${md_name}  ${EDGE_URL}  ${TOKEN}  ${endpoint}  ${request_id}  &{arguments}
+    [Arguments]           ${md_name}  ${request_id}=${NONE}  &{arguments}
+    ${resp}=              Invoke model API  ${md_name}  ${EDGE_URL}  ${TOKEN}  ${request_id}  &{arguments}
     [Return]              ${resp}
 
 Send feedback for deployed model
@@ -69,8 +71,9 @@ Validate model API meta log entry HTTP method
 
 Validate model API meta log entry POST arguments
     [Documentation]  check that model API log entry POST arguments are correct
-    [Arguments]      ${log_entry}   &{excpected_values}
-    ${actual_post_args}=    Get From Dictionary       ${log_entry}     request_post_args
+    [Arguments]      ${log_entry}   ${excpected_values}
+    ${actual_post_args}=    Get From Dictionary       ${log_entry}     request_content
+    ${actual_post_args}=    Evaluate     json.loads("""${actual_post_args}""")    json
     Dictionaries Should Be Equal    ${actual_post_args}    ${excpected_values}
 
 Validate model API meta ID and version
@@ -83,7 +86,7 @@ Validate model API meta ID and version
 
 Validate model API response
     [Documentation]  check that model API response is correct
-    [Arguments]      ${actual_response}   &{excpected_values}
+    [Arguments]      ${actual_response}   ${excpected_values}
     Dictionaries Should Be Equal    ${actual_response}    ${excpected_values}
 
 Validate model API body log entry
@@ -126,7 +129,7 @@ Validate model feedback log entry params
     [Documentation]  check that model feedback log entry params are correct
     [Arguments]      ${log_entry}   &{excpected_values}
     ${actual_payload}=      Get From Dictionary       ${log_entry}          payload
-    ${actual_post_args}=    Get From Dictionary       ${actual_payload}     post
+    ${actual_post_args}=    Get From Dictionary       ${actual_payload}     json
     Dictionaries Should Be Equal    ${actual_post_args}    ${excpected_values}
 
 Validate model feedback ID and version
@@ -140,7 +143,7 @@ Validate model feedback ID and version
 Validate model feedback
     [Arguments]  ${request_id}  ${response}  ${expected_response}
     [Documentation]  check model feedback
-    Validate model API response      ${response}    result=${expected_response}
+    Validate model API response      ${response}    ${expected_response}
 
     ${actual_request_id}=          Get model API last response ID
     Log                            Response ID is ${actual_request_id}
@@ -160,7 +163,7 @@ Validate model feedback
     Validate model API body log entry for all entries   ${response_log_entries}
 
     ${aggregated_log_content}=         Get model API body content from all entries  ${response_log_entries}
-    Validate model API response        ${aggregated_log_content}    result=${expected_response}
+    Validate model API response        ${aggregated_log_content}    ${expected_response}
 
     [Return]  ${meta_log_entry}
 
@@ -169,34 +172,36 @@ Check model API logging with request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - with specified request ID
     [Tags]  fluentd  aws
     ${request_id}=          Generate Random String   16  [LETTERS]
-    ${a_value}=             Generate Random String   4   [LETTERS]
-    ${b_value}=             Generate Random String   4   [LETTERS]
-    ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
+    ${str}=                 Generate Random String   4   [LETTERS]
+    ${copies}=              set variable  ${4}
+    ${expected_request}=    evaluate  {'data': [['${str}', ${copies}]], 'columns': ['str', 'copies']}
+    ${expected_response}=   evaluate  {'prediction': {'result': '${str}' * int(${copies})}, 'columns': ['result']}
 
-    ${response}=   Invoke deployed model    ${TEST_MD_NAME}  request_id=${request_id}  a=${a_value}  b=${b_value}
+    ${response}=   Invoke deployed model    ${MD_FEEDBACK_MODEL}  request_id=${request_id}  str=${str}  copies=${copies}
 
     ${meta_log_entry}=  Validate model feedback  ${request_id}  ${response}  ${expected_response}
-    Validate model API meta log entry POST arguments    ${meta_log_entry}   a=${a_value}  b=${b_value}
+    Validate model API meta log entry POST arguments    ${meta_log_entry}   ${expected_request}
 
 Check model API logging with request ID and many chunks
     [Documentation]  Checking that model API log is being persisted - with specified request ID
     [Tags]  fluentd  aws
     ${request_id}=          Generate Random String   16  [LETTERS]
-    ${expected_response}=   Repeat string N times    ${TEST_MODEL_ARG_STR}   ${TEST_MODEL_ARG_COPIES}
+    ${expected_request}=    evaluate  {'data': [['${TEST_MODEL_ARG_STR}', ${TEST_MODEL_ARG_COPIES}]], 'columns': ['str', 'copies']}
+    ${expected_response}=   evaluate  {'prediction': {'result': '${TEST_MODEL_ARG_STR}' * int(${TEST_MODEL_ARG_COPIES})}, 'columns': ['result']}
 
-    ${response}=   Invoke deployed model    ${TEST_MD_NAME}  endpoint=feedback  request_id=${request_id}  str=${TEST_MODEL_ARG_STR}  copies=${TEST_MODEL_ARG_COPIES}
+    ${response}=   Invoke deployed model    ${MD_FEEDBACK_MODEL}  request_id=${request_id}  str=${TEST_MODEL_ARG_STR}  copies=${TEST_MODEL_ARG_COPIES}
 
     ${meta_log_entry}=  Validate model feedback  ${request_id}  ${response}  ${expected_response}
-    Validate model API meta log entry POST arguments    ${meta_log_entry}  str=${TEST_MODEL_ARG_STR}  copies=${TEST_MODEL_ARG_COPIES}
+    Validate model API meta log entry POST arguments    ${meta_log_entry}  ${expected_request}
 
 Check model API feedback with request ID
     [Documentation]  Checking that model API feedback is being persisted - without request ID
     [Tags]  fluentd  aws
     ${request_id}=          Generate Random String   16  [LETTERS]
-    ${a_value}=             Generate Random String   4   [LETTERS]
-    ${b_value}=             Generate Random String   4   [LETTERS]
+    ${str}=                 Generate Random String   4   [LETTERS]
+    ${copies}=              set variable  ${4.0}
 
-    Send feedback for deployed model    ${TEST_MD_NAME}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  ${request_id}  a=${a_value}  b=${b_value}
+    Send feedback for deployed model    ${MD_FEEDBACK_MODEL}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  ${request_id}  str=${str}  copies=${copies}
 
     ${log_locations}=       Get paths with lag  ${FEEDBACK_LOCATION_MODELS_FEEDBACK}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
 
@@ -204,20 +209,21 @@ Check model API feedback with request ID
     Validate model feedback log entry                   ${log_entry}
     Validate model feedback log entry Request ID        ${log_entry}   ${request_id}
     Validate model feedback ID and version              ${log_entry}   ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}
-    @{desired_a_values}=    Create List    ${a_value}
-    @{desired_b_values}=    Create List    ${b_value}
-    Validate model feedback log entry params            ${log_entry}   a=${desired_a_values}  b=${desired_b_values}
+
+    Validate model feedback log entry params            ${log_entry}   str=${str}  copies=${copies}
 
 Check model API logging without request ID and one chunk
     [Documentation]  Checking that model API log is being persisted - without request ID
     [Tags]  fluentd  aws
-    ${a_value}=             Generate Random String   4   [LETTERS]
-    ${b_value}=             Generate Random String   4   [LETTERS]
-    ${expected_response}=   Convert To Number        ${TEST_MODEL_RESULT}
+    ${request_id}=          Generate Random String   16  [LETTERS]
+    ${str}=                 Generate Random String   4   [LETTERS]
+    ${copies}=              set variable  ${4}
+    ${expected_request}=   evaluate  {'data': [['${str}', ${copies}]], 'columns': ['str', 'copies']}
+    ${expected_response}=   evaluate  {'prediction': {'result': '${str}' * int(${copies})}, 'columns': ['result']}
 
-    ${response}=   Invoke deployed model  ${TEST_MD_NAME}  a=${a_value}  b=${b_value}
-    Validate model API response      ${response}    result=${expected_response}
+    ${response}=   Invoke deployed model  ${MD_FEEDBACK_MODEL}  str=${str}  copies=${copies}
+    Validate model API response      ${response}    ${expected_response}
 
     ${request_id}=          Get model API last response ID
     ${meta_log_entry}=  Validate model feedback  ${request_id}  ${response}  ${expected_response}
-    Validate model API meta log entry POST arguments    ${meta_log_entry}   a=${a_value}  b=${b_value}
+    Validate model API meta log entry POST arguments    ${meta_log_entry}   ${expected_request}

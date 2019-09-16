@@ -436,6 +436,11 @@ func (in *ModelPackagingSpec) DeepCopyInto(out *ModelPackagingSpec) {
 		*out = make([]Target, len(*in))
 		copy(*out, *in)
 	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

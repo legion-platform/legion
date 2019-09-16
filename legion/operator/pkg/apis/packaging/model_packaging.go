@@ -39,4 +39,7 @@ type ModelPackagingSpec struct {
 	Arguments map[string]interface{} `json:"arguments"`
 	// List of targets. This parameter depends on the specific packaging integration
 	Targets []v1alpha1.Target `json:"targets"`
+	// Resources for packager container
+	// The same format like k8s uses for pod resources.
+	Resources *v1alpha1.ResourceRequirements `json:"resources,omitempty"`
 }

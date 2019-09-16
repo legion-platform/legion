@@ -39,6 +39,37 @@ spec:
               type: string
             image:
               type: string
+            resources:
+              properties:
+                limits:
+                  description: Limits describes the maximum amount of compute resources
+                    allowed.
+                  properties:
+                    cpu:
+                      description: Read more about CPU resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
+                      type: string
+                    gpu:
+                      description: Read more about GPU resource here https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
+                      type: string
+                    memory:
+                      description: Read more about memory resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
+                      type: string
+                  type: object
+                requests:
+                  description: Requests describes the minimum amount of compute resources
+                    required.
+                  properties:
+                    cpu:
+                      description: Read more about CPU resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
+                      type: string
+                    gpu:
+                      description: Read more about GPU resource here https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
+                      type: string
+                    memory:
+                      description: Read more about memory resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
+                      type: string
+                  type: object
+              type: object
             targets:
               items:
                 properties:

@@ -105,6 +105,7 @@ func newModelPackaging() *packaging.ModelPackaging {
 			ArtifactName:    mpArtifactName,
 			IntegrationName: piIdMpRoute,
 			Image:           mpImage,
+			Resources:       pack_route.DefaultPackagingResources,
 		},
 	}
 }

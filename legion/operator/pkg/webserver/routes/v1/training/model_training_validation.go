@@ -23,6 +23,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
+	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
 	uuid "github.com/nu7hatch/gouuid"
 	"go.uber.org/multierr"
@@ -124,6 +125,9 @@ func (mtv *MtValidator) validateMainParams(mt *training.ModelTraining) (err erro
 		logMT.Info("Training resource parameter is nil. Set the default value",
 			"name", mt.Id, "resources", DefaultTrainingResources)
 		mt.Spec.Resources = &DefaultTrainingResources
+	} else {
+		_, resValidationErr := kubernetes.ConvertLegionResourcesToK8s(mt.Spec.Resources)
+		err = multierr.Append(err, resValidationErr)
 	}
 
 	return
