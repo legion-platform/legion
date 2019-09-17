@@ -15,9 +15,11 @@ class ConnectionSpec(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, key_id: str=None, key_secret: str=None, password: str=None, public_key: str=None, reference: str=None, region: str=None, role: str=None, type: str=None, uri: str=None, username: str=None):  # noqa: E501
+    def __init__(self, description: str=None, key_id: str=None, key_secret: str=None, password: str=None, public_key: str=None, reference: str=None, region: str=None, role: str=None, type: str=None, uri: str=None, username: str=None, web_ui_link: str=None):  # noqa: E501
         """ConnectionSpec - a model defined in Swagger
 
+        :param description: The description of this ConnectionSpec.  # noqa: E501
+        :type description: str
         :param key_id: The key_id of this ConnectionSpec.  # noqa: E501
         :type key_id: str
         :param key_secret: The key_secret of this ConnectionSpec.  # noqa: E501
@@ -38,8 +40,11 @@ class ConnectionSpec(Model):
         :type uri: str
         :param username: The username of this ConnectionSpec.  # noqa: E501
         :type username: str
+        :param web_ui_link: The web_ui_link of this ConnectionSpec.  # noqa: E501
+        :type web_ui_link: str
         """
         self.swagger_types = {
+            'description': str,
             'key_id': str,
             'key_secret': str,
             'password': str,
@@ -49,10 +54,12 @@ class ConnectionSpec(Model):
             'role': str,
             'type': str,
             'uri': str,
-            'username': str
+            'username': str,
+            'web_ui_link': str
         }
 
         self.attribute_map = {
+            'description': 'description',
             'key_id': 'keyID',
             'key_secret': 'keySecret',
             'password': 'password',
@@ -62,9 +69,11 @@ class ConnectionSpec(Model):
             'role': 'role',
             'type': 'type',
             'uri': 'uri',
-            'username': 'username'
+            'username': 'username',
+            'web_ui_link': 'webUILink'
         }
 
+        self._description = description
         self._key_id = key_id
         self._key_secret = key_secret
         self._password = password
@@ -75,6 +84,7 @@ class ConnectionSpec(Model):
         self._type = type
         self._uri = uri
         self._username = username
+        self._web_ui_link = web_ui_link
 
     @classmethod
     def from_dict(cls, dikt) -> 'ConnectionSpec':
@@ -86,6 +96,29 @@ class ConnectionSpec(Model):
         :rtype: ConnectionSpec
         """
         return util.deserialize_model(dikt, cls)
+
+    @property
+    def description(self) -> str:
+        """Gets the description of this ConnectionSpec.
+
+        Custom description  # noqa: E501
+
+        :return: The description of this ConnectionSpec.
+        :rtype: str
+        """
+        return self._description
+
+    @description.setter
+    def description(self, description: str):
+        """Sets the description of this ConnectionSpec.
+
+        Custom description  # noqa: E501
+
+        :param description: The description of this ConnectionSpec.
+        :type description: str
+        """
+
+        self._description = description
 
     @property
     def key_id(self) -> str:
@@ -316,3 +349,26 @@ class ConnectionSpec(Model):
         """
 
         self._username = username
+
+    @property
+    def web_ui_link(self) -> str:
+        """Gets the web_ui_link of this ConnectionSpec.
+
+        Custom web UI link  # noqa: E501
+
+        :return: The web_ui_link of this ConnectionSpec.
+        :rtype: str
+        """
+        return self._web_ui_link
+
+    @web_ui_link.setter
+    def web_ui_link(self, web_ui_link: str):
+        """Sets the web_ui_link of this ConnectionSpec.
+
+        Custom web UI link  # noqa: E501
+
+        :param web_ui_link: The web_ui_link of this ConnectionSpec.
+        :type web_ui_link: str
+        """
+
+        self._web_ui_link = web_ui_link

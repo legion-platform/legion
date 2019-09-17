@@ -2176,6 +2176,10 @@ var doc = `{
         "ConnectionSpec": {
             "type": "object",
             "properties": {
+                "description": {
+                    "description": "Custom description",
+                    "type": "string"
+                },
                 "keyID": {
                     "description": "Key ID",
                     "type": "string"
@@ -2214,6 +2218,10 @@ var doc = `{
                 },
                 "username": {
                     "description": "Username",
+                    "type": "string"
+                },
+                "webUILink": {
+                    "description": "Custom web UI link",
                     "type": "string"
                 }
             }

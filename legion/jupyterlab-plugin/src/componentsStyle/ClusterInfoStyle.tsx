@@ -17,7 +17,12 @@ import { style } from 'typestyle';
 
 export const infoHolder = style({
   textAlign: 'left',
-  padding: '8px 8px 8px 12px'
+  padding: '2px 2px 2px 2px'
+});
+
+export const infoList = style({
+  listStyleType: 'none',
+  paddingInlineStart: '12px'
 });
 
 export const infoTitle = style({

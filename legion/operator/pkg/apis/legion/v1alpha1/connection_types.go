@@ -48,6 +48,10 @@ type ConnectionSpec struct {
 	PublicKey string `json:"publicKey,omitempty"`
 	// VCS reference
 	Reference string `json:"reference,omitempty"`
+	// Custom description
+	Description string `json:"description,omitempty"`
+	// Custom web UI link
+	WebUiLink string `json:"webUILink,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -329,8 +329,8 @@ export function addCommands(options: IAddCloudCommandsOptions) {
   });
 
   commands.addCommand(CommandIDs.issueNewCloudAccessToken, {
-    label: 'Issue token for models deployed on a cloud',
-    caption: 'Create new JWT token',
+    label: "Issue model's API token",
+    caption: 'Create new model JWT token',
     execute: args => {
       try {
         const roleName = args['roleName'] as string;
@@ -361,13 +361,15 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               showErrorMessage('Can not remove issue cloud access token', err);
             });
         } else {
-          cloudDialogs.showIssueModelAccessToken().then(({ value, button }) => {
-            if (button.accept) {
-              commands.execute(CommandIDs.issueNewCloudAccessToken, {
-                roleName: value.roleName
-              });
-            }
-          });
+          cloudDialogs
+            .showIssueModelAccessToken(options.config.defaultModelRole)
+            .then(({ value, button }) => {
+              if (button.accept) {
+                commands.execute(CommandIDs.issueNewCloudAccessToken, {
+                  roleName: value.roleName
+                });
+              }
+            });
         }
       } catch (err) {
         showErrorMessage('Can not remove cloud deployment', err);

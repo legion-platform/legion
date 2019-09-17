@@ -275,6 +275,9 @@ definitions:
     type: object
   ConnectionSpec:
     properties:
+      description:
+        description: Custom description
+        type: string
       keyID:
         description: Key ID
         type: string
@@ -309,6 +312,9 @@ definitions:
         type: string
       username:
         description: Username
+        type: string
+      webUILink:
+        description: Custom web UI link
         type: string
     type: object
   ConnectionStatus:

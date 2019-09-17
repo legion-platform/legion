@@ -34,6 +34,26 @@ export const REMOVE_MODEL_PACKING_LABEL = 'Remove';
 export const LOGS_LABEL = 'Logs';
 
 export function showConnectionInformationDialog(conn: Connection) {
+  let description = conn.spec.description ? (
+    <div>
+      <h3 className={style.fieldLabelStyle}>Description</h3>
+      <p className={style.fieldTextStyle}>{conn.spec.description}</p>
+    </div>
+  ) : (
+    <div />
+  );
+
+  let webUILink = conn.spec.webUILink ? (
+    <div>
+      <h3 className={style.fieldLabelStyle}>WEB UI Link</h3>
+      <a href={conn.spec.webUILink} target="_blank">
+        {conn.spec.webUILink}
+      </a>
+    </div>
+  ) : (
+    <div />
+  );
+
   return showDialog({
     title: `Cloud training information`,
     body: (
@@ -44,6 +64,8 @@ export function showConnectionInformationDialog(conn: Connection) {
         <p className={style.fieldTextStyle}>{conn.spec.type}</p>
         <h3 className={style.fieldLabelStyle}>URI</h3>
         <p className={style.fieldTextStyle}>{conn.spec.uri}</p>
+        {webUILink}
+        {description}
       </div>
     ),
     buttons: [
@@ -125,7 +147,7 @@ export function showPackagingIntegrationDialog(pi: PackagingIntegration) {
         <h3 className={style.fieldLabelStyle}>ID</h3>
         <p className={style.fieldTextStyle}>{pi.id}</p>
         <h3 className={style.fieldLabelStyle}>Image</h3>
-        <p className={style.fieldTextStyle}>{pi.spec['default_image']}</p>
+        <p className={style.fieldTextStyle}>{pi.spec.defaultImage}</p>
       </div>
     ),
     buttons: [Dialog.cancelButton({ label: 'Close window' })]
@@ -133,7 +155,6 @@ export function showPackagingIntegrationDialog(pi: PackagingIntegration) {
 }
 
 export function showToolchainIntegrationDialog(ti: ToolchainIntegration) {
-  console.log(ti);
   return showDialog({
     title: `Toolchain Integration information`,
     body: (
@@ -141,7 +162,7 @@ export function showToolchainIntegrationDialog(ti: ToolchainIntegration) {
         <h3 className={style.fieldLabelStyle}>ID</h3>
         <p className={style.fieldTextStyle}>{ti.id}</p>
         <h3 className={style.fieldLabelStyle}>Image</h3>
-        <p className={style.fieldTextStyle}>{ti.spec['default_image']}</p>
+        <p className={style.fieldTextStyle}>{ti.spec.defaultImage}</p>
         <h3 className={style.fieldLabelStyle}>ID</h3>
         <p className={style.fieldTextStyle}>{ti.id}</p>
       </div>
@@ -354,8 +375,8 @@ export interface IIssueModelAccessTokenDialogValues {
 }
 
 class IssueModelAccessTokenDialog extends Widget {
-  constructor() {
-    super({ node: Private.buildIssueModelAccessTokenDialog() });
+  constructor(defaultRole: string) {
+    super({ node: Private.buildIssueModelAccessTokenDialog(defaultRole) });
   }
 
   getValue(): IIssueModelAccessTokenDialogValues {
@@ -368,10 +389,10 @@ class IssueModelAccessTokenDialog extends Widget {
   }
 }
 
-export function showIssueModelAccessToken() {
+export function showIssueModelAccessToken(defaultRole: string) {
   return showDialog({
     title: 'Creation of cloud access token',
-    body: new IssueModelAccessTokenDialog(),
+    body: new IssueModelAccessTokenDialog(defaultRole),
     buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Get token' })]
   });
 }
@@ -391,10 +412,10 @@ namespace Private {
     return body;
   }
 
-  export function buildIssueModelAccessTokenDialog() {
+  export function buildIssueModelAccessTokenDialog(defaultRole: string) {
     let body = base.createDialogBody();
     body.appendChild(base.createDialogInputLabel('Role name'));
-    body.appendChild(base.createDialogInput());
+    body.appendChild(base.createDialogInput(undefined, defaultRole));
     return body;
   }
 }
