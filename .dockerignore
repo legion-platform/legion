@@ -20,6 +20,7 @@
 !legion/feedback-aggregator/Makefile
 !legion/jupyterlab-plugin/*.json
 !legion/jupyterlab-plugin/*.py
+!legion/jupyterlab-plugin/*.txt
 !legion/jupyterlab-plugin/Pipfile*
 !legion/jupyterlab-plugin/README.md
 !legion/jupyterlab-plugin/yarn*

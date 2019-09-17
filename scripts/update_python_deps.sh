@@ -10,4 +10,6 @@ do
     cd "${ROOT_DIR}/${project}"
 
     pipenv update
+
+    ${ROOT_DIR}/scripts/convert_pipenv_to_requirements.py $(pwd)
 done

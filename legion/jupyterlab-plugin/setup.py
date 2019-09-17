@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 #    Copyright 2019 EPAM Systems
 #
@@ -14,41 +13,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-import json
 import os
 import re
-import typing
 
-from setuptools import setup, find_namespace_packages
-
+from setuptools import find_namespace_packages, setup
 
 data_files_spec = [
     ('etc/jupyter/jupyter_notebook_config.d',
      'jupyter-config/jupyter_notebook_config.d'),
 ]
 
-PIPFILE_DEP_SECTION = 'default'
 PACKAGE_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-PIP_FILE_LOCK_PATH = os.path.join(PACKAGE_ROOT_PATH, 'Pipfile.lock')
 VERSION_FILE = os.path.join(PACKAGE_ROOT_PATH, 'legion/jupyterlab', 'version.py')
-
-
-def extract_requirements() -> typing.List[str]:
-    """
-    Extracts requirements from a pip formatted requirements file.
-
-    :return: package names as strings
-    """
-    legion_dependencies = [f'legion-sdk=={extract_version()}']
-
-    with open(PIP_FILE_LOCK_PATH, 'r') as pip_file_lock_stream:
-        pip_file_lock_data = json.load(pip_file_lock_stream)
-        pip_file_section_data = pip_file_lock_data.get(PIPFILE_DEP_SECTION, {})
-        return legion_dependencies + [
-            key + value['version']
-            for (key, value)
-            in pip_file_section_data.items()
-        ]
 
 
 def extract_version() -> str:
@@ -67,6 +43,9 @@ def extract_version() -> str:
             raise RuntimeError("Unable to find version string in %s." % (file_content,))
 
 
+with open('requirements.txt') as f:
+    requirements = [f'legion-sdk=={extract_version()}'] + f.read().splitlines()
+
 setup(
     name='jupyter_legion',
     description='A JupyterLab Notebook server extension for jupyter_legion',
@@ -82,6 +61,6 @@ setup(
     packages=find_namespace_packages(),
     data_files=[('', ["README.md"])],
     zip_safe=False,
-    install_requires=extract_requirements(),
-    version=extract_version()
+    version=extract_version(),
+    install_requires=requirements
 )

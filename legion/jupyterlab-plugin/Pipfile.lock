@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e486b7dab76a307da2bba852edcd0c5a8785f62a7f855d10902173e883ffba15"
+            "sha256": "f698b6d2f92fbfadbb5f4b4d02135fdacc45620a3b5cf88e5e227dc81714f108"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -110,10 +110,10 @@
         },
         "jupyter-client": {
             "hashes": [
-                "sha256:73a809a2964afa07adcc1521537fddb58c2ffbb7e84d53dc5901cf80480465b3",
-                "sha256:98e8af5edff5d24e4d31e73bc21043130ae9d955a91aa93fc0bc3b1d0f7b5880"
+                "sha256:4274f2eef4265bfd00216f44993aa50d890a1abe55e414c817128cf0338ae66a",
+                "sha256:4c274aaa3d87b83fa6c6853463f54b8bbff137aeb71e65896ab111c17a62ae63"
             ],
-            "version": "==5.3.1"
+            "version": "==5.3.2"
         },
         "jupyter-core": {
             "hashes": [
@@ -193,11 +193,11 @@
         },
         "notebook": {
             "hashes": [
-                "sha256:573e0ae650c5d76b18b6e564ba6d21bf321d00847de1d215b418acb64f056eb8",
-                "sha256:f64fa6624d2323fbef6210a621817d6505a45d0d4a9367f1843b20a38a4666ee"
+                "sha256:660976fe4fe45c7aa55e04bf4bccb9f9566749ff637e9020af3422f9921f9a5d",
+                "sha256:b0a290f5cc7792d50a21bec62b3c221dd820bf00efa916ce9aeec4b5354bde20"
             ],
             "index": "pypi",
-            "version": "==5.7.8"
+            "version": "==6.0.1"
         },
         "pandocfilters": {
             "hashes": [
@@ -251,15 +251,15 @@
         },
         "pydantic": {
             "hashes": [
-                "sha256:098ffe36047a35f78dbc0d8f7c2d40da053e35158b6f4326c50d669c56e48ea7",
-                "sha256:549c5d05138b7e0f33bd24d4313783c90342d0595d824e02ceb562a992c78239",
-                "sha256:6901572483a00d53aaba9121c6261017334511c44864b00b36714b32cc7af712",
-                "sha256:70a5cbab8b52ac3e5f9660a8ad028581095e48abc4a0fc67d1b2bf69e8a51d03",
-                "sha256:9d34421072a7df679638e5896a4a15f48ffbbfb8a57eb5fac6c45806269d0dc0",
-                "sha256:e4968f16f448d7c3026b0197bd29e78b5f39a7d27dbe22d5b3f07fb8602a2dc1"
+                "sha256:18598557f0d9ab46173045910ed50458c4fb4d16153c23346b504d7a5b679f77",
+                "sha256:6a9335c968e13295430a208487e74d69fef40168b72dea8d975765d14e2da660",
+                "sha256:6f5eb88fe4c21380aa064b7d249763fc6306f0b001d7e7d52d80866d1afc9ed3",
+                "sha256:bc6c6a78647d7a65a493e1107572d993f26a652c49183201e3c7d23924bf7311",
+                "sha256:e1a63b4e6bf8820833cb6fa239ffbe8eec57ccdd7d66359eff20e68a83c1deeb",
+                "sha256:ede2d65ae33788d4e26e12b330b4a32c53cb14131c65bca3a59f037c73f6ee7a"
             ],
             "index": "pypi",
-            "version": "==0.29"
+            "version": "==0.32.2"
         },
         "pygments": {
             "hashes": [
