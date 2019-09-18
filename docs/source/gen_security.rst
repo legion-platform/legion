@@ -2,7 +2,7 @@
 Security approaches
 ===================
 
-Legion platform does not manages users, tokens or other credentials by itself. Instead, it relies on OAuth2 IP (identity provider), that can be deployed anyware.
+Legion platform does not manages users, tokens or other credentials by itself. Instead, it relies on OAuth2 IP (identity provider), that can be deployed anywhere.
 
 
 .. warning::

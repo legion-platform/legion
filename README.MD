@@ -19,7 +19,7 @@ Legion is open, comprehensible, flexible and scalable platform to suit a wide ra
 
 The platform was designed in such a way that it contains the capabilities needed for model development purposes using supported [toolchains](docs/source/toolchains.md) (Python) as well as for the platform deployment (onto Kubernetes Cluster).
 
-It also includes the components that are deployed on the cluster (**Graphana**, **Prometheus**) and the ones that are required for that deployment (**Ansible**, **Helm**) or building Legion's components from source code (**Jenkins files**).
+It also includes the components that are deployed on the cluster (**Grafana**, **Prometheus**) and the ones that are required for that deployment (**Terraform**, **Helm**) or building Legion's components from source code (**Jenkins files**).
 
 ### Legion provides:
 

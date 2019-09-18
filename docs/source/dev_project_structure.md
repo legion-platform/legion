@@ -42,14 +42,11 @@ Project **Legion** locates in GitHub Repository [legion-platform/legion](https:/
 ## Infra-specific repositories
 For deploying purposes there are platform-specific repositories that contains platform-specific deploying logic.
 
-**Legion AWS** locates in GitHub Repository [legion-platform/legion-aws](https://github.com/legion-platform/legion-aws) and contains:
-* Ansible playbooks
+**Legion Infrastructure** locates in GitHub Repository [legion-platform/legion-infrastructure](https://github.com/legion-platform/legion-infrastructure) and contains:
+* Terraform modules
 * Jenkinsfiles for Jenkins CI/CD jobs
 * Infrastructure specific containers:
-  * Ansible
-  * Kube-elb-security - kubernetes controller that creates AWS security group rules for service ELB like ingress-nginx with granding access from all kubernetes nodes. It is useful if your services with Type LoadBalancer having firewall restrictions.
-  * Kube-fluentd
-  * Oauth2-proxy
+  * Terraform
 
 ## Additional integrations repositories
 * [Airflow](https://github.com/legion-platform/legion-airflow)
