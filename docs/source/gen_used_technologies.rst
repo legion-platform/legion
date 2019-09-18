@@ -8,7 +8,7 @@ Technologies Used
 
 - **Kubernetes** – as variants of runtime platform.
 
-- **HELM** - for disturbing Legion as Kubernetes application.
+- **HELM** - for distributing Legion as Kubernetes application.
 
 - **Docker** – as containerization engine for some of runtime platforms.
 
