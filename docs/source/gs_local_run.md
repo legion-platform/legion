@@ -81,7 +81,7 @@ To debug your applications you may use next debugging protocols:
 * [PyDevd](https://pypi.org/project/pydevd/) that is supported in PyCharm Professional, PyDev, VSCode Python
 * [ptvsd](https://pypi.org/project/ptvsd/) that is supported in VSCode
 
-## PyDevd
+### PyDevd
 PyDevd debugging works in a **client (in your code) - server (in IDE)** way through network connection.
 
 To start debugging you have to:

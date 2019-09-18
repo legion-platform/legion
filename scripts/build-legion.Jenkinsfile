@@ -59,6 +59,8 @@ pipeline {
             updateVersionScript = "scripts/update_version_id"
             sharedLibPath = "pipelines/legionPipeline.groovy"
             pathToCharts= "${WORKSPACE}/helms"
+            gcpCredential = "${params.GCPCredential}"
+            documentationLocation = "${params.DocumentationGCS}"
     }
 
     stages {
@@ -149,6 +151,14 @@ pipeline {
                         }
                     }
                 }
+                stage('Build documentation builder') {
+                    steps {
+                        script {
+                            legion.buildLegionImage('docs-builder', '.', 'containers/docs-builder/Dockerfile')
+                            legion.uploadDockerImage('docs-builder')
+                        }
+                    }
+                }
                 stage("Build Fluentd Docker image") {
                     steps {
                         script {
@@ -219,15 +229,25 @@ pipeline {
                 stage('Build docs') {
                     steps {
                         script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root") {
-                                sh """
-                                cd /opt/legion
-                                make LEGION_VERSION=${Globals.buildVersion} build-docs
-                                cp /opt/legion/legion_docs_${Globals.buildVersion}.tar.gz ${WORKSPACE}
-                                """
 
-                                archiveArtifacts artifacts: "legion_docs_${Globals.buildVersion}.tar.gz"
-                                sh "rm ${WORKSPACE}/legion_docs_${Globals.buildVersion}.tar.gz"
+                            docker.image("legion/docs-builder:${Globals.buildVersion}").inside() {
+                                sh """
+                                cd docs
+                                /generate.sh
+                                cp out/pdf/legion-docs.pdf ${WORKSPACE}/legion-docs.pdf
+                                rm out/pdf/legion-docs.pdf
+                                zip -r ${WORKSPACE}/${Globals.buildVersion}.zip out/*
+                                """
+                                archiveArtifacts artifacts: "legion-docs.pdf"
+                                archiveArtifacts artifacts: "${Globals.buildVersion}.zip"
+                            }
+
+                            withCredentials([
+                            file(credentialsId: "${env.gcpCredential}", variable: 'gcpCredential')]) {
+                                docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root -e GOOGLE_CREDENTIALS=${gcpCredential}") {                                
+                                    sh "gsutil cp ${WORKSPACE}/legion-docs.pdf ${env.documentationLocation}/${Globals.buildVersion}.pdf"                            
+                                    sh "gsutil cp ${WORKSPACE}/${Globals.buildVersion}.zip ${env.documentationLocation}/${Globals.buildVersion}.zip"
+                                }
                             }
                         }
                     }

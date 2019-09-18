@@ -1,0 +1,181 @@
+fontsAlias:
+    stdFont: Georgia
+    stdBold: League Gothic
+
+styles:
+    normal:
+        fontName: stdFont
+        textColor: #383745
+        fontSize: 12
+        alignment: TA_LEFT
+
+    bodytext:
+        alignment: TA_LEFT
+
+    admonition:
+        backColor: #EEFFCC
+        borderColor: #AACC99
+        borderPadding: 8
+        borderWidth: 0.5
+        commands: []
+                [VALIGN, [0, 0], [-1, -1], TOP]
+        spaceAfter: 6
+        spaceBefore: 12
+
+    admonition-heading:
+        backColor: null
+        borderColor: null
+        borderPadding: 0
+        borderWidth: 0
+        leftIndent: 0
+        parent: heading3
+        textColor: black
+
+    admonition-title:
+        backColor: null
+        borderColor: null
+        borderPadding: 0
+        borderWidth: 0
+        leftIndent: 0
+        parent: heading3
+
+    attribute: parent: bodytext
+    author:
+        alignment: TA_CENTER
+        fontName: stdSansBold
+        fontSize: 8
+        parent: bodytext
+
+    centered:
+        alignment: TA_CENTER
+        fontName: stdBold
+        parent: bodytext
+
+    class: parent: bodytext
+    code:
+        allowOrphans: true
+        allowWidows: true
+        backColor: #EEFFCC
+        borderColor: #AACC99
+        borderPadding: [10, 10, 15, 10]
+        borderWidth: 0.3
+        fontSize: 8
+        spaceBefore: 5
+
+    code-literal:
+        backColor: #EEFFCC
+        borderColor: #AACC99
+        fontSize: 8
+
+    confval: parent: bodytext
+    data: parent: bodytext
+    kbd: parent: bodytext
+    desc: {parent: bodytext, spaceBefore: 6}
+    descclassname: {fontName: stdMono, parent: literal}
+    descname: {fontName: stdMonoBold, parent: literal}
+    descparameter: {fontName: stdMono, parent: literal}
+    desctype: {fontName: stdMono, parent: literal}
+    directive: parent: bodytext
+    exception: parent: bodytext
+    heading:
+        backColor: #ffffff
+        borderColor: #ffffff
+        borderPadding: [8, 2, 2, 12]
+        borderWidth: 0.3
+        fontName: stdSansBold
+        fontSize: 10
+        leading: 10
+        leftIndent: 0
+        spaceBefore: 40
+        textColor: #0071c5
+
+    heading1:
+        backColor: #003C71
+        textColor: #ffffff
+        fontSize: 200%
+    heading2:
+        backColor: #0071c5
+        textColor: #ffffff
+        fontSize: 160%
+    heading3:
+        backColor: #00aeef
+        textColor: #ffffff
+        fontSize: 140%
+    heading4:
+        backColor: #c4d600
+        textColor: #ffffff
+        fontSize: 120%
+    heading5:
+        backColor: #f3d54e
+        textColor: #ffffff
+        fontSize: 110%
+    heading6:
+        backColor: #FFA300
+        textColor: #ffffff
+        fontSize: 100%
+
+    hlist:
+        alignment: TA_CENTER
+        commands: []
+                [VALIGN, [0, 0], [-1, -1], TOP]
+        parent: normal
+        spaceAfter: 0
+        spaceBefore: 6
+
+    method: {fontName: stdSansBold, parent: bodytext}
+    note:
+        backColor: #EEEEEE
+        borderColor: #CCCCCC
+        parent: admonition
+
+    optional: {fontName: stdMonoBold, parent: literal}
+
+    returns: parent: bodytext
+    role: parent: bodytext
+    seealso:
+        backColor: #FFFFCC
+        borderColor: #FFFF66
+        parent: admonition
+
+    sidebar:
+        backColor: #EEFFCC
+        borderColor: #AACC99
+        borderPadding: 8
+        borderWidth: 0.5
+        spaceAfter: 6
+        spaceBefore: 12
+
+    sidebar-subtitle:
+        backColor: null
+        borderColor: null
+        borderPadding: 0
+        borderWidth: 0
+        leftIndent: 0
+        parent: heading4
+        spaceBefore: 0
+
+    sidebar-title:
+        backColor: null
+        borderColor: null
+        borderPadding: 0
+        borderWidth: 0
+        leftIndent: 0
+        parent: heading3
+
+    table-heading: {borderWidth: 0, parent: heading}
+
+    todo-node:
+        backColor: #FFE4E4
+        borderColor: #FF6666
+        parent: admonition
+
+    versionmodified: {fontName: stdItalic, parent: bodytext}
+
+    warning:
+        backColor: #FFE4E4
+        borderColor: #FF6666
+        parent: admonition
+
+    xref: {fontName: stdMonoBold, parent: code}
+
+

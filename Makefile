@@ -183,8 +183,13 @@ lint:
 	scripts/lint.sh
 
 ## build-docs: Build legion docs
-build-docs:
-	BUILD_VERSION="${LEGION_VERSION}" scripts/build-docs.sh
+build-docs: build-docs-builder
+	docker run --rm -v $(PWD)/docs:/var/docs  -v $(PWD):/legion-sources --workdir /var/docs legion/docs-builder:latest /generate.sh
+
+
+## build-docs-builder: Build docker image that can build documentation
+build-docs-builder:
+	docker build -t legion/docs-builder:latest -f containers/docs-builder/Dockerfile .
 
 ## generate-python-client: Generate python models
 generate-python-client:
