@@ -42,21 +42,18 @@ Build model
     Set Suite Variable  ${model_image_key_name}  ${mt.trained_image}
 
     # --------- DEPLOY COMMAND SECTION -----------
-Run EDI deploy
-    [Documentation]  run legionctl 'deploy command', logs result and return dict with return code and output(for exceptions)
-    [Arguments]           ${name}  ${image}  ${role_name}
-    ${result}=            Run Process without PIPE   legionctl --verbose md create ${name} --image ${image} --role ${role_name}  shell=True
-    Log                   stdout = ${result.stdout}
-    Log                   stderr = ${result.stderr}
-    [Return]              ${result}
 
-Run EDI deploy and check model started
-    [Arguments]           ${name}     ${image}      ${model_name}   ${model_ver}  ${role_name}=${EMPTY}
-    ${edi_state}=   Shell  legionctl --verbose md create ${name} --image ${image} --role "${role_name}"
-    Should Be Equal As Integers          ${edi_state.rc}         0
-    ${response}=    Wait Until Keyword Succeeds  1m  0 sec  Check model started  ${name}
-    Should contain                       ${response}             'model_name': '${model_name}'
-    Should contain                       ${response}             'model_version': '${model_ver}'
+Run EDI deploy from model packaging
+    [Arguments]  ${mp_name}  ${md_name}  ${res_file}  ${role_name}=${EMPTY}
+
+    ${res}=  StrictShell  legionctl pack get --id ${mp_name} -o 'jsonpath=$[0].status.results[0].value'
+    StrictShell  legionctl --verbose dep create --id ${md_name} -f ${res_file} --image ${res.stdout}
+
+Run EDI deploy from model packaging and check model started
+    [Arguments]  ${mp_name}  ${md_name}  ${res_file}  ${role_name}=${EMPTY}
+    Run EDI deploy from model packaging  ${mp_name}  ${md_name}  ${res_file}  ${role_name}
+
+    Check model started  ${md_name}
 
     # --------- UNDEPLOY COMMAND SECTION -----------
 Run EDI undeploy model and check
@@ -72,19 +69,15 @@ Run EDI undeploy model and check
 Get token from EDI
     [Documentation]  get token from EDI for the EDGE session
     [Arguments]           ${md_name}  ${role}=${EMPTY}
-    ${resp} =             Shell  legionctl generate-token --md ${md_name} --role "${role}"
-    Should be equal as integers       ${resp.rc}  0
+    ${resp} =             StrictShell  legionctl dep generate-token --md-id ${md_name} --role "${role}"
     Set Suite Variable    ${TOKEN}   ${resp.stdout}
     [Return]              ${resp.stdout}
 
 Check model started
     [Documentation]  check if model run in container by http request
     [Arguments]           ${md_name}
-    ${resp}=              Shell  legionctl --verbose model info --md ${md_name}
-    Should be equal       ${resp.rc}  ${0}
+    ${resp}=              Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl --verbose model info --md ${md_name}
     Log                   ${resp.stdout}
-    Should not be empty   ${resp.stdout}
-    [Return]              ${resp.stdout}
 
 Verify model info from edi
     [Arguments]      ${target_model}       ${model_name}        ${model_state}      ${model_replicas}

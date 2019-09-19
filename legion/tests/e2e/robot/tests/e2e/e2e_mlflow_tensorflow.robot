@@ -14,7 +14,9 @@ Suite Setup         Run Keywords
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
 ...                 Cleanup resources
-Suite Teardown      Cleanup resources
+Suite Teardown      Run Keywords
+...                 Cleanup resources  AND
+...                 Remove file  ${LOCAL_CONFIG}
 Force Tags          e2e  tensorflow  edi
 
 *** Keywords ***
@@ -35,9 +37,9 @@ Tensorflow model
 
     StrictShell  legionctl dep generate-token --md-id ${TENSORFLOW_ID}
 
-    StrictShell  legionctl --verbose model info --mr ${TENSORFLOW_ID}
+    Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl --verbose model info --mr ${TENSORFLOW_ID}
 
-    StrictShell  legionctl --verbose model invoke --mr ${TENSORFLOW_ID} --json-file ${RES_DIR}/tensorflow/request.json
+    Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl --verbose model invoke --mr ${TENSORFLOW_ID} --json-file ${RES_DIR}/tensorflow/request.json
 
     ${res}=  Shell  legionctl model invoke --mr ${TENSORFLOW_ID} --json-file ${RES_DIR}/tensorflow/request.json --jwt wrong-token
     should not be equal  ${res.rc}  0

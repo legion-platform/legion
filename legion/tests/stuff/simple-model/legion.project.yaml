@@ -1,0 +1,15 @@
+binaries:
+  conda_path: legion_model/conda.yaml
+  dependencies: conda
+  type: python
+legionVersion: '1.0'
+model:
+  entrypoint: entrypoint
+  name: simple-model
+  version: '1.2'
+  workDir: legion_model
+output:
+  run_id: fbf90f87da2d42c18afd4fc68aaac363
+toolchain:
+  name: mlflow
+  version: 1.0.0

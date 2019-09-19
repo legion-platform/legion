@@ -243,6 +243,12 @@ unittests:
 	          --junitxml=target/nosetests.xml \
 	          legion
 
+## prepare-e2e-robot: Prepare a test data for the e2e robot tests
+prepare-e2e-robot:
+	legion-authenticate-test-user ${CLUSTER_PROFILE}
+
+	./legion/tests/stuff/apply.sh
+
 ## e2e-robot: Run e2e robot tests
 e2e-robot:
 	pabot --verbose --processes ${ROBOT_THREADS} \

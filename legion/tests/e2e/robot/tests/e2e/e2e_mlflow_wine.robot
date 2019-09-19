@@ -14,7 +14,9 @@ Suite Setup         Run Keywords
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
 ...                 Cleanup resources
-Suite Teardown      Cleanup resources
+Suite Teardown      Run Keywords
+...                 Cleanup resources  AND
+...                 Remove file  ${LOCAL_CONFIG}
 Force Tags          e2e  wine  edi
 
 *** Keywords ***
@@ -35,9 +37,9 @@ Wine model
 
     StrictShell  legionctl dep generate-token --md-id ${WINE_ID}
 
-    StrictShell  legionctl model info --mr ${WINE_ID}
+    Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl model info --mr ${WINE_ID}
 
-    StrictShell  legionctl model invoke --mr ${WINE_ID} --json-file ${RES_DIR}/wine/request.json
+    Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl model invoke --mr ${WINE_ID} --json-file ${RES_DIR}/wine/request.json
 
     ${res}=  Shell  legionctl model invoke --mr ${WINE_ID} --json-file ${RES_DIR}/wine/request.json --jwt wrong-token
     should not be equal  ${res.rc}  0

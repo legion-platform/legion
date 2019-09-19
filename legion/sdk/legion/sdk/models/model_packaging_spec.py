@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from legion.sdk.models.base_model_ import Model
+from legion.sdk.models.resource_requirements import ResourceRequirements  # noqa: F401,E501
 from legion.sdk.models.target import Target  # noqa: F401,E501
 from legion.sdk.models import util
 
@@ -16,7 +17,7 @@ class ModelPackagingSpec(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, arguments: object=None, artifact_name: str=None, image: str=None, integration_name: str=None, targets: List[Target]=None):  # noqa: E501
+    def __init__(self, arguments: object=None, artifact_name: str=None, image: str=None, integration_name: str=None, resources: ResourceRequirements=None, targets: List[Target]=None):  # noqa: E501
         """ModelPackagingSpec - a model defined in Swagger
 
         :param arguments: The arguments of this ModelPackagingSpec.  # noqa: E501
@@ -27,6 +28,8 @@ class ModelPackagingSpec(Model):
         :type image: str
         :param integration_name: The integration_name of this ModelPackagingSpec.  # noqa: E501
         :type integration_name: str
+        :param resources: The resources of this ModelPackagingSpec.  # noqa: E501
+        :type resources: ResourceRequirements
         :param targets: The targets of this ModelPackagingSpec.  # noqa: E501
         :type targets: List[Target]
         """
@@ -35,6 +38,7 @@ class ModelPackagingSpec(Model):
             'artifact_name': str,
             'image': str,
             'integration_name': str,
+            'resources': ResourceRequirements,
             'targets': List[Target]
         }
 
@@ -43,6 +47,7 @@ class ModelPackagingSpec(Model):
             'artifact_name': 'artifactName',
             'image': 'image',
             'integration_name': 'integrationName',
+            'resources': 'resources',
             'targets': 'targets'
         }
 
@@ -50,6 +55,7 @@ class ModelPackagingSpec(Model):
         self._artifact_name = artifact_name
         self._image = image
         self._integration_name = integration_name
+        self._resources = resources
         self._targets = targets
 
     @classmethod
@@ -154,6 +160,29 @@ class ModelPackagingSpec(Model):
         """
 
         self._integration_name = integration_name
+
+    @property
+    def resources(self) -> ResourceRequirements:
+        """Gets the resources of this ModelPackagingSpec.
+
+        Resources for packager container The same format like k8s uses for pod resources.  # noqa: E501
+
+        :return: The resources of this ModelPackagingSpec.
+        :rtype: ResourceRequirements
+        """
+        return self._resources
+
+    @resources.setter
+    def resources(self, resources: ResourceRequirements):
+        """Sets the resources of this ModelPackagingSpec.
+
+        Resources for packager container The same format like k8s uses for pod resources.  # noqa: E501
+
+        :param resources: The resources of this ModelPackagingSpec.
+        :type resources: ResourceRequirements
+        """
+
+        self._resources = resources
 
     @property
     def targets(self) -> List[Target]:

@@ -379,7 +379,7 @@ MODEL_DEPLOYMENT_NAME = ConfigVariableDeclaration('MODEL_DEPLOYMENT_NAME', '', s
 
 MODEL_ROUTE_NAME = ConfigVariableDeclaration('MODEL_ROUTE_NAME', '', str, 'Model deployment name', True)
 
-MODEL_JWT_TOKEN = ConfigVariableDeclaration('MODEL_JWT_TOKEN', False, str,
+MODEL_JWT_TOKEN = ConfigVariableDeclaration('MODEL_JWT_TOKEN', '', str,
                                             'Model jwt token for access to the model', True)
 
 # Building and serving

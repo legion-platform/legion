@@ -18,7 +18,7 @@ FROM python:3.6.8
 
 # Install python package dependencies and docker CLI
 RUN apt-get update && apt-get install -y software-properties-common \
-	&& apt-get install -y make build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
+	&& apt-get install -y make build-essential zip libssl-dev libffi-dev zlib1g-dev libjpeg-dev git \
   jq=1.5+dfsg-1.3 && apt-get clean all
 
 RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13

@@ -57,6 +57,7 @@ func TransformMpFromK8s(mp *v1alpha1.ModelPackaging) (*packaging.ModelPackaging,
 			Image:           mp.Spec.Image,
 			Arguments:       arguments,
 			Targets:         mp.Spec.Targets,
+			Resources:       mp.Spec.Resources,
 		},
 		Status: &mp.Status,
 	}, nil
@@ -88,6 +89,7 @@ func TransformMpToK8s(mp *packaging.ModelPackaging, k8sNamespace string) (*v1alp
 			Image:        mp.Spec.Image,
 			Arguments:    string(argumentsBytes),
 			Targets:      mp.Spec.Targets,
+			Resources:    mp.Spec.Resources,
 		},
 		Status: mpStatus,
 	}, nil

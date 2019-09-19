@@ -1,0 +1,12 @@
+id: simple-model
+kind: ModelDeployment
+spec:
+  image: "<fill-in>"
+  minReplicas: 1
+  resources:
+    requests:
+      cpu: 222m
+      memory: 222Mi
+    limits:
+      cpu: 333m
+      memory: 333Mi

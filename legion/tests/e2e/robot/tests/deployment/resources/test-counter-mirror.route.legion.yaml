@@ -1,0 +1,9 @@
+kind: ModelRoute
+metadata:
+  name: test-route
+spec:
+  modelDeployments:
+  - mdName: counter-model-route-1
+    weight: 100
+  mirror: counter-model-route-2
+  urlPrefix: /test-route/url

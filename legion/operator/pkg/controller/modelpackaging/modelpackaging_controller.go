@@ -26,6 +26,7 @@ import (
 	conn_conf "github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	packaging_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	mp_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
@@ -281,6 +282,14 @@ func (r *ReconcileModelPackaging) reconcilePod(packagingCR *legionv1alpha1.Model
 		})
 	}
 
+	packResources, err := kubernetes.ConvertLegionResourcesToK8s(packagingCR.Spec.Resources)
+	if err != nil {
+		log.Error(err, "The packaging resources is not valid",
+			"mp id", packagingCR.Name, "resources", packagingCR.Namespace)
+
+		return nil, err
+	}
+
 	packagerPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      packagingCR.Name,
@@ -311,11 +320,12 @@ func (r *ReconcileModelPackaging) reconcilePod(packagingCR *legionv1alpha1.Model
 			},
 			Containers: []corev1.Container{
 				{
-					Name:    modelContainerName,
-					Image:   packagingCR.Spec.Image,
-					Command: tinyCommand,
-					Args:    tinyArgs,
-					Stdin:   true,
+					Name:      modelContainerName,
+					Resources: packResources,
+					Image:     packagingCR.Spec.Image,
+					Command:   tinyCommand,
+					Args:      tinyArgs,
+					Stdin:     true,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							MountPath: sharedDir,
@@ -368,7 +378,7 @@ func (r *ReconcileModelPackaging) reconcilePod(packagingCR *legionv1alpha1.Model
 	}
 
 	found := &corev1.Pod{}
-	err := r.Get(context.TODO(), types.NamespacedName{
+	err = r.Get(context.TODO(), types.NamespacedName{
 		Name: packagerPod.Name, Namespace: viper.GetString(packaging_conf.Namespace),
 	}, found)
 	if err != nil && errors.IsNotFound(err) {

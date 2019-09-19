@@ -20,12 +20,16 @@ Variables loader from json Cluster Profile
 import os
 import json
 
+import typing
 from legion.robot.libraries import auth_client
+
+EDI_URL_PARAM_NAME = 'EDI_URL'
+AUTH_TOKEN_PARAM_NAME = 'AUTH_TOKEN'
 
 CLUSTER_PROFILE = 'CLUSTER_PROFILE'
 
 
-def get_variables(profile=None):
+def get_variables(profile=None) -> typing.Dict[str, str]:
     """
     Gather and return all variables to robot
 
@@ -57,7 +61,7 @@ def get_variables(profile=None):
                 'STATIC_USER_EMAIL': data.get('dex_static_user_email'),
                 'STATIC_USER_PASS': data.get('dex_static_user_pass'),
                 'EDGE_URL': os.getenv('EDGE_URL', f'https://edge.{host_base_domain}'),
-                'EDI_URL': os.getenv('EDI_URL', f'https://edi.{host_base_domain}'),
+                EDI_URL_PARAM_NAME: os.getenv(EDI_URL_PARAM_NAME, f'https://edi.{host_base_domain}'),
                 'GRAFANA_URL': os.getenv('GRAFANA_URL', f'https://grafana.{host_base_domain}'),
                 'PROMETHEUS_URL': os.getenv('PROMETHEUS_URL', f'https://prometheus.{host_base_domain}'),
                 'ALERTMANAGER_URL': os.getenv('ALERTMANAGER_URL', f'https://alertmanager.{host_base_domain}'),
@@ -69,7 +73,7 @@ def get_variables(profile=None):
 
         try:
             if data.get('test_user_email') and data.get('test_user_password'):
-                variables['AUTH_TOKEN'] = auth_client.init_token(
+                variables[AUTH_TOKEN_PARAM_NAME] = auth_client.init_token(
                     data['test_user_email'],
                     data['test_user_password'],
                     data['test_oauth_auth_url'],
@@ -78,7 +82,7 @@ def get_variables(profile=None):
                     data['test_oauth_scope']
                 )
             else:
-                variables['AUTH_TOKEN'] = ''
+                variables[AUTH_TOKEN_PARAM_NAME] = ''
         except Exception as err:
             raise Exception("Can\'t get dex authentication data: {}".format(err))
 

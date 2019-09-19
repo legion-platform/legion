@@ -22,6 +22,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
+	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/xeipuuv/gojsonschema"
@@ -36,6 +37,23 @@ const (
 	TargetNotFoundErrorMessage           = "cannot find %s target in packaging integration %s"
 	NotValidConnTypeErrorMessage         = "%s target has not valid connection type %s for packaging integration %s"
 	defaultIdTemplate                    = "%s-%s-%s"
+)
+
+var (
+	defaultMemoryLimit        = "2028Mi"
+	defaultCpuLimit           = "2000m"
+	defaultMemoryRequests     = "1024Mi"
+	defaultCpuRequests        = "1000m"
+	DefaultPackagingResources = &v1alpha1.ResourceRequirements{
+		Limits: &v1alpha1.ResourceList{
+			Cpu:    &defaultCpuLimit,
+			Memory: &defaultMemoryLimit,
+		},
+		Requests: &v1alpha1.ResourceList{
+			Cpu:    &defaultCpuRequests,
+			Memory: &defaultMemoryRequests,
+		},
+	}
 )
 
 type MpValidator struct {
@@ -97,6 +115,15 @@ func (mpv *MpValidator) validateMainParameters(mp *packaging.ModelPackaging) (er
 
 	if len(mp.Spec.ArtifactName) == 0 {
 		err = multierr.Append(err, errors.New(TrainingIdOrArtifactNameErrorMessage))
+	}
+
+	if mp.Spec.Resources == nil {
+		logMP.Info("Packaging resource parameter is nil. Set the default value",
+			"name", mp.Id, "resources", DefaultPackagingResources)
+		mp.Spec.Resources = DefaultPackagingResources
+	} else {
+		_, resValidationErr := kubernetes.ConvertLegionResourcesToK8s(mp.Spec.Resources)
+		err = multierr.Append(err, resValidationErr)
 	}
 
 	return
