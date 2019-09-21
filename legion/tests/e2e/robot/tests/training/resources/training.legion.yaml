@@ -1,0 +1,18 @@
+kind: ModelTraining
+id: test-e2e-wine
+spec:
+  model:
+    name: test-training-data
+    version: 1.0
+  toolchain: training-data-helper
+  entrypoint: main
+  workDir: "."
+  hyperParameters:
+    input-file-location: "data/"
+    target-file-location: "1.0"
+  data:
+    - connName: wine
+      localPath: mlflow/sklearn/wine/wine-quality.csv
+  vcsName: legion-examples
+---
+

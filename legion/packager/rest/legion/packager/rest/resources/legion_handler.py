@@ -16,6 +16,7 @@
 import functools
 import json
 import os
+from typing import List, Dict, Union, Any
 
 import legion_model.entrypoint
 from flask import Flask, jsonify, Response, request
@@ -49,6 +50,10 @@ def info():
     # Consider, if model does not provide info endpoint
     # TODO: Refactor this
     input_schema, output_schema = legion_model.entrypoint.info()
+
+    input_properties = generate_input_props(input_schema)
+    output_properties = generate_output_props(output_schema)
+
     return jsonify({
         "swagger": "2.0",
         "info": {
@@ -96,37 +101,11 @@ def info():
                     "summary": "Prediction",
                     "parameters": [
                         {
-                            "in": "header",
-                            "name": "Authorization",
-                            "type": "string",
-                            "required": False,
-                            "description": "Bearer token",
-                            "default": "Bearer ***"
-                        },
-                        {
                             "in": "body",
                             "name": "PredictionParameters",
                             "required": True,
                             "schema": {
-                                "properties": {
-                                    "columns": {
-                                        "example": [name for name, _ in input_schema.items()],
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "type": "array"
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "items": {
-                                                "type": "number"
-                                            },
-                                            "type": "array"
-                                        },
-                                        "type": "array",
-                                        "example": [[0.0 for _, _ in input_schema.items()]],
-                                    }
-                                },
+                                "properties": input_properties,
                                 "type": "object"
                             }
                         }
@@ -135,22 +114,7 @@ def info():
                         "200": {
                             "description": "Results of prediction",
                             "name": "PredictionResponse",
-                            "properties": {
-                                "prediction": {
-                                    "example": [[0.0 for _, _ in output_schema.items()]],
-                                    "items": {
-                                        "type": "number"
-                                    },
-                                    "type": "array",
-                                },
-                                "columns": {
-                                    "example": [name for name, _ in output_schema.items()],
-                                    "items": {
-                                        "type": "string"
-                                    },
-                                    "type": "array"
-                                }
-                            }
+                            "properties": output_properties
                         },
                         "type": "object"
                     }
@@ -158,6 +122,69 @@ def info():
             }
         }
     })
+
+
+def generate_input_props(input_schema: List[Dict[str, Union[Union[str, None, bool], Any]]]) -> Dict[str, Any]:
+    """
+    Generate input model properties in OpenAPI format
+    :param input_schema: Input schema
+    :return:
+    """
+    examples: List[Any] = []
+    columns: List[str] = []
+    for prop in input_schema:
+        columns.append(prop['name'])
+        examples.append(prop['example'])
+
+    return {
+        "columns": {
+            "example": columns,
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "data": {
+            "items": {
+                "items": {
+                    "type": "number"
+                },
+                "type": "array"
+            },
+            "type": "array",
+            "example": [examples],
+        }
+    }
+
+
+def generate_output_props(output_schema: List[Dict[str, Union[Union[str, None, bool], Any]]]) -> Dict[str, Any]:
+    """
+    Generate input model properties in OpenAPI format
+    :param output_schema:
+    :return:
+    """
+    examples: List[Any] = []
+    columns: List[str] = []
+    for prop in output_schema:
+        columns.append(prop['name'])
+        examples.append(prop['example'])
+
+    return {
+        "prediction": {
+            "example": [examples],
+            "items": {
+                "type": "number"
+            },
+            "type": "array",
+        },
+        "columns": {
+            "example": columns,
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        }
+    }
 
 
 @app.route('/healthcheck', methods=['GET'])

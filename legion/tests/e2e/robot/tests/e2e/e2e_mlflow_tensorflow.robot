@@ -35,8 +35,6 @@ Tensorflow model
 
     StrictShell  legionctl --verbose dep create -f ${RES_DIR}/tensorflow/deployment.legion.yaml --image ${res.stdout}
 
-    StrictShell  legionctl dep generate-token --md-id ${TENSORFLOW_ID}
-
     Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl --verbose model info --mr ${TENSORFLOW_ID}
 
     Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl --verbose model invoke --mr ${TENSORFLOW_ID} --json-file ${RES_DIR}/tensorflow/request.json

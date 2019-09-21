@@ -13,12 +13,10 @@ import {
   infoPairLine,
   infoPairTitle
 } from '../../componentsStyle/ClusterInfoStyle';
+import { Configuration } from '../../legion/Configuration';
 
 export interface IClusterInfoStageProps {
-  ediUrl: string;
-  metricUiUrl: string;
-  serviceCatalogUrl: string;
-  grafanaUrl: string;
+  configuration: Configuration;
 }
 
 export interface IClusterInfoStageState {
@@ -42,6 +40,19 @@ export class ClusterInfoStage extends React.Component<
   }
 
   render() {
+    let externalLinks = [];
+    if (this.props.configuration != null) {
+      for (let link of this.props.configuration.common.externalUrls) {
+        externalLinks.push(
+          <li className={infoPairLine}>
+            <a className={infoPairTitle} href={link.url} target="_blank">
+              {link.name}
+            </a>
+          </li>
+        );
+      }
+    }
+
     return (
       <div>
         <div className={sectionAreaStyle}>
@@ -57,46 +68,7 @@ export class ClusterInfoStage extends React.Component<
         </div>
         {this.state.showStage && (
           <div className={infoHolder}>
-            <ul className={infoList}>
-              <li className={infoPairLine}>
-                <a
-                  className={infoPairTitle}
-                  href={this.props.ediUrl}
-                  target="_blank"
-                >
-                  API's Gateway
-                </a>
-              </li>
-
-              <li className={infoPairLine}>
-                <a
-                  className={infoPairTitle}
-                  href={this.props.metricUiUrl}
-                  target="_blank"
-                >
-                  ML Metrics
-                </a>
-              </li>
-
-              <li className={infoPairLine}>
-                <a
-                  className={infoPairTitle}
-                  href={this.props.serviceCatalogUrl}
-                  target="_blank"
-                >
-                  Service Catalog
-                </a>
-              </li>
-              <li className={infoPairLine}>
-                <a
-                  className={infoPairTitle}
-                  href={this.props.grafanaUrl}
-                  target="_blank"
-                >
-                  Cluster Monitoring
-                </a>
-              </li>
-            </ul>
+            <ul className={infoList}>{externalLinks}</ul>
           </div>
         )}
       </div>

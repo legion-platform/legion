@@ -22,21 +22,21 @@ import (
 )
 
 const (
-	Namespace                = "deployment.namespace"
-	DefaultRoleName          = "deployment.security.role_name"
-	SecurityJwtEnabled       = "deployment.security.jwt.enabled"
-	SecurityJwtPrivateKey    = "deployment.security.jwt.private_key"
-	SecurityJwtPublicKey     = "deployment.security.jwt.public_key"
-	SecurityJwtExpDatetime   = "deployment.security.jwt.exp_date_time"
-	SecurityJwtMaxTtlMinutes = "deployment.security.jwt.max_ttl_min"
-	SecurityJwtTtlMinutes    = "deployment.security.jwt.ttl_minute"
-	SecurityJwksUrl          = "deployment.security.jwks.url"
-	SecurityJwksCluster      = "deployment.security.jwks.cluster"
-	ModelLogsFlushSize       = "deployment.model_log.flush_size"
-	ServerTemplateFolder     = "deployment.server.template_folder"
-	EdgeHost                 = "deployment.edge.host"
-	NodeSelector             = "deployment.node_selector"
-	Toleration               = "deployment.toleration"
+	Namespace       = "deployment.namespace"
+	DefaultRoleName = "deployment.security.role_name"
+	// Jwks url for mode authorization
+	SecurityJwksUrl = "deployment.security.jwks.url"
+	// The Issuer Identifier for mode authorization
+	SecurityJwksIssuer = "deployment.security.jwks.issuer"
+	// Is model authorization enabled
+	SecurityJwksEnabled  = "deployment.security.jwks.enabled"
+	ModelLogsFlushSize   = "deployment.model_log.flush_size"
+	ServerTemplateFolder = "deployment.server.template_folder"
+	EdgeHost             = "deployment.edge.host"
+	NodeSelector         = "deployment.node_selector"
+	Toleration           = "deployment.toleration"
+	IstioServiceName     = "deployment.istio.service_name"
+	IstioNamespace       = "deployment.istio.namespace"
 )
 
 const (
@@ -53,35 +53,20 @@ func init() {
 	viper.SetDefault(Namespace, "legion-deployment")
 	config.PanicIfError(viper.BindEnv(Namespace))
 
-	viper.SetDefault(SecurityJwtTtlMinutes, 120)
-	config.PanicIfError(viper.BindEnv(SecurityJwtTtlMinutes))
-
-	viper.SetDefault(SecurityJwtEnabled, false)
-	config.PanicIfError(viper.BindEnv(SecurityJwtEnabled))
-
-	viper.SetDefault(SecurityJwtMaxTtlMinutes, 259200)
-	config.PanicIfError(viper.BindEnv(SecurityJwtMaxTtlMinutes))
-
-	viper.SetDefault(SecurityJwtExpDatetime, "")
-	config.PanicIfError(viper.BindEnv(SecurityJwtExpDatetime))
-
 	viper.SetDefault(ModelLogsFlushSize, 32)
 	config.PanicIfError(viper.BindEnv(ModelLogsFlushSize))
-
-	viper.SetDefault(SecurityJwtPrivateKey, "legion/operator/private_key.pem")
-	config.PanicIfError(viper.BindEnv(SecurityJwtPrivateKey))
-
-	viper.SetDefault(SecurityJwtPublicKey, "legion/operator/public_key.pem")
-	config.PanicIfError(viper.BindEnv(SecurityJwtPublicKey))
 
 	viper.SetDefault(ServerTemplateFolder, "legion/operator/templates")
 	config.PanicIfError(viper.BindEnv(ServerTemplateFolder))
 
-	viper.SetDefault(SecurityJwksUrl, "http://legion-edi.legion.svc.cluster.local/api/v1/model/jwks")
+	viper.SetDefault(SecurityJwksUrl, "")
 	config.PanicIfError(viper.BindEnv(SecurityJwksUrl))
 
-	viper.SetDefault(SecurityJwksCluster, "outbound|80||legion-edi.legion.svc.cluster.local")
-	config.PanicIfError(viper.BindEnv(SecurityJwksCluster))
+	viper.SetDefault(SecurityJwksIssuer, "")
+	config.PanicIfError(viper.BindEnv(SecurityJwksIssuer))
+
+	viper.SetDefault(SecurityJwksEnabled, false)
+	config.PanicIfError(viper.BindEnv(SecurityJwksEnabled))
 
 	viper.SetDefault(EdgeHost, "")
 	config.PanicIfError(viper.BindEnv(EdgeHost))
@@ -96,4 +81,7 @@ func init() {
 		TolerationValue:    "deployment",
 		TolerationEffect:   "NoSchedule",
 	})
+
+	viper.SetDefault(IstioServiceName, "istio-ingressgateway")
+	viper.SetDefault(IstioNamespace, "istio-system")
 }

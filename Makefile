@@ -243,11 +243,17 @@ unittests:
 	          --junitxml=target/nosetests.xml \
 	          legion
 
-## prepare-e2e-robot: Prepare a test data for the e2e robot tests
-prepare-e2e-robot:
+## setup-e2e-robot: Prepare a test data for the e2e robot tests
+setup-e2e-robot:
 	legion-authenticate-test-user ${CLUSTER_PROFILE}
 
-	./legion/tests/stuff/apply.sh
+	./legion/tests/stuff/training_stuff.sh setup
+
+## cleanup-e2e-robot: Delete a test data after the e2e robot tests
+cleanup-e2e-robot:
+	legion-authenticate-test-user ${CLUSTER_PROFILE}
+
+	./legion/tests/stuff/training_stuff.sh cleanup
 
 ## e2e-robot: Run e2e robot tests
 e2e-robot:

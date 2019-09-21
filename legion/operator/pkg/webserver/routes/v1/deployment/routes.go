@@ -40,7 +40,4 @@ func ConfigureRoutes(routeGroup *gin.RouterGroup, storage md_storage.Storage) {
 	routeGroup.POST(CreateModelRouteUrl, mrController.createMR)
 	routeGroup.PUT(UpdateModelRouteUrl, mrController.updateMR)
 	routeGroup.DELETE(DeleteModelRouteUrl, mrController.deleteMR)
-
-	routeGroup.POST(CreateModelJwtUrl, generateToken)
-	routeGroup.GET(GetJwksUrl, jwks)
 }

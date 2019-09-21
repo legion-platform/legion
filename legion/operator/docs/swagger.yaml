@@ -1,5 +1,39 @@
 basePath: '{{.BasePath}}'
 definitions:
+  CommonConfiguration:
+    properties:
+      externalUrls:
+        description: 'The collection of external urls, for example: metrics, edge,
+          service catalog and so on'
+        items:
+          $ref: '#/definitions/ExternalUrl'
+        type: array
+    type: object
+  Configuration:
+    properties:
+      common:
+        $ref: '#/definitions/CommonConfiguration'
+        description: Common secretion of configuration
+        type: object
+      training:
+        $ref: '#/definitions/TrainingConfiguration'
+        description: Configuration describe training process
+        type: object
+    type: object
+  ExternalUrl:
+    properties:
+      name:
+        description: Human readable name
+        type: string
+      url:
+        description: Link to a resource
+        type: string
+    type: object
+  TrainingConfiguration:
+    properties:
+      metricUrl:
+        type: string
+    type: object
   Connection:
     properties:
       id:
@@ -42,19 +76,9 @@ definitions:
         description: Model route status
         type: object
     type: object
-  TokenRequest:
-    properties:
-      expiration_date:
-        description: Explicitly set expiration date for token
-        type: string
-      role_name:
-        description: Role name
-        type: string
+  feedback.FeedbackRequest:
     type: object
-  TokenResponse:
-    properties:
-      token:
-        type: string
+  feedback.FeedbackResponse:
     type: object
   JsonSchema:
     properties:
@@ -635,14 +659,54 @@ definitions:
 host: '{{.Host}}'
 info:
   contact: {}
-  description: This is a EDI server.
+  description: This is a API's Gateway server.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: EDI API
+  title: API's Gateway
   version: "1.0"
 paths:
+  /api/v1/configuration:
+    put:
+      consumes:
+      - application/json
+      description: Update a Configuration
+      parameters:
+      - description: Create a Configuration
+        in: body
+        name: configuration
+        required: true
+        schema:
+          $ref: '#/definitions/Configuration'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/HTTPResult'
+            type: object
+      summary: Update a Legion service configuration
+      tags:
+      - Configuration
+  /api/v1/configuration/:
+    get:
+      consumes:
+      - application/json
+      description: Get the Legion service configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Configuration'
+            type: object
+      summary: Get the Legion service configuration
+      tags:
+      - Configuration
   /api/v1/connection:
     get:
       consumes:
@@ -802,6 +866,45 @@ paths:
       summary: Get a Connection
       tags:
       - Connection
+  /api/v1/feedback/:
+    post:
+      consumes:
+      - application/json
+      description: Send feedback about previously made prediction
+      parameters:
+      - description: Feedback Request
+        in: body
+        name: feedback
+        required: true
+        schema:
+          $ref: '#/definitions/feedback.FeedbackRequest'
+          type: object
+      - description: Model name
+        in: header
+        name: model-name
+        required: true
+        type: string
+      - description: Model version
+        in: header
+        name: model-version
+        required: true
+        type: string
+      - description: Request ID
+        in: header
+        name: request-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/feedback.FeedbackResponse'
+            type: object
+      summary: Send feedback about previously made prediction
+      tags:
+      - Feedback
   /api/v1/model/deployment:
     get:
       consumes:
@@ -957,20 +1060,6 @@ paths:
       summary: Get a Model deployment
       tags:
       - Deployment
-  /api/v1/model/jwks:
-    get:
-      description: Retrieve model jwks for model services
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/TokenResponse'
-            type: object
-      summary: Retrieve model jwks
-      tags:
-      - JWT
   /api/v1/model/packaging:
     get:
       consumes:
@@ -1310,35 +1399,6 @@ paths:
       summary: Get a Model route
       tags:
       - Route
-  /api/v1/model/token:
-    post:
-      consumes:
-      - application/json
-      description: Create a JWT token for access to the model service
-      parameters:
-      - description: Create a model JWT token
-        in: body
-        name: token
-        required: true
-        schema:
-          $ref: '#/definitions/TokenRequest'
-          type: object
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/TokenResponse'
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/HTTPResult'
-            type: object
-      summary: Create a model JWT token
-      tags:
-      - JWT
   /api/v1/model/training:
     get:
       consumes:

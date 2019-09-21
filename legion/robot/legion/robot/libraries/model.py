@@ -81,7 +81,7 @@ class Model:
             legion_headers.MODEL_VERSION: model_version,
         }
 
-        url = f'{edge}/feedback/model/{md_name}/api/model'
+        url = f'{edge}/api/v1/feedback/model/{md_name}/api/model'
 
         print('Requesting {} with data = {} in POST mode'.format(url, payload))
 

@@ -26,6 +26,7 @@ import { PackagingIntegration } from '../legion/PackagingIntegration';
 
 import * as configurationModels from './configuration';
 import { IConfigurationMainResponse } from './configuration';
+import { Configuration } from '../legion/Configuration';
 export const PLUGIN_CREDENTIALS_STORE_CLUSTER = `legion.cluster:credentials-cluster`;
 export const PLUGIN_CREDENTIALS_STORE_TOKEN = `legion.cluster:credentials-token`;
 
@@ -36,21 +37,21 @@ export interface IApiCloudState {
   modelPackagings: Array<ModelPackaging>;
   toolchainIntegrations: Array<ToolchainIntegration>;
   packagingIntegrations: Array<PackagingIntegration>;
-
+  configuration: Configuration;
   isLoading: boolean;
   signalLoadingStarted(): void;
   onDataChanged: ISignal<this, void>;
   updateAllState(data?: cloud.ICloudAllEntitiesResponse): void;
 
   authorizationRequired: boolean;
-  updateConfiguration(data?: IConfigurationMainResponse): void;
+  updateAuthConfiguration(data?: IConfigurationMainResponse): void;
   credentials: ICloudCredentials;
   setCredentials(
     credentials?: ICloudCredentials,
     skipPersisting?: boolean
   ): void;
 
-  configuration: configurationModels.IConfigurationMainResponse;
+  authConfiguration: configurationModels.IConfigurationMainResponse;
   onConfigurationLoaded(
     config: configurationModels.IConfigurationMainResponse
   ): void;
@@ -65,12 +66,13 @@ class APICloudStateImplementation implements IApiCloudState {
   private _modelpackagings: Array<ModelPackaging>;
   private _toolchainIntegrations: Array<ToolchainIntegration>;
   private _packagingIntegrations: Array<PackagingIntegration>;
+  private _configuration: Configuration;
 
   private _isLoading: boolean;
   private _dataChanged = new Signal<this, void>(this);
 
   private _credentials?: ICloudCredentials;
-  private _configuration?: configurationModels.IConfigurationMainResponse;
+  private _oauthConfiguration?: configurationModels.IConfigurationMainResponse;
 
   constructor() {
     this._isLoading = false;
@@ -82,6 +84,7 @@ class APICloudStateImplementation implements IApiCloudState {
     this._packagingIntegrations = [];
     this._credentials = null;
     this._configuration = null;
+    this._oauthConfiguration = null;
   }
 
   get trainings(): Array<ModelTraining> {
@@ -108,6 +111,10 @@ class APICloudStateImplementation implements IApiCloudState {
     return this._packagingIntegrations;
   }
 
+  get configuration(): Configuration {
+    return this._configuration;
+  }
+
   get isLoading(): boolean {
     return this._isLoading;
   }
@@ -129,14 +136,15 @@ class APICloudStateImplementation implements IApiCloudState {
       this._modelpackagings = data.modelPackagings;
       this._toolchainIntegrations = data.toolchainIntegrations;
       this._packagingIntegrations = data.packagingIntegrations;
+      this._configuration = data.configuration;
     }
     this._isLoading = false;
     this._dataChanged.emit(null);
   }
 
-  updateConfiguration(data?: IConfigurationMainResponse): void {
+  updateAuthConfiguration(data?: IConfigurationMainResponse): void {
     if (data) {
-      this._configuration = data;
+      this._oauthConfiguration = data;
     }
     this._isLoading = false;
     this._dataChanged.emit(null);
@@ -193,14 +201,14 @@ class APICloudStateImplementation implements IApiCloudState {
     }
   }
 
-  get configuration(): configurationModels.IConfigurationMainResponse {
-    return this._configuration;
+  get authConfiguration(): configurationModels.IConfigurationMainResponse {
+    return this._oauthConfiguration;
   }
 
   onConfigurationLoaded(
     config: configurationModels.IConfigurationMainResponse
   ): void {
-    this._configuration = config;
+    this._oauthConfiguration = config;
 
     if (!config.tokenProvided) {
       this.tryToLoadCredentialsFromSettings();
@@ -209,7 +217,8 @@ class APICloudStateImplementation implements IApiCloudState {
 
   get authorizationRequired(): boolean {
     return (
-      (this._configuration == null || !this._configuration.tokenProvided) &&
+      (this._oauthConfiguration == null ||
+        !this._oauthConfiguration.tokenProvided) &&
       this._credentials == null
     );
   }

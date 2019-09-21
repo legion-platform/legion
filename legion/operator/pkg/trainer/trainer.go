@@ -23,6 +23,7 @@ import (
 	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
 	train_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
 	"gopkg.in/yaml.v2"
+	"path"
 	"path/filepath"
 
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
@@ -185,7 +186,7 @@ func (mb *ModelTrainer) saveResult(training *training.K8sTrainer, commitId strin
 		return err
 	}
 
-	if err := storage.Upload(outputZipName); err != nil {
+	if err := storage.Upload(outputZipName, path.Join(storage.RemoteConfig.Path, outputZipName)); err != nil {
 		return err
 	}
 
@@ -217,10 +218,6 @@ func (mb *ModelTrainer) downloadData(training *training.K8sTrainer) error {
 		storage, err := rclone.NewObjectStorage(&mtData.DataBinding)
 		if err != nil {
 			return err
-		}
-
-		if len(mtData.RemotePath) == 0 {
-			mtData.RemotePath = storage.RemotePath
 		}
 
 		if err := storage.Download(mtData.LocalPath, mtData.RemotePath); err != nil {

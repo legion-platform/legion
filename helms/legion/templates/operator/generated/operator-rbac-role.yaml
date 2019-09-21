@@ -64,6 +64,30 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - authentication.istio.io
+  resources:
+  - policies
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - authentication.istio.io
+  resources:
+  - policies/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - legion.legion-platform.org
   resources:
   - modeldeployments

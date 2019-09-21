@@ -28,7 +28,6 @@ from legion.sdk.clients.deployment import ModelDeployment, ModelDeploymentClient
     FAILED_STATE
 from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
-from legion.sdk.config import update_config_file, MODEL_JWT_TOKEN_SECTION
 
 DEFAULT_WAIT_TIMEOUT = 5
 
@@ -214,33 +213,6 @@ def delete(client: ModelDeploymentClient, md_id: str, file: str, ignore_not_foun
             raise e
 
         click.echo(f'Model deployment {md_id} was not found. Ignore')
-
-
-@deployment.command()
-@click.option('--md-id', '--id', type=str, help='Model Name', required=True)
-@click.option('--model-role-name', '--md-role', '--role', type=str, help='Model role name')
-@click.option('--expiration-date', type=str, help='Token expiration date in utc: %%Y-%%m-%%dT%%H:%%M:%%S')
-@pass_obj
-def generate_token(client: ModelDeploymentClient, md_id, model_role_name, expiration_date):
-    """
-    Generate JWT for specified model
-
-    :param expiration_date:
-    :param model_role_name:
-    :param client:
-    :param md_id:
-    :return: str -- token
-    """
-    token = client.get_token(model_role_name, expiration_date)
-
-    if token:
-        if md_id:
-            update_config_file(section=MODEL_JWT_TOKEN_SECTION,
-                               **{md_id: token})
-
-        print(token)
-    else:
-        print('JWT mechanism is disabled')
 
 
 def wait_delete_operation_finish(timeout: int, wait: bool, md_id: str, md_client: ModelDeploymentClient):

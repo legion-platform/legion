@@ -35,8 +35,6 @@ Wine model
 
     StrictShell  legionctl --verbose dep create -f ${RES_DIR}/wine/deployment.legion.yaml --image ${res.stdout}
 
-    StrictShell  legionctl dep generate-token --md-id ${WINE_ID}
-
     Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl model info --mr ${WINE_ID}
 
     Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl model invoke --mr ${WINE_ID} --json-file ${RES_DIR}/wine/request.json

@@ -12,14 +12,6 @@ spec:
   http:
     - match:
       - uri:
-          prefix: "/swagger"
-      route:
-        - destination:
-            host: "{{ .Release.Name }}-service-catalog.{{ .Values.config.deployment.namespace }}.svc.cluster.local"
-            port:
-              number: 5000
-    - match:
-      - uri:
           exact: "/"
       redirect:
         uri: /swagger/index.html

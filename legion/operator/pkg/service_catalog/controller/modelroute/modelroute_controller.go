@@ -18,11 +18,15 @@ package modelroute
 
 import (
 	"context"
+	"fmt"
 	gogotypes "github.com/gogo/protobuf/types"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/catalog"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -72,6 +76,28 @@ type ReconcileModelRoute struct {
 	mrc    *catalog.ModelRouteCatalog
 }
 
+func (r *ReconcileModelRoute) generateModelRequest(mr *legionv1alpha1.ModelRoute) (*http.Request, error) {
+	modelUrl := &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s.%s", viper.GetString(deployment.IstioServiceName), viper.GetString(deployment.IstioNamespace)),
+		Path:   mr.Spec.UrlPrefix,
+	}
+
+	edgeHostUrl := viper.GetString(deployment.EdgeHost)
+	parsedExternalEdgeUrl, err := url.Parse(edgeHostUrl)
+	if err != nil {
+		log.Error(err, "Can not parse the edge host url", "edge host", edgeHostUrl)
+
+		return nil, err
+	}
+
+	return &http.Request{
+		Method: http.MethodGet,
+		URL:    modelUrl,
+		Host:   parsedExternalEdgeUrl.Host,
+	}, nil
+}
+
 func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	modelRouteCR := &legionv1alpha1.ModelRoute{}
 	err := r.Get(context.TODO(), request.NamespacedName, modelRouteCR)
@@ -90,13 +116,23 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	}
 
-	response, err := http.Get(modelRouteCR.Status.EdgeUrl)
+	modelRequest, err := r.generateModelRequest(modelRouteCR)
+	if err != nil {
+		log.Error(err, "Can not generate model request", "model route id", modelRouteCR.Name)
+
+		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
+	}
+
+	response, err := http.DefaultClient.Do(modelRequest)
 	if err != nil {
 		log.Error(err, "Can not get swagger response for model", "mr id", modelRouteCR.Name)
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	} else {
 		defer response.Body.Close()
 		contents, err := ioutil.ReadAll(response.Body)
+
+		log.Info("Get response from model", "model route id", modelRouteCR.Name, "content", string(contents))
+
 		if err != nil {
 			log.Error(err, "Can not get swagger response for model", "mr id", modelRouteCR.Name)
 			return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil

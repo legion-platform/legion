@@ -244,18 +244,15 @@ export function addCommands(options: IAddCloudCommandsOptions) {
             });
         } else {
           dialogs
-            .showChooseOrInputDialog(
+            .showInputDialog(
               'Choose image to deploy',
-              'Please choose finished training',
-              'or type image name manually',
-              [],
+              'type image name',
               'Deploy image',
               false
             )
             .then(({ value }) =>
               commands.execute(CommandIDs.newCloudDeployment, {
-                image:
-                  value.input.length > 0 ? value.input : value.selection.value
+                image: value.input
               })
             );
         }
@@ -318,55 +315,6 @@ export function addCommands(options: IAddCloudCommandsOptions) {
               if (button.accept) {
                 commands.execute(CommandIDs.removeCloudDeployment, {
                   name: value.value
-                });
-              }
-            });
-        }
-      } catch (err) {
-        showErrorMessage('Can not remove cloud deployment', err);
-      }
-    }
-  });
-
-  commands.addCommand(CommandIDs.issueNewCloudAccessToken, {
-    label: "Issue model's API token",
-    caption: 'Create new model JWT token',
-    execute: args => {
-      try {
-        const roleName = args['roleName'] as string;
-        if (roleName) {
-          let splashScreen = options.splash.show();
-          options.api.cloud
-            .issueCloudAccess(
-              {
-                role_name: roleName
-              },
-              options.state.credentials
-            )
-            .then(response => {
-              let dialogContent = response.token;
-              if (dialogContent == null || dialogContent.length === 0) {
-                dialogContent = 'JWT mechanism is disabled';
-              }
-
-              splashScreen.dispose();
-              showDialog({
-                title: `Generated token`,
-                body: dialogContent,
-                buttons: [Dialog.okButton({ label: 'OK' })]
-              });
-            })
-            .catch(err => {
-              splashScreen.dispose();
-              showErrorMessage('Can not remove issue cloud access token', err);
-            });
-        } else {
-          cloudDialogs
-            .showIssueModelAccessToken(options.config.defaultModelRole)
-            .then(({ value, button }) => {
-              if (button.accept) {
-                commands.execute(CommandIDs.issueNewCloudAccessToken, {
-                  roleName: value.roleName
                 });
               }
             });

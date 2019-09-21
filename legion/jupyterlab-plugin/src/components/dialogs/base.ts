@@ -26,7 +26,6 @@ export interface IChooseVariant {
 }
 
 export interface IChooseVariantOrInput {
-  selection?: IChooseVariant;
   input: string;
 }
 
@@ -53,32 +52,18 @@ class ChooseDialog extends Widget {
   }
 }
 
-class ChooseOrInputDialog extends Widget {
-  constructor(
-    body: string,
-    secondText: string,
-    variants: Array<IChooseVariant>
-  ) {
+class InputDialog extends Widget {
+  constructor(body: string) {
     super({
-      node: Private.buildChooseOrInputDialogBody(body, secondText, variants)
+      node: Private.buildInputDialogBody(body)
     });
   }
 
   getValue(): IChooseVariantOrInput {
-    const selects = this.node.getElementsByTagName('select');
-    const targetSelect = selects[0];
-
     const inputs = this.node.getElementsByTagName('input');
     const targetInput = inputs[0];
 
     return {
-      selection:
-        targetSelect.selectedIndex >= 0
-          ? {
-              value: targetSelect.options[targetSelect.selectedIndex].value,
-              text: targetSelect.options[targetSelect.selectedIndex].text
-            }
-          : null,
       input: targetInput.value
     };
   }
@@ -104,17 +89,15 @@ export function showChooseDialog(
   });
 }
 
-export function showChooseOrInputDialog(
+export function showInputDialog(
   title: string,
   body: string,
-  secondText: string,
-  variants: Array<IChooseVariant>,
   confirmChoose: string,
   warn: boolean
 ) {
   return showDialog({
     title: title,
-    body: new ChooseOrInputDialog(body, secondText, variants),
+    body: new InputDialog(body),
     buttons: [
       Dialog.cancelButton(),
       Dialog.okButton({
@@ -226,15 +209,9 @@ namespace Private {
     return body;
   }
 
-  export function buildChooseOrInputDialogBody(
-    bodyText: string,
-    secondText: string,
-    variants: Array<IChooseVariant>
-  ) {
+  export function buildInputDialogBody(bodyText: string) {
     const body = createDialogBody();
     body.appendChild(createDialogInputLabel(bodyText));
-    body.appendChild(createSelect(variants));
-    body.appendChild(createDialogInputLabel(secondText));
     body.appendChild(createDialogInput());
     return body;
   }

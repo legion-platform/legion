@@ -556,12 +556,6 @@ jupyterlab:
     # Type: string
     # tlsSecretName: ~
 
-toolchains:
-  python:
-    # This variable can be uncommented to setup custom image name for python
-    # Type: string
-    # image: custom-image:1.0
-
 packagers:
   rest:
     # REST packager could be disabled
@@ -574,6 +568,11 @@ packagers:
 
 # Legion services configuration
 config:
+  # Common configuration
+  common:
+    # The collection of external urls, for example: metrics, edge, service catalog and so on
+    # Type: string->string map
+    external_urls: []
   # Deployment configuration
   deployment:
     # Model deployment namespace
@@ -589,27 +588,16 @@ config:
       # Required value
       # Type: string
       role_name: test
-      jwt:
-        # REST packager could be disabled
+      jwks:
+        # Is model authorization enabled
         # Type: bool
         enabled: false
-        # Private key for JWT creation
-        # Type: string, base64 format
-        private_key: example
-        # Private key for JWT verification
-        # Type: string, base64 format
-        public_key: example
-        # Default token's TTL in minutes
-        # Type: integer
-        ttl_minute: 120
-        # Maximum value of TTL in minutes
-        # This value is used in EDI to validate requests for token generation
-        # Type: integer
-        max_ttl_min: "${max_token_ttl_minutes}"
-        # Maximum value of TTL in minutes
-        # This value is used in EDI to validate requests for token generation
-        # Type: integer
-        exp_date_time: "2030-12-30T00:00:00"
+        # Jwks url for mode authorization
+        # Type: string
+        url: example
+        # The Issuer Identifier for model authorization
+        # Type: string
+        issuer: example
 
   # Training configuration
   training:

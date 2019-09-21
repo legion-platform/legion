@@ -1,0 +1,28 @@
+{{- if .Values.edi.enabled -}}
+{{- if (ternary $.Values.edi.ingress.enabled $.Values.ingress.enabled (hasKey $.Values.edi.ingress "enabled")) }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    {{- include "legion.ingress-aggregated-annotations" (dict "local" .Values.edi.ingress "root" .) | nindent 4 }}
+  labels:
+    {{- include "legion.helm-labels" (dict "component" "edi" "root" .) | nindent 4 }}
+  name: "{{ .Release.Name }}-feedback-aggregator"
+spec:
+  rules:
+    - host: {{ include "legion.ingress-domain-name" (dict "local" .Values.edi.ingress "root" . "tpl" "edi.%s") }}
+      http:
+        paths:
+          - path: /api/v1/feedback
+            backend:
+              serviceName: "{{ .Release.Name }}-feedback-aggregator"
+              servicePort: 8080
+  {{- if (ternary $.Values.edi.ingress.tlsEnabled $.Values.ingress.tlsEnabled (hasKey $.Values.edi.ingress "tlsEnabled")) }}
+  tls:
+    - hosts:
+        - {{ include "legion.ingress-domain-name" (dict "local" .Values.edi.ingress "root" . "tpl" "edi.%s") | quote }}
+      secretName: {{ include "legion.ingress-tls-secret-name" (dict "local" .Values.edi.ingress "root" . ) | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

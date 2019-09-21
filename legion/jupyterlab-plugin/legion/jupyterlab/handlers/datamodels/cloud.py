@@ -67,15 +67,6 @@ class FileInformationResponse(BaseModel):
         }
 
 
-class IssueTokenRequest(BaseModel):
-    """
-    Request to issue new model API token
-    """
-
-    # Role name
-    role_name: str
-
-
 class ApplyFromFileRequest(BaseModel):
     """
     Request to apply changes (create/edit/delete) from file

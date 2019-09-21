@@ -1,0 +1,8 @@
+id: simple-model
+kind: ModelPackaging
+spec:
+  artifactName: ""
+  targets:
+    - connectionName: docker-ci
+      name: docker-push
+  integrationName: docker-rest

@@ -21,6 +21,7 @@ LEGION_COMPONENT_LABEL = 'app.kubernetes.io/component'
 LEGION_MD_NAME_LABEL = 'app.kubernetes.io/component/md_name'
 
 EDI_VERSION = 'v1'
+CONFIGURATION_URL = '/api/{version}/configuration'
 CONNECTION_URL = '/api/{version}/connection'
 MODEL_TRAINING_URL = '/api/{version}/model/training'
 TOOLCHAIN_INTEGRATION_URL = '/api/{version}/toolchain/integration'

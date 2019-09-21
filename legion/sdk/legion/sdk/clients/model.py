@@ -53,7 +53,7 @@ def encode_http_params(data):
 
 
 def calculate_url(host: str, url: str = None, model_route: str = None, model_deployment: str = None,
-                  url_prefix: str = None):
+                  url_prefix: str = None, mr_client: ModelRouteClient = None):
     """
     Calculate url for model
 
@@ -73,7 +73,9 @@ def calculate_url(host: str, url: str = None, model_route: str = None, model_dep
 
     model_route = model_route or model_deployment
     if model_route:
-        mr_client = ModelRouteClient()
+        if mr_client is None:
+            mr_client = ModelRouteClient()
+
         model_route = mr_client.get(model_route)
 
         LOGGER.debug('Found model route: %s', model_route)

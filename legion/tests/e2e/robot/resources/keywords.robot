@@ -65,14 +65,6 @@ Run EDI undeploy model and check
     Should not contain           ${edi_state.stdout}    ${md_name}
 
 # --------- OTHER KEYWORDS SECTION -----------
-
-Get token from EDI
-    [Documentation]  get token from EDI for the EDGE session
-    [Arguments]           ${md_name}  ${role}=${EMPTY}
-    ${resp} =             StrictShell  legionctl dep generate-token --md-id ${md_name} --role "${role}"
-    Set Suite Variable    ${TOKEN}   ${resp.stdout}
-    [Return]              ${resp.stdout}
-
 Check model started
     [Documentation]  check if model run in container by http request
     [Arguments]           ${md_name}

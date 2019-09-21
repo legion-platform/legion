@@ -159,7 +159,7 @@ func (mp *ModelPackager) downloadData(packaging *packaging.K8sPackager) error {
 		defer file.Close()
 	}
 
-	if err := storage.Download(packaging.TrainingZipName, path.Join(storage.RemotePath, packaging.TrainingZipName)); err != nil {
+	if err := storage.Download(packaging.TrainingZipName, path.Join(storage.RemoteConfig.Path, packaging.TrainingZipName)); err != nil {
 		log.Error(err, "download training zip")
 
 		return err

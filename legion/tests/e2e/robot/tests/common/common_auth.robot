@@ -25,6 +25,7 @@ Service url stay the same after log in
     [Documentation]  Service url stay the same after log in
     [Template]    Url stay the same after log in
     service_url=${DASHBOARD_URL}/?a=1
+    service_url=${EDGE_URL}/swagger/index.html
     service_url=${EDI_URL}/swagger/index.html
     service_url=${GRAFANA_URL}/?orgId=1&x=2
     service_url=${PROMETHEUS_URL}/graph?x=2&y=3
@@ -36,6 +37,7 @@ Invalid credentials raise Auth error
     [Tags]  apps  e2t
     [Documentation]  Invalid credentials raise Auth error
     [Template]    Authorization should raise auth error if user is not authorized
+    service_url=${EDGE_URL}/swagger/index.html
     service_url=${EDI_URL}/swagger/index.html
     service_url=${GRAFANA_URL}/?orgId=1&x=2
     service_url=${PROMETHEUS_URL}/graph?x=2&y=3

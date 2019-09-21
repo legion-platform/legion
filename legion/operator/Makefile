@@ -1,6 +1,10 @@
 LEGION_OPERATOR_GENERATED_ENTITIES = ../../helms/legion/templates/operator/generated
 LINTER_ADDITIONAL_ARGS =
 KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s
+
+LEGION_NAMESPACE=legion
+LEGION_SECRET_CONFIG=legion-operator-config
+
 .EXPORT_ALL_VARIABLES:
 
 all: help
@@ -88,6 +92,7 @@ swag:
 	sed -i 's/deployment\.//g' docs/*
 	sed -i 's/training\.//g' docs/*
 	sed -i 's/packaging\.//g' docs/*
+	sed -i 's/configuration\.//g' docs/*
 	sed -i 's/v1alpha1\.//g' docs/*
 
 ## apply-crds: Apply all legion crds
@@ -110,6 +115,10 @@ endif
 
 ## generate-all: Execute all code generators
 generate-all: generate manifests swag
+
+## export-config-from-k8s: Export operator config from k8s secret. It helps to run operator or edi locally with properly set of config options
+export-config-from-k8s:
+	kubectl get -n ${LEGION_NAMESPACE} legion secrets ${LEGION_SECRET_CONFIG} -o=jsonpath="{$$.data['config\\.yaml']}" | base64 -d > config.yaml
 
 ## lint: Start golangci-lint linter
 lint:

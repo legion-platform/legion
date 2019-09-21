@@ -79,7 +79,7 @@ namespace Private {
       base.createDialogInput(undefined, 'https://edi-company-a.example.com')
     );
 
-    body.appendChild(base.createDialogInputLabel('Dex token'));
+    body.appendChild(base.createDialogInputLabel('Oauth2 token'));
     body.appendChild(
       base.createDialogInput(undefined, 'ZW1haWw6dGVzdHMtdXNlckBsZWdpb24uY....')
     );

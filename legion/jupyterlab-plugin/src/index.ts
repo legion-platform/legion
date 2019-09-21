@@ -320,7 +320,7 @@ function activateCloudPlugin(
   legionExtension.api.configurationApi
     .getCloudConfiguration()
     .then(response => {
-      legionExtension.apiCloudState.updateConfiguration(response);
+      legionExtension.apiCloudState.updateAuthConfiguration(response);
 
       // Register commands in JupyterLab
       addCloudCommands({
@@ -340,16 +340,11 @@ function activateCloudPlugin(
           cluster: response.defaultEDIEndpoint,
           authString: ''
         });
-
-        mainMenu.addMenu(
-          buildTopMenu(app.commands, [CommandIDs.issueNewCloudAccessToken])
-        );
       } else {
         mainMenu.addMenu(
           buildTopMenu(app.commands, [
             CommandIDs.authorizeOnCluster,
-            CommandIDs.unAuthorizeOnCluster,
-            CommandIDs.issueNewCloudAccessToken
+            CommandIDs.unAuthorizeOnCluster
           ])
         );
       }

@@ -137,14 +137,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:6b014c67cb522566c30ef02116f9acb50cd60954708cf92c6654e2985696db18"
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  pruneopts = "T"
-  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
-  version = "v3.2.0"
-
-[[projects]]
   branch = "master"
   digest = "1:0d4540d92fd82f9957e1f718e2b1e5f2d301ed8169e2923bba23558fbbbd08a1"
   name = "github.com/docker/spdystream"
@@ -538,24 +530,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:76209837aaab143ed13f04d566236f250c6355ee7c7ad9a33cf6c5ca9ef2ffd5"
-  name = "github.com/lestrrat-go/jwx"
-  packages = [
-    "internal/base64",
-    "internal/option",
-    "jwa",
-    "jwk",
-    "jws",
-    "jws/sign",
-    "jws/verify",
-    "jwt",
-    "jwt/internal/types",
-  ]
-  pruneopts = "T"
-  revision = "5d60d87d07ddea9874404944870bec81aabcf574"
-  version = "v0.9.0"
-
-[[projects]]
   digest = "1:53e8c5c79716437e601696140e8b1801aae4204f4ec54a504333702a49572c4f"
   name = "github.com/magiconair/properties"
   packages = ["."]
@@ -671,6 +645,7 @@
     "fs/object",
     "fs/operations",
     "fs/rc",
+    "fs/sync",
     "fs/version",
     "fs/walk",
     "lib/errors",
@@ -960,12 +935,12 @@
   version = "v1.0.3"
 
 [[projects]]
-  digest = "1:2eeca55c5718eafa5ee2538e920ca43a30c334acfed5404ac650ecda1c06e97c"
+  digest = "1:5d7e98ad29b0dc062d7cb720c4f8c85b521b64a508ffd6d82d5c288d682a2728"
   name = "github.com/spf13/viper"
   packages = ["."]
   pruneopts = "T"
-  revision = "9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9"
-  version = "v1.3.2"
+  revision = "b5bf975e5823809fb22c7644d008757f78a4259e"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:77aaa935377ee8ee7eea4d4eeaab74e54ea61730c09a09723e9b7527e0620cff"
@@ -1893,23 +1868,22 @@
   analyzer-version = 1
   input-imports = [
     "github.com/alecthomas/template",
+    "github.com/aspenmesh/istio-client-go/pkg/apis/authentication/v1alpha1",
     "github.com/aspenmesh/istio-client-go/pkg/apis/networking/v1alpha3",
     "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme",
-    "github.com/dgrijalva/jwt-go",
     "github.com/emicklei/go-restful",
     "github.com/gin-gonic/gin",
     "github.com/gogo/protobuf/types",
     "github.com/knative/serving/pkg/apis/serving/v1alpha1",
     "github.com/knative/serving/pkg/apis/serving/v1beta1",
-    "github.com/lestrrat-go/jwx/jwa",
-    "github.com/lestrrat-go/jwx/jwk",
-    "github.com/lestrrat-go/jwx/jwt",
     "github.com/ncw/rclone/backend/googlecloudstorage",
     "github.com/ncw/rclone/backend/local",
     "github.com/ncw/rclone/backend/s3",
     "github.com/ncw/rclone/fs",
+    "github.com/ncw/rclone/fs/cache",
     "github.com/ncw/rclone/fs/config",
     "github.com/ncw/rclone/fs/operations",
+    "github.com/ncw/rclone/fs/sync",
     "github.com/nu7hatch/gouuid",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
@@ -1933,6 +1907,7 @@
     "gopkg.in/src-d/go-git.v4/plumbing/transport",
     "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh",
     "gopkg.in/yaml.v2",
+    "istio.io/api/authentication/v1alpha1",
     "istio.io/api/networking/v1alpha3",
     "k8s.io/api/apps/v1",
     "k8s.io/api/core/v1",

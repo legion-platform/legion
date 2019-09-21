@@ -24,6 +24,10 @@ required = [
   version="kubernetes-1.13.1"
 
 [[override]]
+  name = "github.com/spf13/viper"
+  version="v1.4.0"
+
+[[override]]
   name = "sigs.k8s.io/controller-runtime"
   version="v0.1.10"
 

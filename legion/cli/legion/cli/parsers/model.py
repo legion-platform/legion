@@ -38,7 +38,7 @@ def model():
 @click.option('--url', default=config.MODEL_SERVER_URL, type=str, help='Full url of model server')
 @click.option('--url-prefix', type=str, help='Url prefix of model server')
 @click.option('--host', type=str, default=config.MODEL_HOST, help='Host of edge')
-@click.option('--jwt', type=str, default=config.MODEL_JWT_TOKEN, help='Model jwt token')
+@click.option('--jwt', type=str, default=config.EDI_TOKEN, help='Model jwt token')
 @click.option('--json', 'json_input', type=str, help='Json parameter. For example: --json {"x": 2}')
 @click.option('--json-file', '--file', type=click.Path(exists=True), help='Path to json file')
 def invoke(json_input, model_route: str, model_deployment: str, url: str, url_prefix: str,
@@ -54,8 +54,6 @@ def invoke(json_input, model_route: str, model_deployment: str, url: str, url_pr
         with open(json_file) as f:
             json_input = f.read()
 
-    jwt = jwt or config.get_config_file_variable(model_route or model_deployment,
-                                                 section=config.MODEL_JWT_TOKEN_SECTION)
     client = ModelClient(calculate_url(host, url, model_route, model_deployment, url_prefix), jwt)
 
     result = client.invoke(**json.loads(json_input))
@@ -70,7 +68,7 @@ def invoke(json_input, model_route: str, model_deployment: str, url: str, url_pr
 @click.option('--url', default=config.MODEL_SERVER_URL, type=str, help='Full url of model server')
 @click.option('--url-prefix', type=str, help='Url prefix of model server')
 @click.option('--host', type=str, default=config.MODEL_HOST, help='Host of edge')
-@click.option('--jwt', type=str, default=config.MODEL_JWT_TOKEN, help='Model jwt token')
+@click.option('--jwt', type=str, default=config.EDI_TOKEN, help='Model jwt token')
 def info(model_route: str, model_deployment: str, url: str, url_prefix: str,
          host: str, jwt: str):
     """
@@ -78,8 +76,6 @@ def info(model_route: str, model_deployment: str, url: str, url_prefix: str,
 
     :param client: Model HTTP Client
     """
-    jwt = jwt or config.get_config_file_variable(model_route or model_deployment,
-                                                 section=config.MODEL_JWT_TOKEN_SECTION)
     client = ModelClient(calculate_url(host, url, model_route, model_deployment, url_prefix), jwt)
 
     result = client.info()

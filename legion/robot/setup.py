@@ -53,7 +53,8 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'legion-authenticate-test-user=legion.robot.authenticator:main'
+            'legion-authenticate-test-user=legion.robot.authenticator:main',
+            'training-data-helper=legion.robot.training_data_helper:main'
         ],
     },
 )
