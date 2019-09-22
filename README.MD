@@ -12,7 +12,7 @@ The Legion is an open source project dedicated to simplify automation of AI/ML p
 * **Multi Cloud**
   * Core system components are deployed in K8S
   * Deployment automation for major clouds: AWS, Azure, GCP
-* **Security **
+* **Security**
   * Single sign-on (SSO) for all system components
   * Credentials and security keys manager
 * **Multi AI/ML Toolchain**
@@ -21,7 +21,7 @@ The Legion is an open source project dedicated to simplify automation of AI/ML p
 
 ## Documentation
 
-TODO
+[Documentation sources](/docs/source)
 
 ## Changelog
 Please find it here [CHANGELOG](CHANGELOG.md)
