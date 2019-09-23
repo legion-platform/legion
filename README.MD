@@ -9,8 +9,8 @@ The Legion is an open source project dedicated to simplify automation of AI/ML p
   * RESTful APIs and SDKs for all components to build extensions and plugins for external systems
   * Command line interface to interact with system components
   * Plugins for IDEs, Workflow Engines, CICD Engines
-  * Logging, monitoring and alerting
-  * ML experiments tracking
+  * ML experiments tracking component 
+  * Logging, monitoring and alerting components
 * **Multicloud**
   * Core system components deployment in K8S with Helm Charts
   * Deployment automation for major clouds: AWS, Azure, GCP with Terraform 
@@ -32,6 +32,9 @@ Please find it here [CHANGELOG](CHANGELOG.md)
 ## Backlog and Kanban Board
 * [Backlog](https://github.com/legion-platform/legion/issues)
 * [Kanban Board](https://github.com/orgs/legion-platform/projects/1)
+
+## License
+[Apache 2.0](LICENSE)
 
 ## Contribution
 If you are interested in contribution to project feel free to create an issue in [backlog](https://github.com/legion-platform/legion/issues), create a pull request.
