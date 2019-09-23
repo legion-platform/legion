@@ -30,5 +30,5 @@ Please find it here [CHANGELOG](CHANGELOG.md)
 * [Backlog](https://github.com/legion-platform/legion/issues)
 * [Kanban Board](https://github.com/orgs/legion-platform/projects/1)
 
-## Contact Us
-If you are interested in contribution to Legion feel free to create a pull request or create an issue report.
+## Contribution
+If you are interested in contribution to project feel free to create an issue in [backlog](https://github.com/legion-platform/legion/issues), create a pull request.
