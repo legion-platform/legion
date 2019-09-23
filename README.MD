@@ -9,14 +9,17 @@ The Legion is an open source project dedicated to simplify automation of AI/ML p
   * RESTful APIs and SDKs for all components to build extensions and plugins for external systems
   * Command line interface to interact with system components
   * Plugins for IDEs, Workflow Engines, CICD Engines
-* **Multi Cloud**
-  * Core system components are deployed in K8S
-  * Deployment automation for major clouds: AWS, Azure, GCP
+  * Logging, monitoring and alerting
+  * ML experiments tracking
+* **Multicloud**
+  * Core system components deployment in K8S with Helm Charts
+  * Deployment automation for major clouds: AWS, Azure, GCP with Terraform 
 * **Security**
-  * Single sign-on (SSO) for all system components
-  * Credentials and security keys manager
-* **Multi AI/ML Toolchain**
-  * All major ML Toolchains (Scikit-learn, Keras, Tensorflow, PyTorch, H2O and others) are supported
+  * Single sign-on (SSO) with OAuth2 or SAML2
+  * System API endpoints secured with JWT tokens
+  * Credentials manager for connectors to external systems 
+* **Multiple AI/ML Toolchains**
+  * All major ML toolchains Scikit-learn, Keras, Tensorflow, PyTorch, H2O and others are supported
   * Integrated with MLFlow open source project
 
 ## Documentation
