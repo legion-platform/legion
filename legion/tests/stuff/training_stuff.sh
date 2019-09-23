@@ -18,9 +18,6 @@ function cleanup_pack_model() {
   # Removes the local zip file
   [ -f "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" ] && rm "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip"
 
-  # Removes the test trained artifacts from bucket
-  gsutil rm "gs://${CLUSTER_NAME}-data-store/output/${mp_id}.zip"
-
   # Removes the model packaging from EDI service
   legionctl --verbose pack delete --id "${mp_id}" --ignore-not-found
 }
@@ -90,10 +87,7 @@ function cleanup() {
     cleanup_pack_model "${mp_id}" &
   done
 
-  legionctl ti delete -f "${LEGION_RESOURCES}/training_data_helper_ti.yaml" --ignore-not-found
-
-  # Cleanup a test data in the bucket
-  gsutil rm "gs://${CLUSTER_NAME}-data-store/test-data"
+  legionctl ti delete --id training-data-helper --ignore-not-found
 }
 
 # Prints the help message

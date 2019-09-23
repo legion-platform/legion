@@ -46,12 +46,25 @@ var (
 	defaultRequeueDelay  = 1 * time.Second
 )
 
+const defaultUpdatePeriod = 20 * time.Second
+
 func Add(mgr manager.Manager, mrc *catalog.ModelRouteCatalog) error {
 	return add(mgr, newReconciler(mgr, mrc))
 }
 
 func newReconciler(mgr manager.Manager, mrc *catalog.ModelRouteCatalog) reconcile.Reconciler {
-	return &ReconcileModelRoute{Client: mgr.GetClient(), scheme: mgr.GetScheme(), mrc: mrc}
+	rmr := ReconcileModelRoute{
+		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		mrc:    mrc,
+		ticker: time.NewTicker(defaultUpdatePeriod),
+	}
+
+	go func() {
+		rmr.StartUpdate()
+	}()
+
+	return &rmr
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
@@ -74,6 +87,29 @@ type ReconcileModelRoute struct {
 	client.Client
 	scheme *runtime.Scheme
 	mrc    *catalog.ModelRouteCatalog
+	ticker *time.Ticker
+}
+
+func (r *ReconcileModelRoute) StartUpdate() {
+	k8sRouteList := &legionv1alpha1.ModelRouteList{}
+
+	for range r.ticker.C {
+		err := r.List(
+			context.TODO(),
+			&client.ListOptions{
+				Namespace: viper.GetString(deployment.Namespace),
+			},
+			k8sRouteList,
+		)
+
+		if err != nil {
+			log.Error(err, "Can not get list of model routes")
+		}
+
+		log.Info("Found alive model routes", "model routes", k8sRouteList)
+
+		r.mrc.UpdateModelRouteCatalog(k8sRouteList)
+	}
 }
 
 func (r *ReconcileModelRoute) generateModelRequest(mr *legionv1alpha1.ModelRoute) (*http.Request, error) {
@@ -103,7 +139,7 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 	err := r.Get(context.TODO(), request.NamespacedName, modelRouteCR)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.mrc.DeleteModelRoute(modelRouteCR)
+			r.mrc.DeleteModelRoute(request.NamespacedName.Name)
 
 			return reconcile.Result{}, nil
 		}
@@ -145,5 +181,4 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	return reconcile.Result{}, nil
-
 }
