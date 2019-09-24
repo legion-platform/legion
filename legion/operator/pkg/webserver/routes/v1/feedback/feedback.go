@@ -32,7 +32,7 @@ type FeedbackResponse struct{}
 // @Param model-version header string true "Model version"
 // @Param request-id header string true "Request ID"
 // @Success 200 {object} feedback.FeedbackResponse
-// @Router /api/v1/feedback/ [post]
+// @Router /api/v1/feedback [post]
 func stubFeedback() {
 	panic("must be never invoked!")
 }

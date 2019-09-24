@@ -109,8 +109,7 @@ while [ "${1}" != "" ]; do
     ;;
   --models)
     mapfile -t MODEL_NAMES <<< "${2}"
-    shift
-    shift
+    shift 2
     ;;
   --verbose)
     set -x

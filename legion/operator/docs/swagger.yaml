@@ -668,6 +668,21 @@ info:
   version: "1.0"
 paths:
   /api/v1/configuration:
+    get:
+      consumes:
+      - application/json
+      description: Get the Legion service configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Configuration'
+            type: object
+      summary: Get the Legion service configuration
+      tags:
+      - Configuration
     put:
       consumes:
       - application/json
@@ -689,22 +704,6 @@ paths:
             $ref: '#/definitions/HTTPResult'
             type: object
       summary: Update a Legion service configuration
-      tags:
-      - Configuration
-  /api/v1/configuration/:
-    get:
-      consumes:
-      - application/json
-      description: Get the Legion service configuration
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/Configuration'
-            type: object
-      summary: Get the Legion service configuration
       tags:
       - Configuration
   /api/v1/connection:
@@ -866,7 +865,7 @@ paths:
       summary: Get a Connection
       tags:
       - Connection
-  /api/v1/feedback/:
+  /api/v1/feedback:
     post:
       consumes:
       - application/json

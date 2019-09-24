@@ -5,6 +5,7 @@ ${TENSORFLOW_ID}        test-e2e-tensorflow
 
 *** Settings ***
 Documentation       Check tensorflow model
+Test Timeout        30 minutes
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Resource            ../../resources/keywords.robot
 Library             Collections

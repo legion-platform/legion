@@ -27,6 +27,28 @@ var doc = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/api/v1/configuration": {
+            "get": {
+                "description": "Get the Legion service configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Get the Legion service configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/Configuration"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a Configuration",
                 "consumes": [
@@ -57,30 +79,6 @@ var doc = `{
                         "schema": {
                             "type": "object",
                             "$ref": "#/definitions/HTTPResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/configuration/": {
-            "get": {
-                "description": "Get the Legion service configuration",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Configuration"
-                ],
-                "summary": "Get the Legion service configuration",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/Configuration"
                         }
                     }
                 }
@@ -320,7 +318,7 @@ var doc = `{
                 }
             }
         },
-        "/api/v1/feedback/": {
+        "/api/v1/feedback": {
             "post": {
                 "description": "Send feedback about previously made prediction",
                 "consumes": [
