@@ -1,6 +1,6 @@
 /**
- * EDI API
- * This is a EDI server.
+ * API's Gateway
+ * This is a API's Gateway server.
  *
  * OpenAPI spec version: 1.0
  * 

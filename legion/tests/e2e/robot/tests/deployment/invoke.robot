@@ -14,7 +14,6 @@ Library             Collections
 Force Tags          deployment  edi  cli  invoke
 Suite Setup         Run Keywords  Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                               Login to the edi and edge  AND
-...                               Get token from EDI  ${MD_SIMPLE_MODEL}  ${EMPTY}  AND
 ...                               Cleanup resources  AND
 ...                               Run EDI deploy from model packaging  ${MP_SIMPLE_MODEL}  ${MD_SIMPLE_MODEL}  ${RES_DIR}/simple-model.deployment.legion.yaml  AND
 ...                               Check model started  ${MD_SIMPLE_MODEL}
@@ -26,17 +25,12 @@ Cleanup resources
     StrictShell  legionctl --verbose dep delete --id ${MD_SIMPLE_MODEL} --ignore-not-found
 
 Refresh security tokens
-    [Documentation]  Refresh edi and model tokens. Return model jwt token
+    [Documentation]  Refresh edi and model tokens
 
     ${res}=  Shell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
              Should be equal  ${res.rc}  ${0}
-    ${res}=  Shell  legionctl dep generate-token --md-id ${MD_SIMPLE_MODEL}
-             Should be equal  ${res.rc}  ${0}
-    ${JWT}=  Set variable  ${res.stdout}
     ${res}=  Shell  legionctl config set MODEL_HOST ${EDGE_URL}
              Should be equal  ${res.rc}  ${0}
-
-    [Return]  ${JWT}
 
 *** Test Cases ***
 Invoke. Empty jwt
@@ -46,9 +40,8 @@ Invoke. Empty jwt
     Remove File  ${LOCAL_CONFIG}
     StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
 
-    ${res}=  Shell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json-file ${RES_DIR}/simple-model.request.json --host ${EDGE_URL}
+    ${res}=  Shell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json-file ${RES_DIR}/simple-model.request.json --host ${EDGE_URL} --jwt ""
              Should not be equal  ${res.rc}  ${0}
-             Should contain       ${res.stderr}  Jwt is missing
              Should contain       ${res.stderr}  401
 
 Invoke. Empty model service url
@@ -59,7 +52,6 @@ Invoke. Empty model service url
 
     ${res}=  Shell  legionctl --verbose model invoke --host ${EDGE_URL} --url-prefix /model/${MD_SIMPLE_MODEL} --json-file ${RES_DIR}/simple-model.request.json --jwt "some_token"
              Should not be equal  ${res.rc}      ${0}
-             Should contain       ${res.stderr}  Jwt is not in the form of Header.Payload.Signature
              Should contain       ${res.stderr}  401
 
 Invoke. Wrong jwt
@@ -68,7 +60,7 @@ Invoke. Wrong jwt
 
     ${res}=  Shell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json-file ${RES_DIR}/simple-model.request.json --host ${EDGE_URL} --jwt wrong
              Should not be equal  ${res.rc}  ${0}
-             Should contain       ${res.stderr}  Jwt is not in the form of Header.Payload.Signature
+             Should contain       ${res.stderr}  401
 
 Invoke. Pass parameters explicitly
     [Documentation]  Pass parameters explicitly
@@ -77,7 +69,7 @@ Invoke. Pass parameters explicitly
     Remove File  ${LOCAL_CONFIG}
     StrictShell  legionctl --verbose login --edi ${EDI_URL} --token "${AUTH_TOKEN}"
 
-    ${res}=  Shell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json-file ${RES_DIR}/simple-model.request.json --host ${EDGE_URL} --jwt "${JWT}"
+    ${res}=  Shell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json-file ${RES_DIR}/simple-model.request.json --host ${EDGE_URL} --jwt "${AUTH_TOKEN}"
              Should be equal  ${res.rc}  ${0}
              Should contain   ${res.stdout}  42
 

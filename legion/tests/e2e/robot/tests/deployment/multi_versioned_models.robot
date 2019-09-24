@@ -14,8 +14,6 @@ Library             legion.robot.libraries.utils.Utils
 Library             Collections
 Suite Setup         Run keywords  Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
-...                 Get token from EDI  ${MD_SIMPLE_MODEL_1}  ${MD_SIMPLE_MODEL_1}  AND
-...                 Get token from EDI  ${MD_SIMPLE_MODEL_1}  ${MD_SIMPLE_MODEL_1}  AND
 ...                 Cleanup resources
 Suite Teardown      Run keywords  Cleanup resources  AND
 ...                 Remove File  ${LOCAL_CONFIG}
@@ -44,20 +42,17 @@ Check EDI deploy 2 models with the same image
                     Should contain              ${resp.stdout}      ${MD_SIMPLE_MODEL_2}
 
 Check default model urls
-    Get token from EDI   ${MD_SIMPLE_MODEL_1}  ${MD_SIMPLE_MODEL_1}
     Run EDI deploy from model packaging  ${MP_SIMPLE_MODEL}  ${MD_SIMPLE_MODEL_1}  ${RES_DIR}/simple-model-1.deployment.legion.yaml
     Check model started  ${MD_SIMPLE_MODEL_1}
 
-    Get token from EDI   ${MD_SIMPLE_MODEL_1}  ${MD_SIMPLE_MODEL_1}
-    StrictShell  legionctl --verbose model info --md ${MD_SIMPLE_MODEL_1} --jwt ${token}
+    StrictShell  legionctl --verbose model info --md ${MD_SIMPLE_MODEL_1} --jwt ${AUTH_TOKEN}
 
     Run EDI deploy from model packaging  ${MP_SIMPLE_MODEL}  ${MD_SIMPLE_MODEL_2}  ${RES_DIR}/simple-model-2.deployment.legion.yaml
     Check model started  ${MD_SIMPLE_MODEL_2}
 
-    Get token from EDI   ${MD_SIMPLE_MODEL_2}  ${MD_SIMPLE_MODEL_2}
-    ${res}=  StrictShell  legionctl --verbose model info --md ${MD_SIMPLE_MODEL_2} --jwt ${token}
+    ${res}=  StrictShell  legionctl --verbose model info --md ${MD_SIMPLE_MODEL_2} --jwt ${AUTH_TOKEN}
 
-    Shell  legionctl --verbose model info --md ${MD_SIMPLE_MODEL_1} --jwt ${token}
+    Shell  legionctl --verbose model info --md ${MD_SIMPLE_MODEL_1} --jwt ${AUTH_TOKEN}
 
 Invoke two models
     [Documentation]  Check that config holds model jwts separately
@@ -66,14 +61,6 @@ Invoke two models
 
     Check model started  ${MD_SIMPLE_MODEL_1}
     Check model started  ${MD_SIMPLE_MODEL_2}
-
-    ${res}=  Shell  legionctl --verbose dep generate-token --md-id ${MD_SIMPLE_MODEL_1} --role ${MD_SIMPLE_MODEL_1}
-             Should be equal  ${res.rc}  ${0}
-    ${MD_TOKEN_1}=  Set variable  ${res.stdout}
-
-    ${res}=  Shell  legionctl --verbose dep generate-token --md-id ${MD_SIMPLE_MODEL_2} --role ${MD_SIMPLE_MODEL_2}
-             Should be equal  ${res.rc}  ${0}
-    ${MD_TOKEN_2}=  Set variable  ${res.stdout}
 
     ${res}=  Shell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL_1} --json-file ${RES_DIR}/simple-model.request.json
          Should be equal  ${res.rc}  ${0}
@@ -90,22 +77,22 @@ Invoke two models
          Should contain   ${res.stdout}  42
 
     ${res}=  Shell  legionctl --verbose model invoke --url-prefix /model/${MD_SIMPLE_MODEL_1} --json-file ${RES_DIR}/simple-model.request.json
-         Should not be equal  ${res.rc}  ${0}
+         Should be equal  ${res.rc}  ${0}
 
     ${res}=  Shell  legionctl --verbose model invoke --url-prefix /model/${MD_SIMPLE_MODEL_2} --json-file ${RES_DIR}/simple-model.request.json
-         Should not be equal  ${res.rc}  ${0}
+         Should be equal  ${res.rc}  ${0}
 
-    ${res}=  Shell  legionctl --verbose model invoke --url-prefix /model/${MD_SIMPLE_MODEL_1} --json-file ${RES_DIR}/simple-model.request.json --jwt ${MD_TOKEN_1}
+    ${res}=  Shell  legionctl --verbose model invoke --url-prefix /model/${MD_SIMPLE_MODEL_1} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
          Should be equal  ${res.rc}  ${0}
          Should contain   ${res.stdout}  42
 
-    ${res}=  Shell  legionctl --verbose model invoke --url-prefix /model/${MD_SIMPLE_MODEL_2} --json-file ${RES_DIR}/simple-model.request.json --jwt ${MD_TOKEN_2}
+    ${res}=  Shell  legionctl --verbose model invoke --url-prefix /model/${MD_SIMPLE_MODEL_2} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
          Should be equal  ${res.rc}  ${0}
          Should contain   ${res.stdout}  42
 
-    ${res}=  Shell  legionctl --verbose model invoke --url ${EDGE_URL}/model/${MD_SIMPLE_MODEL_1} --json-file ${RES_DIR}/simple-model.request.json --jwt ${MD_TOKEN_1}
+    ${res}=  Shell  legionctl --verbose model invoke --url ${EDGE_URL}/model/${MD_SIMPLE_MODEL_1} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
          Should be equal  ${res.rc}  ${0}
          Should contain   ${res.stdout}  42
-    ${res}=  Shell  legionctl --verbose model invoke --url ${EDGE_URL}/model/${MD_SIMPLE_MODEL_2} --json-file ${RES_DIR}/simple-model.request.json --jwt ${MD_TOKEN_2}
+    ${res}=  Shell  legionctl --verbose model invoke --url ${EDGE_URL}/model/${MD_SIMPLE_MODEL_2} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
          Should be equal  ${res.rc}  ${0}
          Should contain   ${res.stdout}  42

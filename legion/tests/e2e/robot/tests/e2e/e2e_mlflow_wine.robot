@@ -5,6 +5,7 @@ ${WINE_ID}              test-e2e-wine
 
 *** Settings ***
 Documentation       Check wine model
+Test Timeout        30 minutes
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Resource            ../../resources/keywords.robot
 Library             Collections
@@ -34,8 +35,6 @@ Wine model
     ${res}=  StrictShell  legionctl pack get --id ${WINE_ID} -o 'jsonpath=$[0].status.results[0].value'
 
     StrictShell  legionctl --verbose dep create -f ${RES_DIR}/wine/deployment.legion.yaml --image ${res.stdout}
-
-    StrictShell  legionctl dep generate-token --md-id ${WINE_ID}
 
     Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl model info --mr ${WINE_ID}
 

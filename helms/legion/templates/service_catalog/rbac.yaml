@@ -239,7 +239,7 @@ metadata:
   name: "{{ .Release.Name }}-service-catalog"
 subjects:
   - kind: ServiceAccount
-    namespace: "{{ .Values.config.deployment.namespace }}"
+    namespace: "{{ .Release.Namespace }}"
     name: "{{ .Release.Name }}-service-catalog"
 roleRef:
   kind: ClusterRole
@@ -250,7 +250,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "{{ .Release.Name }}-service-catalog"
-  namespace: "{{ .Values.config.deployment.namespace }}"
+  namespace: "{{ .Release.Namespace }}"
 {{- end }}
 
 

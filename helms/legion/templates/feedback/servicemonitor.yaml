@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: "{{ .Release.Name }}-aggregator"
-  namespace: "{{ .Values.config.deployment.namespace }}"
+  namespace: "{{ .Release.Namespace }}"
   labels:
     {{- include "legion.helm-labels" (dict "component" "feedback-aggregator" "root" .) | nindent 4 }}
     {{- range $key, $value := .Values.metrics.serviceMonitoringLabels }}
@@ -16,7 +16,7 @@ spec:
     port: api
   namespaceSelector:
     matchNames:
-    - "{{ .Values.config.deployment.namespace }}"
+    - "{{ .Release.Namespace }}"
   selector:
     matchLabels:
       {{- include "legion.helm-labels-for-search" (dict "component" "feedback-aggregator" "root" .) | nindent 6 }}
@@ -25,7 +25,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: "{{ .Release.Name }}-collector"
-  namespace: "{{ .Values.config.deployment.namespace }}"
+  namespace: "{{ .Release.Namespace }}"
   labels:
     {{- include "legion.helm-labels" (dict "component" "feedback-collector" "root" .) | nindent 4 }}
     {{- range $key, $value := .Values.metrics.serviceMonitoringLabels }}
@@ -38,7 +38,7 @@ spec:
     port: monitoring
   namespaceSelector:
     matchNames:
-    - "{{ .Values.config.deployment.namespace }}"
+    - "{{ .Release.Namespace }}"
   selector:
     matchLabels:
       {{- include "legion.helm-labels-for-search" (dict "component" "feedback-collector" "root" .) | nindent 6 }}

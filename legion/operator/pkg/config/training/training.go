@@ -14,7 +14,7 @@
 //    limitations under the License.
 //
 
-package connection
+package training
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
@@ -29,6 +29,7 @@ const (
 	ModelBuilderImage             = "training.model_trainer.image"
 	NodeSelector                  = "training.node_selector"
 	Toleration                    = "training.toleration"
+	MetricUrl                     = "training.metric_url"
 )
 
 const (
@@ -57,4 +58,6 @@ func init() {
 		TolerationValue:    "training",
 		TolerationEffect:   "NoSchedule",
 	})
+
+	viper.SetDefault(MetricUrl, "")
 }

@@ -18,11 +18,15 @@ package modelroute
 
 import (
 	"context"
+	"fmt"
 	gogotypes "github.com/gogo/protobuf/types"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/catalog"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -42,12 +46,25 @@ var (
 	defaultRequeueDelay  = 1 * time.Second
 )
 
+const defaultUpdatePeriod = 20 * time.Second
+
 func Add(mgr manager.Manager, mrc *catalog.ModelRouteCatalog) error {
 	return add(mgr, newReconciler(mgr, mrc))
 }
 
 func newReconciler(mgr manager.Manager, mrc *catalog.ModelRouteCatalog) reconcile.Reconciler {
-	return &ReconcileModelRoute{Client: mgr.GetClient(), scheme: mgr.GetScheme(), mrc: mrc}
+	rmr := ReconcileModelRoute{
+		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		mrc:    mrc,
+		ticker: time.NewTicker(defaultUpdatePeriod),
+	}
+
+	go func() {
+		rmr.StartUpdate()
+	}()
+
+	return &rmr
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
@@ -70,6 +87,51 @@ type ReconcileModelRoute struct {
 	client.Client
 	scheme *runtime.Scheme
 	mrc    *catalog.ModelRouteCatalog
+	ticker *time.Ticker
+}
+
+func (r *ReconcileModelRoute) StartUpdate() {
+	k8sRouteList := &legionv1alpha1.ModelRouteList{}
+
+	for range r.ticker.C {
+		err := r.List(
+			context.TODO(),
+			&client.ListOptions{
+				Namespace: viper.GetString(deployment.Namespace),
+			},
+			k8sRouteList,
+		)
+
+		if err != nil {
+			log.Error(err, "Can not get list of model routes")
+		}
+
+		log.Info("Found alive model routes", "model routes", k8sRouteList)
+
+		r.mrc.UpdateModelRouteCatalog(k8sRouteList)
+	}
+}
+
+func (r *ReconcileModelRoute) generateModelRequest(mr *legionv1alpha1.ModelRoute) (*http.Request, error) {
+	modelUrl := &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s.%s", viper.GetString(deployment.IstioServiceName), viper.GetString(deployment.IstioNamespace)),
+		Path:   mr.Spec.UrlPrefix,
+	}
+
+	edgeHostUrl := viper.GetString(deployment.EdgeHost)
+	parsedExternalEdgeUrl, err := url.Parse(edgeHostUrl)
+	if err != nil {
+		log.Error(err, "Can not parse the edge host url", "edge host", edgeHostUrl)
+
+		return nil, err
+	}
+
+	return &http.Request{
+		Method: http.MethodGet,
+		URL:    modelUrl,
+		Host:   parsedExternalEdgeUrl.Host,
+	}, nil
 }
 
 func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -77,7 +139,7 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 	err := r.Get(context.TODO(), request.NamespacedName, modelRouteCR)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.mrc.DeleteModelRoute(modelRouteCR)
+			r.mrc.DeleteModelRoute(request.NamespacedName.Name)
 
 			return reconcile.Result{}, nil
 		}
@@ -90,13 +152,23 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	}
 
-	response, err := http.Get(modelRouteCR.Status.EdgeUrl)
+	modelRequest, err := r.generateModelRequest(modelRouteCR)
+	if err != nil {
+		log.Error(err, "Can not generate model request", "model route id", modelRouteCR.Name)
+
+		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
+	}
+
+	response, err := http.DefaultClient.Do(modelRequest)
 	if err != nil {
 		log.Error(err, "Can not get swagger response for model", "mr id", modelRouteCR.Name)
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	} else {
 		defer response.Body.Close()
 		contents, err := ioutil.ReadAll(response.Body)
+
+		log.Info("Get response from model", "model route id", modelRouteCR.Name, "content", string(contents))
+
 		if err != nil {
 			log.Error(err, "Can not get swagger response for model", "mr id", modelRouteCR.Name)
 			return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
@@ -109,5 +181,4 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	return reconcile.Result{}, nil
-
 }

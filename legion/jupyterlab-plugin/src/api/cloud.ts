@@ -36,8 +36,6 @@ export namespace URLs {
     legionApiRootURL + '/cloud/packagings/:packagingName:/logs';
   export const cloudDeploymentsUrl = legionApiRootURL + '/cloud/deployments';
   export const cloudAllDataUrl = legionApiRootURL + '/cloud';
-  export const cloudIssueModelTokenUrl =
-    legionApiRootURL + '/cloud/security/token';
   export const cloudApplyFileUrl = legionApiRootURL + '/cloud/apply';
 }
 
@@ -84,12 +82,6 @@ export interface ICloudApi {
   getCloudAllEntities: (
     credentials: ICloudCredentials
   ) => Promise<models.ICloudAllEntitiesResponse>;
-
-  // Issue model JWT token
-  issueCloudAccess: (
-    request: models.ICloudIssueTokenRequest,
-    credentials: ICloudCredentials
-  ) => Promise<models.ICloudIssueTokenResponse>;
 
   // General
   applyFromFile: (
@@ -295,27 +287,6 @@ export class CloudApi implements IApiGroup, ICloudApi {
         URLs.cloudAllDataUrl,
         'GET',
         null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
-    }
-  }
-
-  async issueCloudAccess(
-    request: models.ICloudIssueTokenRequest,
-    credentials: ICloudCredentials
-  ): Promise<models.ICloudIssueTokenResponse> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudIssueModelTokenUrl,
-        'POST',
-        request,
         credentials
       );
       if (response.status !== 200) {

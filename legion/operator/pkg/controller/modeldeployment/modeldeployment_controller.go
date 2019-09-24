@@ -25,12 +25,10 @@ import (
 	"time"
 
 	"fmt"
-	networkingv1alpha3 "github.com/aspenmesh/istio-client-go/pkg/apis/networking/v1alpha3"
+	authv1alpha1 "github.com/aspenmesh/istio-client-go/pkg/apis/authentication/v1alpha1"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	md_config "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
-	networkingv1alpha3_istio "istio.io/api/networking/v1alpha3"
-
-	prototypes "github.com/gogo/protobuf/types"
+	authv1alpha1_istio "istio.io/api/authentication/v1alpha1"
 
 	"github.com/knative/serving/pkg/apis/serving/v1beta1"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
@@ -72,7 +70,8 @@ const (
 	defaultKnativeAutoscalingClass       = "kpa.autoscaling.knative.dev"
 	modelNameAnnotationKey               = "modelName"
 	latestReadyRevisionKey               = "latestReadyRevision"
-	authProviderName                     = "edi"
+	defaultTargetName                    = "model"
+	includedAuthPrefixPath               = "/api/model/invoke"
 )
 
 var (
@@ -333,171 +332,48 @@ func (r *ReconcileModelDeployment) createModelContainer(modelDeploymentCR *legio
 	}, nil
 }
 
-func generateAuthProvider(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Value_StructValue {
-	return &prototypes.Value_StructValue{
-		StructValue: &prototypes.Struct{
-			Fields: map[string]*prototypes.Value{
-				"audiences": {
-					Kind: &prototypes.Value_ListValue{
-						ListValue: &prototypes.ListValue{
-							Values: []*prototypes.Value{
-								{
-									Kind: &prototypes.Value_StringValue{
-										StringValue: *modelDeploymentCR.Spec.RoleName,
-									},
-								},
-							},
-						},
-					},
-				},
-				"issuer": {
-					Kind: &prototypes.Value_StringValue{
-						StringValue: authProviderName,
-					},
-				},
-				"remote_jwks": {
-					Kind: &prototypes.Value_StructValue{
-						StructValue: &prototypes.Struct{
-							Fields: map[string]*prototypes.Value{
-								"http_uri": {
-									Kind: &prototypes.Value_StructValue{
-										StructValue: &prototypes.Struct{
-											Fields: map[string]*prototypes.Value{
-												"uri": {
-													Kind: &prototypes.Value_StringValue{
-														StringValue: viper.GetString(md_config.SecurityJwksUrl),
-													},
-												},
-												"cluster": {
-													Kind: &prototypes.Value_StringValue{
-														StringValue: viper.GetString(md_config.SecurityJwksCluster),
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func generateAuthRule(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Value_StructValue {
-	return &prototypes.Value_StructValue{
-		StructValue: &prototypes.Struct{
-			Fields: map[string]*prototypes.Value{
-				"match": {
-					Kind: &prototypes.Value_StructValue{
-						StructValue: &prototypes.Struct{
-							Fields: map[string]*prototypes.Value{
-								"prefix": {
-									Kind: &prototypes.Value_StringValue{
-										StringValue: "/api/model/invoke",
-									},
-								},
-							},
-						},
-					},
-				},
-				"requires": {
-					Kind: &prototypes.Value_StructValue{
-						StructValue: &prototypes.Struct{
-							Fields: map[string]*prototypes.Value{
-								"provider_and_audiences": {
-									Kind: &prototypes.Value_StructValue{
-										StructValue: &prototypes.Struct{
-											Fields: map[string]*prototypes.Value{
-												"provider_name": {
-													Kind: &prototypes.Value_StringValue{
-														StringValue: authProviderName,
-													},
-												},
-												"audiences": {
-													Kind: &prototypes.Value_ListValue{
-														ListValue: &prototypes.ListValue{
-															Values: []*prototypes.Value{
-																{
-																	Kind: &prototypes.Value_StringValue{
-																		StringValue: *modelDeploymentCR.Spec.RoleName,
-																	},
-																},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				"forward": {
-					Kind: &prototypes.Value_BoolValue{
-						BoolValue: true,
-					},
-				},
-			},
-		},
-	}
-}
-
-func generateAuthFilterConfig(modelDeploymentCR *legionv1alpha1.ModelDeployment) *prototypes.Struct {
-	return &prototypes.Struct{
-		Fields: map[string]*prototypes.Value{
-			"providers": {
-				Kind: &prototypes.Value_StructValue{
-					StructValue: &prototypes.Struct{
-						Fields: map[string]*prototypes.Value{
-							authProviderName: {
-								Kind: generateAuthProvider(modelDeploymentCR),
-							},
-						},
-					},
-				},
-			},
-			"rules": {
-				Kind: &prototypes.Value_ListValue{
-					ListValue: &prototypes.ListValue{
-						Values: []*prototypes.Value{
-							{
-								Kind: generateAuthRule(modelDeploymentCR),
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func (r *ReconcileModelDeployment) reconcileEnvoyAuthFilter(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
-	envoyAuthFilter := &networkingv1alpha3.EnvoyFilter{
+// Reconcile the Istio Policy for model authorization
+// Read more about in Istio docs https://istio.io/docs/tasks/security/rbac-groups/#configure-json-web-token-jwt-authentication-with-mutual-tls
+// Configuration https://istio.io/docs/reference/config/istio.authentication.v1alpha1/
+func (r *ReconcileModelDeployment) reconcileAuthPolicy(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	envoyAuthFilter := &authv1alpha1.Policy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      modelDeploymentCR.Name,
 			Namespace: modelDeploymentCR.Namespace,
 		},
-		Spec: networkingv1alpha3.EnvoyFilterSpec{
-			EnvoyFilter: networkingv1alpha3_istio.EnvoyFilter{
-				WorkloadLabels: map[string]string{
-					modelNameAnnotationKey: modelDeploymentCR.Name,
-				},
-				Filters: []*networkingv1alpha3_istio.EnvoyFilter_Filter{
+		Spec: authv1alpha1.PolicySpec{
+			Policy: authv1alpha1_istio.Policy{
+				Targets: []*authv1alpha1_istio.TargetSelector{
 					{
-						ListenerMatch: &networkingv1alpha3_istio.EnvoyFilter_ListenerMatch{
-							ListenerType:     networkingv1alpha3_istio.EnvoyFilter_ListenerMatch_SIDECAR_INBOUND,
-							ListenerProtocol: networkingv1alpha3_istio.EnvoyFilter_ListenerMatch_HTTP,
+						// The value does not matter.
+						Name: defaultTargetName,
+						Labels: map[string]string{
+							// We assign the same labels for our model deployments
+							modelNameAnnotationKey: modelDeploymentCR.Name,
 						},
-						FilterName:   "envoy.filters.http.jwt_authn",
-						FilterType:   networkingv1alpha3_istio.EnvoyFilter_Filter_HTTP,
-						FilterConfig: generateAuthFilterConfig(modelDeploymentCR),
 					},
 				},
+				Origins: []*authv1alpha1_istio.OriginAuthenticationMethod{
+					{
+						Jwt: &authv1alpha1_istio.Jwt{
+							Issuer:  viper.GetString(md_config.SecurityJwksIssuer),
+							JwksUri: viper.GetString(md_config.SecurityJwksUrl),
+							TriggerRules: []*authv1alpha1_istio.Jwt_TriggerRule{
+								{
+									// Healthcheck paths must be ignored
+									IncludedPaths: []*authv1alpha1_istio.StringMatch{
+										{
+											MatchType: &authv1alpha1_istio.StringMatch_Prefix{
+												Prefix: includedAuthPrefixPath,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				PrincipalBinding: authv1alpha1_istio.PrincipalBinding_USE_ORIGIN,
 			},
 		},
 	}
@@ -511,32 +387,32 @@ func (r *ReconcileModelDeployment) reconcileEnvoyAuthFilter(modelDeploymentCR *l
 		return err
 	}
 
-	found := &networkingv1alpha3.EnvoyFilter{}
+	found := &authv1alpha1.Policy{}
 	err := r.Get(context.TODO(), types.NamespacedName{
 		Name: envoyAuthFilter.Name, Namespace: envoyAuthFilter.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("Creating %s k8s Istio Envoy Filter", envoyAuthFilter.ObjectMeta.Name))
-		err = r.Create(context.TODO(), envoyAuthFilter)
-		return err
+		log.Info(fmt.Sprintf("Creating %s k8s Istio Auth Policy", envoyAuthFilter.ObjectMeta.Name))
+
+		return r.Create(context.TODO(), envoyAuthFilter)
 	} else if err != nil {
 		return err
 	}
 
 	if !legion.ObjsEqualByHash(envoyAuthFilter, found) {
-		log.Info(fmt.Sprintf("Istio Envoy Filter hashes don't equal. Update the %s Model route", envoyAuthFilter.Name))
+		log.Info(fmt.Sprintf("Istio Auth Policy hashes don't equal. Update the %s Model route", envoyAuthFilter.Name))
 
 		found.Spec = envoyAuthFilter.Spec
 		found.ObjectMeta.Annotations = envoyAuthFilter.ObjectMeta.Annotations
 		found.ObjectMeta.Labels = envoyAuthFilter.ObjectMeta.Labels
 
-		log.Info(fmt.Sprintf("Updating %s k8s Istio Envoy Filter", envoyAuthFilter.ObjectMeta.Name))
-		err = r.Update(context.TODO(), found)
-		if err != nil {
+		log.Info(fmt.Sprintf("Updating %s k8s Istio Auth Policy", envoyAuthFilter.ObjectMeta.Name))
+
+		if err := r.Update(context.TODO(), found); err != nil {
 			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Istio Envoy Filter hashes equal. Skip updating of the %s Istio Envoy Filter", envoyAuthFilter.Name))
+		log.Info(fmt.Sprintf("Istio Auth Policy hashes equal. Skip updating of the %s Istio Auth Policy", envoyAuthFilter.Name))
 	}
 
 	return nil
@@ -578,6 +454,8 @@ func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1al
 
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=authentication.istio.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=authentication.istio.io,resources=policies/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=serving.knative.dev,resources=configurations,verbs=get;list;watch;create;update;patch;delete
@@ -614,11 +492,11 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 
 	log.Info("Start reconciling of model deployment", "Name", modelDeploymentCR.Name)
 
-	if viper.GetBool(md_config.SecurityJwtEnabled) {
+	if viper.GetBool(md_config.SecurityJwksEnabled) {
 		log.Info("Reconcile Auth Filter", "Model Deployment name", modelDeploymentCR.Name)
 
-		if err := r.reconcileEnvoyAuthFilter(modelDeploymentCR); err != nil {
-			log.Error(err, "Reconcile Istio Envoy Filter")
+		if err := r.reconcileAuthPolicy(modelDeploymentCR); err != nil {
+			log.Error(err, "Reconcile Istio Auth Policy")
 			return reconcile.Result{}, err
 		}
 	}

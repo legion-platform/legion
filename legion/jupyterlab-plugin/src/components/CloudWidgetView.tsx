@@ -28,6 +28,9 @@ import { ICloudAllEntitiesResponse } from '../models/cloud';
 import { ClusterInfoStage } from './partials/ClusterInfoStage';
 import { ConfStage } from './partials/ConfStage';
 import { LifecycleStage } from './partials/LifecycleStage';
+import '../../style/scrollbar.css';
+
+const cloudWidgetScrollbarName = 'CloudWidgetScrollbar';
 
 /** Interface for GitPanel component state */
 export interface ICloudWidgetViewNodeState {
@@ -100,7 +103,7 @@ export class CloudWidgetView extends React.Component<
 
   renderDataView() {
     return (
-      <div className={style.widgetPane}>
+      <div className={`${style.widgetPane} ${cloudWidgetScrollbarName}`}>
         <TitleBarView
           text={'Legion'}
           onRefresh={() =>
@@ -109,14 +112,7 @@ export class CloudWidgetView extends React.Component<
           isRefreshing={this.state.isLoading}
         />
 
-        <ClusterInfoStage
-          ediUrl={this.props.dataState.configuration.defaultEDIEndpoint}
-          metricUiUrl={this.props.dataState.configuration.metricUiUrl}
-          serviceCatalogUrl={
-            this.props.dataState.configuration.serviceCatalogUrl
-          }
-          grafanaUrl={this.props.dataState.configuration.grafanaUrl}
-        />
+        <ClusterInfoStage configuration={this.props.dataState.configuration} />
 
         <LifecycleStage app={this.props.app} dataState={this.props.dataState} />
 

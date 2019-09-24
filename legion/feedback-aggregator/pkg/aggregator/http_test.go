@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	testFeedbackUrl = "feedback/model/stub-model-5-1/api/model"
+	testFeedbackUrl = "/api/v1/feedback/model/stub-model-5-1/api/model"
 )
 
 // DataLoggingMock
@@ -118,7 +118,7 @@ func TestIndexRoute(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "{\"links\":[\"/feedback/*any\"]}", w.Body.String())
+	assert.Equal(t, "{\"links\":[\"/api/v1/feedback/*any\"]}", w.Body.String())
 }
 
 func TestNotFoundRoute(t *testing.T) {

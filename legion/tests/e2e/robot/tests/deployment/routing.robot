@@ -18,9 +18,6 @@ Library             legion.robot.libraries.model.Model
 Library             Collections
 Suite Setup         Run keywords  Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
-...                 Get token from EDI  ${MD_COUNTER_MODEL_1}  AND
-...                 Get token from EDI  ${MD_COUNTER_MODEL_2}  AND
-...                 Get token from EDI  ${MD_FAIL_MODEL}  AND
 ...                 Cleanup resources  AND
 ...                 Run EDI deploy from model packaging and check model started  ${MP_COUNTER_MODEL}   ${MD_COUNTER_MODEL_1}   ${RES_DIR}/min-replicas-0.deployment.legion.yaml  AND
 ...                 Run EDI deploy from model packaging and check model started  ${MP_COUNTER_MODEL}   ${MD_COUNTER_MODEL_2}   ${RES_DIR}/min-replicas-0.deployment.legion.yaml  AND
@@ -109,13 +106,12 @@ Getting of nonexistent Route by name
 Basic routing
     [Documentation]  Basic route
     StrictShell  legionctl --verbose route create --id ${TEST_MR_NAME} -f ${RES_DIR}/test-50-50-counter.route.legion.yaml
-    ${TOKEN}=  Get token from EDI  ${MD_COUNTER_MODEL_1}
 
     # TODO: For now we can't control virtual service readiness.
     sleep  5s
 
     : FOR    ${INDEX}    IN RANGE    1    20
-    \    Wait Until Keyword Succeeds  2m  10 sec  StrictShell  legionctl --verbose model invoke --url-prefix ${TEST_MR_URL_PREFIX} --json-file ${RES_DIR}/simple-model.request.json --jwt ${TOKEN}
+    \    Wait Until Keyword Succeeds  2m  10 sec  StrictShell  legionctl --verbose model invoke --url-prefix ${TEST_MR_URL_PREFIX} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
 
     Check model counter  ${MD_COUNTER_MODEL_1}
     Check model counter  ${MD_COUNTER_MODEL_2}
@@ -123,13 +119,12 @@ Basic routing
 Basic mirroring
     [Documentation]  Route with mirroring
     StrictShell  legionctl --verbose route create --id ${TEST_MR_NAME} -f ${RES_DIR}/test-counter-mirror.route.legion.yaml
-    ${TOKEN}=  Get token from EDI  ${MD_COUNTER_MODEL_1}
 
     # TODO: For now we can't control virtual service readiness.
     sleep  5s
 
     : FOR    ${INDEX}    IN RANGE    1    20
-    \    Wait Until Keyword Succeeds  2m  10 sec  StrictShell  legionctl --verbose model invoke --url-prefix ${TEST_MR_URL_PREFIX} --json-file ${RES_DIR}/simple-model.request.json --jwt ${TOKEN}
+    \    Wait Until Keyword Succeeds  2m  10 sec  StrictShell  legionctl --verbose model invoke --url-prefix ${TEST_MR_URL_PREFIX} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
 
     Check model counter  ${MD_COUNTER_MODEL_1}
     Check model counter  ${MD_COUNTER_MODEL_2}
@@ -137,13 +132,12 @@ Basic mirroring
 Mirror to broken model
     [Documentation]  Mirror traffic to broken model
     StrictShell  legionctl --verbose route create --id ${TEST_MR_NAME} -f ${RES_DIR}/test-fail-mirror.route.legion.yaml
-    ${TOKEN}=  Get token from EDI  ${MD_COUNTER_MODEL_1}
 
     # TODO: For now we can't control virtual service readiness.
     sleep  5s
 
     : FOR    ${INDEX}    IN RANGE    1    20
-    \    Wait Until Keyword Succeeds  2m  10 sec  StrictShell  legionctl --verbose model invoke --url-prefix ${TEST_MR_URL_PREFIX} --json-file ${RES_DIR}/simple-model.request.json --jwt ${TOKEN} --jwt ${TOKEN}
+    \    Wait Until Keyword Succeeds  2m  10 sec  StrictShell  legionctl --verbose model invoke --url-prefix ${TEST_MR_URL_PREFIX} --json-file ${RES_DIR}/simple-model.request.json --jwt ${AUTH_TOKEN}
 
     Check model counter  ${MD_COUNTER_MODEL_1}
 

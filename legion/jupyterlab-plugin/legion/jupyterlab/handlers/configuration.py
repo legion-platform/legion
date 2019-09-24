@@ -20,7 +20,7 @@ import os
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, LEGION_X_JWT_TOKEN, \
-    DEFAULT_EDI_ENDPOINT, METRICS_UI_URL, SERVICE_CATALOG_URL, GRAFANA_URL, DEFAULT_MODEL_ROLE
+    DEFAULT_EDI_ENDPOINT
 from legion.sdk.clients.templates import get_legion_template_names, get_legion_template_content
 
 
@@ -43,10 +43,6 @@ class ConfigurationProviderHandler(BaseLegionHandler):
         self.finish_with_json({
             'tokenProvided': jwt_header != '',
             'defaultEDIEndpoint': os.getenv(DEFAULT_EDI_ENDPOINT, ''),
-            'metricUiUrl': os.getenv(METRICS_UI_URL, ''),
-            'serviceCatalogUrl': os.getenv(SERVICE_CATALOG_URL, ''),
-            'grafanaUrl': os.getenv(GRAFANA_URL, ''),
-            'defaultModelRole': os.getenv(DEFAULT_MODEL_ROLE, ''),
             'legionResourceExamples': sorted(get_legion_template_names()),
         })
 

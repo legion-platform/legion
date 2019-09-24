@@ -10,6 +10,8 @@ export const sectionAreaStyle = style({
   fontSize: '12px'
 });
 
+export const widgetScrollbarSelectorName = '.widget-legion';
+
 export const sectionHeaderLabelStyle = style({
   fontSize: 'var(--jp-ui-font-size)',
   flex: '1 1 auto',

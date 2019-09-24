@@ -370,33 +370,6 @@ export function showCreateNewDeploymentDetails(deploymentImage: string) {
   });
 }
 
-export interface IIssueModelAccessTokenDialogValues {
-  roleName: string;
-}
-
-class IssueModelAccessTokenDialog extends Widget {
-  constructor(defaultRole: string) {
-    super({ node: Private.buildIssueModelAccessTokenDialog(defaultRole) });
-  }
-
-  getValue(): IIssueModelAccessTokenDialogValues {
-    let inputs = this.node.getElementsByTagName('input');
-    const roleInput = inputs[0] as HTMLInputElement;
-
-    return {
-      roleName: roleInput.value
-    };
-  }
-}
-
-export function showIssueModelAccessToken(defaultRole: string) {
-  return showDialog({
-    title: 'Creation of cloud access token',
-    body: new IssueModelAccessTokenDialog(defaultRole),
-    buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Get token' })]
-  });
-}
-
 namespace Private {
   export function buildCreateNewDeploymentDetailsDialog(
     deploymentImage: string
@@ -409,13 +382,6 @@ namespace Private {
     );
     body.appendChild(base.createDialogInputLabel('Deployment name'));
     body.appendChild(base.createDialogInput(undefined, 'name of deployment'));
-    return body;
-  }
-
-  export function buildIssueModelAccessTokenDialog(defaultRole: string) {
-    let body = base.createDialogBody();
-    body.appendChild(base.createDialogInputLabel('Role name'));
-    body.appendChild(base.createDialogInput(undefined, defaultRole));
     return body;
   }
 }

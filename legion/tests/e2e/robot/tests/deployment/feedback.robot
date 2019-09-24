@@ -17,7 +17,6 @@ Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords
 ...                 Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                 Login to the edi and edge  AND
-...                 Get token from EDI  ${MD_FEEDBACK_MODEL}  AND
 ...                 Cleanup resources  AND
 ...                 Run EDI deploy from model packaging  ${MP_FEEDBACK_MODEL}  ${MD_FEEDBACK_MODEL}  ${RES_DIR}/simple-model.deployment.legion.yaml  AND
 ...                 Check model started  ${MD_FEEDBACK_MODEL}
@@ -35,13 +34,13 @@ Cleanup resources
 Invoke deployed model
     [Documentation]  call model invoke endpoint
     [Arguments]           ${md_name}  ${request_id}=${NONE}  &{arguments}
-    ${resp}=              Invoke model API  ${md_name}  ${EDGE_URL}  ${TOKEN}  ${request_id}  &{arguments}
+    ${resp}=              Invoke model API  ${md_name}  ${EDGE_URL}  ${AUTH_TOKEN}  ${request_id}  &{arguments}
     [Return]              ${resp}
 
 Send feedback for deployed model
     [Documentation]  call model feedback endpoint
     [Arguments]           ${md_name}  ${model_name}  ${model_ver}  ${request_id}  &{arguments}
-    ${resp}=              Invoke model feedback  ${md_name}  ${model_name}  ${model_ver}  ${EDGE_URL}  ${TOKEN}  ${request_id}  &{arguments}
+    ${resp}=              Invoke model feedback  ${md_name}  ${model_name}  ${model_ver}  ${EDI_URL}  ${AUTH_TOKEN}  ${request_id}  &{arguments}
     [Return]              ${resp}
 
 Validate model API meta log entry
@@ -175,7 +174,7 @@ Check model API logging with request ID and one chunk
     ${str}=                 Generate Random String   4   [LETTERS]
     ${copies}=              set variable  ${4}
     ${expected_request}=    evaluate  {'data': [['${str}', ${copies}]], 'columns': ['str', 'copies']}
-    ${expected_response}=   evaluate  {'prediction': {'result': '${str}' * int(${copies})}, 'columns': ['result']}
+    ${expected_response}=   evaluate  {'prediction': [['${str}' * int(${copies})]], 'columns': ['result']}
 
     ${response}=   Invoke deployed model    ${MD_FEEDBACK_MODEL}  request_id=${request_id}  str=${str}  copies=${copies}
 
@@ -187,7 +186,7 @@ Check model API logging with request ID and many chunks
     [Tags]  fluentd  aws
     ${request_id}=          Generate Random String   16  [LETTERS]
     ${expected_request}=    evaluate  {'data': [['${TEST_MODEL_ARG_STR}', ${TEST_MODEL_ARG_COPIES}]], 'columns': ['str', 'copies']}
-    ${expected_response}=   evaluate  {'prediction': {'result': '${TEST_MODEL_ARG_STR}' * int(${TEST_MODEL_ARG_COPIES})}, 'columns': ['result']}
+    ${expected_response}=   evaluate  {'prediction': [['${TEST_MODEL_ARG_STR}' * int(${TEST_MODEL_ARG_COPIES})]], 'columns': ['result']}
 
     ${response}=   Invoke deployed model    ${MD_FEEDBACK_MODEL}  request_id=${request_id}  str=${TEST_MODEL_ARG_STR}  copies=${TEST_MODEL_ARG_COPIES}
 
@@ -219,7 +218,7 @@ Check model API logging without request ID and one chunk
     ${str}=                 Generate Random String   4   [LETTERS]
     ${copies}=              set variable  ${4}
     ${expected_request}=   evaluate  {'data': [['${str}', ${copies}]], 'columns': ['str', 'copies']}
-    ${expected_response}=   evaluate  {'prediction': {'result': '${str}' * int(${copies})}, 'columns': ['result']}
+    ${expected_response}=   evaluate  {'prediction': [['${str}' * int(${copies})]], 'columns': ['result']}
 
     ${response}=   Invoke deployed model  ${MD_FEEDBACK_MODEL}  str=${str}  copies=${copies}
     Validate model API response      ${response}    ${expected_response}

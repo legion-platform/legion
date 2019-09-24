@@ -95,6 +95,35 @@ nginx.ingress.kubernetes.io/auth-url: {{ .Values.security.oauth2_proxy.url }}
 {{- end -}}
 
 {{/*
+Build ingress auth token annotations
+This section is under control by next sections / fields:
+- .security - enables this section
+- .security.integration - selects building algorithm
+- .security.<oauth2_proxy|etc..> - controlls building of this section
+*/}}
+{{- define "legion.ingress-auth-token-annotations" -}}
+{{- if .Values.security.enabled }}
+{{- if eq .Values.security.integration "oauth2_proxy" -}}
+nginx.ingress.kubernetes.io/auth-url: {{ .Values.security.oauth2_proxy.url }}
+nginx.ingress.kubernetes.io/configuration-snippet: |
+    # This is used for redirection user to oauth2 address
+    set_escape_uri $escaped_request_uri $request_uri;
+
+    # These collect headers from oauth2
+    auth_request_set $user   $upstream_http_x_auth_request_user;
+    auth_request_set $email  $upstream_http_x_auth_request_email;
+    auth_request_set $jwt    $upstream_http_x_auth_request_access_token;
+
+    # These are a headers for upstreams to get information about current user
+    proxy_set_header X-User            $user;
+    proxy_set_header X-Email           $email;
+    proxy_set_header X-JWT             $jwt;
+    proxy_set_header Authorization     "Bearer $jwt";
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Function builds default (root) ingress annotations
 This section is under control by .ingress.annoations section
 Arguments:
@@ -111,6 +140,7 @@ Function builds final ingress annotations for specific service
 This section uses "legion.ingress-default-root-annotations" and "legion.ingress-auth-annotations"
  and it's under control by .ingress.annoations section
 Arguments:
+    - .root - root HELM scope
     - .root - root HELM scope
     - .local - service's ingress section (e.g. .Values.edi.ingress)
 */}}

@@ -31,7 +31,7 @@ import requests.exceptions
 import legion.sdk.config
 from legion.sdk.clients.oauth_handler import start_oauth2_callback_handler, OAuthLoginResult, do_refresh_token
 from legion.sdk.config import update_config_file
-from legion.sdk.definitions import EDI_VERSION, MODEL_TOKEN_TOKEN_URL
+from legion.sdk.definitions import EDI_VERSION
 
 LOGGER = logging.getLogger(__name__)
 
@@ -326,23 +326,6 @@ class RemoteEdiClient:
 
             for line in response.iter_lines():
                 yield line.decode("utf-8")
-
-    def get_token(self, md_role_name: str, expiration_date: typing.Optional[str] = None) -> str:
-        """
-        Get API token
-
-        :param md_role_name: model name
-        :param expiration_date: utc datetime of the token expiration in format "%Y-%m-%dT%H:%M:%S"
-        :return: API Model token
-        """
-        payload = {'role_name': md_role_name}
-
-        if expiration_date:
-            payload['expiration_date'] = expiration_date
-
-        response = self.query(MODEL_TOKEN_TOKEN_URL, action='POST', payload=payload)
-        if response and 'token' in response:
-            return response['token']
 
     def info(self):
         """

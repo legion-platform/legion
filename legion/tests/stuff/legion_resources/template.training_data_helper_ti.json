@@ -1,0 +1,8 @@
+{
+  "kind": "ToolchainIntegration",
+  "id": "training-data-helper",
+  "spec": {
+    "defaultImage": "stub-image",
+    "entrypoint": "/usr/local/bin/training-data-helper"
+  }
+}

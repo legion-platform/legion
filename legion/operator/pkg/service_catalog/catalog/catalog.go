@@ -21,27 +21,31 @@ import (
 	"encoding/json"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 	"sync"
 	"text/template"
 )
 
 var log = logf.Log.WithName("catalog")
 
+type ModelRouteInfo struct {
+	Data map[string]map[string]interface{}
+}
+
 type ModelRouteCatalog struct {
 	sync.RWMutex
-	routes map[string]map[string]interface{}
+	routes map[string]*ModelRouteInfo
 }
 
 func NewModelRouteCatalog() *ModelRouteCatalog {
 	return &ModelRouteCatalog{
-		routes: map[string]map[string]interface{}{},
+		routes: map[string]*ModelRouteInfo{},
 	}
 }
 
 func (mdc *ModelRouteCatalog) AddModelRoute(mr *v1alpha1.ModelRoute, infoResponse []byte) error {
 	mdc.Lock()
 	defer mdc.Unlock()
+	log.Info("Add model route", "model route id", mr.Name)
 
 	modelSwagger := map[string]interface{}{}
 	if err := json.Unmarshal(infoResponse, &modelSwagger); err != nil {
@@ -59,28 +63,57 @@ func (mdc *ModelRouteCatalog) AddModelRoute(mr *v1alpha1.ModelRoute, infoRespons
 			realContent["tags"] = []string{mr.Name}
 		}
 
-		mdc.routes[realUrl] = realMethod
+		log.Info("Add model url", "model url", realUrl, "model route id", mr.Name)
+
+		mri, ok := mdc.routes[mr.Name]
+		if !ok {
+			mri = &ModelRouteInfo{}
+			mri.Data = make(map[string]map[string]interface{})
+			mdc.routes[mr.Name] = mri
+		}
+
+		mri.Data[realUrl] = realMethod
 	}
 
 	return nil
 }
 
-func (mdc *ModelRouteCatalog) DeleteModelRoute(mr *v1alpha1.ModelRoute) {
+func (mdc *ModelRouteCatalog) UpdateModelRouteCatalog(mrList *v1alpha1.ModelRouteList) {
 	mdc.Lock()
 	defer mdc.Unlock()
 
-	for url := range mdc.routes {
-		if strings.HasSuffix(url, mr.Spec.UrlPrefix) {
-			delete(mdc.routes, url)
+	routes := map[string]*ModelRouteInfo{}
+	for _, mr := range mrList.Items {
+		if data, ok := mdc.routes[mr.Name]; ok {
+			log.Info("Stay alive model route", "model route id", mr.Name)
+
+			routes[mr.Name] = data
 		}
 	}
+
+	mdc.routes = routes
+}
+
+func (mdc *ModelRouteCatalog) DeleteModelRoute(mrName string) {
+	mdc.Lock()
+	defer mdc.Unlock()
+	log.Info("Delete model route", "model route id", mrName)
+
+	delete(mdc.routes, mrName)
 }
 
 func (mdc *ModelRouteCatalog) ProcessSwaggerJson() ([]byte, error) {
 	mdc.RLock()
 	defer mdc.RUnlock()
+	allUrls := map[string]map[string]interface{}{}
 
-	routesBytes, err := json.Marshal(&mdc.routes)
+	for _, mri := range mdc.routes {
+		for url, data := range mri.Data {
+			allUrls[url] = data
+		}
+	}
+
+	routesBytes, err := json.Marshal(allUrls)
 	if err != nil {
 		return nil, err
 	}

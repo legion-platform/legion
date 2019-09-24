@@ -14,7 +14,6 @@ Library             Collections
 Force Tags          deployment  edi  cli
 Suite Setup         Run Keywords  Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                               Login to the edi and edge  AND
-...                               Get token from EDI  ${MD_SIMPLE_MODEL}  ${EMPTY}  AND
 ...                               Cleanup resources
 Suite Teardown      Run keywords  Cleanup resources  AND
 ...                 Remove File  ${LOCAL_CONFIG}
@@ -68,16 +67,6 @@ Login. Override login values
     ${res}=  Shell  legionctl --verbose dep --edi ${EDI_URL} --token wrong-token get
              Should not be equal  ${res.rc}  ${0}
              Should contain       ${res.stderr}  Credentials are not correct
-
-Get token from EDI
-    [Documentation]  Try to get token from EDI
-    ${res} =  Shell  legionctl --verbose dep generate-token --md-id ${MD_SIMPLE_MODEL}
-              Should be equal       ${res.rc}  ${0}
-              Should not be empty   ${res.stdout}
-
-    ${res} =  Shell  legionctl --verbose dep --token wrong-token generate-token --md-id ${MD_SIMPLE_MODEL}
-              Should not be equal   ${res.rc}  ${0}
-              Should contain        ${res.stderr}  Credentials are not correct
 
 Deploy fails when validation fails
     [Documentation]  Deploy fails when memory resource is incorect

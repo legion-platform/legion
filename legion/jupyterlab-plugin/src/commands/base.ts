@@ -43,7 +43,6 @@ export namespace CommandIDs {
   export const removeCloudTraining = 'legion:cloud-training-remove';
   export const newCloudDeployment = 'legion:cloud-deployment-new';
   export const removeCloudDeployment = 'legion:cloud-deployment-remove';
-  export const issueNewCloudAccessToken = 'legion:cloud-issue-new-token';
   export const openTrainingLogs = 'legion:cloud-training-logs';
   export const openPackagingLogs = 'legion:cloud-packaging-logs';
   export const applyCloudResources = 'legion:resources:apply';
@@ -63,7 +62,6 @@ export namespace CommandIDs {
 
     // Cloud
     removeCloudDeployment,
-    issueNewCloudAccessToken,
     refreshCloud
   ];
 }

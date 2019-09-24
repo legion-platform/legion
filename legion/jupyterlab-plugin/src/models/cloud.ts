@@ -19,6 +19,7 @@ import { Connection } from '../legion/Connection';
 import { ModelPackaging } from '../legion/ModelPackaging';
 import { PackagingIntegration } from '../legion/PackagingIntegration';
 import { ToolchainIntegration } from '../legion/ToolchainIntegration';
+import { Configuration } from '../legion/Configuration';
 
 export interface IRemoveRequest {
   id: string;
@@ -43,14 +44,7 @@ export interface ICloudAllEntitiesResponse {
   modelPackagings: Array<ModelPackaging>;
   toolchainIntegrations: Array<ToolchainIntegration>;
   packagingIntegrations: Array<PackagingIntegration>;
-}
-
-export interface ICloudIssueTokenRequest {
-  role_name: string;
-}
-
-export interface ICloudIssueTokenResponse {
-  token: string; // Secure fix: //+safeToCommit
+  configuration: Configuration;
 }
 
 export interface IApplyFromFileRequest {

@@ -3,11 +3,16 @@
 # flake8: noqa
 from __future__ import absolute_import
 # import models into model package
+from legion.sdk.models.common_configuration import CommonConfiguration
+from legion.sdk.models.configuration import Configuration
 from legion.sdk.models.connection import Connection
 from legion.sdk.models.connection_spec import ConnectionSpec
 from legion.sdk.models.connection_status import ConnectionStatus
 from legion.sdk.models.data_binding_dir import DataBindingDir
 from legion.sdk.models.environment_variable import EnvironmentVariable
+from legion.sdk.models.external_url import ExternalUrl
+from legion.sdk.models.feedback_feedback_request import FeedbackFeedbackRequest
+from legion.sdk.models.feedback_feedback_response import FeedbackFeedbackResponse
 from legion.sdk.models.http_result import HTTPResult
 from legion.sdk.models.input_data_binding_dir import InputDataBindingDir
 from legion.sdk.models.json_schema import JsonSchema
@@ -39,9 +44,8 @@ from legion.sdk.models.resource_requirements import ResourceRequirements
 from legion.sdk.models.schema import Schema
 from legion.sdk.models.target import Target
 from legion.sdk.models.target_schema import TargetSchema
-from legion.sdk.models.token_request import TokenRequest
-from legion.sdk.models.token_response import TokenResponse
 from legion.sdk.models.toolchain_integration import ToolchainIntegration
 from legion.sdk.models.toolchain_integration_spec import ToolchainIntegrationSpec
 from legion.sdk.models.toolchain_integration_status import ToolchainIntegrationStatus
+from legion.sdk.models.training_configuration import TrainingConfiguration
 from legion.sdk.models.training_result import TrainingResult

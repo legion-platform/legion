@@ -13,10 +13,6 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-export {
-  showChooseDialog,
-  showChooseOrInputDialog,
-  showPromptDialog
-} from './base';
+export { showChooseDialog, showInputDialog, showPromptDialog } from './base';
 export { showLoginDialog, showLogoutDialog } from './authorize';
 export { showApplyResultsDialog } from './cloud';

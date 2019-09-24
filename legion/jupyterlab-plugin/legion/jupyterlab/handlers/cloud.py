@@ -24,6 +24,7 @@ from tornado.web import HTTPError
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
 from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT, LEGION_X_JWT_TOKEN
+from legion.sdk.clients.configuration import ConfigurationClient
 from legion.sdk.clients.connection import ConnectionClient
 from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
 from legion.sdk.clients.edi import EDIConnectionException, RemoteEdiClient
@@ -128,6 +129,15 @@ class BaseCloudLegionHandler(BaseLegionHandler):
             pi.to_dict()
             for pi in client.get_all()
         ]
+
+    def get_configuration(self) -> typing.Dict:
+        """
+        Get Legion configuration
+
+        :return: Legion configuration
+        """
+        client: ConfigurationClient = self.build_cloud_client(ConfigurationClient)
+        return client.get().to_dict()
 
     def get_toolchain_integrations(self) -> typing.List[dict]:
         """
@@ -311,28 +321,6 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
         self.finish_with_json()
 
 
-class CloudTokenIssueHandler(BaseCloudLegionHandler):
-    """
-    Control issuing new tokens
-    """
-
-    @decorate_handler_for_exception
-    def post(self):
-        """
-        Issue new token for model API
-
-        :return: None
-        """
-        data = IssueTokenRequest(**self.get_json_body())
-
-        try:
-            client = self.build_cloud_client(RemoteEdiClient)
-            token = client.get_token(data.role_name)
-            self.finish_with_json({'token': token})
-        except Exception as query_exception:
-            raise HTTPError(log_message='Can not query cloud deployments') from query_exception
-
-
 class CloudApplyFromFileHandler(BaseCloudLegionHandler):
     """
     Apply (create/update/delete) entities from file
@@ -398,4 +386,5 @@ class CloudAllEntitiesHandler(BaseCloudLegionHandler):
             'modelPackagings': self.get_model_packaging_instances(),
             'toolchainIntegrations': self.get_toolchain_integrations(),
             'packagingIntegrations': self.get_packaging_integrations(),
+            'configuration': self.get_configuration()
         })

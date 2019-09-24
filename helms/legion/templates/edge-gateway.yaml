@@ -42,6 +42,7 @@ metadata:
     {{- range $key, $value := .Values.edge.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    {{- include "legion.ingress-auth-token-annotations" . | nindent 4 }}
   labels:
     {{- include "legion.helm-labels" (dict "component" "edge" "root" .) | nindent 4 }}
   name: "{{ .Release.Name }}-edge"

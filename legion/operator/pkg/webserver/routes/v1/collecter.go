@@ -26,6 +26,7 @@ import (
 	deployment_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment/kubernetes"
 	packaging_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
 	training_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/configuration"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
@@ -55,4 +56,5 @@ func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConf
 	deployment.ConfigureRoutes(routeGroup, depStorage)
 	packaging.ConfigureRoutes(routeGroup, packStorage, connStorage)
 	training.ConfigureRoutes(routeGroup, trainStorage, connStorage)
+	configuration.ConfigureRoutes(routeGroup)
 }

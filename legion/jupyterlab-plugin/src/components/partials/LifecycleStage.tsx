@@ -94,7 +94,7 @@ export class LifecycleStage extends React.Component<
                     dialog
                       .showCloudTrainInformationDialog(
                         training,
-                        this.props.dataState.configuration.metricUiUrl
+                        this.props.dataState.configuration.training.metricUrl
                       )
                       .then(({ button }) => {
                         if (button.label === dialog.REMOVE_TRAINING_LABEL) {

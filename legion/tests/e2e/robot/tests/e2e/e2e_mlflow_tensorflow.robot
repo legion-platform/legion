@@ -5,6 +5,7 @@ ${TENSORFLOW_ID}        test-e2e-tensorflow
 
 *** Settings ***
 Documentation       Check tensorflow model
+Test Timeout        30 minutes
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Resource            ../../resources/keywords.robot
 Library             Collections
@@ -34,8 +35,6 @@ Tensorflow model
     ${res}=  StrictShell  legionctl pack get --id ${TENSORFLOW_ID} -o 'jsonpath=$[0].status.results[0].value'
 
     StrictShell  legionctl --verbose dep create -f ${RES_DIR}/tensorflow/deployment.legion.yaml --image ${res.stdout}
-
-    StrictShell  legionctl dep generate-token --md-id ${TENSORFLOW_ID}
 
     Wait Until Keyword Succeeds  1m  0 sec  StrictShell  legionctl --verbose model info --mr ${TENSORFLOW_ID}
 

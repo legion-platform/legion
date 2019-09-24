@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	feedbackUri = "/feedback/*any"
+	feedbackUri = "/api/v1/feedback/*any"
 
 	dataLoggingInstance = "dataLoggingInstance"
 	dataLoggingTag      = "dataLoggingTag"

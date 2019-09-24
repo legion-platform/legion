@@ -13,8 +13,8 @@ import (
 var doc = `{
     "swagger": "2.0",
     "info": {
-        "description": "This is a EDI server.",
-        "title": "EDI API",
+        "description": "This is a API's Gateway server.",
+        "title": "API's Gateway",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {},
         "license": {
@@ -26,6 +26,64 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/configuration": {
+            "get": {
+                "description": "Get the Legion service configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Get the Legion service configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/Configuration"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a Configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Update a Legion service configuration",
+                "parameters": [
+                    {
+                        "description": "Create a Configuration",
+                        "name": "configuration",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/Configuration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/connection": {
             "get": {
                 "description": "Get list of Connections",
@@ -260,6 +318,63 @@ var doc = `{
                 }
             }
         },
+        "/api/v1/feedback": {
+            "post": {
+                "description": "Send feedback about previously made prediction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Feedback"
+                ],
+                "summary": "Send feedback about previously made prediction",
+                "parameters": [
+                    {
+                        "description": "Feedback Request",
+                        "name": "feedback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/feedback.FeedbackRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Model name",
+                        "name": "model-name",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Model version",
+                        "name": "model-version",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "request-id",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/feedback.FeedbackResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/model/deployment": {
             "get": {
                 "description": "Get list of Model deployments",
@@ -483,27 +598,6 @@ var doc = `{
                         "schema": {
                             "type": "object",
                             "$ref": "#/definitions/HTTPResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/model/jwks": {
-            "get": {
-                "description": "Retrieve model jwks for model services",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "JWT"
-                ],
-                "summary": "Retrieve model jwks",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/TokenResponse"
                         }
                     }
                 }
@@ -1001,49 +1095,6 @@ var doc = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/HTTPResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/model/token": {
-            "post": {
-                "description": "Create a JWT token for access to the model service",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "JWT"
-                ],
-                "summary": "Create a model JWT token",
-                "parameters": [
-                    {
-                        "description": "Create a model JWT token",
-                        "name": "token",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/TokenRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/TokenResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "$ref": "#/definitions/HTTPResult"
@@ -1800,6 +1851,54 @@ var doc = `{
         }
     },
     "definitions": {
+        "CommonConfiguration": {
+            "type": "object",
+            "properties": {
+                "externalUrls": {
+                    "description": "The collection of external urls, for example: metrics, edge, service catalog and so on",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExternalUrl"
+                    }
+                }
+            }
+        },
+        "Configuration": {
+            "type": "object",
+            "properties": {
+                "common": {
+                    "description": "Common secretion of configuration",
+                    "type": "object",
+                    "$ref": "#/definitions/CommonConfiguration"
+                },
+                "training": {
+                    "description": "Configuration describe training process",
+                    "type": "object",
+                    "$ref": "#/definitions/TrainingConfiguration"
+                }
+            }
+        },
+        "ExternalUrl": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Human readable name",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "Link to a resource",
+                    "type": "string"
+                }
+            }
+        },
+        "TrainingConfiguration": {
+            "type": "object",
+            "properties": {
+                "metricUrl": {
+                    "type": "string"
+                }
+            }
+        },
         "Connection": {
             "type": "object",
             "properties": {
@@ -1857,26 +1956,11 @@ var doc = `{
                 }
             }
         },
-        "TokenRequest": {
-            "type": "object",
-            "properties": {
-                "expiration_date": {
-                    "description": "Explicitly set expiration date for token",
-                    "type": "string"
-                },
-                "role_name": {
-                    "description": "Role name",
-                    "type": "string"
-                }
-            }
+        "feedback.FeedbackRequest": {
+            "type": "object"
         },
-        "TokenResponse": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                }
-            }
+        "feedback.FeedbackResponse": {
+            "type": "object"
         },
         "JsonSchema": {
             "type": "object",

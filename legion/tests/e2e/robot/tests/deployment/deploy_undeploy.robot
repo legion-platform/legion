@@ -14,7 +14,6 @@ Library             legion.robot.libraries.utils.Utils
 Library             Collections
 Suite Setup         Run Keywords  Set Environment Variable  LEGION_CONFIG  ${LOCAL_CONFIG}  AND
 ...                               Login to the edi and edge  AND
-...                               Get token from EDI  ${MD_SIMPLE_MODEL}  ${EMPTY}  AND
 ...                               Cleanup resources
 Suite Teardown      Run keywords  Cleanup resources  AND
 ...                 Remove File  ${LOCAL_CONFIG}

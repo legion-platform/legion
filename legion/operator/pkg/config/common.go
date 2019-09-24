@@ -34,7 +34,7 @@ var (
 
 func InitBasicParams(cmd *cobra.Command) {
 	setUpLogger()
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(InitConfig)
 
 	cmd.Flags().StringVar(&CfgFile, "config", "", "config file")
 }
@@ -45,7 +45,7 @@ func PanicIfError(err error) {
 	}
 }
 
-func initConfig() {
+func InitConfig() {
 	if CfgFile != "" {
 		viper.SetConfigFile(CfgFile)
 	} else {
