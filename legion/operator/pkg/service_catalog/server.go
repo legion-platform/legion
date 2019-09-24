@@ -21,13 +21,6 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/catalog"
 )
 
-// @title EDI API
-// @version 1.0
-// @description This is a EDI server.
-// @termsOfService http://swagger.io/terms/
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 func SetUPMainServer(mrc *catalog.ModelRouteCatalog) (*gin.Engine, error) {
 	server := gin.Default()
 

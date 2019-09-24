@@ -13,8 +13,8 @@ import (
 var doc = `{
     "swagger": "2.0",
     "info": {
-        "description": "This is a API's Gateway server.",
-        "title": "API's Gateway",
+        "description": "This is an API Gateway server.",
+        "title": "API Gateway",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {},
         "license": {
