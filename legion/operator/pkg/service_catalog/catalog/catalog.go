@@ -140,7 +140,7 @@ const templateStr = `
     "swagger": "2.0",
     "info": {
         "description": "Catalog of model services",
-        "title": "EDGE API",
+        "title": "Service Catalog",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {},
         "license": {

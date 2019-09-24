@@ -1,6 +1,6 @@
 /**
- * API's Gateway
- * This is a API's Gateway server.
+ * API Gateway
+ * This is an API Gateway server.
  *
  * OpenAPI spec version: 1.0
  * 
