@@ -17,12 +17,15 @@
 package main
 
 import (
+	"fmt"
 	istioschema "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis"
 	legion_config "github.com/legion-platform/legion/legion/operator/pkg/config"
+	operator_config "github.com/legion-platform/legion/legion/operator/pkg/config/operator"
 	"github.com/legion-platform/legion/legion/operator/pkg/controller"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -65,7 +68,7 @@ func startOperator(cmd *cobra.Command, args []string) {
 	mgr, err := manager.New(
 		cfg,
 		manager.Options{
-			//MetricsBindAddress: fmt.Sprintf(":%d", viper.GetInt(legion.PrometheusMetricsPort)),
+			MetricsBindAddress: fmt.Sprintf(":%d", viper.GetInt(operator_config.MonitoringPort)),
 		},
 	)
 

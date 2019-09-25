@@ -1505,23 +1505,26 @@
   "templating": {
     "list": [
       {
+        "allValue": null,
         "current": {
-          "text": "legion",
-          "value": "legion"
+          "text": "legion-deployment",
+          "value": "legion-deployment"
         },
         "hide": 2,
+        "includeAll": false,
         "label": "Namespace",
+        "multi": false,
         "name": "namespace",
         "options": [
           {
             "selected": true,
-            "text": "legion",
-            "value": "legion"
+            "text": "legion-deployment",
+            "value": "legion-deployment"
           }
         ],
-        "query": "legion",
+        "query": "legion-deployment,",
         "skipUrlSync": false,
-        "type": "constant"
+        "type": "custom"
       },
       {
         "allValue": null,
