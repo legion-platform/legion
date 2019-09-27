@@ -1,39 +1,8 @@
-======
-About Legion Platform
-======
-
-.. figure:: ../images/legion-logo-h.png
-   :scale: 50 %
-   :alt: Legion Platform logo
-
-The Legion is an open source project dedicated to simplify automation of AI/ML products life cycle for small and large-scale enterprise systems.
-
-## Overview
-
-- **Modular Architecture**
-  - Separate components for different AI product life cycle phases: training, packaging and deployment
-  - RESTful APIs and SDKs for all components to build extensions and plugins for external systems
-  - Command line interface to interact with system components
-  - Plugins for IDEs, Workflow Engines, CICD Engines
-- **Multi Cloud**
-  - Core system components are deployed in K8S
-  - Deployment automation for major clouds: AWS, Azure, GCP
-- **Security**
-  - Single sign-on (SSO) for all system components
-  - Credentials and security keys manager
-- **Multi AI/ML Toolchain**
-  - All major ML Toolchains (Scikit-learn, Keras, Tensorflow, PyTorch, H2O and others) are supported
-  - Integrated with MLFlow open source project
-
-======
-Documentation
-======
-
 .. toctree::
    :maxdepth: 2
-   :caption: General Overview:
+   :caption: General Overview
 
-   gen_glossary
+   about
    gen_architecture
    gen_used_technologies
    gen_distros
@@ -41,7 +10,7 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Installation:
+   :caption: Installation
 
    inst_cluster_installation
    inst_kubernetes_integrations
@@ -82,7 +51,7 @@ Documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Components details:
+   :caption: Components details
 
    comp_edi
    comp_operator
@@ -92,16 +61,17 @@ Documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Development:
+   :caption: Development
 
    dev_general
    dev_project_structure
+   dev_hints
    dev_building
    dev_testing
 
 .. toctree::
    :maxdepth: 1
-   :caption: Custom integrations:
+   :caption: Custom integrations
 
    int_metrics
    int_airflow
@@ -109,20 +79,21 @@ Documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Toolchains:
+   :caption: Toolchains
 
    tlch_about
    tlch_python
 
 .. toctree::
    :maxdepth: 1
-   :caption: References:
+   :caption: References
 
    ref_configuration
    ref_model_rest_api
    ref_feedback_loop_protocol
    ref_network_connectivity
    ref_legion_helm_values_examples
+   gen_glossary
 
 
 Indices and tables

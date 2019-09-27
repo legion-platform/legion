@@ -186,7 +186,6 @@ lint:
 build-docs: build-docs-builder
 	docker run --rm -v $(PWD)/docs:/var/docs  -v $(PWD):/legion-sources --workdir /var/docs legion/docs-builder:latest /generate.sh
 
-
 ## build-docs-builder: Build docker image that can build documentation
 build-docs-builder:
 	docker build -t legion/docs-builder:latest -f containers/docs-builder/Dockerfile .

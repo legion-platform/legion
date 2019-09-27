@@ -13,8 +13,6 @@ Core:
 
 Optional:
 * Airflow – as optional ETL engine
-* Jenkins - as optional model CI/CD server
-
 
 # Repositories structure
 ## Legion
@@ -22,7 +20,6 @@ Project **Legion** locates in GitHub Repository [legion-platform/legion](https:/
 
 * Legion application - several Docker images:
   * EDI
-  * EDGE
   * FluentD
   * Toolchain application
 * [HELM packages](./gen_distros.md):
@@ -32,22 +29,24 @@ Project **Legion** locates in GitHub Repository [legion-platform/legion](https:/
 * [Operator](./cmp_operator.md)
 
 ### Legion's repository directory structure
-* `containers` - all Legion components that are distributed as docker images. [Details](containers/README.md)
+* `containers` - all Legion components that are distributed as docker images.
 * `docs` - documentation that describes Legion platform, architecture, usage and etc.
-* `examples` - examples of machine learning models that could be trained and deployed in Legion, examples base on public available models (such as sklearn digit classifier, MovieLens model, Logistic Regression classifier on Census Income Data) and some syntetic models. [Details](examples/README.md)
 * `helms` - Legion Helm packages (distribution packages for Kubernetes).
 * `legion` - source code of Legion python packages.
-* `scripts` - utilitary scripts for CI/CD process.
+* `scripts` - utility scripts for CI/CD process.
 
 ## Infra-specific repositories
 For deploying purposes there are platform-specific repositories that contains platform-specific deploying logic.
 
 **Legion Infrastructure** locates in GitHub Repository [legion-platform/legion-infrastructure](https://github.com/legion-platform/legion-infrastructure) and contains:
 * Terraform modules
-* Jenkinsfiles for Jenkins CI/CD jobs
+* Jenkins pipelines for Jenkins CI/CD jobs
 * Infrastructure specific containers:
-  * Terraform
+  * Terraform modules
 
 ## Additional integrations repositories
-* [Airflow](https://github.com/legion-platform/legion-airflow)
-* [Jenkins](https://github.com/legion-platform/legion-jenkins)
+
+* [Legion Airflow plugin](https://github.com/legion-platform/legion-airflow-plugins)
+* [Legion MLflow integration](https://github.com/legion-platform/legion-mlflow)
+* [Legion examples](https://github.com/legion-platform/legion-examples)
+* [Legion infrastructure](https://github.com/legion-platform/legion-infrastructure)
