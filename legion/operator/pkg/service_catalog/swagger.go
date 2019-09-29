@@ -20,8 +20,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/legion-platform/legion/legion/operator/docs"
 	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/catalog"
+	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
+	"net/http"
 )
 
 var handler = ginSwagger.WrapHandler(swaggerFiles.Handler)
@@ -31,11 +33,19 @@ func SetUpSwagger(server *gin.Engine, mrCatalog *catalog.ModelRouteCatalog) {
 		if c.Request.RequestURI == "/swagger/doc.json" {
 			docJson, err := mrCatalog.ProcessSwaggerJson()
 			if err != nil {
-				panic(err)
+				c.AbortWithStatusJSON(
+					http.StatusInternalServerError,
+					routes.HTTPResult{Message: err.Error()},
+				)
 			}
 
-			c.Writer.Write(docJson)
-			return
+			_, err = c.Writer.Write(docJson)
+			if err != nil {
+				c.AbortWithStatusJSON(
+					http.StatusInternalServerError,
+					routes.HTTPResult{Message: err.Error()},
+				)
+			}
 		} else {
 			handler(c)
 		}

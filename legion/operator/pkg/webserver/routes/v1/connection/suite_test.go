@@ -17,14 +17,8 @@
 package connection_test
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
-	conn_k8s_routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/connection"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"os"
@@ -64,19 +58,4 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	os.Exit(code)
-}
-
-func createEnvironment() (*gin.Engine, conn_storage.Storage) {
-	mgr, err := manager.New(cfg, manager.Options{NewClient: utils.NewClient})
-	if err != nil {
-		panic(err)
-	}
-
-	server := gin.Default()
-	v1Group := server.Group("/api/v1")
-	k8Client := mgr.GetClient()
-	storage := conn_k8s_storage.NewStorage(testNamespace, k8Client)
-	conn_k8s_routes.ConfigureRoutes(v1Group, storage)
-
-	return server, storage
 }

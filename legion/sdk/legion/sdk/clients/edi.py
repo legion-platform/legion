@@ -22,7 +22,7 @@ import random
 import string
 import sys
 import threading
-import typing
+from typing import Mapping, Any, Optional, Iterator, Tuple, Union, Dict, Callable
 
 from urllib.parse import urlparse, urlencode
 import requests
@@ -41,7 +41,7 @@ class WrongHttpStatusCode(Exception):
     Exception for wrong HTTP status code
     """
 
-    def __init__(self, status_code: int, http_result: typing.Dict[str, str] = None):
+    def __init__(self, status_code: int, http_result: Dict[str, str] = None):
         """
         Initialize Wrong Http Status Code exception
 
@@ -71,7 +71,7 @@ class IncorrectAuthorizationToken(EDIConnectionException):
     pass
 
 
-def get_authorization_redirect(web_redirect: str, after_login: typing.Callable) -> str:
+def get_authorization_redirect(web_redirect: str, after_login: Callable) -> str:
     """
     Try to detect, parse and build OAuth2 redirect
 
@@ -102,10 +102,10 @@ class RemoteEdiClient:
 
     def __init__(self,
                  base_url: str = legion.sdk.config.EDI_URL,
-                 token: typing.Optional[str] = legion.sdk.config.EDI_TOKEN,
-                 retries: typing.Optional[int] = 3,
-                 timeout: typing.Optional[int] = 10,
-                 non_interactive: typing.Optional[bool] = True):
+                 token: Optional[str] = legion.sdk.config.EDI_TOKEN,
+                 retries: Optional[int] = 3,
+                 timeout: Optional[Union[int, Tuple[int, int]]] = 10,
+                 non_interactive: Optional[bool] = True):
         """
         Build client
 
@@ -119,10 +119,10 @@ class RemoteEdiClient:
         self._token = token
         self._version = EDI_VERSION
         self._retries = retries
-        self._timeout = timeout
         self._non_interactive = non_interactive
         self._interactive_login_finished = threading.Event()
 
+        self.timeout = timeout
         # Force if set
         if legion.sdk.config.LEGIONCTL_NONINTERACTIVE:
             self._non_interactive = True
@@ -162,14 +162,14 @@ class RemoteEdiClient:
         :param other: EDI-based client to get connection options from
         :return: self -- new client
         """
-        return cls(other._base_url, other._token, other._retries, other._timeout)
+        return cls(other._base_url, other._token, other._retries, other.timeout)
 
     def _request(self,
                  url_template: str,
-                 payload: typing.Mapping[typing.Any, typing.Any] = None,
+                 payload: Mapping[Any, Any] = None,
                  action: str = 'GET',
                  stream: bool = False,
-                 timeout: typing.Optional[int] = None,
+                 timeout: Optional[int] = None,
                  limit_stack: bool = False):
         """
         Make HTTP request
@@ -195,15 +195,10 @@ class RemoteEdiClient:
 
         left_retries = self._retries if self._retries > 0 else 1
 
-        connection_timeout = timeout if timeout is not None else self._timeout
+        connection_timeout = timeout if timeout is not None else self.timeout
 
         if connection_timeout == 0:
             connection_timeout = None
-
-        if stream:
-            connection_timeout = (connection_timeout, None)
-        else:
-            connection_timeout = connection_timeout
 
         raised_exception = None
 
@@ -284,7 +279,7 @@ class RemoteEdiClient:
 
         return response
 
-    def query(self, url_template: str, payload: typing.Mapping[typing.Any, typing.Any] = None, action: str = 'GET'):
+    def query(self, url_template: str, payload: Mapping[Any, Any] = None, action: str = 'GET'):
         """
         Perform query to EDI server
 
@@ -308,8 +303,7 @@ class RemoteEdiClient:
         LOGGER.debug('Query has been completed, parsed and validated')
         return answer
 
-    def stream(self, url_template: str, action: str = 'GET',
-               params: typing.Mapping[str, typing.Any] = None) -> typing.Dict[str, typing.Any]:
+    def stream(self, url_template: str, action: str = 'GET', params: Mapping[str, Any] = None) -> Iterator[str]:
         """
         Perform query to EDI server
 

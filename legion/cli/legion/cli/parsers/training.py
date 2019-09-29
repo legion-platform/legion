@@ -33,6 +33,8 @@ from legion.sdk.clients.training import ModelTraining, ModelTrainingClient, TRAI
     TRAINING_FAILED_STATE
 
 DEFAULT_WAIT_TIMEOUT = 3
+LOG_READ_TIMEOUT_SECONDS = 60
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -249,6 +251,10 @@ def wait_training_finish(timeout: int, wait: bool, mt_id: str, mt_client: ModelT
     if timeout <= 0:
         raise Exception('Invalid --timeout argument: should be positive integer')
 
+    # We create a separate client for logs because it has the different timeout settings
+    log_mt_client = ModelTrainingClient.construct_from_other(mt_client)
+    log_mt_client.timeout = mt_client.timeout, LOG_READ_TIMEOUT_SECONDS
+
     click.echo("Logs streaming...")
 
     while True:
@@ -266,7 +272,7 @@ def wait_training_finish(timeout: int, wait: bool, mt_id: str, mt_client: ModelT
             elif mt.status.state == "":
                 click.echo(f"Can't determine the state of {mt.id}. Sleeping...")
             else:
-                for msg in mt_client.log(mt.id, follow=True):
+                for msg in log_mt_client.log(mt.id, follow=True):
                     print_logs(msg)
 
         except (WrongHttpStatusCode, HTTPException, RequestException) as e:

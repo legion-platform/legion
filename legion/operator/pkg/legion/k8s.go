@@ -41,7 +41,10 @@ func StoreHash(obj metav1.Object) error {
 	if err != nil {
 		return err
 	}
-	h.Write(jsonData)
+	_, err = h.Write(jsonData)
+	if err != nil {
+		return err
+	}
 
 	annotations := map[string]string{}
 	if obj.GetAnnotations() != nil {
@@ -63,7 +66,11 @@ func StoreHashKnative(obj *knservingv1alpha1.Configuration) error {
 	if err != nil {
 		return err
 	}
-	h.Write(jsonData)
+
+	_, err = h.Write(jsonData)
+	if err != nil {
+		return err
+	}
 
 	annotations := map[string]string{}
 	if obj.GetAnnotations() != nil {

@@ -16,7 +16,7 @@
 """
 EDI client
 """
-import typing
+from typing import List, Iterator
 
 from legion.sdk.clients.edi import RemoteEdiClient
 from legion.sdk.definitions import MODEL_PACKING_URL
@@ -44,7 +44,7 @@ class ModelPackagingClient(RemoteEdiClient):
         """
         return ModelPackaging.from_dict(self.query(f'{MODEL_PACKING_URL}/{name}'))
 
-    def get_all(self) -> typing.List[ModelPackaging]:
+    def get_all(self) -> List[ModelPackaging]:
         """
         Get all Model Packagings from EDI server
 
@@ -83,7 +83,7 @@ class ModelPackagingClient(RemoteEdiClient):
         """
         return self.query(f'{MODEL_PACKING_URL}/{name}', action='DELETE')
 
-    def log(self, name: str, follow: bool = False) -> str:
+    def log(self, name: str, follow: bool = False) -> Iterator[str]:
         """
         Stream logs from packaging
 

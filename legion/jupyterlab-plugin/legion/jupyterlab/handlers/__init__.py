@@ -20,21 +20,24 @@ from notebook.utils import url_path_join
 
 from legion.jupyterlab.handlers.cloud import CloudTrainingsHandler, CloudDeploymentsHandler, \
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
-    CloudAllEntitiesHandler, CloudConnectionHandler, CloudModelPackagingHandler, \
-    CloudPackagingLogsHandler, CloudUrlInfo
+    CloudConnectionHandler, CloudModelPackagingHandler, \
+    CloudPackagingLogsHandler, CloudUrlInfo, CloudToolchainIntegrationsHandler, CloudPackagingIntegrationsHandler, \
+    CloudConfiguratioHandler
 from legion.jupyterlab.handlers.configuration import ConfigurationProviderHandler, TemplatesFilesHandler
 
 # List of all back-end handlers with prefixes
 ALL_HANDLERS = (
     # Cloud
-    (CloudTrainingsHandler, ('cloud', 'trainings')),
+    (CloudConfiguratioHandler, ('cloud', 'configuration')),
     (CloudConnectionHandler, ('cloud', 'connections')),
+    (CloudToolchainIntegrationsHandler, ('cloud', 'toolchains')),
+    (CloudTrainingsHandler, ('cloud', 'trainings')),
     (CloudModelPackagingHandler, ('cloud', 'modelpackagings')),
+    (CloudPackagingIntegrationsHandler, ('cloud', 'packagingintegrations')),
+    (CloudDeploymentsHandler, ('cloud', 'deployments')),
     (CloudTrainingLogsHandler, ('cloud', 'trainings', '(.*)', 'logs')),
     (CloudPackagingLogsHandler, ('cloud', 'packagings', '(.*)', 'logs')),
-    (CloudDeploymentsHandler, ('cloud', 'deployments')),
     (CloudApplyFromFileHandler, ('cloud', 'apply')),
-    (CloudAllEntitiesHandler, ('cloud',)),
     (CloudUrlInfo, ('cloud', 'info')),
     (TemplatesFilesHandler, ('examples', '(.*)', 'content')),
     # Configuration

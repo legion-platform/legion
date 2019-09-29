@@ -12,7 +12,7 @@ spec:
     target-file-location: "1.0"
   data:
     - connName: wine
-      localPath: mlflow/sklearn/wine/wine-quality.csv
+      localPath: test-data/data/file1.txt
   vcsName: legion-examples
 ---
 

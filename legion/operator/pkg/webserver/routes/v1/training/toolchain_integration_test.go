@@ -85,18 +85,6 @@ func (s *ToolchainIntegrationRouteSuite) SetupTest() {
 	s.g = NewGomegaWithT(s.T())
 }
 
-func (s *ToolchainIntegrationRouteSuite) newMultipleMtStubs() []*training.ToolchainIntegration {
-	ti1 := newTiStub()
-	ti1.Id = testToolchainIntegrationId1
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti1)).NotTo(HaveOccurred())
-
-	ti2 := newTiStub()
-	ti2.Id = testToolchainIntegrationId2
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti2)).NotTo(HaveOccurred())
-
-	return []*training.ToolchainIntegration{ti1, ti2}
-}
-
 func TestToolchainIntegrationRouteSuite(t *testing.T) {
 	suite.Run(t, new(ToolchainIntegrationRouteSuite))
 }

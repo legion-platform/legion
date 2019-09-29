@@ -47,6 +47,7 @@ const (
 	ModelDeploymentStateProcessing ModelDeploymentState = "Processing"
 	ModelDeploymentStateReady      ModelDeploymentState = "Ready"
 	ModelDeploymentStateFailed     ModelDeploymentState = "Failed"
+	ModelDeploymentStateDeleting   ModelDeploymentState = "Deleting"
 )
 
 // ModelDeploymentStatus defines the observed state of ModelDeployment
@@ -64,9 +65,9 @@ type ModelDeploymentStatus struct {
 	// The model k8s service name
 	ServiceURL string `json:"serviceURL,omitempty"`
 	// Number of available pods
-	AvailableReplicas int32 `json:"availableReplicas,omitempty"`
+	AvailableReplicas int32 `json:"availableReplicas"`
 	// Expected number of pods under current load
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas"`
 	// Last applied ready knative revision
 	LastRevisionName string `json:"lastRevisionName,omitempty"`
 }

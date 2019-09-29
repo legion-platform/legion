@@ -135,7 +135,7 @@ export class LifecycleStage extends React.Component<
                   }
                 },
                 {
-                  name: 'State',
+                  name: 'Status',
                   flex: {
                     flexGrow: 2,
                     flexBasis: 40
@@ -195,26 +195,41 @@ export class LifecycleStage extends React.Component<
                   name: 'ID',
                   flex: {
                     flexGrow: 3,
-                    flexBasis: 70
+                    flexBasis: 60
                   }
                 },
                 {
-                  name: 'Image',
+                  name: 'Replicas',
                   flex: {
-                    flexGrow: 5,
-                    flexBasis: 70
+                    flexGrow: 3,
+                    flexBasis: 20
+                  }
+                },
+                {
+                  name: 'Status',
+                  flex: {
+                    flexGrow: 3,
+                    flexBasis: 60
                   }
                 }
               ]}
               isLoading={this.state.isLoading}
               items={this.state.cloudData.deployments.map(deployment => {
+                let replicas = 0;
+                if (deployment.status.availableReplicas) {
+                  replicas = deployment.status.availableReplicas;
+                }
+
                 return {
                   items: [
                     {
                       value: deployment.id
                     },
                     {
-                      value: deployment.spec.image
+                      value: replicas.toString()
+                    },
+                    {
+                      value: deployment.status.state
                     }
                   ],
                   onClick: () =>

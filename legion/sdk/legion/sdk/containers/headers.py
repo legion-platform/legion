@@ -17,24 +17,7 @@
 legion headers (for meta-information)
 """
 
-STDERR_PREFIX = 'X-Legion-'
-
 REQUEST_ID = 'x-request-id'
 MODEL_REQUEST_ID = 'request-id'
 MODEL_NAME = 'Model-Name'
-MODEL_PATH = 'Model-Path'
 MODEL_VERSION = 'Model-Version'
-MODEL_ENDPOINT = 'Model-Endpoint'
-IMAGE_TAG_EXTERNAL = 'Model-Image-Tag-External'
-IMAGE_ID_LOCAL = 'Model-Image-Name-Local'
-IMAGE_TAG_LOCAL = 'Model-Image-Tag-Local'
-SAVE_STATUS = 'Save-Status'
-
-DOMAIN_PREFIX = 'com.epam.'
-DOMAIN_MODEL_NAME = DOMAIN_PREFIX + 'legion.model.name'
-DOMAIN_MODEL_VERSION = DOMAIN_PREFIX + 'legion.model.version'
-DOMAIN_CLASS = DOMAIN_PREFIX + 'legion.class'
-DOMAIN_CONTAINER_TYPE = DOMAIN_PREFIX + 'legion.container_type'
-DOMAIN_CONTAINER_DESCRIPTION = DOMAIN_PREFIX + 'legion.container_description'
-DOMAIN_MODEL_PROPERTY_VALUES = DOMAIN_PREFIX + 'legion.model.property_values'
-DOMAIN_MODEL_PROPERTY_TYPE = DOMAIN_PREFIX + 'legion.property'

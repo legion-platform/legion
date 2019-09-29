@@ -88,6 +88,10 @@ func ZipDir(source, target string) error {
 
 func Unzip(src string, dest string) error {
 	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+
 	defer r.Close()
 
 	for _, f := range r.File {
@@ -102,7 +106,11 @@ func Unzip(src string, dest string) error {
 		}
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(fpath, os.ModePerm)
+			err := os.MkdirAll(fpath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+
 			continue
 		}
 

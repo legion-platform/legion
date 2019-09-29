@@ -28,8 +28,8 @@ import (
 
 const (
 	EmptyImageErrorMessage             = "the image parameter is empty"
-	MinReplicasErrorMessage            = "minimum number of replicas parameter must not be less than 0"
-	MaxReplicasErrorMessage            = "maximum number of replicas parameter must not be less than 1"
+	NegativeMinReplicasErrorMessage    = "minimum number of replicas parameter must not be less than 0"
+	NegativeMaxReplicasErrorMessage    = "maximum number of replicas parameter must not be less than 1"
 	MinMoreThanMinReplicasErrorMessage = "minimum number of replicas parameter must not be less than maximum number of replicas parameter"
 	ReadinessProbeErrorMessage         = "readiness probe must be positive number"
 	LivenessProbeErrorMessage          = "liveness probe parameter must be positive number"
@@ -74,17 +74,22 @@ func ValidatesMDAndSetDefaults(md *deployment.ModelDeployment) (err error) {
 		md.Spec.MinReplicas = &MdDefaultMinimumReplicas
 	} else {
 		if *md.Spec.MinReplicas < 0 {
-			err = multierr.Append(errors.New(MinReplicasErrorMessage), err)
+			err = multierr.Append(errors.New(NegativeMinReplicasErrorMessage), err)
 		}
 	}
 
 	if md.Spec.MaxReplicas == nil {
+		if *md.Spec.MinReplicas > MdDefaultMaximumReplicas {
+			md.Spec.MaxReplicas = md.Spec.MinReplicas
+		} else {
+			md.Spec.MaxReplicas = &MdDefaultMaximumReplicas
+		}
+
 		logMD.Info("Maximum number of replicas parameter is nil. Set the default value",
-			"Deployment name", md.Id, "replicas", MdDefaultMinimumReplicas)
-		md.Spec.MaxReplicas = &MdDefaultMaximumReplicas
+			"Deployment name", md.Id, "replicas", *md.Spec.MinReplicas)
 	} else {
 		if *md.Spec.MaxReplicas < 1 {
-			err = multierr.Append(errors.New(MaxReplicasErrorMessage), err)
+			err = multierr.Append(errors.New(NegativeMaxReplicasErrorMessage), err)
 		}
 	}
 

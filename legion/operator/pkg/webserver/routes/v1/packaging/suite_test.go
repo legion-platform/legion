@@ -43,25 +43,13 @@ const (
 	testNamespace = "default"
 	testMpId1     = "test-model-1"
 	testMpId2     = "test-model-2"
-	mpTypeDocker  = "docker-rest"
 	mpImage       = "docker-rest"
 )
 
 var (
 	cfg            *rest.Config
 	mpArtifactName = "mock-artifact-name-id"
-	mpTargets      = []v1alpha1.Target{
-		{
-			Name:           "docker-push",
-			ConnectionName: mpTypeDocker,
-		},
-	}
-	mpArguments = map[string]interface{}{
-		"key-1": "value-1",
-		"key-2": float64(5),
-		"key-3": true,
-	}
-	piArguments = packaging.JsonSchema{
+	piArguments    = packaging.JsonSchema{
 		Properties: []packaging.Property{
 			{
 				Name: "argument-1",

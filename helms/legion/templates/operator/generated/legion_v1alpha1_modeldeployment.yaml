@@ -137,6 +137,9 @@ spec:
                 resource are wrong. For example, there is not a model                  image
                 in a Docker registry.   "Ready" - A model was deployed successfully.
               type: string
+          required:
+          - availableReplicas
+          - replicas
           type: object
   version: v1alpha1
 status:

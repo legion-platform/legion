@@ -13,6 +13,7 @@ cloudstorage = {extras = ["google", "amazon", "microsoft"],version = "*"}
 google-cloud-storage = ">=1.18.0"
 botocore = ">=1.12.75"
 boto3 = ">=1.9.75"
+Jinja2 = ">=2.7.3"
 
 [requires]
 python_version = "3.6"

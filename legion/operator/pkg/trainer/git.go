@@ -17,7 +17,6 @@
 package trainer
 
 import (
-	"errors"
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
@@ -181,5 +180,5 @@ func tryGetHash(repository *git.Repository, reference string) (plumbing.Hash, er
 		}
 	}
 
-	return commitHash, errors.New(fmt.Sprintf("Can't find '%s' refs in git repository", reference))
+	return commitHash, fmt.Errorf("can't find '%s' refs in git repository", reference)
 }

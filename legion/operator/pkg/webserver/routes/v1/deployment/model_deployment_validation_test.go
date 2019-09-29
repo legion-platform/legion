@@ -88,7 +88,7 @@ func (s *ModelDeploymentValidationSuite) TestMDLivenessProbeDefaultValue() {
 	s.g.Expect(*md.Spec.LivenessProbeInitialDelay).To(Equal(md_routes.MdDefaultLivenessProbeInitialDelay))
 }
 
-func (s *ModelDeploymentValidationSuite) TestValidateMinimumReplicas() {
+func (s *ModelDeploymentValidationSuite) TestValidateNegativeMinReplicas() {
 	minReplicas := int32(-1)
 	md := &deployment.ModelDeployment{
 		Spec: v1alpha1.ModelDeploymentSpec{
@@ -98,7 +98,20 @@ func (s *ModelDeploymentValidationSuite) TestValidateMinimumReplicas() {
 
 	err := md_routes.ValidatesMDAndSetDefaults(md)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.MinReplicasErrorMessage))
+	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.NegativeMinReplicasErrorMessage))
+}
+
+func (s *ModelDeploymentValidationSuite) TestValidateNegativeMaxReplicas() {
+	maxReplicas := int32(-1)
+	md := &deployment.ModelDeployment{
+		Spec: v1alpha1.ModelDeploymentSpec{
+			MaxReplicas: &maxReplicas,
+		},
+	}
+
+	err := md_routes.ValidatesMDAndSetDefaults(md)
+	s.g.Expect(err).To(HaveOccurred())
+	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.NegativeMaxReplicasErrorMessage))
 }
 
 func (s *ModelDeploymentValidationSuite) TestValidateMaximumReplicas() {
@@ -111,7 +124,7 @@ func (s *ModelDeploymentValidationSuite) TestValidateMaximumReplicas() {
 
 	err := md_routes.ValidatesMDAndSetDefaults(md)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.MaxReplicasErrorMessage))
+	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.NegativeMaxReplicasErrorMessage))
 }
 
 func (s *ModelDeploymentValidationSuite) TestValidateMinLessMaxReplicas() {
@@ -127,6 +140,21 @@ func (s *ModelDeploymentValidationSuite) TestValidateMinLessMaxReplicas() {
 	err := md_routes.ValidatesMDAndSetDefaults(md)
 	s.g.Expect(err).To(HaveOccurred())
 	s.g.Expect(err.Error()).To(ContainSubstring(md_routes.MinMoreThanMinReplicasErrorMessage))
+}
+
+func (s *ModelDeploymentValidationSuite) TestValidateMinModelThanDefaultMax() {
+	minReplicas := int32(3)
+	md := &deployment.ModelDeployment{
+		Spec: v1alpha1.ModelDeploymentSpec{
+			MinReplicas: &minReplicas,
+		},
+	}
+
+	err := md_routes.ValidatesMDAndSetDefaults(md)
+	s.g.Expect(err).To(HaveOccurred())
+	s.g.Expect(err.Error()).ToNot(ContainSubstring(md_routes.MinMoreThanMinReplicasErrorMessage))
+	s.g.Expect(*md.Spec.MinReplicas).To(Equal(minReplicas))
+	s.g.Expect(*md.Spec.MaxReplicas).To(Equal(minReplicas))
 }
 
 func (s *ModelDeploymentValidationSuite) TestValidateImage() {

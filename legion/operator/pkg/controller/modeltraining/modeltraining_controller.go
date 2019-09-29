@@ -135,41 +135,6 @@ const (
 	evictedPodReason    = "Evicted"
 )
 
-// FindVCSInstance finds relevant VCS instance for ModelTraining instance
-func (r *ReconcileModelTraining) findConnection(connName string, namespace string) (vcsCR *legionv1alpha1.Connection, err error) {
-	vcsInstanceName := types.NamespacedName{
-		Name:      connName,
-		Namespace: namespace,
-	}
-	vcsCR = &legionv1alpha1.Connection{}
-
-	if err = r.Get(context.TODO(), vcsInstanceName, vcsCR); err != nil {
-		log.Error(err, "Cannot fetch VCS Credential with name")
-
-		return
-	}
-
-	return
-}
-
-func (r *ReconcileModelTraining) createTrainingPod(trainingPod *corev1.Pod) (err error) {
-	log.Info("Creating pod")
-
-	err = r.Create(context.TODO(), trainingPod)
-	if err != nil {
-		log.Error(err, "Cannot create Pod")
-
-		r.recorder.Event(trainingPod, "Warning", "CannotSpawn",
-			fmt.Sprintf("Cannot create Pod %s. Failed", trainingPod.Namespace))
-
-		return err
-	}
-
-	log.Info("Created Pod")
-
-	return nil
-}
-
 // Determine crd state by child pod.
 // If pod has RUNNING state then we determine crd state by state of trainer container in the pod
 func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, trainCrd *legionv1alpha1.ModelTraining) error {
@@ -504,6 +469,9 @@ func (r *ReconcileModelTraining) reconcileConfig(trainingCR *legionv1alpha1.Mode
 	conf.Builder.SshKeyPath = path.Join("/home/root/.ssh/", trainer.GitSSHKeyFileName)
 
 	trainerConfBytes, err := json.Marshal(conf)
+	if err != nil {
+		return err
+	}
 
 	k8sTrainingSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

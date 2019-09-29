@@ -26,7 +26,6 @@ import (
 
 const (
 	mrName = "test-mr"
-	mrUrl  = "/test/url"
 )
 
 // TODO: add more tests

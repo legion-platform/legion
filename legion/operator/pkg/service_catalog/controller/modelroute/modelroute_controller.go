@@ -19,7 +19,6 @@ package modelroute
 import (
 	"context"
 	"fmt"
-	gogotypes "github.com/gogo/protobuf/types"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/catalog"
@@ -41,12 +40,15 @@ import (
 )
 
 var (
-	log                  = logf.Log.WithName("service-catalog-controller")
-	defaultTimeoutPerTry = gogotypes.DurationProto(time.Second)
-	defaultRequeueDelay  = 1 * time.Second
+	log                 = logf.Log.WithName("service-catalog-controller")
+	defaultRequeueDelay = 1 * time.Second
 )
 
-const defaultUpdatePeriod = 20 * time.Second
+const (
+	ServiceGatalogMaxConcurrentReconciles = 10
+	defaultUpdatePeriod                   = 20 * time.Second
+	defaultModelRequestTimeout            = 10 * time.Second
+)
 
 func Add(mgr manager.Manager, mrc *catalog.ModelRouteCatalog) error {
 	return add(mgr, newReconciler(mgr, mrc))
@@ -68,7 +70,7 @@ func newReconciler(mgr manager.Manager, mrc *catalog.ModelRouteCatalog) reconcil
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	c, err := controller.New("service-catalog-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("service-catalog-controller", mgr, controller.Options{Reconciler: r, MaxConcurrentReconciles: ServiceGatalogMaxConcurrentReconciles})
 	if err != nil {
 		return err
 	}
@@ -159,7 +161,10 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	}
 
-	response, err := http.DefaultClient.Do(modelRequest)
+	httpClient := http.Client{
+		Timeout: defaultModelRequestTimeout,
+	}
+	response, err := httpClient.Do(modelRequest)
 	if err != nil {
 		log.Error(err, "Can not get swagger response for model", "mr id", modelRouteCR.Name)
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
