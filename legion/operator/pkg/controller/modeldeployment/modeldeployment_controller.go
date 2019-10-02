@@ -18,9 +18,13 @@ package modeldeployment
 
 import (
 	"context"
+	"github.com/knative/serving/pkg/apis/serving"
 	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
 	"github.com/spf13/viper"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
 	"time"
 
@@ -121,6 +125,21 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &legionv1alpha1.ModelDeployment{},
 	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &EnqueueRequestForImplicitOwner{})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &knservingv1alpha1.Revision{}}, &EnqueueRequestForImplicitOwner{})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &corev1.Endpoints{}}, &EnqueueRequestForImplicitOwner{})
 	if err != nil {
 		return err
 	}
@@ -418,18 +437,23 @@ func (r *ReconcileModelDeployment) reconcileAuthPolicy(modelDeploymentCR *legion
 	return nil
 }
 
-func (r *ReconcileModelDeployment) getLatestReadyRevision(modelDeploymentCR *legionv1alpha1.ModelDeployment) (string, error) {
+// Retrieve current configuration and return last revision name.
+// If the latest revision name equals the latest created revision, then last deployment changes were applied.
+func (r *ReconcileModelDeployment) getLatestReadyRevision(modelDeploymentCR *legionv1alpha1.ModelDeployment) (string, bool, error) {
 	knativeConfiguration := &knservingv1alpha1.Configuration{}
 	if err := r.Get(context.TODO(), types.NamespacedName{
 		Name: knativeConfigurationName(modelDeploymentCR), Namespace: modelDeploymentCR.Namespace,
 	}, knativeConfiguration); errors.IsNotFound(err) {
-		return "", nil
+		return "", false, nil
 	} else if err != nil {
 		log.Error(err, "Getting Knative Configuration")
-		return "", err
+		return "", false, err
 	}
 
-	return knativeConfiguration.Status.LatestReadyRevisionName, nil
+	latestReadyRevisionName := knativeConfiguration.Status.LatestReadyRevisionName
+	return latestReadyRevisionName,
+		len(latestReadyRevisionName) != 0 && latestReadyRevisionName == knativeConfiguration.Status.LatestCreatedRevisionName,
+		nil
 }
 
 func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1alpha1.ModelDeployment,
@@ -439,7 +463,7 @@ func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1al
 
 	if len(latestReadyRevision) != 0 {
 		modelDeploymentCR.Status.ServiceURL = fmt.Sprintf(
-			"%s.%s.svc.cluster.local", latestReadyRevision, modelDeploymentCR.Namespace,
+			"%s.%s.svc.cluster.local", modelDeploymentCR.Name, modelDeploymentCR.Namespace,
 		)
 		modelDeploymentCR.Status.LastRevisionName = latestReadyRevision
 	}
@@ -452,8 +476,230 @@ func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1al
 	return nil
 }
 
+// Reconciles a separate kubernetes service for a model deployment with stable name
+func (r *ReconcileModelDeployment) reconcileService(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      modelDeploymentCR.Name,
+			Namespace: modelDeploymentCR.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       80,
+					TargetPort: intstr.FromInt(8012),
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(modelDeploymentCR, service, r.scheme); err != nil {
+		return err
+	}
+
+	if err := legion.StoreHash(service); err != nil {
+		log.Error(err, "Cannot apply obj hash")
+		return err
+	}
+
+	found := &corev1.Service{}
+	err := r.Get(context.TODO(), types.NamespacedName{
+		Name: service.Name, Namespace: service.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info(fmt.Sprintf("Creating %s k8s service", service.ObjectMeta.Name))
+		err = r.Create(context.TODO(), service)
+		return err
+	} else if err != nil {
+		return err
+	}
+
+	if !legion.ObjsEqualByHash(service, found) {
+		log.Info(fmt.Sprintf("service hashes don't equal. Update the %s service", service.Name))
+
+		// ClusterIP must not change
+		clusterIp := found.Spec.ClusterIP
+		found.Spec = service.Spec
+		found.Spec.ClusterIP = clusterIp
+
+		log.Info(fmt.Sprintf("Updating %s k8s service", service.ObjectMeta.Name))
+		err = r.Update(context.TODO(), found)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Info(fmt.Sprintf("k8s service hashes equal. Skip updating of the %s service", service.Name))
+	}
+
+	if err := r.reconcileEndpoints(modelDeploymentCR); err != nil {
+		log.Error(err, "Can not reconcile endpoints", "model deployment id", modelDeploymentCR.Name)
+	}
+
+	return nil
+}
+
+// Syncs subsets endpoints of a model deployment service with subsets endpoints of the latest model knative revision
+func (r *ReconcileModelDeployment) reconcileEndpoints(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	lastRevisionName := modelDeploymentCR.Status.LastRevisionName
+	if len(lastRevisionName) == 0 {
+		log.Info("Last revision name is empty", "model deployment id", modelDeploymentCR.Name)
+
+		return nil
+	}
+
+	knativeEndpoints := &corev1.Endpoints{}
+
+	if err := r.Get(context.TODO(), types.NamespacedName{
+		Namespace: modelDeploymentCR.Namespace,
+		Name:      lastRevisionName,
+	}, knativeEndpoints); err != nil {
+		log.Error(err, "Can not get the knative endpoints endpoints",
+			"model deployment id", modelDeploymentCR.Name,
+			"last revision name", lastRevisionName)
+
+		return err
+	}
+
+	endpoints := &corev1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      modelDeploymentCR.Name,
+			Namespace: modelDeploymentCR.Namespace,
+		},
+		Subsets: knativeEndpoints.Subsets,
+	}
+
+	if err := controllerutil.SetControllerReference(modelDeploymentCR, endpoints, r.scheme); err != nil {
+		return err
+	}
+
+	if err := legion.StoreHash(endpoints); err != nil {
+		log.Error(err, "Cannot apply obj hash")
+		return err
+	}
+
+	found := &corev1.Endpoints{}
+	err := r.Get(context.TODO(), types.NamespacedName{
+		Name: endpoints.Name, Namespace: endpoints.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info(fmt.Sprintf("Creating %s k8s endpoints", endpoints.ObjectMeta.Name))
+		err = r.Create(context.TODO(), endpoints)
+		return err
+	} else if err != nil {
+		return err
+	}
+
+	if !legion.ObjsEqualByHash(endpoints, found) {
+		log.Info(fmt.Sprintf("endpoints hashes don't equal. Update the %s endpoints", endpoints.Name))
+
+		found.Subsets = endpoints.Subsets
+
+		log.Info(fmt.Sprintf("Updating %s k8s endpoints", endpoints.ObjectMeta.Name))
+		err = r.Update(context.TODO(), found)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Info(fmt.Sprintf("k8s endpoints hashes equal. Skip updating of the %s endpoints", endpoints.Name))
+	}
+
+	return nil
+}
+
+// Cleanup old Knative revisions
+// Workaround for https://github.com/knative/serving/issues/2720
+// TODO: need to upgrade knative
+func (r *ReconcileModelDeployment) cleanupOldRevisions(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+	lastRevisionName := modelDeploymentCR.Status.LastRevisionName
+	if len(lastRevisionName) == 0 {
+		log.Info("Last revision name is empty", "model deployment id", modelDeploymentCR.Name)
+
+		return nil
+	}
+
+	lastKnativeRevision := &knservingv1alpha1.Revision{}
+	if err := r.Get(context.TODO(), types.NamespacedName{
+		Name: lastRevisionName, Namespace: modelDeploymentCR.Namespace,
+	}, lastKnativeRevision); err != nil {
+		log.Error(err, "Getting Knative Revision", "model deployment id", modelDeploymentCR.Name)
+
+		return err
+	}
+
+	lastKnativeRevisionGenerationStr, ok := lastKnativeRevision.Labels[serving.ConfigurationGenerationLabelKey]
+	if !ok {
+		return fmt.Errorf("can not get the lastest knative revision generation: %s", lastKnativeRevisionGenerationStr)
+	}
+
+	lastKnativeRevisionGeneration, err := strconv.Atoi(lastKnativeRevisionGenerationStr)
+	if err != nil {
+		return err
+	}
+
+	knativeRevisions := &knservingv1alpha1.RevisionList{}
+
+	labelSelectorReq, err := labels.NewRequirement(modelNameAnnotationKey, selection.DoubleEquals, []string{modelDeploymentCR.Name})
+	if err != nil {
+		log.Error(err, "Creation of the label selector requirement", "model deployment id", modelDeploymentCR.Name)
+		return err
+	}
+
+	labelSelector := labels.NewSelector()
+	labelSelector.Add(*labelSelectorReq)
+
+	if err := r.List(context.TODO(), &client.ListOptions{
+		LabelSelector: labelSelector,
+		Namespace:     modelDeploymentCR.Namespace,
+	}, knativeRevisions); err != nil {
+		log.Error(err, "Get the list of knative revisions", "model deployment id", modelDeploymentCR.Name)
+
+		return err
+	}
+
+	for _, kr := range knativeRevisions.Items {
+		modelDeploymentName, ok := kr.Labels[modelNameAnnotationKey]
+		if !ok || modelDeploymentName != modelDeploymentCR.Name {
+			continue
+		}
+
+		krGenerationStr, ok := kr.Labels[serving.ConfigurationGenerationLabelKey]
+		if !ok {
+			return fmt.Errorf("can not get the lastest knative revision generation: %s", kr.Name)
+		}
+
+		krGeneration, err := strconv.Atoi(krGenerationStr)
+		if err != nil {
+			return err
+		}
+
+		if krGeneration < lastKnativeRevisionGeneration {
+			if err := r.Delete(context.TODO(), &kr); err != nil {
+				log.Error(err, "Delete old knative revision",
+					"model deployment id", modelDeploymentCR.Name,
+					"knative revision name", kr.Name,
+					"knative revision generation", krGeneration)
+				return err
+			}
+
+			log.Info("Delete old knative revision",
+				"model deployment id", modelDeploymentCR.Name,
+				"knative revision name", kr.Name,
+				"knative revision generation", krGeneration)
+		}
+	}
+
+	return nil
+}
+
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services/status,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=endpoints/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=authentication.istio.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=authentication.istio.io,resources=policies/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modeldeployments,verbs=get;list;watch;create;update;patch;delete
@@ -486,7 +732,12 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 			log.Info(fmt.Sprintf("Found %s finalizer. Skip reconciling", metav1.FinalizerDeleteDependents),
 				"Model Deployment name", modelDeploymentCR.Name)
 
-			return reconcile.Result{}, err
+			if err := r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateDeleting, ""); err != nil {
+				log.Error(err, "Set deleting deployment state")
+				return reconcile.Result{}, err
+			}
+
+			return reconcile.Result{}, nil
 		}
 	}
 
@@ -506,14 +757,14 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	latestReadyRevision, err := r.getLatestReadyRevision(modelDeploymentCR)
+	latestReadyRevision, configurationReady, err := r.getLatestReadyRevision(modelDeploymentCR)
 	if err != nil {
 		log.Error(err, "Getting latest revision", "Model Deployment name", modelDeploymentCR.Name)
 		return reconcile.Result{}, err
 	}
 
-	if len(latestReadyRevision) == 0 {
-		log.Info("Can not get latest ready revision. Put the Model Deployment back in the queue", "Model Deployment name", modelDeploymentCR.Name)
+	if !configurationReady {
+		log.Info("Configuration was not updated yet. Put the Model Deployment back in the queue", "Model Deployment name", modelDeploymentCR.Name)
 
 		_ = r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateProcessing, "")
 
@@ -524,6 +775,11 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 
 	if err := r.ReconcileModelRoute(modelDeploymentCR, latestReadyRevision); err != nil {
 		log.Error(err, "Reconcile the default Model Route")
+		return reconcile.Result{}, err
+	}
+
+	if err := r.reconcileService(modelDeploymentCR); err != nil {
+		log.Error(err, "Reconcile the k8s service")
 		return reconcile.Result{}, err
 	}
 
@@ -556,6 +812,11 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 
 	if err := r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateReady, latestReadyRevision); err != nil {
 		log.Error(err, "Reconcile Model Deployment Status", "Model Deployment name", modelDeploymentCR.Name)
+		return reconcile.Result{}, err
+	}
+
+	if err := r.cleanupOldRevisions(modelDeploymentCR); err != nil {
+		log.Error(err, "Cleanup old revisions", "model_deployment_id", modelDeploymentCR.Name)
 		return reconcile.Result{}, err
 	}
 

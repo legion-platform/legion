@@ -71,7 +71,7 @@ func (mrv *MrValidator) validateMainParameters(mr *deployment.ModelRoute) (err e
 		} else {
 			for _, prefix := range ForbiddenPrefixes {
 				if strings.HasPrefix(mr.Spec.UrlPrefix, prefix) {
-					err = multierr.Append(err, errors.New(fmt.Sprintf(ForbiddenPrefix, prefix)))
+					err = multierr.Append(err, fmt.Errorf(ForbiddenPrefix, prefix))
 					break
 				}
 			}

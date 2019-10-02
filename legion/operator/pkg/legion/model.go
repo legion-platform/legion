@@ -19,7 +19,6 @@ package legion
 import (
 	"bytes"
 	"github.com/pborman/uuid"
-	"regexp"
 	"text/template"
 )
 
@@ -36,10 +35,6 @@ const (
 	ModelCommitID     = "model-commit-id"
 	TrainingOutputZip = "training-output-zip"
 	TrainingRunId     = "training-run-id"
-)
-
-var (
-	invalidCharsRegexp = regexp.MustCompile("[^a-zA-Z0-9-]")
 )
 
 type TrainingZipNameConfig struct {

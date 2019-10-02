@@ -18,7 +18,6 @@ package connection
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -40,7 +39,7 @@ func extractHost(gitUrl string) (string, error) {
 	gitHost := SshUrlRegexp.FindStringSubmatch(gitUrl)[2]
 
 	if gitHost == "" {
-		return "", errors.New(fmt.Sprintf("Can't extract host from %s url", gitUrl))
+		return "", fmt.Errorf("can't extract host from %s url", gitUrl)
 	}
 
 	return gitHost, nil

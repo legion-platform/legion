@@ -49,6 +49,12 @@ Run EDI deploy from model packaging
     ${res}=  StrictShell  legionctl pack get --id ${mp_name} -o 'jsonpath=$[0].status.results[0].value'
     StrictShell  legionctl --verbose dep create --id ${md_name} -f ${res_file} --image ${res.stdout}
 
+Run EDI apply from model packaging
+    [Arguments]  ${mp_name}  ${md_name}  ${res_file}  ${role_name}=${EMPTY}
+
+    ${res}=  StrictShell  legionctl pack get --id ${mp_name} -o 'jsonpath=$[0].status.results[0].value'
+    StrictShell  legionctl --verbose dep edit --id ${md_name} -f ${res_file} --image ${res.stdout}
+
 Run EDI deploy from model packaging and check model started
     [Arguments]  ${mp_name}  ${md_name}  ${res_file}  ${role_name}=${EMPTY}
     Run EDI deploy from model packaging  ${mp_name}  ${md_name}  ${res_file}  ${role_name}

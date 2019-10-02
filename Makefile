@@ -241,7 +241,7 @@ unittests:
 	          --cov-report html:target/cover \
 	          --cov-report term-missing \
 	          --junitxml=target/nosetests.xml \
-	          legion
+	          legion/packager/rest legion/cli
 
 ## setup-e2e-robot: Prepare a test data for the e2e robot tests
 setup-e2e-robot:

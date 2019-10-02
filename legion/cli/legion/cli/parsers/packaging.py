@@ -32,6 +32,7 @@ from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 from legion.sdk.clients.packaging import ModelPackaging, ModelPackagingClient, SUCCEEDED_STATE, FAILED_STATE
 
 DEFAULT_WAIT_TIMEOUT = 3
+LOG_READ_TIMEOUT_SECONDS = 60
 
 LOGGER = logging.getLogger(__name__)
 
@@ -245,14 +246,14 @@ def logs(client: ModelPackagingClient, pack_id: str, file: str, follow: bool):
         print_logs(msg)
 
 
-def wait_packaging_finish(timeout: int, wait: bool, mt_id: str, mt_client: ModelPackagingClient):
+def wait_packaging_finish(timeout: int, wait: bool, mp_id: str, mp_client: ModelPackagingClient):
     """
     Wait packaging to finish according command line arguments
 
     :param wait:
     :param timeout:
-    :param mt_id: Model Packaging name
-    :param mt_client: Model Packaging Client
+    :param mp_id: Model Packaging name
+    :param mp_client: Model Packaging Client
     """
     if not wait:
         return
@@ -260,6 +261,10 @@ def wait_packaging_finish(timeout: int, wait: bool, mt_id: str, mt_client: Model
     start = time.time()
     if timeout <= 0:
         raise Exception('Invalid --timeout argument: should be positive integer')
+
+    # We create a separate client for logs because it has the different timeout settings
+    log_mp_client = ModelPackagingClient.construct_from_other(mp_client)
+    log_mp_client.timeout = mp_client.timeout, LOG_READ_TIMEOUT_SECONDS
 
     click.echo("Logs streaming...")
 
@@ -269,16 +274,16 @@ def wait_packaging_finish(timeout: int, wait: bool, mt_id: str, mt_client: Model
             raise Exception('Time out: operation has not been confirmed')
 
         try:
-            mt = mt_client.get(mt_id)
-            if mt.status.state == SUCCEEDED_STATE:
-                click.echo(f'Model {mt_id} was packed. Packaging took {round(time.time() - start)} seconds')
+            mp = mp_client.get(mp_id)
+            if mp.status.state == SUCCEEDED_STATE:
+                click.echo(f'Model {mp_id} was packed. Packaging took {round(time.time() - start)} seconds')
                 return
-            elif mt.status.state == FAILED_STATE:
-                raise Exception(f'Model packaging {mt_id} was failed.')
-            elif mt.status.state == "":
-                click.echo(f"Can't determine the state of {mt.id}. Sleeping...")
+            elif mp.status.state == FAILED_STATE:
+                raise Exception(f'Model packaging {mp_id} was failed.')
+            elif mp.status.state == "":
+                click.echo(f"Can't determine the state of {mp.id}. Sleeping...")
             else:
-                for msg in mt_client.log(mt.id, follow=True):
+                for msg in log_mp_client.log(mp.id, follow=True):
                     print_logs(msg)
 
         except (WrongHttpStatusCode, HTTPException, RequestException) as e:

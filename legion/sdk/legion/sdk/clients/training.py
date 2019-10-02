@@ -17,7 +17,7 @@
 EDI client
 """
 import logging
-import typing
+from typing import List, Iterator
 
 from legion.sdk.clients.edi import RemoteEdiClient
 from legion.sdk.definitions import MODEL_TRAINING_URL
@@ -43,7 +43,7 @@ class ModelTrainingClient(RemoteEdiClient):
         """
         return ModelTraining.from_dict(self.query(f'{MODEL_TRAINING_URL}/{name}'))
 
-    def get_all(self) -> typing.List[ModelTraining]:
+    def get_all(self) -> List[ModelTraining]:
         """
         Get all Model Trainings from EDI server
 
@@ -82,7 +82,7 @@ class ModelTrainingClient(RemoteEdiClient):
         """
         return self.query(f'{MODEL_TRAINING_URL}/{name}', action='DELETE')['message']
 
-    def log(self, name: str, follow: bool = False) -> str:
+    def log(self, name: str, follow: bool = False) -> Iterator[str]:
         """
         Stream logs from training
 

@@ -24,35 +24,38 @@ import {
 import * as models from '../models/cloud';
 import { ModelTraining } from '../legion/ModelTraining';
 import { ModelDeployment } from '../legion/ModelDeployment';
+import { ModelPackaging } from '../legion/ModelPackaging';
+import { Connection } from '../legion/Connection';
+import { PackagingIntegration } from '../legion/PackagingIntegration';
+import { ToolchainIntegration } from '../legion/ToolchainIntegration';
+import { Configuration } from '../legion/Configuration';
 
 export namespace URLs {
-  export const cloudTrainingsUrl = legionApiRootURL + '/cloud/trainings';
+  export const configurationUrl = legionApiRootURL + '/cloud/configuration';
   export const cloudConnectionsUrl = legionApiRootURL + '/cloud/connections';
+  export const cloudToolchainsUrl = legionApiRootURL + '/cloud/toolchains';
+  export const cloudTrainingsUrl = legionApiRootURL + '/cloud/trainings';
+  export const cloudPackagingIntegrationUrl =
+    legionApiRootURL + '/cloud/packagingintegrations';
   export const cloudModelPackagingUrl =
     legionApiRootURL + '/cloud/modelpackagings';
+  export const cloudDeploymentsUrl = legionApiRootURL + '/cloud/deployments';
   export const cloudTrainingLogsUrl =
     legionApiRootURL + '/cloud/trainings/:trainingName:/logs';
   export const cloudPackagingLogsUrl =
     legionApiRootURL + '/cloud/packagings/:packagingName:/logs';
-  export const cloudDeploymentsUrl = legionApiRootURL + '/cloud/deployments';
-  export const cloudAllDataUrl = legionApiRootURL + '/cloud';
   export const cloudApplyFileUrl = legionApiRootURL + '/cloud/apply';
 }
 
 export interface ICloudApi {
   // Trainings
-  getCloudTrainings: (
+  getModelTrainings: (
     credentials: ICloudCredentials
   ) => Promise<Array<ModelTraining>>;
+  getToolchainIntegrations: (
+    credentials: ICloudCredentials
+  ) => Promise<Array<ToolchainIntegration>>;
   removeCloudTraining: (
-    request: models.IRemoveRequest,
-    credentials: ICloudCredentials
-  ) => Promise<void>;
-  removeConnection: (
-    request: models.IRemoveRequest,
-    credentials: ICloudCredentials
-  ) => Promise<void>;
-  removeModelPackaging: (
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ) => Promise<void>;
@@ -60,6 +63,27 @@ export interface ICloudApi {
     request: models.ICloudTrainingLogsRequest,
     credentials: ICloudCredentials
   ) => Promise<models.ICloudLogsResponse>;
+
+  // Connections
+  getConnections: (
+    credentials: ICloudCredentials
+  ) => Promise<Array<Connection>>;
+  removeConnection: (
+    request: models.IRemoveRequest,
+    credentials: ICloudCredentials
+  ) => Promise<void>;
+
+  // Packagers
+  getModelPackagings: (
+    credentials: ICloudCredentials
+  ) => Promise<Array<ModelPackaging>>;
+  getPackagingIntegrations: (
+    credentials: ICloudCredentials
+  ) => Promise<Array<PackagingIntegration>>;
+  removeModelPackaging: (
+    request: models.IRemoveRequest,
+    credentials: ICloudCredentials
+  ) => Promise<void>;
   getPackagingLogs: (
     request: models.ICloudTrainingLogsRequest,
     credentials: ICloudCredentials
@@ -88,11 +112,14 @@ export interface ICloudApi {
     request: models.IApplyFromFileRequest,
     credentials: ICloudCredentials
   ) => Promise<models.IApplyFromFileResponse>;
+
+  // Configuration
+  getConfiguration: (credentials: ICloudCredentials) => Promise<Configuration>;
 }
 
 export class CloudApi implements IApiGroup, ICloudApi {
   // Trainings
-  async getCloudTrainings(
+  async getModelTrainings(
     credentials: ICloudCredentials
   ): Promise<Array<ModelTraining>> {
     try {
@@ -102,6 +129,46 @@ export class CloudApi implements IApiGroup, ICloudApi {
         null,
         credentials
       );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  async getToolchainIntegrations(
+    credentials: ICloudCredentials
+  ): Promise<Array<ToolchainIntegration>> {
+    try {
+      let response = await httpRequest(
+        URLs.cloudToolchainsUrl,
+        'GET',
+        null,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  async getTrainingLogs(
+    request: models.ICloudTrainingLogsRequest,
+    credentials: ICloudCredentials
+  ): Promise<models.ICloudLogsResponse> {
+    try {
+      const url = URLs.cloudTrainingLogsUrl.replace(
+        ':trainingName:',
+        request.id
+      );
+      let response = await httpRequest(url, 'GET', undefined, credentials);
       if (response.status !== 200) {
         const data = await response.json();
         throw new ServerConnection.ResponseError(response, data.message);
@@ -133,6 +200,27 @@ export class CloudApi implements IApiGroup, ICloudApi {
     }
   }
 
+  // Connections
+  async getConnections(
+    credentials: ICloudCredentials
+  ): Promise<Array<Connection>> {
+    try {
+      let response = await httpRequest(
+        URLs.cloudConnectionsUrl,
+        'GET',
+        null,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
   async removeConnection(
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
@@ -154,6 +242,47 @@ export class CloudApi implements IApiGroup, ICloudApi {
     }
   }
 
+  // Packaging
+  async getModelPackagings(
+    credentials: ICloudCredentials
+  ): Promise<Array<ModelPackaging>> {
+    try {
+      let response = await httpRequest(
+        URLs.cloudModelPackagingUrl,
+        'GET',
+        null,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  async getPackagingIntegrations(
+    credentials: ICloudCredentials
+  ): Promise<Array<PackagingIntegration>> {
+    try {
+      let response = await httpRequest(
+        URLs.cloudPackagingIntegrationUrl,
+        'GET',
+        null,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
   async removeModelPackaging(
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
@@ -170,26 +299,6 @@ export class CloudApi implements IApiGroup, ICloudApi {
         throw new ServerConnection.ResponseError(response, data.message);
       }
       return null;
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
-    }
-  }
-
-  async getTrainingLogs(
-    request: models.ICloudTrainingLogsRequest,
-    credentials: ICloudCredentials
-  ): Promise<models.ICloudLogsResponse> {
-    try {
-      const url = URLs.cloudTrainingLogsUrl.replace(
-        ':trainingName:',
-        request.id
-      );
-      let response = await httpRequest(url, 'GET', undefined, credentials);
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
     } catch (err) {
       throw new ServerConnection.NetworkError(err);
     }
@@ -282,21 +391,35 @@ export class CloudApi implements IApiGroup, ICloudApi {
   async getCloudAllEntities(
     credentials: ICloudCredentials
   ): Promise<models.ICloudAllEntitiesResponse> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudAllDataUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
-    }
+    return Promise.all([
+      this.getConfiguration(credentials),
+      this.getConnections(credentials),
+      this.getModelTrainings(credentials),
+      this.getToolchainIntegrations(credentials),
+      this.getModelPackagings(credentials),
+      this.getPackagingIntegrations(credentials),
+      this.getCloudDeployments(credentials)
+    ]).then(function(values) {
+      let [
+        configuration,
+        connections,
+        trainings,
+        toolchains,
+        packagings,
+        packagingsIntegrations,
+        deployments
+      ] = values;
+
+      return {
+        configuration: configuration,
+        connections: connections,
+        trainings: trainings,
+        toolchainIntegrations: toolchains,
+        modelPackagings: packagings,
+        packagingIntegrations: packagingsIntegrations,
+        deployments: deployments
+      };
+    });
   }
 
   // General
@@ -309,6 +432,27 @@ export class CloudApi implements IApiGroup, ICloudApi {
         URLs.cloudApplyFileUrl,
         'POST',
         request,
+        credentials
+      );
+      if (response.status !== 200) {
+        const data = await response.json();
+        throw new ServerConnection.ResponseError(response, data.message);
+      }
+      return response.json();
+    } catch (err) {
+      throw new ServerConnection.NetworkError(err);
+    }
+  }
+
+  // Configuration
+  async getConfiguration(
+    credentials: ICloudCredentials
+  ): Promise<Configuration> {
+    try {
+      let response = await httpRequest(
+        URLs.configurationUrl,
+        'GET',
+        null,
         credentials
       );
       if (response.status !== 200) {

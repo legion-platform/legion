@@ -17,7 +17,7 @@
 Declaration of cloud handlers
 """
 import os
-import typing
+from typing import List, Dict, Tuple
 
 from tornado.web import HTTPError
 
@@ -35,9 +35,19 @@ from legion.sdk.clients.toolchain_integration import ToolchainIntegrationClient
 from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
     TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE
 from legion.sdk.models import ModelPackaging
+from legion.sdk.models.base_model_ import Model
 
 LEGION_CLOUD_CREDENTIALS_EDI = 'X-Legion-Cloud-Endpoint'
 LEGION_CLOUD_CREDENTIALS_TOKEN = 'X-Legion-Cloud-Token'
+
+
+def _convert_to_dict(entities: List[Model]) -> List[Dict]:
+    """
+    Convert all Legion entities to the dict
+    :param entities: Legion entities
+    :return: list with converted Legion entities
+    """
+    return [ent.to_dict() for ent in entities]
 
 
 # pylint: disable=W0223
@@ -51,8 +61,7 @@ class BaseCloudLegionHandler(BaseLegionHandler):
         Build client for REST API
 
         :param target_client_class: target client's class
-        :type target_client_class: type
-        :return: [target_client_class] -- instance of target_client_class class
+        :return: instance of target_client_class class
         """
         default_edi_url = os.getenv(DEFAULT_EDI_ENDPOINT, '')
         jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
@@ -70,92 +79,22 @@ class BaseCloudLegionHandler(BaseLegionHandler):
 
         return target_client_class(edi_url, edi_token)
 
-    def get_cloud_trainings(self) -> typing.List[dict]:
-        """
-        Get cloud trainings status
-
-        :return: typing.List[dict] -- list of trainings
-        """
-        client: ModelTrainingClient = self.build_cloud_client(ModelTrainingClient)
-        return [
-            training.to_dict()
-            for training in client.get_all()
-        ]
-
-    def get_cloud_deployments(self) -> typing.List[dict]:
-        """
-        Get cloud deployments status
-
-        :return: typing.List[dict] -- list of deployments
-        """
-        client: ModelDeploymentClient = self.build_cloud_client(ModelDeploymentClient)
-        return [
-            deployment.to_dict()
-            for deployment in client.get_all()
-        ]
-
-    def get_conn_instances(self) -> typing.List[dict]:
-        """
-        Get connections instances
-
-        :return: typing.List[dict] -- list of connections
-        """
-        client: ConnectionClient = self.build_cloud_client(ConnectionClient)
-        return [
-            conn.to_dict()
-            for conn in client.get_all()
-        ]
-
-    def get_model_packaging_instances(self) -> typing.List[dict]:
-        """
-        Get model packaging
-
-        :return: typing.List[dict] -- list of model packaging
-        """
-        client: ModelPackagingClient = self.build_cloud_client(ModelPackagingClient)
-        return [
-            mp.to_dict()
-            for mp in client.get_all()
-        ]
-
-    def get_packaging_integrations(self) -> typing.List[dict]:
-        """
-        Get packaging integrations
-
-        :return: typing.List[dict] -- list of packaging integrations
-        """
-        client: PackagingIntegrationClient = self.build_cloud_client(PackagingIntegrationClient)
-        return [
-            pi.to_dict()
-            for pi in client.get_all()
-        ]
-
-    def get_configuration(self) -> typing.Dict:
-        """
-        Get Legion configuration
-
-        :return: Legion configuration
-        """
-        client: ConfigurationClient = self.build_cloud_client(ConfigurationClient)
-        return client.get().to_dict()
-
-    def get_toolchain_integrations(self) -> typing.List[dict]:
-        """
-        Get toolchain integrations
-
-        :return: typing.List[dict] -- list of toolchain integrations
-        """
-        client: ToolchainIntegrationClient = self.build_cloud_client(ToolchainIntegrationClient)
-        return [
-            ti.to_dict()
-            for ti in client.get_all()
-        ]
-
 
 class CloudModelPackagingHandler(BaseCloudLegionHandler):
     """
     Control model packagings
     """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Get all model packagings
+
+        :return: None
+        """
+        client: ModelPackagingClient = self.build_cloud_client(ModelPackagingClient)
+
+        self.finish_with_json(_convert_to_dict(client.get_all()))
 
     @decorate_handler_for_exception
     def delete(self):
@@ -198,6 +137,17 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
     """
 
     @decorate_handler_for_exception
+    def get(self):
+        """
+        Get all trainings
+
+        :return: None
+        """
+        client: ModelTrainingClient = self.build_cloud_client(ModelTrainingClient)
+
+        self.finish_with_json(_convert_to_dict(client.get_all()))
+
+    @decorate_handler_for_exception
     def delete(self):
         """
         Remove cloud training
@@ -218,6 +168,17 @@ class CloudConnectionHandler(BaseCloudLegionHandler):
     """
     Control cloud connections
     """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Get all connections
+
+        :return: None
+        """
+        client: ConnectionClient = self.build_cloud_client(ConnectionClient)
+
+        self.finish_with_json(_convert_to_dict(client.get_all()))
 
     @decorate_handler_for_exception
     def delete(self):
@@ -247,11 +208,10 @@ class CloudTrainingLogsHandler(BaseCloudLegionHandler):
         Get training logs
 
         :arg training_name: name of training
-        :type training_name: str
         :return: None
         """
         client = self.build_cloud_client(ModelTrainingClient)
-        training = client.get(training_name)  # type: ModelTraining
+        training: ModelTraining = client.get(training_name)
 
         self.finish_with_json({
             'futureLogsExpected': training.status.state not in (TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE),
@@ -270,7 +230,6 @@ class CloudPackagingLogsHandler(BaseCloudLegionHandler):
         Get training logs
 
         :arg packaging_name: name of training
-        :type packaging_name: str
         :return: None
         """
         client = self.build_cloud_client(ModelPackagingClient)
@@ -282,10 +241,72 @@ class CloudPackagingLogsHandler(BaseCloudLegionHandler):
         })
 
 
+class CloudPackagingIntegrationsHandler(BaseCloudLegionHandler):
+    """
+    Control cloud training logs
+    """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Get all packaging integrations
+
+        :return: None
+        """
+        client: PackagingIntegrationClient = self.build_cloud_client(PackagingIntegrationClient)
+
+        self.finish_with_json(_convert_to_dict(client.get_all()))
+
+
+class CloudToolchainIntegrationsHandler(BaseCloudLegionHandler):
+    """
+    Control cloud training logs
+    """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Get all toolchain intergrations
+
+        :return: None
+        """
+        client: ToolchainIntegrationClient = self.build_cloud_client(ToolchainIntegrationClient)
+
+        self.finish_with_json(_convert_to_dict(client.get_all()))
+
+
+class CloudConfiguratioHandler(BaseCloudLegionHandler):
+    """
+    Control cloud training logs
+    """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Get legio configuration
+
+        :return: None
+        """
+        client: ConfigurationClient = self.build_cloud_client(ConfigurationClient)
+
+        self.finish_with_json(client.get().to_dict())
+
+
 class CloudDeploymentsHandler(BaseCloudLegionHandler):
     """
     Control cloud deployments
     """
+
+    @decorate_handler_for_exception
+    def get(self):
+        """
+        Get all packaging integrations
+
+        :return: None
+        """
+        client: ModelDeploymentClient = self.build_cloud_client(ModelDeploymentClient)
+
+        self.finish_with_json(_convert_to_dict(client.get_all()))
 
     @decorate_handler_for_exception
     def post(self):
@@ -327,13 +348,12 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
     """
 
     @staticmethod
-    def _prepare_resources_list(resources: typing.Tuple[LegionCloudResourceUpdatePair]):
+    def _prepare_resources_list(resources: Tuple[LegionCloudResourceUpdatePair]) -> List[str]:
         """
         Prepare resources list to output
 
         :param resources: resources to output
-        :type resources:  typing.Tuple[LegionCloudResourceUpdatePair]
-        :return: typing.List[str] -- response
+        :return: response
         """
         return [f'{type(resource.resource).__name__} {resource.resource_id}' for resource in resources]
 
@@ -364,27 +384,4 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
             'changed': self._prepare_resources_list(result.changed),
             'removed': self._prepare_resources_list(result.removed),
             'errors': [str(err) for err in result.errors],
-        })
-
-
-class CloudAllEntitiesHandler(BaseCloudLegionHandler):
-    """
-    Return all information for cloud mode
-    """
-
-    @decorate_handler_for_exception
-    def get(self):
-        """
-        Get all information related to cloud state
-
-        :return: None
-        """
-        self.finish_with_json({
-            'trainings': self.get_cloud_trainings(),
-            'deployments': self.get_cloud_deployments(),
-            'connections': self.get_conn_instances(),
-            'modelPackagings': self.get_model_packaging_instances(),
-            'toolchainIntegrations': self.get_toolchain_integrations(),
-            'packagingIntegrations': self.get_packaging_integrations(),
-            'configuration': self.get_configuration()
         })

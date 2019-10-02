@@ -118,7 +118,7 @@ generate-all: generate manifests swag
 
 ## export-config-from-k8s: Export operator config from k8s secret. It helps to run operator or edi locally with properly set of config options
 export-config-from-k8s:
-	kubectl get -n ${LEGION_NAMESPACE} legion secrets ${LEGION_SECRET_CONFIG} -o=jsonpath="{$$.data['config\\.yaml']}" | base64 -d > config.yaml
+	kubectl get -n ${LEGION_NAMESPACE} secrets ${LEGION_SECRET_CONFIG} -o=jsonpath="{$$.data['config\\.yaml']}" | base64 -d > config.yaml
 
 ## lint: Start golangci-lint linter
 lint:

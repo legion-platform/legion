@@ -31,6 +31,8 @@ import { LifecycleStage } from './partials/LifecycleStage';
 import '../../style/scrollbar.css';
 
 const cloudWidgetScrollbarName = 'CloudWidgetScrollbar';
+// 60 seconds
+const defaultUpdatePeriod = 60000;
 
 /** Interface for GitPanel component state */
 export interface ICloudWidgetViewNodeState {
@@ -50,6 +52,8 @@ export class CloudWidgetView extends React.Component<
   ICloudWidgetViewNodeProps,
   ICloudWidgetViewNodeState
 > {
+  private interval?: number;
+
   constructor(props: ICloudWidgetViewNodeProps) {
     super(props);
     this.state = {
@@ -119,6 +123,18 @@ export class CloudWidgetView extends React.Component<
         <ConfStage app={this.props.app} dataState={this.props.dataState} />
       </div>
     );
+  }
+
+  componentDidMount() {
+    this.interval = setInterval(() => {
+      if (!this.props.dataState.authorizationRequired) {
+        this.props.app.commands.execute(CommandIDs.refreshCloud);
+      }
+    }, defaultUpdatePeriod);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   render() {

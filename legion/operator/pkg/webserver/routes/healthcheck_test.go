@@ -57,5 +57,5 @@ func (s *HealthCheckSuite) TestHealthCheck() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(response).Should(Equal(make(map[string]string, 0)))
+	s.g.Expect(response).Should(Equal(make(map[string]string)))
 }

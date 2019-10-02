@@ -13,13 +13,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+import logging
 import os.path
 import stat
-import logging
 import subprocess
 import zipfile
-
-from legion.packager.rest.constants import RESOURCES_FOLDER
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,20 +80,6 @@ def run(*args: str, cwd=None, stream_output: bool = True):
             raise Exception("Non-zero exit code: %s\n\nSTDOUT:\n%s\n\nSTDERR:%s" %
                             (exit_code, stdout, stderr))
         return exit_code, stdout, stderr
-
-
-def load_template(template_name) -> str:
-    """
-    Load template from resources folder
-
-    :param template_name: name of template
-    :type template_name: str
-    :return: str -- template file content
-    """
-    logging.info(f'Loading template file {template_name} from {RESOURCES_FOLDER}')
-    template_path = os.path.join(RESOURCES_FOLDER, template_name)
-    with open(template_path, 'r') as template_stream:
-        return template_stream.read()
 
 
 def remove_directory(path):

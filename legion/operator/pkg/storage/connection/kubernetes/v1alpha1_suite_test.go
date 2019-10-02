@@ -33,10 +33,6 @@ import (
 var cfg *rest.Config
 var c client.Client
 
-const (
-	testNamespace = "default"
-)
-
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "config", "crds")},

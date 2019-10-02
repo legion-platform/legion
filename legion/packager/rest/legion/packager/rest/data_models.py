@@ -20,6 +20,8 @@ import typing
 
 import pydantic
 
+DEFAULT_IMAGE_NAME_TEMPLATE = "{{ Name }}-{{ Version }}:{{ RandomUUID }}"
+
 
 class LegionProjectManifestBinaries(pydantic.BaseModel):
     """
@@ -76,3 +78,5 @@ class PackagingResourceArguments(pydantic.BaseModel):
     timeout: int = 60
     workers: int = 1
     threads: int = 4
+    # Full name or Jinja template
+    imageName: str = DEFAULT_IMAGE_NAME_TEMPLATE

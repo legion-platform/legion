@@ -38,6 +38,42 @@ Check EDI deploy procedure
 
     Check model started  ${MD_SIMPLE_MODEL}
 
+Update model deployment
+    [Documentation]  Check model deployment upgrade
+    [Teardown]  Cleanup resources
+    [Tags]  kek
+    Run EDI deploy from model packaging  ${MP_SIMPLE_MODEL}  ${MD_SIMPLE_MODEL}  ${RES_DIR}/simple-model.deployment.legion.yaml
+    Check model started  ${MD_SIMPLE_MODEL}
+
+    ${res}=  StrictShell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json '{"columns": ["a","b"],"data": [[1.0,2.0]]}'
+    ${actual_response}=    Evaluate     json.loads("""${res.stdout}""")    json
+    ${expected_response}=   evaluate  {'prediction': [[42]], 'columns': ['result']}
+    Dictionaries Should Be Equal    ${actual_response}    ${expected_response}
+
+    Run EDI apply from model packaging  ${MP_COUNTER_MODEL}  ${MD_SIMPLE_MODEL}  ${RES_DIR}/updated-simple-model.deployment.legion.yaml
+    Check model started  ${MD_SIMPLE_MODEL}
+
+    # Check new REST API
+    ${res}=  StrictShell  legionctl --verbose model invoke --md ${MD_SIMPLE_MODEL} --json '{"columns": ["a","b"],"data": [[1.0,2.0]]}'
+    ${actual_response}=    Evaluate     json.loads("""${res.stdout}""")    json
+    ${expected_response}=   evaluate  {'prediction': [[1]], 'columns': ['result']}
+    Dictionaries Should Be Equal    ${actual_response}    ${expected_response}
+
+    # Check new resources
+    ${res}=  StrictShell  legionctl dep get --id ${MD_SIMPLE_MODEL} -o jsonpath='[*].status.deployment'
+    ${model_deployment}=  Get model deployment  ${res.stdout}  ${LEGION_DEPLOYMENT_NAMESPACE}
+    LOG  ${model_deployment}
+
+    ${model_resources}=  Set variable  ${model_deployment.spec.template.spec.containers[0].resources}
+    Should be equal  333m  ${model_resources.limits["cpu"]}
+    Should be equal  333Mi  ${model_resources.limits["memory"]}
+    Should be equal  222m  ${model_resources.requests["cpu"]}
+    Should be equal  222Mi  ${model_resources.requests["memory"]}
+
+    # Check new number of replicas
+    ${res}=  StrictShell  legionctl dep get --id ${MD_SIMPLE_MODEL} -o jsonpath='[*].status.replicas'
+    should be equal as integers  ${2}  ${res.stdout}
+
 Deploy with custom memory and cpu
     [Documentation]  Deploy with custom memory and cpu
     [Teardown]  Cleanup resources

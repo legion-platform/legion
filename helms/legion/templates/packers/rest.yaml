@@ -90,6 +90,22 @@ data:
                   value: integer
                 - name: default
                   value: 4
+            - name: imageName
+              parameters:
+                - name: description
+                  value: |
+                    {{`This option provides a way to specify the Docker image name. You can hardcode the full name or specify a template. Available template values:
+                      - Name (Model Name)
+                      - Version (Model Version)
+                      - RandomUUID
+                    The default value is '{{ Name }}/{{ Version }}:{{ RandomUUID }}'.
+                    Image name examples:
+                      - myservice:123
+                      - {{ Name }}:{{ Version }}`}}
+                - name: type
+                  value: integer
+                - name: default
+                  value: 4
 ---
 apiVersion: batch/v1
 kind: Job

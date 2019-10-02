@@ -27,7 +27,7 @@ from legion.packager.rest.io_proc_utils import setup_logging, remove_directory, 
 from legion.packager.rest.manifest_and_resource import parse_resource_file, extract_connection_from_resource, \
     save_result
 from legion.packager.rest.pipeline import work
-from legion.packager.rest.utils import build_archive_name, build_image_name
+from legion.packager.rest.utils import build_archive_name, build_image_name, TemplateNameValues
 
 
 @click.command()
@@ -70,7 +70,8 @@ def work_resource_file(model, resource_file, verbose):
     docker_pull_connection = extract_connection_from_resource(resource_info, PULL_DOCKER_REGISTRY)
     docker_target_connection = extract_connection_from_resource(resource_info, TARGET_DOCKER_REGISTRY)
 
-    image_name = build_image_name(manifest.model.name, manifest.model.version)
+    image_name = build_image_name(arguments.imageName,
+                                  TemplateNameValues(Name=manifest.model.name, Version=manifest.model.version))
     if docker_target_connection:
         # Start docker build & push mechanism
         build_docker_image(output_folder,

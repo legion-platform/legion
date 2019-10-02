@@ -17,9 +17,6 @@
 legion k8s definitions functions
 """
 
-LEGION_COMPONENT_LABEL = 'app.kubernetes.io/component'
-LEGION_MD_NAME_LABEL = 'app.kubernetes.io/component/md_name'
-
 EDI_VERSION = 'v1'
 CONFIGURATION_URL = '/api/{version}/configuration'
 CONNECTION_URL = '/api/{version}/connection'
@@ -29,4 +26,3 @@ MODEL_DEPLOYMENT_URL = '/api/{version}/model/deployment'
 MODEL_ROUTE_URL = '/api/{version}/model/route'
 MODEL_PACKING_URL = '/api/{version}/model/packaging'
 PACKING_INTEGRATION_URL = '/api/{version}/packaging/integration'
-MODEL_TOKEN_TOKEN_URL = '/api/{version}/model/token'

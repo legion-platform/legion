@@ -20,7 +20,7 @@
 ([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*(~|example|\\s?str,|\\s\\|\\-|$)
 #Allow ansible substitution like password: {{ .... }}
 ([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*(\"|\')?\\{\\{\\s.+\\s\\}\\}(\"|\')?
-([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*typing\.
+([Ll]ogin|[Pp]assword|[Pp]ass|[Tt]oken|[Uu]ser|[Uu]sername|[sS]ecret|[Pp]rivate)\\s*:\\s*Optional\.
 # Allow localhost IPv4 address
 127.0.0.1
 # Allow demo netmask

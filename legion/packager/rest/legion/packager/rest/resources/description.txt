@@ -1,6 +1,6 @@
 This directory contains HTTP service for serving prediction API for Legion's models.
 
-Model name: {model_name}
-Model version: {model_version}
-Legion version: {legion_version}
-Packer version: {packager_version}
+Model name: {{ model_name }}
+Model version: {{ model_version }}
+Legion version: {{ legion_version }}
+Packer version: {{ packager_version }}

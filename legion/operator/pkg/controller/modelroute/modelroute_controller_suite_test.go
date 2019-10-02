@@ -54,7 +54,12 @@ func TestMain(m *testing.M) {
 	}
 
 	code := m.Run()
-	t.Stop()
+
+	if err := t.Stop(); err != nil {
+		// Panic means the test was not configured properly
+		panic(err)
+	}
+
 	os.Exit(code)
 }
 

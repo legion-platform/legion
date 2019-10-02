@@ -454,6 +454,9 @@ func (r *ReconcileModelPackaging) reconcileConfig(packagingCR *legionv1alpha1.Mo
 	conf.Packager.OutputDir = path.Join(conf.Packager.TargetPath, "output")
 
 	packagerConfBytes, err := json.Marshal(conf)
+	if err != nil {
+		return err
+	}
 
 	k8sPackagingSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

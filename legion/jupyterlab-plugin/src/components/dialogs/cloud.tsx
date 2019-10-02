@@ -265,6 +265,14 @@ export function showCloudDeploymentInformationDialog(
         <p className={style.fieldTextStyle}>
           {deploymentInformation.spec.image}
         </p>
+        <h3 className={style.fieldLabelStyle}>Minimum Replicas</h3>
+        <p className={style.fieldTextStyle}>
+          {deploymentInformation.spec.minReplicas}
+        </p>
+        <h3 className={style.fieldLabelStyle}>Maximum Replicas</h3>
+        <p className={style.fieldTextStyle}>
+          {deploymentInformation.spec.maxReplicas}
+        </p>
         <h3 className={style.fieldLabelStyle}>Replicas (actual)</h3>
         <p className={style.fieldTextStyle}>
           {deploymentInformation.status.availableReplicas}

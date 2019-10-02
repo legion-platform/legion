@@ -45,10 +45,9 @@ Cleanup resources
 
 Expect number of replicas
     [Arguments]  ${md_name}  ${expected_number_of_replicas}
-    ${res}=  StrictShell  legionctl dep get --id ${md_name} -o jsonpath='[*].status.deployment'
-    ${number_of_replicas}=  Get deployment replicas  ${res.stdout}  ${LEGION_DEPLOYMENT_NAMESPACE}
+    ${res}=  StrictShell  legionctl dep get --id ${md_name} -o jsonpath='[*].status.replicas'
 
-    should be equal as integers  ${expected_number_of_replicas}  ${number_of_replicas}
+    should be equal as integers  ${expected_number_of_replicas}  ${res.stdout}
 
 Check mr
     [Arguments]  ${url}
@@ -149,6 +148,7 @@ File with entitiy not found
     command=delete
 
 Scaledown to zero pods
+    [Tags]  kek
     [Documentation]  Wait until model scales down to zero pods
     Wait Until Keyword Succeeds  2m  5 sec  Expect number of replicas  ${MD_COUNTER_MODEL_1}  0
 
