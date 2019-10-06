@@ -20,7 +20,7 @@ import "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alph
 
 type ModelPackaging struct {
 	// Model packaging id
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Model packaging specification
 	Spec ModelPackagingSpec `json:"spec,omitempty"`
 	// Model packaging status

@@ -21,7 +21,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	packager_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packager"
 	"github.com/legion-platform/legion/legion/operator/pkg/rclone"
-	packaging_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
+	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -41,13 +41,13 @@ const (
 
 type ModelPackager struct {
 	packagingFunc Pack
-	storage       packaging_storage.Storage
+	repository    packaging_repository.Repository
 }
 
-func NewModelPackager(storage packaging_storage.Storage) (*ModelPackager, error) {
+func NewModelPackager(storage packaging_repository.Repository) (*ModelPackager, error) {
 	return &ModelPackager{
 		packagingFunc: PackOnk8sContainer,
-		storage:       storage,
+		repository:    storage,
 	}, nil
 }
 
@@ -70,7 +70,7 @@ func (mp *ModelPackager) Start() (err error) {
 	}
 
 	if err := mp.downloadData(k8sPackaging); err != nil {
-		log.Error(err, "Downloading packaging data failed", "mp name", k8sPackaging.ModelPackaging.Id)
+		log.Error(err, "Downloading packaging data failed", "mp name", k8sPackaging.ModelPackaging.ID)
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (mp *ModelPackager) Start() (err error) {
 		return err
 	}
 
-	return
+	return err
 }
 
 func (mp *ModelPackager) saveResult(packaging *packaging.K8sPackager) error {
@@ -119,7 +119,7 @@ func (mp *ModelPackager) saveResult(packaging *packaging.K8sPackager) error {
 		return err
 	}
 
-	return mp.storage.SaveModelPackagingResult(packaging.ModelPackaging.Id, result)
+	return mp.repository.SaveModelPackagingResult(packaging.ModelPackaging.ID, result)
 }
 
 func getPackaging() (*packaging.K8sPackager, error) {
@@ -143,23 +143,29 @@ func getPackaging() (*packaging.K8sPackager, error) {
 	return k8sPackaging, nil
 }
 
-func (mp *ModelPackager) downloadData(packaging *packaging.K8sPackager) error {
+func (mp *ModelPackager) downloadData(packaging *packaging.K8sPackager) (err error) {
 	storage, err := rclone.NewObjectStorage(&packaging.ModelHolder.Spec)
 	if err != nil {
-		log.Error(err, "storage creation")
+		log.Error(err, "repository creation")
 
 		return err
 	}
 
-	if file, err := os.Create(packaging.TrainingZipName); err != nil {
+	file, err := os.Create(packaging.TrainingZipName)
+	if err != nil {
 		log.Error(err, "zip creation")
 
 		return err
-	} else {
-		defer file.Close()
 	}
 
-	if err := storage.Download(packaging.TrainingZipName, path.Join(storage.RemoteConfig.Path, packaging.TrainingZipName)); err != nil {
+	defer func() {
+		err = file.Close()
+	}()
+
+	if err := storage.Download(
+		packaging.TrainingZipName,
+		path.Join(storage.RemoteConfig.Path, packaging.TrainingZipName),
+	); err != nil {
 		log.Error(err, "download training zip")
 
 		return err

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
-	train_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
+	train_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 	"gopkg.in/yaml.v2"
 	"path"
 	"path/filepath"
@@ -47,14 +47,14 @@ const (
 type ModelTrainer struct {
 	trainingFunc    Train
 	updateTrainInfo UpdateTrainInfo
-	trainStorage    train_storage.Storage
+	trainRepository train_repository.Repository
 }
 
-func NewModelTrainer(storage train_storage.Storage) (*ModelTrainer, error) {
+func NewModelTrainer(repository train_repository.Repository) (*ModelTrainer, error) {
 	return &ModelTrainer{
 		trainingFunc:    TrainOnBuildah,
 		updateTrainInfo: SaveInfo,
-		trainStorage:    storage,
+		trainRepository: repository,
 	}, nil
 }
 
@@ -76,7 +76,7 @@ func (mb *ModelTrainer) Start() (err error) {
 		return err
 	}
 
-	if err := mb.updateTrainInfo(mb.trainStorage, k8sTraining, map[string]string{
+	if err := mb.updateTrainInfo(mb.trainRepository, k8sTraining, map[string]string{
 		legion.ModelCommitID: commitID,
 	}); err != nil {
 		log.Error(err, "Cannot save the commit id")
@@ -114,7 +114,7 @@ func (mb *ModelTrainer) Start() (err error) {
 		return err
 	}
 
-	return
+	return err
 }
 
 func getTraining() (*training.K8sTrainer, error) {
@@ -142,12 +142,12 @@ type trainingDescription struct {
 	Output map[string]string `yaml:"output"`
 }
 
-func (mb *ModelTrainer) saveResult(training *training.K8sTrainer, commitId string) error {
+func (mb *ModelTrainer) saveResult(training *training.K8sTrainer, commitID string) error {
 	outputZipName, err := legion.ProduceTrainingZipName(training.ModelTraining.Spec.Model.ArtifactNameTemplate,
 		&legion.TrainingZipNameConfig{
 			Name:     training.ModelTraining.Spec.Model.Name,
 			Version:  training.ModelTraining.Spec.Model.Version,
-			CommitID: commitId,
+			CommitID: commitID,
 		})
 	if err != nil {
 		return err
@@ -190,9 +190,9 @@ func (mb *ModelTrainer) saveResult(training *training.K8sTrainer, commitId strin
 		return err
 	}
 
-	if err := mb.updateTrainInfo(mb.trainStorage, training, map[string]string{
+	if err := mb.updateTrainInfo(mb.trainRepository, training, map[string]string{
 		legion.TrainingOutputZip: outputZipName,
-		legion.TrainingRunId:     trainingDesc.Output["run_id"],
+		legion.TrainingRunID:     trainingDesc.Output["run_id"],
 	}); err != nil {
 		log.Error(err, "Cannot save the annotations on pod")
 	}
@@ -202,13 +202,13 @@ func (mb *ModelTrainer) saveResult(training *training.K8sTrainer, commitId strin
 
 func (mb *ModelTrainer) downloadData(training *training.K8sTrainer) error {
 	if len(training.InputData) == 0 {
-		log.Info("Model training data is empty. Skip downloading", "mt id", training.ModelTraining.Id)
+		log.Info("Model training data is empty. Skip downloading", "mt id", training.ModelTraining.ID)
 
 		return nil
 	}
 	for _, mtData := range training.InputData {
 		log.Info("Start download training data",
-			"mt id", training.ModelTraining.Id,
+			"mt id", training.ModelTraining.ID,
 			"remote path", mtData.RemotePath,
 			"local path", mtData.LocalPath,
 			"connection type", mtData.DataBinding.Type,

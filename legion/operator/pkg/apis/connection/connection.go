@@ -40,7 +40,7 @@ func init() {
 
 type Connection struct {
 	// Connection id
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Connection specification
 	Spec v1alpha1.ConnectionSpec `json:"spec"`
 	// Connection status

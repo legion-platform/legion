@@ -24,7 +24,7 @@ export interface ConnectionSpec {
     keyID?: string;
 
     /**
-     * Ssh or service account secret
+     * SSH or service account secret
      */
     keySecret?: string;
 
@@ -34,7 +34,7 @@ export interface ConnectionSpec {
     password?: string;
 
     /**
-     * Ssh public key
+     * SSH public key
      */
     publicKey?: string;
 

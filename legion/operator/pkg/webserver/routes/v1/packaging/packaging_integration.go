@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -30,12 +30,12 @@ import (
 var logPi = logf.Log.WithName("toolchain-integration-controller")
 
 const (
-	getPackagingIntegrationUrl    = "/packaging/integration/:id"
-	getAllPackagingIntegrationUrl = "/packaging/integration"
-	createPackagingIntegrationUrl = "/packaging/integration"
-	updatePackagingIntegrationUrl = "/packaging/integration"
-	deletePackagingIntegrationUrl = "/packaging/integration/:id"
-	IdPiUrlParam                  = "id"
+	getPackagingIntegrationURL    = "/packaging/integration/:id"
+	getAllPackagingIntegrationURL = "/packaging/integration"
+	createPackagingIntegrationURL = "/packaging/integration"
+	updatePackagingIntegrationURL = "/packaging/integration"
+	deletePackagingIntegrationURL = "/packaging/integration/:id"
+	IDPiURLParam                  = "id"
 )
 
 var (
@@ -43,8 +43,8 @@ var (
 )
 
 type PackagingIntegrationController struct {
-	storage   mp_storage.Storage
-	validator *PiValidator
+	repository mp_repository.Repository
+	validator  *PiValidator
 }
 
 // @Summary Get a PackagingIntegration
@@ -59,12 +59,12 @@ type PackagingIntegrationController struct {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/packaging/integration/{id} [get]
 func (pic *PackagingIntegrationController) getPackagingIntegration(c *gin.Context) {
-	piId := c.Param(IdPiUrlParam)
+	piID := c.Param(IDPiURLParam)
 
-	pi, err := pic.storage.GetPackagingIntegration(piId)
+	pi, err := pic.repository.GetPackagingIntegration(piID)
 	if err != nil {
-		logPi.Error(err, fmt.Sprintf("Retrieving %s packaging integration", piId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logPi.Error(err, fmt.Sprintf("Retrieving %s packaging integration", piID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -83,7 +83,7 @@ func (pic *PackagingIntegrationController) getPackagingIntegration(c *gin.Contex
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/packaging/integration [get]
 func (pic *PackagingIntegrationController) getAllPackagingIntegrations(c *gin.Context) {
-	size, page, err := routes.UrlParamsToFilter(c, nil, emptyCache)
+	size, page, err := routes.URLParamsToFilter(c, nil, emptyCache)
 	if err != nil {
 		logPi.Error(err, "Malformed url parameters of packaging integration request")
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -91,13 +91,13 @@ func (pic *PackagingIntegrationController) getAllPackagingIntegrations(c *gin.Co
 		return
 	}
 
-	piList, err := pic.storage.GetPackagingIntegrationList(
+	piList, err := pic.repository.GetPackagingIntegrationList(
 		kubernetes.Size(size),
 		kubernetes.Page(page),
 	)
 	if err != nil {
 		logPi.Error(err, "Retrieving list of packaging integrations")
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -131,9 +131,9 @@ func (pic *PackagingIntegrationController) createPackagingIntegration(c *gin.Con
 		return
 	}
 
-	if err := pic.storage.CreatePackagingIntegration(&pi); err != nil {
+	if err := pic.repository.CreatePackagingIntegration(&pi); err != nil {
 		logPi.Error(err, fmt.Sprintf("Creation of the packaging integration: %+v", pi))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -168,9 +168,9 @@ func (pic *PackagingIntegrationController) updatePackagingIntegration(c *gin.Con
 		return
 	}
 
-	if err := pic.storage.UpdatePackagingIntegration(&pi); err != nil {
+	if err := pic.repository.UpdatePackagingIntegration(&pi); err != nil {
 		logPi.Error(err, fmt.Sprintf("Update of the packaging integration: %+v", pi))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -190,14 +190,14 @@ func (pic *PackagingIntegrationController) updatePackagingIntegration(c *gin.Con
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/packaging/integration/{id} [delete]
 func (pic *PackagingIntegrationController) deletePackagingIntegration(c *gin.Context) {
-	piId := c.Param(IdPiUrlParam)
+	piID := c.Param(IDPiURLParam)
 
-	if err := pic.storage.DeletePackagingIntegration(piId); err != nil {
-		logPi.Error(err, fmt.Sprintf("Deletion of %s packaging integration is failed", piId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := pic.repository.DeletePackagingIntegration(piID); err != nil {
+		logPi.Error(err, fmt.Sprintf("Deletion of %s packaging integration is failed", piID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Packaging integration %s was deleted", piId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Packaging integration %s was deleted", piID)})
 }

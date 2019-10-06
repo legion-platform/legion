@@ -22,15 +22,10 @@ import (
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/spf13/viper"
 	"net/http"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
 	authHeaderName = "X-Jwt"
-)
-
-var (
-	logIndex = logf.Log.WithName("log-index")
 )
 
 func SetUpIndexPage(server *gin.Engine) {

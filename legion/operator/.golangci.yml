@@ -1,2 +1,46 @@
 linters:
   enable-all: true
+  disable:
+    - dupl
+    - gochecknoinits
+    - gochecknoglobals
+    - maligned
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - errcheck
+    - linters:
+        - staticcheck
+      text: "SA1019:"
+    # TODO: need to fix it
+    - linters:
+        - gosec
+      text: "G305:"
+    - linters:
+        - gofmt
+      text: "File is not `gofmt`-ed with `-s`"
+    - linters:
+        - goimports
+      text: "File is not `goimports`-ed"
+    # Exclude comments with an URL
+    - linters:
+        - lll
+      source: "https"
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "kubebuilder:rbac"
+    - linters:
+        - lll
+      source: "^//go:generate"
+    - linters:
+        - golint
+      text: "type name will be used as packaging.Packaging"
+    - linters:
+        - golint
+      text: "type `JsonSchema` should be `JSONSchema`"
+    - linters:
+        - golint
+      text: "type `ExternalUrl` should be `ExternalURL`"

@@ -27,13 +27,13 @@ import (
 )
 
 const (
-	GetConfigurationUrl    = "/configuration"
-	UpdateConfigurationUrl = "/configuration"
+	GetConfigurationURL    = "/configuration"
+	UpdateConfigurationURL = "/configuration"
 )
 
 func ConfigureRoutes(routeGroup *gin.RouterGroup) {
-	routeGroup.GET(GetConfigurationUrl, getConfiguration)
-	routeGroup.PUT(UpdateConfigurationUrl, updateConfiguration)
+	routeGroup.GET(GetConfigurationURL, getConfiguration)
+	routeGroup.PUT(UpdateConfigurationURL, updateConfiguration)
 }
 
 // @Summary Get the Legion service configuration
@@ -46,14 +46,14 @@ func ConfigureRoutes(routeGroup *gin.RouterGroup) {
 func getConfiguration(c *gin.Context) {
 	// TODO: move it to a different file
 	// TODO: manually mapping is a bad approach
-	externalUrls := make([]configuration.ExternalUrl, 0)
-	configExternalUrls := viper.Get(common_conf.ExternalUrls).([]interface{})
-	for _, externalUrlI := range configExternalUrls {
-		externalUrl := externalUrlI.(map[interface{}]interface{})
+	externalURLs := make([]configuration.ExternalUrl, 0)
+	configExternalURLs := viper.Get(common_conf.ExternalURLs).([]interface{})
+	for _, externalURL := range configExternalURLs {
+		externalURL := externalURL.(map[interface{}]interface{})
 
-		name := externalUrl["name"].(string)
-		url := externalUrl["url"].(string)
-		externalUrls = append(externalUrls, configuration.ExternalUrl{
+		name := externalURL["name"].(string)
+		url := externalURL["url"].(string)
+		externalURLs = append(externalURLs, configuration.ExternalUrl{
 			Name: name,
 			URL:  url,
 		})
@@ -61,10 +61,10 @@ func getConfiguration(c *gin.Context) {
 
 	c.JSON(http.StatusOK, &configuration.Configuration{
 		CommonConfiguration: configuration.CommonConfiguration{
-			ExternalUrls: externalUrls,
+			ExternalURLs: externalURLs,
 		},
 		TrainingConfiguration: configuration.TrainingConfiguration{
-			MetricUrl: viper.GetString(training.MetricUrl),
+			MetricURL: viper.GetString(training.MetricURL),
 		},
 	})
 }

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	_ "github.com/ncw/rclone/backend/local"
+	_ "github.com/ncw/rclone/backend/local" //nolint
 	"github.com/ncw/rclone/fs"
 	"github.com/ncw/rclone/fs/cache"
 	"github.com/ncw/rclone/fs/operations"
@@ -101,9 +101,11 @@ func newFsFile(remote string) (fs.Fs, string, error) {
 // A connection has "gs://bucket-name/data" URI structure.
 // The function with following parameters localPath="data/sync_dir/" remotePath="" downloads
 // file to the "data/sync_dir/text.txt" location.
-// The function with following parameters localPath="data/sync_dir/" remotePath="/data/text.txt" downloads
+// The function with following parameters
+// localPath="data/sync_dir/" remotePath="/data/text.txt" downloads
 // file to the "data/sync_dir/text.txt" location.
-// The function with following parameters localPath="data/sync_dir/renamed-text.txt" remotePath="/data/text.txt" downloads
+// The function with following parameters
+// localPath="data/sync_dir/renamed-text.txt" remotePath="/data/text.txt" downloads
 // file to the "data/sync_dir/text.txt" location.
 // If remotePath point to a directory then localPath must point to a directory too.
 func (os *ObjectStorage) Download(localPath, remotePath string) error {
@@ -129,7 +131,10 @@ func (os *ObjectStorage) Download(localPath, remotePath string) error {
 
 	if srcFileName == "" {
 		if localFileName != "" {
-			return fmt.Errorf("local path (%s) points to a file, but remote path (%s) points to a dir", localPath, remotePath)
+			return fmt.Errorf(
+				"local path (%s) points to a file, but remote path (%s) points to a dir",
+				localPath, remotePath,
+			)
 		}
 
 		return sync.CopyDir(localFs, remoteFs, copyEmptySrcDirs)
@@ -151,7 +156,8 @@ func (os *ObjectStorage) Download(localPath, remotePath string) error {
 // file to the "gs://bucket-name/sync_dir/text.txt" bucket location.
 // The function with following parameters localPath="data/" remotePath="/sync_dir/" downloads
 // file to the "gs://bucket-name/sync_dir/text.txt" bucket location.
-// The function with following parameters localPath="data/text.txt" remotePath="/sync_dir/renamed-text.txt" downloads
+// The function with following parameters
+// localPath="data/text.txt" remotePath="/sync_dir/renamed-text.txt" downloads
 // file to the "gs://bucket-name/sync_dir/renamed-text.txt" bucket location.
 // If localPath point to a directory then remotePath must point to a directory too.
 func (os *ObjectStorage) Upload(localPath, remotePath string) error {

@@ -18,9 +18,10 @@ package trainer
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	train_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
+	train_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 )
 
 type Train func(mtFilePath string, training *training.K8sTrainer) error
 
-type UpdateTrainInfo func(trainStorage train_storage.Storage, training *training.K8sTrainer, info map[string]string) error
+type UpdateTrainInfo func(trainRepository train_repository.Repository, training *training.K8sTrainer,
+	info map[string]string) error

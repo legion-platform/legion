@@ -49,7 +49,7 @@ var (
 func CloneUserRepo(k8sTraining *training.K8sTrainer) (string, error) {
 	vcsConn := k8sTraining.VCS
 
-	gitAuth, err := getSshKeyAuth(viper.GetString(trainer_conf.SSHKeyPath))
+	gitAuth, err := getSSHKeyAuth(viper.GetString(trainer_conf.SSHKeyPath))
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +100,7 @@ func CloneUserRepo(k8sTraining *training.K8sTrainer) (string, error) {
 	return hash.String(), err
 }
 
-func getSshKeyAuth(sshKeyPath string) (transport.AuthMethod, error) {
+func getSSHKeyAuth(sshKeyPath string) (transport.AuthMethod, error) {
 	var auth transport.AuthMethod
 
 	sshKey, err := ioutil.ReadFile(sshKeyPath)
@@ -118,8 +118,8 @@ func getSshKeyAuth(sshKeyPath string) (transport.AuthMethod, error) {
 	return auth, nil
 }
 
-// User reference can be short reference(for example: develop), full reference(for example: refs/remotes/origin/develop) or
-// just a hash commit.
+// User reference can be short reference(for example: develop),
+// full reference(for example: refs/remotes/origin/develop) or just a hash commit.
 // Determine in the following order:
 //   * full reference
 //   * tag

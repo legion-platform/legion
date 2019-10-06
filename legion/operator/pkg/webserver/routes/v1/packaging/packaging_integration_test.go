@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	piId           = "ti-test"
+	piID           = "ti-test"
 	piEntrypoint   = "test-entrypoint"
 	piDefaultImage = "test:image"
 	piPrivileged   = false
@@ -41,10 +41,10 @@ func TestGetPackagingIntegration(t *testing.T) {
 
 	pi := newPackagingIntegration()
 	g.Expect(c.CreatePackagingIntegration(pi)).NotTo(HaveOccurred())
-	defer c.DeletePackagingIntegration(pi.Id)
+	defer c.DeletePackagingIntegration(pi.ID)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/packaging/integration/%s", piId), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/packaging/integration/%s", piID), nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	server.ServeHTTP(w, req)
 
@@ -78,7 +78,7 @@ func TestCreatePackagingIntegration(t *testing.T) {
 	server, c, _ := createEnvironment()
 
 	piEntity := newPackagingIntegration()
-	defer c.DeletePackagingIntegration(piId)
+	defer c.DeletePackagingIntegration(piID)
 
 	piEntityBody, err := json.Marshal(piEntity)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -93,10 +93,10 @@ func TestCreatePackagingIntegration(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(w.Code).Should(Equal(http.StatusCreated))
-	g.Expect(piResponse.Id).Should(Equal(piEntity.Id))
+	g.Expect(piResponse.ID).Should(Equal(piEntity.ID))
 	g.Expect(piResponse.Spec).Should(Equal(piEntity.Spec))
 
-	pi, err := c.GetPackagingIntegration(piId)
+	pi, err := c.GetPackagingIntegration(piID)
 	g.Expect(err).ShouldNot(HaveOccurred())
 	g.Expect(pi.Spec).To(Equal(piEntity.Spec))
 }
@@ -107,7 +107,7 @@ func TestCreateDuplicatePackagingIntegration(t *testing.T) {
 
 	pi := newPackagingIntegration()
 	g.Expect(c.CreatePackagingIntegration(pi)).NotTo(HaveOccurred())
-	defer c.DeletePackagingIntegration(piId)
+	defer c.DeletePackagingIntegration(piID)
 
 	piEntityBody, err := json.Marshal(pi)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -131,7 +131,7 @@ func TestUpdatePackagingIntegration(t *testing.T) {
 
 	pi := newPackagingIntegration()
 	g.Expect(c.CreatePackagingIntegration(pi)).NotTo(HaveOccurred())
-	defer c.DeletePackagingIntegration(pi.Id)
+	defer c.DeletePackagingIntegration(pi.ID)
 
 	piEntity := newPackagingIntegration()
 	piEntity.Spec.Entrypoint = "new-entrypoint"
@@ -149,10 +149,10 @@ func TestUpdatePackagingIntegration(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(w.Code).Should(Equal(http.StatusOK))
-	g.Expect(piResponse.Id).Should(Equal(piEntity.Id))
+	g.Expect(piResponse.ID).Should(Equal(piEntity.ID))
 	g.Expect(piResponse.Spec).Should(Equal(piEntity.Spec))
 
-	pi, err = c.GetPackagingIntegration(piId)
+	pi, err = c.GetPackagingIntegration(piID)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(pi.Spec).To(Equal(piEntity.Spec))
 }
@@ -184,10 +184,10 @@ func TestDeletePackagingIntegration(t *testing.T) {
 
 	pi := newPackagingIntegration()
 	g.Expect(c.CreatePackagingIntegration(pi)).NotTo(HaveOccurred())
-	defer c.DeletePackagingIntegration(pi.Id)
+	defer c.DeletePackagingIntegration(pi.ID)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/packaging/integration/%s", piId), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/packaging/integration/%s", piID), nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	server.ServeHTTP(w, req)
 
@@ -208,7 +208,7 @@ func TestDeletePackagingIntegrationNotFound(t *testing.T) {
 	server, _, _ := createEnvironment()
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/packaging/integration/%s", piId), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("/packaging/integration/%s", piID), nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	server.ServeHTTP(w, req)
 

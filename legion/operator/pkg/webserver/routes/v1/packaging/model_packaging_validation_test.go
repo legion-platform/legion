@@ -21,21 +21,21 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"testing"
 
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
-	mp_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
+	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	pack_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
 )
 
 var (
-	piIdMpValid           = "pi-id"
+	piIDMpValid           = "pi-id"
 	piEntrypointMpValid   = "/usr/bin/test"
 	piImageMpValid        = "test:image"
 	piArtifactNameMpValid = "some-artifact-name.zip"
@@ -89,9 +89,9 @@ var (
 
 type ModelPackagingValidationSuite struct {
 	suite.Suite
-	g           *GomegaWithT
-	mpStorage   mp_storage.Storage
-	connStorage conn_storage.Storage
+	g              *GomegaWithT
+	mpRepository   mp_repository.Repository
+	connRepository conn_repository.Repository
 }
 
 func (s *ModelPackagingValidationSuite) SetupTest() {
@@ -104,11 +104,11 @@ func (s *ModelPackagingValidationSuite) SetupSuite() {
 		panic(err)
 	}
 
-	s.mpStorage = mp_k8s_storage.NewStorage(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connStorage = conn_k8s_storage.NewStorage(testNamespace, mgr.GetClient())
+	s.mpRepository = mp_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
 
-	err = s.mpStorage.CreatePackagingIntegration(&packaging.PackagingIntegration{
-		Id: piIdMpValid,
+	err = s.mpRepository.CreatePackagingIntegration(&packaging.PackagingIntegration{
+		ID: piIDMpValid,
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   piEntrypointMpValid,
 			DefaultImage: piImageMpValid,
@@ -123,8 +123,8 @@ func (s *ModelPackagingValidationSuite) SetupSuite() {
 		panic(err)
 	}
 
-	err = s.connStorage.CreateConnection(&connection.Connection{
-		Id: connDockerTypeMpValid,
+	err = s.connRepository.CreateConnection(&connection.Connection{
+		ID: connDockerTypeMpValid,
 		Spec: v1alpha1.ConnectionSpec{
 			Type: connection.DockerType,
 		},
@@ -135,8 +135,8 @@ func (s *ModelPackagingValidationSuite) SetupSuite() {
 		panic(err)
 	}
 
-	err = s.connStorage.CreateConnection(&connection.Connection{
-		Id: connS3TypeMpValid,
+	err = s.connRepository.CreateConnection(&connection.Connection{
+		ID: connS3TypeMpValid,
 		Spec: v1alpha1.ConnectionSpec{
 			Type: connection.S3Type,
 		},
@@ -149,17 +149,17 @@ func (s *ModelPackagingValidationSuite) SetupSuite() {
 }
 
 func (s *ModelPackagingValidationSuite) TearDownSuite() {
-	if err := s.connStorage.DeleteConnection(connS3TypeMpValid); err != nil {
+	if err := s.connRepository.DeleteConnection(connS3TypeMpValid); err != nil {
 		// If we get a panic that we have a test configuration problem
 		panic(err)
 	}
 
-	if err := s.connStorage.DeleteConnection(connDockerTypeMpValid); err != nil {
+	if err := s.connRepository.DeleteConnection(connDockerTypeMpValid); err != nil {
 		// If we get a panic that we have a test configuration problem
 		panic(err)
 	}
 
-	if err := s.mpStorage.DeletePackagingIntegration(piIdMpValid); err != nil {
+	if err := s.mpRepository.DeletePackagingIntegration(piIDMpValid); err != nil {
 		// If we get a panic that we have a test configuration problem
 		panic(err)
 	}
@@ -169,35 +169,35 @@ func TestModelPackagingValidationSuite(t *testing.T) {
 	suite.Run(t, new(ModelPackagingValidationSuite))
 }
 
-func (s *ModelPackagingValidationSuite) TestMpIdGeneration() {
+func (s *ModelPackagingValidationSuite) TestMpIDGeneration() {
 
 	ti := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{},
 	}
 
-	_ = pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(ti)
-	s.g.Expect(ti.Id).ShouldNot(BeEmpty())
+	_ = pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(ti)
+	s.g.Expect(ti.ID).ShouldNot(BeEmpty())
 }
 
-func (s *ModelPackagingValidationSuite) TestMpIdExplicitly() {
+func (s *ModelPackagingValidationSuite) TestMpIDExplicitly() {
 	id := "some-id"
 	mp := &packaging.ModelPackaging{
-		Id:   id,
+		ID:   id,
 		Spec: packaging.ModelPackagingSpec{},
 	}
 
-	_ = pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
-	s.g.Expect(mp.Id).Should(Equal(id))
+	_ = pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
+	s.g.Expect(mp.ID).Should(Equal(id))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpImage() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 		},
 	}
 
-	_ = pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	_ = pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(mp.Spec.Image).ShouldNot(BeEmpty())
 	s.g.Expect(mp.Spec.Image).Should(Equal(piImageMpValid))
 }
@@ -206,12 +206,12 @@ func (s *ModelPackagingValidationSuite) TestMpImageExplicitly() {
 	image := "some-image"
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Image:           image,
 		},
 	}
 
-	_ = pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	_ = pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(mp.Spec.Image).Should(Equal(image))
 }
 
@@ -222,9 +222,10 @@ func (s *ModelPackagingValidationSuite) TestMpImageNotFound() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring("packagingintegrations.legion.legion-platform.org \"not found\" not found"))
+	s.g.Expect(err.Error()).Should(ContainSubstring(
+		"packagingintegrations.legion.legion-platform.org \"not found\" not found"))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpArtifactName() {
@@ -234,9 +235,9 @@ func (s *ModelPackagingValidationSuite) TestMpArtifactName() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).ShouldNot(ContainSubstring(pack_route.TrainingIdOrArtifactNameErrorMessage))
+	s.g.Expect(err.Error()).ShouldNot(ContainSubstring(pack_route.TrainingIDOrArtifactNameErrorMessage))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpArtifactNameMissed() {
@@ -244,9 +245,9 @@ func (s *ModelPackagingValidationSuite) TestMpArtifactNameMissed() {
 		Spec: packaging.ModelPackagingSpec{},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring(pack_route.TrainingIdOrArtifactNameErrorMessage))
+	s.g.Expect(err.Error()).Should(ContainSubstring(pack_route.TrainingIDOrArtifactNameErrorMessage))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpIntegrationNameEmpty() {
@@ -254,7 +255,7 @@ func (s *ModelPackagingValidationSuite) TestMpIntegrationNameEmpty() {
 		Spec: packaging.ModelPackagingSpec{},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
 	s.g.Expect(err.Error()).Should(ContainSubstring(pack_route.EmptyIntegrationNameErrorMessage))
 }
@@ -266,22 +267,23 @@ func (s *ModelPackagingValidationSuite) TestMpIntegrationNotFound() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring("packagingintegrations.legion.legion-platform.org \"some-packaging-name\" not found"))
+	s.g.Expect(err.Error()).Should(ContainSubstring(
+		"packagingintegrations.legion.legion-platform.org \"some-packaging-name\" not found"))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpNotValidArgumentsSchema() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Arguments: map[string]interface{}{
 				"argument-1": 4,
 			},
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
 	s.g.Expect(err.Error()).Should(ContainSubstring("argument-1: Must be greater than or equal to 5"))
 }
@@ -289,14 +291,14 @@ func (s *ModelPackagingValidationSuite) TestMpNotValidArgumentsSchema() {
 func (s *ModelPackagingValidationSuite) TestMpAdditionalArguments() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Arguments: map[string]interface{}{
 				"argument-3": "value",
 			},
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
 	s.g.Expect(err.Error()).Should(ContainSubstring("Additional property argument-3 is not allowed"))
 }
@@ -304,14 +306,14 @@ func (s *ModelPackagingValidationSuite) TestMpAdditionalArguments() {
 func (s *ModelPackagingValidationSuite) TestMpRequiredArguments() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Arguments: map[string]interface{}{
 				"argument-2": "value",
 			},
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
 	s.g.Expect(err.Error()).Should(ContainSubstring("argument-1 is required"))
 }
@@ -319,7 +321,7 @@ func (s *ModelPackagingValidationSuite) TestMpRequiredArguments() {
 func (s *ModelPackagingValidationSuite) TestMpRequiredTargets() {
 	ti := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Targets: []v1alpha1.Target{
 				{
 					Name:           "target-1",
@@ -329,7 +331,7 @@ func (s *ModelPackagingValidationSuite) TestMpRequiredTargets() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(ti)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(ti)
 	s.g.Expect(err).Should(HaveOccurred())
 	s.g.Expect(err.Error()).Should(ContainSubstring("[target-2] are required targets"))
 }
@@ -338,7 +340,7 @@ func (s *ModelPackagingValidationSuite) TestMpNotFoundTargets() {
 	targetNotFoundName := "target-not-found"
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Targets: []v1alpha1.Target{
 				{
 					Name:           targetNotFoundName,
@@ -348,15 +350,17 @@ func (s *ModelPackagingValidationSuite) TestMpNotFoundTargets() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(pack_route.TargetNotFoundErrorMessage, targetNotFoundName, piIdMpValid)))
+	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(
+		pack_route.TargetNotFoundErrorMessage, targetNotFoundName, piIDMpValid,
+	)))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpTargetConnNotFound() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Targets: []v1alpha1.Target{
 				{
 					Name:           "target-1",
@@ -366,15 +370,16 @@ func (s *ModelPackagingValidationSuite) TestMpTargetConnNotFound() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring("connections.legion.legion-platform.org \"conn-not-found\" not found"))
+	s.g.Expect(err.Error()).Should(ContainSubstring(
+		"connections.legion.legion-platform.org \"conn-not-found\" not found"))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpTargetConnWrongType() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Targets: []v1alpha1.Target{
 				{
 					Name:           "target-1",
@@ -384,19 +389,21 @@ func (s *ModelPackagingValidationSuite) TestMpTargetConnWrongType() {
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(pack_route.NotValidConnTypeErrorMessage, "target-1", connection.DockerType, piIdMpValid)))
+	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(
+		pack_route.NotValidConnTypeErrorMessage, "target-1", connection.DockerType, piIDMpValid,
+	)))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpGenerateDefaultResources() {
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 		},
 	}
 
-	_ = pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	_ = pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(mp.Spec.Resources).ShouldNot(BeNil())
 	s.g.Expect(mp.Spec.Resources).Should(Equal(pack_route.DefaultPackagingResources))
 }
@@ -405,30 +412,36 @@ func (s *ModelPackagingValidationSuite) TestMpResourcesValidation() {
 	wrongResourceValue := "wrong res"
 	mp := &packaging.ModelPackaging{
 		Spec: packaging.ModelPackagingSpec{
-			IntegrationName: piIdMpValid,
+			IntegrationName: piIDMpValid,
 			Resources: &v1alpha1.ResourceRequirements{
 				Limits: &v1alpha1.ResourceList{
 					Memory: &wrongResourceValue,
-					Gpu:    &wrongResourceValue,
-					Cpu:    &wrongResourceValue,
+					GPU:    &wrongResourceValue,
+					CPU:    &wrongResourceValue,
 				},
 				Requests: &v1alpha1.ResourceList{
 					Memory: &wrongResourceValue,
-					Gpu:    &wrongResourceValue,
-					Cpu:    &wrongResourceValue,
+					GPU:    &wrongResourceValue,
+					CPU:    &wrongResourceValue,
 				},
 			},
 		},
 	}
 
-	err := pack_route.NewMpValidator(s.mpStorage, s.connStorage).ValidateAndSetDefaults(mp)
+	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
 
 	errorMessage := err.Error()
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of memory request is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of cpu request is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of gpu request is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of memory limit is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of cpu limit is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of gpu limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of memory request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of cpu request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of gpu request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of memory limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of cpu limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of gpu limit is failed: quantities must match the regular expression"))
 }

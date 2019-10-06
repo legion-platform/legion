@@ -43,8 +43,9 @@ func GetClientConfig() (*rest.Config, error) {
 
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
-			err = fmt.Errorf("InClusterConfig as well as BuildConfigFromFlags Failed. Error in InClusterConfig: %+v\nError in BuildConfigFromFlags: %+v", err1, err)
-			return nil, err
+			return nil, fmt.Errorf(
+				"InClusterConfig as well as BuildConfigFromFlags Failed. "+
+					"Error in InClusterConfig: %+v\nError in BuildConfigFromFlags: %+v", err1, err)
 		}
 	}
 
@@ -117,7 +118,8 @@ type LogStream struct {
 	Data []byte
 }
 
-func StreamLogs(namespace string, k8sConfig *rest.Config, trainingName string, containerName string, follow bool) (io.ReadCloser, error) {
+func StreamLogs(namespace string, k8sConfig *rest.Config, trainingName string,
+	containerName string, follow bool) (io.ReadCloser, error) {
 	clientset, _ := kubernetes.NewForConfig(k8sConfig)
 	request := clientset.CoreV1().Pods(namespace).
 		GetLogs(trainingName, &core_v1.PodLogOptions{Follow: follow, Container: containerName})

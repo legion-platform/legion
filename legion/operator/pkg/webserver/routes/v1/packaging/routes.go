@@ -18,30 +18,31 @@ package packaging
 
 import (
 	"github.com/gin-gonic/gin"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 )
 
-func ConfigureRoutes(routeGroup *gin.RouterGroup, storage mp_storage.Storage, connStorage conn_storage.Storage) {
+func ConfigureRoutes(routeGroup *gin.RouterGroup, repository mp_repository.Repository,
+	connRepository conn_repository.Repository) {
 	mtController := ModelPackagingController{
-		storage:   storage,
-		validator: NewMpValidator(storage, connStorage),
+		repository: repository,
+		validator:  NewMpValidator(repository, connRepository),
 	}
-	routeGroup.GET(GetModelPackagingUrl, mtController.getMP)
-	routeGroup.GET(GetAllModelPackagingUrl, mtController.getAllMPs)
-	routeGroup.POST(CreateModelPackagingUrl, mtController.createMP)
-	routeGroup.GET(GetModelPackagingLogsUrl, mtController.getModelPackagingLog)
-	routeGroup.PUT(UpdateModelPackagingUrl, mtController.updateMP)
-	routeGroup.DELETE(DeleteModelPackagingUrl, mtController.deleteMP)
+	routeGroup.GET(GetModelPackagingURL, mtController.getMP)
+	routeGroup.GET(GetAllModelPackagingURL, mtController.getAllMPs)
+	routeGroup.POST(CreateModelPackagingURL, mtController.createMP)
+	routeGroup.GET(GetModelPackagingLogsURL, mtController.getModelPackagingLog)
+	routeGroup.PUT(UpdateModelPackagingURL, mtController.updateMP)
+	routeGroup.DELETE(DeleteModelPackagingURL, mtController.deleteMP)
 
 	tiController := &PackagingIntegrationController{
-		storage:   storage,
-		validator: NewPiValidator(),
+		repository: repository,
+		validator:  NewPiValidator(),
 	}
 
-	routeGroup.GET(getPackagingIntegrationUrl, tiController.getPackagingIntegration)
-	routeGroup.GET(getAllPackagingIntegrationUrl, tiController.getAllPackagingIntegrations)
-	routeGroup.POST(createPackagingIntegrationUrl, tiController.createPackagingIntegration)
-	routeGroup.PUT(updatePackagingIntegrationUrl, tiController.updatePackagingIntegration)
-	routeGroup.DELETE(deletePackagingIntegrationUrl, tiController.deletePackagingIntegration)
+	routeGroup.GET(getPackagingIntegrationURL, tiController.getPackagingIntegration)
+	routeGroup.GET(getAllPackagingIntegrationURL, tiController.getAllPackagingIntegrations)
+	routeGroup.POST(createPackagingIntegrationURL, tiController.createPackagingIntegration)
+	routeGroup.PUT(updatePackagingIntegrationURL, tiController.updatePackagingIntegration)
+	routeGroup.DELETE(deletePackagingIntegrationURL, tiController.deletePackagingIntegration)
 }

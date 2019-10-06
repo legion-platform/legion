@@ -20,7 +20,7 @@ import (
 	"fmt"
 	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
 	train_conf "github.com/legion-platform/legion/legion/operator/pkg/config/training"
-	train_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training/kubernetes"
+	train_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
@@ -47,7 +47,7 @@ var mainCmd = &cobra.Command{
 		}
 
 		modelBuilder, err := trainer.NewModelTrainer(
-			train_k8s_storage.NewStorage(
+			train_k8s_storage.NewRepository(
 				viper.GetString(train_conf.Namespace),
 				viper.GetString(train_conf.ToolchainIntegrationNamespace),
 				mgr.GetClient(), mgr.GetConfig(),

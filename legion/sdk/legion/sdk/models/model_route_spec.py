@@ -103,7 +103,7 @@ class ModelRouteSpec(Model):
     def url_prefix(self) -> str:
         """Gets the url_prefix of this ModelRouteSpec.
 
-        Url prefix for model  For example: /custom/test Prefix must start with slash \"/feedback\" and \"/model\" are reserved for internal usage  # noqa: E501
+        URL prefix for model  For example: /custom/test Prefix must start with slash \"/feedback\" and \"/model\" are reserved for internal usage  # noqa: E501
 
         :return: The url_prefix of this ModelRouteSpec.
         :rtype: str
@@ -114,7 +114,7 @@ class ModelRouteSpec(Model):
     def url_prefix(self, url_prefix: str):
         """Sets the url_prefix of this ModelRouteSpec.
 
-        Url prefix for model  For example: /custom/test Prefix must start with slash \"/feedback\" and \"/model\" are reserved for internal usage  # noqa: E501
+        URL prefix for model  For example: /custom/test Prefix must start with slash \"/feedback\" and \"/model\" are reserved for internal usage  # noqa: E501
 
         :param url_prefix: The url_prefix of this ModelRouteSpec.
         :type url_prefix: str

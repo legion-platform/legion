@@ -11,8 +11,8 @@ from legion.sdk.models.connection_status import ConnectionStatus
 from legion.sdk.models.data_binding_dir import DataBindingDir
 from legion.sdk.models.environment_variable import EnvironmentVariable
 from legion.sdk.models.external_url import ExternalUrl
-from legion.sdk.models.feedback_feedback_request import FeedbackFeedbackRequest
-from legion.sdk.models.feedback_feedback_response import FeedbackFeedbackResponse
+from legion.sdk.models.feedback_model_feedback_request import FeedbackModelFeedbackRequest
+from legion.sdk.models.feedback_model_feedback_response import FeedbackModelFeedbackResponse
 from legion.sdk.models.http_result import HTTPResult
 from legion.sdk.models.input_data_binding_dir import InputDataBindingDir
 from legion.sdk.models.json_schema import JsonSchema

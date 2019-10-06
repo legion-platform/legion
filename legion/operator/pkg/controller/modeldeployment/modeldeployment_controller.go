@@ -19,7 +19,7 @@ package modeldeployment
 import (
 	"context"
 	"github.com/knative/serving/pkg/apis/serving"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	"github.com/spf13/viper"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -175,12 +175,12 @@ func (r *ReconcileModelDeployment) ReconcileModelRoute(modelDeploymentCR *legion
 			Name:      modelRouteName(modelDeploymentCR),
 			Namespace: modelDeploymentCR.Namespace,
 			Annotations: map[string]string{
-				legionv1alpha1.SkipUrlValidationKey: legionv1alpha1.SkipUrlValidationValue,
+				legionv1alpha1.SkipURLValidationKey: legionv1alpha1.SkipURLValidationValue,
 				latestReadyRevisionKey:              latestReadyRevision,
 			},
 		},
 		Spec: legionv1alpha1.ModelRouteSpec{
-			UrlPrefix: fmt.Sprintf("/model/%s", modelDeploymentCR.Name),
+			URLPrefix: fmt.Sprintf("/model/%s", modelDeploymentCR.Name),
 			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
 					Name:   modelDeploymentCR.Name,
@@ -230,7 +230,9 @@ func (r *ReconcileModelDeployment) ReconcileModelRoute(modelDeploymentCR *legion
 	return nil
 }
 
-func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeploymentCR *legionv1alpha1.ModelDeployment) error {
+func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(
+	modelDeploymentCR *legionv1alpha1.ModelDeployment,
+) error {
 	container, err := r.createModelContainer(modelDeploymentCR)
 	if err != nil {
 		return err
@@ -292,7 +294,10 @@ func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeployment
 	}
 
 	if !legion.ObjsEqualByHash(knativeConfiguration, found) {
-		log.Info(fmt.Sprintf("Knative Configuration hashes don't equal. Update the %s Knative Configuration", knativeConfiguration.Name))
+		log.Info(fmt.Sprintf(
+			"Knative Configuration hashes don't equal. Update the %s Knative Configuration",
+			knativeConfiguration.Name,
+		))
 
 		found.Spec = knativeConfiguration.Spec
 		found.ObjectMeta.Annotations = knativeConfiguration.ObjectMeta.Annotations
@@ -304,13 +309,18 @@ func (r *ReconcileModelDeployment) ReconcileKnativeConfiguration(modelDeployment
 			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Knative Configuration hashes equal. Skip updating of the %s Knative Configuration", knativeConfiguration.Name))
+		log.Info(fmt.Sprintf(
+			"Knative Configuration hashes equal. Skip updating of the %s Knative Configuration",
+			knativeConfiguration.Name,
+		))
 	}
 
 	return nil
 }
 
-func (r *ReconcileModelDeployment) createModelContainer(modelDeploymentCR *legionv1alpha1.ModelDeployment) (*corev1.Container, error) {
+func (r *ReconcileModelDeployment) createModelContainer(
+	modelDeploymentCR *legionv1alpha1.ModelDeployment,
+) (*corev1.Container, error) {
 	httpGetAction := &corev1.HTTPGetAction{
 		Path: "/healthcheck",
 	}
@@ -376,7 +386,7 @@ func (r *ReconcileModelDeployment) reconcileAuthPolicy(modelDeploymentCR *legion
 					{
 						Jwt: &authv1alpha1_istio.Jwt{
 							Issuer:  viper.GetString(md_config.SecurityJwksIssuer),
-							JwksUri: viper.GetString(md_config.SecurityJwksUrl),
+							JwksUri: viper.GetString(md_config.SecurityJwksURL),
 							TriggerRules: []*authv1alpha1_istio.Jwt_TriggerRule{
 								{
 									// Healthcheck paths must be ignored
@@ -419,7 +429,9 @@ func (r *ReconcileModelDeployment) reconcileAuthPolicy(modelDeploymentCR *legion
 	}
 
 	if !legion.ObjsEqualByHash(envoyAuthFilter, found) {
-		log.Info(fmt.Sprintf("Istio Auth Policy hashes don't equal. Update the %s Model route", envoyAuthFilter.Name))
+		log.Info(fmt.Sprintf(
+			"Istio Auth Policy hashes don't equal. Update the %s Model route", envoyAuthFilter.Name,
+		))
 
 		found.Spec = envoyAuthFilter.Spec
 		found.ObjectMeta.Annotations = envoyAuthFilter.ObjectMeta.Annotations
@@ -431,7 +443,9 @@ func (r *ReconcileModelDeployment) reconcileAuthPolicy(modelDeploymentCR *legion
 			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Istio Auth Policy hashes equal. Skip updating of the %s Istio Auth Policy", envoyAuthFilter.Name))
+		log.Info(fmt.Sprintf(
+			"Istio Auth Policy hashes equal. Skip updating of the %s Istio Auth Policy", envoyAuthFilter.Name,
+		))
 	}
 
 	return nil
@@ -439,7 +453,9 @@ func (r *ReconcileModelDeployment) reconcileAuthPolicy(modelDeploymentCR *legion
 
 // Retrieve current configuration and return last revision name.
 // If the latest revision name equals the latest created revision, then last deployment changes were applied.
-func (r *ReconcileModelDeployment) getLatestReadyRevision(modelDeploymentCR *legionv1alpha1.ModelDeployment) (string, bool, error) {
+func (r *ReconcileModelDeployment) getLatestReadyRevision(
+	modelDeploymentCR *legionv1alpha1.ModelDeployment,
+) (string, bool, error) {
 	knativeConfiguration := &knservingv1alpha1.Configuration{}
 	if err := r.Get(context.TODO(), types.NamespacedName{
 		Name: knativeConfigurationName(modelDeploymentCR), Namespace: modelDeploymentCR.Namespace,
@@ -451,8 +467,11 @@ func (r *ReconcileModelDeployment) getLatestReadyRevision(modelDeploymentCR *leg
 	}
 
 	latestReadyRevisionName := knativeConfiguration.Status.LatestReadyRevisionName
+	configurationReady := len(latestReadyRevisionName) != 0 &&
+		latestReadyRevisionName == knativeConfiguration.Status.LatestCreatedRevisionName
+
 	return latestReadyRevisionName,
-		len(latestReadyRevisionName) != 0 && latestReadyRevisionName == knativeConfiguration.Status.LatestCreatedRevisionName,
+		configurationReady,
 		nil
 }
 
@@ -469,7 +488,9 @@ func (r *ReconcileModelDeployment) reconcileStatus(modelDeploymentCR *legionv1al
 	}
 
 	if err := r.Update(context.TODO(), modelDeploymentCR); err != nil {
-		log.Error(err, fmt.Sprintf("Update status of %s model deployment custom resource", modelDeploymentCR.Name))
+		log.Error(err, fmt.Sprintf(
+			"Update status of %s model deployment custom resource", modelDeploymentCR.Name,
+		))
 		return err
 	}
 
@@ -521,9 +542,9 @@ func (r *ReconcileModelDeployment) reconcileService(modelDeploymentCR *legionv1a
 		log.Info(fmt.Sprintf("service hashes don't equal. Update the %s service", service.Name))
 
 		// ClusterIP must not change
-		clusterIp := found.Spec.ClusterIP
+		clusterIP := found.Spec.ClusterIP
 		found.Spec = service.Spec
-		found.Spec.ClusterIP = clusterIp
+		found.Spec.ClusterIP = clusterIP
 
 		log.Info(fmt.Sprintf("Updating %s k8s service", service.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
@@ -631,7 +652,10 @@ func (r *ReconcileModelDeployment) cleanupOldRevisions(modelDeploymentCR *legion
 
 	lastKnativeRevisionGenerationStr, ok := lastKnativeRevision.Labels[serving.ConfigurationGenerationLabelKey]
 	if !ok {
-		return fmt.Errorf("can not get the lastest knative revision generation: %s", lastKnativeRevisionGenerationStr)
+		return fmt.Errorf(
+			"can not get the lastest knative revision generation: %s",
+			lastKnativeRevisionGenerationStr,
+		)
 	}
 
 	lastKnativeRevisionGeneration, err := strconv.Atoi(lastKnativeRevisionGenerationStr)
@@ -641,9 +665,18 @@ func (r *ReconcileModelDeployment) cleanupOldRevisions(modelDeploymentCR *legion
 
 	knativeRevisions := &knservingv1alpha1.RevisionList{}
 
-	labelSelectorReq, err := labels.NewRequirement(modelNameAnnotationKey, selection.DoubleEquals, []string{modelDeploymentCR.Name})
+	labelSelectorReq, err := labels.NewRequirement(
+		modelNameAnnotationKey,
+		selection.DoubleEquals,
+		[]string{modelDeploymentCR.Name},
+	)
 	if err != nil {
-		log.Error(err, "Creation of the label selector requirement", "model deployment id", modelDeploymentCR.Name)
+		log.Error(
+			err,
+			"Creation of the label selector requirement",
+			"model deployment id",
+			modelDeploymentCR.Name,
+		)
 		return err
 	}
 
@@ -654,12 +687,20 @@ func (r *ReconcileModelDeployment) cleanupOldRevisions(modelDeploymentCR *legion
 		LabelSelector: labelSelector,
 		Namespace:     modelDeploymentCR.Namespace,
 	}, knativeRevisions); err != nil {
-		log.Error(err, "Get the list of knative revisions", "model deployment id", modelDeploymentCR.Name)
+		log.Error(
+			err,
+			"Get the list of knative revisions",
+			"model deployment id",
+			modelDeploymentCR.Name,
+		)
 
 		return err
 	}
 
 	for _, kr := range knativeRevisions.Items {
+		// pin variable
+		kr := kr
+
 		modelDeploymentName, ok := kr.Labels[modelNameAnnotationKey]
 		if !ok || modelDeploymentName != modelDeploymentCR.Name {
 			continue
@@ -764,7 +805,10 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 	}
 
 	if !configurationReady {
-		log.Info("Configuration was not updated yet. Put the Model Deployment back in the queue", "Model Deployment name", modelDeploymentCR.Name)
+		log.Info(
+			"Configuration was not updated yet. Put the Model Deployment back in the queue",
+			"Model Deployment name", modelDeploymentCR.Name,
+		)
 
 		_ = r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateProcessing, "")
 
@@ -794,7 +838,10 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	} else if err != nil {
-		log.Error(err, "Getting of model deployment", "Model Deployment name", modelDeploymentCR.Name,
+		log.Error(
+			err,
+			"Getting of model deployment",
+			"Model Deployment name", modelDeploymentCR.Name,
 			"K8s Deployment name", modelDeploymentKey.Name)
 
 		return reconcile.Result{}, err
@@ -810,8 +857,16 @@ func (r *ReconcileModelDeployment) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{RequeueAfter: defaultRequeueDelay}, nil
 	}
 
-	if err := r.reconcileStatus(modelDeploymentCR, legionv1alpha1.ModelDeploymentStateReady, latestReadyRevision); err != nil {
-		log.Error(err, "Reconcile Model Deployment Status", "Model Deployment name", modelDeploymentCR.Name)
+	if err := r.reconcileStatus(
+		modelDeploymentCR,
+		legionv1alpha1.ModelDeploymentStateReady,
+		latestReadyRevision,
+	); err != nil {
+		log.Error(
+			err,
+			"Reconcile Model Deployment Status",
+			"Model Deployment name", modelDeploymentCR.Name,
+		)
 		return reconcile.Result{}, err
 	}
 

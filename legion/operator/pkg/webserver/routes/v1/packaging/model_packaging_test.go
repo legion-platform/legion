@@ -22,8 +22,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
+	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	. "github.com/onsi/gomega"
@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"strings"
 
-	mp_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
+	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	pack_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -41,17 +41,17 @@ import (
 )
 
 var (
-	mpIdRoute           = "test-id"
-	piIdMpRoute         = "pi-id"
+	mpIDRoute           = "test-id"
+	piIDMpRoute         = "pi-id"
 	piEntrypointMpRoute = "/usr/bin/test"
 	piImageMpRoute      = "test:image"
 )
 
 type ModelPackagingRouteSuite struct {
 	suite.Suite
-	g         *GomegaWithT
-	server    *gin.Engine
-	mpStorage mp_storage.Storage
+	g            *GomegaWithT
+	server       *gin.Engine
+	mpRepository mp_repository.Repository
 }
 
 func (s *ModelPackagingRouteSuite) SetupSuite() {
@@ -62,11 +62,11 @@ func (s *ModelPackagingRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mpStorage = mp_k8s_storage.NewStorage(testNamespace, testNamespace, mgr.GetClient(), nil)
-	pack_route.ConfigureRoutes(v1Group, s.mpStorage, conn_k8s_storage.NewStorage(testNamespace, mgr.GetClient()))
+	s.mpRepository = mp_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	pack_route.ConfigureRoutes(v1Group, s.mpRepository, conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient()))
 
-	err = s.mpStorage.CreatePackagingIntegration(&packaging.PackagingIntegration{
-		Id: piIdMpRoute,
+	err = s.mpRepository.CreatePackagingIntegration(&packaging.PackagingIntegration{
+		ID: piIDMpRoute,
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   piEntrypointMpRoute,
 			DefaultImage: piImageMpRoute,
@@ -79,7 +79,7 @@ func (s *ModelPackagingRouteSuite) SetupSuite() {
 }
 
 func (s *ModelPackagingRouteSuite) TearDownSuite() {
-	if err := s.mpStorage.DeletePackagingIntegration(piIdMpValid); err != nil {
+	if err := s.mpRepository.DeletePackagingIntegration(piIDMpValid); err != nil {
 		panic(err)
 	}
 }
@@ -89,8 +89,8 @@ func (s *ModelPackagingRouteSuite) SetupTest() {
 }
 
 func (s *ModelPackagingRouteSuite) TearDownTest() {
-	for _, mpId := range []string{mpIdRoute, testMpId1, testMpId2} {
-		if err := s.mpStorage.DeleteModelPackaging(mpId); err != nil && !errors.IsNotFound(err) {
+	for _, mpID := range []string{mpIDRoute, testMpID1, testMpID2} {
+		if err := s.mpRepository.DeleteModelPackaging(mpID); err != nil && !errors.IsNotFound(err) {
 			// If a model packaging is not found then it was not created during a test case
 			// All other errors propagate as a panic
 			panic(err)
@@ -100,10 +100,10 @@ func (s *ModelPackagingRouteSuite) TearDownTest() {
 
 func newModelPackaging() *packaging.ModelPackaging {
 	return &packaging.ModelPackaging{
-		Id: mpIdRoute,
+		ID: mpIDRoute,
 		Spec: packaging.ModelPackagingSpec{
 			ArtifactName:    mpArtifactName,
-			IntegrationName: piIdMpRoute,
+			IntegrationName: piIDMpRoute,
 			Image:           mpImage,
 			Resources:       pack_route.DefaultPackagingResources,
 		},
@@ -112,12 +112,12 @@ func newModelPackaging() *packaging.ModelPackaging {
 
 func (s *ModelPackagingRouteSuite) createModelPackagings() []*packaging.ModelPackaging {
 	mp1 := newModelPackaging()
-	mp1.Id = testMpId1
-	s.g.Expect(s.mpStorage.CreateModelPackaging(mp1)).NotTo(HaveOccurred())
+	mp1.ID = testMpID1
+	s.g.Expect(s.mpRepository.CreateModelPackaging(mp1)).NotTo(HaveOccurred())
 
 	mp2 := newModelPackaging()
-	mp2.Id = testMpId2
-	s.g.Expect(s.mpStorage.CreateModelPackaging(mp2)).NotTo(HaveOccurred())
+	mp2.ID = testMpID2
+	s.g.Expect(s.mpRepository.CreateModelPackaging(mp2)).NotTo(HaveOccurred())
 
 	return []*packaging.ModelPackaging{mp1, mp2}
 }
@@ -128,12 +128,12 @@ func TestModelPackagingRouteSuite(t *testing.T) {
 
 func (s *ModelPackagingRouteSuite) TestGetMP() {
 	mp := newModelPackaging()
-	s.g.Expect(s.mpStorage.CreateModelPackaging(mp)).NotTo(HaveOccurred())
+	s.g.Expect(s.mpRepository.CreateModelPackaging(mp)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.Replace(pack_route.GetModelPackagingUrl, ":id", mp.Id, -1),
+		strings.Replace(pack_route.GetModelPackagingURL, ":id", mp.ID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -151,7 +151,7 @@ func (s *ModelPackagingRouteSuite) TestGetMPNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.Replace(pack_route.GetModelPackagingUrl, ":id", "not-found", -1),
+		strings.Replace(pack_route.GetModelPackagingURL, ":id", "not-found", -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -167,7 +167,7 @@ func (s *ModelPackagingRouteSuite) TestGetMPNotFound() {
 
 func (s *ModelPackagingRouteSuite) TestGetAllMPEmptyResult() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -183,7 +183,7 @@ func (s *ModelPackagingRouteSuite) TestGetAllMP() {
 	s.createModelPackagings()
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -195,18 +195,18 @@ func (s *ModelPackagingRouteSuite) TestGetAllMP() {
 	s.g.Expect(result).Should(HaveLen(2))
 
 	for _, mp := range result {
-		s.g.Expect(mp.Id).To(Or(Equal(testMpId1), Equal(testMpId2)))
+		s.g.Expect(mp.ID).To(Or(Equal(testMpID1), Equal(testMpID2)))
 	}
 }
 
 func (s *ModelPackagingRouteSuite) TestGetAllMTPaging() {
 	s.createModelPackagings()
 
-	mpNames := map[string]interface{}{testMpId1: nil, testMpId2: nil}
+	mpNames := map[string]interface{}{testMpID1: nil, testMpID2: nil}
 
 	// Return first page
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -223,11 +223,11 @@ func (s *ModelPackagingRouteSuite) TestGetAllMTPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(trainings).Should(HaveLen(1))
-	delete(mpNames, trainings[0].Id)
+	delete(mpNames, trainings[0].ID)
 
 	// Return second page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -243,11 +243,11 @@ func (s *ModelPackagingRouteSuite) TestGetAllMTPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(trainings).Should(HaveLen(1))
-	delete(mpNames, trainings[0].Id)
+	delete(mpNames, trainings[0].ID)
 
 	// Return third empty page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, pack_route.GetAllModelPackagingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -273,7 +273,7 @@ func (s *ModelPackagingRouteSuite) TestCreateMP() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, pack_route.CreateModelPackagingUrl, bytes.NewReader(mpEntityBody))
+	req, err := http.NewRequest(http.MethodPost, pack_route.CreateModelPackagingURL, bytes.NewReader(mpEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -282,23 +282,23 @@ func (s *ModelPackagingRouteSuite) TestCreateMP() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusCreated))
-	s.g.Expect(mpResponse.Id).Should(Equal(mpEntity.Id))
+	s.g.Expect(mpResponse.ID).Should(Equal(mpEntity.ID))
 	s.g.Expect(mpResponse.Spec).Should(Equal(mpEntity.Spec))
 
-	mp, err := s.mpStorage.GetModelPackaging(mpIdRoute)
+	mp, err := s.mpRepository.GetModelPackaging(mpIDRoute)
 	s.g.Expect(err).ShouldNot(HaveOccurred())
 	s.g.Expect(mp.Spec).To(Equal(mpEntity.Spec))
 }
 
 func (s *ModelPackagingRouteSuite) TestCreateDuplicateMP() {
 	mp := newModelPackaging()
-	s.g.Expect(s.mpStorage.CreateModelPackaging(mp)).NotTo(HaveOccurred())
+	s.g.Expect(s.mpRepository.CreateModelPackaging(mp)).NotTo(HaveOccurred())
 
 	mpEntityBody, err := json.Marshal(mp)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, pack_route.CreateModelPackagingUrl, bytes.NewReader(mpEntityBody))
+	req, err := http.NewRequest(http.MethodPost, pack_route.CreateModelPackagingURL, bytes.NewReader(mpEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -312,16 +312,16 @@ func (s *ModelPackagingRouteSuite) TestCreateDuplicateMP() {
 
 func (s *ModelPackagingRouteSuite) TestUpdateMP() {
 	mp := newModelPackaging()
-	s.g.Expect(s.mpStorage.CreateModelPackaging(mp)).NotTo(HaveOccurred())
+	s.g.Expect(s.mpRepository.CreateModelPackaging(mp)).NotTo(HaveOccurred())
 
 	updatedMp := newModelPackaging()
-	updatedMp.Spec.Image = updatedMp.Spec.Image + "123"
+	updatedMp.Spec.Image += "123"
 
 	mpEntityBody, err := json.Marshal(updatedMp)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, pack_route.UpdateModelPackagingUrl, bytes.NewReader(mpEntityBody))
+	req, err := http.NewRequest(http.MethodPut, pack_route.UpdateModelPackagingURL, bytes.NewReader(mpEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -330,10 +330,10 @@ func (s *ModelPackagingRouteSuite) TestUpdateMP() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(mpResponse.Id).Should(Equal(updatedMp.Id))
+	s.g.Expect(mpResponse.ID).Should(Equal(updatedMp.ID))
 	s.g.Expect(mpResponse.Spec).Should(Equal(updatedMp.Spec))
 
-	mp, err = s.mpStorage.GetModelPackaging(mpIdRoute)
+	mp, err = s.mpRepository.GetModelPackaging(mpIDRoute)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(mp.Spec).To(Equal(updatedMp.Spec))
 }
@@ -345,7 +345,7 @@ func (s *ModelPackagingRouteSuite) TestUpdateMPNotFound() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, pack_route.UpdateModelPackagingUrl, bytes.NewReader(mpEntityBody))
+	req, err := http.NewRequest(http.MethodPut, pack_route.UpdateModelPackagingURL, bytes.NewReader(mpEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -359,12 +359,12 @@ func (s *ModelPackagingRouteSuite) TestUpdateMPNotFound() {
 
 func (s *ModelPackagingRouteSuite) TestDeleteMP() {
 	mp := newModelPackaging()
-	s.g.Expect(s.mpStorage.CreateModelPackaging(mp)).NotTo(HaveOccurred())
+	s.g.Expect(s.mpRepository.CreateModelPackaging(mp)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		strings.Replace(pack_route.DeleteModelPackagingUrl, ":id", mp.Id, -1),
+		strings.Replace(pack_route.DeleteModelPackagingURL, ":id", mp.ID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -377,7 +377,7 @@ func (s *ModelPackagingRouteSuite) TestDeleteMP() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result.Message).Should(ContainSubstring("was deleted"))
 
-	mpList, err := s.mpStorage.GetModelPackagingList()
+	mpList, err := s.mpRepository.GetModelPackagingList()
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(mpList).To(HaveLen(0))
 }
@@ -386,7 +386,7 @@ func (s *ModelPackagingRouteSuite) TestDeleteMPNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		strings.Replace(pack_route.DeleteModelPackagingUrl, ":id", "some-mp-id", -1),
+		strings.Replace(pack_route.DeleteModelPackagingURL, ":id", "some-mp-id", -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())

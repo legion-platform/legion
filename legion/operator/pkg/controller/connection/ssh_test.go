@@ -20,7 +20,7 @@ import "testing"
 
 func TestExtractHost(t *testing.T) {
 	type args struct {
-		gitUrl string
+		gitURL string
 	}
 	tests := []struct {
 		name    string
@@ -48,8 +48,11 @@ func TestExtractHost(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		// pin variable
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractHost(tt.args.gitUrl)
+			got, err := extractHost(tt.args.gitURL)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("extractHost() error = %v, wantErr %v", err, tt.wantErr)
 				return

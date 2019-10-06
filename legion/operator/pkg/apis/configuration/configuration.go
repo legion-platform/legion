@@ -29,7 +29,7 @@ type Configuration struct {
 
 type CommonConfiguration struct {
 	// The collection of external urls, for example: metrics, edge, service catalog and so on
-	ExternalUrls []ExternalUrl `json:"externalUrls"`
+	ExternalURLs []ExternalUrl `json:"externalUrls"`
 }
 
 type ExternalUrl struct {
@@ -40,5 +40,5 @@ type ExternalUrl struct {
 }
 
 type TrainingConfiguration struct {
-	MetricUrl string `json:"metricUrl"`
+	MetricURL string `json:"metricUrl"`
 }

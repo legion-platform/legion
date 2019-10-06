@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	"reflect"
@@ -30,12 +30,12 @@ import (
 var logC = logf.Log.WithName("connection-controller")
 
 const (
-	GetConnectionUrl    = "/connection/:id"
-	GetAllConnectionUrl = "/connection"
-	CreateConnectionUrl = "/connection"
-	UpdateConnectionUrl = "/connection"
-	DeleteConnectionUrl = "/connection/:id"
-	IdConnUrlParam      = "id"
+	GetConnectionURL    = "/connection/:id"
+	GetAllConnectionURL = "/connection"
+	CreateConnectionURL = "/connection"
+	UpdateConnectionURL = "/connection"
+	DeleteConnectionURL = "/connection/:id"
+	IDConnURLParam      = "id"
 )
 
 var (
@@ -43,30 +43,30 @@ var (
 )
 
 func init() {
-	elem := reflect.TypeOf(&conn_storage.Filter{}).Elem()
+	elem := reflect.TypeOf(&conn_repository.Filter{}).Elem()
 	for i := 0; i < elem.NumField(); i++ {
-		tagName := elem.Field(i).Tag.Get(conn_storage.TagKey)
+		tagName := elem.Field(i).Tag.Get(conn_repository.TagKey)
 
 		fieldsCache[tagName] = i
 	}
 }
 
 type controller struct {
-	connStorage conn_storage.Storage
-	validator   *ConnValidator
+	connRepository conn_repository.Repository
+	validator      *ConnValidator
 }
 
-func ConfigureRoutes(routeGroup *gin.RouterGroup, connStorage conn_storage.Storage) {
+func ConfigureRoutes(routeGroup *gin.RouterGroup, connRepository conn_repository.Repository) {
 	controller := &controller{
-		connStorage: connStorage,
-		validator:   NewConnValidator(),
+		connRepository: connRepository,
+		validator:      NewConnValidator(),
 	}
 
-	routeGroup.GET(GetConnectionUrl, controller.getConnection)
-	routeGroup.GET(GetAllConnectionUrl, controller.getAllConnections)
-	routeGroup.POST(CreateConnectionUrl, controller.createConnection)
-	routeGroup.PUT(UpdateConnectionUrl, controller.updateConnection)
-	routeGroup.DELETE(DeleteConnectionUrl, controller.deleteConnection)
+	routeGroup.GET(GetConnectionURL, controller.getConnection)
+	routeGroup.GET(GetAllConnectionURL, controller.getAllConnections)
+	routeGroup.POST(CreateConnectionURL, controller.createConnection)
+	routeGroup.PUT(UpdateConnectionURL, controller.updateConnection)
+	routeGroup.DELETE(DeleteConnectionURL, controller.deleteConnection)
 }
 
 // @Summary Get a Connection
@@ -81,12 +81,12 @@ func ConfigureRoutes(routeGroup *gin.RouterGroup, connStorage conn_storage.Stora
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/connection/{id} [get]
 func (cc *controller) getConnection(c *gin.Context) {
-	connId := c.Param(IdConnUrlParam)
+	connID := c.Param(IDConnURLParam)
 
-	conn, err := cc.connStorage.GetConnection(connId)
+	conn, err := cc.connRepository.GetConnection(connID)
 	if err != nil {
-		logC.Error(err, fmt.Sprintf("Retrieving %s connection", connId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logC.Error(err, fmt.Sprintf("Retrieving %s connection", connID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -106,8 +106,8 @@ func (cc *controller) getConnection(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/connection [get]
 func (cc *controller) getAllConnections(c *gin.Context) {
-	filter := &conn_storage.Filter{}
-	size, page, err := routes.UrlParamsToFilter(c, filter, fieldsCache)
+	filter := &conn_repository.Filter{}
+	size, page, err := routes.URLParamsToFilter(c, filter, fieldsCache)
 	if err != nil {
 		logC.Error(err, "Malformed url parameters of connection request")
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -115,14 +115,14 @@ func (cc *controller) getAllConnections(c *gin.Context) {
 		return
 	}
 
-	connList, err := cc.connStorage.GetConnectionList(
-		conn_storage.ListFilter(filter),
-		conn_storage.Size(size),
-		conn_storage.Page(page),
+	connList, err := cc.connRepository.GetConnectionList(
+		conn_repository.ListFilter(filter),
+		conn_repository.Size(size),
+		conn_repository.Page(page),
 	)
 	if err != nil {
 		logC.Error(err, "Retrieving list of connections")
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -156,9 +156,9 @@ func (cc *controller) createConnection(c *gin.Context) {
 		return
 	}
 
-	if err := cc.connStorage.CreateConnection(&conn); err != nil {
+	if err := cc.connRepository.CreateConnection(&conn); err != nil {
 		logC.Error(err, fmt.Sprintf("Creation of the connection: %+v", conn))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -193,9 +193,9 @@ func (cc *controller) updateConnection(c *gin.Context) {
 		return
 	}
 
-	if err := cc.connStorage.UpdateConnection(&conn); err != nil {
+	if err := cc.connRepository.UpdateConnection(&conn); err != nil {
 		logC.Error(err, fmt.Sprintf("Update of the connection: %+v", conn))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -215,14 +215,14 @@ func (cc *controller) updateConnection(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/connection/{id} [delete]
 func (cc *controller) deleteConnection(c *gin.Context) {
-	connId := c.Param(IdConnUrlParam)
+	connID := c.Param(IDConnURLParam)
 
-	if err := cc.connStorage.DeleteConnection(connId); err != nil {
-		logC.Error(err, fmt.Sprintf("Deletion of %s connection is failed", connId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := cc.connRepository.DeleteConnection(connID); err != nil {
+		logC.Error(err, fmt.Sprintf("Deletion of %s connection is failed", connID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Connection %s was deleted", connId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Connection %s was deleted", connID)})
 }

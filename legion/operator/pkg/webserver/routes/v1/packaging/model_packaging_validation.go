@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/xeipuuv/gojsonschema"
 	"go.uber.org/multierr"
@@ -31,40 +31,40 @@ import (
 
 const (
 	ValidationMpErrorMessage             = "Validation of model packaging is failed"
-	TrainingIdOrArtifactNameErrorMessage = "you should specify artifactName"
+	TrainingIDOrArtifactNameErrorMessage = "you should specify artifactName"
 	ArgumentValidationErrorMessage       = "argument validation is failed: %s"
 	EmptyIntegrationNameErrorMessage     = "integration name must be nonempty"
 	TargetNotFoundErrorMessage           = "cannot find %s target in packaging integration %s"
 	NotValidConnTypeErrorMessage         = "%s target has not valid connection type %s for packaging integration %s"
-	defaultIdTemplate                    = "%s-%s-%s"
+	defaultIDTemplate                    = "%s-%s-%s"
 )
 
 var (
 	defaultMemoryLimit        = "2028Mi"
-	defaultCpuLimit           = "2000m"
+	defaultCPULimit           = "2000m"
 	defaultMemoryRequests     = "1024Mi"
-	defaultCpuRequests        = "1000m"
+	defaultCPURequests        = "1000m"
 	DefaultPackagingResources = &v1alpha1.ResourceRequirements{
 		Limits: &v1alpha1.ResourceList{
-			Cpu:    &defaultCpuLimit,
+			CPU:    &defaultCPULimit,
 			Memory: &defaultMemoryLimit,
 		},
 		Requests: &v1alpha1.ResourceList{
-			Cpu:    &defaultCpuRequests,
+			CPU:    &defaultCPURequests,
 			Memory: &defaultMemoryRequests,
 		},
 	}
 )
 
 type MpValidator struct {
-	storage     mp_storage.Storage
-	connStorage conn_storage.Storage
+	mpRepository   mp_repository.Repository
+	connRepository conn_repository.Repository
 }
 
-func NewMpValidator(storage mp_storage.Storage, connStorage conn_storage.Storage) *MpValidator {
+func NewMpValidator(mpRepository mp_repository.Repository, connRepository conn_repository.Repository) *MpValidator {
 	return &MpValidator{
-		storage:     storage,
-		connStorage: connStorage,
+		mpRepository:   mpRepository,
+		connRepository: connRepository,
 	}
 }
 
@@ -74,7 +74,7 @@ func (mpv *MpValidator) ValidateAndSetDefaults(mp *packaging.ModelPackaging) (er
 	if len(mp.Spec.IntegrationName) == 0 {
 		err = multierr.Append(err, errors.New(EmptyIntegrationNameErrorMessage))
 	} else {
-		if pi, k8sErr := mpv.storage.GetPackagingIntegration(mp.Spec.IntegrationName); k8sErr != nil {
+		if pi, k8sErr := mpv.mpRepository.GetPackagingIntegration(mp.Spec.IntegrationName); k8sErr != nil {
 			err = multierr.Append(err, k8sErr)
 		} else {
 			err = multierr.Append(err, mpv.validateArguments(pi, mp))
@@ -92,41 +92,41 @@ func (mpv *MpValidator) ValidateAndSetDefaults(mp *packaging.ModelPackaging) (er
 }
 
 func (mpv *MpValidator) validateMainParameters(mp *packaging.ModelPackaging) (err error) {
-	if len(mp.Id) == 0 {
+	if len(mp.ID) == 0 {
 		u4, uuidErr := uuid.NewV4()
 		if uuidErr != nil {
 			err = multierr.Append(err, uuidErr)
 		} else {
-			mp.Id = fmt.Sprintf(defaultIdTemplate, mp.Spec.ArtifactName, mp.Spec.IntegrationName, u4.String())
-			logMP.Info("Model packaging id is empty. Generate a default value", "id", mp.Id)
+			mp.ID = fmt.Sprintf(defaultIDTemplate, mp.Spec.ArtifactName, mp.Spec.IntegrationName, u4.String())
+			logMP.Info("Model packaging id is empty. Generate a default value", "id", mp.ID)
 		}
 	}
 
 	if len(mp.Spec.Image) == 0 {
-		packagingIntegration, k8sErr := mpv.storage.GetPackagingIntegration(mp.Spec.IntegrationName)
+		packagingIntegration, k8sErr := mpv.mpRepository.GetPackagingIntegration(mp.Spec.IntegrationName)
 		if k8sErr != nil {
 			err = multierr.Append(err, k8sErr)
 		} else {
 			mp.Spec.Image = packagingIntegration.Spec.DefaultImage
 			logMP.Info("Model packaging id is empty. Set a packaging integration image",
-				"id", mp.Id, "image", mp.Spec.Image)
+				"id", mp.ID, "image", mp.Spec.Image)
 		}
 	}
 
 	if len(mp.Spec.ArtifactName) == 0 {
-		err = multierr.Append(err, errors.New(TrainingIdOrArtifactNameErrorMessage))
+		err = multierr.Append(err, errors.New(TrainingIDOrArtifactNameErrorMessage))
 	}
 
 	if mp.Spec.Resources == nil {
 		logMP.Info("Packaging resource parameter is nil. Set the default value",
-			"name", mp.Id, "resources", DefaultPackagingResources)
+			"name", mp.ID, "resources", DefaultPackagingResources)
 		mp.Spec.Resources = DefaultPackagingResources
 	} else {
 		_, resValidationErr := kubernetes.ConvertLegionResourcesToK8s(mp.Spec.Resources)
 		err = multierr.Append(err, resValidationErr)
 	}
 
-	return
+	return err
 }
 
 func (mpv *MpValidator) validateArguments(pi *packaging.PackagingIntegration, mp *packaging.ModelPackaging) error {
@@ -167,9 +167,9 @@ func (mpv *MpValidator) validateArguments(pi *packaging.PackagingIntegration, mp
 
 	if result.Valid() {
 		return nil
-	} else {
-		return fmt.Errorf(ArgumentValidationErrorMessage, result.Errors())
 	}
+
+	return fmt.Errorf(ArgumentValidationErrorMessage, result.Errors())
 }
 
 func (mpv *MpValidator) validateTargets(pi *packaging.PackagingIntegration, mp *packaging.ModelPackaging) (err error) {
@@ -190,9 +190,9 @@ func (mpv *MpValidator) validateTargets(pi *packaging.PackagingIntegration, mp *
 		}
 
 		if targetSchema, ok := allTargets[target.Name]; !ok {
-			err = multierr.Append(err, fmt.Errorf(TargetNotFoundErrorMessage, target.Name, pi.Id))
+			err = multierr.Append(err, fmt.Errorf(TargetNotFoundErrorMessage, target.Name, pi.ID))
 		} else {
-			if conn, k8sErr := mpv.connStorage.GetConnection(target.ConnectionName); k8sErr != nil {
+			if conn, k8sErr := mpv.connRepository.GetConnection(target.ConnectionName); k8sErr != nil {
 				err = multierr.Append(err, k8sErr)
 			} else {
 				isValidConnectionType := false
@@ -205,7 +205,7 @@ func (mpv *MpValidator) validateTargets(pi *packaging.PackagingIntegration, mp *
 				}
 
 				if !isValidConnectionType {
-					err = multierr.Append(err, fmt.Errorf(NotValidConnTypeErrorMessage, target.Name, conn.Spec.Type, pi.Id))
+					err = multierr.Append(err, fmt.Errorf(NotValidConnTypeErrorMessage, target.Name, conn.Spec.Type, pi.ID))
 				}
 			}
 		}
@@ -220,5 +220,5 @@ func (mpv *MpValidator) validateTargets(pi *packaging.PackagingIntegration, mp *
 		err = multierr.Append(err, fmt.Errorf("%s are required targets", requiredTargetsList))
 	}
 
-	return
+	return err
 }

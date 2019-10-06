@@ -22,9 +22,9 @@ import (
 
 const (
 	// The collection of external urls, for example: metrics, edge, service catalog and so on
-	ExternalUrls = "common.external_urls"
+	ExternalURLs = "common.external_urls"
 )
 
 func init() {
-	viper.SetDefault(ExternalUrls, []interface{}{})
+	viper.SetDefault(ExternalURLs, []interface{}{})
 }

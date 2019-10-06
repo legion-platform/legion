@@ -35,7 +35,7 @@ import (
 const (
 	urlName   = "Training Api"
 	urlValue  = "https://training.legion.org"
-	metricUrl = "https://metrics.legion.org"
+	metricURL = "https://metrics.legion.org"
 )
 
 type ConfigurationRouteSuite struct {
@@ -51,7 +51,7 @@ func (s *ConfigurationRouteSuite) SetupSuite() {
 }
 
 func (s *ConfigurationRouteSuite) TearDownTest() {
-	viper.Set(common_conf.ExternalUrls, []interface{}{})
+	viper.Set(common_conf.ExternalURLs, []interface{}{})
 }
 
 func (s *ConfigurationRouteSuite) SetupTest() {
@@ -63,16 +63,16 @@ func TestConnectionRouteSuite(t *testing.T) {
 }
 
 func (s *ConfigurationRouteSuite) TestGetConfiguration() {
-	externalUrls := []interface{}{}
-	externalUrls = append(externalUrls, map[interface{}]interface{}{"name": urlName, "url": urlValue})
-	viper.Set(common_conf.ExternalUrls, externalUrls)
+	externalURLs := []interface{}{}
+	externalURLs = append(externalURLs, map[interface{}]interface{}{"name": urlName, "url": urlValue})
+	viper.Set(common_conf.ExternalURLs, externalURLs)
 
-	viper.Set(training.MetricUrl, metricUrl)
+	viper.Set(training.MetricURL, metricURL)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		conf_route.GetConfigurationUrl,
+		conf_route.GetConfigurationURL,
 		nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
@@ -84,22 +84,22 @@ func (s *ConfigurationRouteSuite) TestGetConfiguration() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(Equal(configuration.Configuration{
 		CommonConfiguration: configuration.CommonConfiguration{
-			ExternalUrls: []configuration.ExternalUrl{
+			ExternalURLs: []configuration.ExternalUrl{
 				{
 					Name: urlName,
 					URL:  urlValue,
 				},
 			},
 		},
-		TrainingConfiguration: configuration.TrainingConfiguration{MetricUrl: metricUrl},
+		TrainingConfiguration: configuration.TrainingConfiguration{MetricURL: metricURL},
 	}))
 }
 
-func (s *ConfigurationRouteSuite) TestGetEmptyListOfUrlsConfiguration() {
+func (s *ConfigurationRouteSuite) TestGetEmptyListOfURLsConfiguration() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		conf_route.GetConfigurationUrl,
+		conf_route.GetConfigurationURL,
 		nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
@@ -109,14 +109,14 @@ func (s *ConfigurationRouteSuite) TestGetEmptyListOfUrlsConfiguration() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(result.CommonConfiguration.ExternalUrls).Should(HaveLen(0))
+	s.g.Expect(result.CommonConfiguration.ExternalURLs).Should(HaveLen(0))
 }
 
 func (s *ConfigurationRouteSuite) TestUpdateConfiguration() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodPut,
-		conf_route.UpdateConfigurationUrl,
+		conf_route.UpdateConfigurationURL,
 		nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)

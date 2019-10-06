@@ -29,7 +29,7 @@ const (
 	ModelBuilderImage             = "training.model_trainer.image"
 	NodeSelector                  = "training.node_selector"
 	Toleration                    = "training.toleration"
-	MetricUrl                     = "training.metric_url"
+	MetricURL                     = "training.metric_url"
 )
 
 const (
@@ -59,5 +59,5 @@ func init() {
 		TolerationEffect:   "NoSchedule",
 	})
 
-	viper.SetDefault(MetricUrl, "")
+	viper.SetDefault(MetricURL, "")
 }

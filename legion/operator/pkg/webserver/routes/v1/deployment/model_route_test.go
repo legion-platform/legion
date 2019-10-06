@@ -22,8 +22,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	dep_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
-	dep_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment/kubernetes"
+	dep_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
+	dep_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	dep_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
@@ -39,17 +39,17 @@ import (
 )
 
 const (
-	mrId  = "test-mr"
-	mrId1 = "test-mr1"
-	mrId2 = "test-mr2"
-	mrUrl = "/test/url"
+	mrID  = "test-mr"
+	mrID1 = "test-mr1"
+	mrID2 = "test-mr2"
+	mrURL = "/test/url"
 )
 
 type ModelRouteSuite struct {
 	suite.Suite
-	g         *GomegaWithT
-	server    *gin.Engine
-	mdStorage dep_storage.Storage
+	g            *GomegaWithT
+	server       *gin.Engine
+	mdRepository dep_repository.Repository
 }
 
 func (s *ModelRouteSuite) SetupSuite() {
@@ -60,11 +60,13 @@ func (s *ModelRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mdStorage = dep_k8s_storage.NewStorageWithOptions(testNamespace, mgr.GetClient(), metav1.DeletePropagationBackground)
-	dep_route.ConfigureRoutes(v1Group, s.mdStorage)
+	s.mdRepository = dep_k8s_repository.NewRepositoryWithOptions(
+		testNamespace, mgr.GetClient(), metav1.DeletePropagationBackground,
+	)
+	dep_route.ConfigureRoutes(v1Group, s.mdRepository)
 
-	err = s.mdStorage.CreateModelDeployment(&deployment.ModelDeployment{
-		Id: mdId1,
+	err = s.mdRepository.CreateModelDeployment(&deployment.ModelDeployment{
+		ID: mdID1,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
 			MinReplicas:                &mdMinReplicas,
@@ -80,8 +82,8 @@ func (s *ModelRouteSuite) SetupSuite() {
 		panic(err)
 	}
 
-	err = s.mdStorage.CreateModelDeployment(&deployment.ModelDeployment{
-		Id: mdId2,
+	err = s.mdRepository.CreateModelDeployment(&deployment.ModelDeployment{
+		ID: mdID2,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
 			MinReplicas:                &mdMinReplicas,
@@ -99,8 +101,8 @@ func (s *ModelRouteSuite) SetupSuite() {
 }
 
 func (s *ModelRouteSuite) TearDownSuite() {
-	for _, mdId := range []string{mdId1, mdId2} {
-		if err := s.mdStorage.DeleteModelDeployment(mdId); err != nil && !errors.IsNotFound(err) {
+	for _, mdID := range []string{mdID1, mdID2} {
+		if err := s.mdRepository.DeleteModelDeployment(mdID); err != nil && !errors.IsNotFound(err) {
 			panic(err)
 		}
 	}
@@ -111,8 +113,8 @@ func (s *ModelRouteSuite) SetupTest() {
 }
 
 func (s *ModelRouteSuite) TearDownTest() {
-	for _, mdId := range []string{mrId, mrId1, mrId2} {
-		if err := s.mdStorage.DeleteModelRoute(mdId); err != nil && !errors.IsNotFound(err) {
+	for _, mdID := range []string{mrID, mrID1, mrID2} {
+		if err := s.mdRepository.DeleteModelRoute(mdID); err != nil && !errors.IsNotFound(err) {
 			panic(err)
 		}
 	}
@@ -120,12 +122,12 @@ func (s *ModelRouteSuite) TearDownTest() {
 
 func newStubMr() *deployment.ModelRoute {
 	return &deployment.ModelRoute{
-		Id: mrId,
+		ID: mrID,
 		Spec: legionv1alpha1.ModelRouteSpec{
-			UrlPrefix: mrUrl,
+			URLPrefix: mrURL,
 			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
-					Name:   mdId1,
+					Name:   mdID1,
 					Weight: &dep_route.MaxWeight,
 				},
 			},
@@ -139,12 +141,12 @@ func TestModelRouteSuite(t *testing.T) {
 
 func (s *ModelRouteSuite) TestGetMR() {
 	mr := newStubMr()
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.Replace(dep_route.GetModelRouteUrl, ":id", mrId, -1),
+		strings.Replace(dep_route.GetModelRouteURL, ":id", mrID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -162,7 +164,7 @@ func (s *ModelRouteSuite) TestGetMRNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.Replace(dep_route.GetModelRouteUrl, ":id", "not-found", -1),
+		strings.Replace(dep_route.GetModelRouteURL, ":id", "not-found", -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -178,12 +180,12 @@ func (s *ModelRouteSuite) TestGetMRNotFound() {
 
 func (s *ModelRouteSuite) TestGetAllModelRoutes() {
 	conn := newStubMr()
-	s.g.Expect(s.mdStorage.CreateModelRoute(conn)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelRoute(conn)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		dep_route.GetAllModelRouteUrl,
+		dep_route.GetAllModelRouteURL,
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -195,7 +197,7 @@ func (s *ModelRouteSuite) TestGetAllModelRoutes() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
-	s.g.Expect(result[0].Id).Should(Equal(conn.Id))
+	s.g.Expect(result[0].ID).Should(Equal(conn.ID))
 	s.g.Expect(result[0].Spec).Should(Equal(conn.Spec))
 }
 
@@ -203,7 +205,7 @@ func (s *ModelRouteSuite) TestGetAllEmptyModelRoutes() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		dep_route.GetAllModelRouteUrl,
+		dep_route.GetAllModelRouteURL,
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -219,18 +221,18 @@ func (s *ModelRouteSuite) TestGetAllEmptyModelRoutes() {
 
 func (s *ModelRouteSuite) TestGetAllModelRoutesPaging() {
 	mr1 := newStubMr()
-	mr1.Id = mrId1
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr1)).NotTo(HaveOccurred())
+	mr1.ID = mrID1
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr1)).NotTo(HaveOccurred())
 
 	mr2 := newStubMr()
-	mr2.Id = mrId2
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr2)).NotTo(HaveOccurred())
+	mr2.ID = mrID2
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr2)).NotTo(HaveOccurred())
 
-	connNames := map[string]interface{}{mrId1: nil, mrId2: nil}
+	connNames := map[string]interface{}{mrID1: nil, mrID2: nil}
 
 	// Return first page
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelRouteUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelRouteURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -247,11 +249,11 @@ func (s *ModelRouteSuite) TestGetAllModelRoutesPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
-	delete(connNames, result[0].Id)
+	delete(connNames, result[0].ID)
 
 	// Return second page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelRouteUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelRouteURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -267,11 +269,11 @@ func (s *ModelRouteSuite) TestGetAllModelRoutesPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
-	delete(connNames, result[0].Id)
+	delete(connNames, result[0].ID)
 
 	// Return third empty page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelRouteUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelRouteURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -297,7 +299,7 @@ func (s *ModelRouteSuite) TestCreateMR() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelRouteUrl, bytes.NewReader(mrEntityBody))
+	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelRouteURL, bytes.NewReader(mrEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -306,24 +308,24 @@ func (s *ModelRouteSuite) TestCreateMR() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusCreated))
-	s.g.Expect(mrResponse.Id).To(Equal(mrEntity.Id))
+	s.g.Expect(mrResponse.ID).To(Equal(mrEntity.ID))
 	s.g.Expect(mrResponse.Spec).To(Equal(mrEntity.Spec))
 
-	mr, err := s.mdStorage.GetModelRoute(mrId)
+	mr, err := s.mdRepository.GetModelRoute(mrID)
 	s.g.Expect(err).ShouldNot(HaveOccurred())
-	s.g.Expect(mr.Id).To(Equal(mrEntity.Id))
+	s.g.Expect(mr.ID).To(Equal(mrEntity.ID))
 	s.g.Expect(mr.Spec).To(Equal(mrEntity.Spec))
 }
 
 func (s *ModelRouteSuite) TestCreateDuplicateMR() {
 	mr := newStubMr()
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr)).NotTo(HaveOccurred())
 
 	mrEntityBody, err := json.Marshal(mr)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelRouteUrl, bytes.NewReader(mrEntityBody))
+	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelRouteURL, bytes.NewReader(mrEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -337,13 +339,13 @@ func (s *ModelRouteSuite) TestCreateDuplicateMR() {
 
 func (s *ModelRouteSuite) TestValidateCreateMR() {
 	mr := newStubMr()
-	mr.Spec.UrlPrefix = ""
+	mr.Spec.URLPrefix = ""
 
 	mrEntity, err := json.Marshal(mr)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelRouteUrl, bytes.NewReader(mrEntity))
+	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelRouteURL, bytes.NewReader(mrEntity))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -352,22 +354,22 @@ func (s *ModelRouteSuite) TestValidateCreateMR() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusBadRequest))
-	s.g.Expect(result.Message).Should(ContainSubstring(dep_route.UrlPrefixEmptyErrorMessage))
+	s.g.Expect(result.Message).Should(ContainSubstring(dep_route.URLPrefixEmptyErrorMessage))
 }
 
 func (s *ModelRouteSuite) TestUpdateMR() {
 	mr := newStubMr()
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr)).NotTo(HaveOccurred())
 
-	newUrl := "/new/url"
+	newURL := "/new/url"
 	mrEntity := newStubMr()
-	mrEntity.Spec.UrlPrefix = newUrl
+	mrEntity.Spec.URLPrefix = newURL
 
 	mrEntityBody, err := json.Marshal(mrEntity)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelRouteUrl, bytes.NewReader(mrEntityBody))
+	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelRouteURL, bytes.NewReader(mrEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -376,12 +378,12 @@ func (s *ModelRouteSuite) TestUpdateMR() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(mrResponse.Id).To(Equal(mrEntity.Id))
+	s.g.Expect(mrResponse.ID).To(Equal(mrEntity.ID))
 	s.g.Expect(mrResponse.Spec).To(Equal(mrEntity.Spec))
 
-	mr, err = s.mdStorage.GetModelRoute(mrId)
+	mr, err = s.mdRepository.GetModelRoute(mrID)
 	s.g.Expect(err).NotTo(HaveOccurred())
-	s.g.Expect(mr.Id).To(Equal(mrEntity.Id))
+	s.g.Expect(mr.ID).To(Equal(mrEntity.ID))
 	s.g.Expect(mr.Spec).To(Equal(mrEntity.Spec))
 }
 
@@ -392,7 +394,7 @@ func (s *ModelRouteSuite) TestUpdateMRNotFound() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelRouteUrl, bytes.NewReader(mrEntityBody))
+	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelRouteURL, bytes.NewReader(mrEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -406,14 +408,14 @@ func (s *ModelRouteSuite) TestUpdateMRNotFound() {
 
 func (s *ModelRouteSuite) TestValidateUpdateMR() {
 	mr := newStubMr()
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr)).NotTo(HaveOccurred())
 
-	mr.Spec.UrlPrefix = ""
+	mr.Spec.URLPrefix = ""
 	connEntityBody, err := json.Marshal(mr)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelRouteUrl, bytes.NewReader(connEntityBody))
+	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelRouteURL, bytes.NewReader(connEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -422,17 +424,17 @@ func (s *ModelRouteSuite) TestValidateUpdateMR() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusBadRequest))
-	s.g.Expect(result.Message).Should(ContainSubstring(dep_route.UrlPrefixEmptyErrorMessage))
+	s.g.Expect(result.Message).Should(ContainSubstring(dep_route.URLPrefixEmptyErrorMessage))
 }
 
 func (s *ModelRouteSuite) TestDeleteMR() {
 	mr := newStubMr()
-	s.g.Expect(s.mdStorage.CreateModelRoute(mr)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelRoute(mr)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		strings.Replace(dep_route.DeleteModelRouteUrl, ":id", mrId, -1),
+		strings.Replace(dep_route.DeleteModelRouteURL, ":id", mrID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -445,7 +447,7 @@ func (s *ModelRouteSuite) TestDeleteMR() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result.Message).Should(ContainSubstring("was deleted"))
 
-	mrList, err := s.mdStorage.GetModelRouteList()
+	mrList, err := s.mdRepository.GetModelRouteList()
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(mrList).To(HaveLen(0))
 }
@@ -454,7 +456,7 @@ func (s *ModelRouteSuite) TestDeleteMRNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		strings.Replace(dep_route.DeleteModelRouteUrl, ":id", mrId, -1),
+		strings.Replace(dep_route.DeleteModelRouteURL, ":id", mrID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())

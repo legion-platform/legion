@@ -25,7 +25,7 @@ import (
 	"testing"
 )
 
-func TestIdGeneration(t *testing.T) {
+func TestIDGeneration(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
@@ -37,10 +37,10 @@ func TestIdGeneration(t *testing.T) {
 		},
 	}
 	_ = conn_route.NewConnValidator().ValidatesAndSetDefaults(conn)
-	g.Expect(conn.Id).ShouldNot(BeEmpty())
+	g.Expect(conn.ID).ShouldNot(BeEmpty())
 }
 
-func TestEmptyUrl(t *testing.T) {
+func TestEmptyURL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
@@ -52,7 +52,7 @@ func TestEmptyUrl(t *testing.T) {
 	}
 	err := conn_route.NewConnValidator().ValidatesAndSetDefaults(conn)
 	g.Expect(err).Should(HaveOccurred())
-	g.Expect(err.Error()).Should(ContainSubstring(conn_route.EmptyUriErrorMessage))
+	g.Expect(err.Error()).Should(ContainSubstring(conn_route.EmptyURIErrorMessage))
 }
 
 func TestUnknownTypeType(t *testing.T) {
@@ -60,7 +60,7 @@ func TestUnknownTypeType(t *testing.T) {
 
 	connType := v1alpha1.ConnectionType("not-existed")
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connType,
 			URI:       connURI,
@@ -70,14 +70,16 @@ func TestUnknownTypeType(t *testing.T) {
 	}
 	err := conn_route.NewConnValidator().ValidatesAndSetDefaults(conn)
 	g.Expect(err).To(HaveOccurred())
-	g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(conn_route.UnknownTypeErrorMessage, connType, connection.AllConnectionTypes)))
+	g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(
+		conn_route.UnknownTypeErrorMessage, connType, connection.AllConnectionTypes,
+	)))
 }
 
 func TestGitTypeKeySecretBase64(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GITType,
 			URI:       connURI,
@@ -87,14 +89,16 @@ func TestGitTypeKeySecretBase64(t *testing.T) {
 	}
 	err := conn_route.NewConnValidator().ValidatesAndSetDefaults(conn)
 	g.Expect(err).To(HaveOccurred())
-	g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(conn_route.GitTypeKeySecretErrorMessage, "illegal base64 data")))
+	g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(
+		conn_route.GitTypeKeySecretErrorMessage, "illegal base64 data",
+	)))
 }
 
 func TestGitTypePublicKeyBase64(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GITType,
 			URI:       connURI,
@@ -104,14 +108,16 @@ func TestGitTypePublicKeyBase64(t *testing.T) {
 	}
 	err := conn_route.NewConnValidator().ValidatesAndSetDefaults(conn)
 	g.Expect(err).To(HaveOccurred())
-	g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(conn_route.GitTypePublicKeyErrorMessage, "illegal base64 data")))
+	g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(
+		conn_route.GitTypePublicKeyErrorMessage, "illegal base64 data",
+	)))
 }
 
 func TestDockerTypeUsername(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:     connection.DockerType,
 			URI:      connURI,
@@ -127,7 +133,7 @@ func TestDockerTypePassword(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:     connection.DockerType,
 			URI:      connURI,
@@ -143,7 +149,7 @@ func TestGcsTypeRegion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GcsType,
 			URI:       connURI,
@@ -160,7 +166,7 @@ func TestGcsTypeRoleAndSecretMissed(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:   connection.GcsType,
 			URI:    connURI,
@@ -176,7 +182,7 @@ func TestGcsTypeRoleAndSecretPresent(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GcsType,
 			URI:       connURI,
@@ -194,7 +200,7 @@ func TestS3TypeRegion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.S3Type,
 			URI:       connURI,
@@ -211,7 +217,7 @@ func TestS3TypeRoleAndSecretMissed(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:   connection.S3Type,
 			URI:    connURI,
@@ -227,7 +233,7 @@ func TestS3TypeRoleAndSecretPresent(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	conn := &connection.Connection{
-		Id: connId,
+		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.S3Type,
 			URI:       connURI,

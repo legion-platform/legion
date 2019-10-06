@@ -20,7 +20,7 @@ import "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alph
 
 type ToolchainIntegration struct {
 	// Toolchain integration id
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Toolchain integration specification
 	Spec v1alpha1.ToolchainIntegrationSpec `json:"spec,omitempty"`
 	// Toolchain integration status

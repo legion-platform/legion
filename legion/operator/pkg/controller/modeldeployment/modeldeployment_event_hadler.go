@@ -18,7 +18,6 @@ package modeldeployment
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -38,9 +37,9 @@ func (e *EnqueueRequestForImplicitOwner) Create(evt event.CreateEvent, q workque
 }
 
 func (e *EnqueueRequestForImplicitOwner) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	e.addEvent(evt.ObjectOld, evt.MetaOld, q)
+	e.addEvent(evt.MetaOld, q)
 
-	e.addEvent(evt.ObjectNew, evt.MetaNew, q)
+	e.addEvent(evt.MetaNew, q)
 }
 
 func (e *EnqueueRequestForImplicitOwner) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
@@ -49,10 +48,10 @@ func (e *EnqueueRequestForImplicitOwner) Delete(evt event.DeleteEvent, q workque
 
 // Generic implements EventHandler
 func (e *EnqueueRequestForImplicitOwner) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
-	e.addEvent(evt.Object, evt.Meta, q)
+	e.addEvent(evt.Meta, q)
 }
 
-func (e *EnqueueRequestForImplicitOwner) addEvent(obj runtime.Object, meta metav1.Object, q workqueue.RateLimitingInterface) {
+func (e *EnqueueRequestForImplicitOwner) addEvent(meta metav1.Object, q workqueue.RateLimitingInterface) {
 	labels := meta.GetLabels()
 	name, ok := labels[modelNameAnnotationKey]
 	if !ok {

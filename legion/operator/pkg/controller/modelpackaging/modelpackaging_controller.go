@@ -26,8 +26,8 @@ import (
 	conn_conf "github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	packaging_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
-	mp_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
 	corev1 "k8s.io/api/core/v1"
@@ -50,8 +50,8 @@ import (
 
 var log = logf.Log.WithName("model-packager-controller")
 
-// Add creates a new ModelPackaging Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
+// Add creates a new ModelPackaging Controller and adds it to the Manager with default RBAC.
+// The Manager will set fields on the Controller and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
@@ -192,9 +192,10 @@ func calculateResult(pod *corev1.Pod, packagingCR *legionv1alpha1.ModelPackaging
 
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.Name == "packager" {
-			if container.State.Running != nil {
+			switch {
+			case container.State.Running != nil:
 				packagingCR.Status.State = legionv1alpha1.ModelPackagingRunning
-			} else if container.State.Terminated != nil {
+			case container.State.Terminated != nil:
 				if container.State.Terminated.ExitCode == 0 {
 					packagingCR.Status.State = legionv1alpha1.ModelPackagingSucceeded
 				} else {
@@ -218,8 +219,7 @@ func calculateResult(pod *corev1.Pod, packagingCR *legionv1alpha1.ModelPackaging
 				packagingCR.Status.Message = &container.State.Terminated.Message
 				packagingCR.Status.ExitCode = &container.State.Terminated.ExitCode
 				packagingCR.Status.Reason = &container.State.Terminated.Reason
-
-			} else {
+			default:
 				packagingCR.Status.State = legionv1alpha1.ModelPackagingScheduling
 			}
 		} else {
@@ -239,12 +239,14 @@ func (r *ReconcileModelPackaging) getOutputConnection() (*connection.Connection,
 		return nil, err
 	}
 	return &connection.Connection{
-		Id:   viper.GetString(packaging_conf.OutputConnectionName),
+		ID:   viper.GetString(packaging_conf.OutputConnectionName),
 		Spec: vcs.Spec,
 	}, nil
 }
 
-func (r *ReconcileModelPackaging) getPackagingIntegration(packagingCR *legionv1alpha1.ModelPackaging) (*packaging.PackagingIntegration, error) {
+func (r *ReconcileModelPackaging) getPackagingIntegration(packagingCR *legionv1alpha1.ModelPackaging) (
+	*packaging.PackagingIntegration, error,
+) {
 	var ti legionv1alpha1.PackagingIntegration
 	if err := r.Get(context.TODO(), types.NamespacedName{
 		Name:      packagingCR.Spec.Type,
@@ -253,7 +255,7 @@ func (r *ReconcileModelPackaging) getPackagingIntegration(packagingCR *legionv1a
 		log.Error(err, "Get toolchain integration", "mt name", packagingCR)
 		return nil, err
 	}
-	return mp_k8s_storage.TransformPackagingIntegrationFromK8s(&ti)
+	return mp_k8s_repository.TransformPackagingIntegrationFromK8s(&ti)
 }
 
 func (r *ReconcileModelPackaging) reconcilePod(packagingCR *legionv1alpha1.ModelPackaging) (*corev1.Pod, error) {
@@ -414,7 +416,7 @@ func (r *ReconcileModelPackaging) reconcileConfig(packagingCR *legionv1alpha1.Mo
 		return err
 	}
 
-	mp, err := mp_k8s_storage.TransformMpFromK8s(packagingCR)
+	mp, err := mp_k8s_repository.TransformMpFromK8s(packagingCR)
 	if err != nil {
 		return err
 	}
@@ -429,7 +431,7 @@ func (r *ReconcileModelPackaging) reconcileConfig(packagingCR *legionv1alpha1.Mo
 		targets[i] = packaging.PackagerTarget{
 			Name: target.Name,
 			Connection: connection.Connection{
-				Id:   conn.Name,
+				ID:   conn.Name,
 				Spec: conn.Spec,
 			},
 		}
@@ -491,7 +493,10 @@ func (r *ReconcileModelPackaging) reconcileConfig(packagingCR *legionv1alpha1.Mo
 	}
 
 	if !legion.ObjsEqualByHash(k8sPackagingSecret, found) {
-		log.Info(fmt.Sprintf("Model packaging config hashes don't equal. Update the %s packaging config", k8sPackagingSecret.Name))
+		log.Info(fmt.Sprintf(
+			"Model packaging config hashes don't equal. Update the %s packaging config",
+			k8sPackagingSecret.Name,
+		))
 
 		found.Data = k8sPackagingSecret.Data
 
@@ -501,7 +506,10 @@ func (r *ReconcileModelPackaging) reconcileConfig(packagingCR *legionv1alpha1.Mo
 			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Model packaging config hashes equal. Skip updating of the %s packaging config", k8sPackagingSecret.Name))
+		log.Info(fmt.Sprintf(
+			"Model packaging config hashes equal. Skip updating of the %s packaging config",
+			k8sPackagingSecret.Name,
+		))
 	}
 
 	return nil
@@ -567,10 +575,8 @@ func (r *ReconcileModelPackaging) Reconcile(request reconcile.Request) (reconcil
 		log.Error(err, "Can not synchronize desired K8S instances state to cluster")
 
 		return reconcile.Result{}, err
-	} else {
-		if err := r.syncCrdState(pod, packagingCR); err != nil {
-			return reconcile.Result{}, err
-		}
+	} else if err := r.syncCrdState(pod, packagingCR); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil

@@ -24,9 +24,9 @@ import (
 	_ "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	_ "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	_ "github.com/legion-platform/legion/legion/operator/pkg/config/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog"
-	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/catalog"
-	"github.com/legion-platform/legion/legion/operator/pkg/service_catalog/controller"
+	"github.com/legion-platform/legion/legion/operator/pkg/servicecatalog"
+	"github.com/legion-platform/legion/legion/operator/pkg/servicecatalog/catalog"
+	"github.com/legion-platform/legion/legion/operator/pkg/servicecatalog/controller"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"os"
@@ -79,7 +79,7 @@ var mainCmd = &cobra.Command{
 			log.Error(err, "unable to register controllers to the manager")
 			os.Exit(1)
 		}
-		mainServer, err := service_catalog.SetUPMainServer(routeCatalog)
+		mainServer, err := servicecatalog.SetUPMainServer(routeCatalog)
 
 		if err != nil {
 			log.Error(err, "Can't set up service-catalog server")

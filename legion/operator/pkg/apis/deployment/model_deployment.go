@@ -22,7 +22,7 @@ import (
 
 type ModelDeployment struct {
 	// Model deployment id
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Model deployment specification
 	Spec v1alpha1.ModelDeploymentSpec `json:"spec,omitempty"`
 	// Model deployment status

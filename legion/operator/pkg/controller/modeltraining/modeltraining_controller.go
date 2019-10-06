@@ -24,7 +24,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/trainer"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/rest"
@@ -56,8 +56,8 @@ const (
 
 var log = logf.Log.WithName(controllerName)
 
-// Add creates a new ModelTraining Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
+// Add creates a new ModelTraining Controller and adds it to the Manager with default RBAC.
+// The Manager will set fields on the Controller and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
@@ -82,7 +82,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to ModelTraining
-	if err := c.Watch(&source.Kind{Type: &legionv1alpha1.ModelTraining{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &legionv1alpha1.ModelTraining{}},
+		&handler.EnqueueRequestForObject{}); err != nil {
 		log.Error(err, "Cannot create watch for ModelTraining CR instances")
 		return err
 	}
@@ -117,15 +118,15 @@ type ReconcileModelTraining struct {
 
 type BuilderConf struct {
 	Builder struct {
-		SshKeyPath string `json:"ssh_key_path"`
+		SSHKeyPath string `json:"ssh_key_path"`
 	} `json:"trainer"`
 }
 
 const (
 	gitSecretVolumeName = "git-secrets"
-	gitSecretPath       = "/home/root/.ssh"
-	gitSshVolumeName    = "git-ssh"
-	gitSshVolumePath    = "/etc/ssh"
+	gitSecretPath       = "/home/root/.ssh" //nolint
+	gitSSHVolumeName    = "git-ssh"
+	gitSSHVolumePath    = "/etc/ssh"
 	containerName       = "trainer"
 	configVolume        = "config"
 	TrainStartCommand   = "/opt/legion/trainer"
@@ -158,7 +159,10 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, trainCrd *legionv
 		}
 
 		if container.State.Terminated.ExitCode != 0 {
-			err := fmt.Errorf("impossible situation. Pod is succeeded, but container exit code is %d", container.State.Terminated.ExitCode)
+			err := fmt.Errorf(
+				"impossible situation. Pod is succeeded, but container exit code is %d",
+				container.State.Terminated.ExitCode,
+			)
 			log.Error(err, "mt name", trainCrd.Name)
 			return err
 		}
@@ -166,8 +170,8 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, trainCrd *legionv
 		trainCrd.Status.State = legionv1alpha1.ModelTrainingSucceeded
 
 		outputZipName := pod.Annotations[legion.TrainingOutputZip]
-		trainingRunId := pod.Annotations[legion.TrainingRunId]
-		commitId := pod.Annotations[legion.ModelCommitID]
+		trainingRunID := pod.Annotations[legion.TrainingRunID]
+		commitID := pod.Annotations[legion.ModelCommitID]
 
 		if trainCrd.ObjectMeta.Labels == nil {
 			trainCrd.ObjectMeta.Labels = map[string]string{}
@@ -178,9 +182,9 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, trainCrd *legionv
 		}
 
 		trainCrd.Status.Artifacts = append(trainCrd.Status.Artifacts, legionv1alpha1.TrainingResult{
-			RunID:        trainingRunId,
+			RunID:        trainingRunID,
 			ArtifactName: outputZipName,
-			CommitID:     commitId,
+			CommitID:     commitID,
 		})
 	case corev1.PodFailed:
 		trainCrd.Status.State = legionv1alpha1.ModelTrainingFailed
@@ -218,7 +222,9 @@ func (r *ReconcileModelTraining) syncCrdState(pod *corev1.Pod, trainCrd *legionv
 	return nil
 }
 
-func (r *ReconcileModelTraining) getVcsConnection(trainingCR *legionv1alpha1.ModelTraining) (*connection.Connection, error) {
+func (r *ReconcileModelTraining) getVcsConnection(trainingCR *legionv1alpha1.ModelTraining) (
+	*connection.Connection, error,
+) {
 	vcsName := trainingCR.Spec.VCSName
 	vcs := &legionv1alpha1.Connection{}
 	if err := r.Get(context.TODO(), types.NamespacedName{
@@ -231,7 +237,7 @@ func (r *ReconcileModelTraining) getVcsConnection(trainingCR *legionv1alpha1.Mod
 		return nil, err
 	}
 	return &connection.Connection{
-		Id:   trainingCR.Spec.VCSName,
+		ID:   trainingCR.Spec.VCSName,
 		Spec: vcs.Spec,
 	}, nil
 }
@@ -246,12 +252,14 @@ func (r *ReconcileModelTraining) getOutputConnection() (*connection.Connection, 
 		return nil, err
 	}
 	return &connection.Connection{
-		Id:   viper.GetString(train_conf.OutputConnectionName),
+		ID:   viper.GetString(train_conf.OutputConnectionName),
 		Spec: vcs.Spec,
 	}, nil
 }
 
-func (r *ReconcileModelTraining) getToolchainIntegration(trainingCR *legionv1alpha1.ModelTraining) (*training.ToolchainIntegration, error) {
+func (r *ReconcileModelTraining) getToolchainIntegration(trainingCR *legionv1alpha1.ModelTraining) (
+	*training.ToolchainIntegration, error,
+) {
 	var ti legionv1alpha1.ToolchainIntegration
 	if err := r.Get(context.TODO(), types.NamespacedName{
 		Name:      trainingCR.Spec.Toolchain,
@@ -263,8 +271,10 @@ func (r *ReconcileModelTraining) getToolchainIntegration(trainingCR *legionv1alp
 	return &training.ToolchainIntegration{Spec: ti.Spec}, nil
 }
 
-func (r *ReconcileModelTraining) generateInputData(trainingCR *legionv1alpha1.ModelTraining) ([]training.InputDataBindingDir, error) {
-	var inputData []training.InputDataBindingDir
+func (r *ReconcileModelTraining) generateInputData(trainingCR *legionv1alpha1.ModelTraining) (
+	[]training.InputDataBindingDir, error,
+) {
+	inputData := make([]training.InputDataBindingDir, 0, len(trainingCR.Spec.Data))
 	for _, trainData := range trainingCR.Spec.Data {
 		var trainDataConnSpec legionv1alpha1.ConnectionSpec
 
@@ -315,7 +325,7 @@ func (r *ReconcileModelTraining) reconcilePod(trainingCR *legionv1alpha1.ModelTr
 	var tolerations []corev1.Toleration
 	nodeSelector := viper.GetStringMapString(train_conf.NodeSelector)
 
-	if trainingCR.Spec.Resources.Requests.Gpu == nil {
+	if trainingCR.Spec.Resources.Requests.GPU == nil {
 		tolerationConf := viper.GetStringMapString(train_conf.Toleration)
 		if tolerationConf != nil {
 			tolerations = append(tolerations, corev1.Toleration{
@@ -358,7 +368,7 @@ func (r *ReconcileModelTraining) reconcilePod(trainingCR *legionv1alpha1.ModelTr
 					},
 				},
 				{
-					Name: gitSshVolumeName,
+					Name: gitSSHVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  legion.GenerateConnectionSecretName(trainingCR.Spec.VCSName),
@@ -388,8 +398,8 @@ func (r *ReconcileModelTraining) reconcilePod(trainingCR *legionv1alpha1.ModelTr
 							Name:      configVolume,
 						},
 						{
-							MountPath: gitSshVolumePath,
-							Name:      gitSshVolumeName,
+							MountPath: gitSSHVolumePath,
+							Name:      gitSSHVolumeName,
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
@@ -454,7 +464,7 @@ func (r *ReconcileModelTraining) reconcileConfig(trainingCR *legionv1alpha1.Mode
 		InputData:  inputData,
 		OutputConn: outputConn,
 		ModelTraining: &training.ModelTraining{
-			Id:   trainingCR.Name,
+			ID:   trainingCR.Name,
 			Spec: trainingCR.Spec,
 		},
 		ToolchainIntegration: ti,
@@ -466,7 +476,7 @@ func (r *ReconcileModelTraining) reconcileConfig(trainingCR *legionv1alpha1.Mode
 	}
 
 	conf := &BuilderConf{}
-	conf.Builder.SshKeyPath = path.Join("/home/root/.ssh/", trainer.GitSSHKeyFileName)
+	conf.Builder.SSHKeyPath = path.Join("/home/root/.ssh/", trainer.GitSSHKeyFileName)
 
 	trainerConfBytes, err := json.Marshal(conf)
 	if err != nil {
@@ -506,7 +516,10 @@ func (r *ReconcileModelTraining) reconcileConfig(trainingCR *legionv1alpha1.Mode
 	}
 
 	if !legion.ObjsEqualByHash(k8sTrainingSecret, found) {
-		log.Info(fmt.Sprintf("Knative Configuration hashes don't equal. Update the %s training config", k8sTrainingSecret.Name))
+		log.Info(fmt.Sprintf(
+			"Knative Configuration hashes don't equal. Update the %s training config",
+			k8sTrainingSecret.Name,
+		))
 
 		found.Data = k8sTrainingSecret.Data
 
@@ -516,7 +529,9 @@ func (r *ReconcileModelTraining) reconcileConfig(trainingCR *legionv1alpha1.Mode
 			return err
 		}
 	} else {
-		log.Info(fmt.Sprintf("training config hashes equal. Skip updating of the %s training config", k8sTrainingSecret.Name))
+		log.Info(fmt.Sprintf(
+			"training config hashes equal. Skip updating of the %s training config", k8sTrainingSecret.Name,
+		))
 	}
 
 	return nil
@@ -570,10 +585,8 @@ func (r *ReconcileModelTraining) Reconcile(request reconcile.Request) (reconcile
 		log.Error(err, "Can not synchronize desired K8S instances state to cluster")
 
 		return reconcile.Result{}, err
-	} else {
-		if err := r.syncCrdState(trainPod, trainingCR); err != nil {
-			return reconcile.Result{}, err
-		}
+	} else if err := r.syncCrdState(trainPod, trainingCR); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil

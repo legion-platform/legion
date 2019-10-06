@@ -18,26 +18,26 @@ package deployment
 
 import (
 	"github.com/gin-gonic/gin"
-	md_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
+	md_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
 )
 
-func ConfigureRoutes(routeGroup *gin.RouterGroup, storage md_storage.Storage) {
+func ConfigureRoutes(routeGroup *gin.RouterGroup, repository md_repository.Repository) {
 	mdController := ModelDeploymentController{
-		mdStorage: storage,
+		mdRepository: repository,
 	}
-	routeGroup.GET(GetModelDeploymentUrl, mdController.getMD)
-	routeGroup.GET(GetAllModelDeploymentUrl, mdController.getAllMDs)
-	routeGroup.POST(CreateModelDeploymentUrl, mdController.createMD)
-	routeGroup.PUT(UpdateModelDeploymentUrl, mdController.updateMD)
-	routeGroup.DELETE(DeleteModelDeploymentUrl, mdController.deleteMD)
+	routeGroup.GET(GetModelDeploymentURL, mdController.getMD)
+	routeGroup.GET(GetAllModelDeploymentURL, mdController.getAllMDs)
+	routeGroup.POST(CreateModelDeploymentURL, mdController.createMD)
+	routeGroup.PUT(UpdateModelDeploymentURL, mdController.updateMD)
+	routeGroup.DELETE(DeleteModelDeploymentURL, mdController.deleteMD)
 
 	mrController := ModelRouteController{
-		mrStorage: storage,
-		validator: NewMrValidator(storage),
+		mrRepository: repository,
+		validator:    NewMrValidator(repository),
 	}
-	routeGroup.GET(GetModelRouteUrl, mrController.getMR)
-	routeGroup.GET(GetAllModelRouteUrl, mrController.getAllMRs)
-	routeGroup.POST(CreateModelRouteUrl, mrController.createMR)
-	routeGroup.PUT(UpdateModelRouteUrl, mrController.updateMR)
-	routeGroup.DELETE(DeleteModelRouteUrl, mrController.deleteMR)
+	routeGroup.GET(GetModelRouteURL, mrController.getMR)
+	routeGroup.GET(GetAllModelRouteURL, mrController.getAllMRs)
+	routeGroup.POST(CreateModelRouteURL, mrController.createMR)
+	routeGroup.PUT(UpdateModelRouteURL, mrController.updateMR)
+	routeGroup.DELETE(DeleteModelRouteURL, mrController.deleteMR)
 }

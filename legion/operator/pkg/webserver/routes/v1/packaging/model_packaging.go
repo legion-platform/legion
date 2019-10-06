@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	"reflect"
@@ -32,14 +32,14 @@ import (
 var logMP = logf.Log.WithName("MP-controller")
 
 const (
-	GetModelPackagingUrl     = "/model/packaging/:id"
-	GetModelPackagingLogsUrl = "/model/packaging/:id/log"
-	GetAllModelPackagingUrl  = "/model/packaging"
-	CreateModelPackagingUrl  = "/model/packaging"
-	UpdateModelPackagingUrl  = "/model/packaging"
-	DeleteModelPackagingUrl  = "/model/packaging/:id"
-	IdMpUrlParam             = "id"
-	FollowUrlParam           = "follow"
+	GetModelPackagingURL     = "/model/packaging/:id"
+	GetModelPackagingLogsURL = "/model/packaging/:id/log"
+	GetAllModelPackagingURL  = "/model/packaging"
+	CreateModelPackagingURL  = "/model/packaging"
+	UpdateModelPackagingURL  = "/model/packaging"
+	DeleteModelPackagingURL  = "/model/packaging/:id"
+	IDMpURLParam             = "id"
+	FollowURLParam           = "follow"
 )
 
 var (
@@ -47,17 +47,17 @@ var (
 )
 
 func init() {
-	elem := reflect.TypeOf(&mp_storage.MPFilter{}).Elem()
+	elem := reflect.TypeOf(&mp_repository.MPFilter{}).Elem()
 	for i := 0; i < elem.NumField(); i++ {
-		tagName := elem.Field(i).Tag.Get(mp_storage.TagKey)
+		tagName := elem.Field(i).Tag.Get(mp_repository.TagKey)
 
 		fieldsCache[tagName] = i
 	}
 }
 
 type ModelPackagingController struct {
-	storage   mp_storage.Storage
-	validator *MpValidator
+	repository mp_repository.Repository
+	validator  *MpValidator
 }
 
 // @Summary Get a Model Packaging
@@ -72,12 +72,12 @@ type ModelPackagingController struct {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/packaging/{id} [get]
 func (mpc *ModelPackagingController) getMP(c *gin.Context) {
-	mpId := c.Param(IdMpUrlParam)
+	mpID := c.Param(IDMpURLParam)
 
-	mp, err := mpc.storage.GetModelPackaging(mpId)
+	mp, err := mpc.repository.GetModelPackaging(mpID)
 	if err != nil {
-		logMP.Error(err, fmt.Sprintf("Retrieving %s model packaging", mpId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logMP.Error(err, fmt.Sprintf("Retrieving %s model packaging", mpID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -96,8 +96,8 @@ func (mpc *ModelPackagingController) getMP(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/packaging [get]
 func (mpc *ModelPackagingController) getAllMPs(c *gin.Context) {
-	filter := &mp_storage.MPFilter{}
-	size, page, err := routes.UrlParamsToFilter(c, filter, fieldsCache)
+	filter := &mp_repository.MPFilter{}
+	size, page, err := routes.URLParamsToFilter(c, filter, fieldsCache)
 	if err != nil {
 		logMP.Error(err, "Malformed url parameters of model packaging request")
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -105,14 +105,14 @@ func (mpc *ModelPackagingController) getAllMPs(c *gin.Context) {
 		return
 	}
 
-	mpList, err := mpc.storage.GetModelPackagingList(
+	mpList, err := mpc.repository.GetModelPackagingList(
 		kubernetes.ListFilter(filter),
 		kubernetes.Size(size),
 		kubernetes.Page(page),
 	)
 	if err != nil {
 		logMP.Error(err, "Retrieving list of model packagings")
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -146,9 +146,9 @@ func (mpc *ModelPackagingController) createMP(c *gin.Context) {
 		return
 	}
 
-	if err := mpc.storage.CreateModelPackaging(&mp); err != nil {
+	if err := mpc.repository.CreateModelPackaging(&mp); err != nil {
 		logMP.Error(err, fmt.Sprintf("Creation of the model packaging: %+v", mp))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -183,9 +183,9 @@ func (mpc *ModelPackagingController) updateMP(c *gin.Context) {
 		return
 	}
 
-	if err := mpc.storage.UpdateModelPackaging(&mp); err != nil {
+	if err := mpc.repository.UpdateModelPackaging(&mp); err != nil {
 		logMP.Error(err, fmt.Sprintf("Update of the model packaging: %+v", mp))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -205,16 +205,16 @@ func (mpc *ModelPackagingController) updateMP(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/packaging/{id} [delete]
 func (mpc *ModelPackagingController) deleteMP(c *gin.Context) {
-	mpId := c.Param(IdMpUrlParam)
+	mpID := c.Param(IDMpURLParam)
 
-	if err := mpc.storage.DeleteModelPackaging(mpId); err != nil {
-		logMP.Error(err, fmt.Sprintf("Deletion of %s model packaging is failed", mpId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := mpc.repository.DeleteModelPackaging(mpID); err != nil {
+		logMP.Error(err, fmt.Sprintf("Deletion of %s model packaging is failed", mpID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model packaging %s was deleted", mpId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model packaging %s was deleted", mpID)})
 }
 
 // @Summary Stream logs from model packaging pod
@@ -229,12 +229,12 @@ func (mpc *ModelPackagingController) deleteMP(c *gin.Context) {
 // @Failure 400 {string} string
 // @Router /api/v1/model/packaging/{id}/log [get]
 func (mpc *ModelPackagingController) getModelPackagingLog(c *gin.Context) {
-	mpId := c.Param(IdMpUrlParam)
+	mpID := c.Param(IDMpURLParam)
 	follow := false
 	var err error
 
 	urlParameters := c.Request.URL.Query()
-	followParam := urlParameters.Get(FollowUrlParam)
+	followParam := urlParameters.Get(FollowURLParam)
 
 	if len(followParam) != 0 {
 		follow, err = strconv.ParseBool(followParam)
@@ -247,9 +247,9 @@ func (mpc *ModelPackagingController) getModelPackagingLog(c *gin.Context) {
 		}
 	}
 
-	if err := mpc.storage.GetModelPackagingLogs(mpId, c.Writer, follow); err != nil {
-		logMP.Error(err, fmt.Sprintf("Getting %s model packaging logs is failed", mpId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := mpc.repository.GetModelPackagingLogs(mpID, c.Writer, follow); err != nil {
+		logMP.Error(err, fmt.Sprintf("Getting %s model packaging logs is failed", mpID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}

@@ -22,8 +22,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	dep_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
-	dep_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment/kubernetes"
+	dep_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
+	dep_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	dep_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
@@ -39,9 +39,9 @@ import (
 )
 
 var (
-	mdId                    = "test-model-deployment"
-	mdId1                   = "test-model-deployment1"
-	mdId2                   = "test-model-deployment2"
+	mdID                    = "test-model-deployment"
+	mdID1                   = "test-model-deployment1"
+	mdID2                   = "test-model-deployment2"
 	mdRoleName1             = "role-1"
 	mdRoleName2             = "role-2"
 	mdImage                 = "test/test:123"
@@ -54,15 +54,15 @@ var (
 var (
 	mdAnnotations = map[string]string{"k1": "v1", "k2": "v2"}
 	reqMem        = "111Mi"
-	reqCpu        = "111m"
+	reqCPU        = "111m"
 	limMem        = "222Mi"
 	mdResources   = &legionv1alpha1.ResourceRequirements{
 		Limits: &legionv1alpha1.ResourceList{
-			Cpu:    nil,
+			CPU:    nil,
 			Memory: &limMem,
 		},
 		Requests: &legionv1alpha1.ResourceList{
-			Cpu:    &reqCpu,
+			CPU:    &reqCPU,
 			Memory: &reqMem,
 		},
 	}
@@ -70,9 +70,9 @@ var (
 
 type ModelDeploymentRouteSuite struct {
 	suite.Suite
-	g         *GomegaWithT
-	server    *gin.Engine
-	mdStorage dep_storage.Storage
+	g            *GomegaWithT
+	server       *gin.Engine
+	mdRepository dep_repository.Repository
 }
 
 func (s *ModelDeploymentRouteSuite) SetupSuite() {
@@ -83,8 +83,10 @@ func (s *ModelDeploymentRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mdStorage = dep_k8s_storage.NewStorageWithOptions(testNamespace, mgr.GetClient(), metav1.DeletePropagationBackground)
-	dep_route.ConfigureRoutes(v1Group, s.mdStorage)
+	s.mdRepository = dep_k8s_repository.NewRepositoryWithOptions(
+		testNamespace, mgr.GetClient(), metav1.DeletePropagationBackground,
+	)
+	dep_route.ConfigureRoutes(v1Group, s.mdRepository)
 }
 
 func (s *ModelDeploymentRouteSuite) SetupTest() {
@@ -92,8 +94,8 @@ func (s *ModelDeploymentRouteSuite) SetupTest() {
 }
 
 func (s *ModelDeploymentRouteSuite) TearDownTest() {
-	for _, currMdId := range []string{mdId, mdId1, mdId2} {
-		if err := s.mdStorage.DeleteModelDeployment(currMdId); err != nil && !errors.IsNotFound(err) {
+	for _, currMdID := range []string{mdID, mdID1, mdID2} {
+		if err := s.mdRepository.DeleteModelDeployment(currMdID); err != nil && !errors.IsNotFound(err) {
 			panic(err)
 		}
 	}
@@ -101,7 +103,7 @@ func (s *ModelDeploymentRouteSuite) TearDownTest() {
 
 func newStubMd() *deployment.ModelDeployment {
 	return &deployment.ModelDeployment{
-		Id: mdId,
+		ID: mdID,
 		Spec: legionv1alpha1.ModelDeploymentSpec{
 			Image:                      mdImage,
 			MinReplicas:                &mdMinReplicas,
@@ -117,14 +119,14 @@ func newStubMd() *deployment.ModelDeployment {
 
 func (s *ModelDeploymentRouteSuite) newMultipleMds() []*deployment.ModelDeployment {
 	md1 := newStubMd()
-	md1.Id = mdId1
+	md1.ID = mdID1
 	md1.Spec.RoleName = &mdRoleName1
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md1)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md1)).NotTo(HaveOccurred())
 
 	md2 := newStubMd()
-	md2.Id = mdId2
+	md2.ID = mdID2
 	md2.Spec.RoleName = &mdRoleName2
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md2)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md2)).NotTo(HaveOccurred())
 
 	return []*deployment.ModelDeployment{md1, md2}
 }
@@ -135,12 +137,12 @@ func TestModelDeploymentRouteSuite(t *testing.T) {
 
 func (s *ModelDeploymentRouteSuite) TestGetMD() {
 	md := newStubMd()
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.Replace(dep_route.GetModelDeploymentUrl, ":id", mdId, -1),
+		strings.Replace(dep_route.GetModelDeploymentURL, ":id", mdID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -151,14 +153,16 @@ func (s *ModelDeploymentRouteSuite) TestGetMD() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(result).Should(Equal(deployment.ModelDeployment{Id: md.Id, Spec: md.Spec, Status: &legionv1alpha1.ModelDeploymentStatus{}}))
+	s.g.Expect(result).Should(Equal(deployment.ModelDeployment{
+		ID: md.ID, Spec: md.Spec, Status: &legionv1alpha1.ModelDeploymentStatus{},
+	}))
 }
 
 func (s *ModelDeploymentRouteSuite) TestGetMDNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.Replace(dep_route.GetModelDeploymentUrl, ":id", "not-found", -1),
+		strings.Replace(dep_route.GetModelDeploymentURL, ":id", "not-found", -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -174,7 +178,7 @@ func (s *ModelDeploymentRouteSuite) TestGetMDNotFound() {
 
 func (s *ModelDeploymentRouteSuite) TestGetAllMDEmptyResult() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -190,7 +194,7 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMD() {
 	s.newMultipleMds()
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -202,7 +206,7 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMD() {
 	s.g.Expect(result).Should(HaveLen(2))
 
 	for _, md := range result {
-		s.g.Expect(md.Id).To(Or(Equal(mdId1), Equal(mdId2)))
+		s.g.Expect(md.ID).To(Or(Equal(mdID1), Equal(mdID2)))
 	}
 }
 
@@ -210,7 +214,7 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMdByRole() {
 	mds := s.newMultipleMds()
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -226,7 +230,7 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMdByRole() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
-	s.g.Expect(result[0].Id).Should(Equal(mdId2))
+	s.g.Expect(result[0].ID).Should(Equal(mdID2))
 	s.g.Expect(result[0].Spec).Should(Equal(mds[1].Spec))
 }
 
@@ -234,7 +238,7 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMdMultipleFiltersByRole() {
 	s.newMultipleMds()
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -256,11 +260,11 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMdMultipleFiltersByRole() {
 func (s *ModelDeploymentRouteSuite) TestGetAllMdPaging() {
 	s.newMultipleMds()
 
-	mdNames := map[string]interface{}{mdId1: nil, mdId2: nil}
+	mdNames := map[string]interface{}{mdID1: nil, mdID2: nil}
 
 	// Return first page
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -277,11 +281,11 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMdPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
-	delete(mdNames, result[0].Id)
+	delete(mdNames, result[0].ID)
 
 	// Return second page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -297,11 +301,11 @@ func (s *ModelDeploymentRouteSuite) TestGetAllMdPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
-	delete(mdNames, result[0].Id)
+	delete(mdNames, result[0].ID)
 
 	// Return third empty page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, dep_route.GetAllModelDeploymentURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -326,7 +330,7 @@ func (s *ModelDeploymentRouteSuite) TestCreateMD() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelDeploymentUrl, bytes.NewReader(mdEntityBody))
+	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelDeploymentURL, bytes.NewReader(mdEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -335,10 +339,10 @@ func (s *ModelDeploymentRouteSuite) TestCreateMD() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusCreated))
-	s.g.Expect(mdEntity.Id).To(Equal(mdResponse.Id))
+	s.g.Expect(mdEntity.ID).To(Equal(mdResponse.ID))
 	s.g.Expect(mdEntity.Spec).To(Equal(mdResponse.Spec))
 
-	md, err := s.mdStorage.GetModelDeployment(mdId)
+	md, err := s.mdRepository.GetModelDeployment(mdID)
 	s.g.Expect(err).ShouldNot(HaveOccurred())
 	s.g.Expect(md.Spec).To(Equal(mdEntity.Spec))
 }
@@ -350,7 +354,7 @@ func (s *ModelDeploymentRouteSuite) TestCreateMDValidation() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelDeploymentUrl, bytes.NewReader(mdEntityBody))
+	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelDeploymentURL, bytes.NewReader(mdEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -365,13 +369,13 @@ func (s *ModelDeploymentRouteSuite) TestCreateMDValidation() {
 func (s *ModelDeploymentRouteSuite) TestCreateDuplicateMD() {
 	md := newStubMd()
 
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md)).NotTo(HaveOccurred())
 
 	mdEntityBody, err := json.Marshal(md)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelDeploymentUrl, bytes.NewReader(mdEntityBody))
+	req, err := http.NewRequest(http.MethodPost, dep_route.CreateModelDeploymentURL, bytes.NewReader(mdEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -385,7 +389,7 @@ func (s *ModelDeploymentRouteSuite) TestCreateDuplicateMD() {
 
 func (s *ModelDeploymentRouteSuite) TestUpdateMD() {
 	md := newStubMd()
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md)).NotTo(HaveOccurred())
 
 	newMaxReplicas := mdMaxReplicas + 1
 	newMDLivenessIninitialDelay := mdLivenessInitialDelay + 1
@@ -400,7 +404,7 @@ func (s *ModelDeploymentRouteSuite) TestUpdateMD() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelDeploymentUrl, bytes.NewReader(mdEntityBody))
+	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelDeploymentURL, bytes.NewReader(mdEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -409,18 +413,18 @@ func (s *ModelDeploymentRouteSuite) TestUpdateMD() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(mdEntity.Id).To(Equal(mdResponse.Id))
+	s.g.Expect(mdEntity.ID).To(Equal(mdResponse.ID))
 	s.g.Expect(mdEntity.Spec).To(Equal(mdResponse.Spec))
 
-	md, err = s.mdStorage.GetModelDeployment(mdId)
+	md, err = s.mdRepository.GetModelDeployment(mdID)
 	s.g.Expect(err).NotTo(HaveOccurred())
-	s.g.Expect(mdEntity.Id).To(Equal(md.Id))
+	s.g.Expect(mdEntity.ID).To(Equal(md.ID))
 	s.g.Expect(mdEntity.Spec).To(Equal(md.Spec))
 }
 
 func (s *ModelDeploymentRouteSuite) TestUpdateMDValidation() {
 	md := newStubMd()
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md)).NotTo(HaveOccurred())
 
 	mdEntity := newStubMd()
 	mdEntity.Spec.Image = ""
@@ -429,7 +433,7 @@ func (s *ModelDeploymentRouteSuite) TestUpdateMDValidation() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelDeploymentUrl, bytes.NewReader(mdEntityBody))
+	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelDeploymentURL, bytes.NewReader(mdEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -448,7 +452,7 @@ func (s *ModelDeploymentRouteSuite) TestUpdateMDNotFound() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelDeploymentUrl, bytes.NewReader(mdEntityBody))
+	req, err := http.NewRequest(http.MethodPut, dep_route.UpdateModelDeploymentURL, bytes.NewReader(mdEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -462,12 +466,12 @@ func (s *ModelDeploymentRouteSuite) TestUpdateMDNotFound() {
 
 func (s *ModelDeploymentRouteSuite) TestDeleteMD() {
 	md := newStubMd()
-	s.g.Expect(s.mdStorage.CreateModelDeployment(md)).NotTo(HaveOccurred())
+	s.g.Expect(s.mdRepository.CreateModelDeployment(md)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		strings.Replace(dep_route.DeleteModelDeploymentUrl, ":id", md.Id, -1),
+		strings.Replace(dep_route.DeleteModelDeploymentURL, ":id", md.ID, -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())
@@ -480,7 +484,7 @@ func (s *ModelDeploymentRouteSuite) TestDeleteMD() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result.Message).Should(ContainSubstring("was deleted"))
 
-	mdList, err := s.mdStorage.GetModelDeploymentList()
+	mdList, err := s.mdRepository.GetModelDeploymentList()
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(mdList).To(HaveLen(0))
 }
@@ -489,7 +493,7 @@ func (s *ModelDeploymentRouteSuite) TestDeleteMDNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		strings.Replace(dep_route.DeleteModelDeploymentUrl, ":id", "not-found", -1),
+		strings.Replace(dep_route.DeleteModelDeploymentURL, ":id", "not-found", -1),
 		nil,
 	)
 	s.g.Expect(err).NotTo(HaveOccurred())

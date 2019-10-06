@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
-	md_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
+	md_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	"reflect"
@@ -31,12 +31,12 @@ import (
 var logMD = logf.Log.WithName("md-controller")
 
 const (
-	GetModelDeploymentUrl    = "/model/deployment/:id"
-	GetAllModelDeploymentUrl = "/model/deployment"
-	CreateModelDeploymentUrl = "/model/deployment"
-	UpdateModelDeploymentUrl = "/model/deployment"
-	DeleteModelDeploymentUrl = "/model/deployment/:id"
-	IdMdUrlParam             = "id"
+	GetModelDeploymentURL    = "/model/deployment/:id"
+	GetAllModelDeploymentURL = "/model/deployment"
+	CreateModelDeploymentURL = "/model/deployment"
+	UpdateModelDeploymentURL = "/model/deployment"
+	DeleteModelDeploymentURL = "/model/deployment/:id"
+	IDMdURLParam             = "id"
 )
 
 var (
@@ -44,16 +44,16 @@ var (
 )
 
 func init() {
-	elem := reflect.TypeOf(&md_storage.MdFilter{}).Elem()
+	elem := reflect.TypeOf(&md_repository.MdFilter{}).Elem()
 	for i := 0; i < elem.NumField(); i++ {
-		tagName := elem.Field(i).Tag.Get(md_storage.TagKey)
+		tagName := elem.Field(i).Tag.Get(md_repository.TagKey)
 
 		fieldsCache[tagName] = i
 	}
 }
 
 type ModelDeploymentController struct {
-	mdStorage md_storage.Storage
+	mdRepository md_repository.Repository
 }
 
 // @Summary Get a Model deployment
@@ -68,12 +68,12 @@ type ModelDeploymentController struct {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/deployment/{id} [get]
 func (mdc *ModelDeploymentController) getMD(c *gin.Context) {
-	mdId := c.Param(IdMdUrlParam)
+	mdID := c.Param(IDMdURLParam)
 
-	md, err := mdc.mdStorage.GetModelDeployment(mdId)
+	md, err := mdc.mdRepository.GetModelDeployment(mdID)
 	if err != nil {
-		logMD.Error(err, fmt.Sprintf("Retrieving %s model deployment", mdId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logMD.Error(err, fmt.Sprintf("Retrieving %s model deployment", mdID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -92,8 +92,8 @@ func (mdc *ModelDeploymentController) getMD(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/deployment [get]
 func (mdc *ModelDeploymentController) getAllMDs(c *gin.Context) {
-	filter := &md_storage.MdFilter{}
-	size, page, err := routes.UrlParamsToFilter(c, filter, fieldsCache)
+	filter := &md_repository.MdFilter{}
+	size, page, err := routes.URLParamsToFilter(c, filter, fieldsCache)
 	if err != nil {
 		logMD.Error(err, "Malformed url parameters of model deployment request")
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -101,14 +101,14 @@ func (mdc *ModelDeploymentController) getAllMDs(c *gin.Context) {
 		return
 	}
 
-	mdList, err := mdc.mdStorage.GetModelDeploymentList(
+	mdList, err := mdc.mdRepository.GetModelDeploymentList(
 		kubernetes.ListFilter(filter),
 		kubernetes.Size(size),
 		kubernetes.Page(page),
 	)
 	if err != nil {
 		logMD.Error(err, "Retrieving list of model deployments")
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -142,9 +142,9 @@ func (mdc *ModelDeploymentController) createMD(c *gin.Context) {
 		return
 	}
 
-	if err := mdc.mdStorage.CreateModelDeployment(&md); err != nil {
+	if err := mdc.mdRepository.CreateModelDeployment(&md); err != nil {
 		logMD.Error(err, fmt.Sprintf("Creation of the model deployment: %+v", md))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -179,9 +179,9 @@ func (mdc *ModelDeploymentController) updateMD(c *gin.Context) {
 		return
 	}
 
-	if err := mdc.mdStorage.UpdateModelDeployment(&md); err != nil {
+	if err := mdc.mdRepository.UpdateModelDeployment(&md); err != nil {
 		logMD.Error(err, fmt.Sprintf("Update of the model deployment: %+v", md))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -201,14 +201,14 @@ func (mdc *ModelDeploymentController) updateMD(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/deployment/{id} [delete]
 func (mdc *ModelDeploymentController) deleteMD(c *gin.Context) {
-	mdId := c.Param(IdMdUrlParam)
+	mdID := c.Param(IDMdURLParam)
 
-	if err := mdc.mdStorage.DeleteModelDeployment(mdId); err != nil {
-		logMD.Error(err, fmt.Sprintf("Deletion of %s model deployment is failed", mdId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := mdc.mdRepository.DeleteModelDeployment(mdID); err != nil {
+		logMD.Error(err, fmt.Sprintf("Deletion of %s model deployment is failed", mdID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model deployment %s was deleted", mdId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model deployment %s was deleted", mdID)})
 }

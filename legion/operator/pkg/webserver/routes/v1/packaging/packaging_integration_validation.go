@@ -28,13 +28,13 @@ import (
 
 const (
 	ValidationPiErrorMessage               = "Validation of packaging integration is failed"
-	EmptyIdErrorMessage                    = "id must be nonempty"
+	EmptyIDErrorMessage                    = "id must be nonempty"
 	EmptyEntrypointErrorMessage            = "entrypoint must be nonempty"
 	EmptyDefaultImageErrorMessage          = "default image must be nonempty"
 	TargetEmptyConnectionTypesErrorMessage = "%s target must have at least one connection type"
 	TargetEmptyNameErrorMessage            = "one of target has empty name"
 	TargetUnknownConnTypeErrorMessage      = "%s target have unknown connection type: %s"
-	NotValidJsonSchemaErrorMessage         = "arguments have not valid json schema: %s"
+	NotValidJSONSchemaErrorMessage         = "arguments have not valid json schema: %s"
 	errorMessageTemplate                   = "%s: %s"
 )
 
@@ -72,7 +72,7 @@ func (mpv *PiValidator) validateArgumentsSchema(pi *packaging.PackagingIntegrati
 		"additionalProperties": false,
 	}
 	if _, validationErr := gojsonschema.NewSchema(gojsonschema.NewGoLoader(jsonSchema)); validationErr != nil {
-		return fmt.Errorf(NotValidJsonSchemaErrorMessage, validationErr.Error())
+		return fmt.Errorf(NotValidJSONSchemaErrorMessage, validationErr.Error())
 	}
 
 	return nil
@@ -100,8 +100,8 @@ func (mpv *PiValidator) validateTargetsSchema(pi *packaging.PackagingIntegration
 }
 
 func (mpv *PiValidator) validateMainParameters(pi *packaging.PackagingIntegration) (err error) {
-	if len(pi.Id) == 0 {
-		err = multierr.Append(err, errors.New(EmptyIdErrorMessage))
+	if len(pi.ID) == 0 {
+		err = multierr.Append(err, errors.New(EmptyIDErrorMessage))
 	}
 
 	if len(pi.Spec.Entrypoint) == 0 {

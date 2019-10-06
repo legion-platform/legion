@@ -147,7 +147,7 @@ class ConnectionSpec(Model):
     def key_secret(self) -> str:
         """Gets the key_secret of this ConnectionSpec.
 
-        Ssh or service account secret  # noqa: E501
+        SSH or service account secret  # noqa: E501
 
         :return: The key_secret of this ConnectionSpec.
         :rtype: str
@@ -158,7 +158,7 @@ class ConnectionSpec(Model):
     def key_secret(self, key_secret: str):
         """Sets the key_secret of this ConnectionSpec.
 
-        Ssh or service account secret  # noqa: E501
+        SSH or service account secret  # noqa: E501
 
         :param key_secret: The key_secret of this ConnectionSpec.
         :type key_secret: str
@@ -193,7 +193,7 @@ class ConnectionSpec(Model):
     def public_key(self) -> str:
         """Gets the public_key of this ConnectionSpec.
 
-        Ssh public key  # noqa: E501
+        SSH public key  # noqa: E501
 
         :return: The public_key of this ConnectionSpec.
         :rtype: str
@@ -204,7 +204,7 @@ class ConnectionSpec(Model):
     def public_key(self, public_key: str):
         """Sets the public_key of this ConnectionSpec.
 
-        Ssh public key  # noqa: E501
+        SSH public key  # noqa: E501
 
         :param public_key: The public_key of this ConnectionSpec.
         :type public_key: str

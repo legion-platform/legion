@@ -19,7 +19,7 @@ package rclone
 import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	_ "github.com/ncw/rclone/backend/s3"
+	_ "github.com/ncw/rclone/backend/s3" //nolint
 	"github.com/ncw/rclone/fs"
 	"github.com/ncw/rclone/fs/config"
 	"net/url"
@@ -41,7 +41,7 @@ func createS3config(configName string, conn *v1alpha1.ConnectionSpec) (*FileDesc
 		return nil, err
 	}
 
-	parsedUri, err := url.Parse(conn.URI)
+	parsedURI, err := url.Parse(conn.URI)
 	if err != nil {
 		log.Error(err, "Parsing data binding URI", "connection uri", conn.URI)
 
@@ -49,7 +49,7 @@ func createS3config(configName string, conn *v1alpha1.ConnectionSpec) (*FileDesc
 	}
 
 	return &FileDescription{
-		FsName: fmt.Sprintf("%s:%s", configName, parsedUri.Host),
-		Path:   parsedUri.Path,
+		FsName: fmt.Sprintf("%s:%s", configName, parsedURI.Host),
+		Path:   parsedURI.Path,
 	}, nil
 }
