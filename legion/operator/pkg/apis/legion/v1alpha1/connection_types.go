@@ -27,6 +27,7 @@ type ConnectionSpec struct {
 	// Required value. Available values:
 	//   * s3
 	//   * gcs
+	//   * azureblob
 	//   * git
 	//   * docker
 	Type ConnectionType `json:"type"`

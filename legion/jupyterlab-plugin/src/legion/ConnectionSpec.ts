@@ -54,7 +54,7 @@ export interface ConnectionSpec {
     role?: string;
 
     /**
-     * Required value. Available values:   * s3   * gcs   * git   * docker
+     * Required value. Available values:   * s3   * gcs   * azureblob   * git   * docker
      */
     type?: string;
 

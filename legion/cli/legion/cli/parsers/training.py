@@ -33,6 +33,7 @@ from legion.sdk.clients.training import ModelTraining, ModelTrainingClient, TRAI
     TRAINING_FAILED_STATE
 
 DEFAULT_WAIT_TIMEOUT = 3
+DEFAULT_TRAINING_TIMEOUT = 2400
 LOG_READ_TIMEOUT_SECONDS = 60
 
 LOGGER = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ def get(client: ModelTrainingClient, train_id: str, output_format: str):
 @click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with training')
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
-@click.option('--timeout', default=1200, type=int,
+@click.option('--timeout', default=DEFAULT_TRAINING_TIMEOUT, type=int,
               help='timeout in seconds. for wait (if no-wait is off)')
 @pass_obj
 def create(client: ModelTrainingClient, train_id: str, file: str, wait: bool, timeout: int):
@@ -117,7 +118,7 @@ def create(client: ModelTrainingClient, train_id: str, file: str, wait: bool, ti
 @click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with training')
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
-@click.option('--timeout', default=1200, type=int,
+@click.option('--timeout', default=DEFAULT_TRAINING_TIMEOUT, type=int,
               help='timeout in seconds. for wait (if no-wait is off)')
 @pass_obj
 def edit(client: ModelTrainingClient, train_id: str, file: str, wait: bool, timeout: int):

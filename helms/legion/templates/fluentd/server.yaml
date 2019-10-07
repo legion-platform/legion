@@ -29,12 +29,11 @@ spec:
       containers:
       - name: fluentd
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.feedback.fluentd "tpl" "%sk8s-fluentd:%s") }}"
+        command: ["fluentd"]
+        args: ["-c", "/opt/fluent-config/fluent.conf"]
         resources:
           {{- toYaml .Values.feedback.fluentd.resources | nindent 10 }}
         env:
-        # File load data from
-        - name: FLUENTD_ARGS
-          value: -c /opt/fluent-config/fluent.conf
         # Auth on external storage systems
         {{- if eq .Values.feedback.output.target "s3" }}
         {{- if eq .Values.feedback.output.s3.authorization "secret" }}
@@ -48,6 +47,20 @@ spec:
             secretKeyRef:
               name: "{{ .Release.Name }}-fluentd-secret"
               key: AWSSecretKey
+        {{- end }}
+        {{- end }}
+        {{- if eq .Values.feedback.output.target "azureblob" }}
+        {{- if eq .Values.feedback.output.azureblob.authorization "accesskey" }}
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-fluentd-secret"
+              key: AzureStorageAccount
+        - name: AZURE_STORAGE_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-fluentd-secret"
+              key: AzureStorageAccessKey
         {{- end }}
         {{- end }}
         ports:

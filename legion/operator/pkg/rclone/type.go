@@ -55,8 +55,10 @@ func NewObjectStorage(conn *legionv1alpha1.ConnectionSpec) (obj *ObjectStorage, 
 		config, err = createS3config(name.String(), conn)
 	case connection.GcsType:
 		config, err = createGcsConfig(name.String(), conn)
+	case connection.AzureBlobType:
+		config, err = createAzureBlobConfig(name.String(), conn)
 	default:
-		return nil, errors.New(fmt.Sprintf("Unxpected connection type: %s", conn.Type))
+		return nil, errors.New(fmt.Sprintf("Unexpected connection type: %s", conn.Type))
 	}
 
 	log.Info("Extract FileDescription", "file description", config)

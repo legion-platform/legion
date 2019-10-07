@@ -22,7 +22,7 @@ data:
             connectionTypes: ["docker"]
             required: false
           - name: archive-storage
-            connectionTypes: ["s3", "gcs"]
+            connectionTypes: ["s3", "gcs", "azureblob"]
             required: false
         arguments:
           properties:

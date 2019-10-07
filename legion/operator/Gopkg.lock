@@ -10,6 +10,22 @@
   version = "v0.37.2"
 
 [[projects]]
+  digest = "1:ccbe381c4021dfcedddacedaf73620cb54bf11689af60c214deef43a187cd8cd"
+  name = "github.com/Azure/azure-pipeline-go"
+  packages = ["pipeline"]
+  pruneopts = "T"
+  revision = "232aee85e8e3a6223a11c0943f7df2ae0fac00e4"
+  version = "v0.2.2"
+
+[[projects]]
+  digest = "1:b6c9c71f6a8fa9aff48e446e418ac0ac7ac763b000203fcad81d2d1a1599da72"
+  name = "github.com/Azure/azure-storage-blob-go"
+  packages = ["azblob"]
+  pruneopts = "T"
+  revision = "fc700035fe4a7020f50d49f420b3c088aed57e03"
+  version = "v0.8.0"
+
+[[projects]]
   digest = "1:bd3632deea7c224314b504dc51fbd244a59163e89c0cb730877d51bb13f5f74a"
   name = "github.com/PuerkitoBio/purell"
   packages = ["."]
@@ -566,6 +582,14 @@
   revision = "81af80346b1a01caae0cbc27fd3c1ba5b11e189f"
 
 [[projects]]
+  branch = "master"
+  digest = "1:9ea5fc318bde1e04f7c32d73ee7528db77240a3909990b4e4ca14f6e91eb1803"
+  name = "github.com/mattn/go-ieproxy"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "f9202b1cfdeb0c82ddd3dc1e8e9cd94b3c0c1b13"
+
+[[projects]]
   digest = "1:e150b5fafbd7607e2d638e4e5cf43aa4100124e5593385147b0a74e2733d8b0d"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
@@ -617,6 +641,7 @@
   digest = "1:1929be76f4b2723c1ff965637f22c834c13d274e4a7122d5fd015173342e5715"
   name = "github.com/ncw/rclone"
   packages = [
+    "backend/azureblob",
     "backend/crypt",
     "backend/crypt/pkcs7",
     "backend/dropbox/dbhash",
@@ -993,6 +1018,7 @@
     "pkg/apis/config",
     "pkg/apis/pipeline",
     "pkg/apis/pipeline/v1alpha1",
+    "pkg/client/clientset/versioned/scheme",
     "pkg/list",
     "pkg/names",
   ]
@@ -1147,6 +1173,7 @@
     "html/atom",
     "html/charset",
     "http/httpguts",
+    "http/httpproxy",
     "http2",
     "http2/hpack",
     "idna",
@@ -1189,6 +1216,7 @@
     "cpu",
     "unix",
     "windows",
+    "windows/registry",
   ]
   pruneopts = "T"
   revision = "9eb1bfa1ce65ae8a6ff3114b0aaf9a41a6cf3560"
@@ -1919,6 +1947,7 @@
     "github.com/knative/serving/pkg/apis/serving",
     "github.com/knative/serving/pkg/apis/serving/v1alpha1",
     "github.com/knative/serving/pkg/apis/serving/v1beta1",
+    "github.com/ncw/rclone/backend/azureblob",
     "github.com/ncw/rclone/backend/googlecloudstorage",
     "github.com/ncw/rclone/backend/local",
     "github.com/ncw/rclone/backend/s3",
@@ -1940,6 +1969,7 @@
     "github.com/swaggo/gin-swagger/swaggerFiles",
     "github.com/swaggo/swag",
     "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1",
+    "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/scheme",
     "github.com/xeipuuv/gojsonschema",
     "github.com/zsais/go-gin-prometheus",
     "go.uber.org/multierr",

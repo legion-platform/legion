@@ -16,30 +16,31 @@
 
 FROM ubuntu:18.04 as builder
 
-ENV OPERATOR_DIR="/go/src/github.com/legion-platform/legion/legion/operator"
-ENV GOPATH="/go"
-ENV PATH "$PATH:/go/bin:/usr/lib/go-1.11/bin"
+ENV OPERATOR_DIR="/go/src/github.com/legion-platform/legion/legion/operator" \
+    PATH="$PATH:/go/bin:/usr/lib/go-1.11/bin" \
+    GOPATH="/go"
+
 WORKDIR "${OPERATOR_DIR}"
 
 RUN apt-get update -qq && \
     apt-get install -y software-properties-common && \
-    add-apt-repository ppa:gophers/archive && \
+    add-apt-repository -y ppa:gophers/archive && \
     apt-get update -qq && \
     apt-get install -y git gcc make golang-1.11-go wget && \
-    wget https://github.com/golangci/golangci-lint/releases/download/v1.17.1/golangci-lint-1.17.1-linux-amd64.tar.gz -O /tmp/golangci-lint.tar.gz && \
+    wget -q https://github.com/golangci/golangci-lint/releases/download/v1.17.1/golangci-lint-1.17.1-linux-amd64.tar.gz -O /tmp/golangci-lint.tar.gz && \
     tar -zxvf /tmp/golangci-lint.tar.gz -C /usr/local/ && mv /usr/local/golangci-lint*/golangci-lint /usr/bin/golangci-lint && \
-    wget https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
+    wget -q https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \
     chmod +x /usr/local/bin/dep && \
-    wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
+    wget -q https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
     tar -zxvf /tmp/kubebuilder.tar.gz -C /usr/local/ && mv /usr/local/kubebuilder_* /usr/local/kubebuilder && \
-    wget https://github.com/swaggo/swag/releases/download/v1.5.0/swag_1.5.0_Linux_x86_64.tar.gz -O /tmp/swag.tar.gz && \
+    wget -q https://github.com/swaggo/swag/releases/download/v1.5.0/swag_1.5.0_Linux_x86_64.tar.gz -O /tmp/swag.tar.gz && \
     tar -zxvf /tmp/swag.tar.gz -C /usr/local/ && mv /usr/local/swag /usr/bin/ && \
-    wget https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
+    wget -q https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
     tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
     go get github.com/t-yuki/gocover-cobertura
 
 COPY legion/operator/Gopkg.toml legion/operator/Gopkg.lock ./
-RUN dep ensure -vendor-only
+RUN dep ensure -v -vendor-only
 
 COPY legion/operator/ ./
 
@@ -99,12 +100,10 @@ CMD ["./edi"]
 
 FROM ubuntu:18.04 as model-trainer
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV LANG C.UTF-8
-ENV LANGUAGE C:en
-ENV LC_ALL C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive \
+    LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 \
+    WORK_DIR="/opt/legion"
 
-ENV WORK_DIR="/opt/legion"
 WORKDIR "${WORK_DIR}/"
 
 RUN apt-get update -qq && \
@@ -127,12 +126,10 @@ CMD ["./trainer"]
 
 FROM ubuntu:18.04 as model-packager
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV LANG C.UTF-8
-ENV LANGUAGE C:en
-ENV LC_ALL C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive \
+    LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 \
+    WORK_DIR="/opt/legion"
 
-ENV WORK_DIR="/opt/legion"
 WORKDIR "${WORK_DIR}/"
 
 RUN apt-get update -qq && \

@@ -1,5 +1,5 @@
 #
-#    Copyright 2018 EPAM Systems
+#    Copyright 2019 EPAM Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,10 +14,13 @@
 #    limitations under the License.
 #
 
-FROM k8s.gcr.io/fluentd-elasticsearch:v2.0.4
+FROM fluent/fluentd:v1.7-debian as builder
+USER root
+RUN apt-get -qq update && apt-get -y install zlib1g-dev libxml2-dev gcc make patch
 
-# Install fluentd-s3 plugin
-RUN gem install -N fluent-plugin-s3 -v '~>1.1.4' --no-document
+# Install required fluentd plugins
+RUN gem install -N fluent-plugin-s3:1.1.11 fluent-plugin-gcs:0.4.0 fluent-plugin-azure-storage-append-blob:0.1.1
 
-# Install fluentd-gcs plugin
-RUN gem install -N fluent-plugin-gcs -v "0.4.0" --no-document
+FROM fluent/fluentd:v1.7-debian
+
+COPY --from=builder /usr/local/bundle/ /usr/local/bundle/

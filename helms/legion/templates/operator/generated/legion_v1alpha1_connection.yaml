@@ -56,8 +56,8 @@ spec:
               description: Service account role
               type: string
             type:
-              description: 'Required value. Available values:   * s3   * gcs   * git   *
-                docker'
+              description: 'Required value. Available values:   * s3   * gcs   * azureblob   *
+                git   * docker'
               type: string
             uri:
               description: URI. It is required value

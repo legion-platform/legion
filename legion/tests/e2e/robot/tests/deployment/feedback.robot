@@ -11,7 +11,7 @@ Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             Collections
-Library             legion.robot.libraries.feedback.Feedback  ${CLOUD_TYPE}  ${FEEDBACK_BUCKET}
+Library             legion.robot.libraries.feedback.Feedback  ${CLOUD_TYPE}  ${FEEDBACK_BUCKET}  ${CLUSTER_NAME}
 Library             legion.robot.libraries.utils.Utils
 Library             legion.robot.libraries.model.Model
 Suite Setup         Run Keywords

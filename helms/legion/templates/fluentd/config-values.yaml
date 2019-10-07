@@ -44,6 +44,10 @@ data:
 
       # Storing
       s3_object_key_format {{ .Values.feedback.output.objectKeyFormat }}
+
+      store_as {{ .Values.feedback.output.storeAs }}
+      time_slice_wait {{ .Values.feedback.output.timeSliceWait }}
+      utc
     {{- end }}
     {{- if eq .Values.feedback.output.target "gcs"}}
     <match *>
@@ -60,12 +64,33 @@ data:
       # Storing
       bucket {{ required "GCS bucket value is required" .Values.feedback.output.gcs.bucket }}
       object_key_format {{ .Values.feedback.output.objectKeyFormat }}
-    {{- end }}
-      path {{ .Values.feedback.output.path }}
+
       store_as {{ .Values.feedback.output.storeAs }}
-      time_slice_format {{ .Values.feedback.output.timeSliceFormat }}
       time_slice_wait {{ .Values.feedback.output.timeSliceWait }}
       utc
+    {{- end }}
+    {{- if eq .Values.feedback.output.target "azureblob"}}
+    <match *>
+      @type azure-storage-append-blob
+
+      {{- if eq .Values.feedback.output.azureblob.authorization "accesskey" }}
+      # Auth based on secrets from HELM configuration
+      # Secrets are attached as secretKeyRefs from "{{ .Release.Name }}-fluentd-secret" secret
+      azure_storage_account "#{ENV['AZURE_STORAGE_ACCOUNT']}"
+      azure_storage_access_key "#{ENV['AZURE_STORAGE_ACCESS_KEY']}"
+      {{- end }}
+      {{- if eq .Values.feedback.output.azureblob.authorization "sas" }}
+      # TODO: Auth based on Shared Access Signature (SAS Token) for Storage Account
+      {{- end }}
+
+      # Storing
+      azure_container {{ required "Azure Blob container name is required" .Values.feedback.output.azureblob.bucket }}
+      azure_object_key_format {{ .Values.feedback.output.objectKeyFormat }}
+      auto_create_container "true"
+    {{- end }}
+
+      path {{ .Values.feedback.output.path }}
+      time_slice_format {{ .Values.feedback.output.timeSliceFormat }}
 
       # Buffering
       <buffer tag,time,model_name,model_version>

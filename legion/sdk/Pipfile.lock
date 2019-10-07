@@ -53,9 +53,9 @@
         },
         "hstspreload": {
             "hashes": [
-                "sha256:badcc029455af3c762d5703d6fcfccc74be53beb18a02ff3b8dbe8fd2ba9c4b8"
+                "sha256:dd634749f1e43c592f382dda1775bd5789095b543f1a8a917f312f22211459f9"
             ],
-            "version": "==2019.10.11"
+            "version": "==2019.10.14"
         },
         "httpx": {
             "hashes": [
