@@ -23,9 +23,13 @@ import (
 
 const (
 	Namespace = "connection.namespace"
+	// Enable connection API/operator
+	Enabled   = "connection.enabled"
 )
 
 func init() {
+	viper.SetDefault(Enabled, true)
+
 	viper.SetDefault(Namespace, "legion")
 	config.PanicIfError(viper.BindEnv(Namespace))
 }

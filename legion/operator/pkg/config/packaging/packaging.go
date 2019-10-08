@@ -23,6 +23,8 @@ import (
 
 const (
 	Namespace                     = "packaging.namespace"
+	// Enable packaging API/operator
+	Enabled                       = "packaging.enabled"
 	PackagingIntegrationNamespace = "packaging.packager_integration_namespace"
 	ServiceAccount                = "packaging.service_account"
 	OutputConnectionName          = "packaging.output_connection"
@@ -39,6 +41,8 @@ const (
 )
 
 func init() {
+	viper.SetDefault(Enabled, true)
+
 	viper.SetDefault(Namespace, "legion-packaging")
 	viper.SetDefault(PackagingIntegrationNamespace, "legion")
 	config.PanicIfError(viper.BindEnv(Namespace))

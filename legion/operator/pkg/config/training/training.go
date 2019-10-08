@@ -23,6 +23,8 @@ import (
 
 const (
 	Namespace                     = "training.namespace"
+	// Enable training API/operator
+	Enabled                       = "training.enabled"
 	ToolchainIntegrationNamespace = "training.ti_namespace"
 	TrainingServiceAccount        = "training.service_account"
 	OutputConnectionName          = "training.output_connection"
@@ -40,6 +42,8 @@ const (
 )
 
 func init() {
+	viper.SetDefault(Enabled, true)
+
 	viper.SetDefault(Namespace, "legion-training")
 	config.PanicIfError(viper.BindEnv(Namespace))
 

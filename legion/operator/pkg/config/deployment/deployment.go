@@ -23,6 +23,8 @@ import (
 
 const (
 	Namespace       = "deployment.namespace"
+	// Enable deployment API/operator
+	Enabled         = "deployment.enabled"
 	DefaultRoleName = "deployment.security.role_name"
 	// Jwks url for mode authorization
 	SecurityJwksURL = "deployment.security.jwks.url"
@@ -47,6 +49,8 @@ const (
 )
 
 func init() {
+	viper.SetDefault(Enabled, true)
+
 	viper.SetDefault(DefaultRoleName, "default-legion")
 	config.PanicIfError(viper.BindEnv(DefaultRoleName))
 

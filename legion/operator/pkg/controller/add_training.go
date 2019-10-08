@@ -18,9 +18,23 @@ package controller
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/controller/modeltraining"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func init() {
-	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, modeltraining.Add)
+	// AddToManagerTrainingFuncs is a list of functions to create controllers and add them to a manager.
+	AddToManagerTrainingFuncs = append(AddToManagerTrainingFuncs, modeltraining.Add)
+}
+
+// AddToManagerTrainingFuncs is a list of functions to add all Controllers to the Manager
+var AddToManagerTrainingFuncs []func(manager.Manager) error
+
+// AddToManager adds all Controllers to the Manager
+func AddTrainingToManager(m manager.Manager) error {
+	for _, f := range AddToManagerTrainingFuncs {
+		if err := f(m); err != nil {
+			return err
+		}
+	}
+	return nil
 }

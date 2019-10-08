@@ -17,21 +17,23 @@
 package controller
 
 import (
-	"github.com/legion-platform/legion/legion/operator/pkg/controller/connection"
+	"github.com/legion-platform/legion/legion/operator/pkg/controller/modeldeployment"
+	"github.com/legion-platform/legion/legion/operator/pkg/controller/modelroute"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func init() {
-	// AddToManagerConnectionFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerConnectionFuncs = append(AddToManagerConnectionFuncs, connection.Add)
+	// AddToManagerDeploymentFuncs is a list of functions to create controllers and add them to a manager.
+	AddToManagerDeploymentFuncs = append(AddToManagerDeploymentFuncs, modeldeployment.Add)
+	AddToManagerDeploymentFuncs = append(AddToManagerDeploymentFuncs, modelroute.Add)
 }
 
-// AddToManagerConnectionFuncs is a list of functions to add all Controllers to the Manager
-var AddToManagerConnectionFuncs []func(manager.Manager) error
+// AddToManagerDeploymentFuncs is a list of functions to add all Controllers to the Manager
+var AddToManagerDeploymentFuncs []func(manager.Manager) error
 
 // AddToManager adds all Controllers to the Manager
-func AddConnectionToManager(m manager.Manager) error {
-	for _, f := range AddToManagerConnectionFuncs {
+func AddDeploymentToManager(m manager.Manager) error {
+	for _, f := range AddToManagerDeploymentFuncs {
 		if err := f(m); err != nil {
 			return err
 		}

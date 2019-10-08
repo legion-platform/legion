@@ -170,11 +170,11 @@ pipeline {
                     steps {
                         script {
                             legion.buildLegionImage('operator-dependencies', ".", "containers/operator/Dockerfile", "--target builder")
-                            legion.buildLegionImage('k8s-model-trainer', ".", "containers/operator/Dockerfile", "--target model-trainer --cache-from legion/operator-dependencies:${Globals.buildVersion}")
-                            legion.buildLegionImage('k8s-model-packager', ".", "containers/operator/Dockerfile", "--target model-packager --cache-from legion/operator-dependencies:${Globals.buildVersion}")
-                            legion.buildLegionImage('service-catalog', ".", "containers/operator/Dockerfile", "--target service-catalog --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('service-catalog', ".", "containers/operator/Dockerfile", "--target service-catalog --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-model-trainer', ".", "containers/operator/Dockerfile", "--target model-trainer --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-model-packager', ".", "containers/operator/Dockerfile", "--target model-packager --cache-from legion/operator-dependencies:${Globals.buildVersion}")
 
                             docker.image("legion/operator-dependencies:${Globals.buildVersion}").inside() {
                                 sh """

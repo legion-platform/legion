@@ -573,8 +573,16 @@ config:
     # The collection of external urls, for example: metrics, edge, service catalog and so on
     # Type: string->string map
     external_urls: []
+  # Connection configuration
+  connection:
+    # Enable connection API/operator
+    # Type: boolean
+    enabled: true
   # Deployment configuration
   deployment:
+    # Enable deployment API/operator
+    # Type: boolean
+    enabled: true
     # Model deployment namespace
     # Required value
     # Type: string
@@ -601,6 +609,9 @@ config:
 
   # Training configuration
   training:
+    # Enable training API/operator
+    # Type: boolean
+    enabled: true
     # Training namespace
     # Required value
     # Type: string
@@ -618,6 +629,9 @@ config:
 
   # Packaging configuration
   packaging:
+    # Enable packaging API/operator
+    # Type: boolean
+    enabled: true
     # Packaging namespace
     # Required value
     # Type: string
