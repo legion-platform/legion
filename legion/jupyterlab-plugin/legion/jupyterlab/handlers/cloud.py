@@ -23,7 +23,7 @@ from tornado.web import HTTPError
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
-from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT, LEGION_X_JWT_TOKEN
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT
 from legion.sdk.clients.configuration import ConfigurationClient
 from legion.sdk.clients.connection import ConnectionClient
 from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
@@ -64,7 +64,7 @@ class BaseCloudLegionHandler(BaseLegionHandler):
         :return: instance of target_client_class class
         """
         default_edi_url = os.getenv(DEFAULT_EDI_ENDPOINT, '')
-        jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
+        jwt_header = self.get_token_from_header()
 
         edi_url = self.request.headers.get(LEGION_CLOUD_CREDENTIALS_EDI, '')
         if not edi_url:

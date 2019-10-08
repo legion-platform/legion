@@ -338,7 +338,7 @@ function activateCloudPlugin(
       if (response.defaultEDIEndpoint.length !== 0) {
         legionExtension.apiCloudState.setCredentials({
           cluster: response.defaultEDIEndpoint,
-          authString: ''
+          authString: null
         });
       } else {
         mainMenu.addMenu(

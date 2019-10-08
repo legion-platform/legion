@@ -24,7 +24,8 @@ from legion.sdk.clients.edi import EDIConnectionException, IncorrectAuthorizatio
 
 LEGION_X_JWT_TOKEN = 'X-Jwt'
 DEFAULT_EDI_ENDPOINT = 'DEFAULT_EDI_ENDPOINT'
-DEFAULT_MODEL_ROLE = 'DEFAULT_MODEL_ROLE'
+LEGION_OAUTH_TOKEN_COOKIE_NAME = '_legion_oauth_token'
+LEGION_OAUTH_STATE_COOKIE_NAME = '_legion_oauth_state'
 
 
 def decorate_handler_for_exception(function):

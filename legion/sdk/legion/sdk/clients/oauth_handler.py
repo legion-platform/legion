@@ -193,6 +193,10 @@ def get_id_token(code: str, issue_token_url: str, redirect_uri: str) -> typing.O
         'code': code,
         'redirect_uri': redirect_uri
     }
+
+    if config.LEGIONCTL_OAUTH_CLIENT_SECRET:
+        payload['client_secret'] = config.LEGIONCTL_OAUTH_CLIENT_SECRET
+
     return _ask_token_endpoint(issue_token_url, payload)
 
 

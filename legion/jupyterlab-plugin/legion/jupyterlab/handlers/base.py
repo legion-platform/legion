@@ -17,8 +17,43 @@
 Declaration of base back-end handler
 """
 import json
+import random
+import string
+from typing import Tuple
 
+from urllib.parse import urlencode
 from notebook.base.handlers import APIHandler
+
+from legion.jupyterlab.handlers.helper import LEGION_X_JWT_TOKEN
+from legion.sdk import config
+
+OAUTH_STATE_LENGTH = 10
+
+
+def build_redirect_url() -> str:
+    """
+    Build Jupyterlab redirect URL
+    :return: URL
+    """
+    return f'{config.JUPYTER_REDIRECT_URL}/legion/api/oauth2/callback'
+
+
+def build_oauth_url() -> Tuple[str, str]:
+    """
+    Build full oauth URL
+    :return: URL and state
+    """
+    state = ''.join(random.choice(string.ascii_letters) for _ in range(OAUTH_STATE_LENGTH))
+
+    parameters = {
+        'client_id': config.LEGIONCTL_OAUTH_CLIENT_ID,
+        'response_type': 'code',
+        'state': state,
+        'redirect_uri': build_redirect_url(),
+        'scope': config.LEGIONCTL_OAUTH_SCOPE
+    }
+
+    return f'{config.LEGIONCTL_OAUTH_AUTH_URL}?{urlencode(parameters)}', state
 
 
 # pylint: disable=W0223
@@ -62,3 +97,10 @@ class BaseLegionHandler(APIHandler):
         :return: None
         """
         self.finish(json.dumps(data))
+
+    def get_token_from_header(self) -> str:
+        """
+        Returns a JWT from the oauth proxy header
+        :return: JWT
+        """
+        return self.request.headers.get(LEGION_X_JWT_TOKEN, '')
