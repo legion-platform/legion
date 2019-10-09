@@ -22,10 +22,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
-	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
-	mt_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training/kubernetes"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
+	mt_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	train_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/training"
@@ -52,10 +52,10 @@ var (
 
 type ToolchainIntegrationRouteSuite struct {
 	suite.Suite
-	g           *GomegaWithT
-	server      *gin.Engine
-	mtStorage   mt_storage.Storage
-	connStorage conn_storage.Storage
+	g              *GomegaWithT
+	server         *gin.Engine
+	mtRepository   mt_repository.Repository
+	connRepository conn_repository.Repository
 }
 
 func (s *ToolchainIntegrationRouteSuite) SetupSuite() {
@@ -66,14 +66,18 @@ func (s *ToolchainIntegrationRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mtStorage = mt_k8s_storage.NewStorage(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connStorage = conn_k8s_storage.NewStorage(testNamespace, mgr.GetClient())
-	train_route.ConfigureRoutes(v1Group, s.mtStorage, s.connStorage)
+	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	train_route.ConfigureRoutes(v1Group, s.mtRepository, s.connRepository)
 }
 
 func (s *ToolchainIntegrationRouteSuite) TearDownTest() {
-	for _, mpId := range []string{testToolchainIntegrationId, testToolchainIntegrationId1, testToolchainIntegrationId2} {
-		if err := s.mtStorage.DeleteToolchainIntegration(mpId); err != nil && !errors.IsNotFound(err) {
+	for _, mpID := range []string{
+		testToolchainIntegrationID,
+		testToolchainIntegrationID1,
+		testToolchainIntegrationID2,
+	} {
+		if err := s.mtRepository.DeleteToolchainIntegration(mpID); err != nil && !errors.IsNotFound(err) {
 			// If a model training is not found then it was not created during a test case
 			// All other errors propagate as a panic
 			panic(err)
@@ -91,7 +95,7 @@ func TestToolchainIntegrationRouteSuite(t *testing.T) {
 
 func newTiStub() *training.ToolchainIntegration {
 	return &training.ToolchainIntegration{
-		Id: testToolchainIntegrationId,
+		ID: testToolchainIntegrationID,
 		Spec: v1alpha1.ToolchainIntegrationSpec{
 			Entrypoint:             tiEntrypoint,
 			DefaultImage:           tiDefaultImage,
@@ -102,30 +106,32 @@ func newTiStub() *training.ToolchainIntegration {
 
 func (s *ToolchainIntegrationRouteSuite) newMultipleTiStubs() []*training.ToolchainIntegration {
 	ti1 := &training.ToolchainIntegration{
-		Id: testToolchainIntegrationId1,
+		ID: testToolchainIntegrationID1,
 		Spec: v1alpha1.ToolchainIntegrationSpec{
 			DefaultImage: testToolchainMtImage,
 		},
 	}
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti1)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti1)).NotTo(HaveOccurred())
 
 	ti2 := &training.ToolchainIntegration{
-		Id: testToolchainIntegrationId2,
+		ID: testToolchainIntegrationID2,
 		Spec: v1alpha1.ToolchainIntegrationSpec{
 			DefaultImage: testToolchainMtImage,
 		},
 	}
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti2)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti2)).NotTo(HaveOccurred())
 
 	return []*training.ToolchainIntegration{ti1, ti2}
 }
 
 func (s *ToolchainIntegrationRouteSuite) TestGetToolchainIntegration() {
 	ti := newTiStub()
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, strings.Replace(train_route.GetToolchainIntegrationUrl, ":id", ti.Id, -1), nil)
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
+		train_route.GetToolchainIntegrationURL, ":id", ti.ID, -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -134,13 +140,15 @@ func (s *ToolchainIntegrationRouteSuite) TestGetToolchainIntegration() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(tiResponse.Id).Should(Equal(ti.Id))
+	s.g.Expect(tiResponse.ID).Should(Equal(ti.ID))
 	s.g.Expect(tiResponse.Spec).Should(Equal(ti.Spec))
 }
 
 func (s *ToolchainIntegrationRouteSuite) TestGetToolchainIntegrationNotFound() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, strings.Replace(train_route.GetToolchainIntegrationUrl, ":id", "not-found", -1), nil)
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
+		train_route.GetToolchainIntegrationURL, ":id", "not-found", -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -154,7 +162,7 @@ func (s *ToolchainIntegrationRouteSuite) TestGetToolchainIntegrationNotFound() {
 
 func (s *ToolchainIntegrationRouteSuite) TestGetAllTiEmptyResult() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -170,7 +178,7 @@ func (s *ToolchainIntegrationRouteSuite) TestGetAllTi() {
 	s.newMultipleTiStubs()
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -182,18 +190,18 @@ func (s *ToolchainIntegrationRouteSuite) TestGetAllTi() {
 	s.g.Expect(result).Should(HaveLen(2))
 
 	for _, ti := range result {
-		s.g.Expect(ti.Id).To(Or(Equal(testToolchainIntegrationId1), Equal(testToolchainIntegrationId2)))
+		s.g.Expect(ti.ID).To(Or(Equal(testToolchainIntegrationID1), Equal(testToolchainIntegrationID2)))
 	}
 }
 
 func (s *ToolchainIntegrationRouteSuite) TestGetAllTiPaging() {
 	s.newMultipleTiStubs()
 
-	toolchainsNames := map[string]interface{}{testToolchainIntegrationId1: nil, testToolchainIntegrationId2: nil}
+	toolchainsNames := map[string]interface{}{testToolchainIntegrationID1: nil, testToolchainIntegrationID2: nil}
 
 	// Return first page
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -210,11 +218,11 @@ func (s *ToolchainIntegrationRouteSuite) TestGetAllTiPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(toolchains).Should(HaveLen(1))
-	delete(toolchainsNames, toolchains[0].Id)
+	delete(toolchainsNames, toolchains[0].ID)
 
 	// Return second page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -230,11 +238,11 @@ func (s *ToolchainIntegrationRouteSuite) TestGetAllTiPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(toolchains).Should(HaveLen(1))
-	delete(toolchainsNames, toolchains[0].Id)
+	delete(toolchainsNames, toolchains[0].ID)
 
 	// Return third empty page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, train_route.GetAllToolchainIntegrationURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -260,7 +268,9 @@ func (s *ToolchainIntegrationRouteSuite) TestCreateToolchainIntegration() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, train_route.CreateToolchainIntegrationUrl, bytes.NewReader(tiEntityBody))
+	req, err := http.NewRequest(
+		http.MethodPost, train_route.CreateToolchainIntegrationURL, bytes.NewReader(tiEntityBody),
+	)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -269,10 +279,10 @@ func (s *ToolchainIntegrationRouteSuite) TestCreateToolchainIntegration() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusCreated))
-	s.g.Expect(tiResponse.Id).Should(Equal(tiEntity.Id))
+	s.g.Expect(tiResponse.ID).Should(Equal(tiEntity.ID))
 	s.g.Expect(tiResponse.Spec).Should(Equal(tiEntity.Spec))
 
-	ti, err := s.mtStorage.GetToolchainIntegration(testToolchainIntegrationId)
+	ti, err := s.mtRepository.GetToolchainIntegration(testToolchainIntegrationID)
 	s.g.Expect(err).ShouldNot(HaveOccurred())
 	s.g.Expect(ti.Spec).To(Equal(tiEntity.Spec))
 }
@@ -285,7 +295,9 @@ func (s *ToolchainIntegrationRouteSuite) TestCreateToolchainIntegrationValidatio
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, train_route.CreateToolchainIntegrationUrl, bytes.NewReader(tiEntityBody))
+	req, err := http.NewRequest(
+		http.MethodPost, train_route.CreateToolchainIntegrationURL, bytes.NewReader(tiEntityBody),
+	)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -300,13 +312,15 @@ func (s *ToolchainIntegrationRouteSuite) TestCreateToolchainIntegrationValidatio
 func (s *ToolchainIntegrationRouteSuite) TestCreateDuplicateToolchainIntegration() {
 	ti := newTiStub()
 
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
 
 	tiEntityBody, err := json.Marshal(ti)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, train_route.CreateToolchainIntegrationUrl, bytes.NewReader(tiEntityBody))
+	req, err := http.NewRequest(
+		http.MethodPost, train_route.CreateToolchainIntegrationURL, bytes.NewReader(tiEntityBody),
+	)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -320,7 +334,7 @@ func (s *ToolchainIntegrationRouteSuite) TestCreateDuplicateToolchainIntegration
 
 func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegration() {
 	ti := newTiStub()
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
 
 	updatedTi := newTiStub()
 	updatedTi.Spec.Entrypoint = "new-entrypoint"
@@ -329,7 +343,9 @@ func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegration() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, train_route.UpdateToolchainIntegrationUrl, bytes.NewReader(tiEntityBody))
+	req, err := http.NewRequest(
+		http.MethodPut, train_route.UpdateToolchainIntegrationURL, bytes.NewReader(tiEntityBody),
+	)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -338,17 +354,17 @@ func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegration() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(tiResponse.Id).Should(Equal(updatedTi.Id))
+	s.g.Expect(tiResponse.ID).Should(Equal(updatedTi.ID))
 	s.g.Expect(tiResponse.Spec).Should(Equal(updatedTi.Spec))
 
-	ti, err = s.mtStorage.GetToolchainIntegration(testToolchainIntegrationId)
+	ti, err = s.mtRepository.GetToolchainIntegration(testToolchainIntegrationID)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(ti.Spec).To(Equal(updatedTi.Spec))
 }
 
 func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegrationValidation() {
 	ti := newTiStub()
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
 
 	updatedTi := newTiStub()
 	updatedTi.Spec.Entrypoint = ""
@@ -357,7 +373,9 @@ func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegrationValidatio
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, train_route.UpdateToolchainIntegrationUrl, bytes.NewReader(tiEntityBody))
+	req, err := http.NewRequest(
+		http.MethodPut, train_route.UpdateToolchainIntegrationURL, bytes.NewReader(tiEntityBody),
+	)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -376,7 +394,7 @@ func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegrationNotFound(
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, train_route.UpdateToolchainIntegrationUrl, bytes.NewReader(tiBody))
+	req, err := http.NewRequest(http.MethodPut, train_route.UpdateToolchainIntegrationURL, bytes.NewReader(tiBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -390,10 +408,12 @@ func (s *ToolchainIntegrationRouteSuite) TestUpdateToolchainIntegrationNotFound(
 
 func (s *ToolchainIntegrationRouteSuite) TestDeleteToolchainIntegration() {
 	ti := newTiStub()
-	s.g.Expect(s.mtStorage.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateToolchainIntegration(ti)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodDelete, strings.Replace(train_route.DeleteToolchainIntegrationUrl, ":id", ti.Id, -1), nil)
+	req, err := http.NewRequest(http.MethodDelete, strings.Replace(
+		train_route.DeleteToolchainIntegrationURL, ":id", ti.ID, -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -404,14 +424,16 @@ func (s *ToolchainIntegrationRouteSuite) TestDeleteToolchainIntegration() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result.Message).Should(ContainSubstring("was deleted"))
 
-	tiList, err := s.mtStorage.GetToolchainIntegrationList()
+	tiList, err := s.mtRepository.GetToolchainIntegrationList()
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(tiList).To(HaveLen(0))
 }
 
 func (s *ToolchainIntegrationRouteSuite) TestDeleteToolchainIntegrationNotFound() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodDelete, strings.Replace(train_route.DeleteToolchainIntegrationUrl, ":id", "not-found", -1), nil)
+	req, err := http.NewRequest(http.MethodDelete, strings.Replace(
+		train_route.DeleteToolchainIntegrationURL, ":id", "not-found", -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 

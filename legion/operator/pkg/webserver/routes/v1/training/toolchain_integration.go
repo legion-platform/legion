@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
-	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -30,12 +30,12 @@ import (
 var logTI = logf.Log.WithName("toolchain-integration-controller")
 
 const (
-	GetToolchainIntegrationUrl    = "/toolchain/integration/:id"
-	GetAllToolchainIntegrationUrl = "/toolchain/integration"
-	CreateToolchainIntegrationUrl = "/toolchain/integration"
-	UpdateToolchainIntegrationUrl = "/toolchain/integration"
-	DeleteToolchainIntegrationUrl = "/toolchain/integration/:id"
-	IdTiUrlParam                  = "id"
+	GetToolchainIntegrationURL    = "/toolchain/integration/:id"
+	GetAllToolchainIntegrationURL = "/toolchain/integration"
+	CreateToolchainIntegrationURL = "/toolchain/integration"
+	UpdateToolchainIntegrationURL = "/toolchain/integration"
+	DeleteToolchainIntegrationURL = "/toolchain/integration/:id"
+	IDTiURLParam                  = "id"
 )
 
 var (
@@ -43,8 +43,8 @@ var (
 )
 
 type ToolchainIntegrationController struct {
-	storage   mt_storage.Storage
-	validator *TiValidator
+	repository mt_repository.Repository
+	validator  *TiValidator
 }
 
 // @Summary Get a ToolchainIntegration
@@ -59,12 +59,12 @@ type ToolchainIntegrationController struct {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/toolchain/integration/{id} [get]
 func (tic *ToolchainIntegrationController) getToolchainIntegration(c *gin.Context) {
-	tiId := c.Param(IdTiUrlParam)
+	tiID := c.Param(IDTiURLParam)
 
-	ti, err := tic.storage.GetToolchainIntegration(tiId)
+	ti, err := tic.repository.GetToolchainIntegration(tiID)
 	if err != nil {
-		logTI.Error(err, fmt.Sprintf("Retrieving %s toolchain intergration", tiId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logTI.Error(err, fmt.Sprintf("Retrieving %s toolchain integration", tiID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -83,7 +83,7 @@ func (tic *ToolchainIntegrationController) getToolchainIntegration(c *gin.Contex
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/toolchain/integration [get]
 func (tic *ToolchainIntegrationController) getAllToolchainIntegrations(c *gin.Context) {
-	size, page, err := routes.UrlParamsToFilter(c, nil, emptyCache)
+	size, page, err := routes.URLParamsToFilter(c, nil, emptyCache)
 	if err != nil {
 		logTI.Error(err, fmt.Sprintf("Malformed url parameters of toolchain itergration request"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -91,13 +91,13 @@ func (tic *ToolchainIntegrationController) getAllToolchainIntegrations(c *gin.Co
 		return
 	}
 
-	tiList, err := tic.storage.GetToolchainIntegrationList(
+	tiList, err := tic.repository.GetToolchainIntegrationList(
 		kubernetes.Size(size),
 		kubernetes.Page(page),
 	)
 	if err != nil {
-		logTI.Error(err, fmt.Sprintf("Retrieving list of toolchain intergrations"))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logTI.Error(err, fmt.Sprintf("Retrieving list of toolchain integrations"))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -118,22 +118,22 @@ func (tic *ToolchainIntegrationController) createToolchainIntegration(c *gin.Con
 	var ti training.ToolchainIntegration
 
 	if err := c.ShouldBindJSON(&ti); err != nil {
-		logTI.Error(err, fmt.Sprintf("JSON binding of toolchain intergration is failed"))
+		logTI.Error(err, fmt.Sprintf("JSON binding of toolchain integration is failed"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
 	if err := tic.validator.ValidatesAndSetDefaults(&ti); err != nil {
-		logMT.Error(err, fmt.Sprintf("Validation of the tollchain intergration is failed: %v", ti))
+		logMT.Error(err, fmt.Sprintf("Validation of the tollchain integration is failed: %v", ti))
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	if err := tic.storage.CreateToolchainIntegration(&ti); err != nil {
-		logTI.Error(err, fmt.Sprintf("Creation of toolchain intergration: %v", ti))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := tic.repository.CreateToolchainIntegration(&ti); err != nil {
+		logTI.Error(err, fmt.Sprintf("Creation of toolchain integration: %v", ti))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -155,22 +155,22 @@ func (tic *ToolchainIntegrationController) updateToolchainIntegration(c *gin.Con
 	var ti training.ToolchainIntegration
 
 	if err := c.ShouldBindJSON(&ti); err != nil {
-		logTI.Error(err, fmt.Sprintf("JSON binding of toolchain intergration is failed"))
+		logTI.Error(err, fmt.Sprintf("JSON binding of toolchain integration is failed"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
 	if err := tic.validator.ValidatesAndSetDefaults(&ti); err != nil {
-		logMT.Error(err, fmt.Sprintf("Validation of the tollchain intergration is failed: %v", ti))
+		logMT.Error(err, fmt.Sprintf("Validation of the tollchain integration is failed: %v", ti))
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	if err := tic.storage.UpdateToolchainIntegration(&ti); err != nil {
-		logTI.Error(err, fmt.Sprintf("Update of toolchain intergration: %v", ti))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := tic.repository.UpdateToolchainIntegration(&ti); err != nil {
+		logTI.Error(err, fmt.Sprintf("Update of toolchain integration: %v", ti))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -190,14 +190,14 @@ func (tic *ToolchainIntegrationController) updateToolchainIntegration(c *gin.Con
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/toolchain/integration/{id} [delete]
 func (tic *ToolchainIntegrationController) deleteToolchainIntegration(c *gin.Context) {
-	tiId := c.Param(IdTiUrlParam)
+	tiID := c.Param(IDTiURLParam)
 
-	if err := tic.storage.DeleteToolchainIntegration(tiId); err != nil {
-		logTI.Error(err, fmt.Sprintf("Deletion of %s toolchain intergration is failed", tiId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := tic.repository.DeleteToolchainIntegration(tiID); err != nil {
+		logTI.Error(err, fmt.Sprintf("Deletion of %s toolchain integration is failed", tiID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("ToolchainIntegration %s was deleted", tiId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("ToolchainIntegration %s was deleted", tiID)})
 }

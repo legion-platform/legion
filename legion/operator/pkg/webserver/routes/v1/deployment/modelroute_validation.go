@@ -20,18 +20,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
-	md_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
+	md_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
 	"go.uber.org/multierr"
 	"strings"
 )
 
 const (
-	UrlPrefixEmptyErrorMessage = "URL Prefix must not be empty"
+	URLPrefixEmptyErrorMessage = "URL Prefix must not be empty"
 	EmptyTargetErrorMessage    = "model deployment targets must contain at least one element"
 	OneTargetErrorMessage      = "it must have 100 weight or nil value if there is only one target"
 	MissedWeightErrorMessage   = "weights must be present if there are more than one model deployment targets"
 	TotalWeightErrorMessage    = "total target weight does not equal 100"
-	UrlPrefixSlashErrorMessage = "the URL prefix must start with slash"
+	URLPrefixSlashErrorMessage = "the URL prefix must start with slash"
 	ForbiddenPrefix            = "the URL prefix %s is forbidden"
 	ErrorMessageTemplate       = "%s: %s"
 	ValidationMrErrorMessage   = "Validation of model route is failed"
@@ -45,12 +45,12 @@ var (
 )
 
 type MrValidator struct {
-	mdStorage md_storage.Storage
+	mdRepository md_repository.Repository
 }
 
-func NewMrValidator(mdStorage md_storage.Storage) *MrValidator {
+func NewMrValidator(mdRepository md_repository.Repository) *MrValidator {
 	return &MrValidator{
-		mdStorage: mdStorage,
+		mdRepository: mdRepository,
 	}
 }
 
@@ -63,14 +63,14 @@ func (mrv *MrValidator) ValidatesAndSetDefaults(mr *deployment.ModelRoute) (err 
 }
 
 func (mrv *MrValidator) validateMainParameters(mr *deployment.ModelRoute) (err error) {
-	if len(mr.Spec.UrlPrefix) == 0 {
-		err = multierr.Append(err, errors.New(UrlPrefixEmptyErrorMessage))
+	if len(mr.Spec.URLPrefix) == 0 {
+		err = multierr.Append(err, errors.New(URLPrefixEmptyErrorMessage))
 	} else {
-		if !strings.HasPrefix(mr.Spec.UrlPrefix, "/") {
-			err = multierr.Append(err, errors.New(UrlPrefixSlashErrorMessage))
+		if !strings.HasPrefix(mr.Spec.URLPrefix, "/") {
+			err = multierr.Append(err, errors.New(URLPrefixSlashErrorMessage))
 		} else {
 			for _, prefix := range ForbiddenPrefixes {
-				if strings.HasPrefix(mr.Spec.UrlPrefix, prefix) {
+				if strings.HasPrefix(mr.Spec.URLPrefix, prefix) {
 					err = multierr.Append(err, fmt.Errorf(ForbiddenPrefix, prefix))
 					break
 				}
@@ -78,7 +78,7 @@ func (mrv *MrValidator) validateMainParameters(mr *deployment.ModelRoute) (err e
 		}
 	}
 	if mr.Spec.Mirror != nil && len(*mr.Spec.Mirror) != 0 {
-		if _, k8sError := mrv.mdStorage.GetModelDeployment(*mr.Spec.Mirror); k8sError != nil {
+		if _, k8sError := mrv.mdRepository.GetModelDeployment(*mr.Spec.Mirror); k8sError != nil {
 			err = multierr.Append(err, k8sError)
 		}
 	}
@@ -97,23 +97,21 @@ func (mrv *MrValidator) validateModelDeploymentTargets(mr *deployment.ModelRoute
 	case 1:
 		mdt := mr.Spec.ModelDeploymentTargets[0]
 
-		if _, k8sError := mrv.mdStorage.GetModelDeployment(mdt.Name); k8sError != nil {
+		if _, k8sError := mrv.mdRepository.GetModelDeployment(mdt.Name); k8sError != nil {
 			err = multierr.Append(err, k8sError)
 		}
 		if mdt.Weight == nil {
 			logMR.Info("Weight parameter is nil. Set the default value",
-				"Model Route name", mr.Id, "weight", MaxWeight)
+				"Model Route name", mr.ID, "weight", MaxWeight)
 			mr.Spec.ModelDeploymentTargets[0].Weight = &MaxWeight
-		} else {
-			if *mdt.Weight != 100 {
-				err = multierr.Append(err, errors.New(OneTargetErrorMessage))
-			}
+		} else if *mdt.Weight != 100 {
+			err = multierr.Append(err, errors.New(OneTargetErrorMessage))
 		}
 	default:
 		weightSum := int32(0)
 
 		for _, mdt := range mr.Spec.ModelDeploymentTargets {
-			if _, k8sError := mrv.mdStorage.GetModelDeployment(mdt.Name); k8sError != nil {
+			if _, k8sError := mrv.mdRepository.GetModelDeployment(mdt.Name); k8sError != nil {
 				err = multierr.Append(err, k8sError)
 			}
 
@@ -130,5 +128,5 @@ func (mrv *MrValidator) validateModelDeploymentTargets(mr *deployment.ModelRoute
 		}
 	}
 
-	return
+	return err
 }

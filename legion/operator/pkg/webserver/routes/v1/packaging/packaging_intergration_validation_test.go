@@ -25,7 +25,7 @@ import (
 	"testing"
 )
 
-func TestPiIdValidation(t *testing.T) {
+func TestPiIDValidation(t *testing.T) {
 	g := NewGomegaWithT(t)
 	createEnvironment()
 	pi := &packaging.PackagingIntegration{
@@ -34,7 +34,7 @@ func TestPiIdValidation(t *testing.T) {
 
 	err := pack_route.NewPiValidator().ValidateAndSetDefaults(pi)
 	g.Expect(err).Should(HaveOccurred())
-	g.Expect(err.Error()).Should(ContainSubstring(pack_route.EmptyIdErrorMessage))
+	g.Expect(err.Error()).Should(ContainSubstring(pack_route.EmptyIDErrorMessage))
 }
 
 func TestPiEntrypointValidation(t *testing.T) {
@@ -65,7 +65,7 @@ func TestPiEmptyTargetsValidation(t *testing.T) {
 	g := NewGomegaWithT(t)
 	createEnvironment()
 	pi := &packaging.PackagingIntegration{
-		Id: "some-id",
+		ID: "some-id",
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   "some-entrypoint",
 			DefaultImage: "some/image:tag",
@@ -81,7 +81,7 @@ func TestPiEmptyArgumentsValidation(t *testing.T) {
 	g := NewGomegaWithT(t)
 	createEnvironment()
 	pi := &packaging.PackagingIntegration{
-		Id: "some-id",
+		ID: "some-id",
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   "some-entrypoint",
 			DefaultImage: "some/image:tag",
@@ -97,7 +97,7 @@ func TestPiEmptyTargetName(t *testing.T) {
 	g := NewGomegaWithT(t)
 	createEnvironment()
 	pi := &packaging.PackagingIntegration{
-		Id: "some-id",
+		ID: "some-id",
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   "some-entrypoint",
 			DefaultImage: "some/image:tag",
@@ -124,7 +124,7 @@ func TestPiEmptyConnectionType(t *testing.T) {
 	createEnvironment()
 	targetName := "some-name"
 	pi := &packaging.PackagingIntegration{
-		Id: "some-id",
+		ID: "some-id",
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   "some-entrypoint",
 			DefaultImage: "some/image:tag",
@@ -143,7 +143,9 @@ func TestPiEmptyConnectionType(t *testing.T) {
 
 	err := pack_route.NewPiValidator().ValidateAndSetDefaults(pi)
 	g.Expect(err).Should(HaveOccurred())
-	g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(pack_route.TargetEmptyConnectionTypesErrorMessage, targetName)))
+	g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(
+		pack_route.TargetEmptyConnectionTypesErrorMessage, targetName,
+	)))
 }
 
 func TestPiUnknownConnectionType(t *testing.T) {
@@ -152,7 +154,7 @@ func TestPiUnknownConnectionType(t *testing.T) {
 	unknownConnType := "some-type"
 	targetName := "some-name"
 	pi := &packaging.PackagingIntegration{
-		Id: "some-id",
+		ID: "some-id",
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   "some-entrypoint",
 			DefaultImage: "some/image:tag",
@@ -171,7 +173,9 @@ func TestPiUnknownConnectionType(t *testing.T) {
 
 	err := pack_route.NewPiValidator().ValidateAndSetDefaults(pi)
 	g.Expect(err).Should(HaveOccurred())
-	g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(pack_route.TargetUnknownConnTypeErrorMessage, targetName, unknownConnType)))
+	g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(
+		pack_route.TargetUnknownConnTypeErrorMessage, targetName, unknownConnType,
+	)))
 }
 
 func TestPiNotValidJsonSchema(t *testing.T) {
@@ -179,7 +183,7 @@ func TestPiNotValidJsonSchema(t *testing.T) {
 	createEnvironment()
 
 	pi := &packaging.PackagingIntegration{
-		Id: "some-id",
+		ID: "some-id",
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   "some-entrypoint",
 			DefaultImage: "some/image:tag",

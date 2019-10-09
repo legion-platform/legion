@@ -18,11 +18,13 @@ package main
 
 import (
 	"fmt"
-	istioschema "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme"
-	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis"
 	legion_config "github.com/legion-platform/legion/legion/operator/pkg/config"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/connection"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	operator_config "github.com/legion-platform/legion/legion/operator/pkg/config/operator"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/training"
 	"github.com/legion-platform/legion/legion/operator/pkg/controller"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,6 +46,29 @@ var mainCmd = &cobra.Command{
 
 func init() {
 	legion_config.InitBasicParams(mainCmd)
+
+	const enableConnControllerName = "enable-connection-controller"
+	const enableTrainControllerName = "enable-training-controller"
+	const enablePackControllerName = "enable-packaging-controller"
+	const enableDepControllerName = "enable-deployment-controller"
+
+	mainCmd.PersistentFlags().Bool(enableConnControllerName, false, "config file")
+	mainCmd.PersistentFlags().Bool(enableTrainControllerName, false, "config file")
+	mainCmd.PersistentFlags().Bool(enablePackControllerName, false, "config file")
+	mainCmd.PersistentFlags().Bool(enableDepControllerName, false, "config file")
+
+	if err := viper.BindPFlag(connection.Enabled, mainCmd.PersistentFlags().Lookup(enableConnControllerName)); err != nil {
+		panic(err)
+	}
+	if err := viper.BindPFlag(training.Enabled, mainCmd.PersistentFlags().Lookup(enableTrainControllerName)); err != nil {
+		panic(err)
+	}
+	if err := viper.BindPFlag(packaging.Enabled, mainCmd.PersistentFlags().Lookup(enablePackControllerName)); err != nil {
+		panic(err)
+	}
+	if err := viper.BindPFlag(deployment.Enabled, mainCmd.PersistentFlags().Lookup(enableDepControllerName)); err != nil {
+		panic(err)
+	}
 }
 
 func main() {
@@ -82,15 +107,6 @@ func startOperator(cmd *cobra.Command, args []string) {
 	log.Info("Setting up Legion scheme")
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "unable add Legion APIs to scheme")
-		os.Exit(1)
-	}
-
-	log.Info("Setting up Istio scheme")
-	istioschema.AddToScheme(mgr.GetScheme())
-
-	log.Info("Setting up Knative scheme")
-	if err := knservingv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "unable add Knative APIs to scheme")
 		os.Exit(1)
 	}
 

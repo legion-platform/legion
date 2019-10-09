@@ -64,7 +64,7 @@ spec:
                 type: object
               type: array
             urlPrefix:
-              description: 'Url prefix for model deployment. For example: /custom/test
+              description: 'URL prefix for model deployment. For example: /custom/test
                 Prefix must start with slash "/feedback" and "/model" are reserved
                 for internal usage'
               type: string

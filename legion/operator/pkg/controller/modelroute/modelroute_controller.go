@@ -96,8 +96,8 @@ func VirtualServiceName(mr *legionv1alpha1.ModelRoute) string {
 	return mr.Name
 }
 
-func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alpha1.ModelRoute) (error, bool) {
-	var httpTargets []*v1alpha3_istio.HTTPRouteDestination
+func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alpha1.ModelRoute) (bool, error) {
+	httpTargets := []*v1alpha3_istio.HTTPRouteDestination{}
 	reconileAgain := false
 
 	for _, md := range modelRouteCR.Spec.ModelDeploymentTargets {
@@ -105,14 +105,22 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 		if err := r.Get(context.TODO(), types.NamespacedName{
 			Name: md.Name, Namespace: modelRouteCR.Namespace,
 		}, modelDeployment); errors.IsNotFound(err) {
-			log.Error(nil, "Model Deployment is not found", "Model Deployment Name", md.Name, "Model Route Name", modelRouteCR.Name)
+			log.Error(
+				err, "Model Deployment is not found",
+				"Model Deployment Name", md.Name,
+				"Model Route Name", modelRouteCR.Name,
+			)
 
 			reconileAgain = true
 			continue
 		} else if err != nil {
-			log.Error(err, "Getting of the Model Deployment", "Model Deployment Name", md.Name, "Model Route Name", modelRouteCR.Name)
+			log.Error(
+				err, "Getting of the Model Deployment",
+				"Model Deployment Name", md.Name,
+				"Model Route Name", modelRouteCR.Name,
+			)
 
-			return err, reconileAgain
+			return reconileAgain, err
 		}
 
 		if modelDeployment.Status.State != legionv1alpha1.ModelDeploymentStateReady {
@@ -146,7 +154,7 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 
 	if len(httpTargets) == 0 {
 		log.Info("Number of http targets is zero", "Model Route Name", modelRouteCR.Name)
-		return nil, reconileAgain
+		return reconileAgain, nil
 	}
 
 	var mirror *v1alpha3_istio.Destination
@@ -159,11 +167,15 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 		} else if err != nil {
 			log.Error(err, fmt.Sprintf("Getting of %s Model Deployment mirror", *modelRouteCR.Spec.Mirror))
 
-			return err, reconileAgain
+			return reconileAgain, err
 		}
 
 		if modelDeployment.Status.State != legionv1alpha1.ModelDeploymentStateReady {
-			log.Info("Model deployment is not ready", "Model Deployment Name", modelRouteCR.Spec.Mirror, "Model Route Name", modelRouteCR.Name)
+			log.Info(
+				"Model deployment is not ready",
+				"Model Deployment Name", modelRouteCR.Spec.Mirror,
+				"Model Route Name", modelRouteCR.Name,
+			)
 
 			reconileAgain = true
 		} else {
@@ -193,7 +205,7 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 							{
 								Uri: &v1alpha3_istio.StringMatch{
 									MatchType: &v1alpha3_istio.StringMatch_Exact{
-										Exact: modelRouteCR.Spec.UrlPrefix,
+										Exact: modelRouteCR.Spec.URLPrefix,
 									},
 								},
 							},
@@ -214,7 +226,7 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 							{
 								Uri: &v1alpha3_istio.StringMatch{
 									MatchType: &v1alpha3_istio.StringMatch_Prefix{
-										Prefix: fmt.Sprintf("%s/api", modelRouteCR.Spec.UrlPrefix),
+										Prefix: fmt.Sprintf("%s/api", modelRouteCR.Spec.URLPrefix),
 									},
 								},
 							},
@@ -231,12 +243,12 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 	}
 
 	if err := controllerutil.SetControllerReference(modelRouteCR, vservice, r.scheme); err != nil {
-		return err, reconileAgain
+		return reconileAgain, err
 	}
 
 	if err := legion.StoreHash(vservice); err != nil {
 		log.Error(err, "Cannot apply obj hash")
-		return err, reconileAgain
+		return reconileAgain, err
 	}
 
 	found := &v1alpha3_istio_api.VirtualService{}
@@ -246,9 +258,9 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 	if err != nil && errors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("Creating %s k8s Istio Virtual Service", vservice.ObjectMeta.Name))
 		err = r.Create(context.TODO(), vservice)
-		return err, reconileAgain
+		return reconileAgain, err
 	} else if err != nil {
-		return err, reconileAgain
+		return reconileAgain, err
 	}
 
 	if !legion.ObjsEqualByHash(vservice, found) {
@@ -261,17 +273,23 @@ func (r *ReconcileModelRoute) reconcileVirtualService(modelRouteCR *legionv1alph
 		log.Info(fmt.Sprintf("Updating %s k8s Istio Virtual Service", vservice.ObjectMeta.Name))
 		err = r.Update(context.TODO(), found)
 		if err != nil {
-			return err, reconileAgain
+			return reconileAgain, err
 		}
 	} else {
-		log.Info(fmt.Sprintf("Istio Virtual Service hashes equal. Skip updating of the %s Istio Virtual Service", vservice.Name))
+		log.Info(fmt.Sprintf(
+			"Istio Virtual Service hashes equal. Skip updating of the %s Istio Virtual Service",
+			vservice.Name),
+		)
 	}
 
-	return nil, reconileAgain
+	return reconileAgain, err
 }
 
-func (r *ReconcileModelRoute) reconcileStatus(modelRouteCR *legionv1alpha1.ModelRoute, state legionv1alpha1.ModelRouteState) error {
-	modelRouteCR.Status.EdgeUrl = fmt.Sprintf("%s%s", viper.GetString(md_config.EdgeHost), modelRouteCR.Spec.UrlPrefix)
+func (r *ReconcileModelRoute) reconcileStatus(modelRouteCR *legionv1alpha1.ModelRoute,
+	state legionv1alpha1.ModelRouteState) error {
+	modelRouteCR.Status.EdgeURL = fmt.Sprintf(
+		"%s%s", viper.GetString(md_config.EdgeHost), modelRouteCR.Spec.URLPrefix,
+	)
 	modelRouteCR.Status.State = state
 
 	if err := r.Update(context.TODO(), modelRouteCR); err != nil {
@@ -296,7 +314,7 @@ func (r *ReconcileModelRoute) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	if err, reconcileAgain := r.reconcileVirtualService(modelRouteCR); err != nil {
+	if reconcileAgain, err := r.reconcileVirtualService(modelRouteCR); err != nil {
 		log.Error(err, "Reconcile Istio Virtual Service")
 		return reconcile.Result{}, err
 	} else if reconcileAgain {

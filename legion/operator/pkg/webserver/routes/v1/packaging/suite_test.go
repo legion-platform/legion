@@ -26,11 +26,11 @@ import (
 	mp_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	mp_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging"
-	mp_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
+	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"os"
@@ -41,8 +41,8 @@ import (
 
 const (
 	testNamespace = "default"
-	testMpId1     = "test-model-1"
-	testMpId2     = "test-model-2"
+	testMpID1     = "test-model-1"
+	testMpID2     = "test-model-2"
 	mpImage       = "docker-rest"
 )
 
@@ -111,7 +111,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func createEnvironment() (*gin.Engine, mp_storage.Storage, conn_storage.Storage) {
+func createEnvironment() (*gin.Engine, mp_repository.Repository, conn_repository.Repository) {
 	mgr, err := manager.New(cfg, manager.Options{NewClient: utils.NewClient})
 	if err != nil {
 		panic(err)
@@ -119,16 +119,16 @@ func createEnvironment() (*gin.Engine, mp_storage.Storage, conn_storage.Storage)
 
 	server := gin.Default()
 	v1Group := server.Group("")
-	storage := mp_k8s_storage.NewStorage(testNamespace, testNamespace, mgr.GetClient(), nil)
-	connStorage := conn_k8s_storage.NewStorage(testNamespace, mgr.GetClient())
-	mp_route.ConfigureRoutes(v1Group, storage, connStorage)
+	repository := mp_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	connRepository := conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	mp_route.ConfigureRoutes(v1Group, repository, connRepository)
 
-	return server, storage, connStorage
+	return server, repository, connRepository
 }
 
 func newPackagingIntegration() *packaging.PackagingIntegration {
 	return &packaging.PackagingIntegration{
-		Id: piId,
+		ID: piID,
 		Spec: packaging.PackagingIntegrationSpec{
 			Entrypoint:   piEntrypoint,
 			DefaultImage: piDefaultImage,

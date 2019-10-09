@@ -20,7 +20,7 @@ import "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alph
 
 type ModelTraining struct {
 	// Model training ID
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Model training specification
 	Spec v1alpha1.ModelTrainingSpec `json:"spec,omitempty"`
 	// Model training status

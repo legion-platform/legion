@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
-	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	"reflect"
@@ -32,14 +32,14 @@ import (
 var logMT = logf.Log.WithName("training-controller")
 
 const (
-	GetModelTrainingUrl     = "/model/training/:id"
-	GetAllModelTrainingUrl  = "/model/training"
-	GetModelTrainingLogsUrl = "/model/training/:id/log"
-	CreateModelTrainingUrl  = "/model/training"
-	UpdateModelTrainingUrl  = "/model/training"
-	DeleteModelTrainingUrl  = "/model/training/:id"
-	IdMtUrlParam            = "id"
-	FollowUrlParam          = "follow"
+	GetModelTrainingURL     = "/model/training/:id"
+	GetAllModelTrainingURL  = "/model/training"
+	GetModelTrainingLogsURL = "/model/training/:id/log"
+	CreateModelTrainingURL  = "/model/training"
+	UpdateModelTrainingURL  = "/model/training"
+	DeleteModelTrainingURL  = "/model/training/:id"
+	IDMtURLParam            = "id"
+	FollowURLParam          = "follow"
 )
 
 var (
@@ -47,17 +47,17 @@ var (
 )
 
 func init() {
-	elem := reflect.TypeOf(&mt_storage.MTFilter{}).Elem()
+	elem := reflect.TypeOf(&mt_repository.MTFilter{}).Elem()
 	for i := 0; i < elem.NumField(); i++ {
-		tagName := elem.Field(i).Tag.Get(mt_storage.TagKey)
+		tagName := elem.Field(i).Tag.Get(mt_repository.TagKey)
 
 		fieldsCache[tagName] = i
 	}
 }
 
 type ModelTrainingController struct {
-	mtStorage mt_storage.Storage
-	validator *MtValidator
+	mtRepository mt_repository.Repository
+	validator    *MtValidator
 }
 
 // @Summary Get a Model Training
@@ -72,12 +72,12 @@ type ModelTrainingController struct {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/training/{id} [get]
 func (mtc *ModelTrainingController) getMT(c *gin.Context) {
-	mtId := c.Param(IdMtUrlParam)
+	mtID := c.Param(IDMtURLParam)
 
-	mt, err := mtc.mtStorage.GetModelTraining(mtId)
+	mt, err := mtc.mtRepository.GetModelTraining(mtID)
 	if err != nil {
-		logMT.Error(err, fmt.Sprintf("Retrieving of %s model training", mtId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logMT.Error(err, fmt.Sprintf("Retrieving of %s model training", mtID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -99,8 +99,8 @@ func (mtc *ModelTrainingController) getMT(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/training [get]
 func (mtc *ModelTrainingController) getAllMTs(c *gin.Context) {
-	filter := &mt_storage.MTFilter{}
-	size, page, err := routes.UrlParamsToFilter(c, filter, fieldsCache)
+	filter := &mt_repository.MTFilter{}
+	size, page, err := routes.URLParamsToFilter(c, filter, fieldsCache)
 	if err != nil {
 		logMT.Error(err, "Malformed url parameters of model training request")
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -108,14 +108,14 @@ func (mtc *ModelTrainingController) getAllMTs(c *gin.Context) {
 		return
 	}
 
-	mtList, err := mtc.mtStorage.GetModelTrainingList(
+	mtList, err := mtc.mtRepository.GetModelTrainingList(
 		kubernetes.ListFilter(filter),
 		kubernetes.Size(size),
 		kubernetes.Page(page),
 	)
 	if err != nil {
 		logMT.Error(err, "Retrieving list of model trainings")
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -149,9 +149,9 @@ func (mtc *ModelTrainingController) createMT(c *gin.Context) {
 		return
 	}
 
-	if err := mtc.mtStorage.CreateModelTraining(&mt); err != nil {
+	if err := mtc.mtRepository.CreateModelTraining(&mt); err != nil {
 		logMT.Error(err, fmt.Sprintf("Creation of the model training: %v", mt))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -186,9 +186,9 @@ func (mtc *ModelTrainingController) updateMT(c *gin.Context) {
 		return
 	}
 
-	if err := mtc.mtStorage.UpdateModelTraining(&mt); err != nil {
+	if err := mtc.mtRepository.UpdateModelTraining(&mt); err != nil {
 		logMT.Error(err, fmt.Sprintf("Creation of the model training: %v", mt))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -208,16 +208,16 @@ func (mtc *ModelTrainingController) updateMT(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/training/{id} [delete]
 func (mtc *ModelTrainingController) deleteMT(c *gin.Context) {
-	mtId := c.Param(IdMtUrlParam)
+	mtID := c.Param(IDMtURLParam)
 
-	if err := mtc.mtStorage.DeleteModelTraining(mtId); err != nil {
-		logMT.Error(err, fmt.Sprintf("Deletion of %s model training is failed", mtId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := mtc.mtRepository.DeleteModelTraining(mtID); err != nil {
+		logMT.Error(err, fmt.Sprintf("Deletion of %s model training is failed", mtID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model training %s was deleted", mtId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model training %s was deleted", mtID)})
 }
 
 // @Summary Stream logs from model training pod
@@ -232,12 +232,12 @@ func (mtc *ModelTrainingController) deleteMT(c *gin.Context) {
 // @Failure 400 {string} string
 // @Router /api/v1/model/training/{id}/log [get]
 func (mtc *ModelTrainingController) getModelTrainingLog(c *gin.Context) {
-	mtId := c.Param(IdMtUrlParam)
+	mtID := c.Param(IDMtURLParam)
 	follow := false
 	var err error
 
 	urlParameters := c.Request.URL.Query()
-	followParam := urlParameters.Get(FollowUrlParam)
+	followParam := urlParameters.Get(FollowURLParam)
 
 	if len(followParam) != 0 {
 		follow, err = strconv.ParseBool(followParam)
@@ -250,9 +250,9 @@ func (mtc *ModelTrainingController) getModelTrainingLog(c *gin.Context) {
 		}
 	}
 
-	if err := mtc.mtStorage.GetModelTrainingLogs(mtId, c.Writer, follow); err != nil {
-		logMT.Error(err, fmt.Sprintf("Getting %s model training logs is failed", mtId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := mtc.mtRepository.GetModelTrainingLogs(mtID, c.Writer, follow); err != nil {
+		logMT.Error(err, fmt.Sprintf("Getting %s model training logs is failed", mtID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}

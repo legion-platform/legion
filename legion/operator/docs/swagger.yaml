@@ -76,9 +76,9 @@ definitions:
         description: Model route status
         type: object
     type: object
-  feedback.FeedbackRequest:
+  feedback.ModelFeedbackRequest:
     type: object
-  feedback.FeedbackResponse:
+  feedback.ModelFeedbackResponse:
     type: object
   JsonSchema:
     properties:
@@ -312,13 +312,13 @@ definitions:
         description: Key ID
         type: string
       keySecret:
-        description: Ssh or service account secret
+        description: SSH or service account secret
         type: string
       password:
         description: Password
         type: string
       publicKey:
-        description: Ssh public key
+        description: SSH public key
         type: string
       reference:
         description: VCS reference
@@ -503,7 +503,7 @@ definitions:
         type: array
       urlPrefix:
         description: |-
-          Url prefix for model  For example: /custom/test
+          URL prefix for model  For example: /custom/test
           Prefix must start with slash
           "/feedback" and "/model" are reserved for internal usage
         type: string
@@ -876,7 +876,7 @@ paths:
         name: feedback
         required: true
         schema:
-          $ref: '#/definitions/feedback.FeedbackRequest'
+          $ref: '#/definitions/feedback.ModelFeedbackRequest'
           type: object
       - description: Model name
         in: header
@@ -899,7 +899,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/feedback.FeedbackResponse'
+            $ref: '#/definitions/feedback.ModelFeedbackResponse'
             type: object
       summary: Send feedback about previously made prediction
       tags:

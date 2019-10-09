@@ -170,16 +170,16 @@ pipeline {
                     steps {
                         script {
                             legion.buildLegionImage('operator-dependencies', ".", "containers/operator/Dockerfile", "--target builder")
-                            legion.buildLegionImage('k8s-model-trainer', ".", "containers/operator/Dockerfile", "--target model-trainer --cache-from legion/operator-dependencies:${Globals.buildVersion}")
-                            legion.buildLegionImage('k8s-model-packager', ".", "containers/operator/Dockerfile", "--target model-packager --cache-from legion/operator-dependencies:${Globals.buildVersion}")
-                            legion.buildLegionImage('service-catalog', ".", "containers/operator/Dockerfile", "--target service-catalog --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-operator', ".", "containers/operator/Dockerfile", "--target operator --cache-from legion/operator-dependencies:${Globals.buildVersion}")
                             legion.buildLegionImage('k8s-edi', ".", "containers/operator/Dockerfile", "--target edi --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('service-catalog', ".", "containers/operator/Dockerfile", "--target service-catalog --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-model-trainer', ".", "containers/operator/Dockerfile", "--target model-trainer --cache-from legion/operator-dependencies:${Globals.buildVersion}")
+                            legion.buildLegionImage('k8s-model-packager', ".", "containers/operator/Dockerfile", "--target model-packager --cache-from legion/operator-dependencies:${Globals.buildVersion}")
 
                             docker.image("legion/operator-dependencies:${Globals.buildVersion}").inside() {
                                 sh """
                                     gocover-cobertura < "\${OPERATOR_DIR}/operator-cover.out" > ./operator-cover.xml
-                                    cp "\${OPERATOR_DIR}/operator-report.xml" "\${OPERATOR_DIR}/linter-output.xml" ./
+                                    cp "\${OPERATOR_DIR}/operator-report.xml" "\${OPERATOR_DIR}/linter-output.txt" ./
                                 """
 
                                 junit 'operator-report.xml'
@@ -187,16 +187,14 @@ pipeline {
 
                                 sh 'rm -rf operator-report.xml operator-cover.xml'
 
-                                archiveArtifacts 'linter-output.xml'
-//                                 step([
-//                                         $class                     : 'WarningsPublisher',
-//                                         parserConfigurations       : [[
-//                                                                               parserName: 'checkstyle',
-//                                                                               pattern   : 'linter-output.xml'
-//                                                                       ]],
-//                                         unstableTotalAll           : '0',
-//                                         usePreviousBuildAsReference: true
-//                                 ])
+                                def linterContent = readFile "linter-output.txt"
+
+                                // If the linter result contains an error, then we mark the build as unstable.
+                                if (linterContent?.trim()) {
+                                  currentBuild.result = 'UNSTABLE'
+                                }
+
+                                archiveArtifacts 'linter-output.txt'
                             }
                         }
                     }

@@ -38,13 +38,13 @@ func NewTiValidator() *TiValidator {
 }
 
 func (tiv *TiValidator) ValidatesAndSetDefaults(ti *training.ToolchainIntegration) (err error) {
-	if len(ti.Id) == 0 {
+	if len(ti.ID) == 0 {
 		u4, uuidErr := uuid.NewV4()
 		if uuidErr != nil {
 			err = multierr.Append(err, uuidErr)
 		} else {
-			ti.Id = u4.String()
-			logTI.Info("Toolchain integration id is empty. Generate a default value", "id", ti.Id)
+			ti.ID = u4.String()
+			logTI.Info("Toolchain integration id is empty. Generate a default value", "id", ti.ID)
 		}
 
 	}

@@ -147,7 +147,7 @@ func (r *ReconcileConnection) Reconcile(request reconcile.Request) (reconcile.Re
 		},
 		Data: map[string][]byte{
 			trainer.GitSSHKeyFileName: decodedRsa,
-			PublicSshKeyName:          publicKey,
+			PublicSSHKeyName:          publicKey,
 		},
 	}
 

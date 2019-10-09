@@ -38,13 +38,13 @@ spec:
               description: Key ID
               type: string
             keySecret:
-              description: Ssh or service account secret
+              description: SSH or service account secret
               type: string
             password:
               description: Password
               type: string
             publicKey:
-              description: Ssh public key
+              description: SSH public key
               type: string
             reference:
               description: VCS reference

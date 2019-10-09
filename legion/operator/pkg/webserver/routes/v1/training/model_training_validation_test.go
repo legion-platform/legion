@@ -21,10 +21,10 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
-	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
-	mt_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training/kubernetes"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
+	mt_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	train_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/training"
 	. "github.com/onsi/gomega"
@@ -37,10 +37,10 @@ import (
 
 type ModelTrainingValidationSuite struct {
 	suite.Suite
-	g           *GomegaWithT
-	validator   *train_route.MtValidator
-	mtStorage   mt_storage.Storage
-	connStorage conn_storage.Storage
+	g              *GomegaWithT
+	validator      *train_route.MtValidator
+	mtRepository   mt_repository.Repository
+	connRepository conn_repository.Repository
 }
 
 func (s *ModelTrainingValidationSuite) SetupTest() {
@@ -53,13 +53,13 @@ func (s *ModelTrainingValidationSuite) SetupSuite() {
 		panic(err)
 	}
 
-	s.mtStorage = mt_k8s_storage.NewStorage(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connStorage = conn_k8s_storage.NewStorage(testNamespace, mgr.GetClient())
-	s.validator = train_route.NewMtValidator(s.mtStorage, s.connStorage)
+	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	s.validator = train_route.NewMtValidator(s.mtRepository, s.connRepository)
 
 	// Create the connection that will be used as the vcs param for a training.
-	if err := s.connStorage.CreateConnection(&connection.Connection{
-		Id: testMtVCSId,
+	if err := s.connRepository.CreateConnection(&connection.Connection{
+		ID: testMtVCSID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GITType,
 			Reference: testVcsReference,
@@ -70,8 +70,8 @@ func (s *ModelTrainingValidationSuite) SetupSuite() {
 	}
 
 	// Create the toolchain integration that will be used for a training.
-	if err := s.mtStorage.CreateToolchainIntegration(&training.ToolchainIntegration{
-		Id: testToolchainIntegrationId,
+	if err := s.mtRepository.CreateToolchainIntegration(&training.ToolchainIntegration{
+		ID: testToolchainIntegrationID,
 		Spec: v1alpha1.ToolchainIntegrationSpec{
 			DefaultImage: testToolchainMtImage,
 		},
@@ -82,11 +82,11 @@ func (s *ModelTrainingValidationSuite) SetupSuite() {
 }
 
 func (s *ModelTrainingValidationSuite) TearDownSuite() {
-	if err := s.mtStorage.DeleteToolchainIntegration(testToolchainIntegrationId); err != nil {
+	if err := s.mtRepository.DeleteToolchainIntegration(testToolchainIntegrationID); err != nil {
 		panic(err)
 	}
 
-	if err := s.connStorage.DeleteConnection(testMtVCSId); err != nil {
+	if err := s.connRepository.DeleteConnection(testMtVCSID); err != nil {
 		panic(err)
 	}
 }
@@ -108,7 +108,7 @@ func (s *ModelTrainingValidationSuite) TestMtDefaultResource() {
 func (s *ModelTrainingValidationSuite) TestMtVcsReference() {
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{
-			VCSName: testMtVCSId,
+			VCSName: testMtVCSID,
 		},
 	}
 
@@ -119,7 +119,7 @@ func (s *ModelTrainingValidationSuite) TestMtVcsReference() {
 func (s *ModelTrainingValidationSuite) TestMtMtImage() {
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{
-			Toolchain: testToolchainIntegrationId,
+			Toolchain: testToolchainIntegrationID,
 		},
 	}
 
@@ -131,7 +131,7 @@ func (s *ModelTrainingValidationSuite) TestMtMtImageExplicitly() {
 	image := "image-test"
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{
-			Toolchain: testToolchainIntegrationId,
+			Toolchain: testToolchainIntegrationID,
 			Image:     image,
 		},
 	}
@@ -140,20 +140,20 @@ func (s *ModelTrainingValidationSuite) TestMtMtImageExplicitly() {
 	s.g.Expect(mt.Spec.Image).To(Equal(image))
 }
 
-func (s *ModelTrainingValidationSuite) TestMtIdGeneration() {
+func (s *ModelTrainingValidationSuite) TestMtIDGeneration() {
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{},
 	}
 
 	_ = s.validator.ValidatesAndSetDefaults(mt)
-	s.g.Expect(mt.Id).ShouldNot(BeEmpty())
+	s.g.Expect(mt.ID).ShouldNot(BeEmpty())
 }
 
 func (s *ModelTrainingValidationSuite) TestMtExplicitMTReference() {
 	mtExplicitReference := "test-ref"
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{
-			VCSName:   testMtVCSId,
+			VCSName:   testMtVCSID,
 			Reference: mtExplicitReference,
 		},
 	}
@@ -164,27 +164,27 @@ func (s *ModelTrainingValidationSuite) TestMtExplicitMTReference() {
 
 func (s *ModelTrainingValidationSuite) TestMtNotExplicitMTReference() {
 	conn := &connection.Connection{
-		Id: "vcs",
+		ID: "vcs",
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GITType,
 			Reference: "",
 		},
 	}
 
-	err := s.connStorage.CreateConnection(conn)
+	err := s.connRepository.CreateConnection(conn)
 	s.g.Expect(err).Should(BeNil())
-	defer s.connStorage.DeleteConnection(conn.Id)
+	defer s.connRepository.DeleteConnection(conn.ID)
 
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{
-			VCSName:   conn.Id,
+			VCSName:   conn.ID,
 			Reference: "",
 		},
 	}
 
 	err = s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).ShouldNot(BeNil())
-	s.g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(train_route.WrongVcsReferenceErrorMessage, conn.Id)))
+	s.g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(train_route.WrongVcsReferenceErrorMessage, conn.ID)))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtEmptyVcsName() {
@@ -199,19 +199,19 @@ func (s *ModelTrainingValidationSuite) TestMtEmptyVcsName() {
 
 func (s *ModelTrainingValidationSuite) TestMtWrongVcsConnectionType() {
 	conn := &connection.Connection{
-		Id: "wrong-type",
+		ID: "wrong-type",
 		Spec: v1alpha1.ConnectionSpec{
 			Type: connection.S3Type,
 		},
 	}
 
-	err := s.connStorage.CreateConnection(conn)
+	err := s.connRepository.CreateConnection(conn)
 	s.g.Expect(err).Should(BeNil())
-	defer s.connStorage.DeleteConnection(conn.Id)
+	defer s.connRepository.DeleteConnection(conn.ID)
 
 	mt := &training.ModelTraining{
 		Spec: v1alpha1.ModelTrainingSpec{
-			VCSName: conn.Id,
+			VCSName: conn.ID,
 		},
 	}
 
@@ -229,7 +229,8 @@ func (s *ModelTrainingValidationSuite) TestMtToolchainType() {
 
 	err := s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring("toolchainintegrations.legion.legion-platform.org \"not-exists\" not found"))
+	s.g.Expect(err.Error()).To(ContainSubstring(
+		"toolchainintegrations.legion.legion-platform.org \"not-exists\" not found"))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtVcsNotExists() {
@@ -241,7 +242,8 @@ func (s *ModelTrainingValidationSuite) TestMtVcsNotExists() {
 
 	err := s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring("connections.legion.legion-platform.org \"not-exists\" not found"))
+	s.g.Expect(err.Error()).To(ContainSubstring(
+		"connections.legion.legion-platform.org \"not-exists\" not found"))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtVcsEmptyName() {
@@ -303,7 +305,7 @@ func (s *ModelTrainingValidationSuite) TestMtWrongDataType() {
 		Spec: v1alpha1.ModelTrainingSpec{
 			Data: []v1alpha1.DataBindingDir{
 				{
-					Connection: testMtVCSId,
+					Connection: testMtVCSID,
 					LocalPath:  testMtDataPath,
 				},
 			},
@@ -312,7 +314,9 @@ func (s *ModelTrainingValidationSuite) TestMtWrongDataType() {
 
 	err := s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring("legion-test data binding has wrong data type. Currently supported the following types of connections for data bindings:"))
+	s.g.Expect(err.Error()).Should(ContainSubstring(
+		"legion-test data binding has wrong data type. " +
+			"Currently supported the following types of connections for data bindings:"))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtEmptyDataName() {
@@ -329,7 +333,8 @@ func (s *ModelTrainingValidationSuite) TestMtEmptyDataName() {
 
 	err := s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(train_route.EmptyDataBindingNameErrorMessage, 0)))
+	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(
+		train_route.EmptyDataBindingNameErrorMessage, 0)))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtEmptyDataPath() {
@@ -337,7 +342,7 @@ func (s *ModelTrainingValidationSuite) TestMtEmptyDataPath() {
 		Spec: v1alpha1.ModelTrainingSpec{
 			Data: []v1alpha1.DataBindingDir{
 				{
-					Connection: testMtVCSId,
+					Connection: testMtVCSID,
 					LocalPath:  "",
 				},
 			},
@@ -346,7 +351,8 @@ func (s *ModelTrainingValidationSuite) TestMtEmptyDataPath() {
 
 	err := s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(train_route.EmptyDataBindingPathErrorMessage, 0)))
+	s.g.Expect(err.Error()).Should(ContainSubstring(fmt.Sprintf(
+		train_route.EmptyDataBindingPathErrorMessage, 0)))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtNotFoundData() {
@@ -363,7 +369,8 @@ func (s *ModelTrainingValidationSuite) TestMtNotFoundData() {
 
 	err := s.validator.ValidatesAndSetDefaults(mt)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring("connections.legion.legion-platform.org \"not-present\" not found"))
+	s.g.Expect(err.Error()).Should(ContainSubstring(
+		"connections.legion.legion-platform.org \"not-present\" not found"))
 }
 
 func (s *ModelTrainingValidationSuite) TestMtResourcesValidation() {
@@ -373,13 +380,13 @@ func (s *ModelTrainingValidationSuite) TestMtResourcesValidation() {
 			Resources: &v1alpha1.ResourceRequirements{
 				Limits: &v1alpha1.ResourceList{
 					Memory: &wrongResourceValue,
-					Gpu:    &wrongResourceValue,
-					Cpu:    &wrongResourceValue,
+					GPU:    &wrongResourceValue,
+					CPU:    &wrongResourceValue,
 				},
 				Requests: &v1alpha1.ResourceList{
 					Memory: &wrongResourceValue,
-					Gpu:    &wrongResourceValue,
-					Cpu:    &wrongResourceValue,
+					GPU:    &wrongResourceValue,
+					CPU:    &wrongResourceValue,
 				},
 			},
 		},
@@ -389,10 +396,16 @@ func (s *ModelTrainingValidationSuite) TestMtResourcesValidation() {
 	s.g.Expect(err).Should(HaveOccurred())
 
 	errorMessage := err.Error()
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of memory request is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of cpu request is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of gpu request is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of memory limit is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of cpu limit is failed: quantities must match the regular expression"))
-	s.g.Expect(errorMessage).Should(ContainSubstring("validation of gpu limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of memory request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of cpu request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of gpu request is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of memory limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of cpu limit is failed: quantities must match the regular expression"))
+	s.g.Expect(errorMessage).Should(ContainSubstring(
+		"validation of gpu limit is failed: quantities must match the regular expression"))
 }

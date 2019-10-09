@@ -18,9 +18,9 @@ package v1alpha1
 
 type ResourceList struct {
 	// Read more about GPU resource here https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
-	Gpu *string `json:"gpu,omitempty"`
+	GPU *string `json:"gpu,omitempty"`
 	// Read more about CPU resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
-	Cpu *string `json:"cpu,omitempty"`
+	CPU *string `json:"cpu,omitempty"`
 	// Read more about memory resource here https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
 	Memory *string `json:"memory,omitempty"`
 }

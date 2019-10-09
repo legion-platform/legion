@@ -20,7 +20,7 @@ import (
 	"context"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,15 +52,15 @@ var (
 		},
 	}
 	reqMem      = "111Mi"
-	reqCpu      = "111m"
+	reqCPU      = "111m"
 	limMem      = "222Mi"
 	mdResources = &legionv1alpha1.ResourceRequirements{
 		Limits: &legionv1alpha1.ResourceList{
-			Cpu:    nil,
+			CPU:    nil,
 			Memory: &limMem,
 		},
 		Requests: &legionv1alpha1.ResourceList{
-			Cpu:    &reqCpu,
+			CPU:    &reqCPU,
 			Memory: &reqMem,
 		},
 	}
@@ -107,11 +107,21 @@ func TestReconcile(t *testing.T) {
 
 	configurationAnnotations := configuration.Spec.Template.ObjectMeta.Annotations
 	g.Expect(configurationAnnotations).Should(HaveLen(5))
-	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeMinReplicasKey, strconv.Itoa(int(mdMinReplicas))))
-	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeMaxReplicasKey, strconv.Itoa(int(mdMaxReplicas))))
-	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeAutoscalingTargetKey, knativeAutoscalingTargetDefaultValue))
-	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeAutoscalingClass, defaultKnativeAutoscalingClass))
-	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(knativeAutoscalingMetric, defaultKnativeAutoscalingMetric))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(
+		knativeMinReplicasKey, strconv.Itoa(int(mdMinReplicas)),
+	))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(
+		knativeMaxReplicasKey, strconv.Itoa(int(mdMaxReplicas)),
+	))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(
+		knativeAutoscalingTargetKey, knativeAutoscalingTargetDefaultValue,
+	))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(
+		knativeAutoscalingClass, defaultKnativeAutoscalingClass,
+	))
+	g.Expect(configurationAnnotations).Should(HaveKeyWithValue(
+		knativeAutoscalingMetric, defaultKnativeAutoscalingMetric,
+	))
 
 	configurationLabels := configuration.Spec.Template.ObjectMeta.Labels
 	g.Expect(configurationLabels).Should(HaveLen(1))

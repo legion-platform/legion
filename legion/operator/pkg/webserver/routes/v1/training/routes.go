@@ -18,30 +18,31 @@ package training
 
 import (
 	"github.com/gin-gonic/gin"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 )
 
-func ConfigureRoutes(routeGroup *gin.RouterGroup, mtStorage mt_storage.Storage, connStorage conn_storage.Storage) {
+func ConfigureRoutes(routeGroup *gin.RouterGroup, mtRepository mt_repository.Repository,
+	connRepository conn_repository.Repository) {
 	mtController := ModelTrainingController{
-		mtStorage: mtStorage,
-		validator: NewMtValidator(mtStorage, connStorage),
+		mtRepository: mtRepository,
+		validator:    NewMtValidator(mtRepository, connRepository),
 	}
-	routeGroup.GET(GetModelTrainingUrl, mtController.getMT)
-	routeGroup.GET(GetAllModelTrainingUrl, mtController.getAllMTs)
-	routeGroup.GET(GetModelTrainingLogsUrl, mtController.getModelTrainingLog)
-	routeGroup.POST(CreateModelTrainingUrl, mtController.createMT)
-	routeGroup.PUT(UpdateModelTrainingUrl, mtController.updateMT)
-	routeGroup.DELETE(DeleteModelTrainingUrl, mtController.deleteMT)
+	routeGroup.GET(GetModelTrainingURL, mtController.getMT)
+	routeGroup.GET(GetAllModelTrainingURL, mtController.getAllMTs)
+	routeGroup.GET(GetModelTrainingLogsURL, mtController.getModelTrainingLog)
+	routeGroup.POST(CreateModelTrainingURL, mtController.createMT)
+	routeGroup.PUT(UpdateModelTrainingURL, mtController.updateMT)
+	routeGroup.DELETE(DeleteModelTrainingURL, mtController.deleteMT)
 
 	tiController := &ToolchainIntegrationController{
-		storage:   mtStorage,
-		validator: NewTiValidator(),
+		repository: mtRepository,
+		validator:  NewTiValidator(),
 	}
 
-	routeGroup.GET(GetToolchainIntegrationUrl, tiController.getToolchainIntegration)
-	routeGroup.GET(GetAllToolchainIntegrationUrl, tiController.getAllToolchainIntegrations)
-	routeGroup.POST(CreateToolchainIntegrationUrl, tiController.createToolchainIntegration)
-	routeGroup.PUT(UpdateToolchainIntegrationUrl, tiController.updateToolchainIntegration)
-	routeGroup.DELETE(DeleteToolchainIntegrationUrl, tiController.deleteToolchainIntegration)
+	routeGroup.GET(GetToolchainIntegrationURL, tiController.getToolchainIntegration)
+	routeGroup.GET(GetAllToolchainIntegrationURL, tiController.getAllToolchainIntegrations)
+	routeGroup.POST(CreateToolchainIntegrationURL, tiController.createToolchainIntegration)
+	routeGroup.PUT(UpdateToolchainIntegrationURL, tiController.updateToolchainIntegration)
+	routeGroup.DELETE(DeleteToolchainIntegrationURL, tiController.deleteToolchainIntegration)
 }

@@ -18,9 +18,23 @@ package controller
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/controller/connection"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func init() {
-	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, connection.Add)
+	// AddToManagerConnectionFuncs is a list of functions to create controllers and add them to a manager.
+	AddToManagerConnectionFuncs = append(AddToManagerConnectionFuncs, connection.Add)
+}
+
+// AddToManagerConnectionFuncs is a list of functions to add all Controllers to the Manager
+var AddToManagerConnectionFuncs []func(manager.Manager) error
+
+// AddToManager adds all Controllers to the Manager
+func AddConnectionToManager(m manager.Manager) error {
+	for _, f := range AddToManagerConnectionFuncs {
+		if err := f(m); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
-	mr_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
-	"github.com/legion-platform/legion/legion/operator/pkg/storage/kubernetes"
+	mr_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 
 	"net/http"
@@ -31,12 +31,12 @@ import (
 var logMR = logf.Log.WithName("mr-controller")
 
 const (
-	GetModelRouteUrl    = "/model/route/:id"
-	GetAllModelRouteUrl = "/model/route"
-	CreateModelRouteUrl = "/model/route"
-	UpdateModelRouteUrl = "/model/route"
-	DeleteModelRouteUrl = "/model/route/:id"
-	IdMrUrlParam        = "id"
+	GetModelRouteURL    = "/model/route/:id"
+	GetAllModelRouteURL = "/model/route"
+	CreateModelRouteURL = "/model/route"
+	UpdateModelRouteURL = "/model/route"
+	DeleteModelRouteURL = "/model/route/:id"
+	IDMrURLParam        = "id"
 )
 
 var (
@@ -44,8 +44,8 @@ var (
 )
 
 type ModelRouteController struct {
-	mrStorage mr_storage.Storage
-	validator *MrValidator
+	mrRepository mr_repository.Repository
+	validator    *MrValidator
 }
 
 // @Summary Get a Model route
@@ -60,12 +60,12 @@ type ModelRouteController struct {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/route/{id} [get]
 func (mrc *ModelRouteController) getMR(c *gin.Context) {
-	mrId := c.Param(IdMrUrlParam)
+	mrID := c.Param(IDMrURLParam)
 
-	mr, err := mrc.mrStorage.GetModelRoute(mrId)
+	mr, err := mrc.mrRepository.GetModelRoute(mrID)
 	if err != nil {
-		logMR.Error(err, fmt.Sprintf("Retrieving %s model route", mrId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		logMR.Error(err, fmt.Sprintf("Retrieving %s model route", mrID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -84,7 +84,7 @@ func (mrc *ModelRouteController) getMR(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/route [get]
 func (mrc *ModelRouteController) getAllMRs(c *gin.Context) {
-	size, page, err := routes.UrlParamsToFilter(c, nil, emptyCache)
+	size, page, err := routes.URLParamsToFilter(c, nil, emptyCache)
 	if err != nil {
 		logMR.Error(err, "Malformed url parameters of model route request")
 		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
@@ -92,13 +92,13 @@ func (mrc *ModelRouteController) getAllMRs(c *gin.Context) {
 		return
 	}
 
-	mrList, err := mrc.mrStorage.GetModelRouteList(
+	mrList, err := mrc.mrRepository.GetModelRouteList(
 		kubernetes.Size(size),
 		kubernetes.Page(page),
 	)
 	if err != nil {
 		logMR.Error(err, "Retrieving list of model routes")
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -132,9 +132,9 @@ func (mrc *ModelRouteController) createMR(c *gin.Context) {
 		return
 	}
 
-	if err := mrc.mrStorage.CreateModelRoute(&mr); err != nil {
+	if err := mrc.mrRepository.CreateModelRoute(&mr); err != nil {
 		logMR.Error(err, fmt.Sprintf("Creation of the model route: %+v", mr))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -169,9 +169,9 @@ func (mrc *ModelRouteController) updateMR(c *gin.Context) {
 		return
 	}
 
-	if err := mrc.mrStorage.UpdateModelRoute(&mr); err != nil {
+	if err := mrc.mrRepository.UpdateModelRoute(&mr); err != nil {
 		logMR.Error(err, fmt.Sprintf("Update of the model route: %+v", mr))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
@@ -191,14 +191,14 @@ func (mrc *ModelRouteController) updateMR(c *gin.Context) {
 // @Failure 400 {object} routes.HTTPResult
 // @Router /api/v1/model/route/{id} [delete]
 func (mrc *ModelRouteController) deleteMR(c *gin.Context) {
-	mrId := c.Param(IdMrUrlParam)
+	mrID := c.Param(IDMrURLParam)
 
-	if err := mrc.mrStorage.DeleteModelRoute(mrId); err != nil {
-		logMR.Error(err, fmt.Sprintf("Deletion of %s model route is failed", mrId))
-		c.AbortWithStatusJSON(routes.CalculateHttpStatusCode(err), routes.HTTPResult{Message: err.Error()})
+	if err := mrc.mrRepository.DeleteModelRoute(mrID); err != nil {
+		logMR.Error(err, fmt.Sprintf("Deletion of %s model route is failed", mrID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model route %s was deleted", mrId)})
+	c.JSON(http.StatusOK, routes.HTTPResult{Message: fmt.Sprintf("Model route %s was deleted", mrID)})
 }

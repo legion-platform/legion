@@ -20,7 +20,7 @@ import (
 	"fmt"
 	packager_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packager"
 	pack_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
-	pack_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
+	pack_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
@@ -47,7 +47,7 @@ var mainCmd = &cobra.Command{
 		}
 
 		modelPackager, err := packager.NewModelPackager(
-			pack_k8s_storage.NewStorage(
+			pack_k8s_storage.NewRepository(
 				viper.GetString(pack_conf.Namespace),
 				viper.GetString(pack_conf.PackagingIntegrationNamespace),
 				mgr.GetClient(), mgr.GetConfig(),

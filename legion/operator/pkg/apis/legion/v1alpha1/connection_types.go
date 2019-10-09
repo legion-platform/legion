@@ -42,16 +42,16 @@ type ConnectionSpec struct {
 	Role string `json:"role,omitempty"`
 	// Key ID
 	KeyID string `json:"keyID,omitempty"`
-	// Ssh or service account secret
+	// SSH or service account secret
 	KeySecret string `json:"keySecret,omitempty"`
-	// Ssh public key
+	// SSH public key
 	PublicKey string `json:"publicKey,omitempty"`
 	// VCS reference
 	Reference string `json:"reference,omitempty"`
 	// Custom description
 	Description string `json:"description,omitempty"`
 	// Custom web UI link
-	WebUiLink string `json:"webUILink,omitempty"`
+	WebUILink string `json:"webUILink,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -26,19 +26,23 @@ import (
 )
 
 const (
-	ErrorMessageTemplate                     = "%s: %s"
-	EmptyUriErrorMessage                     = "the uri parameter is empty"
-	ValidationConnErrorMessage               = "Validation of connection is failed"
-	UnknownTypeErrorMessage                  = "unknown type: %s. Supported types: %s"
-	DockerTypePasswordErrorMessage           = "docker type requires the password parameter"
-	DockerTypeUsernameErrorMessage           = "docker type requires the username parameter"
-	GitTypePublicKeyErrorMessage             = "git type requires that publicKey parameter must be encoded in base64 format, error message: %s"
-	GitTypeKeySecretErrorMessage             = "git type requires that keySecret parameter must be encoded in base64 format, error message: %s"
+	ErrorMessageTemplate           = "%s: %s"
+	EmptyURIErrorMessage           = "the uri parameter is empty"
+	ValidationConnErrorMessage     = "Validation of connection is failed"
+	UnknownTypeErrorMessage        = "unknown type: %s. Supported types: %s"
+	DockerTypePasswordErrorMessage = "docker type requires the password parameter" //nolint
+	DockerTypeUsernameErrorMessage = "docker type requires the username parameter"
+	GitTypePublicKeyErrorMessage   = "git type requires that publicKey parameter must be encoded" +
+		" in base64 format, error message: %s"
+	GitTypeKeySecretErrorMessage = "git type requires that keySecret parameter must be encoded" +
+		" in base64 format, error message: %s"
 	GcsTypeRegionErrorMessage                = "gcs type requires that region must be non-empty"
-	GcsTypeRoleAndKeySecretEmptyErrorMessage = "gcs type requires that either role or keySecret parameter must be non-empty"
-	S3TypeRegionErrorMessage                 = "s3 type requires that region must be non-empty"
-	S3TypeRoleAndKeySecretEmptyErrorMessage  = "s3 type requires that either role or keySecret parameter must be non-empty"
-	defaultIdTemplate                        = "%s-%s"
+	GcsTypeRoleAndKeySecretEmptyErrorMessage = "gcs type requires that either role or keySecret parameter" +
+		" must be non-empty"
+	S3TypeRegionErrorMessage                = "s3 type requires that region must be non-empty"
+	S3TypeRoleAndKeySecretEmptyErrorMessage = "s3 type requires that either role or keySecret parameter" +
+		" must be non-empty"
+	defaultIDTemplate = "%s-%s"
 )
 
 type ConnValidator struct {
@@ -50,18 +54,18 @@ func NewConnValidator() *ConnValidator {
 }
 
 func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (err error) {
-	if len(conn.Id) == 0 {
+	if len(conn.ID) == 0 {
 		u4, uuidErr := uuid.NewV4()
 		if uuidErr != nil {
 			err = multierr.Append(err, uuidErr)
 		} else {
-			conn.Id = fmt.Sprintf(defaultIdTemplate, conn.Spec.Type, u4.String())
-			logC.Info("Connection id is empty. Generate a default value", "id", conn.Id)
+			conn.ID = fmt.Sprintf(defaultIDTemplate, conn.Spec.Type, u4.String())
+			logC.Info("Connection id is empty. Generate a default value", "id", conn.ID)
 		}
 	}
 
 	if len(conn.Spec.URI) == 0 {
-		err = multierr.Append(err, errors.New(EmptyUriErrorMessage))
+		err = multierr.Append(err, errors.New(EmptyURIErrorMessage))
 	}
 
 	switch conn.Spec.Type {
@@ -81,7 +85,7 @@ func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (e
 		return fmt.Errorf(ErrorMessageTemplate, ValidationConnErrorMessage, err.Error())
 	}
 
-	return
+	return err
 }
 
 func validateS3Type(conn *connection.Connection) (err error) {

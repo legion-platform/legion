@@ -23,9 +23,11 @@ import (
 
 const (
 	Namespace       = "deployment.namespace"
+	// Enable deployment API/operator
+	Enabled         = "deployment.enabled"
 	DefaultRoleName = "deployment.security.role_name"
 	// Jwks url for mode authorization
-	SecurityJwksUrl = "deployment.security.jwks.url"
+	SecurityJwksURL = "deployment.security.jwks.url"
 	// The Issuer Identifier for mode authorization
 	SecurityJwksIssuer = "deployment.security.jwks.issuer"
 	// Is model authorization enabled
@@ -47,6 +49,8 @@ const (
 )
 
 func init() {
+	viper.SetDefault(Enabled, true)
+
 	viper.SetDefault(DefaultRoleName, "default-legion")
 	config.PanicIfError(viper.BindEnv(DefaultRoleName))
 
@@ -59,8 +63,8 @@ func init() {
 	viper.SetDefault(ServerTemplateFolder, "legion/operator/templates")
 	config.PanicIfError(viper.BindEnv(ServerTemplateFolder))
 
-	viper.SetDefault(SecurityJwksUrl, "")
-	config.PanicIfError(viper.BindEnv(SecurityJwksUrl))
+	viper.SetDefault(SecurityJwksURL, "")
+	config.PanicIfError(viper.BindEnv(SecurityJwksURL))
 
 	viper.SetDefault(SecurityJwksIssuer, "")
 	config.PanicIfError(viper.BindEnv(SecurityJwksIssuer))

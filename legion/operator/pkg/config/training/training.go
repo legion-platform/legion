@@ -23,13 +23,15 @@ import (
 
 const (
 	Namespace                     = "training.namespace"
+	// Enable training API/operator
+	Enabled                       = "training.enabled"
 	ToolchainIntegrationNamespace = "training.ti_namespace"
 	TrainingServiceAccount        = "training.service_account"
 	OutputConnectionName          = "training.output_connection"
 	ModelBuilderImage             = "training.model_trainer.image"
 	NodeSelector                  = "training.node_selector"
 	Toleration                    = "training.toleration"
-	MetricUrl                     = "training.metric_url"
+	MetricURL                     = "training.metric_url"
 )
 
 const (
@@ -40,6 +42,8 @@ const (
 )
 
 func init() {
+	viper.SetDefault(Enabled, true)
+
 	viper.SetDefault(Namespace, "legion-training")
 	config.PanicIfError(viper.BindEnv(Namespace))
 
@@ -59,5 +63,5 @@ func init() {
 		TolerationEffect:   "NoSchedule",
 	})
 
-	viper.SetDefault(MetricUrl, "")
+	viper.SetDefault(MetricURL, "")
 }

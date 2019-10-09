@@ -24,22 +24,22 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-const PublicSshKeyName = "ssh_known_hosts"
+const PublicSSHKeyName = "ssh_known_hosts"
 
 var (
-	SshUrlRegexp = regexp.MustCompile(`(?P<User>.+)@(?P<Host>[\w.]+)[/:].*`)
-	logSsh       = logf.Log.WithName("ssh")
+	SSHURLRegexp = regexp.MustCompile(`(?P<User>.+)@(?P<Host>[\w.]+)[/:].*`)
+	logSSH       = logf.Log.WithName("ssh")
 )
 
 // TODO: Need to find a better solution.
 // url.Parse can't find a host
 // url.Parse with git+ssh://url does not evaluate a valid host.
-func extractHost(gitUrl string) (string, error) {
+func extractHost(gitURL string) (string, error) {
 	// [0] - full url, [1] - user, [2] - host
-	gitHost := SshUrlRegexp.FindStringSubmatch(gitUrl)[2]
+	gitHost := SSHURLRegexp.FindStringSubmatch(gitURL)[2]
 
 	if gitHost == "" {
-		return "", fmt.Errorf("can't extract host from %s url", gitUrl)
+		return "", fmt.Errorf("can't extract host from %s url", gitURL)
 	}
 
 	return gitHost, nil
@@ -47,8 +47,8 @@ func extractHost(gitUrl string) (string, error) {
 
 // TODO: Need to find a better solution.
 // The best way is use standard library.
-func EvaluatePublicKey(sshUrl string) (string, error) {
-	sshHost, err := extractHost(sshUrl)
+func EvaluatePublicKey(sshURL string) (string, error) {
+	sshHost, err := extractHost(sshURL)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +63,7 @@ func EvaluatePublicKey(sshUrl string) (string, error) {
 	err = cmd.Run()
 
 	if err != nil {
-		logSsh.Error(err, fmt.Sprintf("Stderr: %s", errBuf.String()))
+		logSSH.Error(err, fmt.Sprintf("Stderr: %s", errBuf.String()))
 		return "", err
 	}
 

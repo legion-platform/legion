@@ -43,7 +43,7 @@ RUN dep ensure -vendor-only
 
 COPY legion/operator/ ./
 
-RUN GOOS=linux GOARCH=amd64 make build-all && (make test ; make LINTER_ADDITIONAL_ARGS='--out-format checkstyle > linter-output.xml' lint || true)
+RUN GOOS=linux GOARCH=amd64 make build-all && (make test ; make LINTER_ADDITIONAL_ARGS='> linter-output.txt' lint || true)
 
 #########################################################
 #########################################################

@@ -29,8 +29,8 @@ import (
 const (
 	MaxSize          = 500
 	FirstPage        = 0
-	SizeUrlParamName = "size"
-	PageUrlParamName = "page"
+	SizeURLParamName = "size"
+	PageURLParamName = "page"
 )
 
 type HTTPResult struct {
@@ -38,25 +38,26 @@ type HTTPResult struct {
 	Message string `json:"message"`
 }
 
-// We should develop a custom exception on the storage layer.
+// We should develop a custom exception on the repository layer.
 // But we rely on kubernetes exceptions for now.
 // TODO: implement Legion exceptions
-func CalculateHttpStatusCode(err error) int {
-	if errStatus, ok := err.(*k8_serror.StatusError); !ok {
+func CalculateHTTPStatusCode(err error) int {
+	errStatus, ok := err.(*k8_serror.StatusError)
+	if !ok {
 		return http.StatusInternalServerError
-	} else {
-		return int(errStatus.ErrStatus.Code)
 	}
+
+	return int(errStatus.ErrStatus.Code)
 }
 
-func UrlParamsToFilter(c *gin.Context, filter interface{}, fields map[string]int) (size int, page int, err error) {
+func URLParamsToFilter(c *gin.Context, filter interface{}, fields map[string]int) (size int, page int, err error) {
 	urlParameters := c.Request.URL.Query()
 	size = MaxSize
 	page = FirstPage
 
 	for name, value := range urlParameters {
 		switch name {
-		case SizeUrlParamName:
+		case SizeURLParamName:
 			if len(value) > 1 {
 				return size, page, errors.New("the size URL parameter must be only one")
 			}
@@ -64,7 +65,7 @@ func UrlParamsToFilter(c *gin.Context, filter interface{}, fields map[string]int
 			if err != nil {
 				return size, page, err
 			}
-		case PageUrlParamName:
+		case PageURLParamName:
 			if len(value) > 1 {
 				return size, page, errors.New("the page URL parameter must be only one")
 			}

@@ -28,10 +28,10 @@ type ModelDeploymentTarget struct {
 }
 
 type ModelRouteSpec struct {
-	// Url prefix for model deployment. For example: /custom/test
+	// URL prefix for model deployment. For example: /custom/test
 	// Prefix must start with slash
 	// "/feedback" and "/model" are reserved for internal usage
-	UrlPrefix string `json:"urlPrefix"`
+	URLPrefix string `json:"urlPrefix"`
 	// Mirror HTTP traffic to a another Model deployment in addition to forwarding
 	// the requests to the model deployments.
 	Mirror *string `json:"mirror,omitempty"`
@@ -44,14 +44,14 @@ type ModelRouteState string
 const (
 	ModelRouteStateReady      = ModelRouteState("Ready")
 	ModelRouteStateProcessing = ModelRouteState("Processing")
-	SkipUrlValidationKey      = "internal.legion.org.skip_url_validation"
-	SkipUrlValidationValue    = "true"
+	SkipURLValidationKey      = "internal.legion.org.skip_url_validation"
+	SkipURLValidationValue    = "true"
 )
 
 // ModelRouteStatus defines the observed state of ModelRoute
 type ModelRouteStatus struct {
 	// Full url with prefix to a model deployment service
-	EdgeUrl string `json:"edgeUrl"`
+	EdgeURL string `json:"edgeUrl"`
 	// State of Model Route
 	State ModelRouteState `json:"state"`
 }

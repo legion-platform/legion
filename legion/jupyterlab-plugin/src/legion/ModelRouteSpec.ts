@@ -24,7 +24,7 @@ export interface ModelRouteSpec {
     modelDeployments?: Array<models.ModelDeploymentTarget>;
 
     /**
-     * Url prefix for model  For example: /custom/test Prefix must start with slash \"/feedback\" and \"/model\" are reserved for internal usage
+     * URL prefix for model  For example: /custom/test Prefix must start with slash \"/feedback\" and \"/model\" are reserved for internal usage
      */
     urlPrefix?: string;
 

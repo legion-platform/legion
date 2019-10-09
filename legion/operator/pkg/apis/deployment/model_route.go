@@ -22,7 +22,7 @@ import (
 
 type ModelRoute struct {
 	// Model route id
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Model route specification
 	Spec v1alpha1.ModelRouteSpec `json:"spec,omitempty"`
 	// Model route status

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	dep_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment"
-	dep_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment/kubernetes"
+	dep_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment"
+	dep_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	dep_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
 	"github.com/stretchr/testify/suite"
@@ -33,9 +33,9 @@ import (
 
 type ModelRouteValidationSuite struct {
 	suite.Suite
-	g         *GomegaWithT
-	mdStorage dep_storage.Storage
-	validator *dep_route.MrValidator
+	g            *GomegaWithT
+	mdRepository dep_repository.Repository
+	validator    *dep_route.MrValidator
 }
 
 func (s *ModelRouteValidationSuite) SetupTest() {
@@ -48,8 +48,8 @@ func (s *ModelRouteValidationSuite) SetupSuite() {
 		panic(err)
 	}
 
-	s.mdStorage = dep_k8s_storage.NewStorage(testNamespace, mgr.GetClient())
-	s.validator = dep_route.NewMrValidator(s.mdStorage)
+	s.mdRepository = dep_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	s.validator = dep_route.NewMrValidator(s.mdRepository)
 }
 
 func TestModelPackagingValidationSuite(t *testing.T) {
@@ -61,7 +61,7 @@ func (s *ModelRouteValidationSuite) TestDefaultValues() {
 		Spec: v1alpha1.ModelRouteSpec{
 			ModelDeploymentTargets: []v1alpha1.ModelDeploymentTarget{
 				{
-					Name: mdId1,
+					Name: mdID1,
 				},
 			},
 		},
@@ -72,14 +72,14 @@ func (s *ModelRouteValidationSuite) TestDefaultValues() {
 	s.g.Expect(*mr.Spec.ModelDeploymentTargets[0].Weight).To(Equal(dep_route.MaxWeight))
 }
 
-func (s *ModelRouteValidationSuite) TestEmptyUrlPrefix() {
+func (s *ModelRouteValidationSuite) TestEmptyURLPrefix() {
 	mr := &deployment.ModelRoute{
 		Spec: v1alpha1.ModelRouteSpec{},
 	}
 
 	err := s.validator.ValidatesAndSetDefaults(mr)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(dep_route.UrlPrefixEmptyErrorMessage))
+	s.g.Expect(err.Error()).To(ContainSubstring(dep_route.URLPrefixEmptyErrorMessage))
 }
 
 func (s *ModelRouteValidationSuite) TestNotExistsMirrorMD() {
@@ -111,7 +111,7 @@ func (s *ModelRouteValidationSuite) TestOneTargetWrongWeight() {
 		Spec: v1alpha1.ModelRouteSpec{
 			ModelDeploymentTargets: []v1alpha1.ModelDeploymentTarget{
 				{
-					Name:   mdId1,
+					Name:   mdID1,
 					Weight: &weight,
 				},
 			},
@@ -146,11 +146,11 @@ func (s *ModelRouteValidationSuite) TestMultipleTargetsWrongWeight() {
 		Spec: v1alpha1.ModelRouteSpec{
 			ModelDeploymentTargets: []v1alpha1.ModelDeploymentTarget{
 				{
-					Name:   mdId1,
+					Name:   mdID1,
 					Weight: &weight1,
 				},
 				{
-					Name:   mdId2,
+					Name:   mdID2,
 					Weight: &weight2,
 				},
 			},
@@ -168,10 +168,10 @@ func (s *ModelRouteValidationSuite) TestMultipleTargetsMissingWeight() {
 		Spec: v1alpha1.ModelRouteSpec{
 			ModelDeploymentTargets: []v1alpha1.ModelDeploymentTarget{
 				{
-					Name: mdId1,
+					Name: mdID1,
 				},
 				{
-					Name:   mdId2,
+					Name:   mdID2,
 					Weight: &weight2,
 				},
 			},
@@ -194,7 +194,7 @@ func (s *ModelRouteValidationSuite) TestMultipleTargetsNotExist() {
 					Weight: &weight1,
 				},
 				{
-					Name:   mdId2,
+					Name:   mdID2,
 					Weight: &weight2,
 				},
 			},
@@ -206,23 +206,23 @@ func (s *ModelRouteValidationSuite) TestMultipleTargetsNotExist() {
 	s.g.Expect(err.Error()).To(ContainSubstring("modeldeployments.legion.legion-platform.org \"not-exists\" not found"))
 }
 
-func (s *ModelRouteValidationSuite) TestUrlStartWithSlash() {
+func (s *ModelRouteValidationSuite) TestURLStartWithSlash() {
 	mr := &deployment.ModelRoute{
 		Spec: v1alpha1.ModelRouteSpec{
-			UrlPrefix: "test/test",
+			URLPrefix: "test/test",
 		},
 	}
 
 	err := s.validator.ValidatesAndSetDefaults(mr)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(dep_route.UrlPrefixSlashErrorMessage))
+	s.g.Expect(err.Error()).To(ContainSubstring(dep_route.URLPrefixSlashErrorMessage))
 }
 
 func (s *ModelRouteValidationSuite) TestForbiddenPrefixes() {
 	for _, prefix := range dep_route.ForbiddenPrefixes {
 		mr := &deployment.ModelRoute{
 			Spec: v1alpha1.ModelRouteSpec{
-				UrlPrefix: fmt.Sprintf("%s/test/test", prefix),
+				URLPrefix: fmt.Sprintf("%s/test/test", prefix),
 			},
 		}
 
@@ -235,9 +235,9 @@ func (s *ModelRouteValidationSuite) TestForbiddenPrefixes() {
 func (s *ModelRouteValidationSuite) TestAllowForbiddenPrefixes() {
 	for _, prefix := range dep_route.ForbiddenPrefixes {
 		mr := &deployment.ModelRoute{
-			Id: mrId,
+			ID: mrID,
 			Spec: v1alpha1.ModelRouteSpec{
-				UrlPrefix: fmt.Sprintf("%s/test/test", prefix),
+				URLPrefix: fmt.Sprintf("%s/test/test", prefix),
 			},
 		}
 

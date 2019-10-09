@@ -22,10 +22,10 @@ import (
 	deployment_config "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	packaging_config "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	training_config "github.com/legion-platform/legion/legion/operator/pkg/config/training"
-	connection_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
-	deployment_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/deployment/kubernetes"
-	packaging_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/packaging/kubernetes"
-	training_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training/kubernetes"
+	connection_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	deployment_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment/kubernetes"
+	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
+	training_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/configuration"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
@@ -37,24 +37,24 @@ import (
 )
 
 func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConfig *rest.Config) {
-	connStorage := connection_storage.NewStorage(viper.GetString(connection_config.Namespace), k8sClient)
-	depStorage := deployment_storage.NewStorage(viper.GetString(deployment_config.Namespace), k8sClient)
-	packStorage := packaging_storage.NewStorage(
+	connRepository := connection_repository.NewRepository(viper.GetString(connection_config.Namespace), k8sClient)
+	depRepository := deployment_repository.NewRepository(viper.GetString(deployment_config.Namespace), k8sClient)
+	packRepository := packaging_repository.NewRepository(
 		viper.GetString(packaging_config.Namespace),
 		viper.GetString(packaging_config.PackagingIntegrationNamespace),
 		k8sClient,
 		k8sConfig,
 	)
-	trainStorage := training_storage.NewStorage(
+	trainRepository := training_repository.NewRepository(
 		viper.GetString(training_config.Namespace),
 		viper.GetString(training_config.ToolchainIntegrationNamespace),
 		k8sClient,
 		k8sConfig,
 	)
 
-	connection.ConfigureRoutes(routeGroup, connStorage)
-	deployment.ConfigureRoutes(routeGroup, depStorage)
-	packaging.ConfigureRoutes(routeGroup, packStorage, connStorage)
-	training.ConfigureRoutes(routeGroup, trainStorage, connStorage)
+	connection.ConfigureRoutes(routeGroup, connRepository)
+	deployment.ConfigureRoutes(routeGroup, depRepository)
+	packaging.ConfigureRoutes(routeGroup, packRepository, connRepository)
+	training.ConfigureRoutes(routeGroup, trainRepository, connRepository)
 	configuration.ConfigureRoutes(routeGroup)
 }

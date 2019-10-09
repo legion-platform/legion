@@ -33,7 +33,7 @@ import (
 
 const (
 	mrName  = "test-mr"
-	mrUrl   = "/test/url"
+	mrURL   = "/test/url"
 	timeout = time.Second * 5
 )
 
@@ -135,7 +135,7 @@ func TestBasicReconcile(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: legionv1alpha1.ModelRouteSpec{
-			UrlPrefix: mrUrl,
+			URLPrefix: mrURL,
 			Mirror:    &md1.ObjectMeta.Name,
 			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
@@ -183,7 +183,7 @@ func TestEmptyMirror(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: legionv1alpha1.ModelRouteSpec{
-			UrlPrefix: mrUrl,
+			URLPrefix: mrURL,
 			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
 					Name:   md2.ObjectMeta.Name,
@@ -225,7 +225,7 @@ func TestNotReadyEmptyMirror(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: legionv1alpha1.ModelRouteSpec{
-			UrlPrefix: mrUrl,
+			URLPrefix: mrURL,
 			Mirror:    &mdNotReady.ObjectMeta.Name,
 			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
@@ -268,7 +268,7 @@ func TestMultipleTargets(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: legionv1alpha1.ModelRouteSpec{
-			UrlPrefix: mrUrl,
+			URLPrefix: mrURL,
 			ModelDeploymentTargets: []legionv1alpha1.ModelDeploymentTarget{
 				{
 					Name:   md1.ObjectMeta.Name,

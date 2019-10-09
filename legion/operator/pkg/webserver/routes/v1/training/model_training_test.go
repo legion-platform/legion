@@ -24,10 +24,10 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	conn_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection"
-	conn_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/connection/kubernetes"
-	mt_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
-	mt_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training/kubernetes"
+	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
+	mt_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	train_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/training"
@@ -44,10 +44,10 @@ import (
 
 type ModelTrainingRouteSuite struct {
 	suite.Suite
-	g           *GomegaWithT
-	server      *gin.Engine
-	mtStorage   mt_storage.Storage
-	connStorage conn_storage.Storage
+	g              *GomegaWithT
+	server         *gin.Engine
+	mtRepository   mt_repository.Repository
+	connRepository conn_repository.Repository
 }
 
 func (s *ModelTrainingRouteSuite) SetupSuite() {
@@ -58,13 +58,13 @@ func (s *ModelTrainingRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mtStorage = mt_k8s_storage.NewStorage(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connStorage = conn_k8s_storage.NewStorage(testNamespace, mgr.GetClient())
-	train_route.ConfigureRoutes(v1Group, s.mtStorage, s.connStorage)
+	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	train_route.ConfigureRoutes(v1Group, s.mtRepository, s.connRepository)
 
 	// Create the connection that will be used as the vcs param for a training.
-	if err := s.connStorage.CreateConnection(&connection.Connection{
-		Id: testMtVCSId,
+	if err := s.connRepository.CreateConnection(&connection.Connection{
+		ID: testMtVCSID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:      connection.GITType,
 			Reference: testVcsReference,
@@ -75,8 +75,8 @@ func (s *ModelTrainingRouteSuite) SetupSuite() {
 	}
 
 	// Create the toolchain integration that will be used for a training.
-	if err := s.mtStorage.CreateToolchainIntegration(&training.ToolchainIntegration{
-		Id: testToolchainIntegrationId,
+	if err := s.mtRepository.CreateToolchainIntegration(&training.ToolchainIntegration{
+		ID: testToolchainIntegrationID,
 		Spec: v1alpha1.ToolchainIntegrationSpec{
 			DefaultImage: testToolchainMtImage,
 		},
@@ -87,18 +87,18 @@ func (s *ModelTrainingRouteSuite) SetupSuite() {
 }
 
 func (s *ModelTrainingRouteSuite) TearDownSuite() {
-	if err := s.mtStorage.DeleteToolchainIntegration(testToolchainIntegrationId); err != nil {
+	if err := s.mtRepository.DeleteToolchainIntegration(testToolchainIntegrationID); err != nil {
 		panic(err)
 	}
 
-	if err := s.connStorage.DeleteConnection(testMtVCSId); err != nil {
+	if err := s.connRepository.DeleteConnection(testMtVCSID); err != nil {
 		panic(err)
 	}
 }
 
 func (s *ModelTrainingRouteSuite) TearDownTest() {
-	for _, mpId := range []string{testMtId, testMtId1, testMtId2} {
-		if err := s.mtStorage.DeleteModelTraining(mpId); err != nil && !errors.IsNotFound(err) {
+	for _, mpID := range []string{testMtID, testMtID1, testMtID2} {
+		if err := s.mtRepository.DeleteModelTraining(mpID); err != nil && !errors.IsNotFound(err) {
 			// If a model training is not found then it was not created during a test case
 			// All other errors propagate as a panic
 			panic(err)
@@ -112,14 +112,14 @@ func (s *ModelTrainingRouteSuite) SetupTest() {
 
 func (s *ModelTrainingRouteSuite) newMultipleMtStubs() []*training.ModelTraining {
 	mt1 := newMtStub()
-	mt1.Id = testMtId1
+	mt1.ID = testMtID1
 	mt1.Spec.Model.Version = testModelVersion1
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt1)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt1)).NotTo(HaveOccurred())
 
 	mt2 := newMtStub()
-	mt2.Id = testMtId2
+	mt2.ID = testMtID2
 	mt2.Spec.Model.Version = testModelVersion2
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt2)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt2)).NotTo(HaveOccurred())
 
 	return []*training.ModelTraining{mt1, mt2}
 }
@@ -130,16 +130,16 @@ func TestModelTrainingRouteSuite(t *testing.T) {
 
 func newMtStub() *training.ModelTraining {
 	return &training.ModelTraining{
-		Id: testMtId,
+		ID: testMtID,
 		Spec: v1alpha1.ModelTrainingSpec{
 			Model: v1alpha1.ModelIdentity{
 				Name:                 testModelName,
 				Version:              testModelVersion1,
 				ArtifactNameTemplate: train_route.DefaultArtifactOutputTemplate,
 			},
-			Toolchain:  testToolchainIntegrationId,
+			Toolchain:  testToolchainIntegrationID,
 			Entrypoint: testMtEntrypoint,
-			VCSName:    testMtVCSId,
+			VCSName:    testMtVCSID,
 			Image:      testMtImage,
 			Reference:  testMtReference,
 			Resources:  &train_route.DefaultTrainingResources,
@@ -149,10 +149,10 @@ func newMtStub() *training.ModelTraining {
 
 func (s *ModelTrainingRouteSuite) TestGetMT() {
 	mt := newMtStub()
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, strings.Replace(train_route.GetModelTrainingUrl, ":id", mt.Id, -1), nil)
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(train_route.GetModelTrainingURL, ":id", mt.ID, -1), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -166,7 +166,9 @@ func (s *ModelTrainingRouteSuite) TestGetMT() {
 
 func (s *ModelTrainingRouteSuite) TestGetMTNotFound() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, strings.Replace(train_route.GetModelTrainingUrl, ":id", "not-present", -1), nil)
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
+		train_route.GetModelTrainingURL, ":id", "not-present", -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -180,7 +182,7 @@ func (s *ModelTrainingRouteSuite) TestGetMTNotFound() {
 
 func (s *ModelTrainingRouteSuite) TestGetAllMTEmptyResult() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -195,7 +197,7 @@ func (s *ModelTrainingRouteSuite) TestGetAllMTEmptyResult() {
 func (s *ModelTrainingRouteSuite) TestGetAllMT() {
 	s.newMultipleMtStubs()
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -207,17 +209,17 @@ func (s *ModelTrainingRouteSuite) TestGetAllMT() {
 	s.g.Expect(result).Should(HaveLen(2))
 
 	for _, mt := range result {
-		s.g.Expect(mt.Id).To(Or(Equal(testMtId1), Equal(testMtId2)))
+		s.g.Expect(mt.ID).To(Or(Equal(testMtID1), Equal(testMtID2)))
 	}
 }
 
 func (s *ModelTrainingRouteSuite) TestGetAllMTPaging() {
 	s.newMultipleMtStubs()
-	trainingNames := map[string]interface{}{testMtId1: nil, testMtId2: nil}
+	trainingNames := map[string]interface{}{testMtID1: nil, testMtID2: nil}
 
 	// Return first page
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query := req.URL.Query()
@@ -234,11 +236,11 @@ func (s *ModelTrainingRouteSuite) TestGetAllMTPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(trainings).Should(HaveLen(1))
-	delete(trainingNames, trainings[0].Id)
+	delete(trainingNames, trainings[0].ID)
 
 	// Return second page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -254,11 +256,11 @@ func (s *ModelTrainingRouteSuite) TestGetAllMTPaging() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(trainings).Should(HaveLen(1))
-	delete(trainingNames, trainings[0].Id)
+	delete(trainingNames, trainings[0].ID)
 
 	// Return third empty page
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingUrl, nil)
+	req, err = http.NewRequest(http.MethodGet, train_route.GetAllModelTrainingURL, nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	query = req.URL.Query()
@@ -296,7 +298,7 @@ func (s *ModelTrainingRouteSuite) TestGetAllMTByModelName() {
 	s.g.Expect(result).Should(HaveLen(2))
 
 	for _, mt := range result {
-		s.g.Expect(mt.Id).To(Or(Equal(testMtId1), Equal(testMtId2)))
+		s.g.Expect(mt.ID).To(Or(Equal(testMtID1), Equal(testMtID2)))
 	}
 }
 
@@ -307,7 +309,9 @@ func (s *ModelTrainingRouteSuite) TestGetAllMTByModelVersion() {
 	params.Add(testModelVersionFilter, testModelVersion1)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", train_route.GetAllModelTrainingUrl, params.Encode()), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(
+		"%s?%s", train_route.GetAllModelTrainingURL, params.Encode(),
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -328,7 +332,9 @@ func (s *ModelTrainingRouteSuite) TestGetAllMTByWrongModelVersion() {
 	params.Add(testModelVersionFilter, "wrong-version")
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", train_route.GetAllModelTrainingUrl, params.Encode()), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(
+		"%s?%s", train_route.GetAllModelTrainingURL, params.Encode(),
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -347,39 +353,41 @@ func (s *ModelTrainingRouteSuite) TestCreateMT() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, train_route.CreateModelTrainingUrl, bytes.NewReader(mtEntityBody))
+	req, err := http.NewRequest(http.MethodPost, train_route.CreateModelTrainingURL, bytes.NewReader(mtEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
 	var mtResponse training.ModelTraining
 	err = json.Unmarshal(w.Body.Bytes(), &mtResponse)
 
+	s.g.Expect(err).ShouldNot(HaveOccurred())
 	s.g.Expect(w.Code).Should(Equal(http.StatusCreated))
-	s.g.Expect(mtResponse.Id).Should(Equal(initialMT.Id))
+	s.g.Expect(mtResponse.ID).Should(Equal(initialMT.ID))
 	s.g.Expect(mtResponse.Spec).Should(Equal(initialMT.Spec))
 
-	mt, err := s.mtStorage.GetModelTraining(testMtId)
+	mt, err := s.mtRepository.GetModelTraining(testMtID)
 	s.g.Expect(err).ShouldNot(HaveOccurred())
-	s.g.Expect(mt.Id).Should(Equal(initialMT.Id))
+	s.g.Expect(mt.ID).Should(Equal(initialMT.ID))
 	s.g.Expect(mt.Spec).Should(Equal(initialMT.Spec))
 }
 
 func (s *ModelTrainingRouteSuite) TestCreateMTCheckValidation() {
 	initialMT := training.ModelTraining{
-		Id: testModelName,
+		ID: testModelName,
 	}
 
 	mtEntityBody, err := json.Marshal(initialMT)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, train_route.CreateModelTrainingUrl, bytes.NewReader(mtEntityBody))
+	req, err := http.NewRequest(http.MethodPost, train_route.CreateModelTrainingURL, bytes.NewReader(mtEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
 	var messageResponse routes.HTTPResult
 	err = json.Unmarshal(w.Body.Bytes(), &messageResponse)
 
+	s.g.Expect(err).ShouldNot(HaveOccurred())
 	s.g.Expect(w.Code).Should(Equal(http.StatusBadRequest))
 	s.g.Expect(messageResponse.Message).Should(ContainSubstring(train_route.ValidationMtErrorMessage))
 }
@@ -387,13 +395,13 @@ func (s *ModelTrainingRouteSuite) TestCreateMTCheckValidation() {
 func (s *ModelTrainingRouteSuite) TestCreateDuplicateMT() {
 	mt := newMtStub()
 
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt)).NotTo(HaveOccurred())
 
 	mtEntityBody, err := json.Marshal(mt)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPost, train_route.CreateModelTrainingUrl, bytes.NewReader(mtEntityBody))
+	req, err := http.NewRequest(http.MethodPost, train_route.CreateModelTrainingURL, bytes.NewReader(mtEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -407,10 +415,10 @@ func (s *ModelTrainingRouteSuite) TestCreateDuplicateMT() {
 
 func (s *ModelTrainingRouteSuite) TestUpdateMT() {
 	mt := newMtStub()
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt)).NotTo(HaveOccurred())
 
 	newMt := &training.ModelTraining{
-		Id:   mt.Id,
+		ID:   mt.ID,
 		Spec: mt.Spec,
 	}
 	newMt.Spec.Entrypoint = "new-entrypoint"
@@ -419,7 +427,7 @@ func (s *ModelTrainingRouteSuite) TestUpdateMT() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, train_route.UpdateModelTrainingUrl, bytes.NewReader(mtEntityBody))
+	req, err := http.NewRequest(http.MethodPut, train_route.UpdateModelTrainingURL, bytes.NewReader(mtEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -428,20 +436,20 @@ func (s *ModelTrainingRouteSuite) TestUpdateMT() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(mtResponse.Id).Should(Equal(newMt.Id))
+	s.g.Expect(mtResponse.ID).Should(Equal(newMt.ID))
 	s.g.Expect(mtResponse.Spec).Should(Equal(newMt.Spec))
 
-	mt, err = s.mtStorage.GetModelTraining(testMtId)
+	mt, err = s.mtRepository.GetModelTraining(testMtID)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(mt.Spec).To(Equal(newMt.Spec))
 }
 
 func (s *ModelTrainingRouteSuite) TestUpdateMTCheckValidation() {
 	mt := newMtStub()
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt)).NotTo(HaveOccurred())
 
 	newMt := &training.ModelTraining{
-		Id:   mt.Id,
+		ID:   mt.ID,
 		Spec: v1alpha1.ModelTrainingSpec{},
 	}
 
@@ -449,7 +457,7 @@ func (s *ModelTrainingRouteSuite) TestUpdateMTCheckValidation() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, train_route.UpdateModelTrainingUrl, bytes.NewReader(mtEntityBody))
+	req, err := http.NewRequest(http.MethodPut, train_route.UpdateModelTrainingURL, bytes.NewReader(mtEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -468,7 +476,7 @@ func (s *ModelTrainingRouteSuite) TestUpdateMTNotFound() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodPut, train_route.UpdateModelTrainingUrl, bytes.NewReader(mtEntityBody))
+	req, err := http.NewRequest(http.MethodPut, train_route.UpdateModelTrainingURL, bytes.NewReader(mtEntityBody))
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -482,10 +490,12 @@ func (s *ModelTrainingRouteSuite) TestUpdateMTNotFound() {
 
 func (s *ModelTrainingRouteSuite) TestDeleteMT() {
 	mt := newMtStub()
-	s.g.Expect(s.mtStorage.CreateModelTraining(mt)).NotTo(HaveOccurred())
+	s.g.Expect(s.mtRepository.CreateModelTraining(mt)).NotTo(HaveOccurred())
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodDelete, strings.Replace(train_route.DeleteModelTrainingUrl, ":id", mt.Id, -1), nil)
+	req, err := http.NewRequest(http.MethodDelete, strings.Replace(
+		train_route.DeleteModelTrainingURL, ":id", mt.ID, -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 
@@ -496,14 +506,16 @@ func (s *ModelTrainingRouteSuite) TestDeleteMT() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result.Message).Should(ContainSubstring("was deleted"))
 
-	mtList, err := s.mtStorage.GetModelTrainingList()
+	mtList, err := s.mtRepository.GetModelTrainingList()
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.g.Expect(mtList).To(HaveLen(0))
 }
 
 func (s *ModelTrainingRouteSuite) TestDeleteMTNotFound() {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodDelete, strings.Replace(train_route.DeleteModelTrainingUrl, ":id", "not-found", -1), nil)
+	req, err := http.NewRequest(http.MethodDelete, strings.Replace(
+		train_route.DeleteModelTrainingURL, ":id", "not-found", -1,
+	), nil)
 	s.g.Expect(err).NotTo(HaveOccurred())
 	s.server.ServeHTTP(w, req)
 

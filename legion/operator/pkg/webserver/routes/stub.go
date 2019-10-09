@@ -17,8 +17,8 @@
 package routes
 
 import (
-	_ "github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	_ "github.com/legion-platform/legion/legion/operator/pkg/apis/training"
+	_ "github.com/legion-platform/legion/legion/operator/pkg/apis/packaging" //nolint
+	_ "github.com/legion-platform/legion/legion/operator/pkg/apis/training"  //nolint
 )
 
 // We have some data that doesn't involve in EDI HTTP API,
@@ -32,6 +32,6 @@ import (
 // @Produce  json
 // @Success 200 {object} packaging.K8sPackager
 // @Success 201 {object} training.K8sTrainer
-func stubBuilder() {
+func stubBuilder() { //nolint
 	panic("must be never invoked!")
 }

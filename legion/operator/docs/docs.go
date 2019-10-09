@@ -339,7 +339,7 @@ var doc = `{
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/feedback.FeedbackRequest"
+                            "$ref": "#/definitions/feedback.ModelFeedbackRequest"
                         }
                     },
                     {
@@ -369,7 +369,7 @@ var doc = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/feedback.FeedbackResponse"
+                            "$ref": "#/definitions/feedback.ModelFeedbackResponse"
                         }
                     }
                 }
@@ -1956,10 +1956,10 @@ var doc = `{
                 }
             }
         },
-        "feedback.FeedbackRequest": {
+        "feedback.ModelFeedbackRequest": {
             "type": "object"
         },
-        "feedback.FeedbackResponse": {
+        "feedback.ModelFeedbackResponse": {
             "type": "object"
         },
         "JsonSchema": {
@@ -2274,7 +2274,7 @@ var doc = `{
                     "type": "string"
                 },
                 "keySecret": {
-                    "description": "Ssh or service account secret",
+                    "description": "SSH or service account secret",
                     "type": "string"
                 },
                 "password": {
@@ -2282,7 +2282,7 @@ var doc = `{
                     "type": "string"
                 },
                 "publicKey": {
-                    "description": "Ssh public key",
+                    "description": "SSH public key",
                     "type": "string"
                 },
                 "reference": {
@@ -2515,7 +2515,7 @@ var doc = `{
                     }
                 },
                 "urlPrefix": {
-                    "description": "Url prefix for model  For example: /custom/test\nPrefix must start with slash\n\"/feedback\" and \"/model\" are reserved for internal usage",
+                    "description": "URL prefix for model  For example: /custom/test\nPrefix must start with slash\n\"/feedback\" and \"/model\" are reserved for internal usage",
                     "type": "string"
                 }
             }

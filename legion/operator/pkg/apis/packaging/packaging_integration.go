@@ -20,7 +20,7 @@ import "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alph
 
 type PackagingIntegration struct {
 	// Packaging integration id
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Packaging integration specification
 	Spec PackagingIntegrationSpec `json:"spec,omitempty"`
 	// Packaging integration status

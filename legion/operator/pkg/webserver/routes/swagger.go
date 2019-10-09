@@ -18,7 +18,7 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	_ "github.com/legion-platform/legion/legion/operator/docs"
+	_ "github.com/legion-platform/legion/legion/operator/docs" //nolint
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )

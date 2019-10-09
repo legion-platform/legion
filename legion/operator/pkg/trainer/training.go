@@ -18,15 +18,16 @@ package trainer
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	train_storage "github.com/legion-platform/legion/legion/operator/pkg/storage/training"
+	train_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 )
 
-func LogInfo(trainStorage train_storage.Storage, training *training.K8sTrainer, info map[string]string) error {
+func LogInfo(trainRepository train_repository.Repository, training *training.K8sTrainer, info map[string]string) error {
 	log.Info("Update information", "training", training, "info", info)
 
 	return nil
 }
 
-func SaveInfo(trainStorage train_storage.Storage, training *training.K8sTrainer, info map[string]string) error {
-	return trainStorage.SaveModelTrainingInfo(training.ModelTraining.Id, info)
+func SaveInfo(trainRepository train_repository.Repository, training *training.K8sTrainer,
+	info map[string]string) error {
+	return trainRepository.SaveModelTrainingInfo(training.ModelTraining.ID, info)
 }

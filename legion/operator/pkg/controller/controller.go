@@ -17,18 +17,62 @@
 package controller
 
 import (
+	istioschema "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme"
+	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/connection"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
+	"github.com/legion-platform/legion/legion/operator/pkg/config/training"
+	"github.com/spf13/viper"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-// AddToManagerFuncs is a list of functions to add all Controllers to the Manager
-var AddToManagerFuncs []func(manager.Manager) error
+var log = logf.Log.WithName("controller-setup")
 
 // AddToManager adds all Controllers to the Manager
 func AddToManager(m manager.Manager) error {
-	for _, f := range AddToManagerFuncs {
-		if err := f(m); err != nil {
+	if viper.GetBool(connection.Enabled) {
+		log.Info("Setting up the connection controller")
+
+		if err := AddConnectionToManager(m); err != nil {
 			return err
 		}
 	}
+
+	if viper.GetBool(training.Enabled) {
+		log.Info("Setting up the training controller")
+
+		if err := AddTrainingToManager(m); err != nil {
+			return err
+		}
+	}
+
+	if viper.GetBool(packaging.Enabled) {
+		log.Info("Setting up the packaging controller")
+
+		if err := AddPackagingToManager(m); err != nil {
+			return err
+		}
+	}
+
+	if viper.GetBool(deployment.Enabled) {
+		log.Info("Setting up the deployment controller")
+
+		log.Info("Setting up Istio scheme")
+		istioschema.AddToScheme(m.GetScheme())
+
+		log.Info("Setting up Knative scheme")
+		if err := knservingv1alpha1.AddToScheme(m.GetScheme()); err != nil {
+			log.Error(err, "unable add Knative APIs to scheme")
+
+			return err
+		}
+
+		if err := AddDeploymentToManager(m); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

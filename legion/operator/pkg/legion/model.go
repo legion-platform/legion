@@ -34,7 +34,7 @@ const (
 	ModelVersionKey   = "model-version"
 	ModelCommitID     = "model-commit-id"
 	TrainingOutputZip = "training-output-zip"
-	TrainingRunId     = "training-run-id"
+	TrainingRunID     = "training-run-id"
 )
 
 type TrainingZipNameConfig struct {

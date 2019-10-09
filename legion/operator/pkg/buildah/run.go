@@ -45,16 +45,8 @@ func RunCmd(args ...RunArg) error {
 	}
 
 	params = append(params, "--cap-add", "CAP_SYS_ADMIN")
-	//params = append(params, "--security-opt", "seccomp=unconfined")
-	//params = append(params, "--isolation", "oci")
 	params = append(params, "--storage-driver", "vfs")
 	params = append(params, "-v", "/sys:/sys:rw")
-	//params = append(params, "--no-pivot")
-	//params = append(params,
-	//"--security-opt", "label=disable",
-	//"--security-opt", "seccomp=unconfined",
-	//"-v", "/dev/fuse:/dev/fuse:rw")
-	// --security-opt label=disable --security-opt seccomp=unconfined --device /dev/fuse:rw
 
 	params = append(params, argsList.ContainerName, "--")
 	params = append(params, argsList.Commands...)
