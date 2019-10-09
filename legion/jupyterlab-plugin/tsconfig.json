@@ -8,6 +8,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es2015",
+    "experimentalDecorators": true,
     "outDir": "lib",
     "lib": ["es5", "es6", "es2015.promise", "es2015.collection", "dom"],
     "types": [],

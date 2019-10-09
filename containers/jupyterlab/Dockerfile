@@ -36,25 +36,29 @@ RUN \
   npm i -g npm@^6 && \
   rm -rf /var/lib/apt/lists/*
 
+# Install jupyterlab
+RUN pip3 install --disable-pip-version-check jupyterlab==$JUPYTERLAB_VERSION
+
 COPY legion/jupyterlab-plugin/package.json \
      legion/jupyterlab-plugin/yarn.lock \
      "${WORK_DIR}/"
 
 RUN yarn install --non-interactive --ignore-scripts
 
-COPY legion/jupyterlab-plugin/ \
+COPY legion/jupyterlab-plugin/tsconfig.json \
+     legion/jupyterlab-plugin/tslint.json \
      "${WORK_DIR}/"
+COPY legion/jupyterlab-plugin/src "${WORK_DIR}/src"
+COPY legion/jupyterlab-plugin/style "${WORK_DIR}/style"
+COPY legion/jupyterlab-plugin/jupyter-config "${WORK_DIR}/jupyter-config"
 
 RUN yarn build && yarn lint && npm pack .
-
-# Install jupyterlab
-RUN pip3 install --disable-pip-version-check jupyterlab==$JUPYTERLAB_VERSION
 
 # Run installation w/o any code to warm up nodejs cache
 RUN jupyter lab build && mv /opt/legion-plugin/jupyter_legion-*.tgz jupyter_legion.tgz
 
 RUN jupyter labextension install --no-build jupyter_legion.tgz && \
-    jupyter labextension install @jupyterlab/git jupyterlab_conda jupyterlab_toastify jupyterlab-jupytext@0.19
+    jupyter labextension install @jupyterlab/git jupyterlab_toastify jupyterlab-jupytext@0.19
 
 # We have to remove folder with node_modules and other build-related staff that is not required for running
 RUN rm -rf /usr/local/share/jupyter/lab/staging
@@ -101,8 +105,6 @@ RUN pip3 install --no-deps -e legion/sdk && \
     jupyter serverextension enable --py jupyterlab_git && \
     jupyter nbextension install --py jupytext && \
     jupyter nbextension enable --py jupytext && \
-    # jupyter_conda
-    # jupyter serverextension enable --py jupyter_conda && \
     echo '[ ! -z "$TERM" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc && \
     cat /opt/legion/legion-doc.txt > /etc/motd
 

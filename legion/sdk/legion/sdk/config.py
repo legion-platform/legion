@@ -518,6 +518,10 @@ LEGIONCTL_OAUTH_CLIENT_ID = ConfigVariableDeclaration('LEGIONCTL_OAUTH_CLIENT_ID
                                                       'Set OAuth2 Client id',
                                                       True)
 
+LEGIONCTL_OAUTH_CLIENT_SECRET = ConfigVariableDeclaration('LEGIONCTL_OAUTH_CLIENT_SECRET', '', str,
+                                                          'Set OAuth2 Client id',
+                                                          True)
+
 LEGIONCTL_OAUTH_SCOPE = ConfigVariableDeclaration('LEGIONCTL_OAUTH_SCOPE',
                                                   'openid profile email offline_access groups', str,
                                                   'Set OAuth2 scope',
@@ -529,14 +533,25 @@ LEGIONCTL_OAUTH_LOOPBACK_HOST = ConfigVariableDeclaration('LEGIONCTL_OAUTH_LOOPB
                                                           True)
 
 LEGIONCTL_OAUTH_LOOPBACK_URL = ConfigVariableDeclaration('LEGIONCTL_OAUTH_LOOPBACK_URL',
-                                                          '/oauth/callback', str,
-                                                          'Target redirect url for OAuth2 interactive authorization',
-                                                          True)
+                                                         '/oauth/callback', str,
+                                                         'Target redirect url for OAuth2 interactive authorization',
+                                                         True)
 
 LEGIONCTL_OAUTH_TOKEN_ISSUING_URL = ConfigVariableDeclaration('LEGIONCTL_OAUTH_TOKEN_ISSUING_URL',
                                                               '', str,
                                                               'OAuth2 token issuing URL',
                                                               True)
+
+LEGIONCTL_OAUTH_AUTH_URL = ConfigVariableDeclaration('LEGIONCTL_OAUTH_AUTH_URL',
+                                                     '',
+                                                     str,
+                                                     'OAuth2 token issuing URL',
+                                                     True)
+
+JUPYTER_REDIRECT_URL = ConfigVariableDeclaration('JUPYTER_REDIRECT_URL',
+                                                 '', str,
+                                                 'JupyterLab external URL',
+                                                 True)
 
 LEGIONCTL_NONINTERACTIVE = ConfigVariableDeclaration('LEGIONCTL_NONINTERACTIVE', False,
                                                      bool, 'Disable any interaction (e.g. authorization)', True)

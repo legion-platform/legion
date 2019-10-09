@@ -19,8 +19,9 @@ Configuration handler
 import os
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
-from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, LEGION_X_JWT_TOKEN, \
-    DEFAULT_EDI_ENDPOINT
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, \
+    DEFAULT_EDI_ENDPOINT, LEGION_OAUTH_TOKEN_COOKIE_NAME
+from legion.sdk import config
 from legion.sdk.clients.templates import get_legion_template_names, get_legion_template_content
 
 
@@ -39,9 +40,12 @@ class ConfigurationProviderHandler(BaseLegionHandler):
 
         :return: None
         """
-        jwt_header = self.request.headers.get(LEGION_X_JWT_TOKEN, '')
         self.finish_with_json({
-            'tokenProvided': jwt_header != '',
+            # Verify that all parameters are set
+            'oauth2AuthorizationIsEnabled': bool(config.JUPYTER_REDIRECT_URL) and bool(
+                config.LEGIONCTL_OAUTH_AUTH_URL),
+            'idToken': self.get_cookie(LEGION_OAUTH_TOKEN_COOKIE_NAME, ''),
+            'tokenProvided': bool(self.get_token_from_header()),
             'defaultEDIEndpoint': os.getenv(DEFAULT_EDI_ENDPOINT, ''),
             'legionResourceExamples': sorted(get_legion_template_names()),
         })

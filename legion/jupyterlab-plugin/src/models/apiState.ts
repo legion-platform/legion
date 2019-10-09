@@ -27,8 +27,10 @@ import { PackagingIntegration } from '../legion/PackagingIntegration';
 import * as configurationModels from './configuration';
 import { IConfigurationMainResponse } from './configuration';
 import { Configuration } from '../legion/Configuration';
+
 export const PLUGIN_CREDENTIALS_STORE_CLUSTER = `legion.cluster:credentials-cluster`;
 export const PLUGIN_CREDENTIALS_STORE_TOKEN = `legion.cluster:credentials-token`;
+export const LEGION_OAUTH_TOKEN_COOKIE_NAME = `_legion_oauth_token`;
 
 export interface IApiCloudState {
   trainings: Array<ModelTraining>;
@@ -39,24 +41,26 @@ export interface IApiCloudState {
   packagingIntegrations: Array<PackagingIntegration>;
   configuration: Configuration;
   isLoading: boolean;
+
   signalLoadingStarted(): void;
+
   onDataChanged: ISignal<this, void>;
+
   updateAllState(data?: cloud.ICloudAllEntitiesResponse): void;
 
   authorizationRequired: boolean;
+
   updateAuthConfiguration(data?: IConfigurationMainResponse): void;
+
   credentials: ICloudCredentials;
-  setCredentials(
-    credentials?: ICloudCredentials,
-    skipPersisting?: boolean
-  ): void;
+
+  setCredentials(credentials?: ICloudCredentials): void;
 
   authConfiguration: configurationModels.IConfigurationMainResponse;
+
   onConfigurationLoaded(
     config: configurationModels.IConfigurationMainResponse
   ): void;
-
-  tryToLoadCredentialsFromSettings(): void;
 }
 
 class APICloudStateImplementation implements IApiCloudState {
@@ -71,7 +75,6 @@ class APICloudStateImplementation implements IApiCloudState {
   private _isLoading: boolean;
   private _dataChanged = new Signal<this, void>(this);
 
-  private _credentials?: ICloudCredentials;
   private _oauthConfiguration?: configurationModels.IConfigurationMainResponse;
 
   constructor() {
@@ -82,7 +85,6 @@ class APICloudStateImplementation implements IApiCloudState {
     this._modelpackagings = [];
     this._toolchainIntegrations = [];
     this._packagingIntegrations = [];
-    this._credentials = null;
     this._configuration = null;
     this._oauthConfiguration = null;
   }
@@ -151,54 +153,40 @@ class APICloudStateImplementation implements IApiCloudState {
   }
 
   get credentials(): ICloudCredentials {
-    return this._credentials;
+    let defaultEDIURL = this.authConfiguration
+      ? this.authConfiguration.defaultEDIEndpoint
+      : '';
+
+    return {
+      cluster:
+        localStorage.getItem(PLUGIN_CREDENTIALS_STORE_CLUSTER) || defaultEDIURL,
+      authString: localStorage.getItem(PLUGIN_CREDENTIALS_STORE_TOKEN)
+    };
   }
 
-  setCredentials(
-    credentials?: ICloudCredentials,
-    skipPersisting?: boolean
-  ): void {
-    if (credentials != undefined) {
-      console.log('Updating credentials for ', credentials.cluster);
-      this._credentials = credentials;
-    } else {
-      console.log('Resetting credentials');
-      this._credentials = null;
-    }
-
-    if (skipPersisting !== true) {
-      if (this._credentials) {
+  setCredentials(credentials?: ICloudCredentials): void {
+    if (credentials) {
+      if (credentials.cluster) {
         localStorage.setItem(
           PLUGIN_CREDENTIALS_STORE_CLUSTER,
-          this._credentials.cluster
+          credentials.cluster
         );
+      }
+
+      if (credentials.authString) {
         localStorage.setItem(
           PLUGIN_CREDENTIALS_STORE_TOKEN,
-          this._credentials.authString
+          credentials.authString
         );
-      } else {
-        localStorage.removeItem(PLUGIN_CREDENTIALS_STORE_CLUSTER);
-        localStorage.removeItem(PLUGIN_CREDENTIALS_STORE_TOKEN);
       }
-    }
-    this._dataChanged.emit(null);
-  }
-
-  tryToLoadCredentialsFromSettings(): void {
-    const cluster = localStorage.getItem(PLUGIN_CREDENTIALS_STORE_CLUSTER);
-    const authString = localStorage.getItem(PLUGIN_CREDENTIALS_STORE_TOKEN);
-
-    if (cluster && authString) {
-      this.setCredentials(
-        {
-          cluster,
-          authString
-        },
-        true
-      );
     } else {
-      console.error('Can not load credentials from store');
+      console.log('Resetting credentials');
+
+      localStorage.removeItem(PLUGIN_CREDENTIALS_STORE_CLUSTER);
+      localStorage.removeItem(PLUGIN_CREDENTIALS_STORE_TOKEN);
     }
+
+    this._dataChanged.emit(null);
   }
 
   get authConfiguration(): configurationModels.IConfigurationMainResponse {
@@ -210,8 +198,11 @@ class APICloudStateImplementation implements IApiCloudState {
   ): void {
     this._oauthConfiguration = config;
 
-    if (!config.tokenProvided) {
-      this.tryToLoadCredentialsFromSettings();
+    if (config.oauth2AuthorizationIsEnabled && config.idToken) {
+      this.setCredentials({
+        authString: config.idToken,
+        cluster: ''
+      });
     }
   }
 
@@ -219,7 +210,7 @@ class APICloudStateImplementation implements IApiCloudState {
     return (
       (this._oauthConfiguration == null ||
         !this._oauthConfiguration.tokenProvided) &&
-      this._credentials == null
+      (!this.credentials.authString || !this.credentials.cluster)
     );
   }
 }

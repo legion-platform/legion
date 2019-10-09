@@ -24,11 +24,18 @@ interface ILoginDialogValues {
 }
 
 class LoginDialog extends Widget {
+  private readonly tokenRequired: boolean;
+
   /**
    * Construct a new "rename" dialog.
+   * @param defaultEdiUrl - default EDI URL
+   * @param tokenRequired - If it equals true then the widget creates input field for a Legion token.
    */
-  constructor() {
-    super({ node: Private.buildAuthorizeDialogBody() });
+  constructor(defaultEdiUrl: string, tokenRequired: boolean = true) {
+    super({
+      node: Private.buildAuthorizeDialogBody(defaultEdiUrl, tokenRequired)
+    });
+    this.tokenRequired = tokenRequired;
   }
 
   getInputNodeValue(no: number): string {
@@ -46,15 +53,18 @@ class LoginDialog extends Widget {
   getValue(): ILoginDialogValues {
     return {
       cluster: this.getInputNodeValue(0),
-      authString: this.getInputNodeValue(1)
+      authString: this.tokenRequired ? this.getInputNodeValue(1) : ''
     };
   }
 }
 
-export function showLoginDialog() {
+export function showLoginDialog(
+  defaultEdiUrl: string,
+  tokenRequired: boolean = true
+) {
   return showDialog({
     title: 'Authorization on a Legion cluster',
-    body: new LoginDialog(),
+    body: new LoginDialog(defaultEdiUrl, tokenRequired),
     buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Login' })]
   });
 }
@@ -71,18 +81,26 @@ export function showLogoutDialog(clusterName) {
 }
 
 namespace Private {
-  export function buildAuthorizeDialogBody() {
+  export function buildAuthorizeDialogBody(
+    defaultEdiUrl: string,
+    tokenRequired: boolean = true
+  ) {
     let body = base.createDialogBody();
 
     body.appendChild(base.createDialogInputLabel('Cluster (EDI) url'));
     body.appendChild(
-      base.createDialogInput(undefined, 'https://edi-company-a.example.com')
+      base.createDialogInput(defaultEdiUrl, 'https://edi-company-a.example.com')
     );
 
-    body.appendChild(base.createDialogInputLabel('Oauth2 token'));
-    body.appendChild(
-      base.createDialogInput(undefined, 'ZW1haWw6dGVzdHMtdXNlckBsZWdpb24uY....')
-    );
+    if (tokenRequired) {
+      body.appendChild(base.createDialogInputLabel('Oauth2 token'));
+      body.appendChild(
+        base.createDialogInput(
+          undefined,
+          'ZW1haWw6dGVzdHMtdXNlckBsZWdpb24uY....'
+        )
+      );
+    }
 
     return body;
   }

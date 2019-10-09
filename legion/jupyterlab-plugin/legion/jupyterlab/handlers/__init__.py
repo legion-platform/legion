@@ -24,6 +24,7 @@ from legion.jupyterlab.handlers.cloud import CloudTrainingsHandler, CloudDeploym
     CloudPackagingLogsHandler, CloudUrlInfo, CloudToolchainIntegrationsHandler, CloudPackagingIntegrationsHandler, \
     CloudConfiguratioHandler
 from legion.jupyterlab.handlers.configuration import ConfigurationProviderHandler, TemplatesFilesHandler
+from legion.jupyterlab.handlers.oauth2 import OAuth2Callback, OAuth2Info
 
 # List of all back-end handlers with prefixes
 ALL_HANDLERS = (
@@ -42,6 +43,8 @@ ALL_HANDLERS = (
     (TemplatesFilesHandler, ('examples', '(.*)', 'content')),
     # Configuration
     (ConfigurationProviderHandler, ('common', 'configuration')),
+    (OAuth2Callback, ('oauth2', 'callback')),
+    (OAuth2Info, ('oauth2', 'info'))
 )
 
 

@@ -16,6 +16,8 @@
 
 export interface IConfigurationMainResponse {
   tokenProvided: boolean;
+  oauth2AuthorizationIsEnabled: boolean;
+  idToken: string;
   defaultEDIEndpoint: string;
   legionResourceExamples: Array<string>;
 }

@@ -29,6 +29,7 @@ import { Connection } from '../legion/Connection';
 import { PackagingIntegration } from '../legion/PackagingIntegration';
 import { ToolchainIntegration } from '../legion/ToolchainIntegration';
 import { Configuration } from '../legion/Configuration';
+import { legionHttpExceptionHandler } from './errorHandler';
 
 export namespace URLs {
   export const configurationUrl = legionApiRootURL + '/cloud/configuration';
@@ -119,275 +120,234 @@ export interface ICloudApi {
 
 export class CloudApi implements IApiGroup, ICloudApi {
   // Trainings
+  @legionHttpExceptionHandler()
   async getModelTrainings(
     credentials: ICloudCredentials
   ): Promise<Array<ModelTraining>> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudTrainingsUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudTrainingsUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async getToolchainIntegrations(
     credentials: ICloudCredentials
   ): Promise<Array<ToolchainIntegration>> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudToolchainsUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudToolchainsUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async getTrainingLogs(
     request: models.ICloudTrainingLogsRequest,
     credentials: ICloudCredentials
   ): Promise<models.ICloudLogsResponse> {
-    try {
-      const url = URLs.cloudTrainingLogsUrl.replace(
-        ':trainingName:',
-        request.id
-      );
-      let response = await httpRequest(url, 'GET', undefined, credentials);
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    const url = URLs.cloudTrainingLogsUrl.replace(':trainingName:', request.id);
+    let response = await httpRequest(url, 'GET', undefined, credentials);
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async removeCloudTraining(
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ): Promise<void> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudTrainingsUrl,
-        'DELETE',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return null;
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudTrainingsUrl,
+      'DELETE',
+      request,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return null;
   }
 
   // Connections
+  @legionHttpExceptionHandler()
   async getConnections(
     credentials: ICloudCredentials
   ): Promise<Array<Connection>> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudConnectionsUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudConnectionsUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async removeConnection(
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ): Promise<void> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudConnectionsUrl,
-        'DELETE',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return null;
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudConnectionsUrl,
+      'DELETE',
+      request,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return null;
   }
 
   // Packaging
+  @legionHttpExceptionHandler()
   async getModelPackagings(
     credentials: ICloudCredentials
   ): Promise<Array<ModelPackaging>> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudModelPackagingUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudModelPackagingUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async getPackagingIntegrations(
     credentials: ICloudCredentials
   ): Promise<Array<PackagingIntegration>> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudPackagingIntegrationUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudPackagingIntegrationUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async removeModelPackaging(
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ): Promise<void> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudModelPackagingUrl,
-        'DELETE',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return null;
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudModelPackagingUrl,
+      'DELETE',
+      request,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return null;
   }
 
+  @legionHttpExceptionHandler()
   async getPackagingLogs(
     request: models.ICloudTrainingLogsRequest,
     credentials: ICloudCredentials
   ): Promise<models.ICloudLogsResponse> {
-    try {
-      const url = URLs.cloudPackagingLogsUrl.replace(
-        ':packagingName:',
-        request.id
-      );
-      let response = await httpRequest(url, 'GET', undefined, credentials);
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    const url = URLs.cloudPackagingLogsUrl.replace(
+      ':packagingName:',
+      request.id
+    );
+    let response = await httpRequest(url, 'GET', undefined, credentials);
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
   // Deployments
+  @legionHttpExceptionHandler()
   async getCloudDeployments(
     credentials: ICloudCredentials
   ): Promise<Array<ModelDeployment>> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudDeploymentsUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudDeploymentsUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async createCloudDeployment(
     request: ModelDeployment,
     credentials: ICloudCredentials
   ): Promise<ModelDeployment> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudDeploymentsUrl,
-        'POST',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudDeploymentsUrl,
+      'POST',
+      request,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
+  @legionHttpExceptionHandler()
   async removeCloudDeployment(
     request: models.IRemoveRequest,
     credentials: ICloudCredentials
   ): Promise<void> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudDeploymentsUrl,
-        'DELETE',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return null;
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudDeploymentsUrl,
+      'DELETE',
+      request,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return null;
   }
 
   // Aggregated
+  @legionHttpExceptionHandler()
   async getCloudAllEntities(
     credentials: ICloudCredentials
   ): Promise<models.ICloudAllEntitiesResponse> {
@@ -423,45 +383,39 @@ export class CloudApi implements IApiGroup, ICloudApi {
   }
 
   // General
+  @legionHttpExceptionHandler()
   async applyFromFile(
     request: models.IApplyFromFileRequest,
     credentials: ICloudCredentials
   ): Promise<models.IApplyFromFileResponse> {
-    try {
-      let response = await httpRequest(
-        URLs.cloudApplyFileUrl,
-        'POST',
-        request,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.cloudApplyFileUrl,
+      'POST',
+      request,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 
   // Configuration
+  @legionHttpExceptionHandler()
   async getConfiguration(
     credentials: ICloudCredentials
   ): Promise<Configuration> {
-    try {
-      let response = await httpRequest(
-        URLs.configurationUrl,
-        'GET',
-        null,
-        credentials
-      );
-      if (response.status !== 200) {
-        const data = await response.json();
-        throw new ServerConnection.ResponseError(response, data.message);
-      }
-      return response.json();
-    } catch (err) {
-      throw new ServerConnection.NetworkError(err);
+    let response = await httpRequest(
+      URLs.configurationUrl,
+      'GET',
+      null,
+      credentials
+    );
+    if (response.status !== 200) {
+      const data = await response.json();
+      throw new ServerConnection.ResponseError(response, data.message);
     }
+    return response.json();
   }
 }
