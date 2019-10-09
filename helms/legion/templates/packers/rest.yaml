@@ -16,10 +16,10 @@ data:
       schema:
         targets:
           - name: docker-push
-            connectionTypes: ["docker"]
+            connectionTypes: ["docker", "ecr"]
             required: true
           - name: docker-pull
-            connectionTypes: ["docker"]
+            connectionTypes: ["docker", "ecr"]
             required: false
           - name: archive-storage
             connectionTypes: ["s3", "gcs", "azureblob"]

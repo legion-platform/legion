@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends apt-transport-h
     apt-get install -y --no-install-recommends azure-cli google-cloud-sdk &&\
     apt-get clean all && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13
+RUN pip install --disable-pip-version-check --upgrade pip==18.1 pipenv==2018.10.13 awscli
 
 # Install kubectl
 RUN curl -fsSLO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \

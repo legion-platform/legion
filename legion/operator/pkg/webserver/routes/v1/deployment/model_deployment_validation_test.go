@@ -19,7 +19,9 @@ package deployment_test
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	md_routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	"testing"
 
@@ -228,4 +230,31 @@ func (s *ModelDeploymentValidationSuite) TestMdResourcesValidation() {
 		"validation of cpu limit is failed: quantities must match the regular expression"))
 	s.g.Expect(errorMessage).Should(ContainSubstring(
 		"validation of gpu limit is failed: quantities must match the regular expression"))
+}
+
+func (s *ModelDeploymentValidationSuite) TestValidateDefaultDockerPullConnectionName() {
+	defaultDockerPullConnectionName := "default-docker-pull-conn"
+	viper.SetDefault(config_deployment.DefaultDockerPullConnectionName, defaultDockerPullConnectionName)
+
+	md := &deployment.ModelDeployment{
+		Spec: v1alpha1.ModelDeploymentSpec{},
+	}
+
+	_ = md_routes.ValidatesMDAndSetDefaults(md)
+	s.g.Expect(md.Spec.ImagePullConnectionID).ShouldNot(BeNil())
+	s.g.Expect(*md.Spec.ImagePullConnectionID).Should(Equal(defaultDockerPullConnectionName))
+}
+
+func (s *ModelDeploymentValidationSuite) TestValidateDockerPullConnectionName() {
+	dockerPullConnectionName := "default-docker-pull-conn"
+
+	md := &deployment.ModelDeployment{
+		Spec: v1alpha1.ModelDeploymentSpec{
+			ImagePullConnectionID: &dockerPullConnectionName,
+		},
+	}
+
+	_ = md_routes.ValidatesMDAndSetDefaults(md)
+	s.g.Expect(md.Spec.ImagePullConnectionID).ShouldNot(BeNil())
+	s.g.Expect(*md.Spec.ImagePullConnectionID).Should(Equal(dockerPullConnectionName))
 }

@@ -52,3 +52,7 @@ legion/operator/pkg/webserver/routes/v1/connection/connection_validation_test.go
 .*token:      token.*
 .*Username: "test-username".*
 .*User:   "git".*
+.*Username: mdConn.Spec.Username.*
+.*Password: mdConn.Spec.Password.*
+.*Username: user.*
+.*Password: password.*

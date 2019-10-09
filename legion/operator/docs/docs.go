@@ -2399,6 +2399,10 @@ var doc = `{
                     "description": "Model Docker image",
                     "type": "string"
                 },
+                "imagePullConnID": {
+                    "description": "If pulling of your image requires authorization, then you should specify the connection id",
+                    "type": "string"
+                },
                 "livenessProbeInitialDelay": {
                     "description": "Initial delay for liveness probe of model pod",
                     "type": "integer"
@@ -2439,6 +2443,10 @@ var doc = `{
                 },
                 "lastRevisionName": {
                     "description": "Last applied ready knative revision",
+                    "type": "string"
+                },
+                "lastUpdatedTime": {
+                    "description": "Time when credentials was updated",
                     "type": "string"
                 },
                 "replicas": {

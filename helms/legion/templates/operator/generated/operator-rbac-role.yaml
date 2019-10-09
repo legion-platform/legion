@@ -8,38 +8,6 @@ metadata:
     {{- include "legion.helm-labels" (dict "component" "operator" "root" .) | nindent 4 }}
 rules:
 - apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - connections
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - connections/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -285,6 +253,66 @@ rules:
   - events
   verbs:
   - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - secrets/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - connections
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - connections/status
+  verbs:
+  - get
+  - update
   - patch
 - apiGroups:
   - ""

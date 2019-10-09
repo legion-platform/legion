@@ -33,10 +33,12 @@ func createS3config(configName string, conn *v1alpha1.ConnectionSpec) (*FileDesc
 	}
 
 	if err := config.CreateRemote(configName, "s3", map[string]interface{}{
-		fs.ConfigProvider: "AWS",
-		"env_auth":        true,
-		"region":          conn.Region,
-		"bucket_acl":      "private",
+		fs.ConfigProvider:   "AWS",
+		"env_auth":          false,
+		"region":            conn.Region,
+		"bucket_acl":        "private",
+		"access_key_id":     conn.KeyID,
+		"secret_access_key": conn.KeySecret,
 	}); err != nil {
 		return nil, err
 	}

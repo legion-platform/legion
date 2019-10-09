@@ -19,7 +19,6 @@ package controller
 import (
 	istioschema "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	"github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/training"
@@ -33,14 +32,6 @@ var log = logf.Log.WithName("controller-setup")
 
 // AddToManager adds all Controllers to the Manager
 func AddToManager(m manager.Manager) error {
-	if viper.GetBool(connection.Enabled) {
-		log.Info("Setting up the connection controller")
-
-		if err := AddConnectionToManager(m); err != nil {
-			return err
-		}
-	}
-
 	if viper.GetBool(training.Enabled) {
 		log.Info("Setting up the training controller")
 

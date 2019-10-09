@@ -49,6 +49,7 @@ var (
 	mdMaxReplicas           = int32(2)
 	mdLivenessInitialDelay  = int32(60)
 	mdReadinessInitialDelay = int32(30)
+	mdImagePullConnID       = "test-docker-pull-conn-id"
 )
 
 var (
@@ -113,6 +114,7 @@ func newStubMd() *deployment.ModelDeployment {
 			Annotations:                mdAnnotations,
 			Resources:                  mdResources,
 			RoleName:                   &mdRoleName,
+			ImagePullConnectionID:      &mdImagePullConnID,
 		},
 	}
 }

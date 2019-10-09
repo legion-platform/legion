@@ -15,7 +15,7 @@ class ModelDeploymentStatus(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, available_replicas: int=None, deployment: str=None, last_revision_name: str=None, replicas: int=None, service: str=None, service_url: str=None, state: str=None):  # noqa: E501
+    def __init__(self, available_replicas: int=None, deployment: str=None, last_revision_name: str=None, last_updated_time: str=None, replicas: int=None, service: str=None, service_url: str=None, state: str=None):  # noqa: E501
         """ModelDeploymentStatus - a model defined in Swagger
 
         :param available_replicas: The available_replicas of this ModelDeploymentStatus.  # noqa: E501
@@ -24,6 +24,8 @@ class ModelDeploymentStatus(Model):
         :type deployment: str
         :param last_revision_name: The last_revision_name of this ModelDeploymentStatus.  # noqa: E501
         :type last_revision_name: str
+        :param last_updated_time: The last_updated_time of this ModelDeploymentStatus.  # noqa: E501
+        :type last_updated_time: str
         :param replicas: The replicas of this ModelDeploymentStatus.  # noqa: E501
         :type replicas: int
         :param service: The service of this ModelDeploymentStatus.  # noqa: E501
@@ -37,6 +39,7 @@ class ModelDeploymentStatus(Model):
             'available_replicas': int,
             'deployment': str,
             'last_revision_name': str,
+            'last_updated_time': str,
             'replicas': int,
             'service': str,
             'service_url': str,
@@ -47,6 +50,7 @@ class ModelDeploymentStatus(Model):
             'available_replicas': 'availableReplicas',
             'deployment': 'deployment',
             'last_revision_name': 'lastRevisionName',
+            'last_updated_time': 'lastUpdatedTime',
             'replicas': 'replicas',
             'service': 'service',
             'service_url': 'serviceURL',
@@ -56,6 +60,7 @@ class ModelDeploymentStatus(Model):
         self._available_replicas = available_replicas
         self._deployment = deployment
         self._last_revision_name = last_revision_name
+        self._last_updated_time = last_updated_time
         self._replicas = replicas
         self._service = service
         self._service_url = service_url
@@ -140,6 +145,29 @@ class ModelDeploymentStatus(Model):
         """
 
         self._last_revision_name = last_revision_name
+
+    @property
+    def last_updated_time(self) -> str:
+        """Gets the last_updated_time of this ModelDeploymentStatus.
+
+        Time when credentials was updated  # noqa: E501
+
+        :return: The last_updated_time of this ModelDeploymentStatus.
+        :rtype: str
+        """
+        return self._last_updated_time
+
+    @last_updated_time.setter
+    def last_updated_time(self, last_updated_time: str):
+        """Sets the last_updated_time of this ModelDeploymentStatus.
+
+        Time when credentials was updated  # noqa: E501
+
+        :param last_updated_time: The last_updated_time of this ModelDeploymentStatus.
+        :type last_updated_time: str
+        """
+
+        self._last_updated_time = last_updated_time
 
     @property
     def replicas(self) -> int:

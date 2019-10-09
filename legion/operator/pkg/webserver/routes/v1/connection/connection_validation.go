@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/awslabs/amazon-ecr-credential-helper/ecr-login/api"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	uuid "github.com/nu7hatch/gouuid"
 	"go.uber.org/multierr"
@@ -40,12 +41,22 @@ const (
 	GcsTypeRegionErrorMessage                = "gcs type requires that region must be non-empty"
 	GcsTypeRoleAndKeySecretEmptyErrorMessage = "gcs type requires that either role or keySecret parameter" +
 		" must be non-empty"
+	GcsTypeKeySecretEmptyErrorMessage = "gcs type requires that keySecret parameter" +
+		" must be non-empty"
+	GcsTypeRoleNotSupportedErrorMessage = "gcs type does not support role parameter yet" +
+		" must be non-empty"
 	AzureBlobTypeKeySecretEmptyErrorMessage = "azureblob type requires that keySecret parameter contains" +
 		"HTTP endpoint with SAS Token"
 	S3TypeRegionErrorMessage                = "s3 type requires that region must be non-empty"
 	S3TypeRoleAndKeySecretEmptyErrorMessage = "s3 type requires that either role or keySecret parameter" +
 		" must be non-empty"
-	defaultIDTemplate = "%s-%s"
+	S3TypeKeySecretEmptyErrorMessage = "s3 type requires that keyID and keySecret parameters" +
+		" must be non-empty"
+	defaultIDTemplate                  = "%s-%s"
+	S3TypeRoleNotSupportedErrorMessage = "s3 type does not support role parameter yet"
+	ECRTypeKeySecretEmptyErrorMessage  = "ecr type requires that keyID and keySecret parameters" +
+		" must be non-empty"
+	ECRTypeNotValidURI = "not valid uri for ecr type: %s"
 )
 
 type PublicKeyEvaluator func(string) (string, error)
@@ -85,6 +96,8 @@ func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (e
 		err = multierr.Append(err, cv.validateAzureBlobType(conn))
 	case connection.DockerType:
 		err = multierr.Append(err, cv.validateDockerType(conn))
+	case connection.EcrType:
+		err = multierr.Append(err, cv.validateEcrType(conn))
 	default:
 		err = multierr.Append(err, fmt.Errorf(UnknownTypeErrorMessage, conn.Spec.Type, connection.AllConnectionTypes))
 	}
@@ -96,17 +109,36 @@ func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (e
 	return err
 }
 
+func (cv *ConnValidator) validateEcrType(conn *connection.Connection) (err error) {
+	// Try to parse URI
+	registry, urlParsingErr := api.ExtractRegistry(conn.Spec.URI)
+	if urlParsingErr != nil {
+		err = multierr.Append(err, fmt.Errorf(ECRTypeNotValidURI, urlParsingErr.Error()))
+	}
+
+	if len(conn.Spec.Region) == 0 && registry != nil {
+		conn.Spec.Region = registry.Region
+		logC.Info("Connection region is empty. Set region from url", "id", conn.ID, "region", registry.Region)
+	}
+
+	if len(conn.Spec.KeySecret) == 0 || len(conn.Spec.KeyID) == 0 {
+		err = multierr.Append(err, errors.New(ECRTypeKeySecretEmptyErrorMessage))
+	}
+
+	return
+}
+
 func (cv *ConnValidator) validateS3Type(conn *connection.Connection) (err error) {
 	if len(conn.Spec.Region) == 0 {
 		err = multierr.Append(err, errors.New(S3TypeRegionErrorMessage))
 	}
 
-	if len(conn.Spec.Role) == 0 && len(conn.Spec.KeySecret) == 0 {
-		err = multierr.Append(err, errors.New(S3TypeRoleAndKeySecretEmptyErrorMessage))
+	if len(conn.Spec.Role) != 0 {
+		err = multierr.Append(err, errors.New(S3TypeRoleNotSupportedErrorMessage))
 	}
 
-	if len(conn.Spec.Role) != 0 && len(conn.Spec.KeySecret) != 0 {
-		err = multierr.Append(err, errors.New(S3TypeRoleAndKeySecretEmptyErrorMessage))
+	if len(conn.Spec.KeySecret) == 0 || len(conn.Spec.KeyID) == 0 {
+		err = multierr.Append(err, errors.New(S3TypeKeySecretEmptyErrorMessage))
 	}
 
 	return
@@ -117,12 +149,12 @@ func (cv *ConnValidator) validateGcsType(conn *connection.Connection) (err error
 		err = multierr.Append(err, errors.New(GcsTypeRegionErrorMessage))
 	}
 
-	if len(conn.Spec.Role) == 0 && len(conn.Spec.KeySecret) == 0 {
-		err = multierr.Append(err, errors.New(GcsTypeRoleAndKeySecretEmptyErrorMessage))
+	if len(conn.Spec.Role) != 0 {
+		err = multierr.Append(err, errors.New(GcsTypeRoleNotSupportedErrorMessage))
 	}
 
-	if len(conn.Spec.Role) != 0 && len(conn.Spec.KeySecret) != 0 {
-		err = multierr.Append(err, errors.New(GcsTypeRoleAndKeySecretEmptyErrorMessage))
+	if len(conn.Spec.KeySecret) == 0 {
+		err = multierr.Append(err, errors.New(GcsTypeKeySecretEmptyErrorMessage))
 	}
 
 	return

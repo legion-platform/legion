@@ -29,6 +29,7 @@ import (
 )
 
 const (
+	ecrValidUri                   = "7777777777.dkr.ecr.eu-central-1.amazonaws.com/cluster-name/counter-3.3:886a4942-138d-460c-8f3c-eb3b3d2e1d98" //nolint
 	failedMockKeyEvaluatorMessage = "failed mock key evaluator"
 )
 
@@ -161,6 +162,20 @@ func (s *ConnectionValidationSuite) TestDockerTypePassword() {
 	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.DockerTypePasswordErrorMessage))
 }
 
+func (s *ConnectionValidationSuite) TestValidDockerType() {
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type:     connection.DockerType,
+			URI:      connURI,
+			Username: "username",
+			Password: "password",
+		},
+	}
+	err := s.v.ValidatesAndSetDefaults(conn)
+	s.g.Expect(err).ShouldNot(HaveOccurred())
+}
+
 func (s *ConnectionValidationSuite) TestGcsTypeRegion() {
 	conn := &connection.Connection{
 		ID: connID,
@@ -176,34 +191,33 @@ func (s *ConnectionValidationSuite) TestGcsTypeRegion() {
 	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.GcsTypeRegionErrorMessage))
 }
 
-func (s *ConnectionValidationSuite) TestGcsTypeRoleAndSecretMissed() {
+func (s *ConnectionValidationSuite) TestGcsTypeSecretMissed() {
 	conn := &connection.Connection{
 		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
 			Type:   connection.GcsType,
 			URI:    connURI,
-			Region: "username",
+			Region: "region",
 		},
 	}
 	err := s.v.ValidatesAndSetDefaults(conn)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.GcsTypeRoleAndKeySecretEmptyErrorMessage))
+	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.GcsTypeKeySecretEmptyErrorMessage))
 }
 
-func (s *ConnectionValidationSuite) TestGcsTypeRoleAndSecretPresent() {
+func (s *ConnectionValidationSuite) TestGcsTypeRoleNotSupported() {
 	conn := &connection.Connection{
 		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
-			Type:      connection.GcsType,
-			URI:       connURI,
-			Region:    "username",
-			Role:      "role",
-			KeySecret: "key-secret",
+			Type:   connection.GcsType,
+			URI:    connURI,
+			Region: "region",
+			Role:   "role",
 		},
 	}
 	err := s.v.ValidatesAndSetDefaults(conn)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.GcsTypeRoleAndKeySecretEmptyErrorMessage))
+	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.GcsTypeRoleNotSupportedErrorMessage))
 }
 
 func (s *ConnectionValidationSuite) TestAzureBlobTypeSecretMissed() {
@@ -243,25 +257,24 @@ func (s *ConnectionValidationSuite) TestS3TypeRoleAndSecretMissed() {
 			Region: "username",
 		},
 	}
+
 	err := s.v.ValidatesAndSetDefaults(conn)
-	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.S3TypeRoleAndKeySecretEmptyErrorMessage))
+	s.g.Expect(err).Should(HaveOccurred())
+	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.S3TypeKeySecretEmptyErrorMessage))
 }
 
-func (s *ConnectionValidationSuite) TestS3TypeRoleAndSecretPresent() {
+func (s *ConnectionValidationSuite) TestS3ValidRoleParameterNotSupported() {
 	conn := &connection.Connection{
 		ID: connID,
 		Spec: v1alpha1.ConnectionSpec{
-			Type:      connection.S3Type,
-			URI:       connURI,
-			Region:    "username",
-			Role:      "role",
-			KeySecret: "key-secret",
+			Type: connection.S3Type,
+			URI:  connURI,
+			Role: "role",
 		},
 	}
 	err := s.v.ValidatesAndSetDefaults(conn)
 	s.g.Expect(err).To(HaveOccurred())
-	s.g.Expect(err.Error()).To(ContainSubstring(conn_route.S3TypeRoleAndKeySecretEmptyErrorMessage))
+	s.g.Expect(err.Error()).Should(ContainSubstring(conn_route.S3TypeRoleNotSupportedErrorMessage))
 }
 
 func (s *ConnectionValidationSuite) TestGitTypeValid() {
@@ -349,4 +362,76 @@ func (s *ConnectionValidationSuite) TestGitTypeGeneratePublicKeyError() {
 	s.g.Expect(err.Error()).Should(ContainSubstring(
 		fmt.Sprintf(conn_route.GitTypePublicKeyExtractionErrorMessage, failedMockKeyEvaluatorMessage),
 	))
+}
+
+func (s *ConnectionValidationSuite) TestS3ValidSecretParameter() {
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type:      connection.S3Type,
+			URI:       connURI,
+			Region:    "region",
+			KeySecret: "key-secret",
+			KeyID:     "key-id",
+		},
+	}
+	err := s.v.ValidatesAndSetDefaults(conn)
+	s.g.Expect(err).ShouldNot(HaveOccurred())
+}
+
+func (s *ConnectionValidationSuite) TestECRTypeValidationUrl() {
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type: connection.EcrType,
+			URI:  "not-valid-url",
+		},
+	}
+	err := s.v.ValidatesAndSetDefaults(conn)
+	s.g.Expect(err).Should(HaveOccurred())
+	s.g.Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(conn_route.ECRTypeNotValidURI, "")))
+}
+
+func (s *ConnectionValidationSuite) TestECRValidateKeySecret() {
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type:   connection.EcrType,
+			URI:    ecrValidUri,
+			Region: "region",
+		},
+	}
+	err := s.v.ValidatesAndSetDefaults(conn)
+	s.g.Expect(err).To(HaveOccurred())
+	s.g.Expect(err.Error()).Should(ContainSubstring(conn_route.ECRTypeKeySecretEmptyErrorMessage))
+}
+
+func (s *ConnectionValidationSuite) TestECRTypeRegionFromUrl() {
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type:      connection.EcrType,
+			URI:       ecrValidUri,
+			KeySecret: "key-secret",
+			KeyID:     "key-id",
+		},
+	}
+	err := s.v.ValidatesAndSetDefaults(conn)
+	s.g.Expect(err).ShouldNot(HaveOccurred())
+	s.g.Expect(conn.Spec.Region).Should(Equal("eu-central-1"))
+}
+
+func (s *ConnectionValidationSuite) TestECRTypeValidParameters() {
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type:      connection.EcrType,
+			URI:       ecrValidUri,
+			KeySecret: "key-secret",
+			KeyID:     "key-id",
+			Region:    "region",
+		},
+	}
+	err := s.v.ValidatesAndSetDefaults(conn)
+	s.g.Expect(err).ShouldNot(HaveOccurred())
 }

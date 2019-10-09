@@ -27,7 +27,7 @@ from legion.cli.utils.client import pass_obj
 from legion.cli.utils.logs import print_logs
 from legion.cli.utils.output import format_output, DEFAULT_OUTPUT_FORMAT
 from legion.sdk import config
-from legion.sdk.clients.edi import WrongHttpStatusCode
+from legion.sdk.clients.edi import WrongHttpStatusCode, EDIConnectionException
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 from legion.sdk.clients.training import ModelTraining, ModelTrainingClient, TRAINING_SUCCESS_STATE, \
     TRAINING_FAILED_STATE
@@ -276,7 +276,7 @@ def wait_training_finish(timeout: int, wait: bool, mt_id: str, mt_client: ModelT
                 for msg in log_mt_client.log(mt.id, follow=True):
                     print_logs(msg)
 
-        except (WrongHttpStatusCode, HTTPException, RequestException) as e:
+        except (WrongHttpStatusCode, HTTPException, RequestException, EDIConnectionException) as e:
             LOGGER.info('Callback have not confirmed completion of the operation. Exception: %s', str(e))
 
         LOGGER.debug('Sleep before next request')

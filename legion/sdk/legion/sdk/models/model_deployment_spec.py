@@ -16,13 +16,15 @@ class ModelDeploymentSpec(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, annotations: object=None, image: str=None, liveness_probe_initial_delay: int=None, max_replicas: int=None, min_replicas: int=None, readiness_probe_initial_delay: int=None, resources: ResourceRequirements=None, role_name: str=None):  # noqa: E501
+    def __init__(self, annotations: object=None, image: str=None, image_pull_conn_id: str=None, liveness_probe_initial_delay: int=None, max_replicas: int=None, min_replicas: int=None, readiness_probe_initial_delay: int=None, resources: ResourceRequirements=None, role_name: str=None):  # noqa: E501
         """ModelDeploymentSpec - a model defined in Swagger
 
         :param annotations: The annotations of this ModelDeploymentSpec.  # noqa: E501
         :type annotations: object
         :param image: The image of this ModelDeploymentSpec.  # noqa: E501
         :type image: str
+        :param image_pull_conn_id: The image_pull_conn_id of this ModelDeploymentSpec.  # noqa: E501
+        :type image_pull_conn_id: str
         :param liveness_probe_initial_delay: The liveness_probe_initial_delay of this ModelDeploymentSpec.  # noqa: E501
         :type liveness_probe_initial_delay: int
         :param max_replicas: The max_replicas of this ModelDeploymentSpec.  # noqa: E501
@@ -39,6 +41,7 @@ class ModelDeploymentSpec(Model):
         self.swagger_types = {
             'annotations': object,
             'image': str,
+            'image_pull_conn_id': str,
             'liveness_probe_initial_delay': int,
             'max_replicas': int,
             'min_replicas': int,
@@ -50,6 +53,7 @@ class ModelDeploymentSpec(Model):
         self.attribute_map = {
             'annotations': 'annotations',
             'image': 'image',
+            'image_pull_conn_id': 'imagePullConnID',
             'liveness_probe_initial_delay': 'livenessProbeInitialDelay',
             'max_replicas': 'maxReplicas',
             'min_replicas': 'minReplicas',
@@ -60,6 +64,7 @@ class ModelDeploymentSpec(Model):
 
         self._annotations = annotations
         self._image = image
+        self._image_pull_conn_id = image_pull_conn_id
         self._liveness_probe_initial_delay = liveness_probe_initial_delay
         self._max_replicas = max_replicas
         self._min_replicas = min_replicas
@@ -123,6 +128,29 @@ class ModelDeploymentSpec(Model):
         """
 
         self._image = image
+
+    @property
+    def image_pull_conn_id(self) -> str:
+        """Gets the image_pull_conn_id of this ModelDeploymentSpec.
+
+        If pulling of your image requires authorization, then you should specify the connection id  # noqa: E501
+
+        :return: The image_pull_conn_id of this ModelDeploymentSpec.
+        :rtype: str
+        """
+        return self._image_pull_conn_id
+
+    @image_pull_conn_id.setter
+    def image_pull_conn_id(self, image_pull_conn_id: str):
+        """Sets the image_pull_conn_id of this ModelDeploymentSpec.
+
+        If pulling of your image requires authorization, then you should specify the connection id  # noqa: E501
+
+        :param image_pull_conn_id: The image_pull_conn_id of this ModelDeploymentSpec.
+        :type image_pull_conn_id: str
+        """
+
+        self._image_pull_conn_id = image_pull_conn_id
 
     @property
     def liveness_probe_initial_delay(self) -> int:

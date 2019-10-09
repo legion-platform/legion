@@ -33,14 +33,15 @@ import (
 )
 
 var (
-	timeout          = time.Second * 5
-	image            = "test/image:123"
-	mdName           = "test-md"
-	mdMinReplicas    = int32(1)
-	mdMaxReplicas    = int32(2)
-	mdReadinessDelay = int32(33)
-	mdLivenessDelay  = int32(44)
-	mdNamespace      = "default"
+	timeout                 = time.Second * 5
+	image                   = "test/image:123"
+	mdName                  = "test-md"
+	mdMinReplicas           = int32(1)
+	mdMaxReplicas           = int32(2)
+	mdReadinessDelay        = int32(33)
+	mdLivenessDelay         = int32(44)
+	mdNamespace             = "default"
+	mdImagePullConnectionID = ""
 )
 
 var (
@@ -77,6 +78,7 @@ func TestReconcile(t *testing.T) {
 			ReadinessProbeInitialDelay: &mdReadinessDelay,
 			LivenessProbeInitialDelay:  &mdLivenessDelay,
 			Resources:                  mdResources,
+			ImagePullConnectionID:      &mdImagePullConnectionID,
 		},
 	}
 

@@ -44,6 +44,10 @@ func GenerateTrainingResultCMName(mtID string) string {
 	return fmt.Sprintf("%s-mt-result", mtID)
 }
 
+func GenerateDeploymentConnectionSecretName(connName string) string {
+	return fmt.Sprintf("%s-regsecret", connName)
+}
+
 // Compute hash and store it in the annotations
 func StoreHash(obj metav1.Object) error {
 	h := sha512.New()

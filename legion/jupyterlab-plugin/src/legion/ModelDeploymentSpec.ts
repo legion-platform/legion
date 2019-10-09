@@ -24,6 +24,11 @@ export interface ModelDeploymentSpec {
     image?: string;
 
     /**
+     * If pulling of your image requires authorization, then you should specify the connection id
+     */
+    imagePullConnID?: string;
+
+    /**
      * Initial delay for liveness probe of model pod
      */
     livenessProbeInitialDelay?: number;
