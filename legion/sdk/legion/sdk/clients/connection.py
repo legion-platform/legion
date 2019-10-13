@@ -75,3 +75,54 @@ class ConnectionClient(RemoteEdiClient):
         :return Message from EDI server
         """
         return self.query(f'{CONNECTION_URL}/{name}', action='DELETE')['message']
+
+
+class AsyncConnectionClient(RemoteEdiClient):
+    """
+    HTTP connection async client
+    """
+
+    async def get(self, name: str) -> Connection:
+        """
+        Get Connection from EDI server
+
+        :param name: Connection name
+        :type name: str
+        :return: Connection
+        """
+        return Connection.from_dict(await self.query(f'{CONNECTION_URL}/{name}'))
+
+    async def get_all(self) -> typing.List[Connection]:
+        """
+        Get all Connections from EDI server
+
+        :return: all Connections
+        """
+        return [Connection.from_dict(conn) for conn in await self.query(CONNECTION_URL)]
+
+    async def create(self, conn: Connection) -> Connection:
+        """
+        Create Connection
+
+        :param conn: Connection
+        :return Message from EDI server
+        """
+        return Connection.from_dict(await self.query(CONNECTION_URL, action='POST', payload=conn.to_dict()))
+
+    async def edit(self, conn: Connection) -> Connection:
+        """
+        Edit Connection
+
+        :param conn: Connection
+        :return Message from EDI server
+        """
+        return Connection.from_dict(await self.query(CONNECTION_URL, action='PUT', payload=conn.to_dict()))
+
+    async def delete(self, name: str) -> str:
+        """
+        Delete Connections
+
+        :param name: Name of a Connection
+        :return Message from EDI server
+        """
+        return await self.query(f'{CONNECTION_URL}/{name}', action='DELETE')['message']

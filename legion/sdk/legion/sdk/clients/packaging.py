@@ -18,7 +18,7 @@ EDI client
 """
 from typing import List, Iterator
 
-from legion.sdk.clients.edi import RemoteEdiClient
+from legion.sdk.clients.edi import RemoteEdiClient, AsyncRemoteEdiClient
 from legion.sdk.definitions import MODEL_PACKING_URL
 from legion.sdk.models import ModelPackaging
 
@@ -92,3 +92,59 @@ class ModelPackagingClient(RemoteEdiClient):
         :return Message from EDI server
         """
         return self.stream(f'{MODEL_PACKING_URL}/{name}/log', 'GET', params={'follow': follow})
+
+
+class AsyncModelPackagingClient(AsyncRemoteEdiClient, ModelPackagingClient):
+    """
+    Model Packaging async client
+    """
+
+    async def get(self, name: str) -> ModelPackaging:
+        """
+        Get Model Packaging from EDI server
+
+        :param name: Model Packaging name
+        :type name: str
+        :return: Model Packaging
+        """
+        return ModelPackaging.from_dict(await self.query(f'{MODEL_PACKING_URL}/{name}'))
+
+    async def get_all(self) -> List[ModelPackaging]:
+        """
+        Get all Model Packagings from EDI server
+
+        :return: all Model Packagings
+        """
+        return [ModelPackaging.from_dict(mr) for mr in await self.query(MODEL_PACKING_URL)]
+
+    async def create(self, mr: ModelPackaging) -> ModelPackaging:
+        """
+        Create Model Packaging
+
+        :param mr: Model Packaging
+        :return Message from EDI server
+        """
+        return ModelPackaging.from_dict(
+            self.query(MODEL_PACKING_URL, action='POST', payload=mr.to_dict())
+        )
+
+    async def edit(self, mr: ModelPackaging) -> ModelPackaging:
+        """
+        Edit Model Packaging
+
+        :param mr: Model Packaging
+        :return Message from EDI server
+        """
+        return ModelPackaging.from_dict(
+            await self.query(MODEL_PACKING_URL, action='PUT', payload=mr.to_dict())
+        )
+
+    async def delete(self, name: str) -> str:
+        """
+        Delete Model Packagings
+
+        :param name: Name of a Model Packaging
+        :return Message from EDI server
+        """
+        return await self.query(f'{MODEL_PACKING_URL}/{name}', action='DELETE')
+

@@ -18,7 +18,7 @@ EDI client
 """
 import typing
 
-from legion.sdk.clients.edi import RemoteEdiClient
+from legion.sdk.clients.edi import RemoteEdiClient, AsyncRemoteEdiClient
 from legion.sdk.definitions import PACKING_INTEGRATION_URL
 from legion.sdk.models import PackagingIntegration
 
@@ -76,3 +76,58 @@ class PackagingIntegrationClient(RemoteEdiClient):
         :return Message from EDI server
         """
         return self.query(f'{PACKING_INTEGRATION_URL}/{name}', action='DELETE')
+
+
+class AsyncPackagingIntegrationClient(AsyncRemoteEdiClient):
+    """
+    HTTP packaging integration async client
+    """
+
+    async def get(self, name: str) -> PackagingIntegration:
+        """
+        Get Packaging Integration from EDI server
+
+        :param name: Packaging Integration name
+        :type name: str
+        :return: Packaging Integration
+        """
+        return PackagingIntegration.from_dict(await self.query(f'{PACKING_INTEGRATION_URL}/{name}'))
+
+    async def get_all(self) -> typing.List[PackagingIntegration]:
+        """
+        Get all Packaging Integrations from EDI server
+
+        :return: all Packaging Integrations
+        """
+        return [PackagingIntegration.from_dict(mr) for mr in await self.query(PACKING_INTEGRATION_URL)]
+
+    async def create(self, mr: PackagingIntegration) -> PackagingIntegration:
+        """
+        Create Packaging Integration
+
+        :param mr: Packaging Integration
+        :return Message from EDI server
+        """
+        return PackagingIntegration.from_dict(
+            await self.query(PACKING_INTEGRATION_URL, action='POST', payload=mr.to_dict())
+        )
+
+    async def edit(self, mr: PackagingIntegration) -> PackagingIntegration:
+        """
+        Edit Packaging Integration
+
+        :param mr: Packaging Integration
+        :return Message from EDI server
+        """
+        return PackagingIntegration.from_dict(
+            await self.query(PACKING_INTEGRATION_URL, action='PUT', payload=mr.to_dict())
+        )
+
+    async def delete(self, name: str) -> str:
+        """
+        Delete Packaging Integrations
+
+        :param name: Name of a Packaging Integration
+        :return Message from EDI server
+        """
+        return await self.query(f'{PACKING_INTEGRATION_URL}/{name}', action='DELETE')

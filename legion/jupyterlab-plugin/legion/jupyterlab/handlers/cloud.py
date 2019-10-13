@@ -33,7 +33,7 @@ from legion.sdk.clients.packaging import ModelPackagingClient
 from legion.sdk.clients.packaging_integration import PackagingIntegrationClient
 from legion.sdk.clients.toolchain_integration import ToolchainIntegrationClient
 from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
-    TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE
+    TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE, AsyncModelTrainingClient
 from legion.sdk.models import ModelPackaging
 from legion.sdk.models.base_model_ import Model
 
@@ -137,15 +137,15 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
     """
 
     @decorate_handler_for_exception
-    def get(self):
+    async def get(self):
         """
         Get all trainings
 
         :return: None
         """
-        client: ModelTrainingClient = self.build_cloud_client(ModelTrainingClient)
+        client: AsyncModelTrainingClient = self.build_cloud_client(AsyncModelTrainingClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
     @decorate_handler_for_exception
     def delete(self):
