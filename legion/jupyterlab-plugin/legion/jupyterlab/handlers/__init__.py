@@ -22,14 +22,14 @@ from legion.jupyterlab.handlers.cloud import CloudTrainingsHandler, CloudDeploym
     CloudTrainingLogsHandler, CloudApplyFromFileHandler, \
     CloudConnectionHandler, CloudModelPackagingHandler, \
     CloudPackagingLogsHandler, CloudUrlInfo, CloudToolchainIntegrationsHandler, CloudPackagingIntegrationsHandler, \
-    CloudConfiguratioHandler
+    CloudConfigurationHandler
 from legion.jupyterlab.handlers.configuration import ConfigurationProviderHandler, TemplatesFilesHandler
 from legion.jupyterlab.handlers.oauth2 import OAuth2Callback, OAuth2Info
 
 # List of all back-end handlers with prefixes
 ALL_HANDLERS = (
     # Cloud
-    (CloudConfiguratioHandler, ('cloud', 'configuration')),
+    (CloudConfigurationHandler, ('cloud', 'configuration')),
     (CloudConnectionHandler, ('cloud', 'connections')),
     (CloudToolchainIntegrationsHandler, ('cloud', 'toolchains')),
     (CloudTrainingsHandler, ('cloud', 'trainings')),

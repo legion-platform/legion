@@ -23,17 +23,18 @@ from tornado.web import HTTPError
 
 from legion.jupyterlab.handlers.base import BaseLegionHandler
 from legion.jupyterlab.handlers.datamodels.cloud import *  # pylint: disable=W0614, W0401
-from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT
-from legion.sdk.clients.configuration import ConfigurationClient
-from legion.sdk.clients.connection import ConnectionClient
-from legion.sdk.clients.deployment import ModelDeploymentClient, ModelDeployment
+from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, DEFAULT_EDI_ENDPOINT, \
+    decorate_async_handler_for_exception
+from legion.sdk.clients.configuration import AsyncConfigurationClient
+from legion.sdk.clients.connection import AsyncConnectionClient
+from legion.sdk.clients.deployment import ModelDeployment, AsyncModelDeploymentClient
 from legion.sdk.clients.edi import EDIConnectionException, RemoteEdiClient
 from legion.sdk.clients.edi_aggregated import parse_resources_file, apply, LegionCloudResourceUpdatePair
-from legion.sdk.clients.packaging import ModelPackagingClient
-from legion.sdk.clients.packaging_integration import PackagingIntegrationClient
-from legion.sdk.clients.toolchain_integration import ToolchainIntegrationClient
-from legion.sdk.clients.training import ModelTrainingClient, ModelTraining, \
-    TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE
+from legion.sdk.clients.packaging import AsyncModelPackagingClient
+from legion.sdk.clients.packaging_integration import AsyncPackagingIntegrationClient
+from legion.sdk.clients.toolchain_integration import AsyncToolchainIntegrationClient
+from legion.sdk.clients.training import ModelTraining, \
+    TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE, AsyncModelTrainingClient
 from legion.sdk.models import ModelPackaging
 from legion.sdk.models.base_model_ import Model
 
@@ -85,19 +86,19 @@ class CloudModelPackagingHandler(BaseCloudLegionHandler):
     Control model packagings
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
         Get all model packagings
 
         :return: None
         """
-        client: ModelPackagingClient = self.build_cloud_client(ModelPackagingClient)
+        client: AsyncModelPackagingClient = self.build_cloud_client(AsyncModelPackagingClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
-    @decorate_handler_for_exception
-    def delete(self):
+    @decorate_async_handler_for_exception
+    async def delete(self):
         """
         Remove model packaging
 
@@ -106,8 +107,8 @@ class CloudModelPackagingHandler(BaseCloudLegionHandler):
         data = BasicIdRequest(**self.get_json_body())
 
         try:
-            client = self.build_cloud_client(ModelPackagingClient)
-            client.delete(data.id)
+            client: AsyncModelPackagingClient = self.build_cloud_client(AsyncModelPackagingClient)
+            await client.delete(data.id)
             self.finish_with_json()
         except Exception as query_exception:
             raise HTTPError(log_message='Can not remove cluster model packaging') from query_exception
@@ -136,19 +137,19 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
     Control cloud trainings
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
         Get all trainings
 
         :return: None
         """
-        client: ModelTrainingClient = self.build_cloud_client(ModelTrainingClient)
+        client: AsyncModelTrainingClient = self.build_cloud_client(AsyncModelTrainingClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
-    @decorate_handler_for_exception
-    def delete(self):
+    @decorate_async_handler_for_exception
+    async def delete(self):
         """
         Remove cloud training
 
@@ -157,8 +158,8 @@ class CloudTrainingsHandler(BaseCloudLegionHandler):
         data = BasicIdRequest(**self.get_json_body())
 
         try:
-            client = self.build_cloud_client(ModelTrainingClient)
-            client.delete(data.id)
+            client: AsyncModelTrainingClient = self.build_cloud_client(AsyncModelTrainingClient)
+            await client.delete(data.id)
             self.finish_with_json()
         except Exception as query_exception:
             raise HTTPError(log_message='Can not remove cluster model training') from query_exception
@@ -169,19 +170,19 @@ class CloudConnectionHandler(BaseCloudLegionHandler):
     Control cloud connections
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
         Get all connections
 
         :return: None
         """
-        client: ConnectionClient = self.build_cloud_client(ConnectionClient)
+        client: AsyncConnectionClient = self.build_cloud_client(AsyncConnectionClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
-    @decorate_handler_for_exception
-    def delete(self):
+    @decorate_async_handler_for_exception
+    async def delete(self):
         """
         Remove cloud training
 
@@ -190,8 +191,8 @@ class CloudConnectionHandler(BaseCloudLegionHandler):
         data = BasicIdRequest(**self.get_json_body())
 
         try:
-            client = self.build_cloud_client(ConnectionClient)
-            client.delete(data.id)
+            client: AsyncConnectionClient = self.build_cloud_client(AsyncConnectionClient)
+            await client.delete(data.id)
             self.finish_with_json()
         except Exception as query_exception:
             raise HTTPError(log_message='Can not remove cluster model training') from query_exception
@@ -202,20 +203,20 @@ class CloudTrainingLogsHandler(BaseCloudLegionHandler):
     Control cloud training logs
     """
 
-    @decorate_handler_for_exception
-    def get(self, training_name):
+    @decorate_async_handler_for_exception
+    async def get(self, training_name):
         """
         Get training logs
 
         :arg training_name: name of training
         :return: None
         """
-        client = self.build_cloud_client(ModelTrainingClient)
-        training: ModelTraining = client.get(training_name)
+        client: AsyncModelTrainingClient = self.build_cloud_client(AsyncModelTrainingClient)
+        training: ModelTraining = await client.get(training_name)
 
         self.finish_with_json({
             'futureLogsExpected': training.status.state not in (TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE),
-            'data': '\n'.join(client.log(training_name))
+            'data': '\n'.join([chunk async for chunk in client.log(training_name)])
         })
 
 
@@ -224,20 +225,20 @@ class CloudPackagingLogsHandler(BaseCloudLegionHandler):
     Control cloud training logs
     """
 
-    @decorate_handler_for_exception
-    def get(self, packaging_name):
+    @decorate_async_handler_for_exception
+    async def get(self, packaging_name):
         """
         Get training logs
 
         :arg packaging_name: name of training
         :return: None
         """
-        client = self.build_cloud_client(ModelPackagingClient)
-        mp: ModelPackaging = client.get(packaging_name)
+        client: AsyncModelPackagingClient = self.build_cloud_client(AsyncModelPackagingClient)
+        mp: ModelPackaging = await client.get(packaging_name)
 
         self.finish_with_json({
             'futureLogsExpected': mp.status.state not in (TRAINING_SUCCESS_STATE, TRAINING_FAILED_STATE),
-            'data': '\n'.join(client.log(packaging_name))
+            'data': '\n'.join([chunk async for chunk in client.log(packaging_name)])
         })
 
 
@@ -246,16 +247,16 @@ class CloudPackagingIntegrationsHandler(BaseCloudLegionHandler):
     Control cloud training logs
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
         Get all packaging integrations
 
         :return: None
         """
-        client: PackagingIntegrationClient = self.build_cloud_client(PackagingIntegrationClient)
+        client: AsyncPackagingIntegrationClient = self.build_cloud_client(AsyncPackagingIntegrationClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
 
 class CloudToolchainIntegrationsHandler(BaseCloudLegionHandler):
@@ -263,33 +264,33 @@ class CloudToolchainIntegrationsHandler(BaseCloudLegionHandler):
     Control cloud training logs
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
         Get all toolchain intergrations
 
         :return: None
         """
-        client: ToolchainIntegrationClient = self.build_cloud_client(ToolchainIntegrationClient)
+        client: AsyncToolchainIntegrationClient = self.build_cloud_client(AsyncToolchainIntegrationClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
 
-class CloudConfiguratioHandler(BaseCloudLegionHandler):
+class CloudConfigurationHandler(BaseCloudLegionHandler):
     """
     Control cloud training logs
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
-        Get legio configuration
+        Get legion configuration
 
         :return: None
         """
-        client: ConfigurationClient = self.build_cloud_client(ConfigurationClient)
+        client: AsyncConfigurationClient = self.build_cloud_client(AsyncConfigurationClient)
 
-        self.finish_with_json(client.get().to_dict())
+        self.finish_with_json((await client.get()).to_dict())
 
 
 class CloudDeploymentsHandler(BaseCloudLegionHandler):
@@ -297,19 +298,19 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
     Control cloud deployments
     """
 
-    @decorate_handler_for_exception
-    def get(self):
+    @decorate_async_handler_for_exception
+    async def get(self):
         """
         Get all packaging integrations
 
         :return: None
         """
-        client: ModelDeploymentClient = self.build_cloud_client(ModelDeploymentClient)
+        client: AsyncModelDeploymentClient = self.build_cloud_client(AsyncModelDeploymentClient)
 
-        self.finish_with_json(_convert_to_dict(client.get_all()))
+        self.finish_with_json(_convert_to_dict(await client.get_all()))
 
-    @decorate_handler_for_exception
-    def post(self):
+    @decorate_async_handler_for_exception
+    async def post(self):
         """
         Create new cloud deployment
 
@@ -318,14 +319,14 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
         md = ModelDeployment.from_dict(self.get_json_body())
 
         try:
-            client = self.build_cloud_client(ModelDeploymentClient)
-            client.create(md)
+            client: AsyncModelDeploymentClient = self.build_cloud_client(AsyncModelDeploymentClient)
+            await client.create(md)
             self.finish_with_json()
         except Exception as query_exception:
             raise HTTPError(log_message='Can not create new cloud deployment') from query_exception
 
-    @decorate_handler_for_exception
-    def delete(self):
+    @decorate_async_handler_for_exception
+    async def delete(self):
         """
         Remove local deployment
 
@@ -334,8 +335,8 @@ class CloudDeploymentsHandler(BaseCloudLegionHandler):
         data = BasicIdRequest(**self.get_json_body())
 
         try:
-            client = self.build_cloud_client(ModelDeploymentClient)
-            client.delete(data.id)
+            client: AsyncModelDeploymentClient = self.build_cloud_client(AsyncModelDeploymentClient)
+            await client.delete(data.id)
         except Exception as query_exception:
             raise HTTPError(log_message='Can not remove cluster model deployment') from query_exception
 
@@ -357,8 +358,8 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
         """
         return [f'{type(resource.resource).__name__} {resource.resource_id}' for resource in resources]
 
-    @decorate_handler_for_exception
-    def post(self):
+    @decorate_async_handler_for_exception
+    async def post(self):
         """
         Apply entities from JSON/YAML file
 
@@ -373,7 +374,7 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
             raise HTTPError(log_message=f'Can not parse resources file {data.path}: {parse_exception}')
 
         try:
-            result = apply(resources, client, data.removal)
+            result = await apply(resources, client, data.removal)
         except EDIConnectionException as edi_exception:
             raise edi_exception
         except Exception as apply_exception:
