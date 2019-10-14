@@ -20,6 +20,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/controller/modelpackaging"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
 func init() {
 	// AddToManagerPackagingFuncs is a list of functions to create controllers and add them to a manager.
 	AddToManagerPackagingFuncs = append(AddToManagerPackagingFuncs, modelpackaging.Add)

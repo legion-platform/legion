@@ -2483,6 +2483,10 @@ var doc = `{
                     "description": "Pod last log",
                     "type": "string"
                 },
+                "podName": {
+                    "description": "Pod package for name",
+                    "type": "string"
+                },
                 "reason": {
                     "description": "Pod reason",
                     "type": "string"

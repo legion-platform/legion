@@ -987,6 +987,20 @@
   version = "v1.5.0"
 
 [[projects]]
+  digest = "1:e1606d5bb00ebf5637420bc25e676992a1217acdc67de35717b6e96fc107c105"
+  name = "github.com/tektoncd/pipeline"
+  packages = [
+    "pkg/apis/config",
+    "pkg/apis/pipeline",
+    "pkg/apis/pipeline/v1alpha1",
+    "pkg/list",
+    "pkg/names",
+  ]
+  pruneopts = "T"
+  revision = "9ff6aca4b7aa1f573fb9ff2e0d7f868fa9467417"
+  version = "v0.7.0"
+
+[[projects]]
   digest = "1:5c1d10d6f61202b2ea174db3e90200d904a575da1da64c8b76cd90d5c6dc7b68"
   name = "github.com/ugorji/go"
   packages = ["codec"]
@@ -1245,6 +1259,17 @@
   ]
   pruneopts = "T"
   revision = "aef51cc3777c6a88d6834b42444edffdac4860fa"
+
+[[projects]]
+  branch = "master"
+  digest = "1:a0e46a43516d3f5ff0ba3636488b8a8df632b2986da49823cd8340c070c1a125"
+  name = "golang.org/x/xerrors"
+  packages = [
+    ".",
+    "internal",
+  ]
+  pruneopts = "T"
+  revision = "1b5146add8981d58be77b16229c0ff0f8bebd8c1"
 
 [[projects]]
   digest = "1:768a46371da6dd8f18fa03468cfb208ff9b2d58950da9a72b8cdb49f9c165a44"
@@ -1553,6 +1578,7 @@
     "pkg/util/mergepatch",
     "pkg/util/naming",
     "pkg/util/net",
+    "pkg/util/rand",
     "pkg/util/remotecommand",
     "pkg/util/runtime",
     "pkg/util/sets",
@@ -1780,6 +1806,22 @@
   revision = "5e45bb682580c9be5ffa4d27d367f0eeba125c7b"
 
 [[projects]]
+  branch = "master"
+  digest = "1:eff1820d1e919aabae9c6c6dba7861c62aba8841bcd4921714b8723c85d46356"
+  name = "knative.dev/pkg"
+  packages = [
+    "apis",
+    "apis/duck",
+    "apis/duck/v1",
+    "apis/duck/v1beta1",
+    "apis/v1alpha1",
+    "configmap",
+    "kmp",
+  ]
+  pruneopts = "T"
+  revision = "4b3befdaaae1d32f50fbdc42ca9de6fd1cfc0967"
+
+[[projects]]
   digest = "1:5aa50779f75cc439edd3455a6dee7cf179b52f8dde764a47cc929693485d1afb"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
@@ -1874,6 +1916,7 @@
     "github.com/emicklei/go-restful",
     "github.com/gin-gonic/gin",
     "github.com/gogo/protobuf/types",
+    "github.com/knative/serving/pkg/apis/serving",
     "github.com/knative/serving/pkg/apis/serving/v1alpha1",
     "github.com/knative/serving/pkg/apis/serving/v1beta1",
     "github.com/ncw/rclone/backend/googlecloudstorage",
@@ -1896,6 +1939,7 @@
     "github.com/swaggo/gin-swagger",
     "github.com/swaggo/gin-swagger/swaggerFiles",
     "github.com/swaggo/swag",
+    "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1",
     "github.com/xeipuuv/gojsonschema",
     "github.com/zsais/go-gin-prometheus",
     "go.uber.org/multierr",
@@ -1920,6 +1964,7 @@
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/selection",
     "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
@@ -1927,6 +1972,7 @@
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/tools/record",
     "k8s.io/client-go/tools/remotecommand",
+    "k8s.io/client-go/util/workqueue",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/deepcopy-gen",
     "sigs.k8s.io/controller-runtime/pkg/cache",
@@ -1935,6 +1981,7 @@
     "sigs.k8s.io/controller-runtime/pkg/controller",
     "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil",
     "sigs.k8s.io/controller-runtime/pkg/envtest",
+    "sigs.k8s.io/controller-runtime/pkg/event",
     "sigs.k8s.io/controller-runtime/pkg/handler",
     "sigs.k8s.io/controller-runtime/pkg/manager",
     "sigs.k8s.io/controller-runtime/pkg/reconcile",

@@ -34,6 +34,10 @@ func GenerateConnectionSecretName(vcsName string) string {
 	return fmt.Sprintf("%s-vcs", vcsName)
 }
 
+func GeneratePackageResultCMName(mpID string) string {
+	return fmt.Sprintf("%s-result", mpID)
+}
+
 // Compute hash and store it in the annotations
 func StoreHash(obj metav1.Object) error {
 	h := sha512.New()

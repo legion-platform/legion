@@ -16,13 +16,15 @@ class ModelPackagingStatus(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, exit_code: int=None, message: str=None, reason: str=None, results: List[ModelPackagingResult]=None, state: str=None):  # noqa: E501
+    def __init__(self, exit_code: int=None, message: str=None, pod_name: str=None, reason: str=None, results: List[ModelPackagingResult]=None, state: str=None):  # noqa: E501
         """ModelPackagingStatus - a model defined in Swagger
 
         :param exit_code: The exit_code of this ModelPackagingStatus.  # noqa: E501
         :type exit_code: int
         :param message: The message of this ModelPackagingStatus.  # noqa: E501
         :type message: str
+        :param pod_name: The pod_name of this ModelPackagingStatus.  # noqa: E501
+        :type pod_name: str
         :param reason: The reason of this ModelPackagingStatus.  # noqa: E501
         :type reason: str
         :param results: The results of this ModelPackagingStatus.  # noqa: E501
@@ -33,6 +35,7 @@ class ModelPackagingStatus(Model):
         self.swagger_types = {
             'exit_code': int,
             'message': str,
+            'pod_name': str,
             'reason': str,
             'results': List[ModelPackagingResult],
             'state': str
@@ -41,6 +44,7 @@ class ModelPackagingStatus(Model):
         self.attribute_map = {
             'exit_code': 'exitCode',
             'message': 'message',
+            'pod_name': 'podName',
             'reason': 'reason',
             'results': 'results',
             'state': 'state'
@@ -48,6 +52,7 @@ class ModelPackagingStatus(Model):
 
         self._exit_code = exit_code
         self._message = message
+        self._pod_name = pod_name
         self._reason = reason
         self._results = results
         self._state = state
@@ -108,6 +113,29 @@ class ModelPackagingStatus(Model):
         """
 
         self._message = message
+
+    @property
+    def pod_name(self) -> str:
+        """Gets the pod_name of this ModelPackagingStatus.
+
+        Pod package for name  # noqa: E501
+
+        :return: The pod_name of this ModelPackagingStatus.
+        :rtype: str
+        """
+        return self._pod_name
+
+    @pod_name.setter
+    def pod_name(self, pod_name: str):
+        """Sets the pod_name of this ModelPackagingStatus.
+
+        Pod package for name  # noqa: E501
+
+        :param pod_name: The pod_name of this ModelPackagingStatus.
+        :type pod_name: str
+        """
+
+        self._pod_name = pod_name
 
     @property
     def reason(self) -> str:

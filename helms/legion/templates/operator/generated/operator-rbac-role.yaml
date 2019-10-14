@@ -309,6 +309,26 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
   - pods/exec
   verbs:
   - create
@@ -340,6 +360,26 @@ rules:
   - legion.legion-platform.org
   resources:
   - modelpackagings/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - tekton.dev
+  resources:
+  - taskruns
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - tekton.dev
+  resources:
+  - taskruns/status
   verbs:
   - get
   - update

@@ -34,32 +34,43 @@ import (
 var log = logf.Log.WithName("packager-main")
 
 const (
-	mpFile = "mt-file"
+	mpFile = "mp-file"
 )
 
 var mainCmd = &cobra.Command{
-	Use:   "packager",
-	Short: "Legion packager cli",
+	Use:              "packager",
+	Short:            "Legion packager cli",
+	TraverseChildren: true,
+}
+
+var packagerSetupCmd = &cobra.Command{
+	Use:   "setup",
+	Short: "Prepare environment for a packager",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := packager.SetupPackager(); err != nil {
+			log.Error(err, "Setup failed")
+			os.Exit(1)
+		}
+	},
+}
+
+var saveCmd = &cobra.Command{
+	Use:   "save",
+	Short: "Save a packer result",
 	Run: func(cmd *cobra.Command, args []string) {
 		mgr, err := utils.NewManager()
 		if err != nil {
 			log.Error(err, "K8S manager creation failed")
 		}
 
-		modelPackager, err := packager.NewModelPackager(
-			pack_k8s_storage.NewRepository(
-				viper.GetString(pack_conf.Namespace),
-				viper.GetString(pack_conf.PackagingIntegrationNamespace),
-				mgr.GetClient(), mgr.GetConfig(),
-			))
+		repository := pack_k8s_storage.NewRepository(
+			viper.GetString(pack_conf.Namespace),
+			viper.GetString(pack_conf.PackagingIntegrationNamespace),
+			mgr.GetClient(), mgr.GetConfig(),
+		)
 
-		if err != nil {
-			log.Error(err, "Creation of model packager is failed")
-			os.Exit(1)
-		}
-
-		if err := modelPackager.Start(); err != nil {
-			log.Error(err, "Build failed")
+		if err := packager.SaveResult(repository); err != nil {
+			log.Error(err, "Result saving failed")
 			os.Exit(1)
 		}
 	},
@@ -68,8 +79,10 @@ var mainCmd = &cobra.Command{
 func init() {
 	config.InitBasicParams(mainCmd)
 
-	mainCmd.Flags().String(mpFile, "legion/operator/mp.json", "File with model packaging content")
-	config.PanicIfError(viper.BindPFlag(packager_conf.MPFile, mainCmd.Flags().Lookup(mpFile)))
+	mainCmd.PersistentFlags().String(mpFile, "legion/operator/mp.json", "File with model packaging content")
+	config.PanicIfError(viper.BindPFlag(packager_conf.MPFile, mainCmd.PersistentFlags().Lookup(mpFile)))
+
+	mainCmd.AddCommand(packagerSetupCmd, saveCmd)
 }
 
 func main() {
