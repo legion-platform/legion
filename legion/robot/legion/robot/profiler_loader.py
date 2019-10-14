@@ -67,6 +67,7 @@ def get_variables(profile=None) -> typing.Dict[str, str]:
                 'ALERTMANAGER_URL': os.getenv('ALERTMANAGER_URL', f'https://alertmanager.{host_base_domain}'),
                 'DASHBOARD_URL': os.getenv('DASHBOARD_URL', f'https://dashboard.{host_base_domain}'),
                 'JUPYTERLAB_URL': os.getenv('JUPITERLAB_URL', f'https://jupyterlab.{host_base_domain}'),
+                'MLFLOW_URL': os.getenv('MLFLOW_URL', f'https://mlflow.{host_base_domain}'),
             }
         except Exception as err:
             raise Exception("Can\'t get variable from cluster profile: {}".format(err))
