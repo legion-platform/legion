@@ -18,7 +18,7 @@ EDI client
 """
 import logging
 
-from legion.sdk.clients.edi import RemoteEdiClient
+from legion.sdk.clients.edi import RemoteEdiClient, AsyncRemoteEdiClient
 from legion.sdk.definitions import CONFIGURATION_URL
 from legion.sdk.models import Configuration
 
@@ -46,3 +46,26 @@ class ConfigurationClient(RemoteEdiClient):
         :return Message from EDI server
         """
         return Configuration.from_dict(self.query(CONFIGURATION_URL, action='PUT', payload=conf.to_dict()))
+
+
+class AsyncConfigurationClient(AsyncRemoteEdiClient):
+    """
+    HTTP connection async client
+    """
+
+    async def get(self) -> Configuration:
+        """
+        Get Configuration from EDI server
+
+        :return: Configuration
+        """
+        return Configuration.from_dict(await self.query(CONFIGURATION_URL))
+
+    async def edit(self, conf: Configuration) -> Configuration:
+        """
+        Edit Configuration
+
+        :param conf: Configuration
+        :return Message from EDI server
+        """
+        return Configuration.from_dict(await self.query(CONFIGURATION_URL, action='PUT', payload=conf.to_dict()))
