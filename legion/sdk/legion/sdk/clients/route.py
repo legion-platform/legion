@@ -19,7 +19,7 @@ EDI client
 import logging
 import typing
 
-from legion.sdk.clients.edi import RemoteEdiClient
+from legion.sdk.clients.edi import RemoteEdiClient, AsyncRemoteEdiClient
 from legion.sdk.definitions import MODEL_ROUTE_URL
 from legion.sdk.models import ModelRoute
 
@@ -82,3 +82,58 @@ class ModelRouteClient(RemoteEdiClient):
         :return Message from EDI server
         """
         return self.query(f'{MODEL_ROUTE_URL}/{name}', action='DELETE')
+
+
+class AsyncModelRouteClient(AsyncRemoteEdiClient):
+    """
+    HTTP model route client
+    """
+
+    async def get(self, name: str) -> ModelRoute:
+        """
+        Get Model Route from EDI server
+
+        :param name: Model Route name
+        :type name: str
+        :return: Model Route
+        """
+        return ModelRoute.from_dict(await self.query(f'{MODEL_ROUTE_URL}/{name}'))
+
+    async def get_all(self) -> typing.List[ModelRoute]:
+        """
+        Get all Model Routes from EDI server
+
+        :return: all Model Routes
+        """
+        return [ModelRoute.from_dict(mr) for mr in await self.query(MODEL_ROUTE_URL)]
+
+    async def create(self, mr: ModelRoute) -> ModelRoute:
+        """
+        Create Model Route
+
+        :param mr: Model Route
+        :return Message from EDI server
+        """
+        return ModelRoute.from_dict(
+            await self.query(MODEL_ROUTE_URL, action='POST', payload=mr.to_dict())
+        )
+
+    async def edit(self, mr: ModelRoute) -> ModelRoute:
+        """
+        Edit Model Route
+
+        :param mr: Model Route
+        :return Message from EDI server
+        """
+        return ModelRoute.from_dict(
+            await self.query(MODEL_ROUTE_URL, action='PUT', payload=mr.to_dict())
+        )
+
+    async def delete(self, name: str) -> str:
+        """
+        Delete Model Routes
+
+        :param name: Name of a Model Route
+        :return Message from EDI server
+        """
+        return await self.query(f'{MODEL_ROUTE_URL}/{name}', action='DELETE')
