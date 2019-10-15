@@ -40,7 +40,11 @@ Legion product contains 5 main development parts:
 ## Make changes in API entities
 
 All API entities are located in `legion/operator/pkg/api` directory.
-To generate swagger documentation execute `make generate-all` in `legion/operator` directory.
+
+To generate swagger documentation execute `make generate-all` in `legion/operator` directory. 
+Important for Mac users: Makefile uses GNU `sed` tool, but MacOS uses BSD `sed` by default. They are not fully 
+compatible. So you need install and use GNU `sed` on your Mac for using Makefile.
+
 After previous action you can update python and typescript clients using the following command: `make generate-clients`.
 
 ## Actions before a pull request
