@@ -234,8 +234,8 @@ class RemoteEdiClient:
                 if client:
                     response = client.send(request, timeout=connection_timeout, stream=stream)
                 else:
-                    with requests.Session() as client:
-                        response = client.send(request, timeout=connection_timeout, stream=stream)
+                    with requests.Session() as _client:
+                        response = _client.send(request, timeout=connection_timeout, stream=stream)
 
                 LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
 
@@ -445,8 +445,8 @@ class AsyncRemoteEdiClient(RemoteEdiClient):
                 if client:
                     response = await client.send(request, timeout=connection_timeout, stream=stream)
                 else:
-                    async with httpx.AsyncClient() as client:
-                        response = await client.send(request, timeout=connection_timeout, stream=stream)
+                    async with httpx.AsyncClient() as _client:
+                        response = await _client.send(request, timeout=connection_timeout, stream=stream)
 
                 resp_text = response.text if not stream else '<stream>'
                 LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, resp_text))
