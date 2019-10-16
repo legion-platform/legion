@@ -39,37 +39,13 @@ const (
 	modelPackagingFile = "mp.json"
 )
 
-type ModelPackager struct {
-	packagingFunc Pack
-	repository    packaging_repository.Repository
-}
-
-func NewModelPackager(storage packaging_repository.Repository) (*ModelPackager, error) {
-	return &ModelPackager{
-		packagingFunc: PackOnk8sContainer,
-		repository:    storage,
-	}, nil
-}
-
-func (mp *ModelPackager) Start() (err error) {
+func SetupPackager() (err error) {
 	k8sPackaging, err := getPackaging()
 	if err != nil {
 		return err
 	}
 
-	targetDir := viper.GetString(packager_conf.TargetPath)
-	_ = os.RemoveAll(targetDir)
-	if err := os.Mkdir(targetDir, 0777); err != nil {
-		return err
-	}
-
-	log.Info("Change current working dir", "new worker dir", targetDir)
-	if err := os.Chdir(targetDir); err != nil {
-		log.Error(err, "Changing current working dir failed", "new worker dir", targetDir)
-		return err
-	}
-
-	if err := mp.downloadData(k8sPackaging); err != nil {
+	if err := downloadData(k8sPackaging); err != nil {
 		log.Error(err, "Downloading packaging data failed", "mp name", k8sPackaging.ModelPackaging.ID)
 		return err
 	}
@@ -79,27 +55,15 @@ func (mp *ModelPackager) Start() (err error) {
 		return err
 	}
 
-	err = ioutil.WriteFile(modelPackagingFile, mtBytes, 0644)
+	return ioutil.WriteFile(modelPackagingFile, mtBytes, 0644)
+}
+
+func SaveResult(repository packaging_repository.Repository) error {
+	k8sPackaging, err := getPackaging()
 	if err != nil {
 		return err
 	}
 
-	if err := mp.packagingFunc(modelPackagingFile, k8sPackaging); err != nil {
-		log.Error(err, "Starting of packaging failed")
-
-		return err
-	}
-
-	if err := mp.saveResult(k8sPackaging); err != nil {
-		log.Error(err, "Saving of packaging failed")
-
-		return err
-	}
-
-	return err
-}
-
-func (mp *ModelPackager) saveResult(packaging *packaging.K8sPackager) error {
 	resultFile, err := os.Open(resultFileName)
 	if err != nil {
 		log.Error(err, "Open result file")
@@ -119,7 +83,7 @@ func (mp *ModelPackager) saveResult(packaging *packaging.K8sPackager) error {
 		return err
 	}
 
-	return mp.repository.SaveModelPackagingResult(packaging.ModelPackaging.ID, result)
+	return repository.SaveModelPackagingResult(k8sPackaging.ModelPackaging.ID, result)
 }
 
 func getPackaging() (*packaging.K8sPackager, error) {
@@ -143,7 +107,7 @@ func getPackaging() (*packaging.K8sPackager, error) {
 	return k8sPackaging, nil
 }
 
-func (mp *ModelPackager) downloadData(packaging *packaging.K8sPackager) (err error) {
+func downloadData(packaging *packaging.K8sPackager) (err error) {
 	storage, err := rclone.NewObjectStorage(&packaging.ModelHolder.Spec)
 	if err != nil {
 		log.Error(err, "repository creation")

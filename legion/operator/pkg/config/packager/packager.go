@@ -17,17 +17,15 @@
 package packager
 
 import (
-	"github.com/legion-platform/legion/legion/operator/pkg/config"
 	"github.com/spf13/viper"
 	"os"
 	"path"
 )
 
 const (
-	MPFile            = "packager.mt_file"
+	MPFile            = "packager.mp_file"
 	TargetPath        = "packager.target_path"
 	OutputTrainingDir = "packager.output_dir"
-	PodName           = "packager.pod_name"
 )
 
 func init() {
@@ -37,7 +35,4 @@ func init() {
 	}
 	viper.SetDefault(TargetPath, path.Join(cwd, "legion/operator/target"))
 	viper.SetDefault(OutputTrainingDir, path.Join(viper.GetString(TargetPath), "output"))
-
-	viper.SetDefault(PodName, "test-pod-name")
-	config.PanicIfError(viper.BindEnv(PodName))
 }

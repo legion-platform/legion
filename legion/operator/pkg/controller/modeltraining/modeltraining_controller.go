@@ -327,7 +327,7 @@ func (r *ReconcileModelTraining) reconcilePod(trainingCR *legionv1alpha1.ModelTr
 
 	if trainingCR.Spec.Resources.Requests.GPU == nil {
 		tolerationConf := viper.GetStringMapString(train_conf.Toleration)
-		if tolerationConf != nil {
+		if len(tolerationConf) != 0 {
 			tolerations = append(tolerations, corev1.Toleration{
 				Key:      tolerationConf[train_conf.TolerationKey],
 				Operator: corev1.TolerationOperator(tolerationConf[train_conf.TolerationOperator]),

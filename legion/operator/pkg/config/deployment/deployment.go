@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	Namespace       = "deployment.namespace"
+	Namespace = "deployment.namespace"
 	// Enable deployment API/operator
 	Enabled         = "deployment.enabled"
 	DefaultRoleName = "deployment.security.role_name"

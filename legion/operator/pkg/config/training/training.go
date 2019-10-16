@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	Namespace                     = "training.namespace"
+	Namespace = "training.namespace"
 	// Enable training API/operator
 	Enabled                       = "training.enabled"
 	ToolchainIntegrationNamespace = "training.ti_namespace"

@@ -44,6 +44,8 @@ type ModelPackagingResult struct {
 
 // ModelPackagingStatus defines the observed state of ModelPackaging
 type ModelPackagingStatus struct {
+	// Pod package for name
+	PodName string `json:"podName,omitempty"`
 	// Model Packaging State
 	State ModelPackagingState `json:"state,omitempty"`
 	// Pod exit code

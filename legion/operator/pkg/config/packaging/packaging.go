@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	Namespace                     = "packaging.namespace"
+	Namespace = "packaging.namespace"
 	// Enable packaging API/operator
 	Enabled                       = "packaging.enabled"
 	PackagingIntegrationNamespace = "packaging.packager_integration_namespace"

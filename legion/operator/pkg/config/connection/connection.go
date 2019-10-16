@@ -24,7 +24,7 @@ import (
 const (
 	Namespace = "connection.namespace"
 	// Enable connection API/operator
-	Enabled   = "connection.enabled"
+	Enabled = "connection.enabled"
 )
 
 func init() {

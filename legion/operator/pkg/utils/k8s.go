@@ -118,11 +118,11 @@ type LogStream struct {
 	Data []byte
 }
 
-func StreamLogs(namespace string, k8sConfig *rest.Config, trainingName string,
+func StreamLogs(namespace string, k8sConfig *rest.Config, podName string,
 	containerName string, follow bool) (io.ReadCloser, error) {
 	clientset, _ := kubernetes.NewForConfig(k8sConfig)
 	request := clientset.CoreV1().Pods(namespace).
-		GetLogs(trainingName, &core_v1.PodLogOptions{Follow: follow, Container: containerName})
+		GetLogs(podName, &core_v1.PodLogOptions{Follow: follow, Container: containerName})
 
 	readCloser, err := request.Stream()
 	if err != nil {

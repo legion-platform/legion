@@ -23,6 +23,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	corev1 "k8s.io/api/core/v1"
@@ -95,30 +96,19 @@ func TransformMpToK8s(mp *packaging.ModelPackaging, k8sNamespace string) (*v1alp
 	}, nil
 }
 
-func (kc *packagingK8sRepository) SaveModelPackagingResult(id string, info map[string]string) error {
-	mp, err := kc.GetModelPackaging(id)
-	if err != nil {
-		return err
-	}
-
-	packagingPod := &corev1.Pod{}
-	packagingNamespacedName := types.NamespacedName{
-		Name:      mp.ID,
+func (kc *packagingK8sRepository) SaveModelPackagingResult(id string, dataResult map[string]string) error {
+	result := &corev1.ConfigMap{}
+	resultNamespacedName := types.NamespacedName{
+		Name:      legion.GeneratePackageResultCMName(id),
 		Namespace: kc.namespace,
 	}
-	if err := kc.k8sClient.Get(context.TODO(), packagingNamespacedName, packagingPod); err != nil {
+	if err := kc.k8sClient.Get(context.TODO(), resultNamespacedName, result); err != nil {
 		return err
 	}
 
-	if len(packagingPod.Annotations) == 0 {
-		packagingPod.Annotations = map[string]string{}
-	}
+	result.Data = dataResult
 
-	for k, v := range info {
-		packagingPod.Annotations[k] = v
-	}
-
-	return kc.k8sClient.Update(context.TODO(), packagingPod)
+	return kc.k8sClient.Update(context.TODO(), result)
 }
 
 func (kc *packagingK8sRepository) GetModelPackaging(id string) (*packaging.ModelPackaging, error) {
@@ -270,7 +260,13 @@ func (kc *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_rep
 		return fmt.Errorf("model packaing %s has not started yet", id)
 	}
 
-	reader, err := utils.StreamLogs(kc.namespace, kc.k8sConfig, id, "packager", follow)
+	reader, err := utils.StreamLogs(
+		kc.namespace,
+		kc.k8sConfig,
+		mp.Status.PodName,
+		"step-packager",
+		follow,
+	)
 	if err != nil {
 		return err
 	}

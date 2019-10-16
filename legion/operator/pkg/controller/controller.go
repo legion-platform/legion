@@ -24,6 +24,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/training"
 	"github.com/spf13/viper"
+	tektonschema "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -50,6 +51,12 @@ func AddToManager(m manager.Manager) error {
 
 	if viper.GetBool(packaging.Enabled) {
 		log.Info("Setting up the packaging controller")
+
+		if err := tektonschema.AddToScheme(m.GetScheme()); err != nil {
+			log.Error(err, "unable to add tekton APIs to scheme")
+
+			return err
+		}
 
 		if err := AddPackagingToManager(m); err != nil {
 			return err
