@@ -98,7 +98,7 @@ def get_authorization_redirect(web_redirect: str, after_login: Callable) -> str:
     return web_redirect
 
 
-def get_prepared_request(*args, **kwargs):
+def get_prepared_request(*args, **kwargs) -> requests.PreparedRequest:
     request = requests.PreparedRequest()
     request.prepare(*args, **kwargs)
     return request
@@ -174,7 +174,7 @@ class RemoteEdiClient:
         return cls(other._base_url, other._token, other._retries, other.timeout)
 
     def _build_request(self,
-                       request_cls,
+                       request_cls: Callable[..., Union[httpx.AsyncRequest, requests.PreparedRequest]],
                        url_template: str,
                        payload: Mapping[Any, Any] = None,
                        action: str = 'GET',
@@ -232,10 +232,10 @@ class RemoteEdiClient:
                 LOGGER.debug('Requesting {}'.format(request.url))
 
                 if client:
+                    response = client.send(request, timeout=connection_timeout, stream=stream)
+                else:
                     with requests.Session() as client:
                         response = client.send(request, timeout=connection_timeout, stream=stream)
-                else:
-                    response = client.send(request, timeout=connection_timeout, stream=stream)
 
                 LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
 

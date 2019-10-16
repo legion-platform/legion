@@ -29,7 +29,7 @@ from legion.sdk.clients.configuration import AsyncConfigurationClient
 from legion.sdk.clients.connection import AsyncConnectionClient
 from legion.sdk.clients.deployment import ModelDeployment, AsyncModelDeploymentClient
 from legion.sdk.clients.edi import EDIConnectionException, RemoteEdiClient
-from legion.sdk.clients.edi_aggregated import parse_resources_file, apply, LegionCloudResourceUpdatePair
+from legion.sdk.clients.edi_aggregated import parse_resources_file, async_apply, LegionCloudResourceUpdatePair
 from legion.sdk.clients.packaging import AsyncModelPackagingClient
 from legion.sdk.clients.packaging_integration import AsyncPackagingIntegrationClient
 from legion.sdk.clients.toolchain_integration import AsyncToolchainIntegrationClient
@@ -374,7 +374,7 @@ class CloudApplyFromFileHandler(BaseCloudLegionHandler):
             raise HTTPError(log_message=f'Can not parse resources file {data.path}: {parse_exception}')
 
         try:
-            result = await apply(resources, client, data.removal)
+            result = await async_apply(resources, client, data.removal)
         except EDIConnectionException as edi_exception:
             raise edi_exception
         except Exception as apply_exception:
