@@ -16,6 +16,7 @@
 """
 Aggregated EDI client (can apply multiple resources)
 """
+import asyncio
 import json
 import logging
 import os
@@ -227,9 +228,9 @@ def parse_resources_file_with_one_item(path: str) -> LegionCloudResourceUpdatePa
     return resources.changes[0]
 
 
-async def apply(updates: LegionCloudResourcesUpdateList,
-                async_edi_client: AsyncRemoteEdiClient,
-                is_removal: bool) -> ApplyResult:
+async def async_apply(updates: LegionCloudResourcesUpdateList,
+                      async_edi_client: AsyncRemoteEdiClient,
+                      is_removal: bool) -> ApplyResult:
     """
     Apply changes on Legion cloud
 
@@ -298,3 +299,26 @@ async def apply(updates: LegionCloudResourcesUpdateList,
             continue
 
     return ApplyResult(tuple(created), tuple(removed), tuple(changed), tuple(errors))
+
+
+def apply(updates: LegionCloudResourcesUpdateList,
+          edi_client: typing.Union[AsyncRemoteEdiClient, RemoteEdiClient],
+          is_removal: bool) -> ApplyResult:
+    """
+    Apply changes on Legion cloud (wrapper for async_apply). Used for not async client (For backward compatibility)
+
+    :param updates: changes to apply
+    :type updates: :py:class:LegionCloudResourcesUpdateList
+    :param edi_client: client to extract connection properties from
+    :type edi_client: RemoteEdiClient or AsyncRemoteEdiClient
+    :param is_removal: is it removal?
+    :type is_removal: bool
+    :return: :py:class:ApplyResult -- result of applying
+    """
+    loop = asyncio.get_event_loop()
+
+    feature = async_apply(updates, edi_client, is_removal)
+
+    result = loop.run_until_complete(feature)
+
+    return result
