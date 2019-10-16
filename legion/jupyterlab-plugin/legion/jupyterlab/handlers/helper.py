@@ -44,3 +44,21 @@ def decorate_handler_for_exception(function):
         except EDIConnectionException as base_exception:
             raise HTTPError(log_message=str(base_exception)) from base_exception
     return wrapper
+
+
+def decorate_async_handler_for_exception(function):
+    """
+    Wrap async API handler to properly handle EDI client exceptions
+
+    :param function: function to wrap
+    :return: wrapped function
+    """
+    @functools.wraps(function)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await function(*args, **kwargs)
+        except IncorrectAuthorizationToken as base_exception:
+            raise HTTPError(log_message=str(base_exception), status_code=403) from base_exception
+        except EDIConnectionException as base_exception:
+            raise HTTPError(log_message=str(base_exception)) from base_exception
+    return wrapper
