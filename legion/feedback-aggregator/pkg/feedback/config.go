@@ -1,6 +1,7 @@
 package feedback
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -53,7 +54,7 @@ func initConfig() {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		logC.Error(err, "Reading config")
+		logC.Info(fmt.Sprintf("Error during reading of the config: %s", err.Error()))
 	}
 }
 

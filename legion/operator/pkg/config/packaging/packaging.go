@@ -19,6 +19,7 @@ package packaging
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
 	"github.com/spf13/viper"
+	"time"
 )
 
 const (
@@ -31,6 +32,7 @@ const (
 	ModelPackagerImage            = "packaging.model_packager.image"
 	NodeSelector                  = "packaging.node_selector"
 	Toleration                    = "packaging.toleration"
+	Timeout                       = "packaging.timeout"
 )
 
 const (
@@ -58,4 +60,6 @@ func init() {
 		TolerationValue:    "packaging",
 		TolerationEffect:   "NoSchedule",
 	})
+
+	viper.SetDefault(Timeout, 60*time.Minute)
 }

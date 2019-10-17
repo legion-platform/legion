@@ -18,8 +18,6 @@ package kubernetes_test
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
-	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	"log"
 	"os"
 	"path/filepath"
@@ -27,12 +25,10 @@ import (
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 var cfg *rest.Config
-var c mp_repository.Repository
 
 const (
 	testNamespace = "default"
@@ -51,16 +47,6 @@ func TestMain(m *testing.M) {
 	if cfg, err = t.Start(); err != nil {
 		log.Fatal(err)
 	}
-
-	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		// If we get a panic that we have a test configuration problem
-		panic(err)
-	}
-
-	// k8sConfig is nil because we use this client only for getting logs
-	// we do not test this functionality in unit tests
-	c = mp_k8s_repository.NewRepository(testNamespace, testNamespace, k8sClient, nil)
 
 	code := m.Run()
 	_ = t.Stop()

@@ -150,7 +150,7 @@ File with entitiy not found
 Scaledown to zero pods
     [Tags]  kek
     [Documentation]  Wait until model scales down to zero pods
-    Wait Until Keyword Succeeds  2m  5 sec  Expect number of replicas  ${MD_COUNTER_MODEL_1}  0
+    Wait Until Keyword Succeeds  4m  5 sec  Expect number of replicas  ${MD_COUNTER_MODEL_1}  0
 
     Check model counter  ${MD_COUNTER_MODEL_1}
 

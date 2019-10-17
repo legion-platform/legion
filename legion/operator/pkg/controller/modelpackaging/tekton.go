@@ -19,8 +19,10 @@ package modelpackaging
 import (
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
+	operator_conf "github.com/legion-platform/legion/legion/operator/pkg/config/operator"
 	packaging_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/spf13/viper"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,14 +30,9 @@ import (
 )
 
 const (
-	configVolumeName            = "config"
-	configDir                   = "/etc/legion"
-	pathToPackagerBin           = "/opt/legion/packager"
-	workspacePath               = "/workspace"
-	resultPackagerContainerName = "result"
-	packagerContainerName       = "packager"
-	setupPackagerContainerName  = "setup"
-	outputDir                   = "output"
+	pathToPackagerBin = "/opt/legion/packager"
+	workspacePath     = "/workspace"
+	outputDir         = "output"
 )
 
 func generatePackagerTaskSpec(
@@ -49,42 +46,29 @@ func generatePackagerTaskSpec(
 
 	return &tektonv1alpha1.TaskSpec{
 		Steps: []tektonv1alpha1.Step{
-			createInitPackagerStep(), mainPackagerStep, createResultPackagerStep(),
-		},
-		Volumes: []corev1.Volume{
-			{
-				Name: configVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: packagingCR.Name,
-					},
-				},
-			},
-		},
-		StepTemplate: &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      configVolumeName,
-					ReadOnly:  true,
-					MountPath: configDir,
-				},
-			},
+			createInitPackagerStep(packagingCR.Name),
+			mainPackagerStep,
+			createResultPackagerStep(packagingCR.Name),
 		},
 	}, nil
 }
 
-func createInitPackagerStep() tektonv1alpha1.Step {
+func createInitPackagerStep(mpID string) tektonv1alpha1.Step {
 	return tektonv1alpha1.Step{
 		Container: corev1.Container{
-			Name:    setupPackagerContainerName,
+			Name:    legion.PackagerSetupStep,
 			Image:   viper.GetString(packaging_conf.ModelPackagerImage),
 			Command: []string{pathToPackagerBin},
 			Args: []string{
-				"--config",
-				path.Join(configDir, packagerConfig),
 				"setup",
 				"--mp-file",
-				path.Join(configDir, mpContentFile),
+				path.Join(workspacePath, mpContentFile),
+				"--mp-id",
+				mpID,
+				"--output-connection-name",
+				viper.GetString(packaging_conf.OutputConnectionName),
+				"--edi-url",
+				viper.GetString(operator_conf.EdiURL),
 			},
 			Resources: packagerResources,
 		},
@@ -104,12 +88,12 @@ func createMainPackagerStep(
 
 	return tektonv1alpha1.Step{
 		Container: corev1.Container{
-			Name:    packagerContainerName,
+			Name:    legion.PackagerPackageStep,
 			Image:   packagingCR.Spec.Image,
 			Command: []string{packagingIntegration.Spec.Entrypoint},
 			Args: []string{
 				path.Join(workspacePath, outputDir),
-				path.Join(configDir, mpContentFile),
+				path.Join(workspacePath, mpContentFile),
 			},
 			SecurityContext: &corev1.SecurityContext{
 				Privileged:               &packagingPrivileged,
@@ -120,18 +104,22 @@ func createMainPackagerStep(
 	}, nil
 }
 
-func createResultPackagerStep() tektonv1alpha1.Step {
+func createResultPackagerStep(mpID string) tektonv1alpha1.Step {
 	return tektonv1alpha1.Step{
 		Container: corev1.Container{
-			Name:    resultPackagerContainerName,
+			Name:    legion.PackagerResultStep,
 			Image:   viper.GetString(packaging_conf.ModelPackagerImage),
 			Command: []string{pathToPackagerBin},
 			Args: []string{
-				"--config",
-				path.Join(configDir, packagerConfig),
-				"save",
+				"result",
 				"--mp-file",
-				path.Join(configDir, mpContentFile),
+				path.Join(workspacePath, mpContentFile),
+				"--mp-id",
+				mpID,
+				"--output-connection-name",
+				viper.GetString(packaging_conf.OutputConnectionName),
+				"--edi-url",
+				viper.GetString(operator_conf.EdiURL),
 			},
 			Resources: packagerResources,
 		},

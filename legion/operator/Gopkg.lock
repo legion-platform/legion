@@ -1943,6 +1943,7 @@
     "github.com/aspenmesh/istio-client-go/pkg/client/clientset/versioned/scheme",
     "github.com/emicklei/go-restful",
     "github.com/gin-gonic/gin",
+    "github.com/go-logr/logr",
     "github.com/gogo/protobuf/types",
     "github.com/knative/serving/pkg/apis/serving",
     "github.com/knative/serving/pkg/apis/serving/v1alpha1",

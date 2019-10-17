@@ -20,7 +20,7 @@ import (
 	"context"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"

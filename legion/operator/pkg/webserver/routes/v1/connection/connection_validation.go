@@ -34,7 +34,8 @@ const (
 	DockerTypeUsernameErrorMessage = "docker type requires the username parameter"
 	GitTypePublicKeyErrorMessage   = "git type requires that publicKey parameter must be encoded" +
 		" in base64 format, error message: %s"
-	GitTypeKeySecretErrorMessage = "git type requires that keySecret parameter must be encoded" +
+	GitTypePublicKeyExtractionErrorMessage = "can not extract the public SSH host key from URI: %s"
+	GitTypeKeySecretErrorMessage           = "git type requires that keySecret parameter must be encoded" +
 		" in base64 format, error message: %s"
 	GcsTypeRegionErrorMessage                = "gcs type requires that region must be non-empty"
 	GcsTypeRoleAndKeySecretEmptyErrorMessage = "gcs type requires that either role or keySecret parameter" +
@@ -47,12 +48,15 @@ const (
 	defaultIDTemplate = "%s-%s"
 )
 
+type PublicKeyEvaluator func(string) (string, error)
+
 type ConnValidator struct {
+	keyEvaluator PublicKeyEvaluator
 }
 
 // Currently validator does not need any arguments
-func NewConnValidator() *ConnValidator {
-	return &ConnValidator{}
+func NewConnValidator(keyEvaluator PublicKeyEvaluator) *ConnValidator {
+	return &ConnValidator{keyEvaluator: keyEvaluator}
 }
 
 func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (err error) {
@@ -72,15 +76,15 @@ func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (e
 
 	switch conn.Spec.Type {
 	case connection.GITType:
-		err = multierr.Append(err, validateGitType(conn))
+		err = multierr.Append(err, cv.validateGitType(conn))
 	case connection.S3Type:
-		err = multierr.Append(err, validateS3Type(conn))
+		err = multierr.Append(err, cv.validateS3Type(conn))
 	case connection.GcsType:
-		err = multierr.Append(err, validateGcsType(conn))
+		err = multierr.Append(err, cv.validateGcsType(conn))
 	case connection.AzureBlobType:
-		err = multierr.Append(err, validateAzureBlobType(conn))
+		err = multierr.Append(err, cv.validateAzureBlobType(conn))
 	case connection.DockerType:
-		err = multierr.Append(err, validateDockerType(conn))
+		err = multierr.Append(err, cv.validateDockerType(conn))
 	default:
 		err = multierr.Append(err, fmt.Errorf(UnknownTypeErrorMessage, conn.Spec.Type, connection.AllConnectionTypes))
 	}
@@ -92,7 +96,7 @@ func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (e
 	return err
 }
 
-func validateS3Type(conn *connection.Connection) (err error) {
+func (cv *ConnValidator) validateS3Type(conn *connection.Connection) (err error) {
 	if len(conn.Spec.Region) == 0 {
 		err = multierr.Append(err, errors.New(S3TypeRegionErrorMessage))
 	}
@@ -108,7 +112,7 @@ func validateS3Type(conn *connection.Connection) (err error) {
 	return
 }
 
-func validateGcsType(conn *connection.Connection) (err error) {
+func (cv *ConnValidator) validateGcsType(conn *connection.Connection) (err error) {
 	if len(conn.Spec.Region) == 0 {
 		err = multierr.Append(err, errors.New(GcsTypeRegionErrorMessage))
 	}
@@ -124,7 +128,7 @@ func validateGcsType(conn *connection.Connection) (err error) {
 	return
 }
 
-func validateAzureBlobType(conn *connection.Connection) (err error) {
+func (cv *ConnValidator) validateAzureBlobType(conn *connection.Connection) (err error) {
 	if len(conn.Spec.KeySecret) == 0 {
 		err = multierr.Append(err, errors.New(AzureBlobTypeKeySecretEmptyErrorMessage))
 	}
@@ -132,7 +136,7 @@ func validateAzureBlobType(conn *connection.Connection) (err error) {
 	return
 }
 
-func validateDockerType(conn *connection.Connection) (err error) {
+func (cv *ConnValidator) validateDockerType(conn *connection.Connection) (err error) {
 	if len(conn.Spec.Password) == 0 {
 		err = multierr.Append(err, errors.New(DockerTypePasswordErrorMessage))
 	}
@@ -144,7 +148,7 @@ func validateDockerType(conn *connection.Connection) (err error) {
 	return
 }
 
-func validateGitType(conn *connection.Connection) (err error) {
+func (cv *ConnValidator) validateGitType(conn *connection.Connection) (err error) {
 	if len(conn.Spec.KeySecret) != 0 {
 		_, base64err := base64.StdEncoding.DecodeString(conn.Spec.KeySecret)
 
@@ -158,6 +162,13 @@ func validateGitType(conn *connection.Connection) (err error) {
 
 		if base64err != nil {
 			err = multierr.Append(base64err, fmt.Errorf(GitTypePublicKeyErrorMessage, base64err.Error()))
+		}
+	} else if len(conn.Spec.URI) != 0 {
+		publicKey, keyError := cv.keyEvaluator(conn.Spec.URI)
+		if keyError != nil {
+			err = multierr.Append(keyError, fmt.Errorf(GitTypePublicKeyExtractionErrorMessage, keyError.Error()))
+		} else {
+			conn.Spec.PublicKey = base64.StdEncoding.EncodeToString([]byte(publicKey))
 		}
 	}
 

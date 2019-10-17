@@ -365,6 +365,26 @@ rules:
   - update
   - patch
 - apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - packagingintegrations
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - legion.legion-platform.org
+  resources:
+  - packagingintegrations/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
   - tekton.dev
   resources:
   - taskruns
@@ -488,46 +508,6 @@ rules:
   - legion.legion-platform.org
   resources:
   - modeltrainings/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - modelpackagings
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - modelpackagings/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - packagingintegrations
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - legion.legion-platform.org
-  resources:
-  - packagingintegrations/status
   verbs:
   - get
   - update

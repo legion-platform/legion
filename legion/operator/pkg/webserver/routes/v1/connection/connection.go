@@ -56,10 +56,12 @@ type controller struct {
 	validator      *ConnValidator
 }
 
-func ConfigureRoutes(routeGroup *gin.RouterGroup, connRepository conn_repository.Repository) {
+func ConfigureRoutes(
+	routeGroup *gin.RouterGroup, connRepository conn_repository.Repository, keyEvaluator PublicKeyEvaluator,
+) {
 	controller := &controller{
 		connRepository: connRepository,
-		validator:      NewConnValidator(),
+		validator:      NewConnValidator(keyEvaluator),
 	}
 
 	routeGroup.GET(GetConnectionURL, controller.getConnection)

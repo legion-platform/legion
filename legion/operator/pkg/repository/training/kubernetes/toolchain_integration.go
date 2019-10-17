@@ -20,7 +20,7 @@ import (
 	"context"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,10 +41,10 @@ func transform(mr *v1alpha1.ToolchainIntegration) *training.ToolchainIntegration
 	}
 }
 
-func (kc *trainingK8sRepository) GetToolchainIntegration(name string) (*training.ToolchainIntegration, error) {
+func (tkr *trainingK8sRepository) GetToolchainIntegration(name string) (*training.ToolchainIntegration, error) {
 	k8sMR := &v1alpha1.ToolchainIntegration{}
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: name, Namespace: kc.tiNamespace},
+	if err := tkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: tkr.tiNamespace},
 		k8sMR,
 	); err != nil {
 		logC.Error(err, "Get Toolchain Integration from k8s", "name", name)
@@ -55,7 +55,7 @@ func (kc *trainingK8sRepository) GetToolchainIntegration(name string) (*training
 	return transform(k8sMR), nil
 }
 
-func (kc *trainingK8sRepository) GetToolchainIntegrationList(options ...kubernetes.ListOption) (
+func (tkr *trainingK8sRepository) GetToolchainIntegrationList(options ...kubernetes.ListOption) (
 	[]training.ToolchainIntegration, error,
 ) {
 	var k8sMRList v1alpha1.ToolchainIntegrationList
@@ -77,9 +77,9 @@ func (kc *trainingK8sRepository) GetToolchainIntegrationList(options ...kubernet
 	continueToken := ""
 
 	for i := 0; i < *listOptions.Page+1; i++ {
-		if err := kc.k8sClient.List(context.TODO(), &client.ListOptions{
+		if err := tkr.k8sClient.List(context.TODO(), &client.ListOptions{
 			LabelSelector: labelSelector,
-			Namespace:     kc.tiNamespace,
+			Namespace:     tkr.tiNamespace,
 			Raw: &metav1.ListOptions{
 				Limit:    int64(*listOptions.Size),
 				Continue: continueToken,
@@ -106,15 +106,15 @@ func (kc *trainingK8sRepository) GetToolchainIntegrationList(options ...kubernet
 	return tis, nil
 }
 
-func (kc *trainingK8sRepository) DeleteToolchainIntegration(name string) error {
+func (tkr *trainingK8sRepository) DeleteToolchainIntegration(name string) error {
 	tis := &v1alpha1.ToolchainIntegration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: kc.tiNamespace,
+			Namespace: tkr.tiNamespace,
 		},
 	}
 
-	if err := kc.k8sClient.Delete(context.TODO(),
+	if err := tkr.k8sClient.Delete(context.TODO(),
 		tis,
 	); err != nil {
 		logC.Error(err, "Delete Packaging Integration from k8s", "name", name)
@@ -125,10 +125,10 @@ func (kc *trainingK8sRepository) DeleteToolchainIntegration(name string) error {
 	return nil
 }
 
-func (kc *trainingK8sRepository) UpdateToolchainIntegration(ti *training.ToolchainIntegration) error {
+func (tkr *trainingK8sRepository) UpdateToolchainIntegration(ti *training.ToolchainIntegration) error {
 	var k8sTi v1alpha1.ToolchainIntegration
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: ti.ID, Namespace: kc.tiNamespace},
+	if err := tkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: ti.ID, Namespace: tkr.tiNamespace},
 		&k8sTi,
 	); err != nil {
 		logC.Error(err, "Update toolchain integration from k8s", "name", ti.ID)
@@ -139,7 +139,7 @@ func (kc *trainingK8sRepository) UpdateToolchainIntegration(ti *training.Toolcha
 	// TODO: think about update, not replacing as for now
 	k8sTi.Spec = ti.Spec
 
-	if err := kc.k8sClient.Update(context.TODO(), &k8sTi); err != nil {
+	if err := tkr.k8sClient.Update(context.TODO(), &k8sTi); err != nil {
 		logC.Error(err, "Creation of the toolchain integration", "name", ti.ID)
 
 		return err
@@ -148,16 +148,16 @@ func (kc *trainingK8sRepository) UpdateToolchainIntegration(ti *training.Toolcha
 	return nil
 }
 
-func (kc *trainingK8sRepository) CreateToolchainIntegration(ti *training.ToolchainIntegration) error {
+func (tkr *trainingK8sRepository) CreateToolchainIntegration(ti *training.ToolchainIntegration) error {
 	k8sTi := &v1alpha1.ToolchainIntegration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ti.ID,
-			Namespace: kc.tiNamespace,
+			Namespace: tkr.tiNamespace,
 		},
 		Spec: ti.Spec,
 	}
 
-	if err := kc.k8sClient.Create(context.TODO(), k8sTi); err != nil {
+	if err := tkr.k8sClient.Create(context.TODO(), k8sTi); err != nil {
 		logC.Error(err, "Toolchain integration creation error from k8s", "name", ti.ID)
 
 		return err

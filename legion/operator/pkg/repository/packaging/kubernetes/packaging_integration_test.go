@@ -20,7 +20,12 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
+	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
+	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
+	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -72,9 +77,48 @@ var (
 	}
 )
 
-func TestPackagingIntegrationRepository(t *testing.T) {
-	g := NewGomegaWithT(t)
+type PIRepositorySuite struct {
+	suite.Suite
+	g         *GomegaWithT
+	k8sClient client.Client
+	rep       mp_repository.Repository
+}
 
+func (s *PIRepositorySuite) SetupSuite() {
+	var err error
+	s.k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		// If we get a panic that we have a test configuration problem
+		panic(err)
+	}
+
+	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		// If we get the panic that we have a test configuration problem
+		panic(err)
+	}
+
+	// k8sConfig is nil because we use this client only for getting logs
+	// we do not test this functionality in unit tests
+	s.rep = mp_k8s_repository.NewRepository(testNamespace, testNamespace, k8sClient, nil)
+}
+
+func (s *PIRepositorySuite) SetupTest() {
+	s.g = NewGomegaWithT(s.T())
+}
+
+func (s *PIRepositorySuite) TearDownTest() {
+	if err := s.rep.DeleteModelPackaging(mpID); err != nil && !errors.IsNotFound(err) {
+		// If we get the panic that we have a test configuration problem
+		panic(err)
+	}
+}
+
+func TestSuitePI(t *testing.T) {
+	suite.Run(t, new(PIRepositorySuite))
+}
+
+func (s *PIRepositorySuite) TestPackagingIntegrationRepository() {
 	created := &packaging.PackagingIntegration{
 		ID: piID,
 		Spec: packaging.PackagingIntegrationSpec{
@@ -88,25 +132,25 @@ func TestPackagingIntegrationRepository(t *testing.T) {
 		},
 	}
 
-	g.Expect(c.CreatePackagingIntegration(created)).NotTo(HaveOccurred())
+	s.g.Expect(s.rep.CreatePackagingIntegration(created)).NotTo(HaveOccurred())
 
-	fetched, err := c.GetPackagingIntegration(piID)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(fetched.ID).To(Equal(created.ID))
-	g.Expect(fetched.Spec).To(Equal(created.Spec))
+	fetched, err := s.rep.GetPackagingIntegration(piID)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(fetched.ID).To(Equal(created.ID))
+	s.g.Expect(fetched.Spec).To(Equal(created.Spec))
 
 	updated := fetched
 	updated.Spec.Entrypoint = piNewEntrypoint
-	g.Expect(c.UpdatePackagingIntegration(updated)).NotTo(HaveOccurred())
+	s.g.Expect(s.rep.UpdatePackagingIntegration(updated)).NotTo(HaveOccurred())
 
-	fetched, err = c.GetPackagingIntegration(piID)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(fetched.ID).To(Equal(updated.ID))
-	g.Expect(fetched.Spec).To(Equal(updated.Spec))
-	g.Expect(fetched.Spec.Entrypoint).To(Equal(piNewEntrypoint))
+	fetched, err = s.rep.GetPackagingIntegration(piID)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(fetched.ID).To(Equal(updated.ID))
+	s.g.Expect(fetched.Spec).To(Equal(updated.Spec))
+	s.g.Expect(fetched.Spec.Entrypoint).To(Equal(piNewEntrypoint))
 
-	g.Expect(c.DeletePackagingIntegration(piID)).NotTo(HaveOccurred())
-	_, err = c.GetPackagingIntegration(piID)
-	g.Expect(err).To(HaveOccurred())
-	g.Expect(errors.IsNotFound(err)).Should(BeTrue())
+	s.g.Expect(s.rep.DeletePackagingIntegration(piID)).NotTo(HaveOccurred())
+	_, err = s.rep.GetPackagingIntegration(piID)
+	s.g.Expect(err).To(HaveOccurred())
+	s.g.Expect(errors.IsNotFound(err)).Should(BeTrue())
 }

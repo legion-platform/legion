@@ -18,25 +18,29 @@ package packaging_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
 	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
+	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
+	pack_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"strings"
-
-	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
-	pack_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +56,7 @@ type ModelPackagingRouteSuite struct {
 	g            *GomegaWithT
 	server       *gin.Engine
 	mpRepository mp_repository.Repository
+	k8sClient    client.Client
 }
 
 func (s *ModelPackagingRouteSuite) SetupSuite() {
@@ -62,7 +67,8 @@ func (s *ModelPackagingRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mpRepository = mp_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
+	s.k8sClient = mgr.GetClient()
+	s.mpRepository = mp_k8s_repository.NewRepository(testNamespace, testNamespace, s.k8sClient, nil)
 	pack_route.ConfigureRoutes(v1Group, s.mpRepository, conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient()))
 
 	err = s.mpRepository.CreatePackagingIntegration(&packaging.PackagingIntegration{
@@ -398,4 +404,46 @@ func (s *ModelPackagingRouteSuite) TestDeleteMPNotFound() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusNotFound))
 	s.g.Expect(result.Message).Should(ContainSubstring("not found"))
+}
+
+func (s *ModelPackagingRouteSuite) TestSavingMPResult() {
+	resultCM := &corev1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      legion.GeneratePackageResultCMName(mpIDRoute),
+			Namespace: testNamespace,
+		},
+	}
+	s.g.Expect(s.k8sClient.Create(context.TODO(), resultCM)).NotTo(HaveOccurred())
+	defer s.k8sClient.Delete(context.TODO(), resultCM)
+
+	expectedMPResult := []legionv1alpha1.ModelPackagingResult{
+		{
+			Name:  "test-name-1",
+			Value: "test-value-1",
+		},
+		{
+			Name:  "test-name-2",
+			Value: "test-value-2",
+		},
+	}
+	expectedMPResultBody, err := json.Marshal(expectedMPResult)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodPut,
+		strings.Replace(pack_route.SaveModelPackagingResultURL, ":id", mpIDRoute, -1),
+		bytes.NewReader(expectedMPResultBody),
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.server.ServeHTTP(w, req)
+
+	result := []legionv1alpha1.ModelPackagingResult{}
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(expectedMPResult).Should(Equal(result))
+
+	result, err = s.mpRepository.GetModelPackagingResult(mpIDRoute)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(expectedMPResult).To(Equal(result))
 }

@@ -17,14 +17,11 @@
 package main
 
 import (
-	"fmt"
-	packager_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packager"
-	pack_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
-	pack_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
-	"github.com/legion-platform/legion/legion/operator/pkg/utils"
-
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
+	packager_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packager"
 	"github.com/legion-platform/legion/legion/operator/pkg/packager"
+	connection_http_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/http"
+	packaging_http_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/http"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -34,7 +31,10 @@ import (
 var log = logf.Log.WithName("packager-main")
 
 const (
-	mpFile = "mp-file"
+	mpFileCLIParam               = "mp-file"
+	mpIDCLIParam                 = "mp-id"
+	outputConnectionNameCLIParam = "output-connection-name"
+	ediURLCLIParam               = "edi-url"
 )
 
 var mainCmd = &cobra.Command{
@@ -47,29 +47,18 @@ var packagerSetupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Prepare environment for a packager",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := packager.SetupPackager(); err != nil {
-			log.Error(err, "Setup failed")
+		if err := newPackagerWithHTTPRepositories().SetupPackager(); err != nil {
+			log.Error(err, "Packaging setup failed")
 			os.Exit(1)
 		}
 	},
 }
 
 var saveCmd = &cobra.Command{
-	Use:   "save",
+	Use:   "result",
 	Short: "Save a packer result",
 	Run: func(cmd *cobra.Command, args []string) {
-		mgr, err := utils.NewManager()
-		if err != nil {
-			log.Error(err, "K8S manager creation failed")
-		}
-
-		repository := pack_k8s_storage.NewRepository(
-			viper.GetString(pack_conf.Namespace),
-			viper.GetString(pack_conf.PackagingIntegrationNamespace),
-			mgr.GetClient(), mgr.GetConfig(),
-		)
-
-		if err := packager.SaveResult(repository); err != nil {
+		if err := newPackagerWithHTTPRepositories().SaveResult(); err != nil {
 			log.Error(err, "Result saving failed")
 			os.Exit(1)
 		}
@@ -79,15 +68,42 @@ var saveCmd = &cobra.Command{
 func init() {
 	config.InitBasicParams(mainCmd)
 
-	mainCmd.PersistentFlags().String(mpFile, "legion/operator/mp.json", "File with model packaging content")
-	config.PanicIfError(viper.BindPFlag(packager_conf.MPFile, mainCmd.PersistentFlags().Lookup(mpFile)))
+	mainCmd.PersistentFlags().String(mpFileCLIParam, "mp.json", "File with model packaging content")
+	config.PanicIfError(viper.BindPFlag(packager_conf.MPFile, mainCmd.PersistentFlags().Lookup(mpFileCLIParam)))
+
+	mainCmd.PersistentFlags().String(mpIDCLIParam, "", "ID of the model packaging")
+	config.PanicIfError(viper.BindPFlag(packager_conf.ModelPackagingID, mainCmd.PersistentFlags().Lookup(mpIDCLIParam)))
+
+	mainCmd.PersistentFlags().String(ediURLCLIParam, "", "EDI URL")
+	config.PanicIfError(viper.BindPFlag(packager_conf.EdiURL, mainCmd.PersistentFlags().Lookup(ediURLCLIParam)))
+
+	mainCmd.PersistentFlags().String(outputConnectionNameCLIParam,
+		"It is a connection ID, which specifies where a artifact trained artifact is stored.",
+		"File with model packaging content",
+	)
+	config.PanicIfError(viper.BindPFlag(
+		packager_conf.OutputConnectionName,
+		mainCmd.PersistentFlags().Lookup(outputConnectionNameCLIParam)),
+	)
 
 	mainCmd.AddCommand(packagerSetupCmd, saveCmd)
 }
 
+func newPackagerWithHTTPRepositories() *packager.Packager {
+	packRepo := packaging_http_repository.NewRepository(
+		viper.GetString(packager_conf.EdiURL), viper.GetString(packager_conf.EdiToken),
+	)
+	connRepo := connection_http_repository.NewRepository(
+		viper.GetString(packager_conf.EdiURL), viper.GetString(packager_conf.EdiToken),
+	)
+
+	return packager.NewPackager(packRepo, connRepo, viper.GetString(packager_conf.ModelPackagingID))
+}
+
 func main() {
 	if err := mainCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Error(err, "packager CLI command failed")
+
 		os.Exit(1)
 	}
 }

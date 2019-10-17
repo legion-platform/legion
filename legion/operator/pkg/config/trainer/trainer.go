@@ -17,27 +17,35 @@
 package trainer
 
 import (
-	"github.com/legion-platform/legion/legion/operator/pkg/config"
 	"github.com/spf13/viper"
 	"os"
-	"path"
 )
 
 const (
-	MTFile            = "trainer.mt_file"
-	TargetPath        = "trainer.target_path"
-	SSHKeyPath        = "trainer.ssh_key_path"
+	// The path to the configuration file for a user trainer.
+	MTFile = "trainer.mt_file"
+	// The path to the dir when a user trainer will save their result.
 	OutputTrainingDir = "trainer.output_dir"
+	// EDI URL
+	EdiURL = "trainer.edi_url"
+	// It is a mock for the future. Currently, it is always empty.
+	EdiToken = "trainer.edi_token"
+	// It is a connection ID, which specifies where a artifact trained artifact is stored.
+	OutputConnectionName = "trainer.output_connection"
+	// ID of the model training
+	ModelTrainingID = "trainer.model_training_id"
 )
 
 func init() {
-	viper.SetDefault(SSHKeyPath, ".ssh/id_rsa")
-	config.PanicIfError(viper.BindEnv(SSHKeyPath, ".ssh/id_rsa"))
-
-	cwd, err := os.Getwd()
+	currentDir, err := os.Getwd()
 	if err != nil {
+		// Impossible situation
 		panic(err)
 	}
-	viper.SetDefault(TargetPath, path.Join(cwd, "legion/operator/target"))
-	viper.SetDefault(OutputTrainingDir, path.Join(viper.GetString(TargetPath), "output"))
+
+	viper.SetDefault(OutputTrainingDir, currentDir)
+	viper.SetDefault(MTFile, "mt.json")
+	viper.SetDefault(EdiURL, "http://localhost:5000")
+	viper.SetDefault(EdiToken, "")
+	viper.SetDefault(OutputConnectionName, "")
 }

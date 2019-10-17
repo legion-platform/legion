@@ -18,7 +18,7 @@ package connection
 
 import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 )
 
 const (

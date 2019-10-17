@@ -17,8 +17,9 @@
 package connection
 
 import (
+	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"io"
 	"net/http"
 )
@@ -31,7 +32,8 @@ type Repository interface {
 	GetModelTraining(id string) (*training.ModelTraining, error)
 	GetModelTrainingList(options ...kubernetes.ListOption) ([]training.ModelTraining, error)
 	GetModelTrainingLogs(id string, writer Writer, follow bool) error
-	SaveModelTrainingInfo(id string, info map[string]string) error
+	SaveModelTrainingResult(id string, result *legionv1alpha1.TrainingResult) error
+	GetModelTrainingResult(id string) (*legionv1alpha1.TrainingResult, error)
 	DeleteModelTraining(id string) error
 	UpdateModelTraining(md *training.ModelTraining) error
 	CreateModelTraining(md *training.ModelTraining) error

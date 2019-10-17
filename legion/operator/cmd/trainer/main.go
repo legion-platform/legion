@@ -17,13 +17,10 @@
 package main
 
 import (
-	"fmt"
-	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
-	train_conf "github.com/legion-platform/legion/legion/operator/pkg/config/training"
-	train_k8s_storage "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
-	"github.com/legion-platform/legion/legion/operator/pkg/utils"
-
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
+	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
+	conn_http_storage "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/http"
+	train_http_storage "github.com/legion-platform/legion/legion/operator/pkg/repository/training/http"
 	"github.com/legion-platform/legion/legion/operator/pkg/trainer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,48 +31,94 @@ import (
 var log = logf.Log.WithName("trainer-main")
 
 const (
-	mtFile = "mt-file"
+	mtFileCLIParam               = "mt-file"
+	mtIDCLIParam                 = "mt-id"
+	outputConnectionNameCLIParam = "output-connection-name"
+	ediURLCLIParam               = "edi-url"
+	outputTrainingDirCLIParam    = "output-dir"
 )
 
 var mainCmd = &cobra.Command{
-	Use:   "trainer",
-	Short: "Legion trainer cli",
+	Use:              "trainer",
+	Short:            "Legion trainer cli",
+	TraverseChildren: true,
+}
+
+var trainerSetupCmd = &cobra.Command{
+	Use:   "setup",
+	Short: "Prepare environment for a trainer",
 	Run: func(cmd *cobra.Command, args []string) {
-		mgr, err := utils.NewManager()
-		if err != nil {
-			log.Error(err, "K8S manager creation failed")
-		}
-
-		modelBuilder, err := trainer.NewModelTrainer(
-			train_k8s_storage.NewRepository(
-				viper.GetString(train_conf.Namespace),
-				viper.GetString(train_conf.ToolchainIntegrationNamespace),
-				mgr.GetClient(), mgr.GetConfig(),
-			),
-		)
-
-		if err != nil {
-			log.Error(err, "Creation of model trainer failed")
+		if err := newTrainerWithHTTPRepositories().Setup(); err != nil {
+			log.Error(err, "Training setup failed")
 			os.Exit(1)
 		}
+	},
+}
 
-		if err := modelBuilder.Start(); err != nil {
-			log.Error(err, "Build failed")
+var saveCmd = &cobra.Command{
+	Use:   "result",
+	Short: "Save a trainer result",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := newTrainerWithHTTPRepositories().SaveResult(); err != nil {
+			log.Error(err, "Result saving failed")
 			os.Exit(1)
 		}
 	},
 }
 
 func init() {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		// Impossible situation
+		panic(err)
+	}
+
 	config.InitBasicParams(mainCmd)
 
-	mainCmd.Flags().String(mtFile, "legion/operator/mt.json", "File with model training content")
-	config.PanicIfError(viper.BindPFlag(trainer_conf.MTFile, mainCmd.Flags().Lookup(mtFile)))
+	mainCmd.PersistentFlags().String(mtFileCLIParam, "mt.json", "File with model training content")
+	config.PanicIfError(viper.BindPFlag(trainer_conf.MTFile, mainCmd.PersistentFlags().Lookup(mtFileCLIParam)))
+
+	mainCmd.PersistentFlags().String(mtIDCLIParam, "", "ID of the model training")
+	config.PanicIfError(viper.BindPFlag(trainer_conf.ModelTrainingID, mainCmd.PersistentFlags().Lookup(mtIDCLIParam)))
+
+	mainCmd.PersistentFlags().String(ediURLCLIParam, "", "EDI URL")
+	config.PanicIfError(viper.BindPFlag(trainer_conf.EdiURL, mainCmd.PersistentFlags().Lookup(ediURLCLIParam)))
+
+	mainCmd.PersistentFlags().String(
+		outputTrainingDirCLIParam, currentDir,
+		"The path to the dir when a user trainer will save their result",
+	)
+	config.PanicIfError(viper.BindPFlag(
+		trainer_conf.OutputTrainingDir, mainCmd.PersistentFlags().Lookup(outputTrainingDirCLIParam),
+	))
+
+	mainCmd.PersistentFlags().String(outputConnectionNameCLIParam,
+		"It is a connection ID, which specifies where a artifact trained artifact is stored.",
+		"File with model training content",
+	)
+	config.PanicIfError(viper.BindPFlag(
+		trainer_conf.OutputConnectionName,
+		mainCmd.PersistentFlags().Lookup(outputConnectionNameCLIParam)),
+	)
+
+	mainCmd.AddCommand(trainerSetupCmd, saveCmd)
+}
+
+func newTrainerWithHTTPRepositories() *trainer.ModelTrainer {
+	trainRepo := train_http_storage.NewRepository(
+		viper.GetString(trainer_conf.EdiURL), viper.GetString(trainer_conf.EdiToken),
+	)
+	connRepo := conn_http_storage.NewRepository(
+		viper.GetString(trainer_conf.EdiURL), viper.GetString(trainer_conf.EdiToken),
+	)
+
+	return trainer.NewModelTrainer(trainRepo, connRepo, viper.GetString(trainer_conf.ModelTrainingID))
 }
 
 func main() {
 	if err := mainCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Error(err, "trainer CLI command failed")
+
 		os.Exit(1)
 	}
 }

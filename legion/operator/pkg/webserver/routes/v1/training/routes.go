@@ -33,6 +33,7 @@ func ConfigureRoutes(routeGroup *gin.RouterGroup, mtRepository mt_repository.Rep
 	routeGroup.GET(GetModelTrainingLogsURL, mtController.getModelTrainingLog)
 	routeGroup.POST(CreateModelTrainingURL, mtController.createMT)
 	routeGroup.PUT(UpdateModelTrainingURL, mtController.updateMT)
+	routeGroup.PUT(SaveModelTrainingResultURL, mtController.saveMPResults)
 	routeGroup.DELETE(DeleteModelTrainingURL, mtController.deleteMT)
 
 	tiController := &ToolchainIntegrationController{

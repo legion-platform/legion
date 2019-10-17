@@ -23,8 +23,14 @@ import (
 const (
 	// HTTP port with "/metric" endpoint
 	MonitoringPort = "operator.monitoring_port"
+	// EDI URL
+	EdiURL = "operator.edi_url"
+	// It is a mock for the future. Currently, it is always empty.
+	EdiToken = "operator.edi_token"
 )
 
 func init() {
 	viper.SetDefault(MonitoringPort, 7777)
+	viper.SetDefault(EdiURL, "http://localhost:5000")
+	viper.SetDefault(EdiToken, "")
 }

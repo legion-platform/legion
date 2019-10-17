@@ -26,6 +26,7 @@ import (
 	deployment_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment/kubernetes"
 	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	training_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/configuration"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/deployment"
@@ -34,6 +35,10 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	LegionV1ApiVersion = "api/v1"
 )
 
 func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConfig *rest.Config) {
@@ -52,7 +57,7 @@ func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConf
 		k8sConfig,
 	)
 
-	connection.ConfigureRoutes(routeGroup, connRepository)
+	connection.ConfigureRoutes(routeGroup, connRepository, utils.EvaluatePublicKey)
 	deployment.ConfigureRoutes(routeGroup, depRepository)
 	packaging.ConfigureRoutes(routeGroup, packRepository, connRepository)
 	training.ConfigureRoutes(routeGroup, trainRepository, connRepository)

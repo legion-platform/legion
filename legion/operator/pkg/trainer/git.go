@@ -17,10 +17,9 @@
 package trainer
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	trainer_conf "github.com/legion-platform/legion/legion/operator/pkg/config/trainer"
-	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
@@ -33,7 +32,7 @@ import (
 )
 
 const (
-	GitSSHKeyFileName = "id_rsa"
+	publicHostKeyFile = "known_hosts"
 )
 
 var (
@@ -46,15 +45,30 @@ var (
 
 // Clone repository and checkout user specific reference
 // Return commit id
-func CloneUserRepo(k8sTraining *training.K8sTrainer) (string, error) {
+func (mt *ModelTrainer) cloneUserRepo(
+	k8sTraining *training.K8sTrainer, cloneDir string) (string, error) {
 	vcsConn := k8sTraining.VCS
 
-	gitAuth, err := getSSHKeyAuth(viper.GetString(trainer_conf.SSHKeyPath))
+	decodedPublicHostKey, err := base64.StdEncoding.DecodeString(vcsConn.Spec.PublicKey)
 	if err != nil {
 		return "", err
 	}
 
-	cloneDir := viper.GetString(trainer_conf.TargetPath)
+	err = ioutil.WriteFile(publicHostKeyFile, decodedPublicHostKey, 0600)
+	if err != nil {
+		return "", err
+	}
+
+	decodedKeySecret, err := base64.StdEncoding.DecodeString(vcsConn.Spec.KeySecret)
+	if err != nil {
+		return "", err
+	}
+
+	gitAuth, err := getSSHKeyAuth(decodedKeySecret, publicHostKeyFile)
+	if err != nil {
+		return "", err
+	}
+
 	_ = os.RemoveAll(cloneDir)
 
 	repository, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
@@ -63,7 +77,7 @@ func CloneUserRepo(k8sTraining *training.K8sTrainer) (string, error) {
 		Auth:     gitAuth,
 	})
 	if err != nil {
-		log.Error(err, "Cloning git repository")
+		mt.log.Error(err, "Cloning git repository")
 		return "", err
 	}
 
@@ -75,13 +89,14 @@ func CloneUserRepo(k8sTraining *training.K8sTrainer) (string, error) {
 		Tags:     git.AllTags,
 	})
 	if err != nil {
-		log.Info("Fetching additional references failed")
+		mt.log.Info("Fetching additional references failed")
 	}
 
 	referenceName := k8sTraining.ModelTraining.Spec.Reference
-	hash, err := tryGetHash(repository, referenceName)
+	hash, err := mt.tryGetHash(repository, referenceName)
 	if err != nil {
-		log.Error(err, "Determine full reference name")
+		mt.log.Error(err, "Determine full reference name")
+
 		return "", err
 	}
 
@@ -94,26 +109,32 @@ func CloneUserRepo(k8sTraining *training.K8sTrainer) (string, error) {
 		Hash: hash,
 	})
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Checkout reference: %s", referenceName))
+		mt.log.Error(err, fmt.Sprintf("Checkout reference: %s", referenceName))
 	}
 
 	return hash.String(), err
 }
 
-func getSSHKeyAuth(sshKeyPath string) (transport.AuthMethod, error) {
+func getSSHKeyAuth(sshKey []byte, knownHostPath string) (transport.AuthMethod, error) {
 	var auth transport.AuthMethod
-
-	sshKey, err := ioutil.ReadFile(sshKeyPath)
-	if err != nil {
-		return auth, err
-	}
 
 	signer, err := ssh.ParsePrivateKey(sshKey)
 	if err != nil {
 		return auth, err
 	}
 
-	auth = &gogitssh.PublicKeys{User: "git", Signer: signer} //+safeToCommit
+	keyCallback, err := gogitssh.NewKnownHostsCallback(knownHostPath)
+	if err != nil {
+		return nil, err
+	}
+
+	auth = &gogitssh.PublicKeys{
+		User:   "git",
+		Signer: signer,
+		HostKeyCallbackHelper: gogitssh.HostKeyCallbackHelper{
+			HostKeyCallback: keyCallback,
+		},
+	} //+safeToCommit
 
 	return auth, nil
 }
@@ -127,36 +148,36 @@ func getSSHKeyAuth(sshKeyPath string) (transport.AuthMethod, error) {
 //   * commit hash
 //   * short commit hash
 // Return error if not one of the options did not fit
-func tryGetHash(repository *git.Repository, reference string) (plumbing.Hash, error) {
+func (mt *ModelTrainer) tryGetHash(repository *git.Repository, reference string) (plumbing.Hash, error) {
 	commitHash := plumbing.Hash{}
 
 	ref, err := repository.Reference(plumbing.ReferenceName(reference), true)
 	if err == nil {
-		log.Info(fmt.Sprintf("'%s' is a reference", reference))
+		mt.log.Info(fmt.Sprintf("'%s' is a reference", reference))
 		return ref.Hash(), nil
 	}
 
 	ref, err = repository.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/tags/%s", reference)), true)
 	if err == nil {
-		log.Info(fmt.Sprintf("'%s' is a tag", reference))
+		mt.log.Info(fmt.Sprintf("'%s' is a tag", reference))
 		return ref.Hash(), nil
 	}
 
 	ref, err = repository.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/remotes/%s", reference)), true)
 	if err == nil {
-		log.Info(fmt.Sprintf("'%s' is a branch", reference))
+		mt.log.Info(fmt.Sprintf("'%s' is a branch", reference))
 		return ref.Hash(), nil
 	}
 
 	ref, err = repository.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/remotes/origin/%s", reference)), true)
 	if err == nil {
-		log.Info(fmt.Sprintf("'%s' is a branch", reference))
+		mt.log.Info(fmt.Sprintf("'%s' is a branch", reference))
 		return ref.Hash(), nil
 	}
 
 	commit, err := repository.CommitObject(plumbing.NewHash(reference))
 	if err == nil {
-		log.Info(fmt.Sprintf("'%s' is a commit hash", reference))
+		mt.log.Info(fmt.Sprintf("'%s' is a commit hash", reference))
 		return commit.Hash, nil
 	}
 
@@ -175,7 +196,7 @@ func tryGetHash(repository *git.Repository, reference string) (plumbing.Hash, er
 		}
 
 		if commit.Hash.String()[:len(reference)] == reference {
-			log.Info(fmt.Sprintf("'%s' is a short commit hash", reference))
+			mt.log.Info(fmt.Sprintf("'%s' is a short commit hash", reference))
 			return commit.Hash, nil
 		}
 	}

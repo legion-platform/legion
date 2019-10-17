@@ -18,12 +18,14 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
 	"io"
@@ -39,6 +41,13 @@ var (
 	logMT       = logf.Log.WithName("model-training--repository")
 	MDMaxSize   = 500
 	MDFirstPage = 0
+	// List of packager steps in execution order
+	trainerContainerNames = []string{
+		utils.TektonContainerName(legion.TrainerSetupStep),
+		utils.TektonContainerName(legion.TrainerTrainStep),
+		utils.TektonContainerName(legion.TrainerResultStep),
+	}
+	resultConfigKey = "result"
 )
 
 func mtTransformToLabels(mt *training.ModelTraining) map[string]string {
@@ -57,36 +66,72 @@ func mtTransform(k8sMT *v1alpha1.ModelTraining) *training.ModelTraining {
 	}
 }
 
-func (kc *trainingK8sRepository) SaveModelTrainingInfo(id string, info map[string]string) error {
-	mt, err := kc.GetModelTraining(id)
+func (tkr *trainingK8sRepository) SaveModelTrainingResult(id string, result *v1alpha1.TrainingResult) error {
+	resultStorage := &corev1.ConfigMap{}
+	resultNamespacedName := types.NamespacedName{
+		Name:      legion.GenerateTrainingResultCMName(id),
+		Namespace: tkr.namespace,
+	}
+	if err := tkr.k8sClient.Get(context.TODO(), resultNamespacedName, resultStorage); err != nil {
+		logMT.Error(err, "Result config map must be present", "mt_id", id)
+		return err
+	}
+
+	oldResult := &v1alpha1.TrainingResult{}
+	resultBinary, ok := resultStorage.BinaryData[resultConfigKey]
+	if ok {
+		if err := json.Unmarshal(resultBinary, oldResult); err != nil {
+			return err
+		}
+
+		if len(result.CommitID) != 0 {
+			oldResult.CommitID = result.CommitID
+		}
+		if len(result.ArtifactName) != 0 {
+			oldResult.ArtifactName = result.ArtifactName
+		}
+		if len(result.RunID) != 0 {
+			oldResult.RunID = result.RunID
+		}
+	} else {
+		oldResult = result
+	}
+
+	resultJSON, err := json.Marshal(oldResult)
 	if err != nil {
 		return err
 	}
 
-	trainingPod := &corev1.Pod{}
-	trainingNamespacedName := types.NamespacedName{
-		Name:      mt.ID,
-		Namespace: kc.namespace,
-	}
-	if err := kc.k8sClient.Get(context.TODO(), trainingNamespacedName, trainingPod); err != nil {
-		return err
+	resultStorage.BinaryData = map[string][]byte{
+		resultConfigKey: resultJSON,
 	}
 
-	if len(trainingPod.Annotations) == 0 {
-		trainingPod.Annotations = map[string]string{}
-	}
-
-	for k, v := range info {
-		trainingPod.Annotations[k] = v
-	}
-
-	return kc.k8sClient.Update(context.TODO(), trainingPod)
+	return tkr.k8sClient.Update(context.TODO(), resultStorage)
 }
 
-func (kc *trainingK8sRepository) GetModelTraining(id string) (*training.ModelTraining, error) {
+func (tkr *trainingK8sRepository) GetModelTrainingResult(id string) (*v1alpha1.TrainingResult, error) {
+	resultStorage := &corev1.ConfigMap{}
+	resultNamespacedName := types.NamespacedName{
+		Name:      legion.GenerateTrainingResultCMName(id),
+		Namespace: tkr.namespace,
+	}
+	if err := tkr.k8sClient.Get(context.TODO(), resultNamespacedName, resultStorage); err != nil {
+		logMT.Error(err, "Result config map must be present", "mt_id", id)
+		return nil, err
+	}
+
+	trainingResult := &v1alpha1.TrainingResult{}
+	if err := json.Unmarshal(resultStorage.BinaryData[resultConfigKey], &trainingResult); err != nil {
+		return nil, err
+	}
+
+	return trainingResult, nil
+}
+
+func (tkr *trainingK8sRepository) GetModelTraining(id string) (*training.ModelTraining, error) {
 	k8sMD := &v1alpha1.ModelTraining{}
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: id, Namespace: kc.namespace},
+	if err := tkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: id, Namespace: tkr.namespace},
 		k8sMD,
 	); err != nil {
 		logMT.Error(err, "Get Model Training from k8s", "id", id)
@@ -97,7 +142,7 @@ func (kc *trainingK8sRepository) GetModelTraining(id string) (*training.ModelTra
 	return mtTransform(k8sMD), nil
 }
 
-func (kc *trainingK8sRepository) GetModelTrainingList(options ...kubernetes.ListOption) (
+func (tkr *trainingK8sRepository) GetModelTrainingList(options ...kubernetes.ListOption) (
 	[]training.ModelTraining, error,
 ) {
 	var k8sMDList v1alpha1.ModelTrainingList
@@ -119,9 +164,9 @@ func (kc *trainingK8sRepository) GetModelTrainingList(options ...kubernetes.List
 	continueToken := ""
 
 	for i := 0; i < *listOptions.Page+1; i++ {
-		if err := kc.k8sClient.List(context.TODO(), &client.ListOptions{
+		if err := tkr.k8sClient.List(context.TODO(), &client.ListOptions{
 			LabelSelector: labelSelector,
-			Namespace:     kc.namespace,
+			Namespace:     tkr.namespace,
 			Raw: &metav1.ListOptions{
 				Limit:    int64(*listOptions.Size),
 				Continue: continueToken,
@@ -148,15 +193,15 @@ func (kc *trainingK8sRepository) GetModelTrainingList(options ...kubernetes.List
 	return mts, nil
 }
 
-func (kc *trainingK8sRepository) DeleteModelTraining(id string) error {
+func (tkr *trainingK8sRepository) DeleteModelTraining(id string) error {
 	mt := &v1alpha1.ModelTraining{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
-			Namespace: kc.namespace,
+			Namespace: tkr.namespace,
 		},
 	}
 
-	if err := kc.k8sClient.Delete(context.TODO(), mt); err != nil {
+	if err := tkr.k8sClient.Delete(context.TODO(), mt); err != nil {
 		logMT.Error(err, "Delete Model Training from k8s", "id", id)
 
 		return err
@@ -165,10 +210,10 @@ func (kc *trainingK8sRepository) DeleteModelTraining(id string) error {
 	return nil
 }
 
-func (kc *trainingK8sRepository) UpdateModelTraining(mt *training.ModelTraining) error {
+func (tkr *trainingK8sRepository) UpdateModelTraining(mt *training.ModelTraining) error {
 	var k8sMD v1alpha1.ModelTraining
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: mt.ID, Namespace: kc.namespace},
+	if err := tkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: mt.ID, Namespace: tkr.namespace},
 		&k8sMD,
 	); err != nil {
 		logMT.Error(err, "Get Model Training from k8s", "name", mt.ID)
@@ -184,7 +229,7 @@ func (kc *trainingK8sRepository) UpdateModelTraining(mt *training.ModelTraining)
 	k8sMD.Status.Message = nil
 	k8sMD.ObjectMeta.Labels = mtTransformToLabels(mt)
 
-	if err := kc.k8sClient.Update(context.TODO(), &k8sMD); err != nil {
+	if err := tkr.k8sClient.Update(context.TODO(), &k8sMD); err != nil {
 		logMT.Error(err, "Update of the Model Training", "name", mt.ID)
 
 		return err
@@ -193,17 +238,17 @@ func (kc *trainingK8sRepository) UpdateModelTraining(mt *training.ModelTraining)
 	return nil
 }
 
-func (kc *trainingK8sRepository) CreateModelTraining(mt *training.ModelTraining) error {
+func (tkr *trainingK8sRepository) CreateModelTraining(mt *training.ModelTraining) error {
 	k8sMd := &v1alpha1.ModelTraining{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mt.ID,
-			Namespace: kc.namespace,
+			Namespace: tkr.namespace,
 			Labels:    mtTransformToLabels(mt),
 		},
 		Spec: mt.Spec,
 	}
 
-	if err := kc.k8sClient.Create(context.TODO(), k8sMd); err != nil {
+	if err := tkr.k8sClient.Create(context.TODO(), k8sMd); err != nil {
 		logMT.Error(err, "ModelTraining creation error from k8s", "name", mt.ID)
 
 		return err
@@ -212,10 +257,10 @@ func (kc *trainingK8sRepository) CreateModelTraining(mt *training.ModelTraining)
 	return nil
 }
 
-func (kc *trainingK8sRepository) GetModelTrainingLogs(id string, writer mt_repository.Writer, follow bool) error {
+func (tkr *trainingK8sRepository) GetModelTrainingLogs(id string, writer mt_repository.Writer, follow bool) error {
 	var mt v1alpha1.ModelTraining
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: id, Namespace: kc.namespace},
+	if err := tkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: id, Namespace: tkr.namespace},
 		&mt,
 	); err != nil {
 		return err
@@ -225,11 +270,26 @@ func (kc *trainingK8sRepository) GetModelTrainingLogs(id string, writer mt_repos
 		return fmt.Errorf("model Training %s has not started yet", id)
 	}
 
-	reader, err := utils.StreamLogs(kc.namespace, kc.k8sConfig, id, "trainer", follow)
-	if err != nil {
-		return err
+	logReaders := make([]io.Reader, 0, len(trainerContainerNames))
+
+	// Collect logs from all containers in execution order
+	for _, containerName := range trainerContainerNames {
+		reader, err := utils.StreamLogs(
+			tkr.namespace,
+			tkr.k8sConfig,
+			mt.Status.PodName,
+			containerName,
+			follow,
+		)
+		if err != nil {
+			return err
+		}
+		defer reader.Close()
+
+		logReaders = append(logReaders, reader)
 	}
-	defer reader.Close()
+	logReader := io.MultiReader(logReaders...)
+
 	clientGone := writer.CloseNotify()
 	for {
 		logFlushSize := viper.GetInt64(config_deployment.ModelLogsFlushSize)
@@ -238,7 +298,7 @@ func (kc *trainingK8sRepository) GetModelTrainingLogs(id string, writer mt_repos
 		case <-clientGone:
 			return nil
 		default:
-			_, err := io.CopyN(writer, reader, logFlushSize)
+			_, err := io.CopyN(writer, logReader, logFlushSize)
 			if err != nil {
 				if err == io.EOF {
 					logMT.Error(err, "Error during coping of log stream")
