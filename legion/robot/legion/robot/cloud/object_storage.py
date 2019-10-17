@@ -186,7 +186,7 @@ class AzureBlobStorage(ObjectStorage):
         sm_client: StorageManagementClient = get_client_from_cli_profile(StorageManagementClient)
 
         for storage_account in sm_client.storage_accounts.list():
-            if storage_account.tags.get('cluster') == cluster_name:
+            if storage_account.tags.get('cluster') == cluster_name and storage_account.tags.get('purpose') == 'Legion models storage': # pylint: disable=line-too-long
                 sa_name = storage_account.name
                 break
         else:
@@ -196,7 +196,7 @@ class AzureBlobStorage(ObjectStorage):
         sa_keys = sm_client.storage_accounts.list_keys(resource_group_name=cluster_name, account_name=sa_name)
         if not sa_keys.keys:
             raise ValueError(
-                f'Cannot find a keys for the {sa_name} storage account in the {cluster_name} resource group')
+                f'Cannot find keys for the {sa_name} storage account in the {cluster_name} resource group')
 
         return BlockBlobService(
             account_name=sa_name,
@@ -220,4 +220,4 @@ def build_client(cloud_type: str, bucket: str, cluster_name: str) -> ObjectStora
     elif cloud_type == "azure":
         return AzureBlobStorage(bucket, cluster_name)
     else:
-        raise ValueError('Cloud type parameter must be "gcp"" or "aws"')
+        raise ValueError('Cloud type parameter must be "gcp"", "aws" or "azure"')
