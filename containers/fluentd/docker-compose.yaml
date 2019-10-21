@@ -22,9 +22,8 @@ version: "3"
 
 services:
   fluentd:
-    image: k8s.gcr.io/fluentd-elasticsearch:v2.0.4
-    environment:
-      - FLUENTD_ARGS=-c /opt/fluent-config/fluent.conf
+    image: fluent/fluentd:v1.7
+    command: -c /opt/fluent-config/fluent.conf
     ports:
       - 24224:24224/tcp
       - 24224:24224/udp
