@@ -255,6 +255,7 @@ feedback:
     # Valid values:
     # s3 - AWS S3
     # gcs - Google Cloud Storage
+    # azureblob - Azure Blob Storage
     target: "s3"
 
     # Detail configuration for storing on GCS
@@ -348,6 +349,26 @@ feedback:
       # S3 region
       # Type: string
       region: ~
+
+    # Detail configuration for storing data in Azure Blob storage
+    azureblob:
+      # Type of authorization in Azure Blob storage
+      # Valid values are:
+      #   - accesskey
+      #   - sas
+      authorization: "accesskey"
+
+      #
+      # Type: string
+      #AzureStorageAccount: ~
+
+      #
+      # Type: string
+      #AzureStorageAccessKey: ~
+
+      # Azure Blob container name
+      # Type: string
+      bucket: ~
 
     # Storage type
     # Type: string

@@ -32,6 +32,7 @@ from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 from legion.sdk.clients.packaging import ModelPackaging, ModelPackagingClient, SUCCEEDED_STATE, FAILED_STATE
 
 DEFAULT_WAIT_TIMEOUT = 3
+DEFAULT_PACKAGING_TIMEOUT = 2400
 LOG_READ_TIMEOUT_SECONDS = 60
 
 LOGGER = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ def get(client: ModelPackagingClient, pack_id: str, output_format: str):
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
 @click.option('--artifact-name', type=str, help='Override artifact name from file')
-@click.option('--timeout', default=1200, type=int,
+@click.option('--timeout', default=DEFAULT_PACKAGING_TIMEOUT, type=int,
               help='timeout in seconds. for wait (if no-wait is off)')
 @pass_obj
 def create(client: ModelPackagingClient, pack_id: str, file: str, wait: bool, timeout: int,
@@ -123,7 +124,7 @@ def create(client: ModelPackagingClient, pack_id: str, file: str, wait: bool, ti
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
 @click.option('--artifact-name', type=str, help='Override artifact name from file')
-@click.option('--timeout', default=1200, type=int,
+@click.option('--timeout', default=DEFAULT_PACKAGING_TIMEOUT, type=int,
               help='timeout in seconds. for wait (if no-wait is off)')
 @pass_obj
 def edit(client: ModelPackagingClient, pack_id: str, file: str, wait: bool, timeout: int,

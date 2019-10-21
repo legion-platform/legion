@@ -196,6 +196,21 @@ func TestGcsTypeRoleAndSecretPresent(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring(conn_route.GcsTypeRoleAndKeySecretEmptyErrorMessage))
 }
 
+func TestAzureBlobTypeSecretMissed(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	conn := &connection.Connection{
+		ID: connID,
+		Spec: v1alpha1.ConnectionSpec{
+			Type:      connection.AzureBlobType,
+			URI:       connURI,
+		},
+	}
+	err := conn_route.NewConnValidator().ValidatesAndSetDefaults(conn)
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring(conn_route.AzureBlobTypeKeySecretEmptyErrorMessage))
+}
+
 func TestS3TypeRegion(t *testing.T) {
 	g := NewGomegaWithT(t)
 

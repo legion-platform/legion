@@ -43,11 +43,11 @@ class Feedback:
     WAIT_FILE_TIME = 10
     WAIT_FILE_ITERATIONS = 12
 
-    def __init__(self, cloud_type, bucket):
+    def __init__(self, cloud_type, bucket, cluster_name):
         """
         Init client
         """
-        self._client = object_storage.build_client(cloud_type, bucket)
+        self._client = object_storage.build_client(cloud_type, bucket, cluster_name)
 
     @staticmethod
     def get_paths_with_lag(*paths, **kwargs):

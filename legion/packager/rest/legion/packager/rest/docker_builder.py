@@ -96,11 +96,12 @@ def build_docker_image_buildah(context,
 
     logging.info('Starting building of new image')
     build_args = [
-        BUILDAH_BIN, 'bud',
+        BUILDAH_BIN, 'build-using-dockerfile',
         *_extract_buildah_credentials(pull_connection),
-        '-f', docker_file,
+        '--file', docker_file,
+        '--format', 'docker',
         '--compress',
-        '-t', remote_tag,
+        '--tag', remote_tag,
         context
     ]
     run(*build_args)

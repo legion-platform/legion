@@ -9,3 +9,5 @@ robotframework>=3.0.2
 robotframework-pabot>=0.44
 pyyaml>=3.1.2
 google-cloud-storage>=1.18.0
+azure-storage-blob>=1.5.0
+azure-cli-core>=2.0.75

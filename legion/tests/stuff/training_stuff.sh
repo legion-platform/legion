@@ -37,7 +37,25 @@ function pack_model() {
   cd -
 
   # Pushes trained zip artifact to the bucket
-  gsutil cp "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" "gs://${CLUSTER_NAME}-data-store/output/${mp_id}.zip"
+  case "${CLOUD_PROVIDER}" in
+  aws)
+    aws s3 cp "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" "s3://${CLUSTER_NAME}-data-store/output/${mp_id}.zip"
+    ;;
+  azure)
+    STORAGE_ACCOUNT=$(az storage account list -g ${CLUSTER_NAME} --query "[?tags.cluster=='${CLUSTER_NAME}' && tags.purpose=='Legion models storage'].[name]" -otsv)
+    az storage blob upload --account-name ${STORAGE_ACCOUNT} -c ${CLUSTER_NAME}-data-store \
+      -f "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" -n "output/${mp_id}.zip"
+    ;;
+  gcp)
+    gsutil cp "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" "gs://${CLUSTER_NAME}-data-store/output/${mp_id}.zip"
+    ;;
+  *)
+    echo "Unexpected CLOUD_PROVIDER: ${CLOUD_PROVIDER}"
+    usage
+    exit 1
+    ;;
+  esac
+
   rm "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip"
 
   # Repackages trained artifact to a docker image
@@ -52,10 +70,10 @@ function wait_all_background_task() {
 
   for job in $(jobs -p); do
     echo "${job} waiting..."
-    wait "${job}" || ((fail_tasks + 1))
+    wait "${job}" || ((fail_tasks=fail_tasks + 1))
   done
 
-  if [[ "$fail_tasks" != "0" ]]; then
+  if [[ "$fail_tasks" -ne "0" ]]; then
     echo "Failed $fail_tasks linters"
     exit 1
   fi
@@ -75,8 +93,24 @@ function setup() {
   rm "${LEGION_RESOURCES}/training_data_helper_ti.json"
 
   # Pushes a test data to the bucket
-  gsutil cp -r "${TEST_DATA}/" "gs://${CLUSTER_NAME}-data-store/test-data/"
-
+  case "${CLOUD_PROVIDER}" in
+  aws)
+    aws s3 cp --recursive "${TEST_DATA}/" "s3://${CLUSTER_NAME}-data-store/test-data/"
+    ;;
+  azure)
+    STORAGE_ACCOUNT=$(az storage account list -g ${CLUSTER_NAME} --query "[?tags.cluster=='${CLUSTER_NAME}' && tags.purpose=='Legion models storage'].[name]" -otsv)
+    az storage blob upload-batch --account-name ${STORAGE_ACCOUNT} --source "${TEST_DATA}/" \
+      --destination "${CLUSTER_NAME}-data-store" --destination-path "test-data"
+    ;;
+  gcp)
+    gsutil cp -r "${TEST_DATA}/" "gs://${CLUSTER_NAME}-data-store/test-data/"
+    ;;
+  *)
+    echo "Unexpected CLOUD_PROVIDER: ${CLOUD_PROVIDER}"
+    usage
+    exit 1
+    ;;
+  esac
   wait_all_background_task
 }
 

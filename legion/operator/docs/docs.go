@@ -2298,7 +2298,7 @@ var doc = `{
                     "type": "string"
                 },
                 "type": {
-                    "description": "Required value. Available values:\n  * s3\n  * gcs\n  * git\n  * docker",
+                    "description": "Required value. Available values:\n  * s3\n  * gcs\n  * azureblob\n  * git\n  * docker",
                     "type": "string"
                 },
                 "uri": {

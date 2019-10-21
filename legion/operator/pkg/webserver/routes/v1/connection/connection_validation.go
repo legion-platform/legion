@@ -39,6 +39,8 @@ const (
 	GcsTypeRegionErrorMessage                = "gcs type requires that region must be non-empty"
 	GcsTypeRoleAndKeySecretEmptyErrorMessage = "gcs type requires that either role or keySecret parameter" +
 		" must be non-empty"
+	AzureBlobTypeKeySecretEmptyErrorMessage = "azureblob type requires that keySecret parameter contains" +
+		"HTTP endpoint with SAS Token"
 	S3TypeRegionErrorMessage                = "s3 type requires that region must be non-empty"
 	S3TypeRoleAndKeySecretEmptyErrorMessage = "s3 type requires that either role or keySecret parameter" +
 		" must be non-empty"
@@ -75,6 +77,8 @@ func (cv *ConnValidator) ValidatesAndSetDefaults(conn *connection.Connection) (e
 		err = multierr.Append(err, validateS3Type(conn))
 	case connection.GcsType:
 		err = multierr.Append(err, validateGcsType(conn))
+	case connection.AzureBlobType:
+		err = multierr.Append(err, validateAzureBlobType(conn))
 	case connection.DockerType:
 		err = multierr.Append(err, validateDockerType(conn))
 	default:
@@ -115,6 +119,14 @@ func validateGcsType(conn *connection.Connection) (err error) {
 
 	if len(conn.Spec.Role) != 0 && len(conn.Spec.KeySecret) != 0 {
 		err = multierr.Append(err, errors.New(GcsTypeRoleAndKeySecretEmptyErrorMessage))
+	}
+
+	return
+}
+
+func validateAzureBlobType(conn *connection.Connection) (err error) {
+	if len(conn.Spec.KeySecret) == 0 {
+		err = multierr.Append(err, errors.New(AzureBlobTypeKeySecretEmptyErrorMessage))
 	}
 
 	return

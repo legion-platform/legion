@@ -58,6 +58,7 @@ var (
 			ConnectionTypes: []string{
 				string(connection.S3Type),
 				string(connection.GcsType),
+				string(connection.AzureBlobType),
 			},
 			Required: false,
 		},

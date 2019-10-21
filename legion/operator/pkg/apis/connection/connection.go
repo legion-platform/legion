@@ -19,15 +19,16 @@ package connection
 import "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 
 const (
-	S3Type     = v1alpha1.ConnectionType("s3")
-	GcsType    = v1alpha1.ConnectionType("gcs")
-	GITType    = v1alpha1.ConnectionType("git")
-	DockerType = v1alpha1.ConnectionType("docker")
+	S3Type        = v1alpha1.ConnectionType("s3")
+	GcsType       = v1alpha1.ConnectionType("gcs")
+	AzureBlobType = v1alpha1.ConnectionType("azureblob")
+	GITType       = v1alpha1.ConnectionType("git")
+	DockerType    = v1alpha1.ConnectionType("docker")
 )
 
 var (
 	AllConnectionTypes = []v1alpha1.ConnectionType{
-		S3Type, GcsType, GITType, DockerType,
+		S3Type, GcsType, AzureBlobType, GITType, DockerType,
 	}
 	AllConnectionTypesSet = map[v1alpha1.ConnectionType]interface{}{}
 )

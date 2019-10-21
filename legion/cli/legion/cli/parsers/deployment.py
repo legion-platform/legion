@@ -30,6 +30,7 @@ from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 
 DEFAULT_WAIT_TIMEOUT = 5
+DEFAULT_DEPLOYMENT_TIMEOUT = 600
 
 DEFAULT_WIDTH = 120
 MD_HEADER = ["Name", "State", "Min/Current/Max Replicas", "Service URL"]
@@ -83,7 +84,7 @@ def get(client: ModelDeploymentClient, md_id: str, output_format: str):
 @click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with deployment')
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
-@click.option('--timeout', default=600, type=int, callback=positive_number,
+@click.option('--timeout', default=DEFAULT_DEPLOYMENT_TIMEOUT, type=int, callback=positive_number,
               help='timeout in seconds. for wait (if no-wait is off)')
 @click.option('--image', type=str, help='Override Docker image from file')
 @pass_obj
@@ -124,7 +125,7 @@ def create(client: ModelDeploymentClient, md_id: str, file: str, wait: bool, tim
 @click.option('--file', '-f', type=click.Path(), required=True, help='Path to the file with deployment')
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
-@click.option('--timeout', default=600, type=int, callback=positive_number,
+@click.option('--timeout', default=DEFAULT_DEPLOYMENT_TIMEOUT, type=int, callback=positive_number,
               help='timeout in seconds. for wait (if no-wait is off)')
 @click.option('--image', type=str, help='Override Docker image from file')
 @pass_obj
@@ -165,7 +166,7 @@ def edit(client: ModelDeploymentClient, md_id: str, file: str, wait: bool, timeo
 @click.option('--file', '-f', type=click.Path(), help='Path to the file with deployment')
 @click.option('--wait/--no-wait', default=True,
               help='no wait until scale will be finished')
-@click.option('--timeout', default=600, type=int, callback=positive_number,
+@click.option('--timeout', default=DEFAULT_DEPLOYMENT_TIMEOUT, type=int, callback=positive_number,
               help='timeout in seconds. for wait (if no-wait is off)')
 @click.option('--ignore-not-found/--not-ignore-not-found', default=False,
               help='ignore if Model Deployment is not found')

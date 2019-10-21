@@ -285,7 +285,7 @@ class ConnectionSpec(Model):
     def type(self) -> str:
         """Gets the type of this ConnectionSpec.
 
-        Required value. Available values:   * s3   * gcs   * git   * docker  # noqa: E501
+        Required value. Available values:   * s3   * gcs   * azureblob   * git   * docker  # noqa: E501
 
         :return: The type of this ConnectionSpec.
         :rtype: str
@@ -296,7 +296,7 @@ class ConnectionSpec(Model):
     def type(self, type: str):
         """Sets the type of this ConnectionSpec.
 
-        Required value. Available values:   * s3   * gcs   * git   * docker  # noqa: E501
+        Required value. Available values:   * s3   * gcs   * azureblob   * git   * docker  # noqa: E501
 
         :param type: The type of this ConnectionSpec.
         :type type: str
