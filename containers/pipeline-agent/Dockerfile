@@ -16,8 +16,8 @@
 
 FROM python:3.6.8
 
-ENV KUBECTL_VERSION=v1.13.8 \
-    HELM_VERSION=v2.14.3
+ENV KUBECTL_VERSION=v1.13.11 \
+    HELM_VERSION=v2.15.0
 
 # Install python package dependencies and cloud CLI tools
 RUN apt-get update && apt-get install -y --no-install-recommends apt-transport-https software-properties-common \
