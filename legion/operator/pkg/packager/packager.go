@@ -18,9 +18,14 @@ package packager
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/go-logr/logr"
+	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	packager_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packager"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/rclone"
+	connection_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
 	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
@@ -30,23 +35,45 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var (
-	log = logf.Log.WithName("packager")
-)
-
 const (
 	resultFileName     = "result.json"
 	modelPackagingFile = "mp.json"
 )
 
-func SetupPackager() (err error) {
-	k8sPackaging, err := getPackaging()
+type Packager struct {
+	packRepo         packaging_repository.Repository
+	connRepo         connection_repository.Repository
+	log              logr.Logger
+	modelPackagingID string
+}
+
+func NewPackager(
+	packRepo packaging_repository.Repository,
+	connRepo connection_repository.Repository,
+	modelPackagingID string,
+) *Packager {
+	return &Packager{
+		packRepo: packRepo,
+		connRepo: connRepo,
+		log: logf.Log.WithName("packager").WithValues(
+			legion.ModelPackagingIDLogPrefix, modelPackagingID,
+		),
+		modelPackagingID: modelPackagingID,
+	}
+}
+
+// This function prepares a packaging environment. To do this, it performs the following steps:
+//   1) It extracts the packaging entity from repository storage, for example, from the EDI server.
+//   2) It downloads a trained artifact from object storage.
+//   4) Finally, it saves the packaging entity to allow a packager to use it.
+func (p *Packager) SetupPackager() (err error) {
+	k8sPackaging, err := p.getPackaging()
 	if err != nil {
 		return err
 	}
 
-	if err := downloadData(k8sPackaging); err != nil {
-		log.Error(err, "Downloading packaging data failed", "mp name", k8sPackaging.ModelPackaging.ID)
+	if err := p.downloadData(k8sPackaging); err != nil {
+		p.log.Error(err, "Downloading packaging data failed")
 		return err
 	}
 
@@ -58,91 +85,90 @@ func SetupPackager() (err error) {
 	return ioutil.WriteFile(modelPackagingFile, mtBytes, 0644)
 }
 
-func SaveResult(repository packaging_repository.Repository) error {
-	k8sPackaging, err := getPackaging()
+// This function saves a packaging result. To do this, it performs the following steps:
+//   1) It extracts the packaging entity from repository storage, for example, from the EDI server.
+//   2) It reads the packaging result file from workspace.
+//   4) Finally, it saves the packaging results.
+func (p *Packager) SaveResult() error {
+	k8sPackaging, err := p.getPackaging()
 	if err != nil {
 		return err
 	}
 
 	resultFile, err := os.Open(resultFileName)
 	if err != nil {
-		log.Error(err, "Open result file")
+		p.log.Error(err, "Open result file")
 		return err
 	}
 	defer resultFile.Close()
 
 	byteResult, err := ioutil.ReadAll(resultFile)
 	if err != nil {
-		log.Error(err, "Read from result file")
+		p.log.Error(err, "Read from result file")
 		return err
 	}
+
 	var result map[string]string
-
 	if err := json.Unmarshal(byteResult, &result); err != nil {
-		log.Error(err, "Unmarshal result")
+		p.log.Error(err, "Unmarshal result")
 		return err
 	}
 
-	return repository.SaveModelPackagingResult(k8sPackaging.ModelPackaging.ID, result)
+	packResult := make([]v1alpha1.ModelPackagingResult, 0, len(result))
+	for name, value := range result {
+		packResult = append(packResult, v1alpha1.ModelPackagingResult{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	return p.packRepo.SaveModelPackagingResult(k8sPackaging.ModelPackaging.ID, packResult)
 }
 
-func getPackaging() (*packaging.K8sPackager, error) {
-	k8sPackaging := &packaging.K8sPackager{}
-
-	k8sPackagingFile, err := os.Open(viper.GetString(packager_conf.MPFile))
-	if err != nil {
-		return nil, err
-	}
-
-	k8sPackagingBytes, err := ioutil.ReadAll(k8sPackagingFile)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(k8sPackagingBytes, k8sPackaging)
-	if err != nil {
-		return nil, err
-	}
-
-	return k8sPackaging, nil
-}
-
-func downloadData(packaging *packaging.K8sPackager) (err error) {
+func (p *Packager) downloadData(packaging *packaging.K8sPackager) (err error) {
+	fmt.Println(packaging)
 	storage, err := rclone.NewObjectStorage(&packaging.ModelHolder.Spec)
 	if err != nil {
-		log.Error(err, "repository creation")
+		p.log.Error(err, "repository creation")
 
 		return err
 	}
 
 	file, err := os.Create(packaging.TrainingZipName)
 	if err != nil {
-		log.Error(err, "zip creation")
+		p.log.Error(err, "zip creation")
 
 		return err
 	}
 
 	defer func() {
-		err = file.Close()
+		closeErr := file.Close()
+		if closeErr != nil {
+			p.log.Error(err, "Error during closing of the file")
+		}
+
+		if err == nil {
+			err = closeErr
+		}
 	}()
 
 	if err := storage.Download(
 		packaging.TrainingZipName,
 		path.Join(storage.RemoteConfig.Path, packaging.TrainingZipName),
 	); err != nil {
-		log.Error(err, "download training zip")
+		p.log.Error(err, "download training zip")
 
 		return err
 	}
 
-	if err = os.Mkdir(viper.GetString(packager_conf.OutputTrainingDir), 0777); err != nil {
-		log.Error(err, "output dir creation")
+	if err = os.Mkdir(viper.GetString(packager_conf.OutputPackagingDir), 0777); err != nil {
+		p.log.Error(err, "output dir creation")
 
 		return err
 	}
 
-	if err := utils.Unzip(packaging.TrainingZipName, viper.GetString(packager_conf.OutputTrainingDir)); err != nil {
-		log.Error(err, "unzip training data")
+	if err := utils.Unzip(packaging.TrainingZipName, viper.GetString(packager_conf.OutputPackagingDir)); err != nil {
+		p.log.Error(err, "unzip training data")
 
 		return err
 	}

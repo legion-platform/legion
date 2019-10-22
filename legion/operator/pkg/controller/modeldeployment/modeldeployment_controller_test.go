@@ -20,7 +20,7 @@ import (
 	"context"
 	knservingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -99,6 +99,7 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), md)
 
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	configuration := &knservingv1alpha1.Configuration{}

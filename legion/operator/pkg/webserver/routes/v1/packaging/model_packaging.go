@@ -19,9 +19,10 @@ package packaging
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	"reflect"
@@ -32,14 +33,15 @@ import (
 var logMP = logf.Log.WithName("MP-controller")
 
 const (
-	GetModelPackagingURL     = "/model/packaging/:id"
-	GetModelPackagingLogsURL = "/model/packaging/:id/log"
-	GetAllModelPackagingURL  = "/model/packaging"
-	CreateModelPackagingURL  = "/model/packaging"
-	UpdateModelPackagingURL  = "/model/packaging"
-	DeleteModelPackagingURL  = "/model/packaging/:id"
-	IDMpURLParam             = "id"
-	FollowURLParam           = "follow"
+	GetModelPackagingURL        = "/model/packaging/:id"
+	GetModelPackagingLogsURL    = "/model/packaging/:id/log"
+	GetAllModelPackagingURL     = "/model/packaging"
+	CreateModelPackagingURL     = "/model/packaging"
+	UpdateModelPackagingURL     = "/model/packaging"
+	SaveModelPackagingResultURL = "/model/packaging/:id/result"
+	DeleteModelPackagingURL     = "/model/packaging/:id"
+	IDMpURLParam                = "id"
+	FollowURLParam              = "follow"
 )
 
 var (
@@ -191,6 +193,39 @@ func (mpc *ModelPackagingController) updateMP(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, mp)
+}
+
+// @Summary Save a Model Packaging result
+// @Description Save a Model Packaging by id
+// @Tags Packaging
+// @Name id
+// @Accept  json
+// @Produce  json
+// @Param MP body v1alpha1.ModelPackagingResult true "Model Packaging result"
+// @Param id path string true "Model Packaging id"
+// @Success 200 {array} v1alpha1.ModelPackagingResult
+// @Failure 404 {object} routes.HTTPResult
+// @Failure 400 {object} routes.HTTPResult
+// @Router /api/v1/model/packaging/{id}/result [put]
+func (mpc *ModelPackagingController) saveMPResults(c *gin.Context) {
+	mpID := c.Param(IDMpURLParam)
+	mpResult := make([]v1alpha1.ModelPackagingResult, 0)
+
+	if err := c.ShouldBindJSON(&mpResult); err != nil {
+		logMP.Error(err, "JSON binding of the model packaging result is failed")
+		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
+
+		return
+	}
+
+	if err := mpc.repository.SaveModelPackagingResult(mpID, mpResult); err != nil {
+		logMP.Error(err, fmt.Sprintf("Save the result of the model packaging: %+v", mpResult))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, mpResult)
 }
 
 // @Summary Delete a Model Packaging

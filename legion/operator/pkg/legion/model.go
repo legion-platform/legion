@@ -28,10 +28,7 @@ type Model struct {
 }
 
 const (
-	ManifestFile      = "manifest.json"
-	ModelCommitID     = "model-commit-id"
-	TrainingOutputZip = "training-output-zip"
-	TrainingRunID     = "training-run-id"
+	ManifestFile = "manifest.json"
 )
 
 type TrainingZipNameConfig struct {

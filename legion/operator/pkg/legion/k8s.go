@@ -28,14 +28,20 @@ import (
 
 const (
 	LastAppliedHashAnnotation = "operator.legion.org/last-applied-hash"
+	PackagerSetupStep         = "setup"
+	PackagerPackageStep       = "packager"
+	PackagerResultStep        = "result"
+	TrainerSetupStep          = "setup"
+	TrainerTrainStep          = "trainer"
+	TrainerResultStep         = "result"
 )
 
-func GenerateConnectionSecretName(vcsName string) string {
-	return fmt.Sprintf("%s-vcs", vcsName)
+func GeneratePackageResultCMName(mpID string) string {
+	return fmt.Sprintf("%s-mp-result", mpID)
 }
 
-func GeneratePackageResultCMName(mpID string) string {
-	return fmt.Sprintf("%s-result", mpID)
+func GenerateTrainingResultCMName(mtID string) string {
+	return fmt.Sprintf("%s-mt-result", mtID)
 }
 
 // Compute hash and store it in the annotations

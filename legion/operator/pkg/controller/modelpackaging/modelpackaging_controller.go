@@ -18,15 +18,14 @@ package modelpackaging
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	conn_conf "github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	packaging_conf "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
+	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	mp_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
+	packaging_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	"github.com/spf13/viper"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -45,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 var log = logf.Log.WithName("model-packager-controller")
@@ -58,7 +55,19 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileModelPackaging{Client: mgr.GetClient(), scheme: mgr.GetScheme(), config: mgr.GetConfig()}
+	k8sClient := mgr.GetClient()
+
+	return &ReconcileModelPackaging{
+		Client: k8sClient,
+		scheme: mgr.GetScheme(),
+		config: mgr.GetConfig(),
+		packRepo: packaging_k8s_repository.NewRepository(
+			viper.GetString(packaging_conf.Namespace),
+			viper.GetString(packaging_conf.PackagingIntegrationNamespace),
+			k8sClient,
+			mgr.GetConfig(),
+		),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -99,13 +108,13 @@ var _ reconcile.Reconciler = &ReconcileModelPackaging{}
 // ReconcileModelPackaging reconciles a ModelPackaging object
 type ReconcileModelPackaging struct {
 	client.Client
-	scheme *runtime.Scheme
-	config *rest.Config
+	scheme   *runtime.Scheme
+	config   *rest.Config
+	packRepo packaging_repository.Repository
 }
 
 const (
 	mpContentFile    = "mp.json"
-	packagerConfig   = "packager.conf.json"
 	evictedPodReason = "Evicted"
 )
 
@@ -122,23 +131,6 @@ var (
 	}
 	packagingPrivileged = true
 )
-
-// FindVCSInstance finds relevant VCS instance for ModelPackaging instance
-func (r *ReconcileModelPackaging) findConnection(connName string) (vcsCR *legionv1alpha1.Connection, err error) {
-	vcsInstanceName := types.NamespacedName{
-		Name:      connName,
-		Namespace: viper.GetString(conn_conf.Namespace),
-	}
-	vcsCR = &legionv1alpha1.Connection{}
-
-	if err = r.Get(context.TODO(), vcsInstanceName, vcsCR); err != nil {
-		log.Error(err, "Cannot fetch VCS Credential with name")
-
-		return
-	}
-
-	return
-}
 
 // Determine crd state by child pod.
 // If pod has RUNNING state then we determine crd state by state of packager container in the pod
@@ -181,28 +173,12 @@ func (r *ReconcileModelPackaging) calculateStateByTaskRun(
 		packagingCR.Status.Message = &lastCondition.Message
 		packagingCR.Status.Reason = &lastCondition.Reason
 
-		resultCM := &corev1.ConfigMap{}
-		if err := r.Get(
-			context.TODO(),
-			types.NamespacedName{
-				Namespace: packagingCR.Namespace,
-				Name:      legion.GeneratePackageResultCMName(packagingCR.Name),
-			},
-			resultCM,
-		); err != nil {
+		results, err := r.packRepo.GetModelPackagingResult(packagingCR.Name)
+		if err != nil {
 			return err
 		}
 
-		if len(resultCM.Data) == 0 {
-			return fmt.Errorf("%s packaging does not have a result", packagingCR.Name)
-		}
-
-		mpResult := make([]legionv1alpha1.ModelPackagingResult, 0, len(resultCM.Data))
-		for k, v := range resultCM.Data {
-			mpResult = append(mpResult, legionv1alpha1.ModelPackagingResult{Name: k, Value: v})
-		}
-
-		packagingCR.Status.Results = mpResult
+		packagingCR.Status.Results = results
 	case corev1.ConditionFalse:
 		packagingCR.Status.State = legionv1alpha1.ModelPackagingFailed
 		packagingCR.Status.Message = &lastCondition.Message
@@ -245,21 +221,6 @@ func (r *ReconcileModelPackaging) calculateStateByPod(
 	}
 
 	return nil
-}
-
-func (r *ReconcileModelPackaging) getOutputConnection() (*connection.Connection, error) {
-	vcs := &legionv1alpha1.Connection{}
-	if err := r.Get(context.TODO(), types.NamespacedName{
-		Namespace: viper.GetString(conn_conf.Namespace),
-		Name:      viper.GetString(packaging_conf.OutputConnectionName),
-	}, vcs); err != nil {
-		log.Error(err, "Get output connection", "vcs name", vcs)
-		return nil, err
-	}
-	return &connection.Connection{
-		ID:   viper.GetString(packaging_conf.OutputConnectionName),
-		Spec: vcs.Spec,
-	}, nil
 }
 
 func (r *ReconcileModelPackaging) getPackagingIntegration(packagingCR *legionv1alpha1.ModelPackaging) (
@@ -320,9 +281,8 @@ func (r *ReconcileModelPackaging) reconcileTaskRun(
 			Namespace: packagingCR.Namespace,
 		},
 		Spec: tektonv1alpha1.TaskRunSpec{
-			ServiceAccount: viper.GetString(packaging_conf.ServiceAccount),
-			TaskSpec:       taskSpec,
-			Timeout:        &metav1.Duration{Duration: 30 * time.Minute},
+			TaskSpec: taskSpec,
+			Timeout:  &metav1.Duration{Duration: viper.GetDuration(packaging_conf.Timeout)},
 			PodTemplate: tektonv1alpha1.PodTemplate{
 				NodeSelector: viper.GetStringMapString(packaging_conf.NodeSelector),
 				Tolerations:  tolerations,
@@ -355,126 +315,6 @@ func (r *ReconcileModelPackaging) reconcileTaskRun(
 	}
 
 	return taskRun, r.Create(context.TODO(), taskRun)
-}
-
-type PackagerConf struct {
-	Packager struct {
-		PodName    string `json:"pod_name"`
-		TargetPath string `json:"target_path"`
-		OutputDir  string `json:"output_dir"`
-	} `json:"packager"`
-}
-
-func (r *ReconcileModelPackaging) reconcileConfig(packagingCR *legionv1alpha1.ModelPackaging) error {
-	outputConn, err := r.getOutputConnection()
-	if err != nil {
-		return err
-	}
-
-	pi, err := r.getPackagingIntegration(packagingCR)
-	if err != nil {
-		return err
-	}
-	pi.Status = nil
-
-	mp, err := mp_k8s_repository.TransformMpFromK8s(packagingCR)
-	if err != nil {
-		return err
-	}
-	mp.Status = nil
-
-	targets := make([]packaging.PackagerTarget, len(mp.Spec.Targets))
-	for i, target := range mp.Spec.Targets {
-		conn, err := r.findConnection(target.ConnectionName)
-		if err != nil {
-			return err
-		}
-
-		targets[i] = packaging.PackagerTarget{
-			Name: target.Name,
-			Connection: connection.Connection{
-				ID:   conn.Name,
-				Spec: conn.Spec,
-			},
-		}
-	}
-
-	k8sPackaging := &packaging.K8sPackager{
-		ModelHolder:          outputConn,
-		ModelPackaging:       mp,
-		PackagingIntegration: pi,
-		TrainingZipName:      *packagingCR.Spec.ArtifactName,
-		Targets:              targets,
-	}
-
-	k8sPackagingBytes, err := json.Marshal(k8sPackaging)
-	if err != nil {
-		return err
-	}
-
-	conf := &PackagerConf{}
-	conf.Packager.PodName = packagingCR.Name
-	conf.Packager.TargetPath = workspacePath
-	conf.Packager.OutputDir = path.Join(conf.Packager.TargetPath, outputDir)
-
-	packagerConfBytes, err := json.Marshal(conf)
-	if err != nil {
-		return err
-	}
-
-	k8sPackagingSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      packagingCR.Name,
-			Namespace: viper.GetString(packaging_conf.Namespace),
-		},
-		Data: map[string][]byte{
-			mpContentFile:  k8sPackagingBytes,
-			packagerConfig: packagerConfBytes,
-		},
-	}
-
-	if err := controllerutil.SetControllerReference(packagingCR, k8sPackagingSecret, r.scheme); err != nil {
-		return err
-	}
-
-	if err := legion.StoreHash(k8sPackagingSecret); err != nil {
-		log.Error(err, "Cannot apply obj hash")
-		return err
-	}
-
-	found := &corev1.Secret{}
-	err = r.Get(context.TODO(), types.NamespacedName{
-		Name: packagingCR.Name, Namespace: viper.GetString(packaging_conf.Namespace),
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("Creating %s k8s secret", k8sPackagingSecret.ObjectMeta.Name))
-		err = r.Create(context.TODO(), k8sPackagingSecret)
-		return err
-	} else if err != nil {
-		return err
-	}
-
-	if !legion.ObjsEqualByHash(k8sPackagingSecret, found) {
-		log.Info(fmt.Sprintf(
-			"Model packaging config hashes don't equal. Update the %s packaging config",
-			k8sPackagingSecret.Name,
-		))
-
-		found.Data = k8sPackagingSecret.Data
-
-		log.Info(fmt.Sprintf("Updating %s packaging config", k8sPackagingSecret.ObjectMeta.Name))
-		err = r.Update(context.TODO(), found)
-		if err != nil {
-			return err
-		}
-	} else {
-		log.Info(fmt.Sprintf(
-			"Model packaging config hashes equal. Skip updating of the %s packaging config",
-			k8sPackagingSecret.Name,
-		))
-	}
-
-	return nil
 }
 
 func (r *ReconcileModelPackaging) createResultConfigMap(packagingCR *legionv1alpha1.ModelPackaging) error {
@@ -524,6 +364,8 @@ func isPackagingFinished(mp *legionv1alpha1.ModelPackaging) bool {
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modelpackagings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=modelpackagings/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=legion.legion-platform.org,resources=packagingintegrations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=legion.legion-platform.org,resources=packagingintegrations/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=tekton.dev,resources=taskruns,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=tekton.dev,resources=taskruns/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=legion.legion-platform.org,resources=connecitons,verbs=get;list
@@ -544,12 +386,6 @@ func (r *ReconcileModelPackaging) Reconcile(request reconcile.Request) (reconcil
 		log.Info("Packaging has been finished. Skip reconcile function", "mp name", packagingCR.Name)
 
 		return reconcile.Result{}, nil
-	}
-
-	if err := r.reconcileConfig(packagingCR); err != nil {
-		log.Error(err, "Can not synchronize desired K8S secret state to cluster")
-
-		return reconcile.Result{}, err
 	}
 
 	// The configmap is used to save a packaging result.

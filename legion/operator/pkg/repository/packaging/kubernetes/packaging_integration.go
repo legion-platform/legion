@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,10 +94,10 @@ func TransformPiToK8s(pi *packaging.PackagingIntegration, k8sNamespace string) (
 	}, nil
 }
 
-func (kc *packagingK8sRepository) GetPackagingIntegration(name string) (*packaging.PackagingIntegration, error) {
+func (pkr *packagingK8sRepository) GetPackagingIntegration(name string) (*packaging.PackagingIntegration, error) {
 	k8sMR := &v1alpha1.PackagingIntegration{}
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: name, Namespace: kc.piNamespace},
+	if err := pkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: pkr.piNamespace},
 		k8sMR,
 	); err != nil {
 		logPI.Error(err, "Get Packaging Integration from k8s", "name", name)
@@ -108,7 +108,7 @@ func (kc *packagingK8sRepository) GetPackagingIntegration(name string) (*packagi
 	return TransformPackagingIntegrationFromK8s(k8sMR)
 }
 
-func (kc *packagingK8sRepository) GetPackagingIntegrationList(options ...kubernetes.ListOption) (
+func (pkr *packagingK8sRepository) GetPackagingIntegrationList(options ...kubernetes.ListOption) (
 	[]packaging.PackagingIntegration, error,
 ) {
 	var k8sMRList v1alpha1.PackagingIntegrationList
@@ -130,9 +130,9 @@ func (kc *packagingK8sRepository) GetPackagingIntegrationList(options ...kuberne
 	continueToken := ""
 
 	for i := 0; i < *listOptions.Page+1; i++ {
-		if err := kc.k8sClient.List(context.TODO(), &client.ListOptions{
+		if err := pkr.k8sClient.List(context.TODO(), &client.ListOptions{
 			LabelSelector: labelSelector,
-			Namespace:     kc.piNamespace,
+			Namespace:     pkr.piNamespace,
 			Raw: &metav1.ListOptions{
 				Limit:    int64(*listOptions.Size),
 				Continue: continueToken,
@@ -164,15 +164,15 @@ func (kc *packagingK8sRepository) GetPackagingIntegrationList(options ...kuberne
 	return pis, nil
 }
 
-func (kc *packagingK8sRepository) DeletePackagingIntegration(name string) error {
+func (pkr *packagingK8sRepository) DeletePackagingIntegration(name string) error {
 	pi := &v1alpha1.PackagingIntegration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: kc.piNamespace,
+			Namespace: pkr.piNamespace,
 		},
 	}
 
-	if err := kc.k8sClient.Delete(context.TODO(), pi); err != nil {
+	if err := pkr.k8sClient.Delete(context.TODO(), pi); err != nil {
 		logPI.Error(err, "Delete Packaging Integration from k8s", "name", name)
 
 		return err
@@ -181,10 +181,10 @@ func (kc *packagingK8sRepository) DeletePackagingIntegration(name string) error 
 	return nil
 }
 
-func (kc *packagingK8sRepository) UpdatePackagingIntegration(pi *packaging.PackagingIntegration) error {
+func (pkr *packagingK8sRepository) UpdatePackagingIntegration(pi *packaging.PackagingIntegration) error {
 	var k8sPi v1alpha1.PackagingIntegration
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: pi.ID, Namespace: kc.piNamespace},
+	if err := pkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: pi.ID, Namespace: pkr.piNamespace},
 		&k8sPi,
 	); err != nil {
 		logPI.Error(err, "Get packaging integration from k8s", "name", pi.ID)
@@ -193,14 +193,14 @@ func (kc *packagingK8sRepository) UpdatePackagingIntegration(pi *packaging.Packa
 	}
 
 	// TODO: think about update, not replacing as for now
-	updateK8sPi, err := TransformPiToK8s(pi, kc.piNamespace)
+	updateK8sPi, err := TransformPiToK8s(pi, pkr.piNamespace)
 	if err != nil {
 		return err
 	}
 
 	k8sPi.Spec = updateK8sPi.Spec
 
-	if err := kc.k8sClient.Update(context.TODO(), &k8sPi); err != nil {
+	if err := pkr.k8sClient.Update(context.TODO(), &k8sPi); err != nil {
 		logPI.Error(err, "Creation of the packaging integration", "name", pi.ID)
 
 		return err
@@ -209,13 +209,13 @@ func (kc *packagingK8sRepository) UpdatePackagingIntegration(pi *packaging.Packa
 	return nil
 }
 
-func (kc *packagingK8sRepository) CreatePackagingIntegration(pi *packaging.PackagingIntegration) error {
-	k8sPi, err := TransformPiToK8s(pi, kc.piNamespace)
+func (pkr *packagingK8sRepository) CreatePackagingIntegration(pi *packaging.PackagingIntegration) error {
+	k8sPi, err := TransformPiToK8s(pi, pkr.piNamespace)
 	if err != nil {
 		return err
 	}
 
-	if err := kc.k8sClient.Create(context.TODO(), k8sPi); err != nil {
+	if err := pkr.k8sClient.Create(context.TODO(), k8sPi); err != nil {
 		logPI.Error(err, "Packaging integration creation error from k8s", "name", pi.ID)
 
 		return err

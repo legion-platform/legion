@@ -29,6 +29,11 @@ export interface ModelTrainingStatus {
     message?: string;
 
     /**
+     * Pod package for name
+     */
+    podName?: string;
+
+    /**
      * Pod reason
      */
     reason?: string;

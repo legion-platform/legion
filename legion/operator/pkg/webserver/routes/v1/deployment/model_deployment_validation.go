@@ -21,7 +21,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/spf13/viper"
 	"go.uber.org/multierr"
 )

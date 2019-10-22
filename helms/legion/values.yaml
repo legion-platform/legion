@@ -594,6 +594,11 @@ config:
     # The collection of external urls, for example: metrics, edge, service catalog and so on
     # Type: string->string map
     external_urls: []
+  # Operator configuration
+  operator:
+    # The in-cluster EDI url
+    # Type: string->string
+    edi_url: http://legion-edi.legion.svc.cluster.local
   # Connection configuration
   connection:
     # Enable connection API/operator

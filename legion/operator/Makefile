@@ -120,6 +120,14 @@ generate-all: generate manifests swag
 export-config-from-k8s:
 	kubectl get -n ${LEGION_NAMESPACE} secrets ${LEGION_SECRET_CONFIG} -o=jsonpath="{$$.data['config\\.yaml']}" | base64 -d > config.yaml
 
+## turn-off-legion-operator: The command scales down the legion operator to the zero number of pods.
+turn-off-legion-operator:
+	kubectl scale --replicas 0 -n ${LEGION_NAMESPACE} statefulset/legion-operator
+
+## turn-on-legion-operator: The command scales up the legion operator to the one number of pods.
+turn-on-legion-operator:
+	kubectl scale --replicas 1 -n ${LEGION_NAMESPACE} statefulset/legion-operator
+
 ## lint: Start golangci-lint linter
 lint:
 	golangci-lint run ${LINTER_ADDITIONAL_ARGS}

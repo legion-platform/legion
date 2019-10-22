@@ -23,8 +23,8 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	uuid "github.com/nu7hatch/gouuid"
 	"go.uber.org/multierr"
 	"reflect"
@@ -63,7 +63,6 @@ var (
 			Memory: &defaultMemoryRequests,
 		},
 	}
-	DefaultExperimentValue      = "experiment"
 	expectedConnectionDataTypes = map[v1alpha1.ConnectionType]bool{
 		connection.GcsType: true,
 		connection.S3Type:  true,

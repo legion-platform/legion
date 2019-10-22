@@ -18,12 +18,14 @@ package training_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
-	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
 	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
 	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
@@ -33,10 +35,13 @@ import (
 	train_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/training"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 	"testing"
@@ -48,6 +53,7 @@ type ModelTrainingRouteSuite struct {
 	server         *gin.Engine
 	mtRepository   mt_repository.Repository
 	connRepository conn_repository.Repository
+	k8sClient      client.Client
 }
 
 func (s *ModelTrainingRouteSuite) SetupSuite() {
@@ -58,14 +64,15 @@ func (s *ModelTrainingRouteSuite) SetupSuite() {
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	s.k8sClient = mgr.GetClient()
+	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, s.k8sClient, nil)
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, s.k8sClient)
 	train_route.ConfigureRoutes(v1Group, s.mtRepository, s.connRepository)
 
 	// Create the connection that will be used as the vcs param for a training.
 	if err := s.connRepository.CreateConnection(&connection.Connection{
 		ID: testMtVCSID,
-		Spec: v1alpha1.ConnectionSpec{
+		Spec: legionv1alpha1.ConnectionSpec{
 			Type:      connection.GITType,
 			Reference: testVcsReference,
 		},
@@ -77,7 +84,7 @@ func (s *ModelTrainingRouteSuite) SetupSuite() {
 	// Create the toolchain integration that will be used for a training.
 	if err := s.mtRepository.CreateToolchainIntegration(&training.ToolchainIntegration{
 		ID: testToolchainIntegrationID,
-		Spec: v1alpha1.ToolchainIntegrationSpec{
+		Spec: legionv1alpha1.ToolchainIntegrationSpec{
 			DefaultImage: testToolchainMtImage,
 		},
 	}); err != nil {
@@ -131,8 +138,8 @@ func TestModelTrainingRouteSuite(t *testing.T) {
 func newMtStub() *training.ModelTraining {
 	return &training.ModelTraining{
 		ID: testMtID,
-		Spec: v1alpha1.ModelTrainingSpec{
-			Model: v1alpha1.ModelIdentity{
+		Spec: legionv1alpha1.ModelTrainingSpec{
+			Model: legionv1alpha1.ModelIdentity{
 				Name:                 testModelName,
 				Version:              testModelVersion1,
 				ArtifactNameTemplate: train_route.DefaultArtifactOutputTemplate,
@@ -450,7 +457,7 @@ func (s *ModelTrainingRouteSuite) TestUpdateMTCheckValidation() {
 
 	newMt := &training.ModelTraining{
 		ID:   mt.ID,
-		Spec: v1alpha1.ModelTrainingSpec{},
+		Spec: legionv1alpha1.ModelTrainingSpec{},
 	}
 
 	mtEntityBody, err := json.Marshal(newMt)
@@ -525,4 +532,108 @@ func (s *ModelTrainingRouteSuite) TestDeleteMTNotFound() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusNotFound))
 	s.g.Expect(result.Message).Should(ContainSubstring("not found"))
+}
+
+func (s *ModelTrainingRouteSuite) TestSaveMTResult() {
+	resultCM := &corev1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      legion.GenerateTrainingResultCMName(testMtID),
+			Namespace: testNamespace,
+		},
+	}
+	s.g.Expect(s.k8sClient.Create(context.TODO(), resultCM)).NotTo(HaveOccurred())
+	defer s.k8sClient.Delete(context.TODO(), resultCM)
+
+	expectedMTResult := &legionv1alpha1.TrainingResult{
+		RunID:        "test-run-id",
+		ArtifactName: "test-artifact-name",
+		CommitID:     "test-commit-id",
+	}
+	expectedMPResultBody, err := json.Marshal(expectedMTResult)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodPut,
+		strings.Replace(train_route.SaveModelTrainingResultURL, ":id", testMtID, -1),
+		bytes.NewReader(expectedMPResultBody),
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.server.ServeHTTP(w, req)
+
+	result := &legionv1alpha1.TrainingResult{}
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(expectedMTResult).Should(Equal(result))
+
+	result, err = s.mtRepository.GetModelTrainingResult(testMtID)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(expectedMTResult).To(Equal(result))
+}
+
+func (s *ModelTrainingRouteSuite) TestUpdateMTResult() {
+	resultCM := &corev1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      legion.GenerateTrainingResultCMName(testMtID),
+			Namespace: testNamespace,
+		},
+	}
+	s.g.Expect(s.k8sClient.Create(context.TODO(), resultCM)).NotTo(HaveOccurred())
+	defer s.k8sClient.Delete(context.TODO(), resultCM)
+
+	const runID = "test-run-id"
+	const artifactName = "test-artifact-name"
+	const commitID = "test-commit-id"
+	mtResult := &legionv1alpha1.TrainingResult{
+		CommitID: commitID,
+	}
+	expectedMPResultBody, err := json.Marshal(mtResult)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodPut,
+		strings.Replace(train_route.SaveModelTrainingResultURL, ":id", testMtID, -1),
+		bytes.NewReader(expectedMPResultBody),
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.server.ServeHTTP(w, req)
+
+	result := &legionv1alpha1.TrainingResult{}
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(mtResult).Should(Equal(result))
+
+	result, err = s.mtRepository.GetModelTrainingResult(testMtID)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(mtResult).To(Equal(result))
+
+	mtResult = &legionv1alpha1.TrainingResult{
+		RunID:        runID,
+		ArtifactName: artifactName,
+	}
+	expectedMPResultBody, err = json.Marshal(mtResult)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	w = httptest.NewRecorder()
+	req, err = http.NewRequest(
+		http.MethodPut,
+		strings.Replace(train_route.SaveModelTrainingResultURL, ":id", testMtID, -1),
+		bytes.NewReader(expectedMPResultBody),
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.server.ServeHTTP(w, req)
+
+	result = &legionv1alpha1.TrainingResult{}
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(mtResult).Should(Equal(result))
+
+	result, err = s.mtRepository.GetModelTrainingResult(testMtID)
+	s.g.Expect(err).NotTo(HaveOccurred())
+	s.g.Expect(&legionv1alpha1.TrainingResult{
+		RunID:        runID,
+		ArtifactName: artifactName,
+		CommitID:     commitID,
+	}).To(Equal(result))
 }

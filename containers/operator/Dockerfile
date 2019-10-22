@@ -33,7 +33,7 @@ RUN apt-get update -qq && \
     chmod +x /usr/local/bin/dep && \
     wget -q https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz -O /tmp/kubebuilder.tar.gz && \
     tar -zxvf /tmp/kubebuilder.tar.gz -C /usr/local/ && mv /usr/local/kubebuilder_* /usr/local/kubebuilder && \
-    wget -q https://github.com/swaggo/swag/releases/download/v1.5.0/swag_1.5.0_Linux_x86_64.tar.gz -O /tmp/swag.tar.gz && \
+    wget -q https://github.com/swaggo/swag/releases/download/v1.6.3/swag_1.6.3_Linux_x86_64.tar.gz -O /tmp/swag.tar.gz && \
     tar -zxvf /tmp/swag.tar.gz -C /usr/local/ && mv /usr/local/swag /usr/bin/ && \
     wget -q https://github.com/gotestyourself/gotestsum/releases/download/v0.3.4/gotestsum_0.3.4_linux_amd64.tar.gz -O /tmp/gotestsum.tar.gz && \
     tar -zxvf /tmp/gotestsum.tar.gz -C /usr/local/ && mv /usr/local/gotestsum* /usr/bin/gotestsum && \
@@ -54,7 +54,7 @@ FROM ubuntu:18.04 as operator
 
 ENV LEGION_DIR="/opt/legion"
 RUN  apt-get -yq update && \
-     apt-get -yqq install openssh-client
+     apt-get -yqq install ca-certificates
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/operator "${LEGION_DIR}/"
 WORKDIR "${LEGION_DIR}"
@@ -69,6 +69,8 @@ FROM ubuntu:18.04 as edi
 ENV LEGION_DIR="/opt/legion" \
     TEMPLATE_FOLDER="/opt/legion/templates" \
     GIN_MODE="release"
+RUN  apt-get -yq update && \
+     apt-get -yqq install openssh-client ca-certificates
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/edi "${LEGION_DIR}/"
 COPY legion/operator/templates "${TEMPLATE_FOLDER}/"
@@ -86,7 +88,8 @@ ENV LEGION_DIR="/opt/legion" \
     TEMPLATE_FOLDER="/opt/legion/templates" \
     GIN_MODE="release"
 
-RUN apt-get update && apt-get install -y ca-certificates
+RUN  apt-get -yq update && \
+     apt-get -yqq install ca-certificates
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/service-catalog "${LEGION_DIR}/"
 COPY legion/operator/templates "${TEMPLATE_FOLDER}/"
@@ -106,15 +109,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR "${WORK_DIR}/"
 
-RUN apt-get update -qq && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:projectatomic/ppa && \
-    apt-get update -qq && \
-    apt-get -qq -y install runc buildah iptables libdevmapper-event1.02.1 uidmap
-
-COPY containers/operator/registries.conf \
-     containers/operator/storage.conf \
-     /etc/containers/
+RUN  apt-get -yq update && \
+     apt-get -yqq install ca-certificates
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/trainer "${WORK_DIR}/"
 
@@ -130,17 +126,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 \
     WORK_DIR="/opt/legion"
 
+RUN  apt-get -yq update && \
+     apt-get -yqq install ca-certificates
+
 WORKDIR "${WORK_DIR}/"
-
-RUN apt-get update -qq && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:projectatomic/ppa && \
-    apt-get update -qq && \
-    apt-get -qq -y install runc buildah iptables libdevmapper-event1.02.1 uidmap
-
-COPY containers/operator/registries.conf \
-     containers/operator/storage.conf \
-     /etc/containers/
 
 COPY --from=builder /go/src/github.com/legion-platform/legion/legion/operator/packager "${WORK_DIR}/"
 

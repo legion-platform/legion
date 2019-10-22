@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -30,11 +30,11 @@ import (
 var logPi = logf.Log.WithName("toolchain-integration-controller")
 
 const (
-	getPackagingIntegrationURL    = "/packaging/integration/:id"
-	getAllPackagingIntegrationURL = "/packaging/integration"
-	createPackagingIntegrationURL = "/packaging/integration"
-	updatePackagingIntegrationURL = "/packaging/integration"
-	deletePackagingIntegrationURL = "/packaging/integration/:id"
+	GetPackagingIntegrationURL    = "/packaging/integration/:id"
+	GetAllPackagingIntegrationURL = "/packaging/integration"
+	CreatePackagingIntegrationURL = "/packaging/integration"
+	UpdatePackagingIntegrationURL = "/packaging/integration"
+	DeletePackagingIntegrationURL = "/packaging/integration/:id"
 	IDPiURLParam                  = "id"
 )
 

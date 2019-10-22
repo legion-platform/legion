@@ -1,4 +1,3 @@
-basePath: '{{.BasePath}}'
 definitions:
   CommonConfiguration:
     properties:
@@ -584,6 +583,9 @@ definitions:
       message:
         description: Pod last log
         type: string
+      podName:
+        description: Pod package for name
+        type: string
       reason:
         description: Pod reason
         type: string
@@ -660,7 +662,6 @@ definitions:
         description: Mlflow run ID
         type: string
     type: object
-host: '{{.Host}}'
 info:
   contact: {}
   description: This is an API Gateway server.
@@ -683,7 +684,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/Configuration'
-            type: object
       summary: Get the Legion service configuration
       tags:
       - Configuration
@@ -706,7 +706,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a Legion service configuration
       tags:
       - Configuration
@@ -741,7 +740,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of Connections
       tags:
       - Connection
@@ -764,12 +762,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/Connection'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a Connection
       tags:
       - Connection
@@ -792,17 +788,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a Connection
       tags:
       - Connection
@@ -824,17 +817,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Delete a Connection
       tags:
       - Connection
@@ -855,17 +845,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/Connection'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a Connection
       tags:
       - Connection
@@ -904,7 +891,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/feedback.ModelFeedbackResponse'
-            type: object
       summary: Send feedback about previously made prediction
       tags:
       - Feedback
@@ -935,7 +921,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of Model deployments
       tags:
       - Deployment
@@ -958,12 +943,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/ModelDeployment'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a Model deployment
       tags:
       - Deployment
@@ -986,17 +969,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelDeployment'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a Model deployment
       tags:
       - Deployment
@@ -1018,17 +998,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Delete a Model deployment
       tags:
       - Deployment
@@ -1049,17 +1026,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelDeployment'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a Model deployment
       tags:
       - Deployment
@@ -1090,7 +1064,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of Model Packagings
       tags:
       - Packaging
@@ -1113,12 +1086,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/ModelPackaging'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a Model Packaging
       tags:
       - Packaging
@@ -1141,17 +1112,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelPackaging'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a Model Packaging
       tags:
       - Packaging
@@ -1173,17 +1141,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Delete a Model Packaging
       tags:
       - Packaging
@@ -1204,17 +1169,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelPackaging'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a Model Packaging
       tags:
       - Packaging
@@ -1247,6 +1209,44 @@ paths:
       summary: Stream logs from model packaging pod
       tags:
       - Packaging
+  /api/v1/model/packaging/{id}/result:
+    put:
+      consumes:
+      - application/json
+      description: Save a Model Packaging by id
+      parameters:
+      - description: Model Packaging result
+        in: body
+        name: MP
+        required: true
+        schema:
+          $ref: '#/definitions/ModelPackagingResult'
+          type: object
+      - description: Model Packaging id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ModelPackagingResult'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+      summary: Save a Model Packaging result
+      tags:
+      - Packaging
   /api/v1/model/route:
     get:
       consumes:
@@ -1274,7 +1274,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of Model routes
       tags:
       - Route
@@ -1297,12 +1296,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/ModelRoute'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a Model route
       tags:
       - Route
@@ -1325,17 +1322,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelRoute'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a Model route
       tags:
       - Route
@@ -1357,17 +1351,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Delete a Model route
       tags:
       - Route
@@ -1388,17 +1379,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelRoute'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a Model route
       tags:
       - Route
@@ -1441,7 +1429,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of Model Trainings
       tags:
       - Training
@@ -1464,12 +1451,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/ModelTraining'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a Model Training
       tags:
       - Training
@@ -1492,17 +1477,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelTraining'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a Model Training
       tags:
       - Training
@@ -1524,17 +1506,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a Model Training
       tags:
       - Training
@@ -1555,17 +1534,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ModelTraining'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a Model Training
       tags:
       - Training
@@ -1598,6 +1574,44 @@ paths:
       summary: Stream logs from model training pod
       tags:
       - Training
+  /api/v1/model/training/{id}/result:
+    put:
+      consumes:
+      - application/json
+      description: Save a Model Training by id
+      parameters:
+      - description: Model Training result
+        in: body
+        name: MP
+        required: true
+        schema:
+          $ref: '#/definitions/TrainingResult'
+          type: object
+      - description: Model Training id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/TrainingResult'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+      summary: Save a Model Training result
+      tags:
+      - Training
   /api/v1/packaging/integration:
     get:
       consumes:
@@ -1625,7 +1639,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of PackagingIntegrations
       tags:
       - Packager
@@ -1648,12 +1661,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/PackagingIntegration'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a PackagingIntegration
       tags:
       - Packager
@@ -1676,17 +1687,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/PackagingIntegration'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a PackagingIntegration
       tags:
       - Packager
@@ -1708,17 +1716,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Delete a PackagingIntegration
       tags:
       - Packager
@@ -1739,17 +1744,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/PackagingIntegration'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a PackagingIntegration
       tags:
       - Packager
@@ -1780,7 +1782,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get list of ToolchainIntegrations
       tags:
       - Toolchain
@@ -1803,12 +1804,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/ToolchainIntegration'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Create a ToolchainIntegration
       tags:
       - Toolchain
@@ -1831,17 +1830,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ToolchainIntegration'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Update a ToolchainIntegration
       tags:
       - Toolchain
@@ -1863,17 +1859,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Delete a ToolchainIntegration
       tags:
       - Toolchain
@@ -1894,17 +1887,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/ToolchainIntegration'
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/HTTPResult'
-            type: object
       summary: Get a ToolchainIntegration
       tags:
       - Toolchain

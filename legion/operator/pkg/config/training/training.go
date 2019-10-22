@@ -32,6 +32,7 @@ const (
 	NodeSelector                  = "training.node_selector"
 	Toleration                    = "training.toleration"
 	MetricURL                     = "training.metric_url"
+	Timeout                       = "packaging.timeout"
 )
 
 const (

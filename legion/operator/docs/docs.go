@@ -5,23 +5,26 @@ package docs
 
 import (
 	"bytes"
+	"encoding/json"
+	"strings"
 
 	"github.com/alecthomas/template"
 	"github.com/swaggo/swag"
 )
 
 var doc = `{
+    "schemes": {{ marshal .Schemes }},
     "swagger": "2.0",
     "info": {
-        "description": "This is an API Gateway server.",
-        "title": "API Gateway",
+        "description": "{{.Description}}",
+        "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {},
         "license": {
             "name": "Apache 2.0",
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
-        "version": "1.0"
+        "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
@@ -43,7 +46,6 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/Configuration"
                         }
                     }
@@ -77,7 +79,6 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -130,7 +131,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -164,21 +164,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -212,14 +209,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/Connection"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -252,21 +247,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/Connection"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -297,21 +289,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -368,7 +357,6 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/feedback.ModelFeedbackResponse"
                         }
                     }
@@ -415,7 +403,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -449,21 +436,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelDeployment"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -497,14 +481,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelDeployment"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -537,21 +519,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelDeployment"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -582,21 +561,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -643,7 +619,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -677,21 +652,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelPackaging"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -725,14 +697,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelPackaging"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -765,21 +735,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelPackaging"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -810,21 +777,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -875,6 +839,63 @@ var doc = `{
                 }
             }
         },
+        "/api/v1/model/packaging/{id}/result": {
+            "put": {
+                "description": "Save a Model Packaging by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Packaging"
+                ],
+                "summary": "Save a Model Packaging result",
+                "parameters": [
+                    {
+                        "description": "Model Packaging result",
+                        "name": "MP",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/ModelPackagingResult"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Model Packaging id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ModelPackagingResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/model/route": {
             "get": {
                 "description": "Get list of Model routes",
@@ -915,7 +936,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -949,21 +969,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelRoute"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -997,14 +1014,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelRoute"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1037,21 +1052,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelRoute"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1082,21 +1094,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1161,7 +1170,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1195,21 +1203,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelTraining"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1243,14 +1248,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelTraining"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1283,21 +1286,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ModelTraining"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1328,21 +1328,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1393,6 +1390,63 @@ var doc = `{
                 }
             }
         },
+        "/api/v1/model/training/{id}/result": {
+            "put": {
+                "description": "Save a Model Training by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Training"
+                ],
+                "summary": "Save a Model Training result",
+                "parameters": [
+                    {
+                        "description": "Model Training result",
+                        "name": "MP",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/TrainingResult"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Model Training id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/TrainingResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/packaging/integration": {
             "get": {
                 "description": "Get list of PackagingIntegrations",
@@ -1433,7 +1487,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1467,21 +1520,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/PackagingIntegration"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1515,14 +1565,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/PackagingIntegration"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1555,21 +1603,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/PackagingIntegration"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1600,21 +1645,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1661,7 +1703,6 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1695,21 +1736,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ToolchainIntegration"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1743,14 +1781,12 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ToolchainIntegration"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1783,21 +1819,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/ToolchainIntegration"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -1828,21 +1861,18 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/HTTPResult"
                         }
                     }
@@ -2618,6 +2648,10 @@ var doc = `{
                     "description": "Pod last log",
                     "type": "string"
                 },
+                "podName": {
+                    "description": "Pod package for name",
+                    "type": "string"
+                },
                 "reason": {
                     "description": "Pod reason",
                     "type": "string"
@@ -2735,23 +2769,39 @@ type swaggerInfo struct {
 	Version     string
 	Host        string
 	BasePath    string
+	Schemes     []string
 	Title       string
 	Description string
 }
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
-var SwaggerInfo swaggerInfo
+var SwaggerInfo = swaggerInfo{
+	Version:     "1.0",
+	Host:        "",
+	BasePath:    "",
+	Schemes:     []string{},
+	Title:       "API Gateway",
+	Description: "This is an API Gateway server.",
+}
 
 type s struct{}
 
 func (s *s) ReadDoc() string {
-	t, err := template.New("swagger_info").Parse(doc)
+	sInfo := SwaggerInfo
+	sInfo.Description = strings.Replace(sInfo.Description, "\n", "\\n", -1)
+
+	t, err := template.New("swagger_info").Funcs(template.FuncMap{
+		"marshal": func(v interface{}) string {
+			a, _ := json.Marshal(v)
+			return string(a)
+		},
+	}).Parse(doc)
 	if err != nil {
 		return doc
 	}
 
 	var tpl bytes.Buffer
-	if err := t.Execute(&tpl, SwaggerInfo); err != nil {
+	if err := t.Execute(&tpl, sInfo); err != nil {
 		return doc
 	}
 

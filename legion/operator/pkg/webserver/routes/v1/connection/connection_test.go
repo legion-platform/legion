@@ -46,6 +46,10 @@ const (
 	creds         = "bG9sCg=="
 )
 
+func stubKeyEvaluator(uri string) (string, error) {
+	return "stub-key", nil
+}
+
 type ConnectionRouteSuite struct {
 	suite.Suite
 	g              *GomegaWithT
@@ -62,7 +66,7 @@ func (s *ConnectionRouteSuite) SetupSuite() {
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
 	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
-	conn_route.ConfigureRoutes(v1Group, s.connRepository)
+	conn_route.ConfigureRoutes(v1Group, s.connRepository, stubKeyEvaluator)
 }
 
 func (s *ConnectionRouteSuite) TearDownTest() {

@@ -18,21 +18,27 @@ package packager
 
 import (
 	"github.com/spf13/viper"
-	"os"
-	"path"
 )
 
 const (
-	MPFile            = "packager.mp_file"
-	TargetPath        = "packager.target_path"
-	OutputTrainingDir = "packager.output_dir"
+	// The path to the configuration file for a user packager.
+	MPFile = "packager.mp_file"
+	// The path to the dir when a user packager will save their result.
+	OutputPackagingDir = "packager.output_dir"
+	// EDI URL
+	EdiURL = "packager.edi_url"
+	// It is a mock for the future. Currently, it is always empty.
+	EdiToken = "packager.edi_token"
+	// ID of the model packaging
+	ModelPackagingID = "packager.model_packaging_id"
+	// It is a connection ID, which specifies where a artifact trained artifact is stored.
+	OutputConnectionName = "packager.output_connection"
 )
 
 func init() {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	viper.SetDefault(TargetPath, path.Join(cwd, "legion/operator/target"))
-	viper.SetDefault(OutputTrainingDir, path.Join(viper.GetString(TargetPath), "output"))
+	viper.SetDefault(OutputPackagingDir, "output")
+	viper.SetDefault(MPFile, "mp.json")
+	viper.SetDefault(EdiURL, "http://localhost:5000")
+	viper.SetDefault(EdiToken, "")
+	viper.SetDefault(OutputConnectionName, "")
 }

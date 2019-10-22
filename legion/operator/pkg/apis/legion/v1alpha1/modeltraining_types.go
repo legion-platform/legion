@@ -89,6 +89,8 @@ type TrainingResult struct {
 
 // ModelTrainingStatus defines the observed state of ModelTraining
 type ModelTrainingStatus struct {
+	// Pod package for name
+	PodName string `json:"podName,omitempty"`
 	// Model Packaging State
 	State ModelTrainingState `json:"state,omitempty"`
 	// Pod exit code

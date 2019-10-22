@@ -33,6 +33,7 @@ func ConfigureRoutes(routeGroup *gin.RouterGroup, repository mp_repository.Repos
 	routeGroup.POST(CreateModelPackagingURL, mtController.createMP)
 	routeGroup.GET(GetModelPackagingLogsURL, mtController.getModelPackagingLog)
 	routeGroup.PUT(UpdateModelPackagingURL, mtController.updateMP)
+	routeGroup.PUT(SaveModelPackagingResultURL, mtController.saveMPResults)
 	routeGroup.DELETE(DeleteModelPackagingURL, mtController.deleteMP)
 
 	tiController := &PackagingIntegrationController{
@@ -40,9 +41,9 @@ func ConfigureRoutes(routeGroup *gin.RouterGroup, repository mp_repository.Repos
 		validator:  NewPiValidator(),
 	}
 
-	routeGroup.GET(getPackagingIntegrationURL, tiController.getPackagingIntegration)
-	routeGroup.GET(getAllPackagingIntegrationURL, tiController.getAllPackagingIntegrations)
-	routeGroup.POST(createPackagingIntegrationURL, tiController.createPackagingIntegration)
-	routeGroup.PUT(updatePackagingIntegrationURL, tiController.updatePackagingIntegration)
-	routeGroup.DELETE(deletePackagingIntegrationURL, tiController.deletePackagingIntegration)
+	routeGroup.GET(GetPackagingIntegrationURL, tiController.getPackagingIntegration)
+	routeGroup.GET(GetAllPackagingIntegrationURL, tiController.getAllPackagingIntegrations)
+	routeGroup.POST(CreatePackagingIntegrationURL, tiController.createPackagingIntegration)
+	routeGroup.PUT(UpdatePackagingIntegrationURL, tiController.updatePackagingIntegration)
+	routeGroup.DELETE(DeletePackagingIntegrationURL, tiController.deletePackagingIntegration)
 }

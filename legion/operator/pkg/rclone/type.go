@@ -139,6 +139,9 @@ func (os *ObjectStorage) Download(localPath, remotePath string) error {
 			)
 		}
 
+		log.Info("Download directory from the remote bucket",
+			"local_dir", localDir, "remote_dir", remotePath,
+		)
 		return sync.CopyDir(localFs, remoteFs, copyEmptySrcDirs)
 	}
 
@@ -146,6 +149,9 @@ func (os *ObjectStorage) Download(localPath, remotePath string) error {
 		localFileName = srcFileName
 	}
 
+	log.Info("Download the file from the remote bucket",
+		"local_file", localPath, "remote_file", remotePath,
+	)
 	return operations.CopyFile(localFs, remoteFs, localFileName, srcFileName)
 }
 
@@ -186,6 +192,9 @@ func (os *ObjectStorage) Upload(localPath, remotePath string) error {
 			return fmt.Errorf("remote path (%s) points to a file, but local path (%s) points to a dir", remotePath, localPath)
 		}
 
+		log.Info("Upload the local directory to the remote bucket",
+			"local_dir", localPath, "remote_dir", remotePath,
+		)
 		return sync.CopyDir(rFs, lFs, copyEmptySrcDirs)
 	}
 
@@ -193,5 +202,8 @@ func (os *ObjectStorage) Upload(localPath, remotePath string) error {
 		remoteFileName = srcFileName
 	}
 
+	log.Info("Upload the file to the remote bucket",
+		"local_file", localPath, "remote_file", remotePath,
+	)
 	return operations.CopyFile(rFs, lFs, remoteFileName, srcFileName)
 }

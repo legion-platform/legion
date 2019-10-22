@@ -19,7 +19,7 @@ package modeldeployment
 import (
 	"context"
 	"github.com/knative/serving/pkg/apis/serving"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/spf13/viper"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"

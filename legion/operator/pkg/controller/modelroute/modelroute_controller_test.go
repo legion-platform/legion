@@ -151,6 +151,7 @@ func TestBasicReconcile(t *testing.T) {
 	defer c.Delete(context.TODO(), mr)
 
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	g.Expect(c.Get(context.TODO(), mrKey, mr)).ToNot(HaveOccurred())
 	g.Expect(mr.Status.State).To(Equal(legionv1alpha1.ModelRouteStateReady))
@@ -198,6 +199,7 @@ func TestEmptyMirror(t *testing.T) {
 	defer c.Delete(context.TODO(), mr)
 
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	g.Expect(c.Get(context.TODO(), mrKey, mr)).ToNot(HaveOccurred())
 	g.Expect(mr.Status.State).To(Equal(legionv1alpha1.ModelRouteStateReady))
@@ -240,6 +242,7 @@ func TestNotReadyEmptyMirror(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), mr)
 
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	g.Expect(c.Get(context.TODO(), mrKey, mr)).ToNot(HaveOccurred())
@@ -286,6 +289,7 @@ func TestMultipleTargets(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), mr)
 
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	g.Expect(c.Get(context.TODO(), mrKey, mr)).ToNot(HaveOccurred())

@@ -24,13 +24,12 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	mp_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
-	corev1 "k8s.io/api/core/v1"
-
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
 	"io"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,9 +37,16 @@ import (
 )
 
 var (
-	logMP       = logf.Log.WithName("model-packaging--repository")
+	logMP       = logf.Log.WithName("model-packaging-repository")
 	MpMaxSize   = 500
 	MpFirstPage = 0
+	// List of packager steps in execution order
+	packagerContainerNames = []string{
+		utils.TektonContainerName(legion.PackagerSetupStep),
+		utils.TektonContainerName(legion.PackagerPackageStep),
+		utils.TektonContainerName(legion.PackagerResultStep),
+	}
+	resultConfigKey = "result"
 )
 
 // TODO: add doc about map[string]interface{} https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v2.0.0
@@ -96,25 +102,10 @@ func TransformMpToK8s(mp *packaging.ModelPackaging, k8sNamespace string) (*v1alp
 	}, nil
 }
 
-func (kc *packagingK8sRepository) SaveModelPackagingResult(id string, dataResult map[string]string) error {
-	result := &corev1.ConfigMap{}
-	resultNamespacedName := types.NamespacedName{
-		Name:      legion.GeneratePackageResultCMName(id),
-		Namespace: kc.namespace,
-	}
-	if err := kc.k8sClient.Get(context.TODO(), resultNamespacedName, result); err != nil {
-		return err
-	}
-
-	result.Data = dataResult
-
-	return kc.k8sClient.Update(context.TODO(), result)
-}
-
-func (kc *packagingK8sRepository) GetModelPackaging(id string) (*packaging.ModelPackaging, error) {
+func (pkr *packagingK8sRepository) GetModelPackaging(id string) (*packaging.ModelPackaging, error) {
 	k8sMp := &v1alpha1.ModelPackaging{}
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: id, Namespace: kc.namespace},
+	if err := pkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: id, Namespace: pkr.namespace},
 		k8sMp,
 	); err != nil {
 		logMP.Error(err, "Get Model Packaging from k8s", "id", id)
@@ -125,7 +116,7 @@ func (kc *packagingK8sRepository) GetModelPackaging(id string) (*packaging.Model
 	return TransformMpFromK8s(k8sMp)
 }
 
-func (kc *packagingK8sRepository) GetModelPackagingList(options ...kubernetes.ListOption) (
+func (pkr *packagingK8sRepository) GetModelPackagingList(options ...kubernetes.ListOption) (
 	[]packaging.ModelPackaging, error,
 ) {
 	var k8sMpList v1alpha1.ModelPackagingList
@@ -147,9 +138,9 @@ func (kc *packagingK8sRepository) GetModelPackagingList(options ...kubernetes.Li
 	continueToken := ""
 
 	for i := 0; i < *listOptions.Page+1; i++ {
-		if err := kc.k8sClient.List(context.TODO(), &client.ListOptions{
+		if err := pkr.k8sClient.List(context.TODO(), &client.ListOptions{
 			LabelSelector: labelSelector,
-			Namespace:     kc.namespace,
+			Namespace:     pkr.namespace,
 			Raw: &metav1.ListOptions{
 				Limit:    int64(*listOptions.Size),
 				Continue: continueToken,
@@ -181,15 +172,15 @@ func (kc *packagingK8sRepository) GetModelPackagingList(options ...kubernetes.Li
 	return mps, nil
 }
 
-func (kc *packagingK8sRepository) DeleteModelPackaging(id string) error {
+func (pkr *packagingK8sRepository) DeleteModelPackaging(id string) error {
 	mp := &v1alpha1.ModelPackaging{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
-			Namespace: kc.namespace,
+			Namespace: pkr.namespace,
 		},
 	}
 
-	if err := kc.k8sClient.Delete(context.TODO(), mp); err != nil {
+	if err := pkr.k8sClient.Delete(context.TODO(), mp); err != nil {
 		logMP.Error(err, "Delete Model Packaging from k8s", "id", id)
 
 		return err
@@ -198,10 +189,10 @@ func (kc *packagingK8sRepository) DeleteModelPackaging(id string) error {
 	return nil
 }
 
-func (kc *packagingK8sRepository) UpdateModelPackaging(mp *packaging.ModelPackaging) error {
+func (pkr *packagingK8sRepository) UpdateModelPackaging(mp *packaging.ModelPackaging) error {
 	var k8sMp v1alpha1.ModelPackaging
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: mp.ID, Namespace: kc.namespace},
+	if err := pkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: mp.ID, Namespace: pkr.namespace},
 		&k8sMp,
 	); err != nil {
 		logMP.Error(err, "Get Model Packaging from k8s", "id", mp.ID)
@@ -210,7 +201,7 @@ func (kc *packagingK8sRepository) UpdateModelPackaging(mp *packaging.ModelPackag
 	}
 
 	// TODO: think about update, not replacing as for now
-	updatedK8sMpSpec, err := TransformMpToK8s(mp, kc.namespace)
+	updatedK8sMpSpec, err := TransformMpToK8s(mp, pkr.namespace)
 	if err != nil {
 		return err
 	}
@@ -223,7 +214,7 @@ func (kc *packagingK8sRepository) UpdateModelPackaging(mp *packaging.ModelPackag
 	k8sMp.Status.Results = []v1alpha1.ModelPackagingResult{}
 	k8sMp.ObjectMeta.Labels = updatedK8sMpSpec.Labels
 
-	if err := kc.k8sClient.Update(context.TODO(), &k8sMp); err != nil {
+	if err := pkr.k8sClient.Update(context.TODO(), &k8sMp); err != nil {
 		logMP.Error(err, "Creation of the Model Packaging", "id", mp.ID)
 
 		return err
@@ -232,13 +223,13 @@ func (kc *packagingK8sRepository) UpdateModelPackaging(mp *packaging.ModelPackag
 	return nil
 }
 
-func (kc *packagingK8sRepository) CreateModelPackaging(mp *packaging.ModelPackaging) error {
-	k8sMp, err := TransformMpToK8s(mp, kc.namespace)
+func (pkr *packagingK8sRepository) CreateModelPackaging(mp *packaging.ModelPackaging) error {
+	k8sMp, err := TransformMpToK8s(mp, pkr.namespace)
 	if err != nil {
 		return err
 	}
 
-	if err := kc.k8sClient.Create(context.TODO(), k8sMp); err != nil {
+	if err := pkr.k8sClient.Create(context.TODO(), k8sMp); err != nil {
 		logMP.Error(err, "Model packaging creation error from k8s", "id", mp.ID)
 
 		return err
@@ -247,10 +238,10 @@ func (kc *packagingK8sRepository) CreateModelPackaging(mp *packaging.ModelPackag
 	return nil
 }
 
-func (kc *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_repository.Writer, follow bool) error {
+func (pkr *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_repository.Writer, follow bool) error {
 	var mp v1alpha1.ModelPackaging
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: id, Namespace: kc.namespace},
+	if err := pkr.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: id, Namespace: pkr.namespace},
 		&mp,
 	); err != nil {
 		return err
@@ -260,17 +251,26 @@ func (kc *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_rep
 		return fmt.Errorf("model packaing %s has not started yet", id)
 	}
 
-	reader, err := utils.StreamLogs(
-		kc.namespace,
-		kc.k8sConfig,
-		mp.Status.PodName,
-		"step-packager",
-		follow,
-	)
-	if err != nil {
-		return err
+	logReaders := make([]io.Reader, 0, len(packagerContainerNames))
+
+	// Collect logs from all containers in execution order
+	for _, containerName := range packagerContainerNames {
+		reader, err := utils.StreamLogs(
+			pkr.namespace,
+			pkr.k8sConfig,
+			mp.Status.PodName,
+			containerName,
+			follow,
+		)
+		if err != nil {
+			return err
+		}
+		defer reader.Close()
+
+		logReaders = append(logReaders, reader)
 	}
-	defer reader.Close()
+	logReader := io.MultiReader(logReaders...)
+
 	clientGone := writer.CloseNotify()
 	for {
 		logFlushSize := viper.GetInt64(config_deployment.ModelLogsFlushSize)
@@ -279,7 +279,7 @@ func (kc *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_rep
 		case <-clientGone:
 			return nil
 		default:
-			_, err := io.CopyN(writer, reader, logFlushSize)
+			_, err := io.CopyN(writer, logReader, logFlushSize)
 			if err != nil {
 				if err == io.EOF {
 					logMP.Error(err, "Error during coping of log stream")
@@ -291,4 +291,46 @@ func (kc *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_rep
 			writer.Flush()
 		}
 	}
+}
+
+func (pkr *packagingK8sRepository) SaveModelPackagingResult(id string, result []v1alpha1.ModelPackagingResult) error {
+	resultStorage := &corev1.ConfigMap{}
+	resultNamespacedName := types.NamespacedName{
+		Name:      legion.GeneratePackageResultCMName(id),
+		Namespace: pkr.namespace,
+	}
+	if err := pkr.k8sClient.Get(context.TODO(), resultNamespacedName, resultStorage); err != nil {
+		logMP.Error(err, "Result config map must be present", "mp_id", id)
+		return err
+	}
+
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+
+	resultStorage.BinaryData = map[string][]byte{
+		resultConfigKey: resultJSON,
+	}
+
+	return pkr.k8sClient.Update(context.TODO(), resultStorage)
+}
+
+func (pkr *packagingK8sRepository) GetModelPackagingResult(id string) ([]v1alpha1.ModelPackagingResult, error) {
+	resultStorage := &corev1.ConfigMap{}
+	resultNamespacedName := types.NamespacedName{
+		Name:      legion.GeneratePackageResultCMName(id),
+		Namespace: pkr.namespace,
+	}
+	if err := pkr.k8sClient.Get(context.TODO(), resultNamespacedName, resultStorage); err != nil {
+		logMP.Error(err, "Result config map must be present", "mp_id", id)
+		return nil, err
+	}
+
+	packResult := make([]v1alpha1.ModelPackagingResult, 0)
+	if err := json.Unmarshal(resultStorage.BinaryData[resultConfigKey], &packResult); err != nil {
+		return nil, err
+	}
+
+	return packResult, nil
 }

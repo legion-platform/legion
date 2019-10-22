@@ -19,9 +19,10 @@ package training
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
 	mt_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	"net/http"
 	"reflect"
@@ -32,14 +33,15 @@ import (
 var logMT = logf.Log.WithName("training-controller")
 
 const (
-	GetModelTrainingURL     = "/model/training/:id"
-	GetAllModelTrainingURL  = "/model/training"
-	GetModelTrainingLogsURL = "/model/training/:id/log"
-	CreateModelTrainingURL  = "/model/training"
-	UpdateModelTrainingURL  = "/model/training"
-	DeleteModelTrainingURL  = "/model/training/:id"
-	IDMtURLParam            = "id"
-	FollowURLParam          = "follow"
+	GetModelTrainingURL        = "/model/training/:id"
+	GetAllModelTrainingURL     = "/model/training"
+	GetModelTrainingLogsURL    = "/model/training/:id/log"
+	CreateModelTrainingURL     = "/model/training"
+	UpdateModelTrainingURL     = "/model/training"
+	SaveModelTrainingResultURL = "/model/training/:id/result"
+	DeleteModelTrainingURL     = "/model/training/:id"
+	IDMtURLParam               = "id"
+	FollowURLParam             = "follow"
 )
 
 var (
@@ -194,6 +196,39 @@ func (mtc *ModelTrainingController) updateMT(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, mt)
+}
+
+// @Summary Save a Model Training result
+// @Description Save a Model Training by id
+// @Tags Training
+// @Name id
+// @Accept  json
+// @Produce  json
+// @Param MP body v1alpha1.TrainingResult true "Model Training result"
+// @Param id path string true "Model Training id"
+// @Success 200 {array} v1alpha1.TrainingResult
+// @Failure 404 {object} routes.HTTPResult
+// @Failure 400 {object} routes.HTTPResult
+// @Router /api/v1/model/training/{id}/result [put]
+func (mtc *ModelTrainingController) saveMPResults(c *gin.Context) {
+	mtID := c.Param(IDMtURLParam)
+	mtResult := &v1alpha1.TrainingResult{}
+
+	if err := c.ShouldBindJSON(mtResult); err != nil {
+		logMT.Error(err, "JSON binding of the model training result is failed")
+		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: err.Error()})
+
+		return
+	}
+
+	if err := mtc.mtRepository.SaveModelTrainingResult(mtID, mtResult); err != nil {
+		logMT.Error(err, fmt.Sprintf("Save the result of the model training: %+v", mtResult))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, mtResult)
 }
 
 // @Summary Get a Model Training

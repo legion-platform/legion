@@ -21,7 +21,7 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	logC      = logf.Log.WithName("connection--repository")
+	logC      = logf.Log.WithName("connection-k8s-repository")
 	MaxSize   = 500
 	FirstPage = 0
 )

@@ -17,8 +17,9 @@
 package connection
 
 import (
+	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"io"
 	"net/http"
 )
@@ -28,7 +29,8 @@ const (
 )
 
 type Repository interface {
-	SaveModelPackagingResult(id string, result map[string]string) error
+	SaveModelPackagingResult(id string, result []legionv1alpha1.ModelPackagingResult) error
+	GetModelPackagingResult(id string) ([]legionv1alpha1.ModelPackagingResult, error)
 	GetModelPackaging(id string) (*packaging.ModelPackaging, error)
 	GetModelPackagingList(options ...kubernetes.ListOption) ([]packaging.ModelPackaging, error)
 	DeleteModelPackaging(id string) error

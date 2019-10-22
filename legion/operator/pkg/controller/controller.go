@@ -44,6 +44,12 @@ func AddToManager(m manager.Manager) error {
 	if viper.GetBool(training.Enabled) {
 		log.Info("Setting up the training controller")
 
+		if err := tektonschema.AddToScheme(m.GetScheme()); err != nil {
+			log.Error(err, "unable to add tekton APIs to scheme")
+
+			return err
+		}
+
 		if err := AddTrainingToManager(m); err != nil {
 			return err
 		}

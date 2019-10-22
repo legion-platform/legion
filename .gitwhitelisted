@@ -49,3 +49,6 @@ legion/sdk/legion/sdk/models/.*:.*
 token: str
 legion/operator/pkg/webserver/routes/v1/connection/connection_test.go:.*
 legion/operator/pkg/webserver/routes/v1/connection/connection_validation_test.go:.*
+.*token:      token.*
+.*Username: "test-username".*
+.*User:   "git".*
