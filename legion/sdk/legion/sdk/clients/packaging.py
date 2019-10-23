@@ -126,7 +126,7 @@ class AsyncModelPackagingClient(AsyncRemoteEdiClient, ModelPackagingClient):
         :return Message from EDI server
         """
         return ModelPackaging.from_dict(
-            self.query(MODEL_PACKING_URL, action='POST', payload=mr.to_dict())
+            await self.query(MODEL_PACKING_URL, action='POST', payload=mr.to_dict())
         )
 
     async def edit(self, mr: ModelPackaging) -> ModelPackaging:
@@ -157,5 +157,6 @@ class AsyncModelPackagingClient(AsyncRemoteEdiClient, ModelPackagingClient):
             :param name: Name of a Model Packaging
             :return Message from EDI server
             """
-        async for chunk in self.stream(f'{MODEL_PACKING_URL}/{name}/log', 'GET', params={'follow': follow}):
+        params = {'follow': 'true' if follow else 'false'}
+        async for chunk in self.stream(f'{MODEL_PACKING_URL}/{name}/log', 'GET', params=params):
             yield chunk

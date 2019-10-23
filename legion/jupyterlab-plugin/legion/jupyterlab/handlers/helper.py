@@ -62,3 +62,12 @@ def decorate_async_handler_for_exception(function):
         except EDIConnectionException as base_exception:
             raise HTTPError(log_message=str(base_exception)) from base_exception
     return wrapper
+
+
+def url_join(*pieces: str) -> str:
+    """
+    Join url parts, avoid slash duplicates or lacks
+    :param pieces: any number of url parts
+    :return: url
+    """
+    return '/'.join(s.strip('/') for s in pieces)
