@@ -19,17 +19,16 @@ EDI client
 import json
 import logging
 import random
-import socket
 import string
 import sys
 import threading
-from typing import Mapping, Any, Optional, Iterator, Tuple, Union, Dict, Callable
 from collections import AsyncIterable
-
+from typing import Mapping, Any, Optional, Iterator, Tuple, Union, Dict, Callable
 from urllib.parse import urlparse, urlencode
+
+import aiohttp
 import requests
 import requests.exceptions
-import httpx
 
 import legion.sdk.config
 from legion.sdk.clients.oauth_handler import start_oauth2_callback_handler, OAuthLoginResult, do_refresh_token
@@ -74,6 +73,14 @@ class IncorrectAuthorizationToken(EDIConnectionException):
     pass
 
 
+class LoginRequired(EDIConnectionException):
+    """
+    Exception that says that login is required to do calls
+    """
+
+    pass
+
+
 def get_authorization_redirect(web_redirect: str, after_login: Callable) -> str:
     """
     Try to detect, parse and build OAuth2 redirect
@@ -96,12 +103,6 @@ def get_authorization_redirect(web_redirect: str, after_login: Callable) -> str:
     }
     web_redirect = f'{loc.scheme}://{loc.netloc}{loc.path}?{urlencode(get_parameters)}'
     return web_redirect
-
-
-def get_prepared_request(*args, **kwargs) -> requests.PreparedRequest:
-    request = requests.PreparedRequest()
-    request.prepare(*args, **kwargs)
-    return request
 
 
 class RemoteEdiClient:
@@ -173,25 +174,43 @@ class RemoteEdiClient:
         """
         return cls(other._base_url, other._token, other._retries, other.timeout)
 
-    def _build_request(self,
-                       request_cls: Callable[..., Union[httpx.AsyncRequest, requests.PreparedRequest]],
-                       url_template: str,
-                       payload: Mapping[Any, Any] = None,
-                       action: str = 'GET',
-                       stream: bool = False):
+    def _build_url(self, url_template):
         sub_url = url_template.format(version=self._version)
         target_url = self._base_url.strip('/') + sub_url
+        return target_url
+
+    def _build_request_kwargs(self,
+                              url_template: str,
+                              payload: Mapping[Any, Any] = None,
+                              action: str = 'GET',
+                              stream: bool = False) -> Dict[str, Any]:
+        target_url = self._build_url(url_template)
         headers = {}
         if self._token:
             headers['Authorization'] = f'Bearer {self._token}'
         if stream:
             headers['Content-type'] = 'text/event-stream'
 
-        request_kwargs = {'params' if action.lower() == 'get' else 'json': payload}
+        request_kwargs = {
+            'method': action,
+            'url': target_url,
+            'params' if action.lower() == 'get' else 'json': payload,
+            'headers': headers
+        }
+        return request_kwargs
 
-        return request_cls(action.lower(), target_url, headers=headers, **request_kwargs)
+    def _build_request(self,
+                       url_template: str,
+                       payload: Mapping[Any, Any] = None,
+                       action: str = 'GET',
+                       stream: bool = False) -> requests.PreparedRequest:
 
-    def _get_conn_timeout(self, timeout):
+        request_kwargs = self._build_request_kwargs(url_template, payload, action, stream)
+        request = requests.PreparedRequest()
+        request.prepare(**request_kwargs)
+        return request
+
+    def _get_conn_timeout(self, timeout=None):
         connection_timeout = timeout if timeout is not None else self.timeout
 
         if connection_timeout == 0:
@@ -222,20 +241,20 @@ class RemoteEdiClient:
         :return: :py:class:`requests.Response` -- response
         """
 
-        request = self._build_request(get_prepared_request, url_template, payload, action, stream)
+        request_kwargs = self._build_request_kwargs(url_template, payload, action, stream)
         connection_timeout = self._get_conn_timeout(timeout)
         left_retries = self._get_left_retries()
 
         raised_exception = None
         while left_retries > 0:
             try:
-                LOGGER.debug('Requesting {}'.format(request.url))
+                LOGGER.debug('Requesting {}'.format(self._build_url(url_template)))
 
                 if client:
-                    response = client.send(request, timeout=connection_timeout, stream=stream)
+                    response = client.request(timeout=connection_timeout, **request_kwargs)
                 else:
                     with requests.Session() as _client:
-                        response = _client.send(request, timeout=connection_timeout, stream=stream)
+                        response = _client.request(timeout=connection_timeout, stream=stream, **request_kwargs)
 
                 LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
 
@@ -275,20 +294,19 @@ class RemoteEdiClient:
         :return: dict[str, any] -- response content
         """
         response = self._request(url_template, payload, action)
-        return self._handle_query_response(response, payload)
+        return self._handle_query_response(response.text, payload, response.status_code)
 
     @staticmethod
-    def _handle_query_response(response, payload):
-
+    def _handle_query_response(text: str, payload: Mapping[Any, Any], status_code: int) -> Dict:
         try:
-            answer = json.loads(response.text)
+            answer = json.loads(text)
             LOGGER.debug('Got answer: {!r} with code {} for URL {!r}'
-                         .format(answer, response.status_code, payload))
+                         .format(answer, status_code, payload))
         except ValueError as json_decode_exception:
-            raise ValueError('Invalid JSON structure {!r}: {}'.format(response.text, json_decode_exception))
+            raise ValueError('Invalid JSON structure {!r}: {}'.format(text, json_decode_exception))
 
-        if 400 <= response.status_code < 600:
-            raise WrongHttpStatusCode(response.status_code, answer)
+        if 400 <= status_code < 600:
+            raise WrongHttpStatusCode(status_code, answer)
 
         LOGGER.debug('Query has been completed, parsed and validated')
         return answer
@@ -327,7 +345,7 @@ class RemoteEdiClient:
     ############################
 
     @staticmethod
-    def _login_required(response: Union[httpx.AsyncResponse, httpx.Response]):
+    def _login_required(response):
         """
         Check whether the login is required or client is already is authorised
         :param response:
@@ -399,92 +417,74 @@ class RemoteEdiClient:
 
 class AsyncRemoteEdiClient(RemoteEdiClient):
 
-    async def query(self, url_template: str, payload: Mapping[Any, Any] = None, action: str = 'GET'):
+    async def _async_request(
+            self, url_template: str,
+            payload: Mapping[Any, Any] = None,
+            action: str = 'GET',
+            stream=False,
+            session: aiohttp.ClientSession = None
+    ) -> AsyncIterable:
         """
-        Perform query to EDI server
+        Perform async request to EDI server
 
         :param url_template: url template from legion.const.api
         :param payload: payload (will be converted to JSON) or None
         :param action: HTTP method (GET, POST, PUT, DELETE)
-        :return: dict[str, any] -- response content
-        """
-        response = await self._request(url_template, payload, action)
-        return self._handle_query_response(response, payload)
-
-    async def _request(self, url_template: str,
-                       payload: Mapping[Any, Any] = None,
-                       action: str = 'GET',
-                       stream: bool = False,
-                       timeout: Optional[int] = None,
-                       limit_stack: bool = False,
-                       client: Optional[httpx.AsyncClient] = None):
-        """
-        Make HTTP request
-
-        :param url_template: target URL
-        :param payload: data to be placed in body of request
-        :param action: request action, e.g. get / post / delete
         :param stream: use stream mode or not
-        :param timeout: custom timeout in seconds (overrides default). 0 for disabling
-        :param limit_stack: do not start refreshing token if it is possible
-        :return: :py:class:`requests.Response` -- response
+        :param session: aiohttp.Session for making response
+        :return: AsyncIterable of data. If stream = False, only one line will be returned
         """
+        assert session is not None
 
-        assert not stream or stream and client, "You must pass AsyncClient for streaming response"
-
-        request = self._build_request(httpx.AsyncRequest, url_template, payload, action, stream)
-
-        connection_timeout = self._get_conn_timeout(timeout)
+        request_kwargs = self._build_request_kwargs(url_template, payload, action, stream=False)
         left_retries = self._get_left_retries()
-
         raised_exception = None
         while left_retries > 0:
             try:
-                LOGGER.debug('Requesting {}'.format(request.url))
+                async with session.request(**request_kwargs) as resp:
+                    print(resp)
+                    if self._login_required(resp):
+                        raise LoginRequired()
 
-                if client:
-                    response = await client.send(request, timeout=connection_timeout, stream=stream)
-                else:
-                    async with httpx.AsyncClient() as _client:
-                        response = await _client.send(request, timeout=connection_timeout, stream=stream)
-
-                resp_text = response.text if not stream else '<stream>'
-                LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, resp_text))
-
-            except (httpx.exceptions.ConnectTimeout, socket.gaierror) as exception:
+                    if stream:
+                        LOGGER.debug('Status code: "{}", Response: "<stream>"'.format(resp.status))
+                        async for line in self._handle_stream_response(resp):
+                            yield line
+                    else:
+                        resp_text = await resp.text()
+                        LOGGER.debug('Status code: "{}", Response: "{}"'.format(resp.status, resp_text))
+                        data = self._handle_query_response(resp_text, payload, resp.status)
+                        yield data
+                    break
+            except aiohttp.ClientConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base_url, exception))
                 raised_exception = exception
-            else:
-                LOGGER.debug('Got response. Breaking')
-                break
-            left_retries -= 1
+                left_retries -= 1
         else:
             raise EDIConnectionException('Can not reach {}'.format(self._base_url)) from raised_exception
 
-        if self._login_required(response):
-            try:
-                self._login(str(response.url), limit_stack=limit_stack)
-            except IncorrectAuthorizationToken as login_exc:
-                raise login_exc from raised_exception
-            return self._request(
-                url_template,
-                payload=payload,
-                action=action,
-                stream=stream,
-                timeout=timeout,
-                limit_stack=True
-            )
-        else:
-            return response
+    async def _handle_stream_response(self, response: aiohttp.ClientResponse, chunk_size=500) -> AsyncIterable:
+        """
+        Helper method that do next things:
+        1) Async iterating over response content by chunks
+        2) Decode bytes to text
+        3) Build string lines from text stream
+        :param response:
+        :param chunk_size:
+        :return:
+        """
 
-    @staticmethod
-    async def _iter_lines(response: httpx.AsyncResponse):
-        # Because iter_lines is not implemented for AsyncResponse yet from scratch
+        if 400 <= response.status < 600:
+            raise WrongHttpStatusCode(response.status)
 
+        encoding = response.get_encoding()
         pending = None
 
-        async for chunk in response.stream_text():
+        async for bytes_chunk in response.content.iter_chunked(chunk_size):
+            chunk = bytes_chunk.decode(encoding)
+
             if pending is not None:
+
                 chunk = pending + chunk
 
             lines = chunk.splitlines()
@@ -500,24 +500,54 @@ class AsyncRemoteEdiClient(RemoteEdiClient):
         if pending is not None:
             yield pending
 
-    async def stream(self, url_template: str, action: str = 'GET', params: Mapping[str, Any] = None) -> AsyncIterable:
+    async def _async_request_with_login(
+            self, url_template: str, payload: Mapping[Any, Any] = None, action: str = 'GET', stream=False
+    ):
         """
-        Perform query to EDI server
+        Perform async request to EDI server.
+        Create session under the hood.
+        Make two attempts to get data. Second attempt is used after login if required
 
         :param url_template: url template from legion.const.api
-        :param params: payload (will be converted to JSON) or None
+        :param payload: payload (will be converted to JSON) or None
         :param action: HTTP method (GET, POST, PUT, DELETE)
-        :return: response content
+        :param stream: use stream mode or not
+        :return: AsyncIterable of data. If stream = False, only one line will be returned
         """
+        async with aiohttp.ClientSession(conn_timeout=self._get_conn_timeout(), trust_env=True) as session:
+            try:
+                async for data in self._async_request(url_template, payload, action, stream, session):
+                    yield data
+            except LoginRequired:
+                self._login(self._build_url(url_template))
+                async for data in self._async_request(url_template, payload, action, stream, session):
+                    yield data
 
-        async with httpx.AsyncClient() as client:
-            response = await self._request(url_template, action=action, stream=True, payload=params, client=client)
+    async def query(self, url_template: str, payload: Mapping[Any, Any] = None, action: str = 'GET') -> Any:
+        """
+        Perform query to EDI server.
 
-            if 400 <= response.status_code < 600:
-                raise WrongHttpStatusCode(response.status_code)
+        :param url_template: url template from legion.const.api
+        :param payload: payload (will be converted to JSON) or None
+        :param action: HTTP method (GET, POST, PUT, DELETE)
+        :return: dict[str, any] -- response content
+        """
+        resp = None
+        async for res in self._async_request_with_login(url_template, payload, action, stream=False):
+            resp = res
+        return resp
 
-            async for line in self._iter_lines(response):
-                yield line
+    async def stream(self, url_template: str, action: str = 'GET', params: Mapping[str, Any] = None) -> AsyncIterable:
+        """
+        Perform query to EDI server in stream mode
+
+        :param url_template: url template from legion.const.api
+        :param action: HTTP method (GET, POST, PUT, DELETE)
+        :param params: payload (will be converted to JSON) or None
+        :return: async iterable that return response content line by line
+        """
+        async for line in self._async_request_with_login(url_template, action=action, stream=True, payload=params):
+            yield line
 
     async def info(self):
         """

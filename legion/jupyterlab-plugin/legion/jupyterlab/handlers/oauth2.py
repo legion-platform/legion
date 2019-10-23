@@ -19,7 +19,8 @@ Oauth2 callback handler
 from legion.jupyterlab.handlers.base import build_redirect_url, build_oauth_url
 from legion.jupyterlab.handlers.cloud import BaseCloudLegionHandler
 from legion.jupyterlab.handlers.helper import decorate_handler_for_exception, LEGION_OAUTH_STATE_COOKIE_NAME, \
-    LEGION_OAUTH_TOKEN_COOKIE_NAME
+    LEGION_OAUTH_TOKEN_COOKIE_NAME, url_join
+from legion.sdk import config
 from legion.sdk.clients.oauth_handler import get_oauth_token_issuer_url, get_id_token
 
 OAUTH_STATE_ARGUMENT = 'state'
@@ -56,7 +57,7 @@ class OAuth2Callback(BaseCloudLegionHandler):
 
         self.set_cookie(LEGION_OAUTH_TOKEN_COOKIE_NAME, login_result.id_token)
 
-        self.redirect(JUPYTERLAB_MAIN_PAGE)
+        self.redirect(url_join(config.JUPYTER_REDIRECT_URL, JUPYTERLAB_MAIN_PAGE))
 
 
 # pylint: disable=W0223

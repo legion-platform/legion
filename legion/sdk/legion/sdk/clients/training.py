@@ -156,5 +156,6 @@ class AsyncModelTrainingClient(AsyncRemoteEdiClient, ModelTrainingClient):
         :param name: Name of a Model Training
         :return Message from EDI server
         """
-        async for chunk in self.stream(f'{MODEL_TRAINING_URL}/{name}/log', 'GET', params={'follow': follow}):
+        params = {'follow': 'true' if follow else 'false'}
+        async for chunk in self.stream(f'{MODEL_TRAINING_URL}/{name}/log', 'GET', params=params):
             yield chunk
