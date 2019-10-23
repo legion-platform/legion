@@ -30,7 +30,7 @@ from legion.sdk.clients.edi import WrongHttpStatusCode
 from legion.sdk.clients.edi_aggregated import parse_resources_file_with_one_item
 
 DEFAULT_WAIT_TIMEOUT = 5
-DEFAULT_DEPLOYMENT_TIMEOUT = 600
+DEFAULT_DEPLOYMENT_TIMEOUT = 1200
 
 DEFAULT_WIDTH = 120
 MD_HEADER = ["Name", "State", "Min/Current/Max Replicas", "Service URL"]

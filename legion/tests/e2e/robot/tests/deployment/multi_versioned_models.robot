@@ -6,7 +6,7 @@ ${MD_SIMPLE_MODEL_2}   simple-model-multiver-2
 
 *** Settings ***
 Documentation       Legion's EDI operational check
-Test Timeout        6 minutes
+Test Timeout        20 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}

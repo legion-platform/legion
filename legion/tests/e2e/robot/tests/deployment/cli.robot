@@ -5,7 +5,7 @@ ${MD_SIMPLE_MODEL}     simple-model-cli
 
 *** Settings ***
 Documentation       Legion's EDI operational check for operations on ModelDeployment resources
-Test Timeout        6 minutes
+Test Timeout        20 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}

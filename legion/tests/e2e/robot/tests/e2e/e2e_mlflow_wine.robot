@@ -5,7 +5,7 @@ ${WINE_ID}              test-e2e-wine
 
 *** Settings ***
 Documentation       Check wine model
-Test Timeout        50 minutes
+Test Timeout        60 minutes
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Resource            ../../resources/keywords.robot
 Library             Collections

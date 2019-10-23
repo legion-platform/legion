@@ -12,7 +12,7 @@ ${CONN_NEW_REFENRECE}   origin/feat
 
 *** Settings ***
 Documentation       Legion's EDI operational check for operations on connection resources
-Test Timeout        6 minutes
+Test Timeout        20 minutes
 Resource            ../../resources/keywords.robot
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             Collections
