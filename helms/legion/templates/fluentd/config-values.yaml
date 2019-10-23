@@ -34,8 +34,8 @@ data:
       aws_sec_key "#{ENV['AWS_SECRET_ACCESS_KEY']}"
       {{- end }}
       {{- if eq .Values.feedback.output.s3.authorization "iam" }}
-      # IAM based authorization does not require any configuration
-      #  it only appends appropriate annotation for IAM service to FluentD pod
+      <instance_profile_credentials>
+      </instance_profile_credentials>
       {{- end }}
 
       # Connection
