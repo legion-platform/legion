@@ -136,12 +136,12 @@ const (
 var (
 	trainerResources = corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("256m"),
-			"memory": resource.MustParse("256Mi"),
+			"cpu":    resource.MustParse("128m"),
+			"memory": resource.MustParse("128Mi"),
 		},
 		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("256m"),
-			"memory": resource.MustParse("256Mi"),
+			"cpu":    resource.MustParse("128m"),
+			"memory": resource.MustParse("128Mi"),
 		},
 	}
 )

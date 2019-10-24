@@ -9,7 +9,7 @@ spec:
   workDir: mlflow/tensorflow/example
   resources:
     limits:
-      cpu: 2024m
+      cpu: 1024m
       memory: 2024Mi
     requests:
       cpu: 1024m
