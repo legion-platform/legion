@@ -79,7 +79,7 @@ func (bec *BaseEdiClient) DoRequest(httpMethod, path string, body interface{}) (
 		URL:    ediURL,
 		Header: map[string][]string{
 			authorizationHeaderName: {
-				fmt.Sprintf(authorizationHeaderValue, bec.ediURL),
+				fmt.Sprintf(authorizationHeaderValue, bec.token),
 			},
 		},
 		Body: bodyStream,
