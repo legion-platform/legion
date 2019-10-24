@@ -17,7 +17,8 @@
 package legion
 
 const (
-	ModelTrainingIDLogPrefix  = "mt_id"
-	ModelPackagingIDLogPrefix = "mp_id"
-	ConnectionIDLogPrefix     = "conn_id"
+	ModelTrainingIDLogPrefix   = "mt_id"
+	ModelPackagingIDLogPrefix  = "mp_id"
+	ModelDeploymentIDLogPrefix = "md_id"
+	ConnectionIDLogPrefix      = "conn_id"
 )

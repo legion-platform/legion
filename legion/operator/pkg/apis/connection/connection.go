@@ -24,11 +24,12 @@ const (
 	AzureBlobType = v1alpha1.ConnectionType("azureblob")
 	GITType       = v1alpha1.ConnectionType("git")
 	DockerType    = v1alpha1.ConnectionType("docker")
+	EcrType       = v1alpha1.ConnectionType("ecr")
 )
 
 var (
 	AllConnectionTypes = []v1alpha1.ConnectionType{
-		S3Type, GcsType, AzureBlobType, GITType, DockerType,
+		S3Type, GcsType, AzureBlobType, GITType, DockerType, EcrType,
 	}
 	AllConnectionTypesSet = map[v1alpha1.ConnectionType]interface{}{}
 )

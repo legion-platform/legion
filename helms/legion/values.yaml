@@ -201,11 +201,11 @@ feedback:
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
     resources:
       requests:
-        cpu: "200m"
+        cpu: "100m"
         memory: "128Mi"
       limits:
-        cpu: "500m"
-        memory: "512Mi"
+        cpu: "100m"
+        memory: "256Mi"
 
   # Aggregator accepts HTTP traffic with "feedback" for previously made predictions
   aggregator:
@@ -221,11 +221,11 @@ feedback:
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
     resources:
       requests:
-        cpu: "50m"
+        cpu: "100m"
         memory: "128Mi"
       limits:
         cpu: "100m"
-        memory: "512Mi"
+        memory: "256Mi"
 
     # Input port number
     # Type: integer
@@ -243,8 +243,8 @@ feedback:
         cpu: "300m"
         memory: "256Mi"
       limits:
-        cpu: "500m"
-        memory: "1024Mi"
+        cpu: "300m"
+        memory: "512Mi"
 
     # Input port number
     # Type: integer
@@ -436,11 +436,11 @@ operator:
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
     resources:
       limits:
-        cpu: "256m"
+        cpu: "128m"
         memory: "256Mi"
       requests:
         cpu: "128m"
-        memory: "128Mi"
+        memory: "256Mi"
 
 # EDI server configuration
 # It provides HTTP API for model training & model deployment management
@@ -475,10 +475,10 @@ edi:
   resources:
     requests:
       cpu: "50m"
-      memory: "128Mi"
+      memory: "256Mi"
     limits:
       cpu: "100m"
-      memory: "512Mi"
+      memory: "256Mi"
 
   # Configuration of ingress object
   ingress:
@@ -516,11 +516,11 @@ service_catalog:
   # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
   resources:
     requests:
-      cpu: "200m"
+      cpu: "100m"
       memory: "128Mi"
     limits:
-      cpu: "500m"
-      memory: "512Mi"
+      cpu: "100m"
+      memory: "256Mi"
 
 # JupyterLab instance
 # It provides web IDE for edition of source codes

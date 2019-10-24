@@ -22,21 +22,29 @@ import os
 import typing
 
 import docker
+from legion.packager.rest.extensions.ecr import ECR_CONNECTION_TYPE, get_ecr_credentials
 from legion.packager.rest.io_proc_utils import run
 from legion.sdk.models import Connection
-
 
 BUILDAH_BIN = os.getenv('BUILDAH_BIN', 'buildah')
 LOGGER = logging.getLogger(__name__)
 
 
-def extract_docker_login_credentials(connection: Connection) -> typing.Tuple[str, str, str]:
+def extract_docker_login_credentials(
+        connection: Connection,
+        docker_image_url: typing.Optional[str] = None) -> typing.Tuple[str, str, str]:
     """
     Extract docker login credentials from connection
 
+    :param docker_image_url:
     :param connection: connection
-    :return: (str, str, str) -- registry, login, password
+    :return: registry, login, password
     """
+    if connection.spec.type == ECR_CONNECTION_TYPE and docker_image_url:
+        user, password = get_ecr_credentials(connection.spec, docker_image_url)
+
+        return connection.spec.uri, user, password
+
     return connection.spec.uri, connection.spec.username, connection.spec.password
 
 
@@ -55,18 +63,18 @@ def test_is_buildah_available():
         return False
 
 
-def _extract_buildah_credentials(connection: typing.Optional[Connection] = None):
+def _extract_buildah_credentials(connection: typing.Optional[Connection] = None,
+                                 docker_image_url: typing.Optional[str] = None) -> typing.List[str]:
     """
     Extract argument for buildah
 
-    :param connection: (Optional) connection
-    :type connection: typing.Optional[PackagingResourceConnection]
+    :param connection: connection
     :return: typing.List[str]
     """
     if not connection:
         return []
 
-    _, login, password = extract_docker_login_credentials(connection)
+    _, login, password = extract_docker_login_credentials(connection, docker_image_url)
 
     logging.info('Using password %r for user %r',
                  '*' * len(password), login)
@@ -109,7 +117,7 @@ def build_docker_image_buildah(context,
     logging.info('Starting pushing of image')
     push_args = [
         BUILDAH_BIN, 'push',
-        *_extract_buildah_credentials(push_connection),
+        *_extract_buildah_credentials(push_connection, remote_tag),
         remote_tag
     ]
     run(*push_args)

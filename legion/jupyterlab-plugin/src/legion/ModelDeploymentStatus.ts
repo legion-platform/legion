@@ -29,6 +29,11 @@ export interface ModelDeploymentStatus {
     lastRevisionName?: string;
 
     /**
+     * Time when credentials was updated
+     */
+    lastUpdatedTime?: string;
+
+    /**
      * Expected number of pods under current load
      */
     replicas?: number;

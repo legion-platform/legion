@@ -10,7 +10,7 @@ ${TRAINING_1_NAME}      bulk-test-mt-1
 
 *** Settings ***
 Documentation       Legion's EDI operational check for bulk operations (with multiple resources)
-Test Timeout        6 minutes
+Test Timeout        20 minutes
 Resource            ../../resources/keywords.robot
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}
 Library             legion.robot.libraries.utils.Utils

@@ -39,6 +39,8 @@ type ModelDeploymentSpec struct {
 	ReadinessProbeInitialDelay *int32 `json:"readinessProbeInitialDelay,omitempty"`
 	// Initial delay for readiness probe of model pod
 	RoleName *string `json:"roleName,omitempty"`
+	// If pulling of your image requires authorization, then you should specify the connection id
+	ImagePullConnectionID *string `json:"imagePullConnID,omitempty"`
 }
 
 type ModelDeploymentState string
@@ -70,6 +72,8 @@ type ModelDeploymentStatus struct {
 	Replicas int32 `json:"replicas"`
 	// Last applied ready knative revision
 	LastRevisionName string `json:"lastRevisionName,omitempty"`
+	// Time when credentials was updated
+	LastCredsUpdatedTime *metav1.Time `json:"lastUpdatedTime,omitempty"`
 }
 
 // +genclient

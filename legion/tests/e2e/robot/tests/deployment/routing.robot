@@ -9,7 +9,7 @@ ${TEST_MR_URL_PREFIX}       /test-route/url
 
 *** Settings ***
 Documentation       Legion's EDI operational check
-Test Timeout        6 minutes
+Test Timeout        20 minutes
 Resource            ../../resources/keywords.robot
 Resource            ../../resources/variables.robot
 Variables           ../../load_variables_from_profiles.py    ${CLUSTER_PROFILE}

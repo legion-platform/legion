@@ -31,14 +31,15 @@ const (
 	// The Issuer Identifier for mode authorization
 	SecurityJwksIssuer = "deployment.security.jwks.issuer"
 	// Is model authorization enabled
-	SecurityJwksEnabled  = "deployment.security.jwks.enabled"
-	ModelLogsFlushSize   = "deployment.model_log.flush_size"
-	ServerTemplateFolder = "deployment.server.template_folder"
-	EdgeHost             = "deployment.edge.host"
-	NodeSelector         = "deployment.node_selector"
-	Toleration           = "deployment.toleration"
-	IstioServiceName     = "deployment.istio.service_name"
-	IstioNamespace       = "deployment.istio.namespace"
+	SecurityJwksEnabled             = "deployment.security.jwks.enabled"
+	ModelLogsFlushSize              = "deployment.model_log.flush_size"
+	ServerTemplateFolder            = "deployment.server.template_folder"
+	EdgeHost                        = "deployment.edge.host"
+	NodeSelector                    = "deployment.node_selector"
+	Toleration                      = "deployment.toleration"
+	IstioServiceName                = "deployment.istio.service_name"
+	IstioNamespace                  = "deployment.istio.namespace"
+	DefaultDockerPullConnectionName = "deployment.default_docker_pull_conn_name"
 )
 
 const (
@@ -50,6 +51,8 @@ const (
 
 func init() {
 	viper.SetDefault(Enabled, true)
+
+	viper.SetDefault(DefaultDockerPullConnectionName, "")
 
 	viper.SetDefault(DefaultRoleName, "default-legion")
 	config.PanicIfError(viper.BindEnv(DefaultRoleName))

@@ -120,5 +120,14 @@ func ValidatesMDAndSetDefaults(md *deployment.ModelDeployment) (err error) {
 		err = multierr.Append(errors.New(LivenessProbeErrorMessage), err)
 	}
 
+	if md.Spec.ImagePullConnectionID == nil || len(*md.Spec.ImagePullConnectionID) == 0 {
+		defaultDockerPullConnName := viper.GetString(config_deployment.DefaultDockerPullConnectionName)
+		logMD.Info("Docker pull connection name parameter is nil. Set the default value",
+			"name", md.ID,
+			"replicas", defaultDockerPullConnName)
+
+		md.Spec.ImagePullConnectionID = &defaultDockerPullConnName
+	}
+
 	return err
 }

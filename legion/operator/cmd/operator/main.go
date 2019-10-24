@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis"
 	legion_config "github.com/legion-platform/legion/legion/operator/pkg/config"
-	"github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	operator_config "github.com/legion-platform/legion/legion/operator/pkg/config/operator"
 	"github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
@@ -47,19 +46,14 @@ var mainCmd = &cobra.Command{
 func init() {
 	legion_config.InitBasicParams(mainCmd)
 
-	const enableConnControllerName = "enable-connection-controller"
 	const enableTrainControllerName = "enable-training-controller"
 	const enablePackControllerName = "enable-packaging-controller"
 	const enableDepControllerName = "enable-deployment-controller"
 
-	mainCmd.PersistentFlags().Bool(enableConnControllerName, false, "config file")
 	mainCmd.PersistentFlags().Bool(enableTrainControllerName, false, "config file")
 	mainCmd.PersistentFlags().Bool(enablePackControllerName, false, "config file")
 	mainCmd.PersistentFlags().Bool(enableDepControllerName, false, "config file")
 
-	if err := viper.BindPFlag(connection.Enabled, mainCmd.PersistentFlags().Lookup(enableConnControllerName)); err != nil {
-		panic(err)
-	}
 	if err := viper.BindPFlag(training.Enabled, mainCmd.PersistentFlags().Lookup(enableTrainControllerName)); err != nil {
 		panic(err)
 	}
