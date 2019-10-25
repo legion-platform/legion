@@ -79,8 +79,11 @@ data:
       azure_storage_account "#{ENV['AZURE_STORAGE_ACCOUNT']}"
       azure_storage_access_key "#{ENV['AZURE_STORAGE_ACCESS_KEY']}"
       {{- end }}
-      {{- if eq .Values.feedback.output.azureblob.authorization "sas" }}
-      # TODO: Auth based on Shared Access Signature (SAS Token) for Storage Account
+      {{- if eq .Values.feedback.output.azureblob.authorization "sastoken" }}
+      # Auth based on secrets from HELM configuration
+      # Secrets are attached as secretKeyRefs from "{{ .Release.Name }}-fluentd-secret" secret
+      azure_storage_account "#{ENV['AZURE_STORAGE_ACCOUNT']}"
+      azure_storage_sas_token "#{ENV['AZURE_STORAGE_SAS_TOKEN']}"
       {{- end }}
 
       # Storing
