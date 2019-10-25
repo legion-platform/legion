@@ -21,10 +21,11 @@ USER root
 # Install required fluentd plugins
 RUN apk update \
  && apk add --no-cache --virtual .build-deps \
-        build-base \
+        build-base git \
         ruby-dev gnupg zlib-dev \
  && gem install fluent-plugin-s3 -v 1.1.11 \
  && gem install fluent-plugin-gcs -v 0.4.0 \
- && gem install fluent-plugin-azure-storage-append-blob -v 0.1.1 \
+ && git clone https://github.com/maxkochubey/fluent-plugin-azure-storage-append-blob.git /tmp/build-azure \
+ && cd /tmp/build-azure && gem build *.gemspec && gem install *.gem \
  && apk del .build-deps \
  && rm -rf /tmp/* /var/tmp/* /usr/lib/ruby/gems/*/cache/*.gem
