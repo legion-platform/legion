@@ -53,7 +53,7 @@ def parse_model_training_entity(source_file: str) -> K8sTrainer:
 
 
 @click.command()
-@click.option("--verbose", action='store_true', help="more extensive logging")
+@click.option("--verbose/--no-verbose", default=True, help="more extensive logging")
 @click.option("--mt-file", '--mt', type=str, required=True,
               help="json/yaml file with a mode training resource")
 @click.option("--target", type=str, default='mlflow_output',
@@ -70,6 +70,9 @@ def main(verbose: str, mt_file: str, target: str) -> None:  # pylint: disable=W0
     k8s_trainer = parse_model_training_entity(mt_file)
     parameters: Dict[str, str] = k8s_trainer.model_training.spec.hyper_parameters
 
-    copyfile(parameters[INPUT_FILE_LOCATION], parameters[join(target, TARGET_FILE_LOCATION)])
+    if not os.path.exists(target):
+        os.makedirs(target)
+
+    copyfile(parameters[INPUT_FILE_LOCATION], join(target, parameters[TARGET_FILE_LOCATION]))
 
     click.echo("Files were copied!")

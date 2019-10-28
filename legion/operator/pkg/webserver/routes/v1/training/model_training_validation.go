@@ -66,6 +66,7 @@ var (
 	expectedConnectionDataTypes = map[v1alpha1.ConnectionType]bool{
 		connection.GcsType: true,
 		connection.S3Type:  true,
+		connection.AzureBlobType: true,
 	}
 )
 

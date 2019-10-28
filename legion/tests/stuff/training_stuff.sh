@@ -8,6 +8,11 @@ TRAINED_ARTIFACTS_DIR="${DIR}/trained_artifacts"
 LEGION_RESOURCES="${DIR}/legion_resources"
 TEST_DATA="${DIR}/data"
 COMMAND=setup
+# Test connection points to the test data directory
+TEST_DATA_DIR_CONNECTION_ID=test-data-dir
+# Test connection points to the test data file
+TEST_DATA_FILE_CONNECTION_ID=test-data-file
+TEST_DATA_TI_ID=training-data-helper
 
 # Cleanups test model packaging from EDI server, cloud bucket and local filesystem.
 # Arguments:
@@ -42,8 +47,8 @@ function pack_model() {
     aws s3 cp "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" "s3://${CLUSTER_NAME}-data-store/output/${mp_id}.zip"
     ;;
   azure)
-    STORAGE_ACCOUNT=$(az storage account list -g ${CLUSTER_NAME} --query "[?tags.cluster=='${CLUSTER_NAME}' && tags.purpose=='Legion models storage'].[name]" -otsv)
-    az storage blob upload --account-name ${STORAGE_ACCOUNT} -c ${CLUSTER_NAME}-data-store \
+    STORAGE_ACCOUNT=$(az storage account list -g "${CLUSTER_NAME}" --query "[?tags.cluster=='${CLUSTER_NAME}' && tags.purpose=='Legion models storage'].[name]" -otsv)
+    az storage blob upload --account-name "${STORAGE_ACCOUNT}" -c "${CLUSTER_NAME}-data-store" \
       -f "${TRAINED_ARTIFACTS_DIR}/${mp_id}.zip" -n "output/${mp_id}.zip"
     ;;
   gcp)
@@ -70,13 +75,32 @@ function wait_all_background_task() {
 
   for job in $(jobs -p); do
     echo "${job} waiting..."
-    wait "${job}" || ((fail_tasks=fail_tasks + 1))
+    wait "${job}" || ((fail_tasks = fail_tasks + 1))
   done
 
   if [[ "$fail_tasks" -ne "0" ]]; then
     echo "Failed $fail_tasks linters"
     exit 1
   fi
+}
+
+# Create a test data Legion connection based on models-output connection.
+# Arguments:
+# $1 - Legion connection ID, which will be used for new connection
+# $2 - Legion connection uri, which will be used for new connection
+function create_test_data_connection() {
+  local conn_id="${1}"
+  local conn_uri="${2}"
+  local conn_file="test-data-connection.yaml"
+
+  # Replaced the uri with the test data directory and added the kind field
+  legionctl conn get --id models-output -o json |
+    conn_uri="${conn_uri}" jq '.[0].spec.uri = env.conn_uri | .[] | .kind = "Connection"' \
+      >"${conn_file}"
+
+  legionctl conn delete --id "${conn_id}" --ignore-not-found
+  legionctl conn create -f "${conn_file}" --id "${conn_id}"
+  rm "${conn_file}"
 }
 
 # Main entrypoint for setup command.
@@ -92,18 +116,24 @@ function setup() {
   legionctl ti create -f "${LEGION_RESOURCES}/training_data_helper_ti.json"
   rm "${LEGION_RESOURCES}/training_data_helper_ti.json"
 
-  # Pushes a test data to the bucket
+  # Pushes a test data to the bucket and create a file with the connection
   case "${CLOUD_PROVIDER}" in
   aws)
-    aws s3 cp --recursive "${TEST_DATA}/" "s3://${CLUSTER_NAME}-data-store/test-data/"
+    remote_dir="s3://${CLUSTER_NAME}-data-store/test-data"
+
+    aws s3 cp --recursive "${TEST_DATA}/" "${remote_dir}/data/"
     ;;
   azure)
-    STORAGE_ACCOUNT=$(az storage account list -g ${CLUSTER_NAME} --query "[?tags.cluster=='${CLUSTER_NAME}' && tags.purpose=='Legion models storage'].[name]" -otsv)
-    az storage blob upload-batch --account-name ${STORAGE_ACCOUNT} --source "${TEST_DATA}/" \
-      --destination "${CLUSTER_NAME}-data-store" --destination-path "test-data"
+    remote_dir="${CLUSTER_NAME}-data-store/test-data"
+    STORAGE_ACCOUNT=$(az storage account list -g "${CLUSTER_NAME}" --query "[?tags.cluster=='${CLUSTER_NAME}' && tags.purpose=='Legion models storage'].[name]" -otsv)
+
+    az storage blob upload-batch --account-name "${STORAGE_ACCOUNT}" --source "${TEST_DATA}/" \
+      --destination "${CLUSTER_NAME}-data-store" --destination-path "test-data/data"
     ;;
   gcp)
-    gsutil cp -r "${TEST_DATA}/" "gs://${CLUSTER_NAME}-data-store/test-data/"
+    remote_dir="gs://${CLUSTER_NAME}-data-store/test-data"
+
+    gsutil cp -r "${TEST_DATA}/" "${remote_dir}/"
     ;;
   *)
     echo "Unexpected CLOUD_PROVIDER: ${CLOUD_PROVIDER}"
@@ -111,6 +141,11 @@ function setup() {
     exit 1
     ;;
   esac
+
+  # Update test-data connections
+  create_test_data_connection "${TEST_DATA_FILE_CONNECTION_ID}" "${remote_dir}/data/legion.project.yaml"
+  create_test_data_connection "${TEST_DATA_DIR_CONNECTION_ID}" "${remote_dir}/data/"
+
   wait_all_background_task
 }
 
@@ -121,7 +156,9 @@ function cleanup() {
     cleanup_pack_model "${mp_id}" &
   done
 
-  legionctl ti delete --id training-data-helper --ignore-not-found
+  legionctl ti delete --id ${TEST_DATA_TI_ID} --ignore-not-found
+  legionctl conn delete --id ${TEST_DATA_DIR_CONNECTION_ID} --ignore-not-found
+  legionctl conn delete --id ${TEST_DATA_FILE_CONNECTION_ID} --ignore-not-found
 }
 
 # Prints the help message
@@ -142,7 +179,7 @@ while [ "${1}" != "" ]; do
     COMMAND=cleanup
     ;;
   --models)
-    mapfile -t MODEL_NAMES <<< "${2}"
+    mapfile -t MODEL_NAMES <<<"${2}"
     shift 2
     ;;
   --verbose)
@@ -174,4 +211,3 @@ cleanup)
   exit 1
   ;;
 esac
-

@@ -1,0 +1,18 @@
+kind: ModelTraining
+id: test-downloading-training-data
+spec:
+  model:
+    name: test-training-data
+    version: 1.0
+  # Toolchain integration name from TEST_DATA_TI_ID variable in "legion/tests/stuff/training_stuff.sh" file
+  toolchain: training-data-helper
+  entrypoint: main
+  workDir: "."
+  hyperParameters:
+    input-file-location: "local/legion.project.yaml"
+    target-file-location: "legion.project.yaml"
+  data:
+    # Connection name from TEST_DATA_DIR_CONNECTION_ID variable in "legion/tests/stuff/training_stuff.sh" file
+    - connName: test-data-dir
+      localPath: local
+  vcsName: legion-examples
