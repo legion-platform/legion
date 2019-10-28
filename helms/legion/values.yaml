@@ -197,6 +197,15 @@ feedback:
     # Type: string
     # image: custom-image:1.0
 
+    # The list of headers which will be skipped during feedback
+    # Pay attention! The headers must be in lowercase format.
+    # Type: list of strings
+    prohibited_headers:
+      - authorization
+      - x-jwt
+      - x-user
+      - x-email
+
     # Resources for each instance
     # For declaration format see https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
     resources:

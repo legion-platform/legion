@@ -28,6 +28,8 @@ data:
                       - "{{ .Release.Name }}-fluentd.{{ .Release.Namespace }}.svc.cluster.local"
                       - "--fluentd-port"
                       - "24224"
+                      - "--prohibited-headers"
+                      - "{{ .Values.feedback.collector.prohibited_headers | join "," }}"
                   ports:
                       - containerPort: 7777
                         name: api

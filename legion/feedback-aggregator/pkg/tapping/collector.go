@@ -19,26 +19,25 @@ const (
 	TapUrl                 = "/tap"
 	filterHeaderKey        = ":path"
 	filterRegexHeaderValue = ".*/api/model/invoke.*"
-	urlEncodedHeader       = "application/x-www-form-urlencoded"
-	contentTypeHeader      = "content-type"
 	defaultBufferSize      = 1024 * 1024
 )
 
 var log = logf.Log.WithName("collector")
 
-var (
-	prohibitedHeaders = map[string]interface{}{
-		"authorization": nil,
-	}
-)
-
 type RequestCollector struct {
 	envoyUrl            string
 	feedbackRequestYaml []byte
 	logger              feedback.DataLogging
+	prohibitedHeaders   map[string]string
 }
 
-func NewRequestCollector(envoyHost string, envoyPort int, configId string, logger feedback.DataLogging) (*RequestCollector, error) {
+func NewRequestCollector(
+	envoyHost string,
+	envoyPort int,
+	configId string,
+	logger feedback.DataLogging,
+	prohibitedHeaders []string,
+) (*RequestCollector, error) {
 	feedbackRequest := TapRequest{
 		ConfigID: configId,
 	}
@@ -64,34 +63,26 @@ func NewRequestCollector(envoyHost string, envoyPort int, configId string, logge
 		return nil, err
 	}
 
+	prohibitedHeadersMap := make(map[string]string, len(prohibitedHeaders))
+	for _, header := range prohibitedHeaders {
+		prohibitedHeadersMap[header] = ""
+	}
+
 	return &RequestCollector{
 		envoyUrl:            fmt.Sprintf("%s:%d", envoyHost, envoyPort),
 		feedbackRequestYaml: feedbackRequestYaml,
 		logger:              logger,
+		prohibitedHeaders:   prohibitedHeadersMap,
 	}, nil
 }
 
-func parseUrlencodedParams(params url.Values) map[string]interface{} {
-	args := make(map[string]interface{}, len(params))
-
-	for k, v := range params {
-		if len(v) == 1 {
-			args[k] = v[0]
-		} else {
-			args[k] = v
-		}
-	}
-
-	return args
-}
-
-func convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.ResponseBody, error) {
+func (rc *RequestCollector) convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.ResponseBody, error) {
 	responseBody := &feedback.ResponseBody{}
 	requestResponse := &feedback.RequestResponse{}
 
 	requestHeaders := make(map[string]string, len(message.HttpBufferedTrace.Request.Headers))
 	for _, header := range message.HttpBufferedTrace.Request.Headers {
-		if _, ok := prohibitedHeaders[header.Key]; ok {
+		if _, ok := rc.prohibitedHeaders[header.Key]; ok {
 			continue
 		}
 
@@ -121,7 +112,7 @@ func convertToFeedback(message *Message) (*feedback.RequestResponse, *feedback.R
 
 	responseHeaders := make(map[string]string, len(message.HttpBufferedTrace.Response.Headers))
 	for _, header := range message.HttpBufferedTrace.Response.Headers {
-		if _, ok := prohibitedHeaders[header.Key]; ok {
+		if _, ok := rc.prohibitedHeaders[header.Key]; ok {
 			continue
 		}
 
@@ -209,7 +200,7 @@ func (rc *RequestCollector) tapTraffic() error {
 			return err
 		}
 
-		requestResponse, responseBody, err := convertToFeedback(&message)
+		requestResponse, responseBody, err := rc.convertToFeedback(&message)
 		if err != nil {
 			return err
 		}
