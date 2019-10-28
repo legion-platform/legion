@@ -1,26 +1,39 @@
-# Prerequirements
-To participate in developing of Legion project you have to meet this requirements:
+# Development
+
+## Pre requirements
+
+To participate in developing of Legion project you have to meet these requirements:
 * Linux/macOS operating systems (due to tools used for development)
-* [Python v3.6](https://www.python.org/downloads/release/python-360/)
-* [Golang v1.12](https://blog.golang.org/go1.12)
-* [HELM v2.10.0](https://github.com/helm/helm/releases/tag/v2.10.0)
-* [Kubectl v1.13.2](https://github.com/kubernetes/kubernetes/releases/tag/v1.13.2)
-* [Docker v17+](https://docs.docker.com/install/)
-* [Kops v1.11.0](https://github.com/kubernetes/kops/releases/tag/1.11.0)
-* Python IDE, e.g. [PyCharm](https://www.jetbrains.com/pycharm/) or [VSCode](https://code.visualstudio.com/) with [vscode-python extension](https://github.com/Microsoft/vscode-python)
-* Golang IDE, e.g. [GoLand](https://www.jetbrains.com/go/) or [VSCode](https://code.visualstudio.com/) with [ms-vscode.go extension](https://github.com/Microsoft/vscode-go)
-* Local Kubernetes cluster (optional, if you don't have an access to external cluster)
+* Python:
+    * [Python v3.6](https://www.python.org/downloads/release/python-360/)
+    * [Pipenv](https://github.com/pypa/pipenv)
+* Golang:
+    * [Golang v1.12](https://blog.golang.org/go1.12)
+    * [Dep](https://github.com/golang/dep)
+    * [golangci-lint](https://github.com/golangci/golangci-lint)
+    * [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
+    * [swag](https://github.com/swaggo/swag)
+    * [gotestsum](https://github.com/gotestyourself/gotestsum)
+* Jupiterlab plugin:
+    * [Typescript](https://www.typescriptlang.org/index.html#download-links)
+    * [Yarn](https://yarnpkg.com/lang/en/)
+* Infra:
+    * [HELM v2.14.0](https://github.com/helm/helm/releases/tag/v2.14.0)
+    * [Kubectl v1.13.2](https://github.com/kubernetes/kubernetes/releases/tag/v1.13.2)
+    * [Docker v17+](https://docs.docker.com/install/)
+    * [Swagger codegen 2.4.7](https://github.com/swagger-api/swagger-codegen/releases)
 
-# Cooperation
-All Legion development takes place in:
-* [Legion Platform GitHub orgranization](https://github.com/legion-platform) ([detailed project's information](project_structure.md))
-* [Legion Platform Slack](https://legion-platform.slack.com)
+## Useful links
 
-## Creating Issues / Bugs
-TBD
-
-## Creating PRs
-TBD
-
-## Approving PRs
-TBD
+* Python:
+    * [Mlflow](https://www.mlflow.org/docs/latest/index.html)
+    * [Robotframework Guide](http://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html)
+    * [Legion Airflow Plugins Development](https://airflow.apache.org/plugins.html)
+* Golang:
+    * [Kubebuilder](https://book.kubebuilder.io/)
+* Jupiterlab plugin:
+    * [Typescript handbook](https://www.typescriptlang.org/docs/handbook/basic-types.html)
+    * [React documentation](https://reactjs.org/docs/getting-started.html)
+    * [Jupiterlab plugin Extension Developer Guide](https://jupyterlab.readthedocs.io/en/stable/developer/extension_dev.html)
+* Infra:
+    * [Helm](https://helm.sh/docs/using_helm/#quickstart-guide)

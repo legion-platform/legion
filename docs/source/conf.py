@@ -220,7 +220,7 @@ pdf_documents = [
 pdf_stylesheets = ['sphinx', 'kerning', 'a4', 'simple', ]
 
 # Page-break level
-pdf_break_level = 2
+pdf_break_level = 1
 pdf_breakside = 'any'
 pdf_language = 'en_US'
 pdf_fit_mode = 'shrink'
