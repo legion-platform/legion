@@ -12,7 +12,7 @@ We set up robot tests for `gke-legion-test` cluster in the example below.
 *Do not forget change your cluster url and legion version.*
 
 Export cluster secrets from legion-profiles directory.
-* Clones [legion-profiles](https://git.epam.com/epmd-legn/legion-profiles) repository. Checkout your or the developer branch.
+* Clones *internal* legion-profiles repository. Checkout your or the developer branch.
 * Clones [legion-infrastructure](https://github.com/legion-platform/legion-infrastructure) repository. Checkout your or the developer branch.
 * Build terraform docker image using the `make docker-build-terraform` command in legion-infrastructure directory.
 * You can optionally override the following parameters in `.env` file:
