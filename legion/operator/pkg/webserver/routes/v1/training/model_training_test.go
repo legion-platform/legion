@@ -66,7 +66,7 @@ func (s *ModelTrainingRouteSuite) SetupSuite() {
 	v1Group := s.server.Group("")
 	s.k8sClient = mgr.GetClient()
 	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, s.k8sClient, nil)
-	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, s.k8sClient)
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, s.k8sClient, "")
 	train_route.ConfigureRoutes(v1Group, s.mtRepository, s.connRepository)
 
 	// Create the connection that will be used as the vcs param for a training.

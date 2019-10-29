@@ -30,12 +30,15 @@ import (
 var logC = logf.Log.WithName("connection-controller")
 
 const (
-	GetConnectionURL    = "/connection/:id"
-	GetAllConnectionURL = "/connection"
-	CreateConnectionURL = "/connection"
-	UpdateConnectionURL = "/connection"
-	DeleteConnectionURL = "/connection/:id"
-	IDConnURLParam      = "id"
+	GetConnectionURL           = "/connection/:id"
+	GetDecryptedConnectionURL  = "/connection/:id/decrypted"
+	GetAllConnectionURL        = "/connection"
+	CreateConnectionURL        = "/connection"
+	UpdateConnectionURL        = "/connection"
+	DeleteConnectionURL        = "/connection/:id"
+	IDConnURLParam             = "id"
+	ConnDecryptTokenQueryParam = "token"
+	MissedTokenErrorMessage    = "missed the token URL param"
 )
 
 var (
@@ -65,6 +68,7 @@ func ConfigureRoutes(
 	}
 
 	routeGroup.GET(GetConnectionURL, controller.getConnection)
+	routeGroup.GET(GetDecryptedConnectionURL, controller.getDecryptedConnection)
 	routeGroup.GET(GetAllConnectionURL, controller.getAllConnections)
 	routeGroup.POST(CreateConnectionURL, controller.createConnection)
 	routeGroup.PUT(UpdateConnectionURL, controller.updateConnection)
@@ -86,6 +90,38 @@ func (cc *controller) getConnection(c *gin.Context) {
 	connID := c.Param(IDConnURLParam)
 
 	conn, err := cc.connRepository.GetConnection(connID)
+	if err != nil {
+		logC.Error(err, fmt.Sprintf("Retrieving %s connection", connID))
+		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, conn)
+}
+
+// @Summary Get a decrypted Connection
+// @Description Get a decrypted Connection by id
+// @Tags Connection
+// @Name id
+// @Accept  json
+// @Produce  json
+// @Param id path string true "Connection id"
+// @Param token query string true "Decrypt token"
+// @Success 200 {object} connection.Connection
+// @Failure 404 {object} routes.HTTPResult
+// @Failure 400 {object} routes.HTTPResult
+// @Router /api/v1/connection/{id}/decrypted [get]
+func (cc *controller) getDecryptedConnection(c *gin.Context) {
+	connID := c.Param(IDConnURLParam)
+	token := c.Query(ConnDecryptTokenQueryParam)
+
+	if len(token) == 0 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, routes.HTTPResult{Message: MissedTokenErrorMessage})
+		return
+	}
+
+	conn, err := cc.connRepository.GetDecryptedConnection(connID, token)
 	if err != nil {
 		logC.Error(err, fmt.Sprintf("Retrieving %s connection", connID))
 		c.AbortWithStatusJSON(routes.CalculateHTTPStatusCode(err), routes.HTTPResult{Message: err.Error()})
@@ -128,7 +164,6 @@ func (cc *controller) getAllConnections(c *gin.Context) {
 
 		return
 	}
-
 	c.JSON(http.StatusOK, connList)
 }
 

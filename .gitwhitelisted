@@ -58,3 +58,6 @@ legion/operator/pkg/webserver/routes/v1/connection/connection_validation_test.go
 .*Password: password.*
 .*username: <paste your username here>.*
 .*password: <paste your password here>.*
+.*Username: "username".*
+.*Password: "password".*
+.*token: "".*

@@ -863,6 +863,40 @@ paths:
       summary: Get a Connection
       tags:
       - Connection
+  /api/v1/connection/{id}/decrypted:
+    get:
+      consumes:
+      - application/json
+      description: Get a decrypted Connection by id
+      parameters:
+      - description: Connection id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Decrypt token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Connection'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/HTTPResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/HTTPResult'
+      summary: Get a decrypted Connection
+      tags:
+      - Connection
   /api/v1/feedback:
     post:
       consumes:

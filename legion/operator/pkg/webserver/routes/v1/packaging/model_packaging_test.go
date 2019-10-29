@@ -69,7 +69,9 @@ func (s *ModelPackagingRouteSuite) SetupSuite() {
 	v1Group := s.server.Group("")
 	s.k8sClient = mgr.GetClient()
 	s.mpRepository = mp_k8s_repository.NewRepository(testNamespace, testNamespace, s.k8sClient, nil)
-	pack_route.ConfigureRoutes(v1Group, s.mpRepository, conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient()))
+	pack_route.ConfigureRoutes(v1Group, s.mpRepository, conn_k8s_repository.NewRepository(
+		testNamespace, mgr.GetClient(), "",
+	))
 
 	err = s.mpRepository.CreatePackagingIntegration(&packaging.PackagingIntegration{
 		ID: piIDMpRoute,

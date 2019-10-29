@@ -21,3 +21,4 @@ ${MP_SIMPLE_MODEL}                    simple-model
 ${MP_FAIL_MODEL}                      fail
 ${MP_COUNTER_MODEL}                   counter
 ${MP_FEEDBACK_MODEL}                  feedback
+${CONN_DECRYPTED_MASK}                *****

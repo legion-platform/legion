@@ -54,7 +54,7 @@ func (s *ModelTrainingValidationSuite) SetupSuite() {
 	}
 
 	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient(), "")
 	s.validator = train_route.NewMtValidator(s.mtRepository, s.connRepository)
 
 	// Create the connection that will be used as the vcs param for a training.

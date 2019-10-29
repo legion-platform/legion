@@ -19,22 +19,20 @@ package connection_test
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	legion_errors "github.com/legion-platform/legion/legion/operator/pkg/errors"
 	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
-	conn_k8s_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver/routes"
 	conn_route "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/connection"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"net/http"
-	"net/http/httptest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strings"
-	"testing"
 )
 
 const (
@@ -50,40 +48,36 @@ func stubKeyEvaluator(uri string) (string, error) {
 	return "stub-key", nil
 }
 
-type ConnectionRouteSuite struct {
+type ConnectionRouteGenericSuite struct {
 	suite.Suite
-	g              *GomegaWithT
-	server         *gin.Engine
-	connRepository conn_repository.Repository
+	g                *GomegaWithT
+	server           *gin.Engine
+	connRepository   conn_repository.Repository
+	connDecryptToken string
 }
 
-func (s *ConnectionRouteSuite) SetupSuite() {
-	mgr, err := manager.New(cfg, manager.Options{NewClient: utils.NewClient})
-	if err != nil {
-		panic(err)
-	}
+func (s *ConnectionRouteGenericSuite) SetupSuite() {
+	utils.SetupLogger()
 
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
-	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
 	conn_route.ConfigureRoutes(v1Group, s.connRepository, stubKeyEvaluator)
 }
 
-func (s *ConnectionRouteSuite) TearDownTest() {
+func (s *ConnectionRouteGenericSuite) TearDownTest() {
 	for _, connID := range []string{connID, connID1, connID2} {
-		if err := s.connRepository.DeleteConnection(connID); err != nil && !errors.IsNotFound(err) {
+		if err := s.connRepository.DeleteConnection(connID); err != nil && !legion_errors.IsNotFoundError(err) {
 			// If a connection is not found then it was not created during a test case
-			// All other errors propagate as a panic
-			panic(err)
+			s.T().Fatalf("Unexpected error: %v", err)
 		}
 	}
 }
 
-func (s *ConnectionRouteSuite) SetupTest() {
+func (s *ConnectionRouteGenericSuite) SetupTest() {
 	s.g = NewGomegaWithT(s.T())
 }
 
-func (s *ConnectionRouteSuite) newMultipleConnStubs() []*connection.Connection {
+func (s *ConnectionRouteGenericSuite) newMultipleConnStubs() []*connection.Connection {
 	conn1 := newConnStub()
 	conn1.ID = connID1
 	s.g.Expect(s.connRepository.CreateConnection(conn1)).NotTo(HaveOccurred())
@@ -93,10 +87,6 @@ func (s *ConnectionRouteSuite) newMultipleConnStubs() []*connection.Connection {
 	s.g.Expect(s.connRepository.CreateConnection(conn2)).NotTo(HaveOccurred())
 
 	return []*connection.Connection{conn1, conn2}
-}
-
-func TestConnectionRouteSuite(t *testing.T) {
-	suite.Run(t, new(ConnectionRouteSuite))
 }
 
 func newConnStub() *connection.Connection {
@@ -111,7 +101,7 @@ func newConnStub() *connection.Connection {
 	}
 }
 
-func (s *ConnectionRouteSuite) TestGetConnection() {
+func (s *ConnectionRouteGenericSuite) TestGetConnection() {
 	conn := newConnStub()
 	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
 
@@ -128,12 +118,11 @@ func (s *ConnectionRouteSuite) TestGetConnection() {
 	s.g.Expect(err).NotTo(HaveOccurred())
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
-	s.g.Expect(result).Should(Equal(connection.Connection{
-		ID: conn.ID, Spec: conn.Spec, Status: &v1alpha1.ConnectionStatus{},
-	}))
+	s.g.Expect(result.ID).Should(Equal(conn.ID))
+	s.g.Expect(result.Spec).Should(Equal(conn.DeleteSensitiveData().Spec))
 }
 
-func (s *ConnectionRouteSuite) TestGetConnectionNotFound() {
+func (s *ConnectionRouteGenericSuite) TestGetConnectionNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -151,7 +140,7 @@ func (s *ConnectionRouteSuite) TestGetConnectionNotFound() {
 	s.g.Expect(result.Message).Should(ContainSubstring("not found"))
 }
 
-func (s *ConnectionRouteSuite) TestGetAllConnections() {
+func (s *ConnectionRouteGenericSuite) TestGetAllConnections() {
 	conn := newConnStub()
 	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
 
@@ -171,10 +160,10 @@ func (s *ConnectionRouteSuite) TestGetAllConnections() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
 	s.g.Expect(result[0].ID).Should(Equal(conn.ID))
-	s.g.Expect(result[0].Spec).Should(Equal(conn.Spec))
+	s.g.Expect(result[0].Spec).Should(Equal(conn.DeleteSensitiveData().Spec))
 }
 
-func (s *ConnectionRouteSuite) TestGetAllEmptyConnections() {
+func (s *ConnectionRouteGenericSuite) TestGetAllEmptyConnections() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -192,7 +181,7 @@ func (s *ConnectionRouteSuite) TestGetAllEmptyConnections() {
 	s.g.Expect(result).Should(HaveLen(0))
 }
 
-func (s *ConnectionRouteSuite) TestGetAllConnectionsByType() {
+func (s *ConnectionRouteGenericSuite) TestGetAllConnectionsByType() {
 	connGit := &connection.Connection{
 		ID: connID1,
 		Spec: v1alpha1.ConnectionSpec{
@@ -233,10 +222,10 @@ func (s *ConnectionRouteSuite) TestGetAllConnectionsByType() {
 	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
 	s.g.Expect(result).Should(HaveLen(1))
 	s.g.Expect(result[0].ID).Should(Equal(connGit.ID))
-	s.g.Expect(result[0].Spec).Should(Equal(connGit.Spec))
+	s.g.Expect(result[0].Spec).Should(Equal(connGit.DeleteSensitiveData().Spec))
 }
 
-func (s *ConnectionRouteSuite) TestGetAllConnectionsMultipleFiltersByType() {
+func (s *ConnectionRouteGenericSuite) TestGetAllConnectionsMultipleFiltersByType() {
 	connGit := &connection.Connection{
 		ID: connID1,
 		Spec: v1alpha1.ConnectionSpec{
@@ -279,7 +268,7 @@ func (s *ConnectionRouteSuite) TestGetAllConnectionsMultipleFiltersByType() {
 	s.g.Expect(result).Should(HaveLen(2))
 }
 
-func (s *ConnectionRouteSuite) TestGetAllConnectionsPaging() {
+func (s *ConnectionRouteGenericSuite) TestGetAllConnectionsPaging() {
 	s.newMultipleConnStubs()
 
 	connNames := map[string]interface{}{connID1: nil, connID2: nil}
@@ -346,7 +335,7 @@ func (s *ConnectionRouteSuite) TestGetAllConnectionsPaging() {
 	s.g.Expect(result).Should(BeEmpty())
 }
 
-func (s *ConnectionRouteSuite) TestCreateConnection() {
+func (s *ConnectionRouteGenericSuite) TestCreateConnection() {
 	connEntity := newConnStub()
 
 	connEntityBody, err := json.Marshal(connEntity)
@@ -361,17 +350,17 @@ func (s *ConnectionRouteSuite) TestCreateConnection() {
 	err = json.Unmarshal(w.Body.Bytes(), &connResponse)
 	s.g.Expect(err).NotTo(HaveOccurred())
 
-	s.g.Expect(w.Code).Should(Equal(http.StatusCreated))
+	s.g.Expect(http.StatusCreated).Should(Equal(w.Code))
 	s.g.Expect(connResponse.ID).Should(Equal(connEntity.ID))
 	s.g.Expect(connResponse.Spec).Should(Equal(connEntity.Spec))
 
 	conn, err := s.connRepository.GetConnection(connID)
 	s.g.Expect(err).ShouldNot(HaveOccurred())
 	s.g.Expect(conn.ID).To(Equal(connEntity.ID))
-	s.g.Expect(conn.Spec).To(Equal(connEntity.Spec))
+	s.g.Expect(conn.Spec).To(Equal(connEntity.DeleteSensitiveData().Spec))
 }
 
-func (s *ConnectionRouteSuite) TestCreateDuplicateConnection() {
+func (s *ConnectionRouteGenericSuite) TestCreateDuplicateConnection() {
 	conn := newConnStub()
 
 	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
@@ -392,7 +381,7 @@ func (s *ConnectionRouteSuite) TestCreateDuplicateConnection() {
 	s.g.Expect(result.Message).Should(ContainSubstring("already exists"))
 }
 
-func (s *ConnectionRouteSuite) TestValidateCreateConnection() {
+func (s *ConnectionRouteGenericSuite) TestValidateCreateConnection() {
 	conn := newConnStub()
 	conn.Spec.Type = "not-found-type"
 
@@ -412,7 +401,7 @@ func (s *ConnectionRouteSuite) TestValidateCreateConnection() {
 	s.g.Expect(result.Message).Should(ContainSubstring("unknown type: not-found-type"))
 }
 
-func (s *ConnectionRouteSuite) TestUpdateConnection() {
+func (s *ConnectionRouteGenericSuite) TestUpdateConnection() {
 	conn := newConnStub()
 	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
 
@@ -437,10 +426,10 @@ func (s *ConnectionRouteSuite) TestUpdateConnection() {
 
 	conn, err = s.connRepository.GetConnection(connID)
 	s.g.Expect(err).NotTo(HaveOccurred())
-	s.g.Expect(conn.Spec).To(Equal(connEntity.Spec))
+	s.g.Expect(conn.Spec).To(Equal(connEntity.DeleteSensitiveData().Spec))
 }
 
-func (s *ConnectionRouteSuite) TestUpdateConnectionNotFound() {
+func (s *ConnectionRouteGenericSuite) TestUpdateConnectionNotFound() {
 	connEntity := newConnStub()
 
 	connEntityBody, err := json.Marshal(connEntity)
@@ -459,7 +448,7 @@ func (s *ConnectionRouteSuite) TestUpdateConnectionNotFound() {
 	s.g.Expect(result.Message).Should(ContainSubstring("not found"))
 }
 
-func (s *ConnectionRouteSuite) TestValidateUpdateConnection() {
+func (s *ConnectionRouteGenericSuite) TestValidateUpdateConnection() {
 	conn := newConnStub()
 	conn.Spec.Type = "not-found-type"
 	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
@@ -480,7 +469,7 @@ func (s *ConnectionRouteSuite) TestValidateUpdateConnection() {
 	s.g.Expect(result.Message).Should(ContainSubstring("unknown type: not-found-type"))
 }
 
-func (s *ConnectionRouteSuite) TestDeleteConnection() {
+func (s *ConnectionRouteGenericSuite) TestDeleteConnection() {
 	conn := newConnStub()
 	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
 
@@ -505,7 +494,7 @@ func (s *ConnectionRouteSuite) TestDeleteConnection() {
 	s.g.Expect(connList).To(HaveLen(0))
 }
 
-func (s *ConnectionRouteSuite) TestDeleteConnectionNotFound() {
+func (s *ConnectionRouteGenericSuite) TestDeleteConnectionNotFound() {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(
 		http.MethodDelete,
@@ -521,4 +510,99 @@ func (s *ConnectionRouteSuite) TestDeleteConnectionNotFound() {
 
 	s.g.Expect(w.Code).Should(Equal(http.StatusNotFound))
 	s.g.Expect(result.Message).Should(ContainSubstring("not found"))
+}
+
+func (s *ConnectionRouteGenericSuite) TestGetDecryptedConnection() {
+	conn := newConnStub()
+	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodGet,
+		strings.Replace(conn_route.GetDecryptedConnectionURL, ":id", connID, -1),
+		nil,
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	query := req.URL.Query()
+	query.Set(conn_route.ConnDecryptTokenQueryParam, s.connDecryptToken)
+	req.URL.RawQuery = query.Encode()
+
+	s.server.ServeHTTP(w, req)
+
+	var result connection.Connection
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	s.g.Expect(w.Code).Should(Equal(http.StatusOK))
+	s.g.Expect(result.ID).Should(Equal(conn.ID))
+	s.g.Expect(result.Spec).Should(Equal(conn.Spec))
+}
+
+func (s *ConnectionRouteGenericSuite) TestGetDecryptedConnectionWrongToken() {
+	conn := newConnStub()
+	s.g.Expect(s.connRepository.CreateConnection(conn)).NotTo(HaveOccurred())
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodGet,
+		strings.Replace(conn_route.GetDecryptedConnectionURL, ":id", connID, -1),
+		nil,
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	query := req.URL.Query()
+	query.Set(conn_route.ConnDecryptTokenQueryParam, "wrong-token")
+	req.URL.RawQuery = query.Encode()
+
+	s.server.ServeHTTP(w, req)
+
+	var result routes.HTTPResult
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	s.g.Expect(w.Code).Should(Equal(http.StatusForbidden))
+	s.g.Expect(result.Message).Should(ContainSubstring("access forbidden"))
+}
+
+func (s *ConnectionRouteGenericSuite) TestGetDecryptedConnectionNotFound() {
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodGet,
+		strings.Replace(conn_route.GetDecryptedConnectionURL, ":id", "not-found", -1),
+		nil,
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	query := req.URL.Query()
+	query.Set(conn_route.ConnDecryptTokenQueryParam, s.connDecryptToken)
+	req.URL.RawQuery = query.Encode()
+
+	s.server.ServeHTTP(w, req)
+
+	var result routes.HTTPResult
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	s.g.Expect(w.Code).Should(Equal(http.StatusNotFound))
+	s.g.Expect(result.Message).Should(ContainSubstring("not found"))
+}
+
+func (s *ConnectionRouteGenericSuite) TestGetDecryptedConnectionMissedToken() {
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		http.MethodGet,
+		strings.Replace(conn_route.GetDecryptedConnectionURL, ":id", "not-found", -1),
+		nil,
+	)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	s.server.ServeHTTP(w, req)
+
+	var result routes.HTTPResult
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	s.g.Expect(err).NotTo(HaveOccurred())
+
+	s.g.Expect(w.Code).Should(Equal(http.StatusBadRequest))
+	s.g.Expect(result.Message).Should(ContainSubstring(conn_route.MissedTokenErrorMessage))
 }

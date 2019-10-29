@@ -106,7 +106,7 @@ func (s *ModelPackagingValidationSuite) SetupSuite() {
 	}
 
 	s.mpRepository = mp_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient(), "")
 
 	err = s.mpRepository.CreatePackagingIntegration(&packaging.PackagingIntegration{
 		ID: piIDMpValid,
@@ -373,8 +373,7 @@ func (s *ModelPackagingValidationSuite) TestMpTargetConnNotFound() {
 
 	err := pack_route.NewMpValidator(s.mpRepository, s.connRepository).ValidateAndSetDefaults(mp)
 	s.g.Expect(err).Should(HaveOccurred())
-	s.g.Expect(err.Error()).Should(ContainSubstring(
-		"connections.legion.legion-platform.org \"conn-not-found\" not found"))
+	s.g.Expect(err.Error()).Should(ContainSubstring("not found"))
 }
 
 func (s *ModelPackagingValidationSuite) TestMpTargetConnWrongType() {

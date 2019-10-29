@@ -121,7 +121,7 @@ func createEnvironment() (*gin.Engine, mp_repository.Repository, conn_repository
 	server := gin.Default()
 	v1Group := server.Group("")
 	repository := mp_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
-	connRepository := conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	connRepository := conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient(), "")
 	mp_route.ConfigureRoutes(v1Group, repository, connRepository)
 
 	return server, repository, connRepository

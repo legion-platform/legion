@@ -67,7 +67,7 @@ func (s *ToolchainIntegrationRouteSuite) SetupSuite() {
 	s.server = gin.Default()
 	v1Group := s.server.Group("")
 	s.mtRepository = mt_k8s_repository.NewRepository(testNamespace, testNamespace, mgr.GetClient(), nil)
-	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient())
+	s.connRepository = conn_k8s_repository.NewRepository(testNamespace, mgr.GetClient(), "")
 	train_route.ConfigureRoutes(v1Group, s.mtRepository, s.connRepository)
 }
 

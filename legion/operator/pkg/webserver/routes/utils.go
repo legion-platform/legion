@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	legion_errors "github.com/legion-platform/legion/legion/operator/pkg/errors"
 	k8_serror "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"reflect"
@@ -43,11 +44,23 @@ type HTTPResult struct {
 // TODO: implement Legion exceptions
 func CalculateHTTPStatusCode(err error) int {
 	errStatus, ok := err.(*k8_serror.StatusError)
-	if !ok {
-		return http.StatusInternalServerError
+	if ok {
+		return int(errStatus.ErrStatus.Code)
 	}
 
-	return int(errStatus.ErrStatus.Code)
+	if legion_errors.IsNotFoundError(err) {
+		return http.StatusNotFound
+	}
+
+	if legion_errors.IsAlreadyExistError(err) {
+		return http.StatusConflict
+	}
+
+	if legion_errors.IsForbiddenError(err) {
+		return http.StatusForbidden
+	}
+
+	return http.StatusInternalServerError
 }
 
 func URLParamsToFilter(c *gin.Context, filter interface{}, fields map[string]int) (size int, page int, err error) {

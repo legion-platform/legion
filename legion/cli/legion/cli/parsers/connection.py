@@ -43,8 +43,11 @@ def connection(ctx: click.core.Context, edi: str, token: str):
 @click.option('--conn-id', '--id', help='Connection ID')
 @click.option('--output-format', '-o', 'output_format', help='Output format',
               default=DEFAULT_OUTPUT_FORMAT, callback=validate_output_format)
+# TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+@click.option('--decrypted', '-d', help='Token for getting a decrypted connection',
+              default=None)
 @pass_obj
-def get(client: ConnectionClient, conn_id: str, output_format: str):
+def get(client: ConnectionClient, conn_id: str, output_format: str, decrypted: str):
     """
     Get connections.\n
     The command without id argument retrieve all connections.\n
@@ -55,12 +58,21 @@ def get(client: ConnectionClient, conn_id: str, output_format: str):
     Using jsonpath:\n
         legionctl conn get -o 'jsonpath=[*].spec.reference'
     \f
+    :param decrypted: Token for getting a decrypted connection
     :param client: Connection HTTP client
     :param conn_id: Connection ID
     :param output_format: Output format
     :return:
     """
-    conns = [client.get(conn_id)] if conn_id else client.get_all()
+    if conn_id:
+        if decrypted:
+            conn = client.get_decrypted(conn_id, decrypted)
+        else:
+            conn = client.get(conn_id)
+
+        conns = [conn]
+    else:
+        conns = client.get_all()
 
     format_output(conns, output_format)
 

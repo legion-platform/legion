@@ -18,6 +18,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/legion-platform/legion/legion/operator/pkg/config"
 	_ "github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	_ "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
@@ -25,7 +27,6 @@ import (
 	_ "github.com/legion-platform/legion/legion/operator/pkg/config/training"
 	"github.com/legion-platform/legion/legion/operator/pkg/webserver"
 	"github.com/spf13/cobra"
-	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 

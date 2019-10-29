@@ -20,10 +20,13 @@ import (
 	"context"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	legion_errors "github.com/legion-platform/legion/legion/operator/pkg/errors"
 	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
+	k8_serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -35,14 +38,17 @@ var (
 )
 
 type k8sConnectionRepository struct {
-	k8sClient client.Client
-	namespace string
+	k8sClient        client.Client
+	namespace        string
+	connDecryptToken string
 }
 
-func NewRepository(namespace string, k8sClient client.Client) conn_repository.Repository {
+// TODO: Remove the token after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+func NewRepository(namespace string, k8sClient client.Client, connDecryptToken string) conn_repository.Repository {
 	return &k8sConnectionRepository{
-		namespace: namespace,
-		k8sClient: k8sClient,
+		namespace:        namespace,
+		k8sClient:        k8sClient,
+		connDecryptToken: connDecryptToken,
 	}
 }
 
@@ -60,17 +66,36 @@ func transform(conn *v1alpha1.Connection) *connection.Connection {
 	}
 }
 
-func (kc *k8sConnectionRepository) GetConnection(name string) (*connection.Connection, error) {
-	k8sConn := &v1alpha1.Connection{}
-	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: name, Namespace: kc.namespace},
-		k8sConn,
-	); err != nil {
-		logC.Error(err, "Get connection from k8s", "name", name)
-
+func (kc *k8sConnectionRepository) GetConnection(id string) (*connection.Connection, error) {
+	connectionFromK8s, err := kc.getConnectionFromK8s(id)
+	if err != nil {
 		return nil, err
 	}
 
+	return connectionFromK8s.DeleteSensitiveData(), err
+}
+
+func (kc *k8sConnectionRepository) GetDecryptedConnection(
+	id string, connDecryptToken string,
+) (*connection.Connection, error) {
+	// TODO: comment
+	if connDecryptToken != kc.connDecryptToken {
+		return nil, legion_errors.ForbiddenError{}
+	}
+
+	return kc.getConnectionFromK8s(id)
+}
+
+func (kc *k8sConnectionRepository) getConnectionFromK8s(id string) (*connection.Connection, error) {
+	k8sConn := &v1alpha1.Connection{}
+	if err := kc.k8sClient.Get(context.TODO(),
+		types.NamespacedName{Name: id, Namespace: kc.namespace},
+		k8sConn,
+	); err != nil {
+		logC.Error(err, "Get connection from k8s", "id", id)
+
+		return nil, convertK8sErrToLegionErr(err)
+	}
 	return transform(k8sConn), nil
 }
 
@@ -106,7 +131,7 @@ func (kc *k8sConnectionRepository) GetConnectionList(options ...conn_repository.
 		}, &k8sConnList); err != nil {
 			logC.Error(err, "Get connection from k8s")
 
-			return nil, err
+			return nil, convertK8sErrToLegionErr(err)
 		}
 
 		continueToken = k8sConnList.ListMeta.Continue
@@ -119,16 +144,21 @@ func (kc *k8sConnectionRepository) GetConnectionList(options ...conn_repository.
 	for i := 0; i < len(k8sConnList.Items); i++ {
 		currentConn := k8sConnList.Items[i]
 
-		conns[i] = connection.Connection{ID: currentConn.Name, Spec: currentConn.Spec, Status: &currentConn.Status}
+		conn := connection.Connection{
+			ID:     currentConn.Name,
+			Spec:   currentConn.Spec,
+			Status: &currentConn.Status,
+		}
+		conns[i] = *conn.DeleteSensitiveData()
 	}
 
 	return conns, nil
 }
 
-func (kc *k8sConnectionRepository) DeleteConnection(name string) error {
+func (kc *k8sConnectionRepository) DeleteConnection(id string) error {
 	conn := &v1alpha1.Connection{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      id,
 			Namespace: kc.namespace,
 		},
 	}
@@ -136,33 +166,33 @@ func (kc *k8sConnectionRepository) DeleteConnection(name string) error {
 	if err := kc.k8sClient.Delete(context.TODO(),
 		conn,
 	); err != nil {
-		logC.Error(err, "Delete connection from k8s", "name", name)
+		logC.Error(err, "Delete connection from k8s", "id", id)
 
-		return err
+		return convertK8sErrToLegionErr(err)
 	}
 
 	return nil
 }
 
-func (kc *k8sConnectionRepository) UpdateConnection(connection *connection.Connection) error {
+func (kc *k8sConnectionRepository) UpdateConnection(conn *connection.Connection) error {
 	var k8sConn v1alpha1.Connection
 	if err := kc.k8sClient.Get(context.TODO(),
-		types.NamespacedName{Name: connection.ID, Namespace: kc.namespace},
+		types.NamespacedName{Name: conn.ID, Namespace: kc.namespace},
 		&k8sConn,
 	); err != nil {
-		logC.Error(err, "Get connection from k8s", "name", connection.ID)
+		logC.Error(err, "Get conn from k8s", "id", conn.ID)
 
-		return err
+		return convertK8sErrToLegionErr(err)
 	}
 
 	// TODO: think about update, not replacing as for now
-	k8sConn.Spec = connection.Spec
-	k8sConn.ObjectMeta.Labels = transformToLabels(connection)
+	k8sConn.Spec = conn.Spec
+	k8sConn.ObjectMeta.Labels = transformToLabels(conn)
 
 	if err := kc.k8sClient.Update(context.TODO(), &k8sConn); err != nil {
-		logC.Error(err, "Creation of the connection", "name", connection.ID)
+		logC.Error(err, "Creation of the conn", "id", conn.ID)
 
-		return err
+		return convertK8sErrToLegionErr(err)
 	}
 
 	return nil
@@ -181,7 +211,21 @@ func (kc *k8sConnectionRepository) CreateConnection(connection *connection.Conne
 	if err := kc.k8sClient.Create(context.TODO(), conn); err != nil {
 		logC.Error(err, "ConnectionName creation error from k8s", "name", connection.ID)
 
-		return err
+		return convertK8sErrToLegionErr(err)
+	}
+
+	return nil
+}
+
+func convertK8sErrToLegionErr(err error) error {
+	errStatus, ok := err.(*k8_serror.StatusError)
+	if ok {
+		switch errStatus.Status().Code {
+		case http.StatusNotFound:
+			return legion_errors.NotFoundError{}
+		case http.StatusConflict:
+			return legion_errors.AlreadyExistError{}
+		}
 	}
 
 	return nil

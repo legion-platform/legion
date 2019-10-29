@@ -19,16 +19,18 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/go-logr/logr"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	conn_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
 	http_util "github.com/legion-platform/legion/legion/operator/pkg/repository/util/http"
 	v1Routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1"
 	conn_routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/connection"
-	"io/ioutil"
-	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var log = logf.Log.WithName("connection-http-repository")
@@ -51,14 +53,39 @@ func wrapConnLogger(id string) logr.Logger {
 	return log.WithValues("conn_id", id)
 }
 
+func (hcr *httpConnectionRepository) GetDecryptedConnection(
+	id string, decryptToken string,
+) (*connection.Connection, error) {
+	connLogger := wrapConnLogger(id)
+
+	query := url.Values{}
+	// TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+	query.Set(conn_routes.ConnDecryptTokenQueryParam, decryptToken)
+
+	return hcr.getConnectionFromEdi(connLogger, &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Path:     strings.Replace(conn_routes.GetDecryptedConnectionURL, ":id", id, 1),
+			RawQuery: query.Encode(),
+		},
+	})
+}
+
 func (hcr *httpConnectionRepository) GetConnection(id string) (conn *connection.Connection, err error) {
 	connLogger := wrapConnLogger(id)
 
-	response, err := hcr.DoRequest(
-		http.MethodGet,
-		strings.Replace(conn_routes.GetConnectionURL, ":id", id, 1),
-		nil,
-	)
+	return hcr.getConnectionFromEdi(connLogger, &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Path: strings.Replace(conn_routes.GetConnectionURL, ":id", id, 1),
+		},
+	})
+}
+
+func (hcr *httpConnectionRepository) getConnectionFromEdi(
+	connLogger logr.Logger, req *http.Request,
+) (conn *connection.Connection, err error) {
+	response, err := hcr.Do(req)
 	if err != nil {
 		connLogger.Error(err, "Retrieving of the connection from EDI failed")
 

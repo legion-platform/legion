@@ -24,8 +24,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"time"
+
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
@@ -53,16 +54,37 @@ func NewBaseEdiClient(ediURL string, token string, apiVersion string) BaseEdiCli
 	}
 }
 
-//DoRequest
-func (bec *BaseEdiClient) DoRequest(httpMethod, path string, body interface{}) (*http.Response, error) {
-	ediURLStr := fmt.Sprintf("%s/%s%s", bec.ediURL, bec.apiVersion, path)
-	ediURL, err := url.Parse(ediURLStr)
-	if err != nil {
-		log.Error(err, "Can not parse edi URL. Most likely, it is a problem with configuration.",
-			"edi_url", ediURLStr)
+func (bec *BaseEdiClient) Do(req *http.Request) (*http.Response, error) {
+	if len(req.URL.Host) == 0 {
+		ediURLStr := fmt.Sprintf("%s/%s%s", bec.ediURL, bec.apiVersion, req.URL.Path)
+		ediURL, err := url.Parse(ediURLStr)
+		if err != nil {
+			log.Error(err, "Can not parse edi URL. Most likely, it is a problem with configuration.",
+				"edi_url", ediURLStr)
 
-		return nil, err
+			return nil, err
+		}
+
+		ediURL.RawQuery = req.URL.RawQuery
+		req.URL = ediURL
 	}
+
+	if req.Header == nil {
+		req.Header = make(map[string][]string, 1)
+	}
+
+	req.Header[authorizationHeaderName] = []string{
+		fmt.Sprintf(authorizationHeaderValue, bec.token),
+	}
+
+	ediHTTPClient := http.Client{
+		Timeout: defaultEdiRequestTimeout,
+	}
+
+	return ediHTTPClient.Do(req)
+}
+
+func (bec *BaseEdiClient) DoRequest(httpMethod, path string, body interface{}) (*http.Response, error) {
 	var bodyStream io.ReadCloser
 
 	if body != nil {
@@ -74,20 +96,11 @@ func (bec *BaseEdiClient) DoRequest(httpMethod, path string, body interface{}) (
 		bodyStream = ioutil.NopCloser(bytes.NewReader(data))
 	}
 
-	req := &http.Request{
+	return bec.Do(&http.Request{
 		Method: httpMethod,
-		URL:    ediURL,
-		Header: map[string][]string{
-			authorizationHeaderName: {
-				fmt.Sprintf(authorizationHeaderValue, bec.token),
-			},
+		URL: &url.URL{
+			Path: path,
 		},
 		Body: bodyStream,
-	}
-
-	ediHTTPClient := http.Client{
-		Timeout: defaultEdiRequestTimeout,
-	}
-
-	return ediHTTPClient.Do(req)
+	})
 }
