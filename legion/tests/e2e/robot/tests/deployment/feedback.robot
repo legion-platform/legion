@@ -26,6 +26,7 @@ Force Tags          deployment  edi  cli  feedback
 
 *** Variables ***
 ${REQUEST_ID_CHECK_RETRIES}         30
+@{FORBIDDEN_HEADERS}  authorization  x-jwt  x-user  x-email
 
 *** Keywords ***
 Cleanup resources
@@ -51,7 +52,6 @@ Validate model API meta log entry
     Dictionary Should Contain Key   ${log_entry}  request_http_headers
     Dictionary Should Contain Key   ${log_entry}  request_host
     Dictionary Should Contain Key   ${log_entry}  request_uri
-    Dictionary Should Contain Key   ${log_entry}  response_http_headers
     Dictionary Should Contain Key   ${log_entry}  response_status
     Dictionary Should Contain Key   ${log_entry}  model_name
     Dictionary Should Contain Key   ${log_entry}  model_version
@@ -67,6 +67,15 @@ Validate model API meta log entry HTTP method
     [Arguments]      ${log_entry}   ${excpected_value}
     ${http_method}=                 Get From Dictionary       ${log_entry}     request_http_method
     Should Be Equal                 ${http_method}            ${excpected_value}
+
+Validate model API meta log entry HTTP headers
+    [Documentation]  check that model API log entry HTTP headers do not have a forbidden header
+    [Arguments]      ${log_entry}
+    ${request_http_headers}=                 Get From Dictionary       ${log_entry}     request_http_headers
+
+    FOR    ${header}    IN    @{FORBIDDEN_HEADERS}
+        Dictionary should not contain key  ${request_http_headers}  ${header}
+    END
 
 Validate model API meta log entry POST arguments
     [Documentation]  check that model API log entry POST arguments are correct
@@ -155,6 +164,7 @@ Validate model feedback
     Validate model API meta log entry Request ID        ${meta_log_entry}   ${request_id}
     Validate model API meta log entry HTTP method       ${meta_log_entry}   POST
     Validate model API meta ID and version              ${meta_log_entry}   ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}
+    Validate model API meta log entry HTTP headers      ${meta_log_entry}
 
     ${body_log_locations}=             Get paths with lag  ${FEEDBACK_LOCATION_MODELS_RESP_LOG}  ${TEST_MODEL_NAME}  ${TEST_MODEL_VERSION}  ${FEEDBACK_PARTITIONING_PATTERN}
     @{response_log_entries}=           Find log lines with content   ${body_log_locations}  ${request_id}  ${1}  ${False}

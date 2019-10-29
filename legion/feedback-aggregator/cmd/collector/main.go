@@ -58,7 +58,9 @@ func entrypoint(cmd *cobra.Command, args []string) {
 		viper.GetString(tapping.CfgEnvoyHost),
 		viper.GetInt(tapping.CfgEnvoyPort),
 		viper.GetString(tapping.CfgEnvoyConfigId),
-		dataLogger)
+		dataLogger,
+		viper.GetStringSlice(feedback.CfgProhibitedHeaders),
+	)
 	if err != nil {
 		log.Error(err, "Collector creation")
 		os.Exit(1)
