@@ -62,6 +62,18 @@ spec:
               name: "{{ .Release.Name }}-fluentd-secret"
               key: AzureStorageAccessKey
         {{- end }}
+        {{- if eq .Values.feedback.output.azureblob.authorization "sastoken" }}
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-fluentd-secret"
+              key: AzureStorageAccount
+        - name: AZURE_STORAGE_SAS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-fluentd-secret"
+              key: AzureStorageSasToken
+        {{- end }}
         {{- end }}
         ports:
         - containerPort: {{ .Values.feedback.fluentd.port }}

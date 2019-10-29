@@ -14,13 +14,21 @@
 #    limitations under the License.
 #
 
-FROM fluent/fluentd:v1.7-debian as builder
+FROM fluent/fluentd:v1.7
+
 USER root
-RUN apt-get -qq update && apt-get -y install zlib1g-dev libxml2-dev gcc make patch
+
+ARG REPO_URL=https://github.com/legion-platform/fluent-plugin-azure-storage-append-blob.git
+ARG GIT_PARAMS="-c advice.detachedHead=false clone --branch 0.1.1"
 
 # Install required fluentd plugins
-RUN gem install -N fluent-plugin-s3:1.1.11 fluent-plugin-gcs:0.4.0 fluent-plugin-azure-storage-append-blob:0.1.1
-
-FROM fluent/fluentd:v1.7-debian
-
-COPY --from=builder /usr/local/bundle/ /usr/local/bundle/
+RUN apk update \
+ && apk add --no-cache --virtual .build-deps \
+        build-base git \
+        ruby-dev gnupg zlib-dev \
+ && gem install fluent-plugin-s3 -v 1.1.11 \
+ && gem install fluent-plugin-gcs -v 0.4.0 \
+ && git ${GIT_PARAMS} ${REPO_URL} /tmp/build-azure \
+ && cd /tmp/build-azure && gem build *.gemspec && gem install *.gem \
+ && apk del .build-deps \
+ && rm -rf /tmp/* /var/tmp/* /usr/lib/ruby/gems/*/cache/*.gem

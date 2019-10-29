@@ -364,16 +364,22 @@ feedback:
       # Type of authorization in Azure Blob storage
       # Valid values are:
       #   - accesskey
-      #   - sas
-      authorization: "accesskey"
+      #   - sastoken
+      authorization: "sastoken"
 
-      #
+      # Name of Azure Storage Account
       # Type: string
       #AzureStorageAccount: ~
 
-      #
+      # One of two keys that used to authorize access to Azure storage account
       # Type: string
       #AzureStorageAccessKey: ~
+
+      # A shared access signature (SAS) is a signed URI that points to one or more storage
+      # resources and includes a token that contains a special set of query parameters.
+      # This variable should contain SAS token to Azure Blob storage service account.
+      # Type: string
+      #AzureStorageSasToken: ~
 
       # Azure Blob container name
       # Type: string
