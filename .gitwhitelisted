@@ -56,3 +56,5 @@ legion/operator/pkg/webserver/routes/v1/connection/connection_validation_test.go
 .*Password: mdConn.Spec.Password.*
 .*Username: user.*
 .*Password: password.*
+.*username: <paste your username here>.*
+.*password: <paste your password here>.*

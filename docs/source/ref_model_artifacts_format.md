@@ -85,6 +85,7 @@ as a Java Library and use one of predefined interfaces for predicting. Value for
 ### Legion's General Python Prediction Interface (GPPI)
 
 #### General information
+
 | Field                 | Value                                      |
 |-----------------------|--------------------------------------------|
 | Name                  | General Python Prediction Interface (GPPI) |
@@ -119,13 +120,4 @@ Interface consists of next functions:
 | get_info                   | Optional. Returns OpenAPI description of input and output types if it is possible.                                   |
 
 
-## Legion Model Packers
-
-Desired platforms for Legion Model Artifacts packing are:
-* Docker REST API
-* AWS SageMaker Docker Image
-* AWS Lambda
-* Google Cloud Functions
-* Spark UDF
-* Airflow processing
  
