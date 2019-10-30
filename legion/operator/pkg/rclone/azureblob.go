@@ -23,6 +23,12 @@ import (
 	"github.com/ncw/rclone/fs"
 	"github.com/ncw/rclone/fs/config"
 	"net/url"
+	"strings"
+)
+
+const (
+	httpsSchema = "https://"
+	wasbSchema  = "wasb://"
 )
 
 func createAzureBlobConfig(configName string, conn *v1alpha1.ConnectionSpec) (*FileDescription, error) {
@@ -38,9 +44,17 @@ func createAzureBlobConfig(configName string, conn *v1alpha1.ConnectionSpec) (*F
 		return nil, err
 	}
 
-	parsedURI, err := url.Parse(conn.URI)
+	// If a URL does not contain a schema, then the Golang URL parser will fail.
+	// So we add the https schema if it missed. A schema is only required for the URL parsing.
+	// Later the schema will be ignored.
+	blobURI := conn.URI
+	if !strings.HasPrefix(httpsSchema, blobURI) && !strings.HasPrefix(wasbSchema, blobURI) {
+		blobURI = httpsSchema + blobURI
+	}
+
+	parsedURI, err := url.Parse(blobURI)
 	if err != nil {
-		log.Error(err, "Parsing data binding URI", "connection uri", conn.URI)
+		log.Error(err, "Parsing data binding URI", "connection uri", blobURI)
 
 		return nil, err
 	}
