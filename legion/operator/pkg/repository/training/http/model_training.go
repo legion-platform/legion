@@ -19,6 +19,10 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
 	"github.com/go-logr/logr"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
@@ -26,12 +30,10 @@ import (
 	training_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training"
 	http_util "github.com/legion-platform/legion/legion/operator/pkg/repository/util/http"
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	v1Routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1"
 	mt_routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/training"
-	"io/ioutil"
-	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var log = logf.Log.WithName("model_training_http_repository")
@@ -116,7 +118,7 @@ func (htr *httpTrainingRepository) CreateModelTraining(mt *training.ModelTrainin
 }
 
 func (htr *httpTrainingRepository) GetModelTrainingLogs(
-	id string, writer training_repository.Writer, follow bool,
+	id string, writer utils.Writer, follow bool,
 ) error {
 	panic("not implemented")
 }

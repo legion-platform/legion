@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
@@ -28,7 +29,6 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -238,7 +238,7 @@ func (pkr *packagingK8sRepository) CreateModelPackaging(mp *packaging.ModelPacka
 	return nil
 }
 
-func (pkr *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_repository.Writer, follow bool) error {
+func (pkr *packagingK8sRepository) GetModelPackagingLogs(id string, writer utils.Writer, follow bool) error {
 	var mp v1alpha1.ModelPackaging
 	if err := pkr.k8sClient.Get(context.TODO(),
 		types.NamespacedName{Name: id, Namespace: pkr.namespace},
@@ -251,46 +251,23 @@ func (pkr *packagingK8sRepository) GetModelPackagingLogs(id string, writer mp_re
 		return fmt.Errorf("model packaing %s has not started yet", id)
 	}
 
-	logReaders := make([]io.Reader, 0, len(packagerContainerNames))
-
 	// Collect logs from all containers in execution order
 	for _, containerName := range packagerContainerNames {
-		reader, err := utils.StreamLogs(
-			pkr.namespace,
+		err := utils.StreamLogs(
 			pkr.k8sConfig,
+			pkr.namespace,
 			mp.Status.PodName,
 			containerName,
+			writer,
 			follow,
+			viper.GetInt64(config_deployment.ModelLogsFlushSize),
 		)
 		if err != nil {
 			return err
 		}
-		defer reader.Close()
-
-		logReaders = append(logReaders, reader)
 	}
-	logReader := io.MultiReader(logReaders...)
 
-	clientGone := writer.CloseNotify()
-	for {
-		logFlushSize := viper.GetInt64(config_deployment.ModelLogsFlushSize)
-
-		select {
-		case <-clientGone:
-			return nil
-		default:
-			_, err := io.CopyN(writer, logReader, logFlushSize)
-			if err != nil {
-				if err == io.EOF {
-					logMP.Error(err, "Error during coping of log stream")
-					return nil
-				}
-				return err
-			}
-
-			writer.Flush()
-		}
-	}
+	return nil
 }
 
 func (pkr *packagingK8sRepository) SaveModelPackagingResult(id string, result []v1alpha1.ModelPackagingResult) error {

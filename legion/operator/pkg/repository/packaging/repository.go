@@ -20,8 +20,7 @@ import (
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/packaging"
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
-	"io"
-	"net/http"
+	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 )
 
 const (
@@ -34,7 +33,7 @@ type Repository interface {
 	GetModelPackaging(id string) (*packaging.ModelPackaging, error)
 	GetModelPackagingList(options ...kubernetes.ListOption) ([]packaging.ModelPackaging, error)
 	DeleteModelPackaging(id string) error
-	GetModelPackagingLogs(id string, writer Writer, follow bool) error
+	GetModelPackagingLogs(id string, writer utils.Writer, follow bool) error
 	UpdateModelPackaging(md *packaging.ModelPackaging) error
 	CreateModelPackaging(md *packaging.ModelPackaging) error
 	GetPackagingIntegration(id string) (*packaging.PackagingIntegration, error)
@@ -46,10 +45,4 @@ type Repository interface {
 
 type MPFilter struct {
 	Type []string `name:"type"`
-}
-
-type Writer interface {
-	http.Flusher
-	http.CloseNotifier
-	io.Writer
 }

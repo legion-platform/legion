@@ -18,13 +18,14 @@ package kubernetes
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"reflect"
 )
 
 const (

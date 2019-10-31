@@ -19,9 +19,8 @@ package connection
 import (
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
-	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
-	"io"
-	"net/http"
+	k8s_utils "github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 )
 
 const (
@@ -30,15 +29,15 @@ const (
 
 type Repository interface {
 	GetModelTraining(id string) (*training.ModelTraining, error)
-	GetModelTrainingList(options ...kubernetes.ListOption) ([]training.ModelTraining, error)
-	GetModelTrainingLogs(id string, writer Writer, follow bool) error
+	GetModelTrainingList(options ...k8s_utils.ListOption) ([]training.ModelTraining, error)
+	GetModelTrainingLogs(id string, writer utils.Writer, follow bool) error
 	SaveModelTrainingResult(id string, result *legionv1alpha1.TrainingResult) error
 	GetModelTrainingResult(id string) (*legionv1alpha1.TrainingResult, error)
 	DeleteModelTraining(id string) error
 	UpdateModelTraining(md *training.ModelTraining) error
 	CreateModelTraining(md *training.ModelTraining) error
 	GetToolchainIntegration(name string) (*training.ToolchainIntegration, error)
-	GetToolchainIntegrationList(options ...kubernetes.ListOption) ([]training.ToolchainIntegration, error)
+	GetToolchainIntegrationList(options ...k8s_utils.ListOption) ([]training.ToolchainIntegration, error)
 	DeleteToolchainIntegration(name string) error
 	UpdateToolchainIntegration(md *training.ToolchainIntegration) error
 	CreateToolchainIntegration(md *training.ToolchainIntegration) error
@@ -48,10 +47,4 @@ type MTFilter struct {
 	Toolchain    []string `name:"toolchain"`
 	ModelName    []string `name:"model_name"`
 	ModelVersion []string `name:"model_version"`
-}
-
-type Writer interface {
-	http.Flusher
-	http.CloseNotifier
-	io.Writer
 }
