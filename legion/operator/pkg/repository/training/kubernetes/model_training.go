@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	config_deployment "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
@@ -28,7 +29,6 @@ import (
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	"github.com/spf13/viper"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -257,7 +257,7 @@ func (tkr *trainingK8sRepository) CreateModelTraining(mt *training.ModelTraining
 	return nil
 }
 
-func (tkr *trainingK8sRepository) GetModelTrainingLogs(id string, writer mt_repository.Writer, follow bool) error {
+func (tkr *trainingK8sRepository) GetModelTrainingLogs(id string, writer utils.Writer, follow bool) error {
 	var mt v1alpha1.ModelTraining
 	if err := tkr.k8sClient.Get(context.TODO(),
 		types.NamespacedName{Name: id, Namespace: tkr.namespace},
@@ -270,44 +270,21 @@ func (tkr *trainingK8sRepository) GetModelTrainingLogs(id string, writer mt_repo
 		return fmt.Errorf("model Training %s has not started yet", id)
 	}
 
-	logReaders := make([]io.Reader, 0, len(trainerContainerNames))
-
 	// Collect logs from all containers in execution order
 	for _, containerName := range trainerContainerNames {
-		reader, err := utils.StreamLogs(
-			tkr.namespace,
+		err := utils.StreamLogs(
 			tkr.k8sConfig,
+			tkr.namespace,
 			mt.Status.PodName,
 			containerName,
+			writer,
 			follow,
+			viper.GetInt64(config_deployment.ModelLogsFlushSize),
 		)
 		if err != nil {
 			return err
 		}
-		defer reader.Close()
-
-		logReaders = append(logReaders, reader)
 	}
-	logReader := io.MultiReader(logReaders...)
 
-	clientGone := writer.CloseNotify()
-	for {
-		logFlushSize := viper.GetInt64(config_deployment.ModelLogsFlushSize)
-
-		select {
-		case <-clientGone:
-			return nil
-		default:
-			_, err := io.CopyN(writer, logReader, logFlushSize)
-			if err != nil {
-				if err == io.EOF {
-					logMT.Error(err, "Error during coping of log stream")
-					return nil
-				}
-				return err
-			}
-
-			writer.Flush()
-		}
-	}
+	return nil
 }

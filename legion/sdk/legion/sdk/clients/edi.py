@@ -251,12 +251,11 @@ class RemoteEdiClient:
                 LOGGER.debug('Requesting {}'.format(self._build_url(url_template)))
 
                 if client:
-                    response = client.request(timeout=connection_timeout, **request_kwargs)
+                    response = client.request(timeout=connection_timeout, stream=stream, **request_kwargs)
                 else:
-                    with requests.Session() as _client:
-                        response = _client.request(timeout=connection_timeout, stream=stream, **request_kwargs)
+                    response = requests.request(timeout=connection_timeout, stream=stream, **request_kwargs)
 
-                LOGGER.debug('Status code: "{}", Response: "{}"'.format(response.status_code, response.text))
+                LOGGER.debug('Response status code: "{}"'.format(response.status_code))
 
             except requests.exceptions.ConnectionError as exception:
                 LOGGER.error('Failed to connect to {}: {}. Retrying'.format(self._base_url, exception))

@@ -25,6 +25,7 @@ import (
 	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging"
 	http_util "github.com/legion-platform/legion/legion/operator/pkg/repository/util/http"
 	"github.com/legion-platform/legion/legion/operator/pkg/repository/util/kubernetes"
+	"github.com/legion-platform/legion/legion/operator/pkg/utils"
 	v1Routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1"
 	mp_routes "github.com/legion-platform/legion/legion/operator/pkg/webserver/routes/v1/packaging"
 	"io/ioutil"
@@ -116,7 +117,7 @@ func (htr *httpPackagingRepository) CreateModelPackaging(mp *packaging.ModelPack
 }
 
 func (htr *httpPackagingRepository) GetModelPackagingLogs(
-	id string, writer packaging_repository.Writer, follow bool,
+	id string, writer utils.Writer, follow bool,
 ) error {
 	panic("not implemented")
 }
