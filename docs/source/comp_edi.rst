@@ -1,3 +1,5 @@
+.. _edi-server-description:
+
 ===
 EDI
 ===
