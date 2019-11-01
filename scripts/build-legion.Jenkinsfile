@@ -73,8 +73,6 @@ pipeline {
                     sh 'echo RunningOn: $(curl http://checkip.amazonaws.com/)'
 
                     // import Legion components
-                    }
-
                     sshagent(["${env.legionCicdGitlabKey}"]) {
                         print ("Checkout Legion-cicd repo")
                         sh"""#!/bin/bash -ex
