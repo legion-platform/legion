@@ -80,7 +80,7 @@ pipeline {
                         if [ ! -d "legion-cicd" ]; then
                             git clone ${env.param_legion_cicd_repo} legion-cicd
                         fi
-                        cd legion-profiles && git checkout ${env.param_legion_cicd_branch}
+                        cd legion-cicd && git checkout ${env.param_legion_cicd_branch}
                         """
 
                         print ("Load legion pipeline common library")
@@ -530,7 +530,7 @@ pipeline {
                       if [ ! -d "legion-cicd" ]; then
                       git clone ${env.param_legion_cicd_repo} legion-cicd
                       fi
-                      cd legion-profiles && git checkout ${env.param_legion_cicd_branch}
+                      cd legion-cicd && git checkout ${env.param_legion_cicd_branch}
                     """
                     print ("Load legion pipeline common library")
                     legion = load "${env.sharedLibPath}"
