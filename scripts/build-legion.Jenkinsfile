@@ -87,12 +87,9 @@ pipeline {
                         legion = load "${env.sharedLibPath}"
                     }
 
-                    dir("${WORKSPACE}/legion-cicd"){
-                      print("Check code for security issues")
-                      sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
-
-                      legion.setBuildMeta(env.updateVersionScript)
-                    }
+                    print("Check code for security issues")
+                    sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+                    legion.setBuildMeta(env.updateVersionScript)
                 }
             }
         }
