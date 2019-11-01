@@ -44,7 +44,7 @@ Create a prediction without specific request id provided
 
 Request to EDGE endpoint for prediction, that does not contain ``request-id`` header.
 
-.. code:: bash
+.. code-block:: bash
 
     curl -X POST -vv "${BASE_URL}/model/${ROUTE}/api/model/invoke" \
     -H "Authorization: Bearer ${JWT}" \
@@ -65,7 +65,7 @@ Request to EDGE endpoint for prediction, that does not contain ``request-id`` he
 
 Response contains generated ``request-id`` header.
 
-.. code:: txt
+.. code-block:: txt
 
     RESPONSE
 
@@ -77,7 +77,7 @@ These requests and responses are being persisted on external storage (e.g. on S3
 
 First file contains meta information about request and response (name is like ``/request_response/income/1.1/year=2019/month=07/day=24/2019072414_4.json``) in next format.
 
-.. code:: json
+.. code-block:: json
 
     {
         "request_id": "85252432-8d26-9b5f-bed3-e9ceeafc688c",
@@ -108,7 +108,7 @@ First file contains meta information about request and response (name is like ``
             "x-envoy-original-path": "/model/sklearn-income/api/model/invoke",
             "x-real-ip": "1.1.1.1",
             "x-envoy-decorator-operation": "sklearn-income-5jrrp.legion.svc.cluster.local:80/model/sklearn-income/api*",
-            "x-istio-attributes": "CksKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIvEi1za2xlYXJuLWluY29tZS01anJycC5sZWdpb24uc3ZjLmNsdXN0ZXIubG9jYWwKSQoXZGVzdGluYXRpb24uc2VydmljZS51aWQSLhIsaXN0aW86Ly9sZWdpb24vc2VydmljZXMvc2tsZWFybi1pbmNvbWUtNWpycnAKMgoYZGVzdGluYXRpb24uc2VydmljZS5uYW1lEhYSFHNrbGVhcm4taW5jb21lLTVqcnJwCikKHWRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZXNwYWNlEggSBmxlZ2lvbgpPCgpzb3VyY2UudWlkEkESP2t1YmVybmV0ZXM6Ly9pc3Rpby1pbmdyZXNzZ2F0ZXdheS02ODVkOTY0OWZkLXRjcmx2LmlzdGlvLXN5c3RlbQ==",
+            "x-istio-attributes": "==",
             "x-forwarded-for": "1.1.1.1,1.1.1.1",
             "content-length": "257",
             "x-forwarded-proto": "http",
@@ -151,7 +151,7 @@ First file contains meta information about request and response (name is like ``
 
 Second file contains response chunks with same ``request-id`` (name is like ``/response_body/income/1.1/year=2019/month=07/day=24/2019072414_1.json``) in next format:
 
-.. code:: json
+.. code-block:: json
 
     {
         "request_id": "85252432-8d26-9b5f-bed3-e9ceeafc688c",
@@ -167,7 +167,7 @@ Create a prediction with specific request id provided
 
 Request to EDGE endpoint for prediction, that contains ``request-id`` header.
 
-.. code:: bash
+.. code-block:: bash
 
     curl -X POST -vv "${BASE_URL}/model/${ROUTE}/api/model/invoke" \
     -H "Authorization: Bearer ${JWT}" \
@@ -189,7 +189,7 @@ Request to EDGE endpoint for prediction, that contains ``request-id`` header.
 
 Response contains sent ``request-id`` header.
 
-.. code:: txt
+.. code-block:: txt
 
     RESPONSE
 
@@ -206,7 +206,7 @@ Send feedback for prediction using JSON payload
 
 Request to EDGE endpoint for saving *feedback* of previous made prediction for model **income** version **1.1** with id **previous-prediction-id**.
 
-.. code:: bash
+.. code-block:: bash
 
     curl -X POST -vv "${BASE_URL}/feedback/model/" \
     -H "Authorization: Bearer ${JWT}" \
@@ -230,7 +230,7 @@ Non 200 HTTP code indicates about parsing / persisting / another error.
 
 Example response
 
-.. code:: txt
+.. code-block:: txt
 
     RESPONSE
 
@@ -241,7 +241,7 @@ Example response
 
 This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in next format.
 
-.. code:: json
+.. code-block:: json
 
     {
         "request_id": "previous-prediction-id",
@@ -260,7 +260,7 @@ Send feedback for prediction using URL parameters
 
 Request to EDGE endpoint for saving *feedback* of previous made prediction for model **income** version **1.1** with id **previous-prediction-id**.
 
-.. code:: bash
+.. code-block:: bash
 
     curl -X POST -vv "${BASE_URL}/feedback/model/?truthful=1" \
     -H "Authorization: Bearer ${JWT}" \
@@ -270,7 +270,7 @@ Request to EDGE endpoint for saving *feedback* of previous made prediction for m
 
 Response
 
-.. code:: txt
+.. code-block:: txt
 
     RESPONSE
 
@@ -281,7 +281,7 @@ Response
 
 This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in next format.
 
-.. code:: json
+.. code-block:: json
 
     {
         "request_id": "previous-prediction-id",

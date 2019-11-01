@@ -52,7 +52,7 @@ All information about URLs that :term:`EDI` provides can be viewed using auto ge
 Authentication and authorization
 --------------------------------
 
-:term:`EDI` analyzes incoming HTTP header named **TODO: MISSED** for JWT token, extracts client's scopes from this token and approves / declines incoming requests based on these (provided in JWT) scopes.
+:term:`EDI` analyzes incoming HTTP headers for JWT token, extracts client's scopes from this token and approves / declines incoming requests based on these (provided in JWT) scopes.
 
 
 Details of realization
