@@ -37,7 +37,7 @@ To deploy Legion on Kubernetes cluster, you have to:
 
 - Install Legion HELM chart using configuration file
 
-.. code:: bash
+.. code-block:: bash
 
     helm install legion -f values.yaml --name legion --repo https://github.com/legion-platform/legion-helm-charts
 
