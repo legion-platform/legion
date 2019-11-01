@@ -23,10 +23,10 @@ pipeline {
             param_release_version = "${params.ReleaseVersion}"
             //Git Branch to build package from
             param_git_branch = "${params.GitBranch}"
-             //Legion Infra repo url (for pipeline methods import)
-            param_legion_infra_repo = "${params.LegionInfraRepo}"
-            //Legion repo version tag (tag or branch name)
-            param_legion_infra_version_tag = "${params.LegionInfraVersionTag}"
+             //Legion CICD repo url (for pipeline methods import)
+            param_legion_cicd_repo = "${params.LegionCicdRepo}"
+            //Legion repo branch (tag or branch name)
+            param_legion_cicd_branch = "${params.LegionCicdBranch}"
             //Push release git tag
             param_push_git_tag = "${params.PushGitTag}"
             //Rewrite git tag i exists
@@ -55,9 +55,10 @@ pipeline {
             param_docker_registry = "${params.DockerRegistry}"
             param_docker_hub_registry = "${params.DockerHubRegistry}"
             param_git_deploy_key = "${params.GitDeployKey}"
+            legionCicdGitlabKey = "${params.legionCicdGitlabKey}"
             ///Job parameters
             updateVersionScript = "scripts/update_version_id"
-            sharedLibPath = "pipelines/legionPipeline.groovy"
+            sharedLibPath = "legion-cicd/pipelines/legionPipeline.groovy"
             pathToCharts= "${WORKSPACE}/helms"
             gcpCredential = "${params.GCPCredential}"
             documentationLocation = "${params.DocumentationGCS}"
@@ -72,19 +73,28 @@ pipeline {
                     sh 'echo RunningOn: $(curl http://checkip.amazonaws.com/)'
 
                     // import Legion components
-                    dir("${WORKSPACE}/legion-aws") {
-                        print ("Checkout Legion-infra repo")
-                        checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
+                    }
+
+                    sshagent(["${env.legionCicdGitlabKey}"]) {
+                        print ("Checkout Legion-cicd repo")
+                        sh"""#!/bin/bash -ex
+                        mkdir -p \$(getent passwd \$(whoami) | cut -d: -f6)/.ssh && ssh-keyscan git.epam.com >> \$(getent passwd \$(whoami) | cut -d: -f6)/.ssh/known_hosts
+                        if [ ! -d "legion-cicd" ]; then
+                            git clone ${env.param_legion_cicd_repo} legion-cicd
+                        fi
+                        cd legion-profiles && git checkout ${env.param_legion_cicd_branch}
+                        """
 
                         print ("Load legion pipeline common library")
                         legion = load "${env.sharedLibPath}"
                     }
 
-                    print("Check code for security issues")
-                    sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
+                    dir("${WORKSPACE}/legion-cicd"){
+                      print("Check code for security issues")
+                      sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
 
-                    legion.setBuildMeta(env.updateVersionScript)
-
+                      legion.setBuildMeta(env.updateVersionScript)
+                    }
                 }
             }
         }
@@ -515,14 +525,21 @@ pipeline {
         always {
             script {
                 // import Legion components
-                dir("${WORKSPACE}/legion-aws") {
-                    print ("Checkout Legion-infra repo")
-                    checkout scm: [$class: 'GitSCM', userRemoteConfigs: [[url: "${env.param_legion_infra_repo}"]], branches: [[name: "refs/tags/${env.param_legion_infra_version_tag}"]]], poll: false
-
+                sshagent(["${env.legionCicdGitlabKey}"]) {
+                    print ("Checkout Legion-cicd repo")
+                    sh"""#!/bin/bash -ex
+                      mkdir -p \$(getent passwd \$(whoami) | cut -d: -f6)/.ssh && ssh-keyscan git.epam.com >> \$(getent passwd \$(whoami) | cut -d: -f6)/.ssh/known_hosts
+                      if [ ! -d "legion-cicd" ]; then
+                      git clone ${env.param_legion_cicd_repo} legion-cicd
+                      fi
+                      cd legion-profiles && git checkout ${env.param_legion_cicd_branch}
+                    """
                     print ("Load legion pipeline common library")
                     legion = load "${env.sharedLibPath}"
                 }
-                legion.notifyBuild(currentBuild.currentResult)
+                dir("${WORKSPACE}/legion-cicd") {
+                    legion.notifyBuild(currentBuild.currentResult)
+                }
             }
             deleteDir()
         }
