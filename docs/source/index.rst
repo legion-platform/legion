@@ -3,8 +3,8 @@
    :caption: General Overview
 
    about
-   gen_architecture
-   gen_used_technologies
+   concepts
+   architecture
    gen_distros
    gen_security
 
