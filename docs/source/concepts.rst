@@ -1,9 +1,10 @@
 ============================
-Legion Platform Architecture
+Legion Platform Concepts
 ============================
 
-Building, training and deploying
+Lifecycle phases
 --------------------------------
+Build, train and deploy
 
 Legion tries to unify process of training, building and deploying ML/AI models, splitting them to 3 main phases.
 
