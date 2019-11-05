@@ -39,13 +39,6 @@
 
 .. toctree::
    :maxdepth: 1
-   :caption: Toolchains
-
-   tlch_about
-   tlch_python
-
-.. toctree::
-   :maxdepth: 1
    :caption: References
 
    ref_configuration
