@@ -7,11 +7,11 @@ Feedback loop
    Described below requires ``feedback`` to be enabled in the HELM's chart configuration during deploy.
 
 
-Feedback loop allows model's developers to get review how good models work from their users (3rd-party systems or users that ask for prediction).
+Feedback loop allows model's developers to get review of how good models work from their users (3rd-party systems or users that ask for prediction).
 
 1. When anybody asks model for prediction, ``Request-ID`` header with random generated value is added to request and response.
 
-2. Generating of new value for ``Request-ID`` header is missing if value is present by requester (in request headers).
+2. If the ``Request-ID`` value is present in the request header (added by the requester), new ``Request-ID`` is not generated.
 
 3. Request and response of the model are being stored on external storage service (such as AWS S3 or GCS, depending on configuration).
 
@@ -36,7 +36,7 @@ As said before, in general, feedback loop consists of two steps:
 
 .. note::
 
-    For sending of feedback JWT with any role name might be used.
+    For sending of feedback JWT with any role name can be used.
 
 
 Create a prediction without specific request id provided
@@ -75,7 +75,7 @@ Response contains generated ``request-id`` header.
 
 These requests and responses are being persisted on external storage (e.g. on S3) in two files.
 
-First file contains meta information about request and response (name is like ``/request_response/income/1.1/year=2019/month=07/day=24/2019072414_4.json``) in next format.
+First file contains meta information about request and response (name should look like ``/request_response/income/1.1/year=2019/month=07/day=24/2019072414_4.json``) in the following format:
 
 .. code-block:: json
 
@@ -149,7 +149,7 @@ First file contains meta information about request and response (name is like ``
         "time": "2019-07-24 14:53:55 +0000"
     }
 
-Second file contains response chunks with same ``request-id`` (name is like ``/response_body/income/1.1/year=2019/month=07/day=24/2019072414_1.json``) in next format:
+Second file contains response chunks with same ``request-id`` (name should look like ``/response_body/income/1.1/year=2019/month=07/day=24/2019072414_1.json``) in the following format:
 
 .. code-block:: json
 
@@ -239,7 +239,7 @@ Example response
     Add example of response
 
 
-This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in next format.
+This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file which name should look like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in the following format:
 
 .. code-block:: json
 
@@ -279,7 +279,7 @@ Response
     Add example of response
 
 
-This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in next format.
+This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file which name should look like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in the following format:
 
 .. code-block:: json
 

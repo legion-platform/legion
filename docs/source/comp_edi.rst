@@ -55,7 +55,7 @@ Authentication and authorization
 :term:`EDI` analyzes incoming HTTP headers for JWT token, extracts client's scopes from this token and approves / declines incoming requests based on these (provided in JWT) scopes.
 
 
-Details of realization
+Implementation details
 ----------------------
 
 :term:`EDI` is a HTTP REST API server, written using GoLang. For easily integration it provides swagger endpoint with up-to-date protocol information.

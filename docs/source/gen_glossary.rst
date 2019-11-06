@@ -17,7 +17,7 @@ Glossary
         Application/tool, that takes source code of models (placed in VCS), :term:`Data Bindings <Data Binding>`, :term:`Connections <Connection>` and :term:`Training Hyperparameters` and produces :term:`Trained Model Binary`
 
     Data Binding
-        Declaration where remote data (e.g. files from S3) should be placed for :term:`Model Training` process
+        Declaration where remote data (e.g. files from S3) should be placed for :term:`Train` process
 
     Connection
         Credentials for external systems, such as Docker Registry, cloud storages and etc.
@@ -38,19 +38,19 @@ Glossary
         Process of converting :term:`Trained Model Binary` into target format, such as Docker Image with REST API, Google Cloud function, AWS Lambda functions and etc. using :term:`Model Packager` application/tool declared in :term:`Toolchain Packaging Integration`
 
     Packager Extension
-        Pluggable mechanism of :term:`Model Packaging` processes
+        Pluggable mechanism of :term:`Package` processes
 
     Deployer
-        Application/tool, that takes results of (or references to) :term:`Model Packaging` and :term:`Connections <Connection>` to deploy this `artifacts` to target systems (such as Kubernetes cluster for Docker Image with REST API and etc.)
+        Application/tool, that takes results of (or references to) :term:`Package` process and :term:`Connections <Connection>` to deploy this `artifacts` to target systems (such as Kubernetes cluster for Docker Image with REST API and etc.)
 
     Deploy
-        Process of deploying results of (or references to) :term:`Model Packaging` to target systems (such as Kubernetes cluster for Docker Image with REST API and etc.) using :term:`Model Deployer` application/tool
+        Process of deploying results of (or references to) :term:`Package` to target systems (such as Kubernetes cluster for Docker Image with REST API and etc.) using :term:`Model Deployer` application/tool
 
     Trainer Metrics
-        Numeric metrics, that are being set by model training code during :term:`Model Training Process <Model Training>` (e.g. accuracy of model). Can be used for querying and comparing :term:`Model Trainings <Model Training>`
+        Numeric metrics, that are being set by model training code during :term:`Model Training Process <Train>` (e.g. accuracy of model). Can be used for querying and comparing :term:`Model Trainings <Train>`
 
     Trainer Tags
-        Key/value (string/string) values that are being set by model training code during :term:`Model Training Process <Model Training>` (e.g. type of algorithm). Can be used for querying and comparing :term:`Model Trainings <Model Training>`
+        Key/value (string/string) values that are being set by model training code during :term:`Model Training Process <Train>` (e.g. type of algorithm). Can be used for querying and comparing :term:`Model Trainings <Train>`
 
     Model Prediction Metrics
         Metrics that provides information how fast is model, based on measuring process of handling :term:`predictions <Prediction>`
@@ -68,7 +68,7 @@ Glossary
         API for managing Legion Platform resources for cloud deployed Platform
 
     Operator
-        Kubernetes Operator that manages Kubernetes resources (Pods, Services and etc.) for providing resources for :term:`Model Trainings <Model Training>`, :term:`Model Packaging <Model Packaging>`, :term:`Model Deployments <Model Deploying>`
+        Kubernetes Operator that manages Kubernetes resources (Pods, Services and etc.) for providing resources for :term:`Model Trainings <Train>`, :term:`Model Packaging <Package>`, :term:`Model Deployments <Deploy>`
 
     Prediction
         Query for deployed model, that contains input parameters (input vector) and returns prediction object. (e.g. prediction what is the number on the picture)
@@ -107,7 +107,7 @@ Glossary
         JSON Web Token that allows users to query deployed models and to provide feedback (by querying feedback API). This token contains :term:`name of role <Model Deployment Access Role Name>`
 
     A/B testing
-        Process of splitting predictions between multiple :term:`Model Deployments <Model Deploying>` in order to compare :term:`prediction metrics <Model Prediction Metrics>`, :term:`feedbacks <Prediction Feedback>` for models, trained with different :term:`source codes <VCS>`, :term:`train datasets <Data Binding>` and :term:`training hyperparameters <Training Hyperparameters>`
+        Process of splitting predictions between multiple :term:`Model Deployments <Deploy>` in order to compare :term:`prediction metrics <Model Prediction Metrics>`, :term:`feedbacks <Prediction Feedback>` for models, trained with different :term:`source codes <VCS>`, :term:`train datasets <Data Binding>` and :term:`training hyperparameters <Training Hyperparameters>`
 
     Legion distribution
         Collection of Docker Images, Python packages, NPM packages and etc., which are publicly available for installation
@@ -116,7 +116,7 @@ Glossary
         Package, that can be install on Kubernetes cluster. It uses :term:`Legion's Docker Images <Legion distribution>`
 
     Legion's CRDs
-        Objects, that :term:`EDI` creates for actions that require computing resources or to be stored (:term:`connections <Connection>`, :term:`model trainings <Model Training>` and etc.).
+        Objects, that :term:`EDI` creates for actions that require computing resources or to be stored (:term:`connections <Connection>`, :term:`model trainings <Train>` and etc.).
 
         These objects are Kubernetes Custom Resources and are being handled by :term:`opertor`
 

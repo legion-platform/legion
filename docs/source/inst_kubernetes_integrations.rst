@@ -21,7 +21,7 @@ Authentication provider
 
 For limiting access to legion WEB services (such as EDI) you may use authentication gateways.
 
-Legion supports `oauth2_proxy <https://github.com/bitly/oauth2_proxy>`_ gateway, that could be easily integrated (through `CoreOS Dex <https://github.com/dexidp/dex>`_) with next authentication provides:
+Legion supports `oauth2_proxy <https://github.com/bitly/oauth2_proxy>`_ gateway, that could be easily integrated (through `CoreOS Dex <https://github.com/dexidp/dex>`_) with next authentication providers:
 
 - LDAP
 
@@ -33,9 +33,9 @@ Legion supports `oauth2_proxy <https://github.com/bitly/oauth2_proxy>`_ gateway,
 Kubernetes cluster autoscaling facilities
 -----------------------------------------
 
-Auto scaling ability can be added to Legion using any Kubernetes auto scaler due the fact that Legion uses native Kubernetes object for training and deployment purposes.
+Auto scaling ability can be added to Legion using any Kubernetes auto scaler due to the fact that Legion uses native Kubernetes object for training and deployment purposes.
 
-Usage of autoscalers, provided by cloud providers also is possible (GKE auto scaler and etc.)
+Usage of autoscalers, provided by cloud providers is also possible (GKE auto scaler and etc.)
 
 .. todo::
 

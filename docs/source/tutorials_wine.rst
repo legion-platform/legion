@@ -751,4 +751,4 @@ Invoke the model to make a prediction:
    {"prediction": [6.0], "columns": ["quality"]}
 
 
-Congrats! You have finished the tutorial!
+Congrats! You have completed the tutorial!

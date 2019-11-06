@@ -44,16 +44,16 @@ To deploy Legion on Kubernetes cluster, you have to:
 
 That's all, starting this moment, you can:
 
-- To manage model trainings
+- Manage model trainings
 
-- To manage model packaging
+- Manage model packaging
 
-- To manage model deployments
+- Manage model deployments
 
-- To ask deployed models for prediction
+- Ask deployed models for prediction
 
-- To make A/B tests for model deployments
+- Make A/B tests for model deployments
 
-- To analyze train and performance metrics
+- Analyze train and performance metrics
 
-- To send feedback for previously made predictions
+- Send feedback for previously made predictions

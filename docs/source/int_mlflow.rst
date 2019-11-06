@@ -33,7 +33,7 @@ and to convert them into :term:`General Python Prediction Interface`
 Limitations
 -----------
 
-- Legion supports all model flavours, that have Python flavor (e.g. keras, sklearn and etc.). MLeap flavour is not supported;
+- Legion supports all model flavours, that have Python flavour (e.g. keras, sklearn and etc.). MLeap flavour is not supported;
 
 - Only Python programming language version 3 is supported;
 

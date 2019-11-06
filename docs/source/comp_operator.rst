@@ -16,12 +16,14 @@ Operator
 
 
 Operator is a mandatory component in Legion platform for cluster installation. It monitors :term:`Legion's CRDs` for changes and
- manages appropriate Kubernetes resources (Kubernetes Secrets, Pods, Services and etc.).
+manages appropriate Kubernetes resources (Kubernetes Secrets, Pods, Services and etc.).
 
 Operator is written using Golang and kubebuilder framework.
 
-## How operator makes training?
+How does operator make training?
+----------------------------------
 For each [training CRD](./ref_crds.md) operator creates appropriate configured Kubernetes Pod that consists of:
+
 * Model's container, created from specified (or default for selected toolchain) image.
   This container is launched with infinity sleep command and is controlled from builder's container.
 * Builder's container, created from `k8s-model-builder` docker image. Details about builder are [below](#what-is-builder).
@@ -30,7 +32,7 @@ For each [training CRD](./ref_crds.md) operator creates appropriate configured K
 Details about training CustomResource are provided in [another chapter](./ref_crds.md).
 
 What is builder?
-~~~~~~~~~~~~~~~~
+----------------------------------
 Builder is responsible for:
 
 1. Checking out sources from Git repository.
@@ -39,8 +41,10 @@ Builder is responsible for:
 
 Builder's image contains `legionctl` CLI tool and `builder` CLI tool that is started on startup.
 
-## How operator manages deployment?
+How does operator manage deployment?
+----------------------------------
 For each [deployment CRD](./ref_crds.md) operator creates:
+
 * Deployment and Pod - with target model image.
 * Service - for routing traffic.
 
@@ -51,7 +55,7 @@ How to reach EDI in target cluster
 Because of the fact that :term:`operator` does not provide any interfaces for connecting,
 you can not reach it directly.
 
-Details of realization
-----------------------
+Implementation details
+----------------------------------
 
 :term:`Operator` is a Kubernetes Operator, written using GoLang (with usage of Kubernetes's official Go packages).
