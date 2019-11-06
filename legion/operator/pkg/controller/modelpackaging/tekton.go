@@ -33,6 +33,10 @@ const (
 	pathToPackagerBin = "/opt/legion/packager"
 	workspacePath     = "/workspace"
 	outputDir         = "output"
+	configVolumeName  = "config"
+	configDir         = "/etc/legion/"
+	configFileName    = "config.yaml"
+	configSecretName  = "legion-packaging-config"
 )
 
 func generatePackagerTaskSpec(
@@ -49,6 +53,16 @@ func generatePackagerTaskSpec(
 			createInitPackagerStep(packagingCR.Name),
 			mainPackagerStep,
 			createResultPackagerStep(packagingCR.Name),
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: configVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: configSecretName,
+					},
+				},
+			},
 		},
 	}, nil
 }
@@ -69,8 +83,16 @@ func createInitPackagerStep(mpID string) tektonv1alpha1.Step {
 				viper.GetString(packaging_conf.OutputConnectionName),
 				"--edi-url",
 				viper.GetString(operator_conf.EdiURL),
+				"--config",
+				path.Join(configDir, configFileName),
 			},
 			Resources: packagerResources,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      configVolumeName,
+					MountPath: configDir,
+				},
+			},
 		},
 	}
 }
@@ -120,8 +142,16 @@ func createResultPackagerStep(mpID string) tektonv1alpha1.Step {
 				viper.GetString(packaging_conf.OutputConnectionName),
 				"--edi-url",
 				viper.GetString(operator_conf.EdiURL),
+				"--config",
+				path.Join(configDir, configFileName),
 			},
 			Resources: packagerResources,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      configVolumeName,
+					MountPath: configDir,
+				},
+			},
 		},
 	}
 }

@@ -17,16 +17,16 @@
 FROM ubuntu:18.04 as builder
 
 ENV OPERATOR_DIR="/go/src/github.com/legion-platform/legion/legion/operator" \
-    PATH="$PATH:/go/bin:/usr/lib/go-1.11/bin" \
+    PATH="$PATH:/go/bin:/usr/lib/go-1.12/bin" \
     GOPATH="/go"
 
 WORKDIR "${OPERATOR_DIR}"
 
 RUN apt-get update -qq && \
     apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:gophers/archive && \
+    add-apt-repository -y ppa:longsleep/golang-backports && \
     apt-get update -qq && \
-    apt-get install -y git gcc make golang-1.11-go wget && \
+    apt-get install -y git gcc make golang-1.12-go wget && \
     wget -q https://github.com/golangci/golangci-lint/releases/download/v1.17.1/golangci-lint-1.17.1-linux-amd64.tar.gz -O /tmp/golangci-lint.tar.gz && \
     tar -zxvf /tmp/golangci-lint.tar.gz -C /usr/local/ && mv /usr/local/golangci-lint*/golangci-lint /usr/bin/golangci-lint && \
     wget -q https://github.com/golang/dep/releases/download/v0.5.1/dep-linux-amd64 -O /usr/local/bin/dep && \

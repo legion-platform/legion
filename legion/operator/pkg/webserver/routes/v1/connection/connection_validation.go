@@ -38,18 +38,14 @@ const (
 	GitTypePublicKeyExtractionErrorMessage = "can not extract the public SSH host key from URI: %s"
 	GitTypeKeySecretErrorMessage           = "git type requires that keySecret parameter must be encoded" +
 		" in base64 format, error message: %s"
-	GcsTypeRegionErrorMessage                = "gcs type requires that region must be non-empty"
-	GcsTypeRoleAndKeySecretEmptyErrorMessage = "gcs type requires that either role or keySecret parameter" +
-		" must be non-empty"
+	GcsTypeRegionErrorMessage         = "gcs type requires that region must be non-empty"
 	GcsTypeKeySecretEmptyErrorMessage = "gcs type requires that keySecret parameter" +
 		" must be non-empty"
 	GcsTypeRoleNotSupportedErrorMessage = "gcs type does not support role parameter yet" +
 		" must be non-empty"
 	AzureBlobTypeKeySecretEmptyErrorMessage = "azureblob type requires that keySecret parameter contains" +
 		"HTTP endpoint with SAS Token"
-	S3TypeRegionErrorMessage                = "s3 type requires that region must be non-empty"
-	S3TypeRoleAndKeySecretEmptyErrorMessage = "s3 type requires that either role or keySecret parameter" +
-		" must be non-empty"
+	S3TypeRegionErrorMessage         = "s3 type requires that region must be non-empty"
 	S3TypeKeySecretEmptyErrorMessage = "s3 type requires that keyID and keySecret parameters" +
 		" must be non-empty"
 	defaultIDTemplate                  = "%s-%s"

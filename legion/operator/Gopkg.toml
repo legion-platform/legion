@@ -47,6 +47,10 @@ required = [
   name = "github.com/Azure/azure-storage-blob-go"
   version = "0.8.0"
 
+[[override]]
+  name = "github.com/Jeffail/gabs"
+  version = "v1.1.1"
+
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 
 [[constraint]]

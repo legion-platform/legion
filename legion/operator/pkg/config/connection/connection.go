@@ -25,6 +25,24 @@ const (
 	Namespace = "connection.namespace"
 	// Enable connection API/operator
 	Enabled = "connection.enabled"
+	// Storage backend for connections. Available options:
+	//   * kubernetes
+	//   * vault
+	RepositoryType = "connection.repository_type"
+	// TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+	DecryptToken = "connection.decrypt_token"
+	// Vault URL
+	VaultURL = "connection.vault.url"
+	// Vault secret engine path where connection will be stored
+	VaultSecretEnginePath = "connection.vault.secret_engine_path"
+	// Vault role for access to the secret engine path
+	VaultRole = "connection.vault.role"
+	// Optionally. Token for access to the vault server
+	// If it is empty then client will use the k8s auth
+	VaultToken = "connection.vault.token"
+
+	RepositoryKubernetesType = "kubernetes"
+	RepositoryVaultType      = "vault"
 )
 
 func init() {
@@ -32,4 +50,12 @@ func init() {
 
 	viper.SetDefault(Namespace, "legion")
 	config.PanicIfError(viper.BindEnv(Namespace))
+
+	viper.SetDefault(VaultToken, "")
+	// This is url of local vault in dev mode
+	viper.SetDefault(VaultURL, "http://127.0.0.1:8200")
+	viper.SetDefault(VaultSecretEnginePath, "legion/connections")
+	viper.SetDefault(VaultRole, "legion")
+
+	viper.SetDefault(RepositoryType, RepositoryKubernetesType)
 }

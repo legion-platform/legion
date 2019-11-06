@@ -37,7 +37,7 @@ func InitBasicParams(cmd *cobra.Command) {
 	setUpLogger()
 	cobra.OnInitialize(InitConfig)
 
-	cmd.Flags().StringVar(&CfgFile, "config", "", "config file")
+	cmd.PersistentFlags().StringVar(&CfgFile, "config", "", "config file")
 }
 
 func PanicIfError(err error) {

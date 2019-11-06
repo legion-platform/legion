@@ -24,6 +24,9 @@ spec:
         - name: config
           secret:
             secretName: "{{ .Release.Name }}-edi-config"
+{{- if .Values.edi.volumes }}
+{{ toYaml .Values.edi.volumes | indent 8 }}
+{{- end }}
       containers:
       - name: edi
         image: "{{ include "legion.image-name" (dict "root" . "service" .Values.edi "tpl" "%sk8s-edi:%s") }}"
@@ -33,6 +36,16 @@ spec:
           - name: config
             mountPath: "/etc/legion"
             readOnly: true
+{{- if .Values.edi.volumeMounts }}
+{{ toYaml .Values.edi.volumeMounts | indent 10 }}
+{{- end }}
+        {{- if .Values.edi.env }}
+        env:
+          {{- range $key, $value := .Values.edi.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+        {{- end }}
         command:
           - ./edi
         args:

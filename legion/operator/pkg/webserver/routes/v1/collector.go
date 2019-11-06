@@ -17,12 +17,15 @@
 package v1
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	connection_config "github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	deployment_config "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	packaging_config "github.com/legion-platform/legion/legion/operator/pkg/config/packaging"
 	training_config "github.com/legion-platform/legion/legion/operator/pkg/config/training"
-	connection_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	connection_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection"
+	k8s_connection_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/kubernetes"
+	vault_connection_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/connection/vault"
 	deployment_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/deployment/kubernetes"
 	packaging_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/packaging/kubernetes"
 	training_repository "github.com/legion-platform/legion/legion/operator/pkg/repository/training/kubernetes"
@@ -41,8 +44,26 @@ const (
 	LegionV1ApiVersion = "api/v1"
 )
 
-func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConfig *rest.Config) {
-	connRepository := connection_repository.NewRepository(viper.GetString(connection_config.Namespace), k8sClient)
+func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConfig *rest.Config) (err error) {
+	var connRepository connection_repository.Repository
+
+	// Setup the connection repository
+	switch viper.GetString(connection_config.RepositoryType) {
+	case connection_config.RepositoryKubernetesType:
+		connRepository = k8s_connection_repository.NewRepository(
+			viper.GetString(connection_config.Namespace),
+			k8sClient,
+			viper.GetString(connection_config.DecryptToken),
+		)
+	case connection_config.RepositoryVaultType:
+		connRepository, err = vault_connection_repository.NewRepositoryFromConfig()
+		if err != nil {
+			return err
+		}
+	default:
+		return errors.New("unexpect connection repository type")
+	}
+
 	depRepository := deployment_repository.NewRepository(viper.GetString(deployment_config.Namespace), k8sClient)
 	packRepository := packaging_repository.NewRepository(
 		viper.GetString(packaging_config.Namespace),
@@ -62,4 +83,6 @@ func SetupV1Routes(routeGroup *gin.RouterGroup, k8sClient client.Client, k8sConf
 	packaging.ConfigureRoutes(routeGroup, packRepository, connRepository)
 	training.ConfigureRoutes(routeGroup, trainRepository, connRepository)
 	configuration.ConfigureRoutes(routeGroup)
+
+	return err
 }

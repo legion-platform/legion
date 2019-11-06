@@ -68,6 +68,8 @@ def get_variables(profile=None) -> typing.Dict[str, str]:
                 'DASHBOARD_URL': os.getenv('DASHBOARD_URL', f'https://dashboard.{host_base_domain}'),
                 'JUPYTERLAB_URL': os.getenv('JUPITERLAB_URL', f'https://jupyterlab.{host_base_domain}'),
                 'MLFLOW_URL': os.getenv('MLFLOW_URL', f'https://mlflow.{host_base_domain}'),
+                # TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+                'CONN_DECRYPT_TOKEN': data.get('legion_connection_decrypt_token'),
             }
         except Exception as err:
             raise Exception("Can\'t get variable from cluster profile: {}".format(err))

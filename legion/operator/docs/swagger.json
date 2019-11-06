@@ -290,6 +290,57 @@
                 }
             }
         },
+        "/api/v1/connection/{id}/decrypted": {
+            "get": {
+                "description": "Get a decrypted Connection by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Connection"
+                ],
+                "summary": "Get a decrypted Connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Connection id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Decrypt token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Connection"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/HTTPResult"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/feedback": {
             "post": {
                 "description": "Send feedback about previously made prediction",

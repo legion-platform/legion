@@ -17,6 +17,8 @@
 package modeltraining
 
 import (
+	"path"
+
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/training"
 	operator_conf "github.com/legion-platform/legion/legion/operator/pkg/config/operator"
@@ -26,13 +28,16 @@ import (
 	"github.com/spf13/viper"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"path"
 )
 
 const (
 	pathToTrainerBin = "/opt/legion/trainer"
 	workspacePath    = "/workspace"
 	outputDir        = "output"
+	configVolumeName = "config"
+	configDir        = "/etc/legion/"
+	configFileName   = "config.yaml"
+	configSecretName = "legion-training-config"
 )
 
 func generateTrainerTaskSpec(
@@ -49,6 +54,16 @@ func generateTrainerTaskSpec(
 			createInitTrainerStep(trainingCR.Name),
 			mainTrainerStep,
 			createResultTrainerStep(trainingCR.Name),
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: configVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: configSecretName,
+					},
+				},
+			},
 		},
 	}, nil
 }
@@ -69,8 +84,16 @@ func createInitTrainerStep(mtID string) tektonv1alpha1.Step {
 				viper.GetString(training_conf.OutputConnectionName),
 				"--edi-url",
 				viper.GetString(operator_conf.EdiURL),
+				"--config",
+				path.Join(configDir, configFileName),
 			},
 			Resources: trainerResources,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      configVolumeName,
+					MountPath: configDir,
+				},
+			},
 		},
 	}
 }
@@ -130,8 +153,16 @@ func createResultTrainerStep(mtID string) tektonv1alpha1.Step {
 				viper.GetString(operator_conf.EdiURL),
 				"--output-dir",
 				path.Join(workspacePath, outputDir),
+				"--config",
+				path.Join(configDir, configFileName),
 			},
 			Resources: trainerResources,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      configVolumeName,
+					MountPath: configDir,
+				},
+			},
 		},
 	}
 }

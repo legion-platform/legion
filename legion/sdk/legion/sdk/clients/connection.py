@@ -31,15 +31,28 @@ class ConnectionClient(RemoteEdiClient):
     HTTP connection client
     """
 
-    def get(self, name: str) -> Connection:
+    def get(self, conn_id: str) -> Connection:
         """
         Get Connection from EDI server
 
-        :param name: Connection name
-        :type name: str
+        :param conn_id: Connection ID
         :return: Connection
         """
-        return Connection.from_dict(self.query(f'{CONNECTION_URL}/{name}'))
+        return Connection.from_dict(self.query(f'{CONNECTION_URL}/{conn_id}'))
+
+    # TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+    def get_decrypted(self, conn_id: str, decrypt_token: str) -> Connection:
+        """
+        Get decrypted connection from EDI server
+
+        :param decrypt_token: Token for getting a decrypted connection
+        :param conn_id: Connection ID
+        :return: Connection
+        """
+        return Connection.from_dict(self.query(
+            f'{CONNECTION_URL}/{conn_id}/decrypted',
+            payload={'token': decrypt_token}
+        ))
 
     def get_all(self) -> typing.List[Connection]:
         """
@@ -82,15 +95,28 @@ class AsyncConnectionClient(AsyncRemoteEdiClient):
     HTTP connection async client
     """
 
-    async def get(self, name: str) -> Connection:
+    async def get(self, conn_id: str) -> Connection:
         """
         Get Connection from EDI server
 
-        :param name: Connection name
-        :type name: str
+        :param conn_id: Connection ID
         :return: Connection
         """
-        return Connection.from_dict(await self.query(f'{CONNECTION_URL}/{name}'))
+        return Connection.from_dict(await self.query(f'{CONNECTION_URL}/{conn_id}'))
+
+    # TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+    async def get_decrypted(self, conn_id: str, decrypt_token: str) -> Connection:
+        """
+        Get decrypted connection from EDI server
+
+        :param decrypt_token: Token for getting a decrypted connection
+        :param conn_id: Connection ID
+        :return: Connection
+        """
+        return Connection.from_dict(await self.query(
+            f'{CONNECTION_URL}/{conn_id}/decrypted',
+            payload={'token': decrypt_token}
+        ))
 
     async def get_all(self) -> typing.List[Connection]:
         """

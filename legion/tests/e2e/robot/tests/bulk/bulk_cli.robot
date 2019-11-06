@@ -65,7 +65,7 @@ Check connection not exist
     [Arguments]  ${name}
     ${res}=  Shell  legionctl --verbose conn get --id ${name}
              Should not be equal  ${res.rc}      ${0}
-             Should contain       ${res.stderr}  "${name}" not found
+             Should contain       ${res.stderr}  not found
 
 Apply bulk file and check counters
     [Arguments]  ${file}  ${created}  ${changed}  ${deleted}
@@ -157,7 +157,7 @@ Apply changes on a good profile, remove on teardown
 Try to apply profile with incorrect order
     [Documentation]  Try to apply profile with resources in incorrect order
     [Teardown]  Cleanup resources
-    Apply bulk file and check errors  incorrect-order.legion.yaml  "${CONN_1_ID}" not found
+    Apply bulk file and check errors  incorrect-order.legion.yaml  not found
 
 Try to apply profile with syntax error
     [Documentation]  Try to apply profile with resources in incorrect order

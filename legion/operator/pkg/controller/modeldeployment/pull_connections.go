@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/legion-platform/legion/legion/operator/pkg/apis/connection"
 	legionv1alpha1 "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
+	conn_conf "github.com/legion-platform/legion/legion/operator/pkg/config/connection"
 	dep_conf "github.com/legion-platform/legion/legion/operator/pkg/config/deployment"
 	"github.com/legion-platform/legion/legion/operator/pkg/legion"
 	"github.com/legion-platform/legion/legion/operator/pkg/utils/aws"
@@ -66,7 +67,10 @@ func (r *ReconcileModelDeployment) reconcileDeploymentPullConnection(
 
 	log = log.WithValues(legion.ConnectionIDLogPrefix, mdConnID)
 
-	mdConn, err := r.connRepo.GetConnection(mdConnID)
+	mdConn, err := r.connRepo.GetDecryptedConnection(
+		mdConnID,
+		viper.GetString(conn_conf.DecryptToken),
+	)
 	if err != nil {
 		log.Error(err, "Cannot retrieve connection")
 

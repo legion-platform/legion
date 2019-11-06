@@ -19,12 +19,14 @@ package connection
 import "github.com/legion-platform/legion/legion/operator/pkg/apis/legion/v1alpha1"
 
 const (
-	S3Type        = v1alpha1.ConnectionType("s3")
-	GcsType       = v1alpha1.ConnectionType("gcs")
-	AzureBlobType = v1alpha1.ConnectionType("azureblob")
-	GITType       = v1alpha1.ConnectionType("git")
-	DockerType    = v1alpha1.ConnectionType("docker")
-	EcrType       = v1alpha1.ConnectionType("ecr")
+	S3Type            = v1alpha1.ConnectionType("s3")
+	GcsType           = v1alpha1.ConnectionType("gcs")
+	AzureBlobType     = v1alpha1.ConnectionType("azureblob")
+	GITType           = v1alpha1.ConnectionType("git")
+	DockerType        = v1alpha1.ConnectionType("docker")
+	EcrType           = v1alpha1.ConnectionType("ecr")
+	decryptedDataMask = "*****"
+	ResourceTypeName  = "connection"
 )
 
 var (
@@ -47,4 +49,13 @@ type Connection struct {
 	Spec v1alpha1.ConnectionSpec `json:"spec"`
 	// Connection status
 	Status *v1alpha1.ConnectionStatus `json:"status,omitempty"`
+}
+
+// Replace sensitive data with mask in the connection
+func (c *Connection) DeleteSensitiveData() *Connection {
+	c.Spec.Password = decryptedDataMask
+	c.Spec.KeySecret = decryptedDataMask
+	c.Spec.KeyID = decryptedDataMask
+
+	return c
 }

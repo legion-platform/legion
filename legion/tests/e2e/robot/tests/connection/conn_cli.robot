@@ -33,6 +33,17 @@ Check conn
     ${res}=  Shell  legionctl --verbose conn get --id ${id} -o json
     Should be equal  ${res.rc}      ${0}
     ${conn}=    Evaluate     json.loads("""${res.stdout}""")[0]    json
+
+    should be equal  ${conn['id']}                 ${id}
+    should be equal  ${conn['spec']['type']}       ${type}
+    should be equal  ${conn['spec']['reference']}  ${reference}
+    should be equal  ${conn['spec']['keySecret']}  ${CONN_DECRYPTED_MASK}
+
+    # TODO: Remove the token after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+    ${res}=  Shell  legionctl --verbose conn get --id ${id} -o json --decrypted ${CONN_DECRYPT_TOKEN}
+    Should be equal  ${res.rc}      ${0}
+    ${conn}=    Evaluate     json.loads("""${res.stdout}""")[0]    json
+
     should be equal  ${conn['id']}                 ${id}
     should be equal  ${conn['spec']['type']}       ${type}
     should be equal  ${conn['spec']['reference']}  ${reference}

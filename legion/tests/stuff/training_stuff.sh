@@ -13,6 +13,8 @@ TEST_DATA_DIR_CONNECTION_ID=test-data-dir
 # Test connection points to the test data file
 TEST_DATA_FILE_CONNECTION_ID=test-data-file
 TEST_DATA_TI_ID=training-data-helper
+# TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+LEGION_CONNECTION_DECTYPT_TOKEN=$(jq '.legion_connection_decrypt_token' -r "${CLUSTER_PROFILE}")
 
 # Cleanups test model packaging from EDI server, cloud bucket and local filesystem.
 # Arguments:
@@ -94,7 +96,8 @@ function create_test_data_connection() {
   local conn_file="test-data-connection.yaml"
 
   # Replaced the uri with the test data directory and added the kind field
-  legionctl conn get --id models-output -o json |
+  # TODO: Remove the token after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+  legionctl conn get --id models-output --decrypted "${LEGION_CONNECTION_DECTYPT_TOKEN}" -o json |
     conn_uri="${conn_uri}" jq '.[0].spec.uri = env.conn_uri | .[] | .kind = "Connection"' \
       >"${conn_file}"
 

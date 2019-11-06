@@ -513,6 +513,24 @@ edi:
     # Type: string
     # domain: ~
 
+  # Extra EDI volume
+  # Example:
+  # - name: vault-tls
+  #   secret:
+  #     secretName: vault-tls
+  volumes: []
+
+  # Extra EDI volume mounts
+  # Example:
+  # - name: vault-tls
+  #   mountPath: /vault/tls
+  volumeMounts: []
+
+  # Extra EDI environment variables
+  # Example:
+  #  VAULT_CAPATH: /vault/tls
+  env: []
+
 # Service catalog server configuration
 service_catalog:
   # service catalog could be disabled
@@ -619,6 +637,28 @@ config:
     # Enable connection API/operator
     # Type: boolean
     enabled: true
+    # Storage backend for connections. Available options:
+    #   * kubernetes
+    #   * vault
+    # Type: string
+    repository_type: kubernetes
+    # TODO: Remove after implementation of the issue https://github.com/legion-platform/legion/issues/1008
+    # Type: string
+    decrypt_token: ""
+    # Vault storage backend configuration
+    vault:
+      # Vault URL
+      # Type: string
+      url: ""
+      # Vault secret engine path where connection will be stored
+      # Type: string
+      secret_engine_path: ""
+      # Vault role for access to the secret engine path
+      # Type: string
+      role: ""
+      # Optionally. Token for access to the vault server
+      # Type: string
+      token: ""
   # Deployment configuration
   deployment:
     # Enable deployment API/operator

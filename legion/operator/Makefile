@@ -5,6 +5,9 @@ KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s
 LEGION_NAMESPACE=legion
 LEGION_SECRET_CONFIG=legion-operator-config
 
+# Hardcoded vault token for local development
+TEST_VAULT_ROOT_TOKEN=test_root_token
+
 .EXPORT_ALL_VARIABLES:
 
 all: help
@@ -81,6 +84,10 @@ fmt:
 ## vet: Run go vet against code
 vet:
 	go vet ./pkg/... ./cmd/...
+
+## run-vault: Start vault in dev model for local development
+run-value:
+	vault server -dev -dev-root-token-id $TEST_VAULT_ROOT_TOKEN
 
 ## swag: Generate swagger files
 swag:

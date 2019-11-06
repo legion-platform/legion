@@ -297,6 +297,11 @@ export-hiera:
 	           -e CLOUD_PROVIDER=${CLOUD_PROVIDER} \
 	           ${EXPORT_HIERA_DOCKER_IMAGE} hiera_exporter_helper
 
+## check-vulnerabilities: Сheck vulnerabilities in the source code
+check-vulnerabilities:
+	./install-git-secrets-hook.sh install_hooks
+	git secrets --scan -r
+
 ## help: Show the help message
 help: Makefile
 	@echo "Choose a command run in "$(PROJECTNAME)":"
