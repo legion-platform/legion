@@ -1,8 +1,8 @@
 ============================
-Legion Architecture
+Architecture
 ============================
 
-Legion subsystems
+Subsystems
 --------------------------------
 
 Legion subsystems are:
@@ -14,9 +14,9 @@ Legion subsystems are:
 External integrations
 --------------------------------
 
-The following libraries and plugins use Legion as a platform:
+These tools and libraries are Legion clients:
 
-1. :term:`Python SDK Library`
+1. :term:`Legion SDK`
 2. :term:`Legion CLI`
 3. :term:`Plugin for JupyterLab`
 4. :term:`Plugin for Jenkins`

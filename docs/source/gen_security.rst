@@ -1,8 +1,8 @@
 ===================
-Security approaches
+Security
 ===================
 
-Legion does not manage users, tokens or other credentials.
+Legion delegates user, token and credential management to third-party providers.
 
 Any service that supports the OAuth2 protocol can be used to provide authentication and authorization to a Legion cluster.
 
@@ -27,7 +27,7 @@ When enabled in the Legion start-up configuration, all other endpoints (such as 
 When a user tries to open a secured resource, ``oauth2_proxy`` checks the incoming request for a :term:`JWT token<JWT Token>` and OAuth2 Cookies.
 If request does not contain appropriate credentials, the user will be redirected to a login sceen.
 
-Securing network connections, ingresses and egresses
+Securing network connections, ingress and egress
 -----
 Legion does not ship with network policies enabled, but any policy that uses Pod label selection can be used (e.g. K8S NetworkPolicy). Details are in the Network Connectivity Reference.
 

@@ -85,8 +85,8 @@ Glossary
     Feedback aggregator
         Service, that provides :term:`Model Feedback API` and gathers input and output :term:`prediction traffic <Model prediction API>`
 
-    Python SDK Library
-        SDK library for :term:`EDI`, written in Python language. Can be installed from PyPi
+    Legion SDK
+        Extensible Python library for :term:`EDI`, written in Python language. Can be installed from PyPi.
 
     Legion CLI
         CLI interface for :term:`EDI`, written in Python language. Can be installed from PyPi. It uses :term:`Python SDK Library`

@@ -1,5 +1,5 @@
 =====
-Legion distributions
+Distributions
 =====
 
 :term:`Legion distributions<Legion distribution>` are provided via :term:`HELM Charts <Legion HELM Chart>`, docker images, Python and NPM packages.
