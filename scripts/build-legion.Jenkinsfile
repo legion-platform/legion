@@ -11,57 +11,70 @@ pipeline {
     agent { label 'ec2builder'}
 
     options{
-            buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
+        buildDiscarder(logRotator(numToKeepStr: '35', artifactNumToKeepStr: '35'))
     }
     environment {
-            /// Input parameters
-            //Enable docker cache parameter
-            param_enable_docker_cache = "${params.EnableDockerCache}"
-            //Build major version release and optionally push it to public repositories
-            param_stable_release = "${params.StableRelease}"
-            //Release version to tag all artifacts to
-            param_release_version = "${params.ReleaseVersion}"
-            //Git Branch to build package from
-            param_git_branch = "${params.GitBranch}"
-             //Legion CICD repo url (for pipeline methods import)
-            param_legion_cicd_repo = "${params.LegionCicdRepo}"
-            //Legion repo branch (tag or branch name)
-            param_legion_cicd_branch = "${params.LegionCicdBranch}"
-            //Push release git tag
-            param_push_git_tag = "${params.PushGitTag}"
-            //Rewrite git tag i exists
-            param_force_tag_push = "${params.ForceTagPush}"
-            //Push release to master bransh
-            param_update_master = "${params.UpdateMaster}"
-            //Upload legion python package to pypi
-            param_upload_legion_package = "${params.UploadLegionPackage}"
-            //Set next releases version explicitly
-            param_next_version = "${params.NextVersion}"
-            // Update version string
-            param_update_version_string = "${params.UpdateVersionString}"
-            // Release version to be used as docker cache source
-            param_docker_cache_source = "${params.DockerCacheSource}"
-            //Artifacts storage parameters
-            param_helm_repo_git_url = "${params.HelmRepoGitUrl}"
-            param_helm_repo_git_branch = "${params.HelmRepoGitBranch}"
-            param_helm_repository = "${params.HelmRepository}"
-            param_pypi_repository = "${params.PyPiRepository}"
-            param_local_pypi_distribution_target_name = "${params.LocalPyPiDistributionTargetName}"
-            param_test_pypi_distribution_target_name = "${params.testPyPiDistributionTargetName}"
-            param_public_pypi_distribution_target_name = "${params.PublicPyPiDistributionTargetName}"
-            param_pypi_distribution_target_name = "${params.PyPiDistributionTargetName}"
-            param_jenkins_plugins_repository_store = "${params.JenkinsPluginsRepositoryStore}"
-            param_jenkins_plugins_repository = "${params.JenkinsPluginsRepository}"
-            param_docker_registry = "${params.DockerRegistry}"
-            param_docker_hub_registry = "${params.DockerHubRegistry}"
-            param_git_deploy_key = "${params.GitDeployKey}"
-            legionCicdGitlabKey = "${params.legionCicdGitlabKey}"
-            ///Job parameters
-            updateVersionScript = "scripts/update_version_id"
-            sharedLibPath = "legion-cicd/pipelines/legionPipeline.groovy"
-            pathToCharts= "${WORKSPACE}/helms"
-            gcpCredential = "${params.GCPCredential}"
-            documentationLocation = "${params.DocumentationGCS}"
+        /// Input parameters
+        //Enable docker cache parameter
+        param_enable_docker_cache = "${params.EnableDockerCache}"
+        //Build major version release and optionally push it to public repositories
+        param_stable_release = "${params.StableRelease}"
+        //Release version to tag all artifacts to
+        param_release_version = "${params.ReleaseVersion}"
+        //Git Branch to build package from
+        param_git_branch = "${params.GitBranch}"
+        //Legion CICD repo url (for pipeline methods import)
+        param_legion_cicd_repo = "${params.LegionCicdRepo}"
+        //Legion repo branch (tag or branch name)
+        param_legion_cicd_branch = "${params.LegionCicdBranch}"
+        //Push release git tag
+        param_push_git_tag = "${params.PushGitTag}"
+        //Rewrite git tag i exists
+        param_force_tag_push = "${params.ForceTagPush}"
+        //Push release to master bransh
+        param_update_master = "${params.UpdateMaster}"
+        //Upload legion python package to pypi
+        param_upload_legion_package = "${params.UploadLegionPackage}"
+        //Set next releases version explicitly
+        param_next_version = "${params.NextVersion}"
+        // Update version string
+        param_update_version_string = "${params.UpdateVersionString}"
+        // Release version to be used as docker cache source
+        param_docker_cache_source = "${params.DockerCacheSource}"
+        //Artifacts storage parameters
+        param_helm_repo_git_url = "${params.HelmRepoGitUrl}"
+        param_helm_repo_git_branch = "${params.HelmRepoGitBranch}"
+        param_helm_repository = "${params.HelmRepository}"
+        param_pypi_repository = "${params.PyPiRepository}"  // TODO: remove
+        param_local_pypi_distribution_target_name = "${params.LocalPyPiDistributionTargetName}" // TODO: remove
+        param_test_pypi_distribution_target_name = "${params.testPyPiDistributionTargetName}" // TODO: remove
+        param_public_pypi_distribution_target_name = "${params.PublicPyPiDistributionTargetName}" // TODO: remove
+        param_pypi_distribution_target_name = "${params.PyPiDistributionTargetName}" // TODO: remove
+        param_jenkins_plugins_repository_store = "${params.JenkinsPluginsRepositoryStore}"
+        param_jenkins_plugins_repository = "${params.JenkinsPluginsRepository}"
+        param_docker_registry = "${params.DockerRegistry}"
+        param_docker_hub_registry = "${params.DockerHubRegistry}"
+        param_git_deploy_key = "${params.GitDeployKey}"
+        legionCicdGitlabKey = "${params.legionCicdGitlabKey}"
+        ///Job parameters
+        sharedLibPath = "legion-cicd/pipelines/legionPipeline.groovy"
+        pathToCharts= "${WORKSPACE}/helms"
+        gcpCredential = "${params.GCPCredential}"
+        documentationLocation = "${params.DocumentationGCS}"
+
+        // NPM
+        param_npm_public_url = "${params.NpmPublicUrl}"
+        param_npm_public_creds = "npm_public_cred"
+        param_npm_private_url = "${params.NpmPrivateUrl}"
+        param_npm_private_creds = "nexus-local-repository"
+        param_npm_publishing_enabled = "${NpmPublishingEnabled}"
+
+        // PyPi
+        param_pypi_public_url = "${params.PyPiPublicUrl}"
+        param_pypi_public_creds = "pypi_public_cred"
+        param_pypi_private_url = "${params.PyPiPrivateUrl}"
+        param_pypi_private_creds = "nexus-local-repository"
+        param_pypi_publishing_enabled = "${PyPiPublishingEnabled}"
     }
 
     stages {
@@ -89,7 +102,14 @@ pipeline {
 
                     print("Check code for security issues")
                     sh "bash install-git-secrets-hook.sh install_hooks && git secrets --scan -r"
-                    legion.setBuildMeta(env.updateVersionScript)
+
+                    verFiles = [
+                            'legion/cli/legion/cli/version.py',
+                            'legion/sdk/legion/sdk/version.py',
+                            'legion/jupyterlab-plugin/legion/jupyterlab/version.py',
+                            'legion/jupyterlab-plugin/package.json',
+                    ]
+                    legion.setBuildMeta(verFiles)
                 }
             }
         }
@@ -112,19 +132,19 @@ pipeline {
         stage("Docker login") {
             steps {
                 withCredentials([[
-                 $class: 'UsernamePasswordMultiBinding',
-                 credentialsId: 'nexus-local-repository',
-                 usernameVariable: 'USERNAME',
-                 passwordVariable: 'PASSWORD']]) {
+                                         $class: 'UsernamePasswordMultiBinding',
+                                         credentialsId: 'nexus-local-repository',
+                                         usernameVariable: 'USERNAME',
+                                         passwordVariable: 'PASSWORD']]) {
                     sh "docker login -u ${USERNAME} -p ${PASSWORD} ${env.param_docker_registry}"
                 }
                 script {
                     if (env.param_stable_release.toBoolean()) {
                         withCredentials([[
-                        $class: 'UsernamePasswordMultiBinding',
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'USERNAME',
-                        passwordVariable: 'PASSWORD']]) {
+                                                 $class: 'UsernamePasswordMultiBinding',
+                                                 credentialsId: 'dockerhub',
+                                                 usernameVariable: 'USERNAME',
+                                                 passwordVariable: 'PASSWORD']]) {
                             sh "docker login -u ${USERNAME} -p ${PASSWORD}"
                         }
                     }
@@ -196,7 +216,7 @@ pipeline {
 
                                 // If the linter result contains an error, then we mark the build as unstable.
                                 if (linterContent?.trim()) {
-                                  currentBuild.result = 'UNSTABLE'
+                                    currentBuild.result = 'UNSTABLE'
                                 }
 
                                 archiveArtifacts 'linter-output.txt'
@@ -246,9 +266,9 @@ pipeline {
                             }
 
                             withCredentials([
-                            file(credentialsId: "${env.gcpCredential}", variable: 'gcpCredential')]) {
-                                docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root -e GOOGLE_CREDENTIALS=${gcpCredential}") {                                
-                                    sh "gsutil cp ${WORKSPACE}/legion-docs.pdf ${env.documentationLocation}/${Globals.buildVersion}.pdf"                            
+                                    file(credentialsId: "${env.gcpCredential}", variable: 'gcpCredential')]) {
+                                docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside("-u root -e GOOGLE_CREDENTIALS=${gcpCredential}") {
+                                    sh "gsutil cp ${WORKSPACE}/legion-docs.pdf ${env.documentationLocation}/${Globals.buildVersion}.pdf"
                                     sh "gsutil cp ${WORKSPACE}/${Globals.buildVersion}.zip ${env.documentationLocation}/${Globals.buildVersion}.zip"
                                 }
                             }
@@ -322,67 +342,19 @@ pipeline {
                         }
                     }
                 }
-                stage("Upload Legion package") {
+                stage('Upload NPM Legion packages') {
                     steps {
                         script {
-                            docker.image("legion/legion-pipeline-agent:${Globals.buildVersion}").inside() {
-                                withCredentials([[
-                                $class: 'UsernamePasswordMultiBinding',
-                                credentialsId: 'nexus-local-repository',
-                                usernameVariable: 'USERNAME',
-                                passwordVariable: 'PASSWORD']]) {
-                                sh """
-                                cat > /tmp/.pypirc << EOL
-                                [distutils]
-                                index-servers =
-                                  ${env.param_local_pypi_distribution_target_name}
-                                [${env.param_local_pypi_distribution_target_name}]
-                                repository=${env.param_pypi_repository.split('/').dropRight(1).join('/')}/
-                                username=${env.USERNAME}
-                                password=${env.PASSWORD}
-                                EOL
-                                """.stripIndent()
-                                }
-                                sh """
-                                cat /tmp/.pypirc
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/sdk/dist/legion-*'
-                                twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/cli/dist/legion-*'
-                                # twine upload -r ${env.param_local_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/packager/rest/dist/legion-*'
-                                """
-
-                                if (env.param_stable_release.toBoolean()) {
-                                    if (env.param_upload_legion_package.toBoolean()){
-                                        withCredentials([[
-                                        $class: 'UsernamePasswordMultiBinding',
-                                        credentialsId: 'pypi-repository',
-                                        usernameVariable: 'USERNAME',
-                                        passwordVariable: 'PASSWORD']]) {
-                                            sh """
-                                            cat > /tmp/.pypirc << EOL
-                                            [distutils]
-                                            index-servers =
-                                              ${env.param_test_pypi_distribution_target_name}
-                                              ${env.param_public_pypi_distribution_target_name}
-                                            [${env.param_test_pypi_distribution_target_name}]
-                                            repository=https://test.pypi.org/legacy/
-                                            username=${env.USERNAME}
-                                            password=${env.PASSWORD}
-                                            [${env.param_public_pypi_distribution_target_name}]
-                                            repository=https://upload.pypi.org/legacy/
-                                            username=${env.USERNAME}
-                                            password=${env.PASSWORD}
-                                            EOL
-                                            """.stripIndent()
-                                        }
-                                        sh """
-                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/sdk/dist/legion-*'
-                                        twine upload -r ${env.param_pypi_distribution_target_name} --config-file /tmp/.pypirc '/opt/legion/legion/cli/dist/legion-*'
-                                        """
-                                    } else {
-                                        print("Skipping package upload")
-                                    }
-                                }
-                            }
+                            legion.publishNpmPackage("legion/jupyterlab-plugin", env.param_npm_private_creds, env.param_npm_private_url, env.param_npm_publishing_enabled, env.param_npm_public_creds, env.param_npm_public_url)
+                        }
+                    }
+                }
+                stage("Upload PyPi Legion packages") {
+                    steps {
+                        script {
+                            legion.publishPythonPackage("legion/cli", env.param_pypi_private_creds, env.param_pypi_private_url, env.param_pypi_publishing_enabled, env.param_pypi_public_creds, env.param_pypi_public_url)
+                            legion.publishPythonPackage("legion/jupyterlab-plugin", env.param_pypi_private_creds, env.param_pypi_private_url, env.param_pypi_publishing_enabled, env.param_pypi_public_creds, env.param_pypi_public_url)
+                            legion.publishPythonPackage("legion/sdk", env.param_pypi_private_creds, env.param_pypi_private_url, env.param_pypi_publishing_enabled, env.param_pypi_public_creds, env.param_pypi_public_url)
                         }
                     }
                 }

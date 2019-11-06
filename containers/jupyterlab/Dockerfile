@@ -55,7 +55,7 @@ COPY legion/jupyterlab-plugin/jupyter-config "${WORK_DIR}/jupyter-config"
 RUN yarn build && yarn lint && npm pack .
 
 # Run installation w/o any code to warm up nodejs cache
-RUN jupyter lab build && mv /opt/legion-plugin/jupyter_legion-*.tgz jupyter_legion.tgz
+RUN jupyter lab build && mv /opt/legion-plugin/jupyter-legion-*.tgz jupyter_legion.tgz
 
 RUN jupyter labextension install --no-build jupyter_legion.tgz && \
     jupyter labextension install @jupyterlab/git jupyterlab_toastify jupyterlab-jupytext@0.19
