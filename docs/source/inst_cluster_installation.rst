@@ -24,8 +24,9 @@ The Legion Platform is distributed as a `Helm <https://helm.sh>`_ `chart <https:
 .. important::
     Legion supports Helm version **2** (minor version >= **2.10**)
 
-Installation Instructions
----------
+=========================================
+Installing Legion
+=========================================
 
 To deploy Legion on Kubernetes cluster, you have to:
 
@@ -49,10 +50,18 @@ From this point on you can:
 - Analyze Train and model performance metrics
 - Send feedback from previous predictions
 
-.. _jupyter_plugin-install:
-
-HOWTO INSTALL :term:`Plugin for JupyterLab`
+=========================================
+Installing Legion CLI
+=========================================
 
 .. _legion_cli-install:
 
 HOWTO INSTALL :term:`Legion CLI`
+
+=========================================
+Installing Jupyter Plugin
+=========================================
+
+.. _jupyter_plugin-install:
+
+HOWTO INSTALL :term:`Plugin for JupyterLab`
