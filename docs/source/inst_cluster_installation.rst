@@ -1,63 +1,53 @@
 .. _installation-prereqs:
 =========================================
-Pre-requirements for on-cluster deploying
+Prerequisites
 =========================================
 
-Legion Platform can be deployed on top of Kuberenetes cluster using HELM tool.
-
-Requirements
-------------
-
-Kubernetes cluster
+Kubernetes
 ~~~~~~~~~~~~~~~~~~
-Legion platform could be deployed on bare-metal / PaaS Kubernetes cluster.
+
+Legion Platform runs on Kubernetes.
 
 .. important::
 
-    Kubernetes version required: at least 1.11.
+    Kubernetes version must be at least 1.11
 
+Legion is built and tested against `EKS <https://aws.amazon.com/eks/>`_, `AKS <https://azure.microsoft.com/en-us/services/kubernetes-service/>`_, and `GKE <https://cloud.google.com/kubernetes-engine/>`_.
 
-Installed HELM tool
+Installing on a self-managed Kubernetes cluster is straight-forward.
+
+Helm
 ~~~~~~~~~~~~~~~~~~~
 
-Entire Legion platform is distributed as a HELM Chart and Docker images (details in appropriate chapter) and you have to use `HELM tool <https://helm.sh>`_ to deploy legion on your cluster.
+The Legion Platform is distributed as a `Helm <https://helm.sh>`_ `chart <https://helm.sh/docs/developing_charts/>`_.
 
-Currently Legion supports HELM (client and server) version **2** (at least **2.10** minor version).
+.. important::
+    Legion supports Helm version **2** (minor version >= **2.10**)
 
-
-Deploying
+Installation Instructions
 ---------
 
 To deploy Legion on Kubernetes cluster, you have to:
 
-- Authorize on cluster
+- Authorize against Kubernetes cluster (:ref:`instructions <https://kubernetes.io/docs/reference/access-authn-authz/authorization/>`_)
 
-- Ensure that HELM is Installed
+- Copy and update a ``values.yaml`` file. (`example file <configuration-values-yaml>`)
 
-- Create configuration file for Legion HELM chart, e.g. ``values.yaml`` using according chapter or use predefined example.
-
-- Install Legion HELM chart using configuration file
+- Install
 
 .. code-block:: bash
 
     helm install legion -f values.yaml --name legion --repo https://github.com/legion-platform/legion-helm-charts
 
+Success!
 
-That's all, starting this moment, you can:
+From this point on you can:
 
-- Manage model trainings
-
-- Manage model packaging
-
-- Manage model deployments
-
-- Ask deployed models for prediction
-
-- Make A/B tests for model deployments
-
-- Analyze train and performance metrics
-
-- Send feedback for previously made predictions
+- Automate model Train, Package, and Deploy
+- Query deployed models for predictions
+- Do model A/B testing
+- Analyze Train and model performance metrics
+- Send feedback from previous predictions
 
 .. _jupyter_plugin-install:
 

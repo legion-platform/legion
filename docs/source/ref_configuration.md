@@ -1,5 +1,6 @@
 # Configuring
 
+.. _configuration-values-yaml:
 ## Configuring Legion HELM chart
 ```yaml
 # Version of Legion

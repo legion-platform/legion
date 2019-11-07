@@ -18,7 +18,7 @@ Securing model APIs
 :term:`Model prediction API` and :term:`Model Feedback API` calls are secured using :term:`JWT tokens <JWT Token>`.
 :term:`EDI` services can issue a new :term:`JWT token` for a given :term:`role name <Model Deployment Access Role Name>`.
 :term:`JWT tokens <JWT Token>` are scoped to specific :term:`role names <Model Deployment Access Role Name>` and may be used for granting access to the :term:`Model prediction API`.
-The role name has to be defined during creation of :term:`model deployments <Model Deploying>`, otherwise default value will be used.
+The role name has to be defined during creation of :term:`model deployments <Deploy>`, otherwise default value will be used.
 
 Securing management APIs
 -----

@@ -6,12 +6,12 @@ Distributions
 
 HELM charts
 ----
-Legion distributes :term:`HELM Chart <Legion HELM Chart>` named **legion**, that contains all Legion's components, such as **EDI**, **CR Operator**, etc.
+Legion distributes :term:`Helm Chart <Legion Helm Chart>` named **legion**, that contains all Legion's components, such as **EDI**, **CR Operator**, etc.
 
 HELM chart locations
 ~~~~~
 
-- Release and pre-release :term:`HELM Charts <Legion HELM Chart>` are in `github<https://github.com/legion-platform/legion-helm-charts>`_.
+- Release and pre-release :term:`HELM Charts <Legion HELM Chart>` are in `github <https://github.com/legion-platform/legion-helm-charts>`_.
 
 
 Docker Images
