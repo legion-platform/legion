@@ -4,7 +4,7 @@ Prerequisites
 =========================================
 
 Kubernetes
-~~~~~~~~~~~~~~~~~~
+--------
 
 Legion Platform runs on Kubernetes.
 
@@ -17,7 +17,7 @@ Legion is built and tested against `EKS <https://aws.amazon.com/eks/>`_, `AKS <h
 Installing on a self-managed Kubernetes cluster is straight-forward.
 
 Helm
-~~~~~~~~~~~~~~~~~~~
+--------
 
 The Legion Platform is distributed as a `Helm <https://helm.sh>`_ `chart <https://helm.sh/docs/developing_charts/>`_.
 
@@ -25,7 +25,7 @@ The Legion Platform is distributed as a `Helm <https://helm.sh>`_ `chart <https:
     Legion supports Helm version **2** (minor version >= **2.10**)
 
 =========================================
-Installing Legion
+Legion
 =========================================
 
 To deploy Legion on Kubernetes cluster, you have to:
@@ -51,7 +51,7 @@ From this point on you can:
 - Send feedback from previous predictions
 
 =========================================
-Installing Legion CLI
+Legion CLI
 =========================================
 
 .. _legion_cli-install:
@@ -59,7 +59,7 @@ Installing Legion CLI
 HOWTO INSTALL :term:`Legion CLI`
 
 =========================================
-Installing Jupyter Plugin
+Jupyter Plugin
 =========================================
 
 .. _jupyter_plugin-install:
