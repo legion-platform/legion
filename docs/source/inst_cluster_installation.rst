@@ -1,3 +1,4 @@
+.. _installation-prereqs:
 =========================================
 Pre-requirements for on-cluster deploying
 =========================================
@@ -57,3 +58,11 @@ That's all, starting this moment, you can:
 - Analyze train and performance metrics
 
 - Send feedback for previously made predictions
+
+.. _jupyter_plugin-install:
+
+HOWTO INSTALL :term:`Plugin for JupyterLab`
+
+.. _legion_cli-install:
+
+HOWTO INSTALL :term:`Legion CLI`

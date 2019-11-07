@@ -1,49 +1,43 @@
 
 ====================
-MLFlow Wine quality
+MLFlow
 ====================
 
-In this tutorial you step by step will learn how to train, pack and deploy your model from scratch by using Legion Platform.
+In this tutorial you will learn how to Train, Package and Deploy a model from scratch on Legion. Once deployed, the model serves RESTful requests, and makes a prediction when provided user input.
+
+Legion's :ref:`EDI <edi-server-description>` server performs Train, Package, and Deploy operations for you, using its REST API.
 
 .. _tutorials_wine-req:
 
 ~~~~~~~~~~~~~~~~~~~
-Requirements
+Prerequisites
 ~~~~~~~~~~~~~~~~~~~
 
-- You must have the Legion Platform deployed in a cluster;
-- :ref:`MLFlow <mod_dev_using_mlflow-section>` and :term:`docker <Docker REST API Packaging Toolchain Integration>` toolchain integrations must be installed;
-- :term:`Legion CLI` is installed locally or :term:`Plugin for JupyterLab` is installed locally or in the cloud;
-- You should be authorized at :ref:`edi-server-description`;
+- Legion cluster (:ref:`installation <installation-prereqs>`)
+- :ref:`MLFlow <mod_dev_using_mlflow-section>` and :term:`REST API Packager` (installed by default)
+- :term:`Legion CLI` or :term:`Plugin for JupyterLab` (installation instructions: :ref:`CLI <legion_cli-install>`, :ref:`Plugin <jupyter_plugin-install>`)
+- JWT token from EDI (:ref:`instructions <edi-server-auth>`)
+- Google Cloud Storage bucket on Google Compute Platform
+- GitHub repository and an ssh key to connect to it
 
 ~~~~~~~~~~~~~~~~~~~
 Tutorial
 ~~~~~~~~~~~~~~~~~~~
 
-To train, pack and deploy model you need to interact with :ref:`edi-server-description` server.
-This server provides REST API. You can use it directly or using different tools.
+In this tutorial, you will learn how to:
 
-You have two options for such tools to complete this tutorial:
-
-1. With using :term:`Legion CLI` command-line tool;
-2. With using :term:`Plugin for JupyterLab`;
-
-In this tutorial, you will learn how-to:
-
-1. :ref:`Create MLFlow project <tutorials_wine-create-project>`;
-2. :ref:`Manage connections for the project <tutorials_wine-manage-connections>`;
-3. :ref:`Train a model of the project <tutorials_wine-train>`;
-4. :ref:`Pack the trained model <tutorials_wine-pack>`;
-5. :ref:`Deploy the packed model <tutorials_wine-deploy>`;
-6. :ref:`Use the deployed model <tutorials_wine-use>`;
+1. :ref:`Create an MLFlow project <tutorials_wine-create-project>`
+2. :ref:`Setup Connections <tutorials_wine-manage-connections>`
+3. :ref:`Train a model <tutorials_wine-train>`
+4. :ref:`Package the model <tutorials_wine-pack>`
+5. :ref:`Deploy the packaged model <tutorials_wine-deploy>`
+6. :ref:`Use the deployed model <tutorials_wine-use>`
 
 This tutorial uses a dataset to predict the quality of the wine based on quantitative features
 like the wine’s "fixed acidity", "pH", "residual sugar", and so on.
 The dataset is from `UCI’s machine learning repository <https://archive.ics.uci.edu/ml/datasets/Wine+Quality>`_.
 
-The final code can be found at `GitHub <https://github.com/legion-platform/legion-examples/tree/master/mlflow/sklearn/wine>`_.
-
-
+Code for the tutorial is available on `GitHub <https://github.com/legion-platform/legion-examples/tree/master/mlflow/sklearn/wine>`_.
 
 .. _tutorials_wine-create-project:
 
@@ -55,8 +49,8 @@ Create MLFlow project
    :stub-columns: 1
    :width: 100%
 
-    "Step input data", System with completed :ref:`requirements<tutorials_wine-req>`
-    "Step output data", "Folder with MLFlow project to predict wine quality"
+    "Before", "Legion cluster that meets :ref:`prerequisites<tutorials_wine-req>`"
+    "After", "Model code that predicts wine quality"
 
 Create a new project folder:
 
@@ -64,13 +58,13 @@ Create a new project folder:
 
    $ mkdir wine && cd wine
 
-Create our training script:
+Create a training script:
 
 .. code-block:: console
 
    $ touch train.py
 
-Paste next code to the created file:
+Paste code into the file:
 
 .. code-block:: python
    :name: Train script
@@ -156,20 +150,20 @@ Paste next code to the created file:
 
 In this file, we do:
 
-- Starting run context on line 46;
-- Training ``ElasticNet`` model on line 48;
-- Setting metrics, parameters and tags on lines 59-64;
-- Saving (through serialization) model with name ``model`` on line 66;
-- Saving input and output samples (for persisting information about input and output column names) on lines 69-72;
+- Start MLflow context on line 46
+- Train ``ElasticNet`` model on line 48
+- Set metrics, parameters and tags on lines 59-64
+- Save model with name ``model`` (model is serialized and sent to the MLflow engine) on line 66
+- Save input and output samples (for persisting information about input and output column names) on lines 69-72
 
 
-Create MLproject file:
+Create an MLproject file:
 
 .. code-block:: console
 
    $ touch MLproject
 
-Paste next code to the created file:
+Paste code into the file:
 
 .. code-block:: yaml
     :caption: MLproject
@@ -186,16 +180,16 @@ Paste next code to the created file:
 
 .. note::
 
-    *Read more about MLproject structure at* `Official MLFlow docs <https://www.mlflow.org/docs/latest/projects.html>`_.
+    *Read more about MLproject structure on the* `official MLFlow docs <https://www.mlflow.org/docs/latest/projects.html>`_.
 
 
-Create conda environment file:
+Create a conda environment file:
 
 .. code-block:: console
 
    $ touch conda.yaml
 
-Paste next code to the created file:
+Paste code to the created file:
 
 .. code-block:: yaml
    :caption: conda.yaml
@@ -214,18 +208,18 @@ Paste next code to the created file:
 
 .. note::
 
-    All packages that tools that are used in training script must be listed at conda.yaml file.
+    All python packages that are used in training script must be listed in the conda.yaml file.
 
-    *Read more about conda environment at* `Official conda docs <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
+    *Read more about conda environment on the* `official conda docs <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
 
-Download wine data set:
+Download the wine data set:
 
 .. code-block:: console
 
    $ mkdir ./data
    $ wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv -O ./data/wine-quality.csv
 
-After this step project folder structure should look next way:
+After this step the project folder should look like this:
 
 .. code-block:: text
 
@@ -240,34 +234,31 @@ After this step project folder structure should look next way:
 .. _tutorials_wine-manage-connections:
 
 ###################################
-Manage connections
+Setup connections
 ###################################
 
 .. csv-table::
    :stub-columns: 1
    :width: 100%
 
-    "Step input data", "System with completed :ref:`requirements<tutorials_wine-req>`"
-    "Step output data", "Created :term:`connections<Connection>`"
+    "Before", "Legion cluster that meets :ref:`prerequisites<tutorials_wine-req>`"
+    "After", "Legion cluster with :term:`Connections<Connection>`"
 
+Legion Platform uses the concept of :term:`Connections<Connection>` to manage authorizations to external services and data.
 
-As mentioned before Legion Platform uses concept of :term:`Connections<Connection>`
-to manage different kinds of data and other external services.
+This tutorial requires three Connections:
 
-To complete this tutorial we will need next connections:
+- A GitHub repository, where the code is located
+- A Google Cloud Storage folder, where input data is located (wine-quality.csv)
+- A Docker registry, where the trained and packaged model will be stored for later use
 
-- :term:`Connection` to VCS repository where MLFlow project for wine classification is located
-- :term:`Connection` to wine-quality.csv file in one of supported object storage
-- :term:`Connection` to docker registry where the packed model will be stored
-
-
-Create :term:`Connection` to VCS repository
+Create :term:`Connection` to GitHub repository
 ---------------------------------------------
 
 Because `legion-examples <https://github.com/legion-platform/legion-examples>`_ repository already contains the required code
 we will just use this repository. But feel free to create and use a new repository if you want.
 
-Create a directory where we will create all payloads for the Legion Platform API calls:
+Legion is REST-powered, and so we encode the REST "payloads" in this tutorial in YAML files. Create a directory where payloads files will be staged:
 
 .. code-block:: console
 
@@ -279,7 +270,7 @@ Create payload:
 
     $ touch ./legion/vcs_connection.legion.yaml
 
-Paste next code to the created file:
+Paste code into the created file:
 
 .. code-block:: yaml
    :caption: vcs_connection.legion.yaml
@@ -299,13 +290,13 @@ Paste next code to the created file:
 
    Read more about `GitHub ssh keys <https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh>`_
 
-Create connection using :term:`Legion CLI`:
+Create a Connection using the :term:`Legion CLI`:
 
 .. code-block:: console
 
     $ legionctl conn create -f ./legion/vcs_connection.legion.yaml
 
-Or create a connection using :term:`Plugin for JupyterLab`:
+Or create a Connection using :term:`Plugin for JupyterLab`:
 
 1. Open jupyterlab (available by jupyterlab.<your-cluster-base-address>);
 2. Open cloned repo, and then the folder with the project;
@@ -321,7 +312,7 @@ Create payload:
 
     $ touch ./legion/wine_connection.legion.yaml
 
-Paste next code to the created file:
+Paste this code into the file:
 
 .. code-block:: yaml
    :caption: wine_connection.legion.yaml
@@ -336,9 +327,9 @@ Paste next code to the created file:
       keySecret: <paste key secret here>
       description: Wine dataset
 
-Create a connection using :term:`Legion CLI` or :term:`Plugin for JupyterLab` as in the previous example.
+Create a connection using the :term:`Legion CLI` or :term:`Plugin for JupyterLab`, as in the previous example.
 
-If wine-quality.csv is not persisted in store yet, you can copy it using:
+If wine-quality.csv is not in the GCS bucket yet, use this command:
 
 .. code-block:: console
 
@@ -354,7 +345,7 @@ Create payload:
 
     $ touch ./legion/docker_connection.legion.yaml
 
-Paste next code to the created file:
+Paste this code into the file:
 
 .. code-block:: yaml
    :caption: docker_connection.legion.yaml
@@ -370,9 +361,9 @@ Paste next code to the created file:
       description: Docker registry for model packaging
 
 
-Create the connection using :term:`Legion CLI` or :term:`Plugin for JupyterLab` as in the previous example.
+Create the connection using :term:`Legion CLI` or :term:`Plugin for JupyterLab`, as in the previous example.
 
-Check all created connections:
+Check all that Connections were created successfully:
 
 .. code-block:: console
 
@@ -391,22 +382,20 @@ Check all created connections:
         description: Wine dataset
         type: gcs
 
-Congrats! Now you are ready to train your model!
-
-
+Congrats! You are now ready to train the model.
 
 .. _tutorials_wine-train:
 
 ##############################
-Train a model of the project
+Train the model
 ##############################
 
 .. csv-table::
    :stub-columns: 1
    :width: 100%
 
-    "Step input data", "Folder with MLFlow project to predict wine quality"
-    "Step output data", "The trained model in :term:`GPPI<General Python Prediction Interface>` :term:`Trained Model Binary Format`"
+    "Step input data", "Project code, hosted on GitHub"
+    "Step output data", "Trained :term:`GPPI<General Python Prediction Interface>` model in :term:`Trained Model Binary Format`"
 
 Create payload:
 
@@ -414,7 +403,7 @@ Create payload:
 
     $ touch ./legion/training.legion.yaml
 
-Paste next code to the created file:
+Paste code into the file:
 
 .. code-block:: yaml
    :caption: ./legion/training.legion.yaml
@@ -430,10 +419,10 @@ Paste next code to the created file:
         version: 1.0
       toolchain: mlflow  # MLFlow training toolchain integration
       entrypoint: main
-      workDir: mlflow/sklearn/wine  # directory where MLproject file is located
+      workDir: mlflow/sklearn/wine  # MLproject location (in GitHub)
       data:
         - connName: wine
-          localPath: mlflow/sklearn/wine/wine-quality.csv # where wine-quality.csv file from GCS should be fetched
+          localPath: mlflow/sklearn/wine/wine-quality.csv # wine-quality.csv file (on GCS)
       hyperParameters:
         alpha: "1.0"
       resources:
@@ -445,83 +434,80 @@ Paste next code to the created file:
           memory: 2024Mi
       vcsName: legion-examples
 
-In this file, we do:
+In this file, we:
 
-- line 7: legion toolchain's name should be set to :ref:`mlflow <mod_dev_using_mlflow-section>`;
-- line 8: legion training's entry point maps to ``entry_points``, declared in :ref:`MLproject file`. We use ``main``;
-- line 9: ``workDir`` point to MLFlow project directory (It is the directory that has :ref:`MLproject file` at the root level);
-- line 10 section that describes where Legion Platform should take data and where this data should be downloaded;
-- line 11: ``connName`` points to the id of :ref:`Wine connection` that we created before;
-- line 12: ``localPath`` points to the path where the file with wine data should be downloaded;
-- lines 13-14: training's hyperparameters maps to MLflow run parameters. ``l1_ratio`` will be set to a default value;
-- line 22: ``vcsName`` should be equal to ``id`` of :ref:`VCS Connection`;
+- line 7: Set Legion toolchain's name :ref:`mlflow <mod_dev_using_mlflow-section>`
+- line 8: Reference ``main`` method in ``entry_points``, declared in :ref:`MLproject file`.
+- line 9: Point ``workDir`` to the MLFlow project directory. (This is the directory that has the :ref:`MLproject file` in it.)
+- line 10: Section defining input data
+- line 11: ``connName`` id of the :ref:`Wine connection`, created previously
+- line 12: ``localPath`` relative path of the data file
+- lines 13-14: Input hyperparameters, defined in MLProject file, and passed to ``main`` method
+- line 22: ``vcsName`` id of the :ref:`VCS Connection`
 
-
-Create :term:`Model Training` using :term:`Legion CLI`:
+:term:`Train` using :term:`Legion CLI`:
 
 .. code-block:: console
 
     $ legionctl conn create -f ./legion/training.legion.yaml
 
-Check :term:`Model Training` logs:
+Check :term:`Train` logs:
 
 .. code-block:: console
 
     $ legionctl training logs --id wine
 
-After some time :term:`Model Training` will be finished.
+The :term:`Train` process will finish after some time.
 
-To check status run:
+To check the status run:
 
 .. code-block:: console
 
     $ legionctl training get --id wine
 
-You will see YAML with an updated ModelTraining resource. Look at the status section. You can see:
+When the Train process finishes, the command will output this YAML:
 
-- ``state`` succeeded (this means that model training process was successful)
-- ``artifactName`` (this is the filename of :term:`Trained Model Binary`)
-
-
-Or create training using :term:`Plugin for JupyterLab`:
-
-1. Open jupyterlab;
-2. Open cloned repo, and then the folder with the project;
-3. Select file ``./legion/training.legion.yaml`` and in context menu press ``submit`` button;
-
-You can see model logs using ``Legion cloud mode`` left side tab (cloud icon) in your Jupyterlab:
-
-1. Open ``Legion cloud mode`` tab;
-2. Look for ``TRAINING`` section;
-3. Press on the row with `ID=wine`;
-4. Press button ``LOGS`` to connect to :term:`Model Training` logs;
-
-After some time :term:`Model Training` will be finished. Status of training is updated in column ``status`` of the `TRAINING` section
-in the ``Legion cloud mode`` tab. If model training finished with success you will see `status=succeeded`.
-
-Then open :term:`Model Training` again by pressing the appropriate row. Look at the `Results` section. You can see:
-
-- ``artifactName`` (this is the filename of :term:`Trained Model Binary`)
+- ``state`` succeeded
+- ``artifactName`` (filename of :term:`Trained Model Binary`)
 
 
+Or `Train` using the :term:`Plugin for JupyterLab`:
 
-``artifactName`` is the filename of the trained model. Our model is stored in :term:`GPPI<General Python Prediction Interface>` format.
-We can download it from storage that is described in ``models-output`` connection (currently this connection
-is created on the Legion Platform installation stage, so we have not created this connection above).
+1. Open jupyterlab
+2. Open cloned repo, and then the folder with the project
+3. Select file ``./legion/training.legion.yaml`` and in context menu press ``submit`` button
+
+You can see model logs using ``Legion cloud mode`` in the left side tab (cloud icon) in Jupyterlab
+
+1. Open ``Legion cloud mode`` tab
+2. Look for ``TRAINING`` section
+3. Press on the row with `ID=wine`
+4. Press button ``LOGS`` to connect to :term:`Train` logs
+
+After some time the :term:`Train` process will finish. Train status is updated in column ``status`` of the `TRAINING` section
+in the ``Legion cloud mode`` tab. If the model training finishes with success, you will see `status=succeeded`.
+
+Then open :term:`Train` again by pressing the appropriate row. Look at the `Results` section. You should see:
+
+- ``artifactName`` (filename of :term:`Trained Model Binary`)
+
+
+``artifactName`` is the filename of the trained model. This model is in :term:`GPPI<General Python Prediction Interface>` format.
+We can download it from storage defined in the ``models-output`` Connection.  (This connection is created during Legion Platform installation, so we were not required to create this Connection as part of this tutorial.)
 
 
 .. _tutorials_wine-pack:
 
 #########################
-Pack the trained model
+Package the model
 #########################
 
 .. csv-table::
    :stub-columns: 1
    :width: 100%
 
-    "Step input data",  "The trained model in :term:`GPPI<General Python Prediction Interface>` :term:`Trained Model Binary Format`"
-    "Step output data", "The packed model as Docker image with REST API"
+    "Before",  "The trained model in :term:`GPPI<General Python Prediction Interface>` :term:`Trained Model Binary Format`"
+    "After", "Docker image for the packaged model, including a model REST API"
 
 Create payload:
 
@@ -529,8 +515,7 @@ Create payload:
 
     $ touch ./legion/packaging.legion.yaml
 
-
-Paste next code to the created file:
+Paste code into the file:
 
 .. code-block:: yaml
    :caption: ./legion/packaging.legion.yaml
@@ -541,78 +526,74 @@ Paste next code to the created file:
     id: wine
     kind: ModelPackaging
     spec:
-      artifactName: "<fill-in>"  # set artifact name from previous step;
+      artifactName: "<fill-in>"  # Use artifact name from Train step
       targets:
-        - connectionName: docker-ci  # set docker repository connection where our packaged model will be saved
+        - connectionName: docker-ci  # Docker registry when output image will be stored
           name: docker-push
-      integrationName: docker-rest  # set Model packaging toolchain integration as rest service
+      integrationName: docker-rest  # REST API Packager
 
-In this file, we do:
+In this file, we:
 
-- line 4: Set artifact name from the previous step;
-- line 6: Set target docker registry to id from :ref:`Docker connection` file;
-- line 7: Set target command for the packager;
-- line 8: Set id of :term:`Docker REST API Packaging Toolchain Integration`;
+- line 4: Set artifact name from the Train step
+- line 6: Set docker registry, where output will be staged
+- line 7: Specify docker command
+- line 8: id of :term:`REST API Packager`
 
-Create :term:`Model Packaging` using :term:`Legion CLI`:
+Create :term:`Package` using :term:`Legion CLI`:
 
 .. code-block:: console
 
     $ legionctl conn create -f ./legion/packaging.legion.yaml
 
-Check :term:`Model Packaging` logs:
+Check :term:`Package` logs:
 
 .. code-block:: console
 
     $ legionctl packaging logs --id wine
 
-After some time :term:`Model Packaging` will be finished.
+After some time, the :term:`Package` process will finish.
 
-To check status run:
+To check the status, run:
 
 .. code-block:: console
 
     $ legionctl packaging get --id wine
 
-You will see YAML with updated :term:`Model Packaging` resource. Look at the status section. You can see:
+You will see YAML with updated :term:`Package` resource. Look at the status section. You can see:
 
-- ``image`` (this is the filename of docker image in the registry with the trained model as a REST service`);
+- ``image`` (this is the filename of the docker image in the registry with the trained model as a REST service`);
 
+Or run Package using the :term:`Plugin for JupyterLab`:
 
-Or create packaging using :term:`Plugin for JupyterLab`:
+1. Open jupyterlab
+2. Open the repository that has the source code, and navigate to the folder with the MLProject file
+3. Select file ``./legion/packaging.legion.yaml`` and in the context menu press the ``submit`` button
 
-1. Open jupyterlab;
-2. Open cloned repo, and then the folder with the project;
-3. Select file ``./legion/packaging.legion.yaml`` and in context menu press ``submit`` button;
-
-You can see model logs using ``Legion cloud mode`` side tab in your Jupyterlab
+To view Package logs, use ``Legion cloud mode`` in the side tab of your Jupyterlab
 
 1. Open ``Legion cloud mode`` tab;
 2. Look for ``PACKAGING`` section;
-3. Press on the row with `ID=wine`;
-4. Press button ``LOGS`` to connect to :term:`Model Packaging` logs;
+3. Click on the row with `ID=wine`;
+4. Click the button for ``LOGS`` and view the ``Packaging`` logs;
 
-After some time :term:`Model Packaging` will be finished. Status of training is updated in column ``status`` of the `PACKAGING` section
-in the ``Legion cloud mode`` tab. If model training finished with success you will see `status=succeeded`.
+After some time the :term:`Package` process will finish. The status of training is updated in column ``status`` of the `PACKAGING` section in the ``Legion cloud mode`` tab. You should see `status=succeeded`.
 
-Then open :term:`Model Packaging` again by pressing the appropriate row. Look at the `Results` section. You can see:
+Then open Packaging again by pressing the appropriate row. Look at the `Results` section. You should see:
 
 - ``image`` (this is the filename of docker image in the registry with the trained model as a REST service`);
-
 
 .. _tutorials_wine-deploy:
 
 #########################
-Deploy the packed model
+Deploy the model
 #########################
 
 .. csv-table::
    :stub-columns: 1
    :width: 100%
 
-    "Step input data",  "The packed model as Docker image with REST API"
-    "Step output data", "The deployed model"
-
+    "Before",  "Model is packaged as image in the Docker registry"
+    "Step output data", "Model is served via REST API from the Legion cluster"
 
 Create payload:
 
@@ -621,7 +602,7 @@ Create payload:
     $ touch ./legion/deployment.legion.yaml
 
 
-Paste next code to the created file:
+Paste code into the file:
 
 .. code-block:: yaml
    :caption: ./legion/deployment.legion.yaml
@@ -636,41 +617,38 @@ Paste next code to the created file:
       minReplicas: 1
       ImagePullConnectionID: docker-ci
 
-In this file, we do:
+In this file, we:
 
-- line 4: Set ``image`` that we got on the previous step;
-- line 6: Set id of :term:`Docker REST API Packaging Toolchain Integration`;
+- line 4: Set the ``image`` that was created in the Package step
+- line 6: Set the id of the :term:`REST API Packager`
 
-Create :term:`Model Deploying` using :term:`Legion CLI`:
+Create a :term:`Deploy` using the :term:`Legion CLI`:
 
 .. code-block:: console
 
     $ legionctl conn create -f ./legion/deployment.legion.yaml
 
-After some time :term:`Model Deploying` will be finished.
+After some time the :term:`Deploy` process will finish.
 
-To check status run:
+To check its status, run:
 
 .. code-block:: console
 
     $ legionctl deployment get --id wine
 
-Or create packaging using :term:`Plugin for JupyterLab`:
+Or create a `Deploy` using the :term:`Plugin for JupyterLab`:
 
-1. Open jupyterlab;
-2. Open cloned repo, and then the folder with the project;
-3. Select file ``./legion/deployment.legion.yaml`` and in context menu press ``submit`` button;
+1. Open jupyterlab
+2. Open the cloned repo, and then the folder with the MLProject file
+3. Select file ``./legion/deployment.legion.yaml``. In context menu press the ``submit`` button
 
-You can see model logs using ``Legion cloud mode`` side tab in your Jupyterlab
+You can see Deploy logs using ``Legion cloud mode`` side tab in your Jupyterlab
 
-1. Open ``Legion cloud mode`` tab;
-2. Look for ``DEPLOYMENT`` section;
-3. Press on the row with `ID=wine`;
+1. Open the ``Legion cloud mode`` tab
+2. Look for the ``DEPLOYMENT`` section
+3. Click the row with `ID=wine`
 
-After some time :term:`Model Deploying` will be finished. Status of training is updated in column ``status`` of the `DEPLOYMENT` section
-in the ``Legion cloud mode`` tab. If model training finished with success you will see `status=Ready`
-
-
+After some time, the :term:`Deploy` process will finish. The status of Deploy is updated in column ``status`` of the `DEPLOYMENT` section in the ``Legion cloud mode`` tab. You should see `status=Ready`.
 
 .. _tutorials_wine-use:
 
@@ -684,23 +662,22 @@ Use the deployed model
 
     "Step input data",  "The deployed model"
 
-After the model is successfully deployed you can check its API in swagger.
+After the model is deployed, you can check its API in Swagger:
 
-Just open ``edge.<your-legion-platform-host>/swagger/index.html`` and look and next endpoints
+Open ``<your-legion-platform-host>/swagger/index.html`` and look and the endpoints:
 
 1. ``GET /model/wine/api/model/info`` – OpenAPI model specification;
 2. ``POST /model/wine/api/model/invoke`` – Endpoint to do predictions;
 
-But you can also do predictions using :term:`Legion CLI`.
+But you can also do predictions using the :term:`Legion CLI`.
 
-Create ``./legion/r.json`` file:
+Create a payload file:
 
 .. code-block:: console
 
     $ touch ./legion/r.json
 
-Add payload for ``/model/wine/api/model/invoke`` according to OpenAPI schema.
-In this payload we list model input variables:
+Add payload for ``/model/wine/api/model/invoke`` according to the OpenAPI schema. In this payload we list model input variables:
 
 .. code-block:: json
    :caption: ./legion/r.json
@@ -751,4 +728,4 @@ Invoke the model to make a prediction:
    {"prediction": [6.0], "columns": ["quality"]}
 
 
-Congrats! You have completed the tutorial!
+Congrats! You have completed the tutorial.

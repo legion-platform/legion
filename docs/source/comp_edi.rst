@@ -49,13 +49,16 @@ What URLs does it provide
 All information about URLs that :term:`EDI` provides can be viewed using auto generated, interactive Swagger (OpenAPI) documentation web page, located at ``<edi-address>/swagger/index.html``. You can read all up-to-date documentation and invoke all methods (allowed for your account) right on this webpage.
 
 
+Implementation details
+----------------------
+
+:term:`EDI` is a HTTP REST API server, written using GoLang. For easily integration it provides swagger endpoint with up-to-date protocol information.
+
 Authentication and authorization
 --------------------------------
 
 :term:`EDI` analyzes incoming HTTP headers for JWT token, extracts client's scopes from this token and approves / declines incoming requests based on these (provided in JWT) scopes.
 
+.. _edi-server-auth:
 
-Implementation details
-----------------------
-
-:term:`EDI` is a HTTP REST API server, written using GoLang. For easily integration it provides swagger endpoint with up-to-date protocol information.
+HOWTO authorize
