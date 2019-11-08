@@ -108,6 +108,8 @@ pipeline {
                             'legion/sdk/legion/sdk/version.py',
                             'legion/jupyterlab-plugin/legion/jupyterlab/version.py',
                             'legion/jupyterlab-plugin/package.json',
+                            'legion/robot/legion/robot/version.py',
+                            'legion/packager/rest/legion/packager/rest/version.py',
                     ]
                     legion.setBuildMeta(verFiles)
                 }
