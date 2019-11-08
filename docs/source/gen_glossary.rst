@@ -5,55 +5,64 @@ Glossary
 .. glossary::
 
     VCS
-        Version control system, place where model source codes are persisted for development and deploy procedures (e.g. Git Repository)
+        Version control system. A service that stores model source code for development
+        and deployment procedures (e.g. a GitHub Repository).
 
     Trained Model Binary
-        Archive, that contains trained ML/AI model (inference code, model weights and etc.). Legion declares formats of these binaries
-
-    Trained Model Binary Format
-        Format of storing trained ML/AI models.
+        An archive containing a trained ML/AI model (inference code, model weights,
+        etc). Legion defines a format for these binaries. See <ref_model_format.html>
 
     Trainer
-        Application/tool, that takes source code of models (placed in VCS), :term:`Data Bindings <Data Binding>`, :term:`Connections <Connection>` and :term:`Training Hyperparameters` and produces :term:`Trained Model Binary`
+        Application that uses model source code, :term:`Data Bindings <Data Binding>`,
+        :term:`Connections <Connection>` and :term:`Training Hyperparameters` to produce
+        a :term:`Trained Model Binary`.
 
     Data Binding
-        Declaration where remote data (e.g. files from S3) should be placed for :term:`Train` process
+        Reference to remote data (e.g. files from S3) should be placed for a
+        :term:`Train` process.
 
     Connection
-        Credentials for external systems, such as Docker Registry, cloud storages and etc.
+        Credentials for an external system. For example: Docker Registry, cloud
+        storage location, etc.
 
     Training Hyperparameters
-        Parameter for training process, e.g. count of epochs in evolution algorithms
+        Parameter for Training process. For example, count of epochs in evolution algorithms.
 
     Train
-        Process of converting model source codes (placed in VCS) with :term:`Data Bindings <Data Binding>`, :term:`Connections <Connection>` and :term:`Training Hyperparameters` to :term:`Trained Model Binary` using :term:`Model Trainer` application/tool declared in :term:`Toolchain Train Integration`
+        A containerized process that converts model source code,
+        :term:`Data Bindings <Data Binding>`, :term:`Connections <Connection>`
+        and :term:`Training Hyperparameters` to :term:`Trained Model Binary` using a :term:`Trainer`
+        defined in a :term:`Trainer Extension`
 
     Trainer Extension
-        Pluggable mechanism of :term:`Train` processes
+        A pluggable :term:`Train` implementation.
 
     Packager
-        Application/tool, that takes :term:`Trained Model Binary` and :term:`Connections <Connection>` and converts into target format,  such as Docker Image with REST API, Google Cloud function, AWS Lambda functions and etc.
+        Containerized application that uses a :term:`Trained Model Binary` and :term:`Connections <Connection>`
+        and converts them into a target Archive. Typically this is a Docker image with REST API.
 
     Package
-        Process of converting :term:`Trained Model Binary` into target format, such as Docker Image with REST API, Google Cloud function, AWS Lambda functions and etc. using :term:`Model Packager` application/tool declared in :term:`Toolchain Packaging Integration`
+        Containerized process which turns a :term:`Trained Model Binary` into a Docker image with REST API using a
+        :term:`Packager Extension`.
 
     Packager Extension
-        Pluggable mechanism of :term:`Package` processes
+        A pluggable :term:`Package` implementation.
 
     Deployer
-        Application/tool, that takes results of (or references to) :term:`Package` process and :term:`Connections <Connection>` to deploy this `artifacts` to target systems (such as Kubernetes cluster for Docker Image with REST API and etc.)
+        Containerized application that uses the results of a :term:`Package` process and
+        :term:`Connections <Connection>` to deploy a packaged model on a Kubernetes cluster.
 
     Deploy
-        Process of deploying results of (or references to) :term:`Package` to target systems (such as Kubernetes cluster for Docker Image with REST API and etc.) using :term:`Model Deployer` application/tool
+        Containerized process that `Deploys <Deploy>`results of a :term:`Package` operation to Kubernetes cluster with
+        a REST web service.
 
     Trainer Metrics
-        Numeric metrics, that are being set by model training code during :term:`Model Training Process <Train>` (e.g. accuracy of model). Can be used for querying and comparing :term:`Model Trainings <Train>`
+         Metrics set by `Trainer` code during `Train` (e.g. accuracy of model). These metrics can be used for
+         querying and comparing `Train` events.
 
     Trainer Tags
-        Key/value (string/string) values that are being set by model training code during :term:`Model Training Process <Train>` (e.g. type of algorithm). Can be used for querying and comparing :term:`Model Trainings <Train>`
-
-    Model Prediction Metrics
-        Metrics that provides information how fast is model, based on measuring process of handling :term:`predictions <Prediction>`
+        Key/value value pairs that are set by `Trainer` code (e.g. type of algorithm). Can be used for querying and
+        comparing `Train` runs.
 
     General Python Prediction Interface
         Format of storing models, written in a Python language
@@ -68,56 +77,62 @@ Glossary
         API for managing Legion Platform resources for cloud deployed Platform
 
     Operator
-        Kubernetes Operator that manages Kubernetes resources (Pods, Services and etc.) for providing resources for :term:`Model Trainings <Train>`, :term:`Model Packaging <Package>`, :term:`Model Deployments <Deploy>`
+        A Kubernetes Operator that manages Kubernetes resources (Pods, Services and etc.) for Legion
+        :term:`Train`, :term:`Package`, and :term:`Deploy` instances.
 
     Prediction
-        Query for deployed model, that contains input parameters (input vector) and returns prediction object. (e.g. prediction what is the number on the picture)
+        A deployed model output, given input parameters.
 
     Model prediction API
-        API for predicting models. Depends on target deployment platform
+        API provided by deployed models to allow users to request predictions through a web service.
 
     Prediction Feedback
-        Feedback for previous made :term:`prediction`. (e.g. was predicted number correct or not)
+        Feedback versus the previous :term:`prediction`, e.g. prediction correctness.
 
     Model Feedback API
-        For for gathering :term:`Prediction Feedbacks <Prediction Feedback>`
+        An API for gathering :term:`Prediction Feedback <Prediction Feedback>`
 
     Feedback aggregator
-        Service, that provides :term:`Model Feedback API` and gathers input and output :term:`prediction traffic <Model prediction API>`
+        A service that provides a :term:`Model Feedback API` and gathers input and output
+        :term:`prediction requests <Model prediction API>`
 
     Legion SDK
-        Extensible Python library for :term:`EDI`, written in Python language. Can be installed from PyPi.
+        An extensible Python client library for :term:`EDI`, written in Python language. Can be installed from PyPi.
 
     Legion CLI
-        CLI interface for :term:`EDI`, written in Python language. Can be installed from PyPi. It uses :term:`Python SDK Library`
+        Command Line Interface for :term:`EDI`, written in Python. Can be installed from PyPi. It uses the :term:`Legion SDK`.
 
     Plugin for JupyterLab
-        Plugin for JupyterLab, that provides an ability to manage Legion Platform resources without leaving JupyterLab
+        A legion-specific plugin that provides Legion Platform management controls in JupyterLab.
 
     Plugin for Jenkins
-        Library for managing Legion Platform resources in Jenkins Pipelines
+        A library for managing Legion Platform resources from Jenkins Pipelines.
 
     Plugin for Airflow
-        Hooks and Operators for managing Legion Platform resources in Airflow
+        A library that provides Hooks and Operators for managing Legion Platform resources from Airflow.
 
     Model Deployment Access Role Name
-        Name of scope/role for accessing model deployments
+        Name of scope or role for accessing model deployments.
 
     JWT Token
-        JSON Web Token that allows users to query deployed models and to provide feedback (by querying feedback API). This token contains :term:`name of role <Model Deployment Access Role Name>`
+        A JSON Web Token that allows users to query deployed models and to provide feedback. This token contains an
+        encoded :term:`role name<Model Deployment Access Role Name>`.
 
     A/B testing
-        Process of splitting predictions between multiple :term:`Model Deployments <Deploy>` in order to compare :term:`prediction metrics <Model Prediction Metrics>`, :term:`feedbacks <Prediction Feedback>` for models, trained with different :term:`source codes <VCS>`, :term:`train datasets <Data Binding>` and :term:`training hyperparameters <Training Hyperparameters>`
+        Process of splitting predictions between multiple :term:`Model Deployments <Deploy>` in order to compare
+        prediction metrics and :term:`Model Feedback<Prediction Feedback>` for models, which can vary by
+        :term:`source code <VCS>`, :term:`dataset <Data Binding>` and/or
+        :term:`training hyperparameters <Training Hyperparameters>`
 
     Legion distribution
-        Collection of Docker Images, Python packages, NPM packages and etc., which are publicly available for installation
+        A collection of Docker Images, Python packages, or NPM packages, which are publicly available for
+        installation as a composable Legion Platform.
 
-    Legion HELM Chart
-        Package, that can be install on Kubernetes cluster. It uses :term:`Legion's Docker Images <Legion distribution>`
+    Legion Helm Chart
+        A YAML definition for Helm that defines a Legion Platform deployed on a Kubernetes cluster.
 
     Legion's CRDs
-        Objects, that :term:`EDI` creates for actions that require computing resources or to be stored (:term:`connections <Connection>`, :term:`model trainings <Train>` and etc.).
+        Objects that :term:`EDI` creates for actions that require computing resources
+        to be stored. For example: :term:`connections <Connection>`, :term:`Trains <Train>`, etc).
 
-        These objects are Kubernetes Custom Resources and are being handled by :term:`opertor`
-
-
+        These objects are Kubernetes Custom Resources and are managed by :term:`operator`.

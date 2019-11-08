@@ -44,7 +44,7 @@ These power the default Toolchain.
 Model storage
 -------------------------
 
-Legion Platform can store models in :term:`Trained Model Binary Formats <Trained Model Binary Format>` for different languages.
+Legion Platform stores models in :term:`Trained Model Binaries <Trained Model Binary>` for different languages.
 
 Presently, Legion Platform supports only:
 

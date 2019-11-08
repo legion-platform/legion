@@ -16,7 +16,7 @@ EDI
 - Model Train and Deploy logs
 - Model :term:`Trainer Metrics`
 - Model :term:`Trainer Tags`
-- :term:`Model Prediction Metrics`
+- Model Prediction Metrics
 
 Things that :term:`EDI` **can not** do:
 

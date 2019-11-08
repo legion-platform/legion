@@ -395,7 +395,7 @@ Train the model
    :width: 100%
 
     "Before", "Project code, hosted on GitHub"
-    "After", "Trained :term:`GPPI<General Python Prediction Interface>` model (a :term:`Trained Model Binary Format`)"
+    "After", "Trained :term:`GPPI<General Python Prediction Interface>` model (a :term:`Trained Model Binary`)"
 
 Create payload:
 
@@ -506,7 +506,7 @@ Package the model
    :stub-columns: 1
    :width: 100%
 
-    "Before",  "The trained model in :term:`GPPI<General Python Prediction Interface>` :term:`Trained Model Binary Format`"
+    "Before",  "The trained model in :term:`GPPI<General Python Prediction Interface>` :term:`Trained Model Binary`"
     "After", "Docker image for the packaged model, including a model REST API"
 
 Create payload:
