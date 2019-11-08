@@ -49,7 +49,7 @@ HOWTO authorize
 Implementation details
 ----------------------
 
-:term:`EDI` is a HTTP REST API server, written using GoLang. For easily integration it provides swagger endpoint with up-to-date protocol information.
+:term:`EDI` is a REST server, written in GoLang. For easy integration, it provides a Swagger endpoint with up-to-date protocol information.
 
 .. csv-table::
    :stub-columns: 1
@@ -59,6 +59,6 @@ Implementation details
     "Distribution representation", "Docker Image"
     "Source code location", "`legion/legion/operator <https://github.com/legion-platform/legion/tree/develop/legion/operator>`_"
     "Can be used w/o Legion Platform?", "Yes"
-    "Does it connect to another services?", "Yes (Kubernetes API)"
-    "Can be deployed locally?", "If local Kubernetes cluster is present"
+    "Does it connect to other services?", "Yes (Kubernetes API)"
+    "Can it be deployed locally?", "If a local Kubernetes cluster is present"
     "Does it provide any interface?", "Yes (HTTP REST API)"
