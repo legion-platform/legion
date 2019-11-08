@@ -28,11 +28,11 @@ The Legion Platform is distributed as a `Helm <https://helm.sh>`_ `chart <https:
 Legion
 =========================================
 
-To deploy Legion on Kubernetes cluster, you have to:
+To deploy Legion on a Kubernetes cluster, you have to:
 
-- Authorize against Kubernetes cluster (:ref:`instructions <https://kubernetes.io/docs/reference/access-authn-authz/authorization/>`_)
+- Authorize against Kubernetes cluster. Instructions for: `self-managed K8s <https://kubernetes.io/docs/reference/access-authn-authz/authorization/>`_, `EKS <https://docs.aws.amazon.com/cli/latest/reference/eks/get-token.html>`_, `GKE <https://cloud.google.com/sdk/gcloud/reference/container/clusters/get-credentials>`_, `AKS <https://docs.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az-aks-get-credentials>`_
 
-- Copy and update a ``values.yaml`` file. (`example file <configuration-values-yaml>`)
+- Copy and update a ``values.yaml`` file: :ref:`values-yaml`
 
 - Install
 
