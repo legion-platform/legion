@@ -5,11 +5,11 @@ Core:
 * Python 3.6, Golang – as main development languages
 * Kubernetes – as runtime platform
 * Docker – as containerization engine for runtime platform
-* [FluentD](./cmp_feedback.md) – as logging aggregator for feedback loop
-* [Operator](./cmp_operator.md) - as handler of Legion's custom resources
-* [EDGE](./cmp_edge.md) – as model API traffic manager
-* [EDI](./cmp_edi.md) – model manager
-* [Toolchains](./tlch_about.md) - APIs for adding to ML Legion capabilities
+* FluentD – as logging aggregator for feedback loop
+* Operator - as handler of Legion's custom resources
+* EDGE – as model API traffic manager
+* EDI – model manager
+* Toolchains - APIs for adding to ML Legion capabilities
 
 Optional:
 * Airflow – as optional ETL engine
@@ -19,14 +19,14 @@ Optional:
 Project **Legion** locates in GitHub Repository [legion-platform/legion](https://github.com/legion-platform/legion) and contains of next items:
 
 * Legion application - several Docker images:
-  * EDI
-  * FluentD
-  * Toolchain application
-* [HELM packages](./gen_distros.md):
-  * legion-core HELM chart
-  * legion HELM chart
+* EDI
+* FluentD
+* Toolchain application
+* Helm charts
+* legion-core HELM chart
+* legion HELM chart
 * Legion Python source codes
-* [Operator](./cmp_operator.md)
+* Operator
 
 ### Legion's repository directory structure
 * `containers` - all Legion components that are distributed as docker images.
@@ -42,7 +42,7 @@ For deploying purposes there are platform-specific repositories that contains pl
 * Terraform modules
 * Jenkins pipelines for Jenkins CI/CD jobs
 * Infrastructure specific containers:
-  * Terraform modules
+* Terraform modules
 
 ## Additional integrations repositories
 
