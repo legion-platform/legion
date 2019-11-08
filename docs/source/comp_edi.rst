@@ -4,6 +4,53 @@
 EDI
 ===
 
+:term:`EDI` is a service that manages Legion Platform entities.
+
+- :term:`Connections <Connection>`
+- :term:`Training Events <Train>`
+- :term:`Packaging Events <Package>`
+- :term:`Deploy Events <Deploy>`
+
+:term:`EDI` can provide the following data, when queried:
+
+- Model Train and Deploy logs
+- Model :term:`Trainer Metrics`
+- Model :term:`Trainer Tags`
+- :term:`Model Prediction Metrics`
+
+Things that :term:`EDI` **can not** do:
+
+- Manage (installation / removal / configuration) of :term:`Trainer <Trainer Extension>` or :term:`Packager Extensions <Packager Extension>`
+- Return :term:`predictions <prediction>` for any model (they're deployed elsewhere!)
+- Gather or provide :term:`Prediction Feedback`
+
+How to reach EDI in the K8s cluster
+----------------------------------
+
+By default, the :term:`EDI` service is available on the calculated URL: ``edi.<cluster-name>``, where ``<cluster name>`` is the cluster's base URL (e.g. ``edi.my-cluster.lab.university.com``). This address can be configured during Legion's Helm chart installation.
+
+EDI-provided URLs
+--------------------------
+
+All information about URLs that :term:`EDI` provides can be viewed using the auto-generated, interactive Swagger page. It is located at ``<edi-address>/swagger/index.html``. You can read all of the up-to-date documentation and invoke all methods (allowed for your account) right from this web page.
+
+Authentication and authorization
+--------------------------------
+
+:term:`EDI` analyzes incoming HTTP headers for JWT token, extracts client's scopes from this token and approves / declines incoming requests based on these (provided in JWT) scopes.
+
+.. _edi-server-auth:
+
+.. todo:
+    implement next piece
+
+HOWTO authorize
+
+Implementation details
+----------------------
+
+:term:`EDI` is a HTTP REST API server, written using GoLang. For easily integration it provides swagger endpoint with up-to-date protocol information.
+
 .. csv-table::
    :stub-columns: 1
    :width: 100%
@@ -15,50 +62,3 @@ EDI
     "Does it connect to another services?", "Yes (Kubernetes API)"
     "Can be deployed locally?", "If local Kubernetes cluster is present"
     "Does it provide any interface?", "Yes (HTTP REST API)"
-
-
-:term:`EDI` is a service which allows to manage Legion Platform entities such as:
-
-- :term:`Connections <Connection>`
-- :term:`Model Trainings <Model Training>` (including log retrieval)
-- :term:`Model Packagings <Model Packaging>` (including log retrieval)
-- :term:`Model Deploying <Model Deploying>` (including log and metrics retrieval, A/B testing configuration and etc.)
-
-Also :term:`EDI` provides possibility to retrieve:
-
-- :term:`Model Training Metrics`
-- :term:`Model Training Tags`
-- :term:`Model Prediction Metrics`
-
-Things that :term:`EDI` **can not** do:
-
-- Managing (installation / removal / configuration) of :term:`Toolchain Train Integrations <Toolchain Train Integration>`
-- Managing (installation / removal / configuration) of :term:`Toolchain Packaging Integrations <Toolchain Packaging Integration>`
-- Making :term:`predictions <prediction>`
-- Gathering and providing :term:`prediction feedbacks <Prediction Feedback>`
-- Managing (installation / removal / configuration) of :term:`Toolchain Train Integrations <Toolchain Train Integration>`
-
-How to reach EDI in target cluster
-----------------------------------
-
-By default, :term:`EDI` service is available on URL ``edi.<cluster-name>``, where ``<cluster name>`` is target cluster's base URL (e.g. ``edi.my-cluster.lab.university.com``. But this address can be configured during Legion's HELM chart installation.
-
-What URLs does it provide
--------------------------
-
-All information about URLs that :term:`EDI` provides can be viewed using auto generated, interactive Swagger (OpenAPI) documentation web page, located at ``<edi-address>/swagger/index.html``. You can read all up-to-date documentation and invoke all methods (allowed for your account) right on this webpage.
-
-
-Implementation details
-----------------------
-
-:term:`EDI` is a HTTP REST API server, written using GoLang. For easily integration it provides swagger endpoint with up-to-date protocol information.
-
-Authentication and authorization
---------------------------------
-
-:term:`EDI` analyzes incoming HTTP headers for JWT token, extracts client's scopes from this token and approves / declines incoming requests based on these (provided in JWT) scopes.
-
-.. _edi-server-auth:
-
-HOWTO authorize
