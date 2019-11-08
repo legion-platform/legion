@@ -19,7 +19,6 @@
    :caption: Installation
 
    inst_cluster_installation
-   inst_kubernetes_integrations
 
 .. toctree::
    :maxdepth: 1
@@ -42,6 +41,7 @@
    :caption: References
 
    ref_configuration
+   ref_kubernetes
    ref_model_rest_api
    ref_model_artifacts_format
    ref_feedback_loop_protocol

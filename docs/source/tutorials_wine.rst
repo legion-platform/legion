@@ -34,7 +34,7 @@ In this tutorial, you will learn how to:
 6. :ref:`Use the deployed model <tutorials_wine-use>`
 
 This tutorial uses a dataset to predict the quality of the wine based on quantitative features
-like the wine’s "fixed acidity", "pH", "residual sugar", and so on.
+like the wine’s *fixed acidity*, *pH*, *residual sugar*, and so on.
 The dataset is from `UCI’s machine learning repository <https://archive.ics.uci.edu/ml/datasets/Wine+Quality>`_.
 
 Code for the tutorial is available on `GitHub <https://github.com/legion-platform/legion-examples/tree/master/mlflow/sklearn/wine>`_.
@@ -148,7 +148,7 @@ Paste code into the file:
             train_y.head().to_pickle('head_output.pkl')
             mlflow.log_artifact('head_output.pkl', 'model')
 
-In this file, we do:
+In this file, we:
 
 - Start MLflow context on line 46
 - Train ``ElasticNet`` model on line 48
@@ -252,7 +252,7 @@ This tutorial requires three Connections:
 - A Google Cloud Storage folder, where input data is located (wine-quality.csv)
 - A Docker registry, where the trained and packaged model will be stored for later use
 
-Create :term:`Connection` to GitHub repository
+Create a :term:`Connection` to GitHub repository
 ---------------------------------------------
 
 Because `legion-examples <https://github.com/legion-platform/legion-examples>`_ repository already contains the required code
@@ -336,8 +336,8 @@ If wine-quality.csv is not in the GCS bucket yet, use this command:
     $ gsutil cp ./data/wine-quality.csv gs://<bucket-name>/data/
 
 
-Create :term:`Connection` to docker registry
----------------------------------------------
+Create a :term:`Connection` to a docker registry
+------------------------------------------------
 
 Create payload:
 
@@ -363,7 +363,7 @@ Paste this code into the file:
 
 Create the connection using :term:`Legion CLI` or :term:`Plugin for JupyterLab`, as in the previous example.
 
-Check all that Connections were created successfully:
+Check that all Connections were created successfully:
 
 .. code-block:: console
 
@@ -394,8 +394,8 @@ Train the model
    :stub-columns: 1
    :width: 100%
 
-    "Step input data", "Project code, hosted on GitHub"
-    "Step output data", "Trained :term:`GPPI<General Python Prediction Interface>` model in :term:`Trained Model Binary Format`"
+    "Before", "Project code, hosted on GitHub"
+    "After", "Trained :term:`GPPI<General Python Prediction Interface>` model (a :term:`Trained Model Binary Format`)"
 
 Create payload:
 
@@ -436,14 +436,14 @@ Paste code into the file:
 
 In this file, we:
 
-- line 7: Set Legion toolchain's name :ref:`mlflow <mod_dev_using_mlflow-section>`
-- line 8: Reference ``main`` method in ``entry_points``, declared in :ref:`MLproject file`.
+- line 7: Set Legion toolchain's name to :ref:`mlflow <mod_dev_using_mlflow-section>`
+- line 8: Reference ``main`` method in ``entry_points`` (which is defined for :ref:`MLproject files <MLproject file>`.
 - line 9: Point ``workDir`` to the MLFlow project directory. (This is the directory that has the :ref:`MLproject file` in it.)
-- line 10: Section defining input data
-- line 11: ``connName`` id of the :ref:`Wine connection`, created previously
+- line 10: A section defining input data
+- line 11: ``connName`` id of the :ref:`Wine connection` (created in the previous step)
 - line 12: ``localPath`` relative path of the data file
 - lines 13-14: Input hyperparameters, defined in MLProject file, and passed to ``main`` method
-- line 22: ``vcsName`` id of the :ref:`VCS Connection`
+- line 22: ``vcsName`` id of the :ref:`VCS Connection` (created in the previous step)
 
 :term:`Train` using :term:`Legion CLI`:
 
@@ -484,7 +484,7 @@ You can see model logs using ``Legion cloud mode`` in the left side tab (cloud i
 3. Press on the row with `ID=wine`
 4. Press button ``LOGS`` to connect to :term:`Train` logs
 
-After some time the :term:`Train` process will finish. Train status is updated in column ``status`` of the `TRAINING` section
+After some time, the :term:`Train` process will finish. Train status is updated in column ``status`` of the `TRAINING` section
 in the ``Legion cloud mode`` tab. If the model training finishes with success, you will see `status=succeeded`.
 
 Then open :term:`Train` again by pressing the appropriate row. Look at the `Results` section. You should see:
@@ -534,18 +534,18 @@ Paste code into the file:
 
 In this file, we:
 
-- line 4: Set artifact name from the Train step
-- line 6: Set docker registry, where output will be staged
-- line 7: Specify docker command
-- line 8: id of :term:`REST API Packager`
+- line 4: Set to artifact name from the Train step
+- line 6: Set to docker registry, where output will be staged
+- line 7: Specify the docker command
+- line 8: id of the :term:`REST API Packager`
 
-Create :term:`Package` using :term:`Legion CLI`:
+Create a :term:`Package` using :term:`Legion CLI`:
 
 .. code-block:: console
 
     $ legionctl conn create -f ./legion/packaging.legion.yaml
 
-Check :term:`Package` logs:
+Check the :term:`Package` logs:
 
 .. code-block:: console
 
@@ -561,7 +561,7 @@ To check the status, run:
 
 You will see YAML with updated :term:`Package` resource. Look at the status section. You can see:
 
-- ``image`` (this is the filename of the docker image in the registry with the trained model as a REST service`);
+- ``image`` # This is the filename of the Docker image in the registry with the trained model prediction, served via REST`.
 
 Or run Package using the :term:`Plugin for JupyterLab`:
 
@@ -571,14 +571,14 @@ Or run Package using the :term:`Plugin for JupyterLab`:
 
 To view Package logs, use ``Legion cloud mode`` in the side tab of your Jupyterlab
 
-1. Open ``Legion cloud mode`` tab;
-2. Look for ``PACKAGING`` section;
-3. Click on the row with `ID=wine`;
-4. Click the button for ``LOGS`` and view the ``Packaging`` logs;
+1. Open ``Legion cloud mode`` tab
+2. Look for ``PACKAGING`` section
+3. Click on the row with `ID=wine`
+4. Click the button for ``LOGS`` and view the ``Packaging`` logs
 
-After some time the :term:`Package` process will finish. The status of training is updated in column ``status`` of the `PACKAGING` section in the ``Legion cloud mode`` tab. You should see `status=succeeded`.
+After some time, the :term:`Package` process will finish. The status of training is updated in column ``status`` of the `PACKAGING` section in the ``Legion cloud mode`` tab. You should see `status=succeeded`.
 
-Then open Packaging again by pressing the appropriate row. Look at the `Results` section. You should see:
+Then open PACKAGING again by pressing the appropriate row. Look at the `Results` section. You should see:
 
 - ``image`` (this is the filename of docker image in the registry with the trained model as a REST service`);
 
@@ -593,7 +593,7 @@ Deploy the model
    :width: 100%
 
     "Before",  "Model is packaged as image in the Docker registry"
-    "Step output data", "Model is served via REST API from the Legion cluster"
+    "After", "Model is served via REST API from the Legion cluster"
 
 Create payload:
 
@@ -628,7 +628,7 @@ Create a :term:`Deploy` using the :term:`Legion CLI`:
 
     $ legionctl conn create -f ./legion/deployment.legion.yaml
 
-After some time the :term:`Deploy` process will finish.
+After some time, the :term:`Deploy` process will finish.
 
 To check its status, run:
 
@@ -642,7 +642,7 @@ Or create a `Deploy` using the :term:`Plugin for JupyterLab`:
 2. Open the cloned repo, and then the folder with the MLProject file
 3. Select file ``./legion/deployment.legion.yaml``. In context menu press the ``submit`` button
 
-You can see Deploy logs using ``Legion cloud mode`` side tab in your Jupyterlab
+You can see Deploy logs using the ``Legion cloud mode`` side tab in your Jupyterlab
 
 1. Open the ``Legion cloud mode`` tab
 2. Look for the ``DEPLOYMENT`` section
@@ -677,7 +677,7 @@ Create a payload file:
 
     $ touch ./legion/r.json
 
-Add payload for ``/model/wine/api/model/invoke`` according to the OpenAPI schema. In this payload we list model input variables:
+Add payload for ``/model/wine/api/model/invoke`` according to the OpenAPI schema. In this payload we provide values for model input variables:
 
 .. code-block:: json
    :caption: ./legion/r.json

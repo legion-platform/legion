@@ -4,14 +4,14 @@ Distributions
 
 :term:`Legion distributions<Legion distribution>` are provided via :term:`HELM Charts <Legion HELM Chart>`, docker images, Python and NPM packages.
 
-HELM charts
+Helm charts
 ----
-Legion distributes :term:`Helm Chart <Legion Helm Chart>` named **legion**, that contains all Legion's components, such as **EDI**, **CR Operator**, etc.
+Legion distributes a :term:`Helm Chart <Legion Helm Chart>` named **legion**, that contains all Legion components, such as **EDI**, **CR Operator**, etc.
 
 HELM chart locations
 ~~~~~
 
-- Release and pre-release :term:`HELM Charts <Legion HELM Chart>` are in `github <https://github.com/legion-platform/legion-helm-charts>`_.
+- Release and pre-release :term:`Helm charts <Legion HELM Chart>` are in `github <https://github.com/legion-platform/legion-helm-charts>`_.
 
 
 Docker Images
@@ -37,9 +37,9 @@ Docker Images
 Docker images locations
 ~~~~~
 
-- Release versions of images are on Docker Hub in `legionplatform <https://hub.docker.com/u/legionplatform>`_ organization. Example image name is `legionplatform/k8s-edi`.
+- Release versions of images are on Docker Hub in the `legionplatform <https://hub.docker.com/u/legionplatform>`_ organization. An example image name is `legionplatform/k8s-edi`.
 
-- Pre-release versions of images are on Docker Hub in `legionplatformtest <https://hub.docker.com/u/legionplatformtest>`_ organization. Example image name is `legionplatformtest/k8s-edi`.
+- Pre-release versions of images are on Docker Hub in the `legionplatformtest <https://hub.docker.com/u/legionplatformtest>`_ organization. An example image name is `legionplatformtest/k8s-edi`.
 
 Python packages
 -----
@@ -53,15 +53,11 @@ Python packages
    "legion-robot", "Utility functions for E2E tests"
    "legion-sdk", "SDK library for Legion API (client)"
 
-
-Python packages locations
+Python package locations
 ~~~~~
 
-- Release versions on Python packages are on PyPi in project `legion <https://pypi.org/project/legion/>`_.
+- Release versions of Python packages are on PyPi in project `legion <https://pypi.org/project/legion/>`_.
 
-.. todo::
-
-   Update Python package locations
 
 
 NPM packages
@@ -73,12 +69,8 @@ NPM packages
 
    "jupyter_legion", "JupyterLab plugin for Legion (requires python back-end)"
 
-NPM packages locations
+
+NPM package locations
 ~~~~~~
 
-- Release versions on Python packages are on npm in project legion.
-
-
-.. todo::
-
-   Add NPM packages locations
+- Release versions of Python packages are on npm in project legion.
