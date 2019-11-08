@@ -47,7 +47,7 @@ with open('requirements.txt') as f:
     requirements = [f'legion-sdk=={extract_version()}'] + f.read().splitlines()
 
 setup(
-    name='jupyter_legion',
+    name='jupyter-legion',
     description='A JupyterLab Notebook server extension for jupyter_legion',
     author='Legion Platform Team',
     license='Apache v2',

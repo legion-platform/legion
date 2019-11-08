@@ -1,5 +1,5 @@
 {
-  "name": "jupyter_legion",
+  "name": "jupyter-legion",
   "version": "0.1.0",
   "description": "Integration with Legion Platform (Cluster mode only)",
   "keywords": [
