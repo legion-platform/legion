@@ -1,48 +1,32 @@
-=============
-Feedback loop
-=============
+==============
+Model Feedback
+==============
+
+**Model Feedback** provides a view of performance over all stages of model lifecycle.
+
+The mechanism is simple:
+
+1. Ask Deploy for prediction (with or without ``Request-Id`` provided)
+2. Send Feedback to Legion about the prediction (with ``Request-Id`` returned from previous step)
+3. Legion stores the prediction and feedback to a configurable location
 
 .. important::
 
-   Described below requires ``feedback`` to be enabled in the HELM's chart configuration during deploy.
+   This flow requires ``feedback`` to be enabled in ``values.yaml`` during Helm chart install
+
+Protocol
+--------
+
+1. If prediction is requested without Request-ID: ``Request-ID`` header with random ID is added to the request. Otherwise, Request-ID is not generated.
+2. Request and response are stored on configured external storage (eg. S3, GCS)
+3. User sends Model Feedback as an argument to the feedback endpoint. (Feedback can be arbitrary JSON.)
+5. All Feedback is persisted on external storage and can be used by models during subsequent Trains.
 
 
-Feedback loop allows model's developers to get review of how good models work from their users (3rd-party systems or users that ask for prediction).
+Worked example (without Request-ID)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. When anybody asks model for prediction, ``Request-ID`` header with random generated value is added to request and response.
-
-2. If the ``Request-ID`` value is present in the request header (added by the requester), new ``Request-ID`` is not generated.
-
-3. Request and response of the model are being stored on external storage service (such as AWS S3 or GCS, depending on configuration).
-
-4. Later, when feedback about prediction could be made (e.g. action, that is predicted, appeared), another HTTP request should be sent.
-
-5. All feedbacks are persisted on external storage service (depending on configuration) and can be used by models during next (re-) training phase (automatically, without any manual actions).
-
-
-Feedback loop protocol
-----------------------
-
-As said before, in general, feedback loop consists of two steps:
-
-1. Creation of prediction (with/without ``request-id`` defined in request)
-
-2. Persisting of feedback (with ``request-id`` returned from previous step)
-
-.. note::
-
-    In examples below **BASE_URL**, **ROUTE** and **JWT** env variables are used. These variables should be set before execution of these chunks of code and they
-    must point to existed EDGE endpoint, existed route name and use valid JWT token with appropriate role.
-
-.. note::
-
-    For sending of feedback JWT with any role name can be used.
-
-
-Create a prediction without specific request id provided
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Request to EDGE endpoint for prediction, that does not contain ``request-id`` header.
+Make prediction request to EDGE:
 
 .. code-block:: bash
 
@@ -63,7 +47,7 @@ Request to EDGE endpoint for prediction, that does not contain ``request-id`` he
     -d 'sex=Male' \
     -d 'workclass=Private'
 
-Response contains generated ``request-id`` header.
+The response contains a generated ``Request-Id`` header.
 
 .. code-block:: txt
 
@@ -73,9 +57,9 @@ Response contains generated ``request-id`` header.
 
     Add example of response
 
-These requests and responses are being persisted on external storage (e.g. on S3) in two files.
+Requests and responses are persisted in two buckets on S3. (File name ~= ``/request_response/income/1.1/year=2019/month=07/day=24/2019072414_4.json``)
 
-First file contains meta information about request and response (name should look like ``/request_response/income/1.1/year=2019/month=07/day=24/2019072414_4.json``) in the following format:
+The first file contains meta-information about request and response:
 
 .. code-block:: json
 
@@ -149,7 +133,7 @@ First file contains meta information about request and response (name should loo
         "time": "2019-07-24 14:53:55 +0000"
     }
 
-Second file contains response chunks with same ``request-id`` (name should look like ``/response_body/income/1.1/year=2019/month=07/day=24/2019072414_1.json``) in the following format:
+The second file contains the response body with the same ``Request-Id`` (File name ~= ``/response_body/income/1.1/year=2019/month=07/day=24/2019072414_1.json``)
 
 .. code-block:: json
 
@@ -162,10 +146,10 @@ Second file contains response chunks with same ``request-id`` (name should look 
         "time": "2019-07-24 14:03:00 +0000"
     }
 
-Create a prediction with specific request id provided
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Worked example (with Request-ID)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Request to EDGE endpoint for prediction, that contains ``request-id`` header.
+Make prediction request to EDGE:
 
 .. code-block:: bash
 
@@ -198,13 +182,17 @@ Response contains sent ``request-id`` header.
     Add example of response
 
 
-These requests and responses are being persisted on external storage (e.g. on S3) as in a previous case.
+Request and response are persisted to S3, as in a previous case.
 
 
-Send feedback for prediction using JSON payload
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In both examples, we have obtained a prediction value and Request-ID.
+We can use these facts to send back Model Feedback about the prediction (precision, area-under-curve, etc).
+Legion will store the Feedback, Request, Response, and Prediction behind one unified interface for later use.
 
-Request to EDGE endpoint for saving *feedback* of previous made prediction for model **income** version **1.1** with id **previous-prediction-id**.
+Worked Example - Send Feedback as Payload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Send Model Feedback request:
 
 .. code-block:: bash
 
@@ -216,17 +204,14 @@ Request to EDGE endpoint for saving *feedback* of previous made prediction for m
     -H 'Content-Type: application/json' \
     -d '{"truthful": 1}'
 
-HTTP response code 200 should be returned if request has been parsed and has been sent to storage.
+Note that the ``-d`` argument can pass arbitrary JSON.
 
-Also, next JSON structure should be returned:
+A successful feedback request will have the following properties:
 
-- Field ``error`` equals to ``false``.
-
-- Field ``registered`` equals to ``true``.
-
-- Field ``message`` equals to data sent on storage.
-
-Non 200 HTTP code indicates about parsing / persisting / another error.
+- HTTP response: 200
+- Response field ``error`` is ``false``.
+- Response field ``registered`` is ``true``.
+- Response field ``message`` is what was sent to storage.
 
 Example response
 
@@ -238,8 +223,8 @@ Example response
 
     Add example of response
 
-
-This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file which name should look like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in the following format:
+File name ~= ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` will have a format like this,
+with feedback stored in the ``payload`` field:
 
 .. code-block:: json
 
@@ -255,10 +240,11 @@ This **feedback** is being persisted on external storage (e.g. on S3) in partiti
         "time": "2019-07-23 12:40:16 +0000"
     }
 
-Send feedback for prediction using URL parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Request to EDGE endpoint for saving *feedback* of previous made prediction for model **income** version **1.1** with id **previous-prediction-id**.
+Worked Example - Send Feedback as URL param
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Send Model Feedback request:
 
 .. code-block:: bash
 
@@ -279,7 +265,8 @@ Response
     Add example of response
 
 
-This **feedback** is being persisted on external storage (e.g. on S3) in partitioned file which name should look like ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` in the following format:
+File name ~= ``/feedback/income/1.1/year=2019/month=07/day=23/2019072311_2.json`` will have a format like this,
+with feedback stored in the ``payload`` field:
 
 .. code-block:: json
 
@@ -296,4 +283,3 @@ This **feedback** is being persisted on external storage (e.g. on S3) in partiti
 .. todo::
 
     Fix example
-

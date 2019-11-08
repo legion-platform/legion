@@ -22,11 +22,11 @@
 
 .. toctree::
    :maxdepth: 1
-   :caption: Components details
+   :caption: Components
 
    comp_edi
    comp_operator
-   gs_feedback_loop
+   comp_model_feedback
 
 .. toctree::
    :maxdepth: 2
@@ -44,7 +44,6 @@
    ref_kubernetes
    ref_model_rest_api
    ref_model_artifacts_format
-   ref_feedback_loop_protocol
    ref_network_connectivity
    ref_legion_helm_values_examples
    gen_glossary
