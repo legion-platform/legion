@@ -26,13 +26,13 @@
 
    comp_edi
    comp_operator
+   comp_mlflow_trainer
    comp_model_feedback
 
 .. toctree::
    :maxdepth: 2
    :caption: Integrations
 
-   int_mlflow
    int_metrics
    int_airflow
 
@@ -50,14 +50,13 @@
 
 .. toctree::
    :maxdepth: 1
-   :caption: Legion developer's guide
+   :caption: Legion developer guide
 
    dev_general
    dev_project_structure
    dev_hints
    dev_building
    dev_testing
-
 
 Indices and tables
 ==================
