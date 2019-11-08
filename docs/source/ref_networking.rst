@@ -7,14 +7,13 @@ selection may be used (e.g. K8S NetworkPolicy).
 
 Network rules
 -------------
+Legion components require communication between:
 
-Legion components require some intra-pod communication:
-
-* Connection between Operator, Trainers, Packagers, and Deployer
-* Connection between EDI and Deployer instances
-* Connection between EDGE and Deployer instances
-* Connection between EDI and Docker Registry
-* Connection between cluster's ingress controller and EDGE
-* Connection between Trainer instances and statsd (in external namespace)
-* Connection between Prometheus and Legion's components -- for exporting performance metrics
-* Connection between EDGE and feedback components (aggregator and FluentD) -- for feedback loop
+* Operator, Trainer, Packager, and Deployer instances
+* EDI and Deployer instances
+* EDGE and Deployer instances
+* EDI and Docker Registry
+* Cluster ingress controller and EDGE
+* Trainer instances and statsd (in external namespace)
+* Prometheus and Legion components -- for exporting performance metrics
+* EDGE and feedback components (aggregator and FluentD) -- for feedback loop
