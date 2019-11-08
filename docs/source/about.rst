@@ -1,5 +1,5 @@
 =====
-About Legion Platform
+About Legion
 =====
 
 .. figure:: ../images/legion-logo-h.png

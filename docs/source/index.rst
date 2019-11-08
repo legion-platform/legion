@@ -45,12 +45,11 @@
    ref_model_rest_api
    ref_model_artifacts_format
    ref_network_connectivity
-   ref_legion_helm_values_examples
    gen_glossary
 
 .. toctree::
    :maxdepth: 1
-   :caption: Legion developer guide
+   :caption: Developer Guide
 
    dev_general
    dev_project_structure
