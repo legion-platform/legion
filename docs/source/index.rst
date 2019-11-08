@@ -42,9 +42,9 @@
 
    ref_configuration
    ref_kubernetes
-   ref_model_rest_api
-   ref_model_artifacts_format
-   ref_network_connectivity
+   ref_model_api
+   ref_model_format
+   ref_networking
    gen_glossary
 
 .. toctree::

@@ -1,4 +1,4 @@
-# Model REST API
+# Model API
 
 Each model provides endpoints for obtaining information,
 simple and batch call of models.
