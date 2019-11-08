@@ -1,6 +1,6 @@
 .. toctree::
    :maxdepth: 2
-   :caption: General Overview
+   :caption: Overview
 
    about
    concepts
@@ -38,7 +38,7 @@
 
 .. toctree::
    :maxdepth: 1
-   :caption: References
+   :caption: Reference
 
    ref_configuration
    ref_kubernetes

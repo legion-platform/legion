@@ -1,7 +1,7 @@
 .. _installation-prereqs:
-=========================================
+=============
 Prerequisites
-=========================================
+=============
 
 Kubernetes
 --------
@@ -16,6 +16,7 @@ Legion is built and tested against `EKS <https://aws.amazon.com/eks/>`_, `AKS <h
 
 Installing on a self-managed Kubernetes cluster is straight-forward.
 
+.. _installation-helm:
 Helm
 --------
 
