@@ -8,7 +8,7 @@ verify_ssl = true
 [packages]
 notebook = ">=5.7.8"
 pydantic = ">=0.29"
-jupyterlab = "==0.35.6"
+jupyterlab = "==1.2.21"
 
 [requires]
 python_version = "3.6"
